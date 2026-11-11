@@ -283,15 +283,15 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   // M7 (D146; T700a rows): jamming and System Reboot (T702), Everglow's healer and C4 Purge's armor
   // (T703), the Sproing Pad (T704), the Gloop Spitter's puddle (T705), bearers and flag-gated
   // posts (T706), the Auditor and Shareholder Value (T707), the Gathering Maw (T708).
-  'attack.leaper': 'T704',
+  'attack.leaper': null, // T704 lifted: sim/leapers.ts
   'tower.puddle': null, // T705 lifted: sim/puddles.ts
   'ability.reboot': null,
   'enemy.jam': null,
-  'enemy.jam.ring': 'T707',
+  'enemy.jam.ring': null, // T707 lifted: enemyAbilities/jamRing.ts
   'enemy.healAura': null, // T703
-  'enemy.boss.hangar': 'T707',
-  'enemy.boss.takeover': 'T707',
-  'enemy.boss.jettison': 'T707',
+  'enemy.boss.hangar': null, // T707: enemyAbilities/hangar.ts
+  'enemy.boss.takeover': null, // T707: enemyAbilities/takeover.ts
+  'enemy.boss.jettison': null, // T707: enemyAbilities/jettison.ts
   'enemy.boss.gather': 'T708',
   'enemy.boss.split': 'T708',
   'map.bearers': null,

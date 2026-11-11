@@ -239,6 +239,7 @@ function compileBoss(ctx: Ctx, b: BossDef, where: string): CompiledBoss {
           : {
               tellTicks: ticks(ctx, p.takeover.tellSec, `${w}.takeover.tellSec`),
               durationTicks: ticks(ctx, p.takeover.durationSec, `${w}.takeover.durationSec`),
+              everyTicks: ticks(ctx, p.takeover.everySec, `${w}.takeover.everySec`),
             },
       jettison:
         p.jettison === undefined

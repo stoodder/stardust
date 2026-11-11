@@ -9,7 +9,6 @@
 // dialogue does (`?test=1` turns it off unless `&dialogue=1`, the radio's rule), like the visit
 // scenes, which wait for it (app/baseScenes.ts).
 import { CAMPAIGN_PLAN_IDS } from '../content/campaign.ts';
-import { SCENES } from '../content/dialogue/index.ts';
 import type { LineNode } from '../content/dialogue/types.ts';
 import { isMapWon } from '../meta/index.ts';
 import { baseChoice } from '../ui/screens/state.ts';
@@ -23,6 +22,7 @@ import {
 } from './resultsFlow.ts';
 import { debriefStoryOf, runStoryContext, spoken } from './runResult.ts';
 import { activeSave } from './save.ts';
+import { storyScene } from './storyStubs.ts';
 
 let pending: PendingChoice | null = null;
 let onClose: (() => void) | null = null;
@@ -47,7 +47,7 @@ export function offerChoiceAtBase(done: () => void): boolean {
   const save = activeSave();
   if (save === null || !dialogueEnabled()) return false;
   for (const map of CAMPAIGN_PLAN_IDS) {
-    const scene = SCENES[`${map}_debrief`];
+    const scene = storyScene(`${map}_debrief`);
     if (scene === undefined || !isMapWon(save, map)) continue;
     const { story } = debriefStoryOf(save);
     if (story === undefined) continue;

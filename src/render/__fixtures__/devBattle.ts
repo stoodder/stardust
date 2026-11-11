@@ -69,6 +69,10 @@ import { silenceMap } from './devJam.ts'; // T702
 import { healMap } from './devHeal.ts'; // T703
 import { gloopMap } from './devGloop.ts'; // T705
 import { bearersMap } from './devM7.ts'; // T706
+import { sproingMap } from './devM7.ts'; // T704
+import { lookie_here } from '../../content/links/lookie_here.ts'; // T704
+import { bounce_chorus } from '../../content/links/bounce_chorus.ts'; // T704
+import { jamMap, takeoverMap } from './devM7.ts'; // T707
 import { blackbudget } from '../../content/enemies/blackbudget.ts'; // T703
 import { choir } from '../../content/towers/choir.ts'; // T607
 import { harmony } from '../../content/links/harmony.ts'; // T607
@@ -1503,6 +1507,9 @@ export const DEV_CONTENT: RawContent<DevIds> = {
     dev_heal: healMap, // T703 (devHeal.ts: the Associate's ring, Liability, gunships, Black Budget)
     dev_gloop: gloopMap, // T705 (devGloop.ts: the Gloop's spit, Corroded, Big Glorp, Sticky Flak)
     dev_bearers: bearersMap, // T706 (devM7.ts: bearers home, Cut the Feed or the surge, militia)
+    dev_sproing: sproingMap, // T704 (devM7.ts: leapers, grounded flyers, Lookie Here, Bounce Chorus)
+    dev_jam: jamMap, // T707 (devM7.ts: the tendril, the Auditors' rings among healed drones)
+    dev_takeover: takeoverMap, // T707 (devM7.ts: Shareholder Value's hangar, Takeover, jettison)
   }),
   links: {
     // Conductive is the live content's link (its partners are the real Zapcoil and Sprinkler).
@@ -1525,6 +1532,12 @@ export const DEV_CONTENT: RawContent<DevIds> = {
     // Sticky Flak (T705): the real Skyhook and Gloop Spitter, for dev_gloop.
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the ids it names are DevIds too
     sticky_flak: sticky_flak as unknown as LinkDef<DevIds>,
+    // Lookie Here and Bounce Chorus (T704): the real Sproing Pad, Lantern, and Hum Choir, for
+    // dev_sproing.
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the ids it names are DevIds too
+    lookie_here: lookie_here as unknown as LinkDef<DevIds>,
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the ids it names are DevIds too
+    bounce_chorus: bounce_chorus as unknown as LinkDef<DevIds>,
   },
   campaign: ['dev_range'],
 };

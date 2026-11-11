@@ -29,8 +29,9 @@
 //   haste aura's pct is within HASTE_CAP. M7 (T700a): a jam tells for JAM_MIN_TELL_SEC to below
 //   its period and lasts at most JAM_MAX_SEC, and only a `tendril` picks (`prefer`); a healer aura
 //   has a radius and a rate; a boss phase's gather follows the gathering rules, its hangar names
-//   an enemy, its Hostile Takeover tells for at least BOSS_MIN_TELL_SEC and jams for at most
-//   JAM_MAX_SEC, its jettison's haste is within HASTE_CAP and names plates (each map that sends
+//   an enemy and launches less often than its BOSS_ABILITY_TELL_SEC tell, its Hostile Takeover
+//   tells for at least BOSS_MIN_TELL_SEC, jams for at most JAM_MAX_SEC, and repeats no sooner
+//   than its tell plus its jam (T707), its jettison's haste is within HASTE_CAP and names plates (each map that sends
 //   it has them: [marker]), and its split names a part (never itself), a whole count ≥ 2, a share
 //   of HP in (0, 1], and a merge time and haste.
 // - [jammer-source]: only the listed jammers jam (enemies.md § 4): the `jammer` trait, a `jam`,
@@ -56,6 +57,7 @@ import { validatePalettes } from './palettes/validate.ts';
 import { ENV_PALETTE_IDS } from './palettes/env.ts';
 import { PALETTES, PALETTE_IDS } from './palettes/index.ts';
 import {
+  BOSS_ABILITY_TELL_SEC,
   BOSS_MIN_TELL_SEC,
   CHILL_CAP,
   COUNTER_ANSWERS,
@@ -610,7 +612,9 @@ function validateM7Phase(
   if (p.gather !== undefined) gather(`${w}.gather`, p.gather);
   if (p.hangar !== undefined) {
     child(`${w}.hangar`, p.hangar.enemy, p.hangar.count);
-    if (!isPositive(p.hangar.everySec)) bad(`${w}.hangar.everySec`, 'must be > 0');
+    if (!(p.hangar.everySec > BOSS_ABILITY_TELL_SEC)) {
+      bad(`${w}.hangar.everySec`, `must be longer than its ${BOSS_ABILITY_TELL_SEC} s tell`);
+    }
   }
   const t = p.takeover;
   if (t !== undefined) {
@@ -619,6 +623,9 @@ function validateM7Phase(
     }
     if (!(t.durationSec > 0 && t.durationSec <= JAM_MAX_SEC)) {
       bad(`${w}.takeover.durationSec`, `must be in (0, ${JAM_MAX_SEC}] s (JAM_MAX_SEC)`);
+    }
+    if (!(t.everySec >= t.tellSec + t.durationSec)) {
+      bad(`${w}.takeover.everySec`, 'must be at least its tell plus its jam');
     }
   }
   const j = p.jettison;

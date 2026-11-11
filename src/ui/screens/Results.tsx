@@ -333,7 +333,19 @@ function TransactionRow({ t }: { t: ResultsTransaction }) {
           )}
         </li>
       );
+    // C4 Purge (T710): QUILL's Rapport comes back, as the uplink's Mk II did.
+    case 'c4':
+      if (t.refund === null) return null;
+      return (
+        <li data-testid="results-c4-refund">
+          <span class="sd-results-pay-label">
+            Refunded<span class="sd-results-pay-note"> · {silkText(t.refund.name)}</span>
+          </span>
+          <Amount n={t.refund.amount} currency={t.refund.currency} />
+        </li>
+      );
     case 'gift':
+    case 'inherit':
       return null;
     default:
       return assertNever(t);
@@ -352,6 +364,12 @@ function StoryAsides({ rewards }: { rewards: RunRewards }) {
         ) : t.kind === 'c2' && t.tuneUp !== null ? (
           <p key={i} class="sd-results-pay-aside sd-results-issued" data-testid="results-tune-up">
             {silkText(`${t.tuneUp.name}: ${t.tuneUp.line}`)}
+          </p>
+        ) : t.kind === 'inherit' || (t.kind === 'c4' && t.inherited !== null) ? (
+          // A companion ability now the Technician's (Gerald's mail; C4 Keep).
+          <p key={i} class="sd-results-pay-aside sd-results-issued" data-testid="results-inherit">
+            Inherited: {silkText(t.kind === 'inherit' ? t.ability : (t.inherited ?? ''))} ·
+            Technician ability
           </p>
         ) : null,
       )}

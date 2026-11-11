@@ -21,6 +21,7 @@ import { PROTOCOLS } from '../content/upgrades/index.ts';
 import {
   abilityAnswers,
   equippedProtocols,
+  abilitiesOffOn,
   initialPick,
   linksAmong,
   loadoutPools,
@@ -287,7 +288,9 @@ export function openLoadout(mapId: string): boolean {
   if (cfg === null) return false;
   const content = cfg.content;
   const map = content.maps[mapId]!; // battleConfig found it
-  const pools = loadoutPools(save);
+  // Slot 1 leaves out what it can't hold here (A3M5's System Reboot under C4 Rewrite; slot 2's).
+  const off = abilitiesOffOn(map, save, cfg.abilities.slot2);
+  const pools = loadoutPools(save, [], off);
   const c: Context = {
     mapId,
     save,
@@ -304,7 +307,7 @@ export function openLoadout(mapId: string): boolean {
   );
   const offered = owned.map((o) => protocolView(o, map.objective));
   const start = {
-    ...initialPick(save, mapId, defaultPick(save, map.builds.parBuild)),
+    ...initialPick(save, mapId, defaultPick(save, map.builds.parBuild, off), off),
     ...equippedView(save),
   };
   // A core-only protocol carried onto a map with no core is benched for one that acts (D144 S1b).

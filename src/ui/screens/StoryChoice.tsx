@@ -1,10 +1,10 @@
-// A debrief's story choice (C2, Zibzab's Price): on the Results card in the way on's place
-// (Results.tsx), and at the base when the card was never answered (BaseChoice.tsx). Price first,
-// truly (D138): the stake (the whole bank) heads the group, and each option shows what it pays
-// under it before the pick (Sell: the Intel windfall and the Zibzab Tune-up; Return: "Carried home
-// · Fee: an IOU"), side by side and alike, since neither is wrong. A stray key can't make it
-// (D138): the focus lands on the group's heading, not an option, and the options ignore input for
-// CHOICE_LOCK_MS after they show.
+// A debrief's story choice (C2, Zibzab's Price; C4, QUILL's directives, under its own title with
+// nothing priced, T710): on the Results card in the way on's place (Results.tsx), and at the base
+// when the card was never answered (BaseChoice.tsx). Price first, truly (D138): the stake (the
+// whole bank) heads the group, and each option shows what it pays under it before the pick (Sell:
+// the Intel windfall and the Zibzab Tune-up; Return: "Carried home · Fee: an IOU"), side by side
+// and alike, since neither is wrong. A stray key can't make it (D138): the focus lands on the
+// group's heading, not an option, and the options ignore input for CHOICE_LOCK_MS after they show.
 import { useEffect, useState } from 'preact/hooks';
 import { silkText } from '../silk.ts';
 import { focusOnce } from './focus.ts';
@@ -27,6 +27,12 @@ function Pays({ pays, id }: { pays: ResultsPay; id: string }) {
   );
 }
 
+/** The choice's name: its title (C4), else "{offerer}'s offer" (C2). */
+export function choiceName(choice: ResultsChoice): string {
+  if (choice.title !== null) return choice.title;
+  return choice.by === '' ? 'Your answer' : `${choice.by}'s offer`;
+}
+
 /**
  * The choice: the stake as the group's heading (focused as it shows), then the options with what
  * each pays. `onPick` takes the option's index; presses in the first CHOICE_LOCK_MS are ignored.
@@ -43,12 +49,18 @@ export function StoryChoice({
     const t = setTimeout(() => setReady(true), CHOICE_LOCK_MS);
     return () => clearTimeout(t);
   }, []);
-  const by = choice.by === '' ? 'Your answer' : `${choice.by}'s offer`;
+  const by = choiceName(choice);
   return (
     <div class="sd-results-buttons sd-results-choice" role="group" aria-label={by}>
       <h2 class="sd-results-stake" tabIndex={-1} ref={focusOnce} data-testid="choice-heading">
-        <span class="sd-visually-hidden">{by}. </span>
-        The whole bank: <span class="sd-stardust">{formatCount(choice.bank)} Stardust</span>
+        {choice.title === null ? (
+          <>
+            <span class="sd-visually-hidden">{by}. </span>
+            The whole bank: <span class="sd-stardust">{formatCount(choice.bank)} Stardust</span>
+          </>
+        ) : (
+          silkText(choice.title)
+        )}
       </h2>
       {choice.options.map((text, i) => {
         const pays = choice.pays[i];

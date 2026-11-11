@@ -2,11 +2,13 @@
 // Order matters: a link's position is its bit in `Tower.linkMask`, so append new links.
 import { defineRegistry } from '../define.ts';
 import { acid_rain } from './acid_rain.ts';
+import { bounce_chorus } from './bounce_chorus.ts';
 import { conductive } from './conductive.ts';
 import { crossfire } from './crossfire.ts';
 import { finders_keepers } from './finders_keepers.ts';
 import { harmony } from './harmony.ts';
 import { lightsong } from './lightsong.ts';
+import { lookie_here } from './lookie_here.ts';
 import { overwatch } from './overwatch.ts';
 import { pinned_down } from './pinned_down.ts';
 import { reel_it_in } from './reel_it_in.ts';
@@ -31,7 +33,7 @@ export const LINKS = defineRegistry({
   // M6: the Scuttle Den's (T604).
   splash_zone,
   finders_keepers,
-  // M6: the Hum Choir's (T607). Bounce Chorus (Sproing + Choir) joins with the Sproing Pad (M7).
+  // M6: the Hum Choir's (T607). Its Bounce Chorus (with the Sproing Pad) is M7's, below.
   harmony,
   // M6: the Stasis Bloom's (T608).
   pinned_down,
@@ -39,4 +41,7 @@ export const LINKS = defineRegistry({
   // M7: the Gloop Spitter's (T705).
   acid_rain,
   sticky_flak,
+  // M7: the Sproing Pad's (T704).
+  lookie_here,
+  bounce_chorus,
 });

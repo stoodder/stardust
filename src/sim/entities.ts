@@ -32,6 +32,8 @@ import type { SpecChoice } from './commands.ts';
 import type { PoolEntity } from './pool.ts';
 
 const NO_TAGS: readonly WaveTag[] = Object.freeze([]);
+/** An empty uid list (an Enemy's `takeoverTowers` between Hostile Takeover tells; T707). */
+export const NO_UIDS: readonly number[] = Object.freeze([]);
 const NO_EFFECTS: readonly CompiledEffect[] = Object.freeze([]);
 
 export interface Tower extends PoolEntity {
@@ -418,6 +420,18 @@ export interface Enemy extends PoolEntity {
   jamTicks: number;
   jamTellTicks: number;
   jamTarget: number;
+  /**
+   * Hostile Takeover's targets (T707; enemyAbilities/takeover.ts): the towers its laser picked as
+   * the tell began (render draws the laser to each), replaced at each tell, empty between tells.
+   */
+  takeoverTowers: readonly number[];
+  /**
+   * How many ticks the last Takeover's jams have held so far (T707): the longest single one,
+   * counting the tick it landed; the run's longest is `stats.takeoverJamTicks` (Declined).
+   */
+  takeoverHeldTicks: number;
+  /** Its plating is gone (T707; enemyAbilities/jettison.ts): armor 0 for the rest of the fight. */
+  jettisoned: boolean;
   /** A split boss's merge (T708): ticks until its parts merge; 0: not counting down. */
   mergeTicks: number;
 }
@@ -490,6 +504,9 @@ export const ENEMY_BLANK: Readonly<Enemy> = Object.freeze({
   jamTicks: 0,
   jamTellTicks: 0,
   jamTarget: 0,
+  takeoverTowers: NO_UIDS,
+  takeoverHeldTicks: 0,
+  jettisoned: false,
   mergeTicks: 0,
 });
 

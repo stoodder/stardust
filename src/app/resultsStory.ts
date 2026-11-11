@@ -1,6 +1,6 @@
 // The story side of the results card's payroll (T510): the story transactions a run made (run
-// end's step 6: A2M4's Q3 Bonus, A2M5's Prism gift; then C2 once the debrief's choice is taken,
-// app/resultsFlow.ts) and the memo that arrives on the card with the Q3 Bonus, as the card shows
+// end's step 6: A2M4's Q3 Bonus, A2M5's Prism gift, A3M4's mail; then C2 or C4 once the debrief's
+// choice is taken, app/resultsFlow.ts) and the memo that arrives on the card with the Q3 Bonus, as the card shows
 // them (ui/screens/state.ts). Pure.
 import { ABILITIES } from '../content/abilities/index.ts';
 import { MEMOS } from '../content/memos/index.ts';
@@ -32,6 +32,24 @@ export function transactionView(t: StoryTransaction): ResultsTransaction {
         tuneUp: t.tuneUp ? { name: def.name, line: def.copy ?? '' } : null,
       };
     }
+    // Gerald's mail (A3M4): "Inherited: Suppressing Fire".
+    case 'inherit':
+      return { kind: 'inherit', ability: ABILITIES[t.ability].name };
+    // C4 (T710): Keep's Time Dilation as an inheritance, Purge's Rapport as a refund row.
+    case 'c4':
+      return {
+        kind: 'c4',
+        choice: t.choice,
+        inherited: t.inherited === null ? null : ABILITIES[t.inherited].name,
+        refund:
+          t.refund === null
+            ? null
+            : {
+                name: UPGRADES[t.refund.upgrade].name,
+                currency: t.refund.currency,
+                amount: t.refund.amount,
+              },
+      };
     default:
       return assertNever(t);
   }

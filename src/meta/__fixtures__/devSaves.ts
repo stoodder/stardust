@@ -13,7 +13,6 @@ import { MEMO_IDS } from '../../content/memos/index.ts';
 import { STAR_MAP_SEEN_ID } from '../../content/starMap.ts';
 import { PROTOCOLS, UPGRADES } from '../../content/upgrades/index.ts';
 import type {
-  AbilityId,
   EnemyId,
   MapId,
   MedalId,
@@ -32,16 +31,10 @@ import type { MapRecord, SaveData, SceneId } from '../saveData.ts';
 import { LIVE_KNOWN_IDS, createNewSave } from '../saveData.ts';
 import { withStoryUnlocks } from '../story.ts';
 import {
-  C4_EFFECTS,
   briefingGifts,
   buyJailbreak,
-  crateContents,
   grantGift,
   grantQ3Bonus,
-  inheritAbility,
-  jailbreakPrice,
-  JAILBREAK,
-  CRATE,
   openCrate,
   resolveC2,
   resolveC4,
@@ -444,74 +437,10 @@ interface ActThreePlan {
   readonly c4?: C4Choice;
 }
 
-/**
- * `r`'s save; or, while its transaction refuses `'unbuilt'` (its body waits for T710), the save
- * `intended` makes by hand: the effect meta/storyTransactions.ts documents for it as data. Any
- * other refusal is a broken fixture and throws. Once T710 lands, the stand-ins are never reached.
- */
-function made(save: SaveData, r: StoryOutcome, intended: (s: SaveData) => SaveData): SaveData {
+/** `r`'s save; a refusal is a broken fixture and throws. */
+function made(r: StoryOutcome): SaveData {
   if (r.ok) return r.save;
-  if (r.reason === 'unbuilt') return intended(save);
   throw new Error(`dev save: ${r.reason}: ${r.message}`);
-}
-
-/** The jailbreak as `JAILBREAK` documents it: every revoked class back, drawn jailbroken. */
-function intendedJailbreak(save: SaveData): SaveData {
-  const cost = jailbreakPrice(save);
-  if (save.currencies.stardust < cost) throw new Error('dev save: short for the jailbreak');
-  const u = save.unlocks;
-  return {
-    ...save,
-    currencies: { ...save.currencies, stardust: save.currencies.stardust - cost },
-    unlocks: { ...u, revokedTowers: [], jailbroken: [...u.jailbroken, ...u.revokedTowers] },
-    story: { ...save.story, granted: [...save.story.granted, JAILBREAK.grant] },
-  };
-}
-
-/** `inheritAbility` as documented: the ability owned, and recorded as inherited. */
-function intendedInherit(ability: AbilityId): (save: SaveData) => SaveData {
-  return (save) => {
-    const u = save.unlocks;
-    return {
-      ...save,
-      unlocks: {
-        ...u,
-        abilities: u.abilities.includes(ability) ? u.abilities : [...u.abilities, ability],
-        inheritedAbilities: [...(u.inheritedAbilities ?? []), ability],
-      },
-    };
-  };
-}
-
-/** C4 as `C4_EFFECTS` documents it: the flag, and Keep's inheritance (no save owns QUILL's Rapport). */
-function intendedC4(choice: C4Choice): (save: SaveData) => SaveData {
-  return (save) => {
-    const effects = C4_EFFECTS[choice];
-    if (effects.refund !== null && (save.upgrades[effects.refund] ?? 0) > 0) {
-      throw new Error("dev save: Purge's Rapport refund isn't modelled (no dev save owns it)");
-    }
-    const flagged = {
-      ...save,
-      story: { ...save.story, flags: { ...save.story.flags, quill_choice: choice } },
-    };
-    if (effects.inherit === null) return flagged;
-    return made(
-      flagged,
-      inheritAbility(flagged, effects.inherit),
-      intendedInherit(effects.inherit),
-    );
-  };
-}
-
-/** Zibzab's crate as `CRATE` documents it (the reference owns tune-ups to install, so no pick). */
-function intendedCrate(save: SaveData): SaveData {
-  const contents = crateContents(save);
-  if (Object.keys(contents).length === 0) throw new Error('dev save: the crate would need a pick');
-  return {
-    ...save,
-    upgrades: { ...save.upgrades, ...contents },
-    story: { ...save.story, granted: [...save.story.granted, CRATE.grant] },
-  };
 }
 
 /**
@@ -530,14 +459,14 @@ function actThreeThrough(last: ActThreeMap, plan: ActThreePlan): SaveData {
     const map: string = step;
     if (!isRegistered(map)) continue;
     // The base before A3M4: the jailbreak (free under the convoy).
-    if (step === 'a3_m04') save = made(save, buyJailbreak(save), intendedJailbreak);
+    if (step === 'a3_m04') save = made(buyJailbreak(save));
     save = bought(save, ACT_THREE_PREP[step]);
     save.loadouts.protocols = [ACT_THREE_PROTOCOL[step]];
     // The briefing: its gifts as the loadout first opens; C3 committed as it closes; the crate
     // opened as A3M6's closes.
     save = briefingGifts(save, step).save;
     if (step === 'a3_m03') save = setDoorChoice(save, plan.door).save;
-    if (step === 'a3_m06') save = made(save, openCrate(save), intendedCrate);
+    if (step === 'a3_m06') save = made(openCrate(save));
     save.campaign.maps[map] = won(map, medalIds(map).slice(0, 1));
     save.currencies.intel += 1;
     save.currencies.stardust += MAPS[map].stardust;
@@ -551,16 +480,11 @@ function actThreeThrough(last: ActThreeMap, plan: ActThreePlan): SaveData {
       save = runEndRevocations(save, { won: true, wonBefore: false, revoked }).save;
     }
     save = runEndTransactions(save, { mapId: map, won: true, wonBefore: false }).save;
-    // A3M4: Gerald's mail grants Suppressing Fire on the first win, then C4 on the card.
+    // A3M4: Gerald's mail granted Suppressing Fire at step 6 (above); then C4 on the card.
     if (step === 'a3_m04') {
-      save = made(
-        save,
-        inheritAbility(save, 'suppressing_fire'),
-        intendedInherit('suppressing_fire'),
-      );
       const c4 = plan.c4;
       if (c4 === undefined) throw new Error('dev save: a plan through A3M4 needs its C4');
-      save = made(save, resolveC4(save, c4), intendedC4(c4));
+      save = made(resolveC4(save, c4));
     }
     // The {name} turret (A3M3's last tag): the par build's Scuttle Den at the choke.
     if (step === 'a3_m03') save.story.memorialTower = knownTower('burrow') ?? null;
@@ -592,17 +516,6 @@ function knownTower(id: string): TowerId | undefined {
 function price(id: keyof typeof UPGRADES): number {
   return UPGRADES[id].ranks[0]?.price ?? 0;
 }
-
-/**
- * The stand-ins `made` applies while T710's bodies are unbuilt, for devSaves.test.ts to check
- * against the documented data before A3M4–A3M6 are registered.
- */
-export const INTENDED = {
-  jailbreak: intendedJailbreak,
-  inherit: intendedInherit,
-  c4: intendedC4,
-  crate: intendedCrate,
-} as const;
 
 /** The reference's Act III branches: C1 cleared, the Rivet revoked, the convoy. */
 const A3_REF = { c1: 'cleared', revoked: 'rivet', door: 'convoy' } as const;
@@ -767,7 +680,7 @@ export const DEV_SAVES: Readonly<Record<DevSaveId, DevSave>> = {
     build: () => actThreeThrough('a3_m03', { c1: 'cleared', revoked: 'rivet', door: 'warren' }),
   },
   // A3M4–A3M6 (T700b): until each map is registered it is skipped with its prep, so these equal
-  // the save before it. Transactions whose bodies wait for T710 are applied by hand (`made`).
+  // the save before it.
   after_a3m4_keep: a3m4Save('convoy', 'keep'),
   after_a3m4_purge: a3m4Save('convoy', 'purge'),
   after_a3m4_rewrite: a3m4Save('convoy', 'rewrite'),
@@ -817,7 +730,8 @@ export const DEV_SAVES: Readonly<Record<DevSaveId, DevSave>> = {
       // The story as far as the wins go: the intake done, the callsign and tags they gave, and
       // every memo due delivered and read (so no NEW badge pulls the base to the Inbox).
       save.profile = { ...DEV_PROFILE, callsign: callsignFor(save) };
-      save.story.flags = { arrival_reason: 'lettuce' };
+      // C4 answered (Keep, QUILL as she was), so the base never stops on A3M4's card (D146).
+      save.story.flags = { arrival_reason: 'lettuce', quill_choice: 'keep' };
       save.story.bricksTagIndex = tagIndexFor(save);
       const story = withStoryUnlocks(save).save;
       story.story.memosRead = [...story.story.memosDelivered];

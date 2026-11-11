@@ -28,7 +28,10 @@
 // - the Hum Choir's (T607): Harmony's wider auras (`linkAuraRadiusTiles`) and Bounce Chorus's
 //   stronger ones (`linkAuraPct`), each scaled like any link bonus (systems/auras.ts reads them),
 //   and Harmony's extra hitscan targets (`linkExtraTargets`, scaled and rounded down like jumps;
-//   the towers system reads it).
+//   the towers system reads it);
+// - the Sproing Pad's (T704; sim/leapers.ts reads them): Bounce Chorus's longer Pin
+//   (`linkPinTicks`, scaled like Splash Zone's latch) and Lookie Here's Marked-first pick
+//   (`linkPreferMarked`).
 // The caps apply when a stat is read (sim/bonuses.ts), never here. Recomputing allocates a little
 // (the new pair list); it runs only when dirty, never per tick.
 import type { CompiledContent, CompiledLinkDef } from '../../content/compiled.ts';
@@ -188,6 +191,10 @@ function recompute(state: SimState, ctx: TickContext): void {
       // Acid Rain, Sticky Flak (T705): whole Corroded stacks per hit, scaled like jumps and rounded
       // down (Linked Up's ×1.5 leaves 1 at 1); sim/puddles.ts lands them.
       if (p.corrodedStacks !== 0) t.linkCorrodedStacks += Math.floor(p.corrodedStacks * k + 1e-9);
+      // The Sproing Pad's (T704): Bounce Chorus's longer Pin, a duration scaled like Splash Zone's
+      // latch (rounded to whole ticks); Lookie Here's Marked-first pick, a switch (sim/leapers.ts).
+      t.linkPinTicks += Math.round(p.pinTicks * k);
+      if (p.preferMarked) t.linkPreferMarked = true;
     }
   }
 
@@ -222,6 +229,8 @@ function clearBonuses(t: Tower): void {
   t.linkFieldRadiusTiles = 0;
   t.linkPulseSoonerTicks = 0;
   t.linkCorrodedStacks = 0;
+  t.linkPinTicks = 0;
+  t.linkPreferMarked = false;
 }
 
 function towerAt(state: SimState, map: TickContext['map'], col: number, row: number): Tower | null {

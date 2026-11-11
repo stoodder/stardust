@@ -94,6 +94,11 @@ export interface ResultsChoice {
   readonly by: string;
   /** Price first: the stake, the whole Stardust bank. */
   readonly bank: number;
+  /**
+   * The choice's own heading in place of the stake, which also names the group (C4: "QUILL's
+   * directives", T710); null for C2's bank.
+   */
+  readonly title: string | null;
   /** The options' text, as the debrief writes them. */
   readonly options: readonly string[];
   /**
@@ -139,6 +144,22 @@ export type ResultsTransaction =
       readonly bank: number;
       readonly intel: number;
       readonly tuneUp: { readonly name: string; readonly line: string } | null;
+    }
+  /** A companion ability inherited into slot 1 (A3M4's mail: Suppressing Fire), by name. */
+  | { readonly kind: 'inherit'; readonly ability: string }
+  /**
+   * C4 as committed (T710): Keep's inherited ability by name (else null), and Purge's Rapport
+   * refund by the upgrade's name (else null). Rewrite shows nothing.
+   */
+  | {
+      readonly kind: 'c4';
+      readonly choice: 'purge' | 'keep' | 'rewrite';
+      readonly inherited: string | null;
+      readonly refund: {
+        readonly name: string;
+        readonly currency: 'stardust' | 'intel';
+        readonly amount: number;
+      } | null;
     };
 
 /** A memo that arrives on the results card (A2M4's Q3 Bonus memo): its id and subject. */

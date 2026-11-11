@@ -47,7 +47,7 @@ import {
   type SpeakerId,
 } from '../content/dialogue/types.ts';
 import type { AllyKind, EnemyId, IdSpace, MapDef, TowerId } from '../content/types.ts';
-import { setDoorChoice, type SaveData } from '../meta/index.ts';
+import { resolveC4, setDoorChoice, type SaveData } from '../meta/index.ts';
 import { baseStoryContext } from '../meta/story.ts';
 import { escortMaxLost, isBossWave } from '../sim/index.ts';
 import { TICK_HZ } from '../shared/time.ts';
@@ -185,16 +185,21 @@ export function holdAtSpeedMs(ms: number, text: string, gameSpeed: number): numb
 /**
  * What a scene changed, applied to `save`: flags, the callsign, and (for a real scene id) seen. C3's
  * `door_choice` (A3M3's briefing) is committed through meta's `setDoorChoice`, so a door already
- * chosen is never changed (D141: asked once; T610).
+ * chosen is never changed (D141: asked once; T610); C4's `quill_choice` through `resolveC4`, so
+ * Keep's inheritance and Purge's refund come with it (T710; Results and the base take it out of
+ * the effects and commit it themselves, app/resultsFlow.ts).
  */
 export function withSceneEffects(
   save: SaveData,
   sceneId: string,
   effects: DialogueEffects,
 ): SaveData {
-  const { door_choice: door, ...rest } = effects.flags;
+  const { door_choice: door, quill_choice: quill, ...rest } = effects.flags;
   const base = withPlainSceneEffects(save, sceneId, { ...effects, flags: rest });
-  return door === undefined ? base : setDoorChoice(base, door).save;
+  const doored = door === undefined ? base : setDoorChoice(base, door).save;
+  if (quill === undefined) return doored;
+  const c4 = resolveC4(doored, quill);
+  return c4.ok ? c4.save : doored;
 }
 
 function withPlainSceneEffects(
@@ -448,6 +453,8 @@ interface Holding {
   staging: StagingView | null;
   /** When the choice on screen showed (performance.now), for a story choice's lock; 0 for none. */
   choiceAt: number;
+  /** Esc doesn't skip it (`PlayOptions.noSkip`: Night Shift the first time, D146). */
+  readonly noSkip: boolean;
 }
 
 let holding: Holding | null = null;
@@ -464,6 +471,11 @@ export interface PlayOptions {
   readonly record?: boolean;
   /** A countdown's radio (`w<NN>`): the wave it's for, dropped unplayed once that wave starts. */
   readonly radioWave?: number;
+  /**
+   * Esc takes the key but skips nothing: every line is played with Next (D146: Night Shift, the
+   * base's mandatory vignette, the first time; app/baseScenes.ts). Default false.
+   */
+  readonly noSkip?: boolean;
 }
 
 /** How long a silence holds when its line names no `durationSec`, in seconds. */
@@ -624,6 +636,7 @@ function open(scene: Scene, opts: PlayOptions, mode: SceneMode): void {
     remember: null,
     staging: openStaging(scene.id, mode, opts.instant ?? false),
     choiceAt: 0,
+    noSkip: opts.noSkip ?? false,
   };
   holding = h;
   settle(h);
@@ -723,9 +736,10 @@ export const STORY_CHOICE_LOCK_MS = 700;
 
 /**
  * The flags whose choice is locked for STORY_CHOICE_LOCK_MS and holds the briefing until answered:
- * C3's door (D141). Other choices, flag-setting or not, take a press at once.
+ * C3's door (D141) and C4's directives (D146: asked with C3's lock; on the card its own lock is
+ * StoryChoice's, the same 700 ms). Other choices, flag-setting or not, take a press at once.
  */
-export const LOCKED_CHOICE_FLAGS: readonly string[] = ['door_choice'];
+export const LOCKED_CHOICE_FLAGS: readonly string[] = ['door_choice', 'quill_choice'];
 
 /** Whether a choice is a locked story choice: one of its options sets a LOCKED_CHOICE_FLAGS flag. */
 export function isStoryChoice(
@@ -781,8 +795,8 @@ export function chooseOption(index: number): void {
 export function skipScene(): boolean {
   const h = holding;
   if (h === null || h.mode === 'briefing') return false;
-  // A locked staging swallows Esc too (the key is taken; nothing skips).
-  if (stagingLocked(h, performance.now())) return true;
+  // A locked staging swallows Esc too (the key is taken; nothing skips), as does a mandatory scene.
+  if (h.noSkip || stagingLocked(h, performance.now())) return true;
   const ctx = storyContext(h.map);
   // Every skipped line joins the transcript (T327), not only the one on screen.
   while (h.cursor.step.kind === 'line') {

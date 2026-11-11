@@ -19,11 +19,10 @@
 //   Strike Mk II's Intel refunded).
 // - **The briefing** (as the map's loadout first opens; `briefingGifts`): A3M1's Scuttle Den. C3,
 //   `setDoorChoice`, is committed as A3M3's briefing closes.
-// - Act III part two (M7): `buyJailbreak` (the base, after A3M3), `inheritAbility` (A3M4's mail
-//   scene; C4 Keep), `resolveC4` (A3M4's card), `openCrate` (as A3M6's briefing closes). T700b
-//   built their signatures, argument checks, and intended effects as data (`JAILBREAK`,
-//   `INHERITED_ABILITIES`, `C4_EFFECTS`, `CRATE`, `crateContents`); each refuses `'unbuilt'` until
-//   T710 makes it real (`ACT3_PART_TWO_TASK`).
+// - Act III part two (M7; T700b's seams, T710's bodies): `buyJailbreak` (the base's Shop, after
+//   A3M3), `inheritAbility` (A3M4's mail scene at run end's step 6; C4 Keep), `resolveC4` (A3M4's
+//   card), `openCrate` (as A3M6's briefing closes), each beside its table (`JAILBREAK`,
+//   `INHERITED_ABILITIES`, `C4_EFFECTS`, `CRATE`); C4's effects in play are `C4_IN_PLAY`.
 import { ABILITIES } from '../content/abilities/index.ts';
 import type { CampaignMapId } from '../content/campaign.ts';
 import { FLAGS, type FlagValueOf } from '../content/dialogue/flags.ts';
@@ -32,6 +31,7 @@ import type { MemoId } from '../content/memos/types.ts';
 import { TOWERS } from '../content/towers/index.ts';
 import type {
   AbilityId,
+  IdSpace,
   MapId,
   ProtocolId,
   TowerFaction,
@@ -40,7 +40,9 @@ import type {
 } from '../content/types.ts';
 import { PROTOCOLS, UPGRADES } from '../content/upgrades/index.ts';
 import type { Currency } from '../content/upgrades/types.ts';
+import type { Modifier } from '../sim/index.ts';
 import { evaluateCondition } from '../story/conditions.ts';
+import { isMapWon } from './progress.ts';
 import type { SaveData } from './saveData.ts';
 import { baseStoryContext } from './story.ts';
 import { clampCurrency } from './validate.ts';
@@ -108,7 +110,12 @@ export type StoryTransaction =
       readonly bank: number;
       readonly intel: number;
       readonly tuneUp: boolean;
-    };
+    }
+  /**
+   * A companion ability inherited into slot 1 (A3M4's mail: Suppressing Fire, run end's step 6),
+   * and C4 as committed on Results (Keep's Time Dilation, Purge's Rapport refund).
+   */
+  | Extract<ActThreeTwoTransaction, { readonly kind: 'inherit' | 'c4' }>;
 
 /** A transaction's result: the new save, and what it did (null when it had already applied). */
 export interface TransactionResult {
@@ -193,7 +200,9 @@ export function grantGift(save: SaveData, tower: TowerId): TransactionResult {
  */
 export type RunEndTransactionDef =
   | { readonly kind: 'q3_bonus' }
-  | { readonly kind: 'gift'; readonly tower: TowerId; readonly when?: Condition };
+  | { readonly kind: 'gift'; readonly tower: TowerId; readonly when?: Condition }
+  /** A companion ability inherited into slot 1 (`inheritAbility`; A3M4's mail). */
+  | { readonly kind: 'inherit'; readonly ability: AbilityId };
 
 /**
  * Each map's run-end transactions, in order (campaign data: story/campaign/act2.md, A2M4's
@@ -206,6 +215,9 @@ export const RUN_END_TRANSACTIONS: Readonly<
   a2_m04: [{ kind: 'q3_bonus' }],
   a2_m05: [{ kind: 'gift', tower: 'prism' }],
   a3_m01: [{ kind: 'gift', tower: 'choir', when: { flag: 'spared_quiet_wave', eq: true } }],
+  // act3.md § A3M4's mail scene (D146): the fire-control key, Bricks's Suppressing Fire, on the
+  // first win, so a closed tab on the scene or the card never loses it.
+  a3_m04: [{ kind: 'inherit', ability: 'suppressing_fire' }],
 };
 
 /** What run end's step 6 reads about the run. */
@@ -238,6 +250,13 @@ export function runEndTransactions(
   for (const def of table[input.mapId] ?? []) {
     if (def.kind === 'gift' && def.when !== undefined) {
       if (!evaluateCondition(def.when, baseStoryContext(next))) continue;
+    }
+    if (def.kind === 'inherit') {
+      const r = inheritAbility(next, def.ability);
+      if (!r.ok) throw new Error(r.message);
+      next = r.save;
+      if (r.applied?.kind === 'inherit') transactions.push(r.applied);
+      continue;
     }
     const r = def.kind === 'q3_bonus' ? grantQ3Bonus(next) : grantGift(next, def.tower);
     next = r.save;
@@ -346,11 +365,7 @@ export type RevocationTransaction =
   | {
       readonly kind: 'revoke_ability';
       readonly ability: AbilityId;
-      readonly refund: {
-        readonly upgrade: UpgradeId;
-        readonly currency: Currency;
-        readonly amount: number;
-      } | null;
+      readonly refund: UpgradeRefund | null;
     };
 
 /** C3 as committed: the door Bricks holds. */
@@ -398,28 +413,11 @@ export function revokeAbility(
   if (!u.abilities.includes(ability) || u.revokedAbilities.includes(ability)) {
     return { save, applied: null };
   }
-  const upgrade = REVOCATION_REFUNDS[ability];
-  const def = upgrade === undefined ? undefined : upgrades[upgrade];
-  const owned = upgrade === undefined ? 0 : (save.upgrades[upgrade] ?? 0);
-  const refund =
-    upgrade === undefined || def === undefined || owned === 0
-      ? null
-      : {
-          upgrade,
-          currency: def.currency,
-          amount: def.ranks.slice(0, owned).reduce((sum, r) => sum + r.price, 0),
-        };
-  const currencies =
-    refund === null
-      ? save.currencies
-      : {
-          ...save.currencies,
-          [refund.currency]: clampCurrency(save.currencies[refund.currency] + refund.amount),
-        };
+  const refund = upgradeRefund(save, REVOCATION_REFUNDS[ability], upgrades);
   return {
     save: {
       ...save,
-      currencies,
+      currencies: refunded(save, refund),
       unlocks: { ...u, revokedAbilities: [...u.revokedAbilities, ability] },
     },
     applied: { kind: 'revoke_ability', ability, refund },
@@ -537,16 +535,12 @@ export function setDoorChoice(
   };
 }
 
-// ─── Act III part two (M7): seams by T700b, bodies by T710 ──────────────────────────────────────
+// ─── Act III part two (M7): T700b's seams, T710's bodies ────────────────────────────────────────
 //
-// Each transaction below takes its final signature and checks its arguments now (an id outside the
-// registries, a value outside its flag's, is `'invalid'`), then refuses `'unbuilt'` until T710
-// writes its body. What each will do is data here (D146; act3.md § A3M4–A3M6), which the dev saves
-// apply by hand meanwhile (meta/__fixtures__/devSaves.ts `intended`), so T710 makes these real
-// against the same tables.
-
-/** The task that makes Act III part two's transactions real; until then each refuses with it. */
-export const ACT3_PART_TWO_TASK = 'T710';
+// Each transaction checks its arguments (an id outside the registries, a value outside its flag's,
+// is `'invalid'`), then makes what its table beside it says (D146; act3.md § A3M4–A3M6): the
+// jailbreak at the base, Gerald's mail and C4 on A3M4's first win, Zibzab's crate as A3M6's
+// briefing closes. The dev saves are built with them (meta/__fixtures__/devSaves.ts).
 
 /** C4's three answers: the `quill_choice` flag's values (campaign.md § 6.1). */
 export type C4Choice = FlagValueOf<'quill_choice'>;
@@ -555,7 +549,7 @@ export const C4_CHOICES: readonly C4Choice[] = FLAGS.quill_choice.values;
 
 /** Why an Act III part two transaction changed nothing. */
 export type StoryRefusal =
-  /** An argument outside the registries or its flag's values: a caller's bug. */
+  /** An argument outside the registries or its flag's values, or not due: a caller's bug. */
   | 'invalid'
   /** The jailbreak before A3M3 is won (`JAILBREAK.availableAfter`). */
   | 'not_stocked'
@@ -563,8 +557,18 @@ export type StoryRefusal =
   | 'nothing_revoked'
   /** The bank is short of the jailbreak's price. */
   | 'short'
-  /** The body waits for `ACT3_PART_TWO_TASK`. */
-  | 'unbuilt';
+  /**
+   * The crate holds no tune-up and a Field Protocol is left to give: it opens on the player's
+   * pick (`crateProtocols`), which the briefing asks for.
+   */
+  | 'needs_pick';
+
+/** An upgrade's price paid back for every rank owned (Purge's Rapport, the uplink's Mk II). */
+export interface UpgradeRefund {
+  readonly upgrade: UpgradeId;
+  readonly currency: Currency;
+  readonly amount: number;
+}
 
 /** What an Act III part two transaction did, for Results and the base. */
 export type ActThreeTwoTransaction =
@@ -580,11 +584,7 @@ export type ActThreeTwoTransaction =
       readonly kind: 'c4';
       readonly choice: C4Choice;
       readonly inherited: AbilityId | null;
-      readonly refund: {
-        readonly upgrade: UpgradeId;
-        readonly currency: Currency;
-        readonly amount: number;
-      } | null;
+      readonly refund: UpgradeRefund | null;
     }
   /** Zibzab's crate: the ranks it installed (each item's new rank), or the protocol picked. */
   | {
@@ -605,8 +605,32 @@ function refuse(reason: StoryRefusal, message: string): StoryOutcome {
   return { ok: false, reason, message };
 }
 
-function unbuilt(what: string): StoryOutcome {
-  return refuse('unbuilt', `story: ${what} waits for ${ACT3_PART_TWO_TASK}`);
+/** The price of every rank of `upgrade` the save owns, or null when it owns none. */
+function upgradeRefund(
+  save: SaveData,
+  upgrade: UpgradeId | undefined | null,
+  upgrades: Readonly<
+    Record<
+      string,
+      { readonly currency: Currency; readonly ranks: readonly { readonly price: number }[] }
+    >
+  >,
+): UpgradeRefund | null {
+  if (upgrade === undefined || upgrade === null) return null;
+  const def = upgrades[upgrade];
+  const owned = save.upgrades[upgrade] ?? 0;
+  if (def === undefined || owned === 0) return null;
+  const amount = def.ranks.slice(0, owned).reduce((sum, r) => sum + r.price, 0);
+  return { upgrade, currency: def.currency, amount };
+}
+
+/** `save`'s bank with `refund` paid in (clamped like any payout). */
+function refunded(save: SaveData, refund: UpgradeRefund | null): SaveData['currencies'] {
+  if (refund === null) return save.currencies;
+  return {
+    ...save.currencies,
+    [refund.currency]: clampCurrency(save.currencies[refund.currency] + refund.amount),
+  };
 }
 
 /**
@@ -634,21 +658,57 @@ export function jailbreakPrice(save: SaveData): number {
 }
 
 /**
- * Buys the jailbreak (the base's Shop, after A3M3; T709's row, T714's confirmation). Refuses
- * `'unbuilt'` until T710; then `'not_stocked'`, `'nothing_revoked'`, or `'short'` as the save says,
- * and `applied` null once `JAILBREAK.grant` is recorded.
+ * Takes the jailbreak (the base's Shop, after A3M3; meta/purchase.ts's `jailbreak` item): every
+ * revoked class moves to `unlocks.jailbroken`, the price comes off the bank, and `JAILBREAK.grant`
+ * is recorded. Refuses `'not_stocked'` before A3M3 is won, `'nothing_revoked'` with no class to
+ * bring back, `'short'` when the bank can't pay; `applied` null once taken.
  */
 export function buyJailbreak(save: SaveData): StoryOutcome {
   if (save.story.granted.includes(JAILBREAK.grant)) return { ok: true, save, applied: null };
-  return unbuilt('the jailbreak');
+  if (!isMapWon(save, JAILBREAK.availableAfter)) {
+    return refuse(
+      'not_stocked',
+      `story: the jailbreak is stocked once ${JAILBREAK.availableAfter} is won`,
+    );
+  }
+  const u = save.unlocks;
+  if (u.revokedTowers.length === 0) {
+    return refuse('nothing_revoked', 'story: the jailbreak has no revoked class to bring back');
+  }
+  const price = jailbreakPrice(save);
+  if (save.currencies.stardust < price) {
+    return refuse(
+      'short',
+      `story: the jailbreak costs ${price} Stardust; the bank holds ${save.currencies.stardust}`,
+    );
+  }
+  const towers = [...u.revokedTowers];
+  return {
+    ok: true,
+    save: {
+      ...save,
+      currencies: {
+        ...save.currencies,
+        stardust: clampCurrency(save.currencies.stardust - price),
+      },
+      unlocks: {
+        ...u,
+        revokedTowers: [],
+        jailbroken: [...u.jailbroken, ...towers.filter((t) => !u.jailbroken.includes(t))],
+      },
+      story: { ...save.story, granted: [...save.story.granted, JAILBREAK.grant] },
+    },
+    applied: { kind: 'jailbreak', towers, stardust: price },
+  };
 }
 
 /**
  * The companion abilities the story makes Technician abilities (core-loop.md § 3.1, § 6.11; D146):
  * where and when each is inherited, and the condition it needs over the save's flags.
  * - Suppressing Fire, Bricks's: the fire-control key in Gerald's mail (A3M4's mail scene), on the
- *   first win, so slot 1 holds it from A3M5. Bricks's Rapport carries over to it.
- * - Time Dilation, QUILL's: C4 Keep (`resolveC4`), from A3M5 through the finale's Phase 1 (the
+ *   first win (run end's step 6, `RUN_END_TRANSACTIONS`), so slot 1 holds it from A3M5. Bricks's
+ *   Rapport carries over to it.
+ * - Time Dilation, QUILL's: C4 Keep (`resolveC4`), from A3M5 through finale Phase 1 (the
  *   finale's Keep script takes it back for Phase 2, M8).
  */
 export const INHERITED_ABILITIES: Readonly<
@@ -665,26 +725,40 @@ export const INHERITED_ABILITIES: Readonly<
 
 /**
  * Makes companion ability `ability` (one of `INHERITED_ABILITIES`) an equippable Technician
- * ability: it joins `unlocks.abilities` and `unlocks.inheritedAbilities` (SaveData's optional
- * field), once. `'invalid'` for any other ability; `'unbuilt'` until T710.
+ * ability: it joins `unlocks.abilities` (unless owned) and `unlocks.inheritedAbilities`, once.
+ * `'invalid'` for any other ability, or one whose `when` doesn't hold over the save's flags.
  */
 export function inheritAbility(save: SaveData, ability: AbilityId): StoryOutcome {
-  if (!Object.hasOwn(ABILITIES, ability) || INHERITED_ABILITIES[ability] === undefined) {
+  const def = INHERITED_ABILITIES[ability];
+  if (!Object.hasOwn(ABILITIES, ability) || def === undefined) {
     return refuse('invalid', `story: '${ability}' isn't an inherited ability`);
   }
   if (save.unlocks.inheritedAbilities?.includes(ability) === true) {
     return { ok: true, save, applied: null };
   }
-  return unbuilt(`inheriting ${ability}`);
+  if (def.when !== undefined && !evaluateCondition(def.when, baseStoryContext(save))) {
+    return refuse('invalid', `story: '${ability}' isn't inherited under this save's flags`);
+  }
+  const u = save.unlocks;
+  return {
+    ok: true,
+    save: {
+      ...save,
+      unlocks: {
+        ...u,
+        abilities: u.abilities.includes(ability) ? u.abilities : [...u.abilities, ability],
+        inheritedAbilities: [...(u.inheritedAbilities ?? []), ability],
+      },
+    },
+    applied: { kind: 'inherit', ability },
+  };
 }
 
 /**
  * What each C4 answer does to the save as it is committed (core-loop.md § 6.11): Keep inherits
- * Time Dilation; Purge refunds QUILL's Companion Rapport (every rank owned, progression.md § 7.3)
- * and takes QUILL off the finale's pick list (M8); Rewrite changes nothing at once. Their effects
- * in play, from A3M5 on, are the battle's (app/battleSetup.ts, T710): Purge's −2 armor on every
- * Everglow Security unit (a faction-scoped `enemyStat`, minimum 0), Rewrite's A3M5 with QUILL
- * offline and System Reboot locked, Keep's Time Dilation in slot 1.
+ * Time Dilation; Purge refunds QUILL's Companion Rapport (every rank owned, progression.md § 7.3;
+ * the rank stays on record, as the uplink's Mk II does) and takes QUILL off the finale's pick list
+ * (M8); Rewrite changes nothing at once. Their effects in play, from A3M5 on, are `C4_IN_PLAY`'s.
  */
 export const C4_EFFECTS: Readonly<
   Record<C4Choice, { readonly inherit: AbilityId | null; readonly refund: UpgradeId | null }>
@@ -695,24 +769,78 @@ export const C4_EFFECTS: Readonly<
 };
 
 /**
- * C4, QUILL's directives (campaign.md § 6.1), asked once in A3M4's debrief on the first win and
- * committed on the answer (D146): sets `quill_choice`, then makes `C4_EFFECTS[choice]`. A save whose
- * flag is set is left as it is (asked once). `'invalid'` for a value outside the flag's; `'unbuilt'`
- * until T710.
+ * C4's effects in play (core-loop.md § 6.11; D146), which the battle reads (app/battleSetup.ts):
+ * - from `from` on (A3M5, and every later campaign map; a dev map counts as later), Purge's
+ *   `purgeArmor`: every Everglow Security unit spawns with −2 armor (minimum 0) and its
+ *   maintenance panel open (sim/factionArmor.ts);
+ * - on `quillOffline.map` (A3M5) under Rewrite, QUILL is offline: her barks and radio slots are
+ *   silent and the threat intel is `system`'s (presentation, T713). System Reboot's lock there is
+ *   the map's own `lockedAbilities` row.
+ * Keep's Time Dilation needs nothing here: it is inherited (`resolveC4`), so slot 1's pool has it.
  */
-export function resolveC4(save: SaveData, choice: C4Choice): StoryOutcome {
+export const C4_IN_PLAY = {
+  from: 'a3_m05',
+  purgeArmor: {
+    when: { flag: 'quill_choice', eq: 'purge' },
+    modifier: {
+      kind: 'enemyStat',
+      stat: 'armor',
+      faction: 'everglow',
+      flat: -2,
+      source: 'c4:purge',
+    },
+  },
+  quillOffline: { map: 'a3_m05', when: { flag: 'quill_choice', eq: 'rewrite' } },
+} as const satisfies {
+  readonly from: CampaignMapId;
+  readonly purgeArmor: { readonly when: Condition; readonly modifier: Modifier<IdSpace> };
+  readonly quillOffline: { readonly map: CampaignMapId; readonly when: Condition };
+};
+
+/**
+ * C4, QUILL's directives (campaign.md § 6.1), asked once in A3M4's debrief on the first win and
+ * committed on the answer (D146): sets `quill_choice`, then makes `C4_EFFECTS[choice]` (Keep
+ * inherits Time Dilation, Purge pays back QUILL's Rapport). A save whose flag is set is left as it
+ * is (asked once). `'invalid'` for a value outside the flag's.
+ */
+export function resolveC4(
+  save: SaveData,
+  choice: C4Choice,
+  upgrades: Readonly<
+    Record<
+      string,
+      { readonly currency: Currency; readonly ranks: readonly { readonly price: number }[] }
+    >
+  > = UPGRADES,
+): StoryOutcome {
   if (!C4_CHOICES.includes(choice)) {
     return refuse('invalid', `story: '${choice}' isn't a quill_choice value`);
   }
   if (save.story.flags.quill_choice !== undefined) return { ok: true, save, applied: null };
-  return unbuilt('C4');
+  const effects = C4_EFFECTS[choice];
+  let next: SaveData = {
+    ...save,
+    story: { ...save.story, flags: { ...save.story.flags, quill_choice: choice } },
+  };
+  if (effects.inherit !== null) {
+    const r = inheritAbility(next, effects.inherit);
+    if (!r.ok) return r;
+    next = r.save;
+  }
+  const refund = upgradeRefund(next, effects.refund, upgrades);
+  next = { ...next, currencies: refunded(next, refund) };
+  return {
+    ok: true,
+    save: next,
+    applied: { kind: 'c4', choice, inherited: effects.inherit, refund },
+  };
 }
 
 /**
  * Zibzab's crate (act3.md § A3M6; D146): opened as A3M6's briefing closes, so it is live from W1.
  * It installs every tune-up rank the save doesn't own for each tower of `faction` the save owns
  * (`crateContents`), free; when there is none to install, one Field Protocol unlock the player picks
- * in the briefing instead. Recorded as `grant`, once.
+ * in the briefing instead (`crateProtocols`). Recorded as `grant`, once.
  */
 export const CRATE = { grant: 'crate', map: 'a3_m06', faction: 'vrell' } as const satisfies {
   readonly grant: string;
@@ -749,19 +877,45 @@ export function crateContents(
 }
 
 /**
- * Opens Zibzab's crate (`CRATE`) on `save`. `pick` is the Field Protocol the player chose when the
- * crate holds no tune-up: it must be a registered protocol the save doesn't own, and it is
- * `'invalid'` while the crate has tune-ups to install. `'unbuilt'` until T710.
+ * The Field Protocols the crate can hold when it holds no tune-up: every registered protocol the
+ * save doesn't own, in catalog order (the briefing's pick; empty when the save owns them all).
+ */
+export function crateProtocols(save: SaveData): ProtocolId[] {
+  return Object.values(PROTOCOLS)
+    .map((p) => p.id)
+    .filter((id) => !save.unlocks.protocols.includes(id));
+}
+
+/**
+ * Opens Zibzab's crate (`CRATE`) on `save`: its tune-ups (`crateContents`) installed free; with
+ * none, `pick` (one of `crateProtocols`) unlocked. `'invalid'` for a pick that isn't one, or any
+ * pick while the crate has tune-ups; `'needs_pick'` with no tune-up, no pick, and a protocol left
+ * to give. A save that owns everything opens an empty crate (only its sticker, peeled off).
  */
 export function openCrate(save: SaveData, pick?: ProtocolId): StoryOutcome {
   if (save.story.granted.includes(CRATE.grant)) return { ok: true, save, applied: null };
+  const contents = crateContents(save);
+  const tuneUps = Object.keys(contents).length > 0;
   if (pick !== undefined) {
     if (!Object.hasOwn(PROTOCOLS, pick) || save.unlocks.protocols.includes(pick)) {
       return refuse('invalid', `story: the crate can't hold protocol '${pick}'`);
     }
-    if (Object.keys(crateContents(save)).length > 0) {
-      return refuse('invalid', 'story: the crate holds tune-ups, not a protocol pick');
-    }
+    if (tuneUps) return refuse('invalid', 'story: the crate holds tune-ups, not a protocol pick');
+  } else if (!tuneUps && crateProtocols(save).length > 0) {
+    return refuse('needs_pick', 'story: the crate holds no tune-up; pick a Field Protocol');
   }
-  return unbuilt("Zibzab's crate");
+  const granted = [...save.story.granted, CRATE.grant];
+  return {
+    ok: true,
+    save: {
+      ...save,
+      upgrades: { ...save.upgrades, ...contents },
+      unlocks:
+        pick === undefined
+          ? save.unlocks
+          : { ...save.unlocks, protocols: [...save.unlocks.protocols, pick] },
+      story: { ...save.story, granted },
+    },
+    applied: { kind: 'crate', upgrades: contents, protocol: pick ?? null },
+  };
 }

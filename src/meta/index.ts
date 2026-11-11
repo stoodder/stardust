@@ -134,6 +134,7 @@ export type {
   C4Choice,
   StoryOutcome,
   StoryRefusal,
+  UpgradeRefund,
   RevocationTransaction,
   RunEndRevocationInput,
   RunRevocations,
@@ -159,15 +160,16 @@ export {
   revokedClassFactions,
   runEndRevocations,
   setDoorChoice,
-  ACT3_PART_TWO_TASK,
   C4_CHOICES,
   C4_EFFECTS,
+  C4_IN_PLAY,
   CRATE,
   INHERITED_ABILITIES,
   JAILBREAK,
   abilityGiftGrantId,
   buyJailbreak,
   crateContents,
+  crateProtocols,
   grantAbilityGift,
   inheritAbility,
   jailbreakPrice,
@@ -185,3 +187,4 @@ export {
 export { MemoryStore, SAVE_KEYS, SLOT_IDS, isSlotId } from './store.ts';
 export type { Validated } from './validate.ts';
 export { validateSave } from './validate.ts';
+export { abilitiesOffOn, onOrAfter, quillOffline, storyModifiers } from './storyInPlay.ts';

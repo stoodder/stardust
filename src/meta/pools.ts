@@ -1,7 +1,8 @@
 // What a save can bring into a map (meta-runtime.md § Meta, Pools): the towers, Technician
 // abilities, and Field Protocols the loadout screen (T201) offers, and the protocol slots.
-// Owned minus revoked, in ownership order. The map's `lockedAbilities` (A3M5 under C4 Rewrite)
-// read story flags, so they leave the ability pool once flags reach map runs (T206b; M5's A3M5).
+// Owned minus revoked, in ownership order. A map's own exclusions (its `lockedAbilities` under the
+// save's flags, A3M5's System Reboot under C4 Rewrite, and slot 2's ability; meta/storyInPlay.ts
+// `abilitiesOffOn`) leave the ability pool when the caller passes them (T710).
 import { ABILITIES } from '../content/abilities/index.ts';
 import { TOWERS } from '../content/towers/index.ts';
 import type { AbilityId, ProtocolId, TowerId } from '../content/types.ts';
@@ -22,10 +23,16 @@ export function towerPool(save: SaveData): TowerId[] {
   );
 }
 
-/** The Technician abilities slot 1 can hold: owned, not revoked, and played by the sim today. */
-export function abilityPool(save: SaveData): AbilityId[] {
+/**
+ * The Technician abilities slot 1 can hold: owned, not revoked, played by the sim today, and not
+ * among `off` (the map's exclusions, `abilitiesOffOn`).
+ */
+export function abilityPool(save: SaveData, off: readonly string[] = []): AbilityId[] {
   return save.unlocks.abilities.filter(
-    (a) => !save.unlocks.revokedAbilities.includes(a) && abilityRefusal(ABILITIES[a]) === null,
+    (a) =>
+      !save.unlocks.revokedAbilities.includes(a) &&
+      !off.includes(a) &&
+      abilityRefusal(ABILITIES[a]) === null,
   );
 }
 

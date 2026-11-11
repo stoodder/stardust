@@ -44,6 +44,7 @@ import { perfectMedalName } from './hudViews.ts';
 import { storyRewardsOf } from './resultsStory.ts';
 import { activeSave, updateActiveSave } from './save.ts';
 import { revocationView } from './storyMeta.ts';
+import { storyScene } from './storyStubs.ts';
 import type { RunOutcome } from './testHookTypes.ts';
 
 /**
@@ -391,7 +392,7 @@ export function debriefLines(
   // with dialogue off (no scene plays) the card keeps it.
   const asScene =
     outcome === 'won' && resultsFlow(map).debriefAsScene === true && dialogueEnabled();
-  const debrief = asScene ? undefined : SCENES[`${map}_debrief`];
+  const debrief = asScene ? undefined : storyScene(`${map}_debrief`);
   return [
     ...(leak === undefined ? [] : [spoken(leak.speaker, leak.text, story, map)]),
     ...(debrief === undefined ? [] : linesUntilChoice(debrief, ctx)).map((l) =>
@@ -555,7 +556,7 @@ export function withDebriefEffects(
   const map = input.mapId;
   if (outcome !== 'won' || !isCampaignMapId(map)) return save;
   const id = `${map}_debrief`;
-  const debrief = SCENES[id];
+  const debrief = storyScene(id);
   if (debrief === undefined || save.story.seen.includes(id)) return save;
   const story = debriefStoryOf(save).story ?? NO_STORY;
   const ctx: StoryContext = { ...story.story, map, run: runOf(map, input.stats, outcome) };

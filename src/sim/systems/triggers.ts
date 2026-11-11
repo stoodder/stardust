@@ -19,7 +19,8 @@
 // sim/revoke.ts): `revokeTowerClass` and `revokeAbility` (from an event only: they read the run's
 // loadout and slots) and `setModifier` (QUILL's lockout, the hidden preview), and `spawnWave`
 // (T706: a script group walks in; sim/scriptGroups.ts, whose units spawn at the end of this
-// system, after the events). A pivot's event runs the
+// system, after the events), and `openTile` (T707: a decor marker's tile opens, to anything but a
+// buildable tile; sim/openTile.ts). A pivot's event runs the
 // objective switch and the refugees beside it, in its action order. Before the events,
 // each clickable marker's fallback trigger is checked: reached, the sim interacts with it itself
 // (`byFallback`), so its `interacted` events fire on this same pass; and on a map whose conditions
@@ -51,6 +52,8 @@ import { startBossEnding } from '../enemyAbilities/bossPhases.ts';
 import { standDown } from '../enemyAbilities/pivot.ts';
 import { revokeAbility, revokeTowerClass, setScriptModifier } from '../revoke.ts';
 import { scriptGroupSpawns, spawnScriptGroup } from '../scriptGroups.ts';
+import { isBuildableTile } from '../grid.ts';
+import { openTile } from '../openTile.ts'; // T707
 import { emit, type SimState } from '../state.ts';
 import type { TickContext } from '../tick.ts';
 
@@ -205,6 +208,8 @@ export function runScriptAction(
     setScriptModifier(state, action.setModifier, action.on);
   } else if ('spawnWave' in action) {
     spawnScriptGroup(state, map, action.spawnWave, firstTick);
+  } else if ('openTile' in action) {
+    openTile(state, action.openTile, action.to); // T707 (sim/openTile.ts)
   }
   // `endMap`, `revokeTowerClass`, and `revokeAbility` run in triggers() (they need the tick's
   // context); anything else is refused by createSim (unsupportedScript).
@@ -219,9 +224,7 @@ export const SCRIPT_GATES: Readonly<Record<string, string>> = Object.freeze({
   // Triggers (D141, D146). A3M5's `objectiveCompleted` runs since T706; the finale's rest (M8).
   restProgressPct: 'M8',
   // Actions (D141, D146). M6's Clean Exit (revocations, QUILL's lockout) runs since T606, M7's
-  // script groups (`spawnWave`) since T706. A3M5's opened tiles (Shareholder Value's jettison):
-  // T707.
-  openTile: 'T707',
+  // script groups (`spawnWave`) since T706, opened tiles (`openTile`) since T707.
   // M8, the finale: a lighting change at a script moment (Dawn; wave-paced light is map data,
   // `MapDef.lighting`, T410a, Sundown's darkness included, T505), the Phase 2 checkpoint (T305b
   // runs the wave checkpoints, not this action), the restored class after "Who's there?", and the
@@ -295,6 +298,11 @@ function unsupportedAction(a: CompiledScriptAction<IdSpace>, where: string, out:
     // Its fallback is a trigger like an event's (T409).
     const fallback = a.setClickable.fallback;
     if (fallback !== null) unsupportedTrigger(fallback, `${where}: setClickable fallback`, out);
+  } else if ('openTile' in a) {
+    // T707 opens a tile nothing builds on (sim/openTile.ts); a buildable one waits for M8.
+    if (isBuildableTile(a.to)) {
+      out.push(`${where}: action openTile to buildable '${a.to}' is not simulated until M8`);
+    }
   } else if (
     !('unlockTowerClass' in a) &&
     !('cue' in a) &&

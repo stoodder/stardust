@@ -409,7 +409,7 @@ describe('System Reboot (core-loop.md § 3.2; abilities/reboot.ts)', () => {
   it('lifts its gates and the Silencer’s (T702)', () => {
     expect(FEATURE_GATES['ability.reboot']).toBeNull();
     expect(FEATURE_GATES['enemy.jam']).toBeNull();
-    expect(FEATURE_GATES['enemy.jam.ring']).toBe('T707');
+    expect(FEATURE_GATES['enemy.jam.ring']).toBeNull(); // T707 lifted it (sim/jamRing.test.ts)
     expect(LIVE.abilities.system_reboot!.effect).toEqual({ kind: 'reboot', immuneTicks: 360 });
   });
 });

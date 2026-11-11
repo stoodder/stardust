@@ -170,6 +170,11 @@ export const JAM_MIN_TELL_SEC = 1.5;
 export const JAM_IMMUNITY_SEC = 6;
 /** In par play, at most this share of the player's towers is jammed at once (harness check). */
 export const JAM_MAX_TOWER_SHARE = 0.25;
+/**
+ * Hostile Takeover jams `min(TAKEOVER_MAX_TOWERS, floor(JAM_MAX_TOWER_SHARE × towers placed))`
+ * towers (D146; T707: enemyAbilities/takeover.ts).
+ */
+export const TAKEOVER_MAX_TOWERS = 2;
 
 // ── Traits, tells, and counters (design/enemies.md § 3) ───────────────────────────────────────
 

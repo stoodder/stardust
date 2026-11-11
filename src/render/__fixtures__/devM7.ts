@@ -16,8 +16,8 @@
 //   vats behind the bearers to hunt them (each hushed costs the asset 1); Cut the Feed (two `feed_*` wreckage markers
 //   cleared before W3) or W3's surge script group walks in; a militia post and a dressing layer
 //   and a banner marker under `door_choice = convoy`.
-// - `dev_sproing` (T704, T705, T703): the Sproing Pad against Puffwings and Asset Recovery
-//   Gunships on an air lane, and the Gloop Spitter against Liability-Class Enforcers on the road.
+// - `dev_sproing` (T704): the Sproing Pad against Puffwings on an air lane, grounding them for a
+//   ground-only Thumper, with a Choir and a Lantern beside it (its links).
 import { mapDefinersFor } from '../../content/define.ts';
 import type { MapDef } from '../../content/types.ts';
 import type { DevIds } from './devBattle.ts';
@@ -105,6 +105,8 @@ export const jamMap = dev.defineMap({
       { wave: 1, build: 'rivet', tile: [7, 2] },
       { wave: 1, upgrade: [7, 2] },
       { wave: 1, upgrade: [7, 2] },
+      // T707: a fourth tower out of every jammer's reach, so one jam at a time is 25% (#10).
+      { wave: 1, build: 'rivet', tile: [3, 4] },
       { wave: 2, ability: 1, when: { afterSec: 8 } },
     ],
   },
@@ -114,10 +116,16 @@ export const jamMap = dev.defineMap({
   },
 });
 
-/** dev_takeover (T707): Auditors, then "Shareholder Value"'s three phases and its plates. */
+/**
+ * dev_takeover (T707): Auditors, then "Shareholder Value"'s three phases and its plates. Par is
+ * four Railspikes (armor-ignoring) round a Hum Choir, and a tier-3 Rivet by the column for the
+ * hangar's drones; with six towers placed each Hostile Takeover takes one (≤ 25%). Sterling's three cues bind to the boss's phases
+ * (`bossPhase` 1–3: the worked example for A3M5's, T721).
+ */
 export const takeoverMap = dev.defineMap({
   ...ROAD,
   id: 'dev_takeover',
+  startCredits: 3400,
   // The jettison's plates land on decor off the road (D146: never a pad).
   markers: { crash_1: [2, 0], crash_2: [4, 0], crash_3: [6, 0], crash_4: [8, 0] },
   threatIntel: ['armored', 'jammer', 'boss'],
@@ -126,16 +134,33 @@ export const takeoverMap = dev.defineMap({
     { groups: [{ enemy: 'auditor', count: 2, route: 'a' }] },
     { countdownSec: 10, groups: [{ enemy: 'shareholder_value', count: 1, route: 'a' }] },
   ]),
-  referenceProfile: { ...PROFILE, towers: ['rivet', 'choir'], technicianAbility: 'system_reboot' },
+  events: [
+    { id: 'sv_spawn', on: { bossPhase: 1 }, actions: [{ cue: 'dev_takeover_cue_sv_spawn' }] },
+    { id: 'takeover', on: { bossPhase: 2 }, actions: [{ cue: 'dev_takeover_cue_takeover' }] },
+    { id: 'jettison', on: { bossPhase: 3 }, actions: [{ cue: 'dev_takeover_cue_jettison' }] },
+  ],
+  referenceProfile: {
+    ...PROFILE,
+    towers: ['rivet', 'choir'],
+    specs: ['rivet'],
+    technicianAbility: 'system_reboot',
+  },
   parBuild: {
     loadout: ['rivet', 'choir'],
     steps: [
       { wave: 1, build: 'choir', tile: [7, 2] },
       { wave: 1, build: 'rivet', tile: [5, 2] },
       { wave: 1, build: 'rivet', tile: [7, 4] },
+      { wave: 1, build: 'rivet', tile: [3, 2] },
       { wave: 1, build: 'rivet', tile: [12, 4] },
-      { wave: 1, upgrade: [5, 2] },
-      { wave: 1, upgrade: [5, 2] },
+      { wave: 1, build: 'rivet', tile: [12, 2] },
+      { wave: 1, upgrade: [12, 4] },
+      { wave: 1, upgrade: [12, 4] },
+      ...[[5, 2] as const, [7, 4] as const, [3, 2] as const, [12, 2] as const].flatMap((tile) => [
+        { wave: 1, upgrade: tile },
+        { wave: 1, upgrade: tile },
+        { wave: 1, specialize: tile, spec: 'b' as const }, // Railspike
+      ]),
     ],
   },
   noCounterBuilds: {
@@ -309,10 +334,26 @@ export const bearersMap = dev.defineMap({
   },
 });
 
-/** dev_sproing (T704, T705): the Sproing Pad against flyers, the Gloop Spitter against armor. */
+/**
+ * dev_sproing (T704): the Sproing Pad against Puffwings on an air lane along the bottom (Nibblers
+ * on the road), a ground-only Thumper beside it that reaches a flyer only once a leaper has
+ * grounded it, and its two links: a Hum Choir beside it (Bounce Chorus) and a Seer's Lantern
+ * (Lookie Here). Its own tiles: a row of four pads on row 4 and two under them, so the links form.
+ */
 export const sproingMap = dev.defineMap({
   ...ROAD,
   id: 'dev_sproing',
+  // prettier-ignore
+  tiles: [
+    '..............',
+    'S##########...',
+    '.o.o.o.o..#.o.',
+    '..........#...',
+    '.o.o.oooo.#.o.',
+    '.....oo...#...',
+    '..........###C',
+    '..............',
+  ],
   airLanes: [
     {
       id: 'sky',
@@ -322,35 +363,40 @@ export const sproingMap = dev.defineMap({
       ],
     },
   ],
-  threatIntel: ['flying', 'armored'],
-  requiredCounters: ['air', 'armor'],
+  threatIntel: ['flying'],
+  requiredCounters: ['air'],
   waves: dev.defineWaves([
     {
       groups: [
-        { enemy: 'puffwing', count: 4, route: 'sky' },
-        { enemy: 'liability', count: 1, route: 'a', delaySec: 2 },
+        { enemy: 'puffwing', count: 5, route: 'sky', intervalSec: 1.2 },
+        { enemy: 'nibbler', count: 4, route: 'a', delaySec: 2 },
       ],
     },
     {
       countdownSec: 10,
       groups: [
-        { enemy: 'gunship', count: 2, route: 'sky' },
-        { enemy: 'liability', count: 2, route: 'a', delaySec: 2 },
+        { enemy: 'puffwing', count: 8, route: 'sky', intervalSec: 0.8 },
+        { enemy: 'nibbler', count: 6, route: 'a', delaySec: 3 },
       ],
     },
   ]),
-  referenceProfile: { ...PROFILE, towers: ['sproing', 'gloop'], specs: ['sproing', 'gloop'] },
+  referenceProfile: {
+    ...PROFILE,
+    towers: ['sproing', 'dev_thumper', 'choir', 'lantern'],
+    specs: ['sproing'],
+  },
   parBuild: {
-    loadout: ['sproing', 'gloop'],
+    loadout: ['sproing', 'dev_thumper', 'choir', 'lantern'],
     steps: [
-      { wave: 1, build: 'sproing', tile: [7, 4] },
-      { wave: 1, build: 'gloop', tile: [7, 2] },
-      { wave: 1, build: 'gloop', tile: [12, 4] },
+      { wave: 1, build: 'sproing', tile: [6, 4] },
+      { wave: 1, build: 'dev_thumper', tile: [7, 4] },
+      { wave: 1, build: 'choir', tile: [5, 4] },
+      { wave: 1, build: 'lantern', tile: [6, 5] },
     ],
   },
+  // A ground-only Thumper never touches a flyer by itself.
   noCounterBuilds: {
-    air: { loadout: ['gloop'], steps: [{ wave: 1, build: 'gloop', tile: [7, 2] }] },
-    armor: { loadout: ['sproing'], steps: [{ wave: 1, build: 'sproing', tile: [7, 4] }] },
+    air: { loadout: ['dev_thumper'], steps: [{ wave: 1, build: 'dev_thumper', tile: [7, 4] }] },
   },
 });
 

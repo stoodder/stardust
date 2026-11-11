@@ -10,7 +10,7 @@ import { trapTab } from '../dialogue/SceneParts.tsx';
 import { useEscape } from './escape.ts';
 import { focusOnce } from './focus.ts';
 import { formatCount } from './format.ts';
-import { StoryChoice } from './StoryChoice.tsx';
+import { choiceName, StoryChoice } from './StoryChoice.tsx';
 import { baseChoice, type BaseChoiceView, type ResultsTransaction } from './state.ts';
 import './results.css';
 
@@ -60,7 +60,7 @@ function Panel({ view }: { view: BaseChoiceView }) {
         onKeyDown={trapTab}
       >
         <h1 id="sd-base-choice-heading" class="sd-results-kicker">
-          {view.choice.by}'s offer
+          {choiceName(view.choice)}
         </h1>
         <ul class="sd-results-debrief" aria-label="Debrief">
           {view.lines.map((l, i) => (

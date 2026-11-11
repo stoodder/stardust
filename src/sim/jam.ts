@@ -19,8 +19,8 @@
 //   immune for JAM_IMMUNITY_SEC (`jamImmuneTicks`, counting the tick it ends). System Reboot
 //   (sim/abilities/reboot.ts) ends every jam at once the same way, with its own immunity.
 // - **The order** in this pass: the countdowns (immunity, then jams), then the jammers whose jams
-//   land in this slot (the Silencer's tendril, enemyAbilities/jamTendril.ts; T707 adds the ring
-//   and the Takeover after it), then the tallies. A jam landed here holds from this tick for
+//   land in this slot (the Silencer's tendril, enemyAbilities/jamTendril.ts; then the Auditor's
+//   ring, jamRing.ts, and Hostile Takeover, takeover.ts, T707), then the tallies. A jam landed here holds from this tick for
 //   exactly its ticks; one landed earlier in the tick would lose a tick to this countdown.
 // - **The tallies** (integers, `state.stats`): `jammedPeak` (the most towers Jammed at once: Keep
 //   the Lights On), `jamOverLimitTicks` (ticks with more than JAM_MAX_TOWER_SHARE of the live towers
@@ -28,7 +28,9 @@
 //   the report's). One pass over the towers a tick; no allocation.
 import { JAM_IMMUNITY_SEC, JAM_MAX_SEC, JAM_MAX_TOWER_SHARE } from '../content/rules.ts';
 import { secToTicks } from '../shared/time.ts';
+import { jamRingPass } from './enemyAbilities/jamRing.ts'; // T707
 import { jamTendrilPass } from './enemyAbilities/jamTendril.ts';
+import { takeoverPass } from './enemyAbilities/takeover.ts'; // T707
 import type { Tower } from './entities.ts';
 import { emit, type SimState } from './state.ts';
 import { relinkIfDirty } from './systems/links.ts';
@@ -107,6 +109,8 @@ export function jams(state: SimState, ctx: TickContext): void {
     if (t.jamTicks > 0 && --t.jamTicks === 0) unjamTower(state, t, JAM_IMMUNITY_TICKS);
   }
   jamTendrilPass(state, ctx);
+  jamRingPass(state, ctx); // T707: the Auditor's ring
+  takeoverPass(state, ctx); // T707: Hostile Takeover
   relinkIfDirty(state, ctx);
   let live = 0;
   let jammed = 0;

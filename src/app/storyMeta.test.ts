@@ -129,10 +129,13 @@ describe("C3 in A3M3's briefing (D141)", () => {
     expect(again.story.flags.held_fire_second_look).toBe(true);
   });
 
-  it("locks and holds C3's choice only (D141), not every choice that sets a flag", () => {
-    expect(LOCKED_CHOICE_FLAGS).toEqual(['door_choice']);
+  it("locks and holds C3's and C4's choices only (D141, D146), not every choice that sets a flag", () => {
+    expect(LOCKED_CHOICE_FLAGS).toEqual(['door_choice', 'quill_choice']);
     expect(
       isStoryChoice([{ set: { door_choice: 'convoy' } }, { set: { door_choice: 'warren' } }]),
+    ).toBe(true);
+    expect(
+      isStoryChoice([{ set: { quill_choice: 'keep' } }, { set: { quill_choice: 'purge' } }]),
     ).toBe(true);
     // A1M3's early ask and A2M4's C2 (whose card has its own lock, D138) take a press at once.
     expect(isStoryChoice([{ set: { asked_zibzab_early: true } }, {}])).toBe(false);

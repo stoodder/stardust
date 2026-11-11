@@ -168,6 +168,13 @@ export const tune_bloom = supportTuneUp('tune_bloom', 'bloom', 'Stasis Bloom Tun
 export const tune_gloop = tuneUp('tune_gloop', 'gloop', 'Gloop Spitter Tune-up', 'a3_m03');
 
 /**
+ * The Sproing Pad's tune-up (T704): the usual three ranks (+5% damage, its bonk's and Big Bonk's
+ * splash; −5% cost; +5% range). Zibzab's; stocked after A3M4 with the gift (A3M5's briefing), and
+ * off the shelf until the pad is given (meta/purchase.ts `shelf`), so the shop never names it early.
+ */
+export const tune_sproing = tuneUp('tune_sproing', 'sproing', 'Sproing Pad Tune-up', 'a3_m04');
+
+/**
  * The Zibzab Tune-up (design/progression.md § 2.1, C2 Sell; "Ten percent. Honestly, eight."): +8%
  * damage for every Vrell tower, permanently: one `towerStat` grant per Vrell tower in the registry,
  * so a later Vrell tower joins by itself. Never sold (`kind: 'grant'`, price 0): A2M4's C2 Sell

@@ -58,16 +58,15 @@ describe('FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES (T700a rows; D146)', ()
       'tower.puddle': null, // T705 lifted it (sim/gloop.test.ts)
       'map.bearers': null, // T706
       'ally.flagGated': null, // T706
-      'enemy.jam.ring': 'T707',
-      'enemy.boss.hangar': 'T707',
-      'enemy.boss.takeover': 'T707',
-      'enemy.boss.jettison': 'T707',
+      'enemy.jam.ring': null, // T707 lifted it (sim/jamRing.test.ts)
+      'enemy.boss.hangar': null, // T707 (sim/takeover.test.ts)
+      'enemy.boss.takeover': null, // T707
+      'enemy.boss.jettison': null, // T707
       'enemy.boss.gather': 'T708',
       'enemy.boss.split': 'T708',
     });
-    expect(SCRIPT_GATES).toMatchObject({ openTile: 'T707' });
-    // T706's run: objectiveCompleted, spawnWave, and the `cleared` atom.
-    for (const key of ['objectiveCompleted', 'spawnWave', 'cleared']) {
+    // T706's run: objectiveCompleted, spawnWave, and the `cleared` atom; T707's openTile.
+    for (const key of ['objectiveCompleted', 'spawnWave', 'cleared', 'openTile']) {
       expect(Object.hasOwn(SCRIPT_GATES, key), key).toBe(false);
     }
     // HARNESS_GATES.jamLimit (lifted by T702): balance/refusals.m5.test.ts.
@@ -251,7 +250,7 @@ describe('validation of the M7 seams', () => {
         ...SV.boss!,
         phases: [
           { ...p1!, hangar: { enemy: 'nobody', count: 0, everySec: 8 } },
-          { ...p2!, takeover: { tellSec: 1, durationSec: 4 } },
+          { ...p2!, takeover: { tellSec: 1, durationSec: 4, everySec: 1 } },
           { ...p3!, jettison: { hastePct: 0.9, plates: [] } },
         ],
       },
@@ -260,6 +259,7 @@ describe('validation of the M7 seams', () => {
       "[enemy-ability] enemies.shareholder_value.boss.phases[0].hangar.enemy: unknown enemy 'nobody'",
       '[enemy-ability] enemies.shareholder_value.boss.phases[0].hangar.count: must be a whole number ≥ 1',
       '[enemy-ability] enemies.shareholder_value.boss.phases[1].takeover.tellSec: a boss ability tells for at least 1.5 s',
+      '[enemy-ability] enemies.shareholder_value.boss.phases[1].takeover.everySec: must be at least its tell plus its jam',
       '[enemy-ability] enemies.shareholder_value.boss.phases[2].jettison.hastePct: must be in (0, 0.5]',
       '[enemy-ability] enemies.shareholder_value.boss.phases[2].jettison.plates: names at least one marker',
     ]);

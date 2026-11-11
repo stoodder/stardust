@@ -1,14 +1,15 @@
 // Sproing Pad (design/towers.md § 7): a springy mushroom pad with a fearless leaper (a grown-up
 // Puffwing-chaser) who boings into the sky; a gift (A3M5). Anti-air that grounds flyers. T1
 // (130): the leaper bonks one target for 25 Kinetic, 0.5 leaps/s, range 3.0, G+A, always a flyer
-// when one is in range; a bonked flyer is Pinned 1.5 s (grounded: ground towers hit it; a boss
-// Chilled 50% instead). T2 (105): 35. T3 (195): Pin 2.0 s, 0.6 leaps/s. Sky Bouncers (390): 2
-// leapers. Big Bonk (390): 90 with a 0.8 splash where it lands.
+// when one is in range; a bonked flyer is Pinned 1.5 s (grounded: ground towers hit it; a flying
+// boss Chilled 50% instead). T2 (105): 35. T3 (195): Pin 2.0 s, 0.6 leaps/s. Sky Bouncers (390):
+// 2 leapers. Big Bonk (390): 90 with a 0.8 splash where it lands.
 //
-// A stub registered ahead of its task (T700a; STUB_TOWER_TASKS): T704 confirms the numbers and
-// runs the leapers (sim/leapers.ts; allies from the swarmling pool, kind 'leaper'). Its priority
-// is First among the flyers (or the ground units when none flies). Links: Lookie Here (Lantern),
-// Bounce Chorus (Hum Choir), T704. Sprites: placeholders under their final ids (T740b).
+// As built (T704): the leapers are owner allies from the swarmling pool (kind 'leaper'), and
+// sim/leapers.ts runs them: the pick (flyers first, then Lookie Here's Marked, then a free unit,
+// then First), the leap, the bonk, and the Pin. `ratePerSec` is each leaper's own period, from the
+// tick it leaps. Links: Lookie Here (Lantern), Bounce Chorus (Hum Choir). Sprites: placeholders
+// under their final ids (T740b).
 import { defineTower } from '../define.ts';
 
 export const sproing = defineTower({

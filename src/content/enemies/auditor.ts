@@ -3,9 +3,11 @@
 // enemies.md § 4): every 10 s an orange ring expands from it for 2 s, then every non-immune tower
 // within 2 tiles is jammed for 3 s (× its `jamMul`).
 //
-// A stub registered ahead of its task (T700a): T707 confirms the numbers and the spawn interval
-// (not in the docs: 1.5 s is a stub) and runs the ring (`enemy.jam.ring`). Sprites: placeholders
-// under their final ids (T740a).
+// Live since T707 (sim/enemyAbilities/jamRing.ts; the rules: enemies.md § 4's *How jamming
+// runs*): the roster row's numbers, and a 1.5 s spawn interval (the docs give none; T700a's stub,
+// for A3M5's balance to tune). It holds still through
+// its ring and waits, ready, while no tower it could jam is in reach. Sprites: placeholders under
+// their final ids (T740a).
 import { defineEnemy } from '../define.ts';
 
 export const auditor = defineEnemy({

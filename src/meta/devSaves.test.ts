@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { TOWERS } from '../content/towers/index.ts';
 import { CAMPAIGN } from '../content/campaign.ts';
+import { DEV_SAVES, afterA2M4Results, afterA2M5Results } from './__fixtures__/devSaves.ts';
 import {
-  DEV_SAVES,
-  INTENDED,
-  afterA2M4Results,
-  afterA2M5Results,
-} from './__fixtures__/devSaves.ts';
-import { briefingGifts } from './storyTransactions.ts';
+  briefingGifts,
+  buyJailbreak,
+  openCrate,
+  resolveC4,
+  runEndTransactions,
+} from './storyTransactions.ts';
 import { exportCode, importCode } from './codec.ts';
 import { buy } from './purchase.ts';
 import { LIVE_KNOWN_IDS, createNewSave } from './saveData.ts';
@@ -268,6 +269,8 @@ describe('dev saves (the ?save= fixtures)', () => {
       expect(build('all_unlocked').story.seen.includes('a3_m04_base_night_shift')).toBe(true);
       const all = build('all_unlocked');
       expect(all.story.seen.includes('a3_m01_base_survey')).toBe(true);
+      // C4 answered, so its card is never offered at the base (D146; T710).
+      expect(all.story.flags.quill_choice).toBe('keep');
     });
   });
 });
@@ -327,13 +330,16 @@ describe('Act III part two: a save for every door and C4 answer (T700b)', () => 
     expect(save.profile?.callsign).toBe('waykeeper');
   });
 
-  describe("the stand-ins for T710's transactions (applied by hand until it lands)", () => {
+  describe("A3M4–A3M6's transactions, as the dev saves make them", () => {
     it.runIf(isRegistered('a3_m03'))(
       'the jailbreak brings the revoked class back, free under the convoy',
       () => {
         for (const door of ['convoy', 'warren'] as const) {
           const before = build(`after_a3m3_${door}`);
-          const after = INTENDED.jailbreak(before);
+          const r = buyJailbreak(before);
+          expect(r.ok, door).toBe(true);
+          if (!r.ok) continue;
+          const after = r.save;
           expect(after.unlocks.revokedTowers).toEqual([]);
           expect(after.unlocks.jailbroken).toEqual(['rivet']);
           expect(after.unlocks.towers).toEqual(before.unlocks.towers);
@@ -347,25 +353,54 @@ describe('Act III part two: a save for every door and C4 answer (T700b)', () => 
 
     it('the mail, C4 and the crate make what their tables say, and validate', () => {
       const base = build('after_a3m3_convoy');
-      const mailed = INTENDED.inherit('suppressing_fire')(base);
-      expect(mailed.unlocks.inheritedAbilities).toEqual(['suppressing_fire']);
-      expect(mailed.unlocks.abilities).toContain('suppressing_fire');
+      const mailed = runEndTransactions(base, { mapId: 'a3_m04', won: true, wonBefore: false });
+      expect(mailed.transactions).toEqual([{ kind: 'inherit', ability: 'suppressing_fire' }]);
+      expect(mailed.save.unlocks.inheritedAbilities).toEqual(['suppressing_fire']);
+      expect(mailed.save.unlocks.abilities).toContain('suppressing_fire');
       for (const c4 of ['keep', 'purge', 'rewrite'] as const) {
-        const answered = INTENDED.c4(c4)(mailed);
-        expect(answered.story.flags.quill_choice).toBe(c4);
-        expect(answered.unlocks.inheritedAbilities).toEqual(
+        const r = resolveC4(mailed.save, c4);
+        expect(r.ok).toBe(true);
+        if (!r.ok) continue;
+        expect(r.save.story.flags.quill_choice).toBe(c4);
+        expect(r.save.unlocks.inheritedAbilities).toEqual(
           c4 === 'keep' ? ['suppressing_fire', 'time_dilation'] : ['suppressing_fire'],
         );
-        expect(validateSave(answered).ok).toBe(true);
+        expect(validateSave(r.save).ok).toBe(true);
       }
       // The crate over the reference into A3M6 (its Vrell towers' tune-ups to the top).
-      const briefed = briefingGifts(mailed, 'a3_m06').save;
-      const crated = INTENDED.crate(briefed);
-      expect(crated.story.granted).toContain('crate');
+      const briefed = briefingGifts(mailed.save, 'a3_m06').save;
+      const r = openCrate(briefed);
+      expect(r.ok).toBe(true);
+      if (!r.ok) return;
+      expect(r.save.story.granted).toContain('crate');
       for (const t of ['zapcoil', 'lookout', 'harpoon'] as const) {
-        if (briefed.unlocks.towers.includes(t)) expect(crated.upgrades[`tune_${t}`]).toBe(3);
+        if (briefed.unlocks.towers.includes(t)) expect(r.save.upgrades[`tune_${t}`]).toBe(3);
       }
-      expect(validateSave(crated).ok).toBe(true);
+      expect(validateSave(r.save).ok).toBe(true);
     });
+
+    it.runIf(isRegistered('a3_m04'))(
+      'each after_a3m4 save is after_a3m3 run through the transactions the app makes',
+      () => {
+        for (const [id, door, c4] of A3M4) {
+          const save = build(id);
+          const before = build(`after_a3m3_${door}`);
+          const jail = buyJailbreak(before);
+          if (!jail.ok) throw new Error(jail.message);
+          const answered = resolveC4(
+            runEndTransactions(briefingGifts(jail.save, 'a3_m04').save, {
+              mapId: 'a3_m04',
+              won: true,
+              wonBefore: false,
+            }).save,
+            c4,
+          );
+          if (!answered.ok) throw new Error(answered.message);
+          expect(save.unlocks, id).toEqual(answered.save.unlocks);
+          expect(save.story.flags, id).toEqual(answered.save.story.flags);
+          expect(save.story.granted, id).toEqual(answered.save.story.granted);
+        }
+      },
+    );
   });
 });

@@ -51,11 +51,12 @@ describe('grant ids', () => {
 });
 
 describe('run end step 6 (runEndTransactions)', () => {
-  it("lists A2M4's Q3 Bonus, A2M5's Prism gift, and A3M1's Hum Choir if spared", () => {
+  it("lists A2M4's Q3 Bonus, A2M5's Prism gift, A3M1's Hum Choir if spared, A3M4's mail", () => {
     expect(RUN_END_TRANSACTIONS).toEqual({
       a2_m04: [{ kind: 'q3_bonus' }],
       a2_m05: [{ kind: 'gift', tower: 'prism' }],
       a3_m01: [{ kind: 'gift', tower: 'choir', when: { flag: 'spared_quiet_wave', eq: true } }],
+      a3_m04: [{ kind: 'inherit', ability: 'suppressing_fire' }],
     });
   });
 

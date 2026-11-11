@@ -88,16 +88,17 @@ describe('the M7 dev maps', () => {
     expect(Object.hasOwn(DEV_CONTENT.maps, 'dev_bearers')).toBe(true);
   });
 
-  it('dev_sproing: the Sproing Pad is a stub (T704); the Gloop Spitter runs (T705)', () => {
-    expect(refused('dev_sproing')).toEqual([
-      "the 'sproing' tower is not simulated until T704",
-      "a 'leaper' attack (sproing) is not simulated until T704",
-    ]);
+  it('dev_sproing: the Sproing Pad, its grounded flyers, and its links (T704)', () => {
+    // T704 runs it (render/__fixtures__/devSproing.test.ts), registered in DEV_CONTENT with
+    // smoke/sproing.spec.ts.
+    expect(refused('dev_sproing')).toEqual([]);
+    expect(Object.hasOwn(DEV_CONTENT.maps, 'dev_sproing')).toBe(true);
   });
 
   it('are not in DEV_CONTENT until their tasks register them', () => {
     for (const id of Object.keys(DEV_M7_MAPS)) {
       if (id === 'dev_bearers') continue; // T706
+      if (id === 'dev_sproing') continue; // T704
       expect(Object.hasOwn(DEV_CONTENT.maps, id), id).toBe(false);
     }
   });

@@ -6,7 +6,9 @@
 //   once A2M4 is won; and after A2M6 (act2.md § A2M6, *Base scene*, *Base vignette*), QUILL's
 //   loophole, then Bricks teaching Pebble to whistle; and after A3M1 (act3.md § A3M1, *Base
 //   scene*), Bricks's survey confession; and after A3M4's C4 (act3.md § A3M4, *Base vignette*
-//   `base_a3_night_shift`), Night Shift. Several due on one visit play in turn.
+//   `base_a3_night_shift`), Night Shift, mandatory (D146: Esc skips nothing, every line is played
+//   with Next; a placeholder plays until T720 registers it, app/storyStubs.ts). Several due on one
+//   visit play in turn.
 // - **The open question**, "Where does stardust come from?", which the player asks from its shop
 //   row (meta/purchase.ts `openQuestionOffered`).
 // Each plays as a pausing panel over the base (app/dialogue.ts) unless its row stages it
@@ -19,6 +21,7 @@ import { isMapWon, openQuestionOffered, type SaveData } from '../meta/index.ts';
 import type { SceneMode } from '../ui/dialogue/state.ts';
 import { dialogueEnabled, playScene } from './dialogue.ts';
 import { activeSave, systemOpen } from './save.ts';
+import { storyScene } from './storyStubs.ts';
 
 /** Zibzab's arrival at the base. */
 export const ARRIVAL_SCENE: SceneId = 'a1_m03_base_arrival';
@@ -33,7 +36,7 @@ export const SURVEY_SCENE: SceneId = 'a3_m01_base_survey';
 /**
  * Night Shift (act3.md § A3M4's `base_a3_night_shift` vignette; the scene id follows the
  * `<map_id>_base_<name>` rule): Pebble, Ves'thara and QUILL in the shelters, due once C4 is
- * answered (D146: mandatory at the next base visit; its no-skip staging is T710/T714's).
+ * answered (D146: mandatory at the next base visit, `noSkip`; its staging is T714's).
  */
 export const NIGHT_SHIFT_SCENE: SceneId = 'a3_m04_base_night_shift';
 /** The shop's open question. */
@@ -45,6 +48,8 @@ interface VisitScene {
   readonly due: (save: SaveData) => boolean;
   /** How it plays: 'fullscreen' on the dark stage; default a pausing panel over the base. */
   readonly mode?: Extract<SceneMode, 'panel' | 'fullscreen'>;
+  /** Mandatory: Esc skips nothing (`PlayOptions.noSkip`; Night Shift, D146). */
+  readonly noSkip?: boolean;
 }
 
 /** The base's visit scenes, in the order they play when several are due. */
@@ -56,10 +61,12 @@ export const VISIT_SCENES: readonly VisitScene[] = [
   { id: WHISTLE_SCENE, due: (save) => isMapWon(save, 'a2_m06'), mode: 'fullscreen' },
   // After the Preserve: Bricks's survey confession, its own beat after the Leaving Song.
   { id: SURVEY_SCENE, due: (save) => isMapWon(save, 'a3_m01') },
-  // After Empty Slot's C4 (answered on the card, or at the base before anything else): Night Shift.
+  // After Empty Slot's C4 (answered on the card, or at the base before anything else; only A3M4's
+  // debrief sets it): Night Shift, mandatory.
   {
     id: NIGHT_SHIFT_SCENE,
-    due: (save) => isMapWon(save, 'a3_m04') && save.story.flags.quill_choice !== undefined,
+    due: (save) => save.story.flags.quill_choice !== undefined,
+    noSkip: true,
   },
 ];
 
@@ -75,7 +82,7 @@ function visitRowsDue(): VisitScene[] {
   const save = activeSave();
   if (save === null || !dialogueEnabled()) return [];
   return VISIT_SCENES.filter(
-    (v) => !save.story.seen.includes(v.id) && v.due(save) && sceneById(v.id) !== undefined,
+    (v) => !save.story.seen.includes(v.id) && v.due(save) && storyScene(v.id) !== undefined,
   );
 }
 
@@ -91,9 +98,9 @@ export function arrivalDue(): boolean {
 export function playBaseScenesIfDue(): boolean {
   let arrival = false;
   for (const v of visitRowsDue()) {
-    const scene = sceneById(v.id);
+    const scene = storyScene(v.id);
     if (scene === undefined) continue;
-    playScene(scene, { mode: v.mode ?? 'panel' });
+    playScene(scene, { mode: v.mode ?? 'panel', ...(v.noSkip === true ? { noSkip: true } : {}) });
     if (v.id === ARRIVAL_SCENE) arrival = true;
   }
   return arrival;

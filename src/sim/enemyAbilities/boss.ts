@@ -19,6 +19,10 @@
 // - A shield-broken phase (the Penitent's phase 2; T506) begins when the shield breaks and
 //   releases its shards; its shield re-forms while they live (shieldBroken.ts, run first, before
 //   the invulnerability wait, since its re-form clock runs through everything).
+// - M7 (T707): a `jettison` phase sheds its plating as it begins and hastes (jettison.ts, before
+//   the invulnerability wait: the shedding is the phase's telegraph); a `hangar` phase launches
+//   drones on its own timer (hangar.ts, after the wait). Hostile Takeover runs in the jams slot
+//   (takeover.ts), so its jams land after the countdowns.
 // Young are born in the boss's wave with its tags (brood.ts). A leaving boss is moved by leave.ts.
 // Chitterbloom: (1) 100–60% sneezes 2 Nibblers every 5 s; (2) 60–25% burrows twice for 3 s and
 // surfaces with a Bunchling each time; (3) 25–0% Haste 50% and a huddle on her young; `driveOff`
@@ -32,6 +36,8 @@ import { cooldownHeld, evadeBlocked, isInterrupted } from '../systems/status.ts'
 import type { TickContext } from '../tick.ts';
 import { BOSS_BURROW_GAP_TICKS, enterBossPhase } from './bossPhases.ts';
 import { spawnBrood } from './brood.ts';
+import { hangarStep } from './hangar.ts'; // T707
+import { jettisonStep } from './jettison.ts'; // T707
 import { shieldBrokenStep } from './shieldBroken.ts';
 
 export const BOSS_ABILITY_TELL_TICKS = secToTicks(BOSS_ABILITY_TELL_SEC);
@@ -86,8 +92,13 @@ export function bossStep(state: SimState, ctx: TickContext, boss: Enemy, def: Co
   shieldBrokenStep(state, ctx, boss, def);
   const p = def.phases[boss.bossPhase - 1]!; // 1 ≤ bossPhase ≤ phases.length
   if (p.hastePct > 0) boss.paceMul *= 1 + (p.hastePct < HASTE_CAP ? p.hastePct : HASTE_CAP);
+  if (p.jettison !== null) jettisonStep(state, boss, p.jettison); // T707: as the phase begins
   if (boss.invulnerableTicks > 0) {
     boss.invulnerableTicks--;
+    return;
+  }
+  if (p.hangar !== null) {
+    hangarStep(state, ctx, boss, p.hangar); // T707: its own launch timer
     return;
   }
   if (boss.abilityTicks <= 0) return;

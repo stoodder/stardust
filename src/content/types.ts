@@ -917,10 +917,14 @@ export interface HangarDef {
   readonly everySec: number;
 }
 
-/** Hostile Takeover (BossPhaseDef.takeover): D146's 3 s laser, then a 4 s jam. */
+/**
+ * Hostile Takeover (BossPhaseDef.takeover): D146's 3 s laser, then a 4 s jam; the first laser as
+ * the phase begins, then one every `everySec` (laser start to laser start; T707).
+ */
 export interface TakeoverDef {
   readonly tellSec: number;
   readonly durationSec: number;
+  readonly everySec: number;
 }
 
 /** The jettison (BossPhaseDef.jettison): D146's armor 0, Haste 40%, four `crash_*` plates. */

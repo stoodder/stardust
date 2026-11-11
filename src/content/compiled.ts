@@ -556,7 +556,11 @@ export interface CompiledBossPhase {
     readonly count: number;
     readonly everyTicks: number;
   } | null;
-  readonly takeover: { readonly tellTicks: number; readonly durationTicks: number } | null;
+  readonly takeover: {
+    readonly tellTicks: number;
+    readonly durationTicks: number;
+    readonly everyTicks: number;
+  } | null;
   readonly jettison: { readonly hastePct: number; readonly plates: readonly MarkerId[] } | null;
   readonly split: {
     readonly part: string;

@@ -40,6 +40,8 @@
 //   the first latch through the tick the last one lets go (that tick's step comes first), a tick
 //   late but exactly as long as they're on. `latchCount` counts the latched units.
 // - **Back** (`back`): the same speed home; on arrival SwarmHome (the head-count chirp) and a rest.
+// The Sproing Pad's leapers (T704) share the pool as owner allies of kind 'leaper'; this pass
+// passes them by (`isSwarm`), and sim/leapers.ts runs them.
 import { DOT_TICK_SEC, SWARMLING_CHILL_CAP } from '../content/rules.ts';
 import type { CompiledAttack } from '../content/compiled.ts';
 import { TICK_HZ } from '../shared/time.ts';
@@ -113,6 +115,11 @@ function denOf(state: SimState, uid: number): Tower | null {
   return null;
 }
 
+/** Whether `a` is a live swarmling or Champion (an owner ally, but not a Sproing Pad's leaper). */
+function isSwarm(a: Ally): boolean {
+  return a.alive && a.mode === 'owner' && a.kind !== 'leaper';
+}
+
 /** The Den's spawner attack, or null (not a Den). */
 function spawnerOf(t: Tower): Spawner | null {
   const a = t.tierDef?.attack ?? null;
@@ -131,7 +138,7 @@ export function swarmlings(state: SimState, ctx: TickContext): void {
   const allies = state.allies;
   for (let i = 0; i < allies.used; i++) {
     const a = allies.items[i]!; // i < used ≤ items.length
-    if (a.alive && a.mode === 'owner') step(state, ctx, a);
+    if (isSwarm(a)) step(state, ctx, a);
   }
   for (let i = 0; i < enemies.used; i++) {
     const e = enemies.items[i]!; // i < used ≤ items.length
@@ -151,7 +158,7 @@ function anySwarm(state: SimState): boolean {
   const allies = state.allies;
   for (let i = 0; i < allies.used; i++) {
     const a = allies.items[i]!; // i < used ≤ items.length
-    if (a.alive && a.mode === 'owner') return true;
+    if (isSwarm(a)) return true;
   }
   return false;
 }
@@ -416,7 +423,7 @@ function claims(state: SimState, uid: number, self: Ally): number {
   let n = 0;
   for (let i = 0; i < allies.used; i++) {
     const a = allies.items[i]!; // i < used ≤ items.length
-    if (a === self || !a.alive || a.mode !== 'owner' || a.targetUid !== uid) continue;
+    if (a === self || !isSwarm(a) || a.targetUid !== uid) continue;
     if (a.swarmState === 'out' || a.swarmState === 'latched') n++;
   }
   return n;

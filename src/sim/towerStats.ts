@@ -35,7 +35,10 @@ export interface TierStats {
   readonly rangeTiles: number;
   /** 0 when the tower has no minimum range. */
   readonly minRangeTiles: number;
-  /** A lobbed shell's or a projectile's (flak) splash radius in tiles; 0 for every other kind. */
+  /**
+   * A lobbed shell's, a projectile's (flak), or a leaper's (Big Bonk) splash radius in tiles; 0 for
+   * every other kind.
+   */
   readonly splashTiles: number;
   readonly armorPierce: number;
   /**
@@ -95,7 +98,11 @@ function tierStats(tierDef: DeepReadonly<CompiledTier>, b: TowerBonuses): TierSt
     minRangeTiles: attack.minRangeTiles,
     // A shell's or a flak burst's radius (the Skyhook and Flak Curtain); a charge's partial splash
     // is its trait ("50% splash 1", app/hudText.ts), not this full-damage radius.
-    splashTiles: attack.kind === 'lobbed' || attack.kind === 'projectile' ? attack.splashTiles : 0,
+    // Big Bonk's splash where a leaper lands (T704) is full damage too.
+    splashTiles:
+      attack.kind === 'lobbed' || attack.kind === 'projectile' || attack.kind === 'leaper'
+        ? attack.splashTiles
+        : 0,
     armorPierce: attack.armorPierce,
     vsStatuses: vs,
     vsStatusDamage: vs.length === 0 ? damage : round2(bonusDamageVs(attack, b)),

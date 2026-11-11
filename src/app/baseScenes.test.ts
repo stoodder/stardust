@@ -154,14 +154,14 @@ describe("Sundown's visit scenes (A2M6)", () => {
   });
 });
 
-describe('Night Shift (A3M4, after C4; T700b seam)', () => {
-  it('is due once A3M4 is won and C4 answered, and never before its scene is registered', () => {
+describe('Night Shift (A3M4, after C4; D146, T710)', () => {
+  it('is due once C4 is answered (only A3M4 asks it), and mandatory', () => {
     const row = VISIT_SCENES.find((v) => v.id === NIGHT_SHIFT_SCENE);
     expect(NIGHT_SHIFT_SCENE).toBe('a3_m04_base_night_shift');
+    expect(row?.noSkip).toBe(true);
     loadDevSave('all_unlocked');
     const save = activeSave()!;
-    const maps: Record<string, unknown> = save.campaign.maps;
-    maps['a3_m04'] = { completed: true, medals: ['victory'], bestMeter: 20 };
+    delete save.story.flags.quill_choice;
     expect(row?.due(save)).toBe(false); // C4 not answered yet
     save.story.flags.quill_choice = 'keep';
     expect(row?.due(save)).toBe(true);

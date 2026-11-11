@@ -1,4 +1,5 @@
-// The debrief's story choice (T510; T329's C2 half): C2, Zibzab's Price, on A2M4's win. The card
+// The debrief's story choice (T510; T329's C2 half; T710's C4): C2, Zibzab's Price, on A2M4's win,
+// and C4, QUILL's directives, on A3M4's (D146: asked once on the first win, committed on the answer). The card
 // shows the debrief up to its choice (app/runResult.ts `debriefLines`); when that choice decides a
 // story transaction's flag (`RESULTS_CHOICES`: `stardust_choice` → meta's `resolveC2`) and the save
 // hasn't made it yet, the card offers its options in place of its way on, price first (the whole
@@ -8,18 +9,21 @@
 // `none`) makes it as the card opens. Guarded by the flag, never by the debrief's seen id: a win
 // whose card was never answered (the tab closed) is offered it at the base (app/baseChoice.ts,
 // which plays the same offer through `openChoice` and `takeChoice`).
-import { SCENES } from '../content/dialogue/index.ts';
 import { isCampaignMapId } from '../content/dialogue/rules.ts';
 import type { FlagSet } from '../content/dialogue/flags.ts';
 import type { FlagId } from '../content/types.ts';
 import type { ChoiceNode, LineNode, Scene } from '../content/dialogue/types.ts';
 import { UPGRADES } from '../content/upgrades/index.ts';
 import {
+  C4_CHOICES,
   c2Windfall,
   resolveC2,
+  resolveC4,
   ZIBZAB_TUNE_UP,
   type C2Choice,
+  type C4Choice,
   type SaveData,
+  type StoryOutcome,
   type TransactionResult,
 } from '../meta/index.ts';
 import type { StoryContext } from '../story/conditions.ts';
@@ -44,6 +48,7 @@ import {
   type RunEndInput,
 } from './runResult.ts';
 import { activeSave, updateActiveSave } from './save.ts';
+import { storyScene } from './storyStubs.ts';
 import type { RunOutcome } from './testHookTypes.ts';
 
 /** A flag a debrief's choice decides on Results, and the story transaction that decides it. */
@@ -53,7 +58,12 @@ export interface ResultsChoiceRule {
   readonly resolve: (save: SaveData, value: string) => TransactionResult;
   /** What choosing `value` would pay over `save`, shown before the pick (price first, D138). */
   readonly pays: (save: SaveData, value: string) => ResultsPay;
+  /** The choice's own heading in place of the bank's stake (`ResultsChoice.title`); C2 has none. */
+  readonly title?: string;
 }
+
+/** Nothing priced under an option (C4: none of QUILL's answers is a purchase). */
+const NO_PAY: ResultsPay = { intel: 0, note: '' };
 
 /** The note under C2's Return, as its payroll row will read ("Carried home", "Fee: an IOU"). */
 export const C2_RETURN_NOTE = 'Fee: an IOU';
@@ -70,14 +80,36 @@ function c2Pays(save: SaveData, value: string): ResultsPay {
   return { intel: 0, note: choice === 'returned' ? C2_RETURN_NOTE : '' };
 }
 
-/** The flags a debrief's choice decides on Results: C2 (C4 joins with A3M4). */
+/**
+ * The flags a debrief's choice decides on Results: C2 (A2M4's Zibzab's Price) and C4 (A3M4's
+ * QUILL's directives, T710; committed on the answer through meta's `resolveC4`, D146).
+ */
 export const RESULTS_CHOICES: readonly ResultsChoiceRule[] = [
   {
     flag: 'stardust_choice',
     resolve: (save, value) => resolveC2(save, c2Choice(value)),
     pays: c2Pays,
   },
+  {
+    flag: 'quill_choice',
+    resolve: (save, value) => c4Result(resolveC4(save, c4Choice(value))),
+    pays: () => NO_PAY,
+    title: "QUILL's directives",
+  },
 ];
+
+/** `value` as C4's answer (a `quill_choice` value); anything else is a content bug. */
+function c4Choice(value: string): C4Choice {
+  const choice = C4_CHOICES.find((c) => c === value);
+  if (choice !== undefined) return choice;
+  throw new Error(`story: '${value}' isn't a quill_choice value`);
+}
+
+/** C4's outcome as a Results transaction (a refusal is a content bug: the value was checked). */
+function c4Result(r: StoryOutcome): TransactionResult {
+  if (!r.ok) throw new Error(r.message);
+  return { save: r.save, applied: r.applied?.kind === 'c4' ? r.applied : null };
+}
 
 /** `value` as C2's choice (a `stardust_choice` value); anything else is a content bug. */
 function c2Choice(value: string): C2Choice {
@@ -148,6 +180,7 @@ export function openChoice(
     const view: ResultsChoice = {
       by: by === undefined ? '' : spoken(by.speaker, '', story).name,
       bank: save.currencies.stardust,
+      title: rule.title ?? null,
       options: options.map((o) => resolveText(o.text, story.text)),
       pays: options.map((o) => rule.pays(save, valueOf(rule, o.set) ?? '')),
       picked: null,
@@ -257,7 +290,7 @@ export function withResultsChoice(
   outcome: RunOutcome,
   save: SaveData | null,
   record = true,
-  lookup: (id: string) => Scene | undefined = (id) => SCENES[id],
+  lookup: (id: string) => Scene | undefined = storyScene,
 ): RunResult {
   pending = null;
   const map = input.mapId;

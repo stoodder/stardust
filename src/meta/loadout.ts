@@ -62,10 +62,15 @@ export interface ProtocolPick {
   readonly picks: Readonly<Partial<Record<ProtocolId, TowerId>>>;
 }
 
-export function loadoutPools(save: SaveData, devUnlocks: readonly MetaSystem[] = []): LoadoutPools {
+/** The loadout's pools; `offAbilities` are the map's slot-1 exclusions (`abilitiesOffOn`). */
+export function loadoutPools(
+  save: SaveData,
+  devUnlocks: readonly MetaSystem[] = [],
+  offAbilities: readonly string[] = [],
+): LoadoutPools {
   return {
     towers: towerPool(save),
-    abilities: abilityPool(save),
+    abilities: abilityPool(save, offAbilities),
     protocols: protocolPool(save),
     protocolSlots: protocolSlotCount(save, devUnlocks),
   };
@@ -161,8 +166,13 @@ function presetOn(save: SaveData, mapId: string): LoadoutPreset | undefined {
  * Where the screen starts on `mapId`: this map's preset, else the last one locked in anywhere,
  * else `fallback` (app/battleSetup.ts's default: the par build's towers first), fitted to the pools.
  */
-export function initialPick(save: SaveData, mapId: string, fallback: LoadoutPick): LoadoutPick {
-  const pools = loadoutPools(save);
+export function initialPick(
+  save: SaveData,
+  mapId: string,
+  fallback: LoadoutPick,
+  offAbilities: readonly string[] = [],
+): LoadoutPick {
+  const pools = loadoutPools(save, [], offAbilities);
   for (const p of [presetOn(save, mapId), save.loadouts.last, fallback]) {
     if (p === undefined || p === null) continue;
     const fitted = fitPick(p, pools);
@@ -175,15 +185,24 @@ export function initialPick(save: SaveData, mapId: string, fallback: LoadoutPick
  * The battle's towers and ability on `mapId`: the map's preset when the save has a loadout choice
  * and the preset still fits the pools; otherwise `fallback` (everything owned when there's no
  * choice, the skip rule). The screen writes the preset before the battle starts, so a retry
- * keeps it too.
+ * keeps it too. `offAbilities` (the map's slot-1 exclusions) leave the pools; a preset holding one
+ * takes the pool's first ability instead.
  */
-export function resolveLoadout(save: SaveData, mapId: string, fallback: LoadoutPick): LoadoutPick {
-  const pools = loadoutPools(save);
-  const preset = presetOn(save, mapId);
-  if (preset === undefined || !hasLoadoutChoice(pools) || !isValidPick(preset, pools)) {
-    return fallback;
-  }
-  return preset;
+export function resolveLoadout(
+  save: SaveData,
+  mapId: string,
+  fallback: LoadoutPick,
+  offAbilities: readonly string[] = [],
+): LoadoutPick {
+  const pools = loadoutPools(save, [], offAbilities);
+  const stored = presetOn(save, mapId);
+  if (stored === undefined || !hasLoadoutChoice(pools)) return fallback;
+  // A preset whose ability the map now excludes keeps its towers and takes the first in the pool.
+  const preset =
+    stored.ability !== null && offAbilities.includes(stored.ability)
+      ? { ...stored, ability: pools.abilities[0] ?? null }
+      : stored;
+  return isValidPick(preset, pools) ? preset : fallback;
 }
 
 /**

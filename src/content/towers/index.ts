@@ -22,12 +22,10 @@ import { zapcoil } from './zapcoil.ts';
  * waits for: stubs whose numbers that task confirms. This is the one home of the refusal: the sim
  * refuses a listed tower whole (sim/gates.ts `stubTowerGate`), meta keeps its license, attunement,
  * and spec unlock off the shelves, and [quiet-wave-reach] and the loadout pools leave it out. The
- * task lifts it by deleting its entry here. M7's (T700a): the Sproing Pad (T704); the Gloop
- * Spitter's T705 lifted.
+ * task lifts it by deleting its entry here. M7's (T700a), the Gloop Spitter and the Sproing Pad,
+ * were lifted by T705 and T704: none waits now.
  */
-export const STUB_TOWER_TASKS: Readonly<Record<string, `T${number}${string}`>> = Object.freeze({
-  sproing: 'T704',
-});
+export const STUB_TOWER_TASKS: Readonly<Record<string, `T${number}${string}`>> = Object.freeze({});
 /** The towers in STUB_TOWER_TASKS (its keys), for the checks that only ask whether one waits. */
 export const TOWERS_AHEAD_OF_TASK: readonly string[] = Object.freeze(Object.keys(STUB_TOWER_TASKS));
 
@@ -49,7 +47,7 @@ export const TOWERS = defineRegistry({
   burrow,
   choir,
   bloom,
-  // M7: the Gloop Spitter (T705), the Sproing Pad (T700a stub until T704).
+  // M7: the Gloop Spitter (T705), the Sproing Pad (T704).
   gloop,
   sproing,
 });

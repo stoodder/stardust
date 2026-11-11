@@ -10,10 +10,12 @@ import { RAW_CONTENT } from '../content/registry.ts';
 import { MAX_LOADOUT } from '../content/rules.ts';
 import type { IdSpace, RawContent } from '../content/types.ts';
 import {
+  abilitiesOffOn,
   abilityPool,
   metaModifiers,
   resolveLoadout,
   saveModifiers,
+  storyModifiers,
   towerPool,
   type LoadoutPick,
   type SaveData,
@@ -83,9 +85,12 @@ export function defaultLoadout(
   return [...first, ...usable.filter((t) => !first.includes(t))].slice(0, MAX_LOADOUT);
 }
 
-/** The Technician's ability (slot 1): the par build's if the save owns it, else the first owned. */
-function slot1Ability(save: SaveData, par: string | null): string | null {
-  const usable: readonly string[] = abilityPool(save);
+/**
+ * The Technician's ability (slot 1): the par build's if the save owns it, else the first owned,
+ * leaving out `off` (the map's exclusions, meta `abilitiesOffOn`).
+ */
+function slot1Ability(save: SaveData, par: string | null, off: readonly string[]): string | null {
+  const usable: readonly string[] = abilityPool(save, off);
   return par !== null && usable.includes(par) ? par : (usable[0] ?? null);
 }
 
@@ -96,11 +101,12 @@ function slot1Ability(save: SaveData, par: string | null): string | null {
 export function defaultPick(
   save: SaveData,
   par: { readonly loadout: readonly string[]; readonly technicianAbility: string | null },
+  off: readonly string[] = [],
 ): LoadoutPick {
   const { towers: owned, abilities } = save.unlocks;
   // The pool: owned, unrevoked, and played by the sim today (meta/pools.ts).
   const towers = defaultLoadout(towerPool(save), [], par.loadout);
-  const ability = slot1Ability(save, par.technicianAbility);
+  const ability = slot1Ability(save, par.technicianAbility, off);
   return {
     // defaultLoadout's order, as the save's typed ids.
     towers: towers.flatMap((t) => owned.filter((o) => o === t)),
@@ -130,6 +136,14 @@ function companionOf(
  */
 export function simulatedSaveModifiers(save: SaveData): Modifier<IdSpace>[] {
   return saveModifiers(save).filter((m) => simulated(modifierFeature(m)));
+}
+
+/**
+ * Modifiers from the save's story on `mapId` (meta/storyInPlay.ts `storyModifiers`: C4 Purge's −2
+ * Everglow armor from A3M5 on, and on a dev map), less any the sim still refuses.
+ */
+export function simulatedStoryModifiers(mapId: string, save: SaveData): Modifier<IdSpace>[] {
+  return storyModifiers(mapId, save).filter((m) => simulated(modifierFeature(m)));
 }
 
 /**
@@ -181,13 +195,17 @@ export function battleConfig(
         specsUnlocked: simulated('specs') ? specs.filter((t) => par.loadout.includes(t)) : [],
       };
     }
-    // The loadout screen's pick for this map (its preset), or the default (meta/loadout.ts).
-    const pick = resolveLoadout(save, mapId, defaultPick(save, par));
+    // The loadout screen's pick for this map (its preset), or the default (meta/loadout.ts),
+    // without the abilities slot 1 can't hold here (A3M5's locked System Reboot under C4 Rewrite;
+    // slot 2's own; meta/storyInPlay.ts).
+    const off = abilitiesOffOn(map, save, slot2);
+    const pick = resolveLoadout(save, mapId, defaultPick(save, par, off), off);
     const loadout: readonly string[] = pick.towers;
     return {
       ...base,
       loadout: [...loadout],
-      modifiers: simulatedSaveModifiers(save),
+      // The save's purchases and protocols, then its story's (C4 Purge's armor from A3M5 on).
+      modifiers: [...simulatedSaveModifiers(save), ...simulatedStoryModifiers(mapId, save)],
       difficulty:
         save.settings.difficulty === 'story' && simulated('storyDifficulty') ? 'story' : 'standard',
       // Slot 1 is the Technician's, from the save; slot 2 is the map's companion's.
