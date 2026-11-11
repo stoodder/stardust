@@ -92,7 +92,11 @@ function inputOf(f: ResultsFixture, save: SaveData | null): RunEndInput {
   const won = f.outcome === 'won';
   const map = isMapId(f.map) ? MAPS[f.map] : undefined;
   const waveCount = map?.waves.length ?? 10;
-  const medals = offeredMedals({ medals: map?.medals ?? null });
+  // The map's objective names Perfect Core plain "Perfect" on an Escort, as the battle does.
+  const medals = offeredMedals({
+    medals: map?.medals ?? null,
+    ...(map === undefined ? {} : { objective: map.objective }),
+  });
   return {
     mapId: f.map,
     act: map?.act ?? 1,

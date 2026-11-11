@@ -27,7 +27,7 @@
 //   (`Enemy.pullImmuneTicks`, counted down by the status pass), whichever Bloom pulses it, so
 //   stacked Wells pull a unit once every 20 s. PulledBack per unit. A pull that carries a unit a
 //   Maw holds out of the Maw's radius loses the gather's tell (enemyAbilities/gather.ts); one Bricks
-//   holds walks back to him (sim/blocker.ts).
+//   holds is let go (Blocked off) and walks back to him, where he takes it again (sim/blocker.ts).
 // - **Hold Fire** quiets the field: no chill and no pulse while the tower holds, its pulse timer
 //   still counting down (the towers system's rule), so it pulses the tick it's released. With the
 //   spare-runners filter the field acts only on a tick an unspared unit is inside, and then on
@@ -142,6 +142,11 @@ function pullBack(state: SimState, t: Tower, f: CompiledField, e: Enemy): void {
   e.dist = to;
   e.seg = pointAt(route, to, e, e.seg);
   e.pullImmuneTicks = f.pullBackCooldownTicks;
+  // A unit a blocker holds is let go (sim/blocker.ts takes it again once it walks back to him).
+  if (e.blockerUid !== 0) {
+    emit(state, { type: 'Blocked', allyUid: e.blockerUid, enemyUid: e.uid, on: false });
+    e.blockerUid = 0;
+  }
   emit(state, {
     type: 'PulledBack',
     uid: e.uid,

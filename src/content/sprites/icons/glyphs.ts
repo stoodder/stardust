@@ -155,18 +155,19 @@ export const iconTellBurrower = defineSprite({
   anchor: { x: 0, y: 0 },
   palette: 'everglow',
   outline: 'auto',
-  // The `burrower` tell (art-direction §8): a down arrow into a line (the ground): a `white.1`
-  // core edged in `grime.4`, over a `grime.4` ground line, inside the `ink.0` outline, so it reads
-  // on grass and dirt alike (D097).
-  legend: { C: 'grime.3', D: 'grime.4', W: 'white.1' },
+  // The `burrower` tell (art-direction §8): a down arrow into a line (the ground): a solid
+  // `white.1` arrow (shaft, head, point) diving into a gap in a `grime.4` ground line, inside the
+  // `ink.0` outline, so it reads on grass and dirt alike (D097) and, where the outline sinks into
+  // Act III's near-black ground (the Undertow's), by its own white shape (T640b).
+  legend: { D: 'grime.4', W: 'white.1' },
   frames: {
     icon: [
       '..WW..',
-      'DWWWWD',
-      '.DWWD.',
-      '..DD..',
-      '......',
-      'DDDDDC',
+      '..WW..',
+      'WWWWWW',
+      '.WWWW.',
+      '..WW..',
+      'DD..DD',
     ],
   },
 });

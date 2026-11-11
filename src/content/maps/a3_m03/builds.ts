@@ -101,17 +101,68 @@ export const builds = defineBuilds({
     },
   },
   altBuilds: {
-    // Scuttle Den, Zapcoil, Skyhook, Lookout: Zapcoils for par's Thumpers and Prisms, a Skyhook
-    // behind Bricks for the Moths, the Lookout home (nothing on the map is cloaked).
+    // Scuttle Den, Zapcoil, Skyhook, Lookout: Dens on the choke as par's, Zapcoils chaining the
+    // clusters in the switchback, behind Bricks and on the forks, Skyhooks for the Moths. The
+    // Lookout stays home (nothing on the map is cloaked).
     coils: {
       loadout: ['burrow', 'zapcoil', 'skyhook', 'lookout'],
-      steps: swapped({ thumper: 'zapcoil', prism: 'zapcoil', mindspike: 'skyhook' }),
+      steps: [
+        { wave: 1, build: 'burrow', tile: CHOKE_E },
+        { wave: 1, build: 'zapcoil', tile: BEND },
+        { wave: 1, upgrade: BEND },
+        { wave: 1, build: 'zapcoil', tile: BEHIND_E },
+        { wave: 2, build: 'zapcoil', tile: RIFT_E },
+        { wave: 3, build: 'burrow', tile: CHOKE_W },
+        suppress(4),
+        { wave: 4, upgrade: CHOKE_E },
+        { wave: 5, upgrade: BEHIND_E },
+        { wave: 6, build: 'skyhook', tile: MID },
+        suppress(7),
+        { wave: 7, upgrade: CHOKE_W },
+        { wave: 7, upgrade: CHOKE_E },
+        { wave: 8, upgrade: MID },
+        { wave: 8, build: 'skyhook', tile: BEHIND_W },
+        { wave: 9, upgrade: CHOKE_W },
+        { wave: 9, upgrade: BEND },
+        suppress(10),
+        { wave: 10, build: 'zapcoil', tile: RIFT_W },
+        { wave: 10, upgrade: RIFT_E },
+        { wave: 11, upgrade: BEHIND_E },
+        suppress(12),
+        { wave: 12, upgrade: RIFT_W },
+        { wave: 13, upgrade: BEHIND_W },
+        SEAL,
+      ],
     },
-    // Scuttle Den, Prism, Harpoon, Zapcoil: no Everglow class at all (any A3M2 revocation leaves it
-    // whole). Zapcoils for par's Thumpers, a Harpoon behind Bricks.
+    // Scuttle Den, Prism, Harpoon, Zapcoil: no Everglow class at all, so any A3M2 revocation
+    // leaves it whole. Dens on the choke, Zapcoils for par's Thumpers, a Harpoon behind Bricks.
     no_everglow: {
       loadout: ['burrow', 'prism', 'harpoon', 'zapcoil'],
-      steps: swapped({ thumper: 'zapcoil', mindspike: 'harpoon' }),
+      steps: [
+        { wave: 1, build: 'burrow', tile: CHOKE_E },
+        { wave: 1, build: 'zapcoil', tile: BEND },
+        { wave: 1, upgrade: BEND },
+        { wave: 1, build: 'harpoon', tile: BEHIND_E },
+        { wave: 2, build: 'prism', tile: MID },
+        { wave: 3, build: 'burrow', tile: CHOKE_W },
+        { wave: 3, build: 'zapcoil', tile: RIFT_E },
+        suppress(4),
+        { wave: 5, upgrade: CHOKE_E },
+        { wave: 6, upgrade: MID },
+        suppress(7),
+        { wave: 7, upgrade: CHOKE_W },
+        { wave: 7, upgrade: BEHIND_E },
+        { wave: 8, upgrade: CHOKE_E },
+        { wave: 9, upgrade: BEND },
+        suppress(10),
+        { wave: 10, build: 'zapcoil', tile: RIFT_W },
+        { wave: 10, upgrade: RIFT_E },
+        { wave: 11, upgrade: CHOKE_W },
+        suppress(12),
+        { wave: 12, build: 'prism', tile: BEHIND_W },
+        { wave: 13, upgrade: MID },
+        SEAL,
+      ],
     },
   },
   flagVariants: { door_choice: ['convoy', 'warren'] },

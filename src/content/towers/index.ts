@@ -23,9 +23,7 @@ import { zapcoil } from './zapcoil.ts';
  * task lifts it by deleting its entry here. None waits now: M6's Scuttle Den (T604), Hum Choir
  * (T607), and Stasis Bloom (T608) lifted theirs.
  */
-export const STUB_TOWER_TASKS: Readonly<Record<string, `T${number}${string}`>> = Object.freeze(
-  {},
-);
+export const STUB_TOWER_TASKS: Readonly<Record<string, `T${number}${string}`>> = Object.freeze({});
 /** The towers in STUB_TOWER_TASKS (its keys), for the checks that only ask whether one waits. */
 export const TOWERS_AHEAD_OF_TASK: readonly string[] = Object.freeze(Object.keys(STUB_TOWER_TASKS));
 

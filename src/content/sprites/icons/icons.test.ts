@@ -29,10 +29,13 @@ describe('icon sprites (art-direction §5)', () => {
     );
   });
 
-  it('bakes tower, enemy, and ability icons at 16×16 and glyphs at 8×8, with one `icon` frame', () => {
+  it('bakes tower, enemy, and ability icons at 16×16, stamps at 34×18, and glyphs at 8×8, with one `icon` frame', () => {
     for (const def of icons) {
       const big = /^icon\.(tower|enemy|ability)\./.test(def.id);
-      expect(bakedSize(def), def.id).toEqual(big ? { w: 16, h: 16 } : { w: 8, h: 8 });
+      // The REVOKED stamps (icons/revoked.ts) are plates of two lines of the 3×5 font.
+      const stamp = def.id.startsWith('icon.stamp.');
+      const want = stamp ? { w: 34, h: 18 } : big ? { w: 16, h: 16 } : { w: 8, h: 8 };
+      expect(bakedSize(def), def.id).toEqual(want);
       expect(Object.keys(def.frames), def.id).toEqual(['icon']);
     }
   });

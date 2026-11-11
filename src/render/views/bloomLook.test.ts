@@ -36,7 +36,11 @@ describe('the Bloom look (T608)', () => {
   });
 
   it('blue for the tiers, violet for Gravity Well, teal for Timeless Garden', () => {
-    expect(bloomColors({ spec: null })).toEqual({ disc: 'blue.3', flash: 'blue.4', ring: 'blue.4' });
+    expect(bloomColors({ spec: null })).toEqual({
+      disc: 'blue.3',
+      flash: 'blue.4',
+      ring: 'blue.4',
+    });
     expect(bloomColors({ spec: 'a' }).ring).toBe('violet.4');
     expect(bloomColors({ spec: 'b' }).ring).toBe('teal.4');
   });

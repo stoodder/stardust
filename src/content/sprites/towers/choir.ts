@@ -161,7 +161,14 @@ const SEATS: readonly Seat[] = [
 ];
 
 /** An elder: a coral ball, a white tuft, moss on her back; a closed-eyed humming face or a back. */
-function elder(g: CharGrid, s: Seat, sway: number, open: boolean, paw: boolean, tall: number): void {
+function elder(
+  g: CharGrid,
+  s: Seat,
+  sway: number,
+  open: boolean,
+  paw: boolean,
+  tall: number,
+): void {
   const cx = s.x + sway + 0.5;
   const rx = s.front ? 3.2 : 2.5;
   const ry = (s.front ? 3 : 2.4) + tall * 0.7;
@@ -207,7 +214,7 @@ function elder(g: CharGrid, s: Seat, sway: number, open: boolean, paw: boolean, 
 function thrum(g: CharGrid, sway: number, open: boolean, paw: boolean, tall: number): void {
   const s = SEATS[1]!;
   const cx = s.x + sway + 0.5;
-  const top = s.y - 8 - Math.round(tall);
+  const top = s.y - 8 - Math.round(tall * 2);
   // The shell: plates rising behind her head, moss on top, her shimmer in the seams.
   for (let y = top; y <= top + 5; y++) {
     for (let x = Math.floor(cx - 5); x <= Math.ceil(cx + 5); x++) {

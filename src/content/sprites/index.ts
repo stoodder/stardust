@@ -211,18 +211,15 @@ import { iconEnemySunderglassPenitent } from './icons/sunderglass_penitent.ts';
 import { towerLantern, towerLanternHead } from './towers/lantern.ts';
 import {
   iconAbilityUnderfoot,
-  iconTellConsumer,
-  iconTellHasteAura,
   iconTowerBloom,
   iconTowerBurrow,
   iconTowerChoir,
-  towerBloom,
-  towerBloomHead,
-  towerBurrow,
-  towerBurrowHead,
-  towerChoir,
-  towerChoirHead,
-} from './placeholders/m6.ts';
+} from './icons/m6_towers.ts';
+import { iconTellConsumer, iconTellHasteAura } from './icons/m6_glyphs.ts';
+import { iconStampLicenseRevoked, iconStampUplinkRevoked } from './icons/revoked.ts';
+import { towerBloom, towerBloomHead } from './towers/bloom.ts';
+import { towerChoir, towerChoirHead } from './towers/choir.ts';
+import { towerBurrow, towerBurrowHead } from './towers/den.ts';
 import { towerMindspike, towerMindspikeHead } from './towers/mindspike.ts';
 import { towerPrism, towerPrismHead } from './towers/prism.ts';
 
@@ -295,7 +292,7 @@ export const SPRITES = [
   towerMindspikeHead,
   towerLantern,
   towerLanternHead,
-  // M6's towers (placeholders until T640b: placeholders/m6.ts).
+  // M6's towers (T640b): the Scuttle Den, the Hum Choir, the Stasis Bloom.
   towerBurrow,
   towerBurrowHead,
   towerChoir,
@@ -417,7 +414,7 @@ export const SPRITES = [
   iconEnemyFractureShard,
   iconEnemyRiftmoth,
   iconAbilityStillness,
-  // M6's icons (placeholders until T640a, the units', and T640b, the towers' and Underfoot's).
+  // M6's icons (T640a, the units'; T640b, the towers', Underfoot's, and the REVOKED stamps).
   iconTowerBurrow,
   iconTowerChoir,
   iconTowerBloom,
@@ -426,6 +423,8 @@ export const SPRITES = [
   iconEnemyCompliance,
   iconEnemyExpediter,
   iconAbilityUnderfoot,
+  iconStampLicenseRevoked,
+  iconStampUplinkRevoked,
   iconCredits,
   iconCore,
   iconLock,
@@ -451,7 +450,7 @@ export const SPRITES = [
   iconTellShieldAura,
   iconTellPhasing,
   iconTellHeavy,
-  // M6's tell glyphs (placeholders until T640b).
+  // M6's tell glyphs (T640b).
   iconTellConsumer,
   iconTellHasteAura,
   sceneRig9Feed,

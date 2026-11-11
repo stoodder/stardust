@@ -69,8 +69,8 @@ function moss(g: CharGrid, cx: number, cy: number, seed: number): void {
   }
 }
 
-/** The heap of earth every tier shares, with `lanterns` glowworm lanterns down its right face. */
-function footing(lanterns: number, seed: number): CharGrid {
+/** The heap of earth every tier shares. */
+function footing(seed: number): CharGrid {
   const g: CharGrid = grid(BASE_W, BASE_H);
   const { x: cx, y: cy } = BASE_ANCHOR;
   isoBox(g, cx, cy + 1, 12, 0, { top: '_', rim: '_', left: '_', right: '_' });
@@ -92,16 +92,22 @@ function footing(lanterns: number, seed: number): CharGrid {
   plot(g, cx + 6, cy + 4, 'J');
   plot(g, cx + 7, cy + 4, 'K');
   plot(g, cx - 3, cy + 6, 'K');
-  // The glowworm lanterns, one per tier, stepping down the right face: a gold drop on a grass
-  // thread, so the tiers count in light.
-  for (let t = 0; t < lanterns; t++) {
+  return g;
+}
+
+/**
+ * The glowworm lanterns, one per tier, stepping down the right face (drawn over the kit, so a
+ * hillock never hides one): a gold drop on a grass thread, so the tiers count in light.
+ */
+function lanterns(g: CharGrid, n: number): void {
+  const { x: cx, y: cy } = BASE_ANCHOR;
+  for (let t = 0; t < n; t++) {
     const x = cx + 3 + t * 3;
     const y = cy - 1 - Math.floor((t * 3) / 2);
     plot(g, x, y - 1, '6');
     plot(g, x, y, '*');
     plot(g, x, y + 1, '+');
   }
-  return g;
 }
 
 /** One base frame per tier (1–3): the footing plus the tower's kit for that tier. */
@@ -110,10 +116,11 @@ export function warrenBase(
   kits: { readonly t2: WarrenKit; readonly t3: WarrenKit },
   seed: number,
 ): string[] {
-  const g = footing(tier, seed);
+  const g = footing(seed);
   const { x: cx, y: cy } = BASE_ANCHOR;
   if (tier >= 2) kits.t2(g, cx, cy);
   if (tier === 3) kits.t3(g, cx, cy);
+  lanterns(g, tier);
   return rows(g);
 }
 
@@ -122,9 +129,10 @@ export function warrenBase(
  * and the spec's own kit (drawn by `kit` round the anchor) in place of T2's and T3's.
  */
 export function warrenSpecBase(kit: WarrenKit, seed: number): string[] {
-  const g = footing(3, seed);
+  const g = footing(seed);
   const { x: cx, y: cy } = BASE_ANCHOR;
   kit(g, cx, cy);
+  lanterns(g, 3);
   plot(g, cx - 1, cy + 4, 'w');
   plot(g, cx, cy + 4, '*');
   return rows(g);

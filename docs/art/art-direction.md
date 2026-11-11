@@ -553,16 +553,16 @@ North is up. It is a top-down survey with hill shading lit from the north-west, 
 
 **Node positions** (glyph centres; the data is `src/content/starMap.ts`, which validates that every node stays inside the chart, out of the reserved corners, and 16 px from every other node on at least one axis):
 
-| Map | Centre | Map | Centre |
-|---|---|---|---|
-| A1M1 | (304, 292) | A2M1 | (500, 88) |
-| A1M2 | (264, 160) | A2M2 | (400, 100) |
-| A1M3 | (440, 236) | A2M3 | (280, 152) |
-| A1M4 | (336, 252) | A2M4 | (472, 168) |
-| A1M5 | (312, 204) | A2M5 | (176, 164) |
-| | | A2M6 | (352, 200) |
+| Map | Centre | Map | Centre | Map | Centre |
+|---|---|---|---|---|---|
+| A1M1 | (304, 292) | A2M1 | (500, 88) | A3M1 | (152, 208), in the Preserve's bowl |
+| A1M2 | (264, 160) | A2M2 | (400, 100) | A3M2 | (352, 260), 16 px east of A1M4 |
+| A1M3 | (440, 236) | A2M3 | (280, 152) | A3M3 | (372, 136), on the Long Walk |
+| A1M4 | (336, 252) | A2M4 | (472, 168) | A3M4 | (296, 248), the colony's west quarter |
+| A1M5 | (312, 204) | A2M5 | (176, 164) | | |
+| | | A2M6 | (352, 200) | | |
 
-Provisional, settled with their milestones: A3M1 (152, 208), A3M2 (352, 260), A3M3 (372, 136), A3M4 (296, 248), A3M5 (488, 176), A3M6 (320, 300), the finale (412, 60).
+Provisional, settled with their milestones: A3M5 (488, 176), A3M6 (320, 300), the finale (412, 60).
 
 ### The north edge and the palette by phase
 
@@ -575,16 +575,16 @@ The chart's **phase** is the frontier's (core-loop §1.1). Its ramps are the act
 | `act3` | A3M1–the finale (first shown at Act II's close, A2M6 won) | `act3.ground`, `act3.path`; the cliffs dark rock from the ground ramp, `act3.crystal`'s low steps on their lit upper faces, and a crystal glint (a `crystal.3` point over a `crystal.2`) on about half the peaks | `act3`'s; the domes' shells go dark (`steel.0`, `ink.3` shade, `steel.1` rims), their windows `act3.emergency`, half of them dark | `red.3` | 72 px across the Spires, with two or three 1 px `violet.2`/`violet.3` cracks reaching south to the Terraces |
 | `dawn` | None (post-game) | `finale.ground`, Act III's path | `finale`'s | `gold.3` | Recedes to 16 px; the Halls' mouth glows `gold.3` and `pink.3` (sung) in a 9 px dither, and the north faces take the warm light |
 
-The `act3` row is built for Act II's close (T512), where A3M1 is a teaser (its node the `soon` glyph, so only the frontier's leg, the plates, and the panel wear the accent); Act III's milestone settles the `next` glyph's `act3` core and its nodes' places. The `dawn` row is a sketch the finale's milestone settles.
+The `act3` row is built (T512, T612): from Act II's close, where A3M1 is a teaser, through A3M3 won, where A3M4 is (the `soon` glyph, so only the frontier's leg, the plates, and the panel wear the accent); between them the `next` glyph's core and ping are `red.3`. The `dawn` row is a sketch the finale's milestone settles.
 
 ### Nodes, legs, and the marker
 
-- **`ui.star_node`** (15×15 frames, `ink.0` outline drawn by hand; `src/content/sprites/starmap/star.ts`; the accent is slot `e0`, so the `act3` variant takes `act3.crystal.2` until Act III settles its row): `cleared`, a 9×9 diamond in `gold.3` with a `gold.4` top-left edge (a survey benchmark in the medal's shape); `next`, a chamfered 11×11 `white.1` square ring around a 5×5 core in the act accent, one palette variant per act (`act2`, `act3`, `finale`); `ping_0`–`ping_3`, a 1 px accent ring growing from 11 to 15 px with stepped alpha, played once every 2 s at 8 fps (the 3 Hz flicker cap holds); `soon`, a dashed `steel.3` ring around the menus' 7×8 padlock; `focus`, four 3 px `white.1` corner brackets at 15×15, overlaid on the selected node.
+- **`ui.star_node`** (15×15 frames, `ink.0` outline drawn by hand; `src/content/sprites/starmap/star.ts`; the act accent is a legend color per act, since no palette's flora slot carries the UI theme's accent: `next` and `ping_0`–`ping_3` in `orange.3`, their `_act3` frames in `red.3`, their `_finale` frames in `gold.3`): `cleared`, a 9×9 diamond in `gold.3` with a `gold.4` top-left edge (a survey benchmark in the medal's shape); `next`, a chamfered 11×11 `white.1` square ring around a 5×5 core in the act accent; `ping_0`–`ping_3`, a 1 px accent ring growing from 11 to 15 px with stepped alpha, played once every 2 s at 8 fps (the 3 Hz flicker cap holds); `soon`, a dashed `steel.3` ring around the menus' 7×8 padlock; `focus`, four 3 px `white.1` corner brackets at 15×15, overlaid on the selected node.
 - **`ui.star_pips`** (13×3): frames `0`–`3`, three 3×3 diamonds, `gold.3` earned and `steel.1` not, 2 px under a cleared glyph.
 - **`ui.star_marker`** (9×13): a down-pointing pin in `white.1` with an `ink.0` outline and a `teal.3` visor slit (the Technician's JPT-1 visor), its tip 1 px above its node's glyph; `idle_0`/`idle_1` bob 1 px at 2 fps. Its walk to a new node takes 0.6 s along the leg, eased, in whole game pixels.
 - **Legs:** 1 px dashes, 2 on and 2 off, in whole game pixels, stopping 6 px short of each glyph: `steel.3` between cleared nodes, the act accent from the marker to the frontier.
 - **Name plates** (on the frontier and the selected node, and on any node while hovered): `ink.1` at 92% with a 1 px act-accent edge, the name in `white.1`, 6 px below the glyph, centred and kept inside the chart; a teaser's plate has a `steel.3` name and an `ink.4` edge.
-- **Region labels:** Silkscreen 8 caps in `steel.4` on `ink.1` plates at 80% with no edge: "The Spires" over the ridges, "Everglow Gardens" by the colony's west wall, the Long Walk's label beside the trail south of the colony, "No survey data" in the north band. A corrected label shows its old words above in `steel.3` with a 1 px line through them and its new words in `steel.4`.
+- **Region labels:** Silkscreen 8 caps in `steel.4` on `ink.1` plates at 80% with no edge: "The Spires" over the ridges, "Everglow Gardens" by the colony's west wall, the Long Walk's label beside the trail south of the colony, "No survey data" in the north band, and, from A3M4 won (the map that names them), "The Deep Halls" over the Halls' mouth at (412, 42), above the finale's node. A corrected label shows its old words above in `steel.3` with a 1 px line through them and its new words in `steel.4`.
 
 ### The panel and the chrome
 

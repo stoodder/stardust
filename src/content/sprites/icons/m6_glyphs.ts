@@ -1,13 +1,12 @@
 // M6's tell glyphs (art-direction §8 *Trait tells*): 8×8, authored 6×6 plus the outline, each a
 // shape first and a colour second, like the glyphs in glyphs.ts.
-// - `consumer` (Gathering, the Maw): inward arrows, the Maw's tendrils pulling in: a chevron from
-//   each side pointing at a dark mouth between them, `acid.2` lit `acid.3` at their tips, inside
-//   the Hollow's pale outline (its palette), so it reads wrong like the Hollow's and holds on
-//   Act III's near-black ground as on grass.
-// - `haste_aura` (the Expediter): a double chevron with a ring: the » of `fast` (`orange.3` lit
-//   `orange.4`) inside a ring that is the Expediter's metronome swing, an arc over it with the
-//   pendulum's bob at its top, so it reads as "speeds up the ones round it", never as `fast`
-//   alone.
+// - `consumer` (Gathering, the Maw): inward arrows, the Maw's tendrils pulling in: a wedge from
+//   each side (▶ ◀), `acid.2` lit `acid.3` toward their points, pinching a dark mouth between
+//   them, inside the Hollow's pale outline (its palette), so it reads wrong like the Hollow's and
+//   holds on Act III's near-black ground as on grass.
+// - `haste_aura` (the Expediter): a double chevron with a ring: the » of `fast` (`orange.4` over
+//   `orange.3`), squat, over an `orange.2` arc, the swing of the Expediter's metronome pendulum,
+//   so it reads as `fast`'s family but never as `fast` alone.
 import { defineSprite } from '../defineSprite.ts';
 import { GLYPH } from './iconGen.ts';
 
@@ -21,10 +20,10 @@ export const iconTellConsumer = defineSprite({
   // `+` acid.2, `*` acid.3 (the palette's emissives), `k` the mouth (hollow.0).
   frames: {
     icon: [
+      '......',
       '+....+',
       '*+..+*',
-      '.*kk*.',
-      '.*kk*.',
+      '**kk**',
       '*+..+*',
       '+....+',
     ],
@@ -38,14 +37,14 @@ export const iconTellHasteAura = defineSprite({
   anchor: { x: 0, y: 0 },
   palette: 'everglow',
   outline: 'auto',
-  legend: { C: 'orange.3', D: 'orange.4', B: 'orange.2' },
+  legend: { B: 'orange.2', C: 'orange.3', D: 'orange.4' },
   frames: {
     icon: [
-      '.CDDC.',
-      'C....C',
-      'BD.D.B',
-      'B.D.DB',
-      'BD.D.B',
+      'DD.DD.',
+      '.DD.DD',
+      '.CC.CC',
+      'CC.CC.',
+      'B....B',
       '.BBBB.',
     ],
   },

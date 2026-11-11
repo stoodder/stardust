@@ -46,6 +46,7 @@ export { cloakedOut } from './enemyAbilities/cloak.ts';
 // A Capacitor Bank's full charge under its bonuses (T407b): render's orb grows against it.
 export { bonusChargeTicks } from './attacks/charge.ts';
 export { detectRadiusTiles, supportPct } from './systems/detection.ts';
+export { fieldPulseTicks, fieldReachTiles } from './systems/fields.ts'; // T608: the Bloom's field
 export type {
   Command,
   CommandLogEntry,

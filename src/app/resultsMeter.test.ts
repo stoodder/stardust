@@ -56,6 +56,8 @@ describe('the results fixture in Act III', () => {
     expect(won.escort).toMatchObject({ evacuated: 30, total: 30, lost: 0 });
     expect(won.meter).toEqual({ kind: 'evacuated', n: 30 });
     expect(won.escort?.holdout).toBeUndefined();
+    // Its Perfect Core is plain "Perfect" (no core to keep), as the battle names it.
+    expect(won.rewards?.medals.map((m) => m.name)).toContain('Perfect');
     const lost = fixtureResult({ map: 'a3_m01', outcome: 'lost' }, save);
     expect(lost.escort).toMatchObject({ evacuated: 15, total: 30, lost: 15 });
     const told = fixtureResult({ map: 'a3_m01', outcome: 'won', escort: { evacuated: 25 } }, save);

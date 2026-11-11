@@ -11,7 +11,7 @@
 //   ring (PulseBurst, battleEvents.ts). Read from sim state, so it holds while paused; still the
 //   same under reduced motion (a brightness step, not motion).
 import type { ColorName } from '../../content/palettes/master.ts';
-import { fieldPulseTicks, fieldReachTiles } from '../../sim/systems/fields.ts';
+import { fieldPulseTicks, fieldReachTiles } from '../../sim/index.ts';
 
 /** How long a pulse brightens the disc, in sim ticks (0.3 s). */
 export const PULSE_FLASH_TICKS = 18;

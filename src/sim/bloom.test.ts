@@ -45,9 +45,15 @@ function tick(state: SimState, ctx: TickContext): void {
 }
 
 function events(state: SimState): SimEvent<IdSpace>[] {
-  const out = state.events.slice() as SimEvent<IdSpace>[];
+  const out: SimEvent<IdSpace>[] = state.events.slice();
   state.events.length = 0;
   return out;
+}
+
+/** Clears a unit's Stasis and its immunity (a test holding it in place by hand). */
+function unfreeze(u: Enemy): void {
+  u.stasisTicks = 0;
+  u.stasisImmuneTicks = 0;
 }
 
 function bursts(evs: readonly SimEvent<IdSpace>[]): SimEvent<IdSpace>[] {
@@ -62,8 +68,8 @@ describe('the Stasis Bloom (towers.md § 7): numbers', () => {
       expect.objectContaining({ radiusTiles: 2.5, pulseEveryTicks: 480, stasisTicks: 120 }),
     ]);
     expect(BLOOM.tiers.map((t) => t.cost)).toEqual([140, 110, 210]);
-    expect(BLOOM.tiers[0]!.targets).toEqual({ ground: true, air: true });
-    expect(BLOOM.tiers[0]!.attack).toBeNull();
+    expect(BLOOM.tiers[0].targets).toEqual({ ground: true, air: true });
+    expect(BLOOM.tiers[0].attack).toBeNull();
     expect(WELL.field).toMatchObject({
       chillPct: 0.3,
       pullBackTiles: 1.5,
@@ -135,7 +141,7 @@ describe('the field: reach and chill', () => {
   });
 
   it('reaches further with Pinned Down and the radius tune-up', () => {
-    const f = BLOOM.tiers[0]!.field!;
+    const f = BLOOM.tiers[0].field!;
     expect(fieldReachTiles(f, { linkFieldRadiusTiles: 0, detectPct: 0 })).toBe(2);
     expect(fieldReachTiles(f, { linkFieldRadiusTiles: 0.3, detectPct: 0 })).toBeCloseTo(2.3, 12);
     expect(fieldReachTiles(f, { linkFieldRadiusTiles: 0.3, detectPct: 0.05 })).toBeCloseTo(
@@ -206,7 +212,7 @@ describe('the pulse: Stasis', () => {
   });
 
   it('Stillmind pulses 1 s sooner (never under a tick)', () => {
-    const f = BLOOM.tiers[0]!.field!;
+    const f = BLOOM.tiers[0].field!;
     expect(fieldPulseTicks(f, { linkPulseSoonerTicks: 60 })).toBe(540);
     expect(fieldPulseTicks(f, { linkPulseSoonerTicks: 90 })).toBe(510); // Linked Up's 1.5 s
     expect(fieldPulseTicks(f, { linkPulseSoonerTicks: 10_000 })).toBe(1);
@@ -303,22 +309,33 @@ describe('Gravity Well (spec A): the pull', () => {
     const e = spawn(state, E.nibbler!, { dist: 4 });
     tick(state, ctx);
     expect(e.dist).toBe(2.5); // the first Well's pull; the second's waits
-    const freeze = (u: Enemy): void => {
-      u.stasisTicks = 0;
-      u.stasisImmuneTicks = 0;
-    };
     // Held at dist 4 by hand: pulses every 8 s, but a pull only once the 20 s are up.
     const pulls: number[] = [];
     for (let k = 1; k <= 1500; k++) {
       e.dist = 4;
       e.x = 2.5;
       e.y = 2.5;
-      freeze(e);
+      unfreeze(e);
       tick(state, ctx);
       if (e.dist !== 4) pulls.push(k);
     }
     // Pulses at 480 and 960 find it immune (till 1200); the one at 1440 pulls it.
     expect(pulls).toEqual([1440]);
+  });
+
+  it('lets go of a unit a blocker holds (Blocked off; it walks back to him)', () => {
+    const { state, ctx } = world();
+    bloom(state, WELL);
+    const e = spawn(state, E.nibbler!, { dist: 4 });
+    e.blockerUid = 77;
+    tick(state, ctx);
+    expect(e.blockerUid).toBe(0);
+    expect(events(state)).toContainEqual({
+      type: 'Blocked',
+      allyUid: 77,
+      enemyUid: e.uid,
+      on: false,
+    });
   });
 
   it("a pull out of a Maw's radius loses its tell (enemies.md § 5.4)", () => {
@@ -371,8 +388,7 @@ describe('fire control', () => {
 });
 
 describe('links: Pinned Down and Stillmind (towers.md § 6.2)', () => {
-  const bit = (s: string): number => 1 << STATUS_BITS.indexOf(s as (typeof STATUS_BITS)[number]);
-  const mask = bit('chilled') | bit('stasis');
+  const mask = (1 << STATUS_BITS.indexOf('chilled')) | (1 << STATUS_BITS.indexOf('stasis'));
 
   it('compile to their partners', () => {
     const byId = new Map(LIVE.links.map((l) => [l.id, l]));
@@ -414,4 +430,3 @@ describe('links: Pinned Down and Stillmind (towers.md § 6.2)', () => {
     expect(t.cooldownTicks).toBe(540);
   });
 });
-

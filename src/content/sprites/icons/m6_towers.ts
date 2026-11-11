@@ -28,20 +28,22 @@ function warrenPlinth(g: CharGrid): void {
 
 function denIcon(): string[] {
   const g = iconGrid();
-  warrenPlinth(g);
-  dome(g, 7, 8.5, 6, 6.5, 0.5);
+  dome(g, 7, 6, 6, 5.5, 0.5);
   // The doorway, two eyes in its dark.
-  for (let y = 5; y <= 10; y++) for (let x = 5; x <= 9; x++) if (y > 5 || (x > 5 && x < 9)) plot(g, x, y, 'k');
-  for (let x = 5; x <= 9; x++) plot(g, x, 4, x < 7 ? 'E' : 'J');
-  plot(g, 6, 7, 'w');
-  plot(g, 8, 7, 'w');
+  for (let y = 4; y <= 9; y++) {
+    for (let x = 5; x <= 9; x++) if (y > 4 || (x > 5 && x < 9)) plot(g, x, y, 'k');
+  }
+  for (let x = 5; x <= 9; x++) plot(g, x, 3, x < 7 ? 'E' : 'J');
+  plot(g, 6, 6, 'w');
+  plot(g, 8, 6, 'w');
   // A teal curtain tied back on the left, the lantern on the right.
-  plot(g, 4, 6, 'c');
-  plot(g, 4, 7, 'd');
-  plot(g, 4, 8, 'c');
-  plot(g, 11, 5, '6');
-  plot(g, 11, 6, '*');
-  plot(g, 11, 7, '+');
+  plot(g, 4, 5, 'c');
+  plot(g, 4, 6, 'd');
+  plot(g, 4, 7, 'c');
+  plot(g, 11, 4, '6');
+  plot(g, 11, 5, '*');
+  plot(g, 11, 6, '+');
+  warrenPlinth(g);
   return rows(g);
 }
 
@@ -124,18 +126,18 @@ function underfootIcon(): string[] {
   // Two coral paws reaching up out of it, claws out.
   // prettier-ignore
   const paws = [
-    '.W.W.....W.W..',
-    '.W3W.....W3W..',
-    '.343.....343..',
-    '..33.....33...',
-    '..43....432...',
-    '...32..232....',
+    'W.W.......W.W.',
+    '3W3W.....W3W3.',
+    '4333.....3332.',
+    '.433.....332..',
+    '..433...332...',
+    '...33...32....',
     '...32..32.....',
   ];
   paws.forEach((r, dy) => {
     for (let dx = 0; dx < r.length; dx++) {
       const c = r.charAt(dx);
-      if (c !== '.') plot(g, dx, 3 + dy, c);
+      if (c !== '.') plot(g, dx, 2 + dy, c);
     }
   });
   // Clods flung up.

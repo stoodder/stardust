@@ -56,7 +56,7 @@ export const waves = defineWaves([
     noCall: true,
     groups: [
       g('fracture', 1, 'cut_west', OPEN),
-      motes(8, 'cut_east', OPEN + 4),
+      motes(10, 'cut_east', OPEN + 4, 0.2),
       g('fracture', 1, 'cut_east', OPEN + 8),
     ],
   },
@@ -70,13 +70,13 @@ export const waves = defineWaves([
   {
     countdownSec: COUNTDOWN,
     noCall: true,
-    groups: [motes(8, 'cut_west', OPEN), motes(6, 'rift_east', OPEN + 8, 0.35)],
+    groups: [motes(8, 'cut_west', OPEN), motes(4, 'rift_east', OPEN + 8, 0.45)],
   },
   // W5 · a Maw, Motes catching it up
   {
     countdownSec: COUNTDOWN,
     noCall: true,
-    groups: [g('maw', 1, 'cut_west', OPEN), motes(8, 'cut_west', OPEN + 2, 0.3)],
+    groups: [g('maw', 1, 'cut_west', OPEN), motes(12, 'cut_west', OPEN + 2, 0.25)],
   },
   // W6 · Rift Moths
   {
@@ -84,7 +84,7 @@ export const waves = defineWaves([
     noCall: true,
     groups: [
       g('riftmoth', 2, 'sky_west', OPEN, 2),
-      motes(8, 'cut_east', OPEN + 2),
+      motes(12, 'cut_east', OPEN + 2, 0.2),
       g('riftmoth', 1, 'sky_east', OPEN + 6),
     ],
   },
@@ -92,17 +92,17 @@ export const waves = defineWaves([
   {
     countdownSec: COUNTDOWN,
     noCall: true,
-    groups: [g('undertow', 3, 'cut_west', OPEN, 2.5), g('undertow', 2, 'cut_east', OPEN + 8, 2.5)],
+    groups: [g('undertow', 2, 'cut_west', OPEN, 2.5), g('undertow', 2, 'cut_east', OPEN + 8, 2.5)],
   },
   // W8 · everything, larger
   {
     countdownSec: COUNTDOWN,
     noCall: true,
     groups: [
-      g('undertow', 2, 'cut_east', OPEN, 2.5),
-      motes(8, 'cut_west', OPEN + 3),
+      g('undertow', 1, 'cut_east', OPEN, 2.5),
+      motes(18, 'cut_west', OPEN + 3, 0.2),
       g('riftmoth', 2, 'sky_west', OPEN + 8, 2),
-      g('undertow', 2, 'cut_west', OPEN + 10, 2.5),
+      g('undertow', 1, 'cut_west', OPEN + 10, 2.5),
     ],
   },
   // W9 · held, while the fourth group crosses
@@ -110,10 +110,10 @@ export const waves = defineWaves([
     countdownSec: COUNTDOWN,
     noCall: true,
     groups: [
-      g('undertow', 3, 'cut_west', OPEN, 2.5),
+      g('undertow', 1, 'cut_west', OPEN, 2.5),
       g('riftmoth', 2, 'sky_east', OPEN + 6, 2),
       g('undertow', 2, 'cut_east', OPEN + 10, 2.5),
-      motes(6, 'rift_east', OPEN + 14, 0.3),
+      motes(8, 'cut_east', OPEN + 14, 0.3),
     ],
   },
   // W10 · the last holdable wave, the fifth group on the road
@@ -122,7 +122,7 @@ export const waves = defineWaves([
     noCall: true,
     groups: [
       g('maw', 1, 'cut_east', OPEN),
-      motes(8, 'cut_east', OPEN + 2, 0.3),
+      motes(14, 'cut_east', OPEN + 2, 0.2),
       g('undertow', 3, 'cut_west', OPEN + 6, 2.5),
       g('riftmoth', 2, 'sky_west', OPEN + 12, 2),
     ],
@@ -132,8 +132,8 @@ export const waves = defineWaves([
     countdownSec: COUNTDOWN,
     noCall: true,
     groups: [
-      g('undertow', 3, 'cut_east', OPEN, 2.5),
-      motes(8, 'rift_east', OPEN + 4, 0.3),
+      g('undertow', 2, 'cut_east', OPEN, 2.5),
+      motes(18, 'cut_west', OPEN + 4, 0.2),
       g('undertow', 1, 'rift_west', OPEN + 8),
       g('riftmoth', 2, 'sky_east', OPEN + 10, 2),
     ],
@@ -145,7 +145,7 @@ export const waves = defineWaves([
     groups: [
       g('undertow', 3, 'cut_west', OPEN, 2.5),
       g('maw', 1, 'cut_east', OPEN + 4),
-      motes(8, 'rift_west', OPEN + 6, 0.3),
+      motes(8, 'cut_east', OPEN + 6, 0.2),
       g('undertow', 1, 'rift_east', OPEN + 10),
       g('riftmoth', 2, 'sky_west', OPEN + 12, 2),
     ],
@@ -155,8 +155,9 @@ export const waves = defineWaves([
     countdownSec: COUNTDOWN,
     noCall: true,
     groups: [
-      g('undertow', 3, 'cut_east', OPEN, 2.5),
-      motes(10, 'rift_east', OPEN + 2, 0.3),
+      g('undertow', 2, 'cut_east', OPEN, 2.5),
+      motes(8, 'cut_east', OPEN + 2, 0.2),
+      motes(18, 'cut_west', OPEN + 4, 0.2),
       g('undertow', 1, 'rift_west', OPEN + 6),
       g('fracture', 2, 'cut_west', OPEN + 8, 2),
       g('riftmoth', 3, 'sky_east', OPEN + 10, 1.5),

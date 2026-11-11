@@ -207,6 +207,16 @@ const KITS = [
   ['_spec_b', 'timelessGarden'],
 ] as const;
 
+/** Every head frame: each look's idle beats and its burst. */
+function headFrames(): Record<string, string[]> {
+  const out: Record<string, string[]> = {};
+  for (const [suffix, kit] of KITS) {
+    for (const k of BEATS) out[`pulse${suffix}_${k}`] = bloomHead(kit, k, null);
+    for (const k of FIRE) out[`fire${suffix}_${k}`] = bloomHead(kit, 0, k);
+  }
+  return out;
+}
+
 export const towerBloomHead = defineSprite({
   id: 'tower.bloom_head',
   size: { w: W, h: H },
@@ -215,12 +225,7 @@ export const towerBloomHead = defineSprite({
   outline: 'auto',
   glow: { slots: ['e0', 'e1'], radius: 1 },
   legend: LEGEND,
-  frames: Object.fromEntries(
-    KITS.flatMap(([suffix, kit]) => [
-      ...BEATS.map((k) => [`pulse${suffix}_${k}`, bloomHead(kit, k, null)]),
-      ...FIRE.map((k) => [`fire${suffix}_${k}`, bloomHead(kit, 0, k)]),
-    ]),
-  ),
+  frames: headFrames(),
   anims: {
     // The first anim is the tier 1–3 idle (render's `headStyle`).
     pulse: { frames: BEATS.map((k) => `pulse_${k}`), fps: 3 },
