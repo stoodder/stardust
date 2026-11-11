@@ -19,9 +19,7 @@
 //   tile, so every Suppressing Fire was refused as `invalidTarget`. A unit's tile is its floor.
 import type { CompiledBuild, CompiledContent } from '../../content/compiled.ts';
 import type { GridPos } from '../../content/types.ts';
-import { ringTelling } from '../../sim/enemyAbilities/jamRing.ts';
-import { tendrilTelling } from '../../sim/enemyAbilities/jamTendril.ts';
-import type { Sim } from '../../sim/index.ts';
+import { ringTelling, tendrilTelling, type Sim } from '../../sim/index.ts';
 
 /** How many enemies make a knot worth a cast… */
 export const CLUSTER_MIN = 6;

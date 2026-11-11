@@ -38,6 +38,7 @@ export { projectedAura } from './enemyAbilities/shieldAura.ts';
 export { projectedHaste } from './enemyAbilities/hasteAura.ts';
 export { healRate, projectedHeal, type HealUnits } from './enemyAbilities/healAura.ts'; // T703
 export { ringGrowth, ringTelling } from './enemyAbilities/jamRing.ts'; // T707
+export { tendrilTelling } from './enemyAbilities/jamTendril.ts'; // balance fixtures (M7 review)
 export { hangarTelling } from './enemyAbilities/hangar.ts'; // T707
 export { takeoverTelling } from './enemyAbilities/takeover.ts'; // T707
 export { openedTile } from './openTile.ts'; // T707
