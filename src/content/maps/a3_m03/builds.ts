@@ -15,9 +15,9 @@ const CHOKE_E: GridPos = [12, 5];
 /** The rock behind Bricks, either side. */
 const BEHIND_W: GridPos = [8, 7];
 const BEHIND_E: GridPos = [12, 7];
-/** Beside each rift, north of the forks. */
-const RIFT_W: GridPos = [4, 3];
-const RIFT_E: GridPos = [16, 3];
+/** Between each fork and the refugees' road: the fork, its rift's tail, and the road. */
+const FORK_W: GridPos = [6, 9];
+const FORK_E: GridPos = [14, 9];
 /** Under the fork, over the refugees' road. */
 const MID: GridPos = [10, 10];
 /** Where Suppressing Fire goes: the choke, in front of Bricks. */
@@ -40,36 +40,36 @@ function parSteps(): BuildStep[] {
     { wave: 1, upgrade: BEND },
     { wave: 1, build: 'burrow', tile: CHOKE_E },
     { wave: 1, build: 'mindspike', tile: BEHIND_E },
+    { wave: 1, build: 'thumper', tile: FORK_E },
     { wave: 2, build: 'prism', tile: MID },
     { wave: 3, build: 'burrow', tile: CHOKE_W },
-    { wave: 4, build: 'thumper', tile: RIFT_E },
-    suppress(5),
-    { wave: 5, upgrade: RIFT_E },
+    suppress(4),
+    { wave: 5, upgrade: FORK_E },
     { wave: 6, upgrade: MID },
-    { wave: 6, upgrade: BEHIND_E },
+    suppress(7),
     { wave: 7, upgrade: CHOKE_E },
-    suppress(8),
-    { wave: 8, upgrade: CHOKE_W },
-    { wave: 8, upgrade: BEND },
-    { wave: 9, build: 'prism', tile: BEHIND_W },
+    { wave: 7, upgrade: CHOKE_W },
+    { wave: 8, upgrade: BEHIND_E },
+    { wave: 9, upgrade: BEND },
     suppress(10),
-    { wave: 10, upgrade: MID },
-    { wave: 10, build: 'thumper', tile: RIFT_W },
-    { wave: 11, upgrade: RIFT_W },
-    { wave: 11, upgrade: BEHIND_E },
+    { wave: 10, build: 'thumper', tile: FORK_W },
+    { wave: 11, upgrade: FORK_E },
+    { wave: 11, upgrade: FORK_W },
     suppress(12),
-    { wave: 12, upgrade: RIFT_E },
-    { wave: 13, upgrade: BEHIND_W },
+    { wave: 12, build: 'prism', tile: BEHIND_W },
+    { wave: 13, upgrade: MID },
     SEAL,
   ];
 }
 
 /** Par's placements and spending with each tower swapped by `swap` (a no-counter or alt build). */
 function swapped(swap: Readonly<Partial<Record<TowerId, TowerId>>>): BuildStep[] {
-  return parSteps().map((st) => {
+  const out: BuildStep[] = [];
+  for (const st of parSteps()) {
     const to = 'build' in st ? swap[st.build] : undefined;
-    return 'build' in st && to !== undefined ? { ...st, build: to } : st;
-  });
+    out.push('build' in st && to !== undefined ? { ...st, build: to } : st);
+  }
+  return out;
 }
 
 export const builds = defineBuilds({

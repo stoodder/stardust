@@ -319,6 +319,7 @@ export function createRunTracker<K extends IdSpace>(
           case 'Blinked':
           case 'BlinkInterrupted':
           case 'PulseBurst':
+          case 'PulledBack':
           case 'TowerIncome':
           case 'Revealed':
           case 'Cloaked':

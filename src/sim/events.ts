@@ -411,10 +411,11 @@ export type SimEvent<K extends IdSpace = LiveIds> =
   | { readonly type: 'BlinkInterrupted'; readonly uid: number }
   | {
       /**
-       * A pulse tower's burst went off (Flash Freeze; T407a): its effects reached every enemy the
-       * pulse reaches within `radiusTiles` of the tower at (x, y), and `frozen` of them entered
-       * Stasis (a boss's converted chill, an immune unit, or one already frozen doesn't count).
-       * The frost ring for render and audio.
+       * A pulse tower's burst went off (Flash Freeze; T407a), or a Stasis Bloom's field pulsed
+       * (sim/systems/fields.ts; T608): its effects reached every enemy the pulse reaches within
+       * `radiusTiles` of the tower at (x, y), and `frozen` of them entered Stasis (a boss's
+       * converted chill, an immune unit, or one already frozen doesn't count). The frost ring for
+       * render and audio.
        */
       readonly type: 'PulseBurst';
       readonly towerUid: number;
@@ -422,6 +423,21 @@ export type SimEvent<K extends IdSpace = LiveIds> =
       readonly y: number;
       readonly radiusTiles: number;
       readonly frozen: number;
+    }
+  | {
+      /**
+       * Gravity Well (the Stasis Bloom's spec A; sim/systems/fields.ts, T608): its pulse pulled
+       * unit `uid` back along its route from (fromX, fromY) to (x, y), `tiles` along the route
+       * (less near the route's start). For render's streak and audio.
+       */
+      readonly type: 'PulledBack';
+      readonly uid: number;
+      readonly towerUid: number;
+      readonly fromX: number;
+      readonly fromY: number;
+      readonly x: number;
+      readonly y: number;
+      readonly tiles: number;
     }
   | {
       /**

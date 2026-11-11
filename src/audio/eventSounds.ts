@@ -136,6 +136,7 @@ const MAKES_SOUND: Readonly<Record<SimEventType, boolean>> = {
   Blinked: true,
   BlinkInterrupted: true,
   PulseBurst: true,
+  PulledBack: false, // Gravity Well's pull (T608): silent until T650 gives it a sound
   // Crane income, Haggler's interest, and Reel It In's credits (T408): a coin (T501h).
   TowerIncome: true,
   Revealed: true,

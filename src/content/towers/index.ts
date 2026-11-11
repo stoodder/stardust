@@ -20,12 +20,12 @@ import { zapcoil } from './zapcoil.ts';
  * waits for: stubs whose numbers that task confirms. This is the one home of the refusal: the sim
  * refuses a listed tower whole (sim/gates.ts `stubTowerGate`), meta keeps its license, attunement,
  * and spec unlock off the shelves, and [quiet-wave-reach] and the loadout pools leave it out. The
- * task lifts it by deleting its entry here. M6 (D141): the Stasis Bloom waits for T608 (the
- * Scuttle Den's T604 and the Hum Choir's T607 lifted theirs).
+ * task lifts it by deleting its entry here. None waits now: M6's Scuttle Den (T604), Hum Choir
+ * (T607), and Stasis Bloom (T608) lifted theirs.
  */
-export const STUB_TOWER_TASKS: Readonly<Record<string, `T${number}${string}`>> = Object.freeze({
-  bloom: 'T608',
-});
+export const STUB_TOWER_TASKS: Readonly<Record<string, `T${number}${string}`>> = Object.freeze(
+  {},
+);
 /** The towers in STUB_TOWER_TASKS (its keys), for the checks that only ask whether one waits. */
 export const TOWERS_AHEAD_OF_TASK: readonly string[] = Object.freeze(Object.keys(STUB_TOWER_TASKS));
 
@@ -43,8 +43,7 @@ export const TOWERS = defineRegistry({
   prism,
   mindspike,
   lantern,
-  // M6: the Scuttle Den (T604); T600a stubs their tasks lift: the Hum Choir (T607), the Stasis
-  // Bloom (T608).
+  // M6: the Scuttle Den (T604), the Hum Choir (T607), the Stasis Bloom (T608).
   burrow,
   choir,
   bloom,

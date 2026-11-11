@@ -69,6 +69,11 @@
 //   Auras (a haste ring, a shield aura, a huddle) have no cooldown, so it doesn't touch them; nor a
 //   hush (contact, no timer) or a shield's own regeneration (a status, not an ability).
 // - It interrupts nothing (the interrupt hook is Stasis's and Unnerved's).
+//
+// Gravity Well (towers.md § Stasis Bloom; T608): a Bloom's pull (systems/fields.ts) sets
+// `pullImmuneTicks` to the spec's 20 s, and this pass counts it down, so a unit is pulled at most
+// once every 20 s whichever Bloom pulses it. The field's chill and Stasis go in through
+// `applyChill` and `applyStasis` like any other.
 import {
   BOSS_CONVERTED_CHILL,
   LULLED_COOLDOWN_MULT,
@@ -299,6 +304,7 @@ export function status(state: SimState): void {
     }
     if (e.markTicks > 0 && --e.markTicks === 0) e.markPct = 0;
     if (e.noEvadeTicks > 0) e.noEvadeTicks--;
+    if (e.pullImmuneTicks > 0) e.pullImmuneTicks--; // Gravity Well's (T608; systems/fields.ts)
 
     // Shields regenerate after the delay without damage (applyDamage resets the delay), unless
     // the enemy's data gives no regen; Corrosive Kiss's Corroded slows it (`corrodedShieldMul`).
