@@ -1587,3 +1587,32 @@ The decisions the builders and the orchestrator made that the docs didn't cover.
 - **Gate:** smoke runs software-composited at 30 fps with 3 workers, which brought it from ~485 s to ~290 s; the quiet gate lands at ~405–420 s warm, so no budget fork for the owner. The test step runs over its share (T564b).
 - **The cut lever wasn't pulled:** the Stasis Bloom and the Choir's harmony line both shipped.
 - The per-task as-built choices (numbers, timings, looks) are in each doc's "as built" notes and the scratch seam map; the docs are their home.
+
+### D143 — 2026-11-11 — M6 review round 1 rulings
+Three reviewers: correctness/architecture/performance; gameplay, story and emotion; UX, art, accessibility and audio. Three high findings, all fixed in this round:
+- **C3 can't be chosen by stray keys.** A story choice focuses its question, never an option, as C2 does. Options arm only on a fresh key-down after the 700 ms lock.
+- **The SEAL arms only after Bricks's "Do it, {name}."** The button shows at W14's start but arms once the cue's last line has typed. The 20 s line counts from the same moment.
+- **Bricks is never hidden at his post.** While he blocks, an occlusion outline draws him over anything in front of him, and his bar sits above his head, not on a tower's base.
+
+**The owner question** (a Thumper-revoked player on A3M3) is kept as an exam and made legible:
+- A revoked class shows in the loadout as a stamped, locked card.
+- Bricks gives one conditional briefing line, on a new `{ revokedTower }` story condition.
+- One pre-doom cluster is packed, so a no-splash build leaks visibly while the waves are still holdable.
+- A plain Zapcoil-for-Thumper swap clears the floor through both doors, pinned by a test.
+
+Medium fixes:
+- Revocation clears name tags, and Bricks gets a line for Lucky.
+- Bricks's post-revocation bark is queued, so it always plays.
+- An escort's fail cap can scale with who walks (`maxLostPct`), so sparing Thrum's group doesn't thin A3M1's margin.
+- Base scenes play over a neutral backdrop.
+- Core-only protocols are marked inert on coreless maps.
+- The art trail gets two M6 corner dioramas.
+
+Low fixes:
+- Act III's darks are coloured, never `#000`, and an Act III value-band test is added.
+- Story lines: "Lost one. Keep 'em coming."; Bramble is plated "The Matriarch" until Pebble names her.
+- UI, render, sim, audio and infra polish, including a 1 MB initial-JS check in the gate and the gate brought back under 480 s.
+
+Deferred: A3M2's par-specific difficulty (T660b).
+
+**Owner asks (listen):** the Leaving Song's harmony and Thrum's timbre; Pebble's late hum in the SEAL's `door_hum`; Sterling's 2 s silence with the stamps; whether `lose_hush` reads as a hum; whether the Choir layer sits under speech.
