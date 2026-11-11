@@ -103,7 +103,16 @@ export const map = defineMapLayout({
   // Security's machines, the Liability Enforcers' plate, the Silencers), and splash (the Mote
   // clusters and the Fractures, out of the vats) are the map's answers (campaign.md § 4.8). The
   // Associates' heal and the Expediters' haste are intel.
-  threatIntel: ['clustered', 'armored', 'healer_aura', 'splitting', 'jammer', 'haste_aura'],
+  threatIntel: [
+    'clustered',
+    'armored',
+    'healer_aura',
+    'splitting',
+    'jammer',
+    'haste_aura',
+    'gathering',
+    'boss',
+  ],
   requiredCounters: ['jam', 'armor', 'splash'],
   // Protect the bearers (design/maps.md § 5.2): their meter, 12; a hushed bearer costs it 1, and
   // a Hollow unit down the hunt its leak (sim/bearers.ts).

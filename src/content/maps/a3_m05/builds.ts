@@ -59,6 +59,11 @@ const still = (wave: number, afterSec: number, target: GridPos): BuildStep => ({
 
 /** Clears the feed lines in W1's build phase (Cut the Feed). */
 const CUT_FEED: readonly BuildStep[] = FEEDS.map((tile) => ({ wave: 1, clear: tile }));
+/** Clears the intake hoppers (their pads), after the feeds. */
+const CLEAR_HOPPERS: readonly BuildStep[] = [
+  { wave: 1, clear: HOPPER_N },
+  { wave: 1, clear: HOPPER_S },
+];
 
 /** `steps` with each tower `swap` names built as its swap instead (same tile, same upgrades). */
 export function swapped(
@@ -77,28 +82,33 @@ export function swapped(
 function parSteps(): BuildStep[] {
   return [
     ...CUT_FEED,
-    { wave: 1, build: 'thumper', tile: CATWALK_E },
-    { wave: 1, build: 'harpoon', tile: YARD_S },
-    { wave: 1, build: 'thumper', tile: YARD_N },
-    { wave: 2, build: 'choir', tile: BEND },
-    { wave: 3, build: 'thumper', tile: CONDUIT },
-    { wave: 4, build: 'bloom', tile: SLUICE_N },
+    ...CLEAR_HOPPERS,
+    { wave: 1, build: 'thumper', tile: INTAKE_W },
+    { wave: 1, build: 'thumper', tile: YARD_S },
+    { wave: 1, build: 'harpoon', tile: YARD_N },
+    { wave: 2, upgrade: INTAKE_W },
+    { wave: 3, build: 'bloom', tile: SLUICE_N },
+    { wave: 4, build: 'choir', tile: HOPPER_N },
     { wave: 4, build: 'harpoon', tile: SLUICE_S },
-    { wave: 5, upgrade: BEND },
-    { wave: 6, upgrade: CATWALK_E },
-    { wave: 6, build: 'harpoon', tile: VAT_E },
-    { wave: 7, upgrade: YARD_S },
-    { wave: 8, upgrade: CONDUIT },
-    { wave: 8, upgrade: BEND },
-    { wave: 9, upgrade: SLUICE_S },
-    { wave: 9, upgrade: SLUICE_N },
-    { wave: 10, upgrade: CATWALK_E },
-    { wave: 10, upgrade: CONDUIT },
-    { wave: 11, upgrade: VAT_E },
-    { wave: 12, specialize: CATWALK_E, spec: 'a' },
-    { wave: 13, upgrade: YARD_S },
-    { wave: 13, upgrade: VAT_E },
-    { wave: 14, specialize: CONDUIT, spec: 'a' },
+    { wave: 5, upgrade: YARD_S },
+    { wave: 6, upgrade: YARD_N },
+    { wave: 6, upgrade: HOPPER_N },
+    { wave: 7, build: 'thumper', tile: CONDUIT },
+    { wave: 8, upgrade: INTAKE_W },
+    { wave: 8, upgrade: SLUICE_S },
+    { wave: 9, build: 'thumper', tile: CATWALK_E },
+    { wave: 9, upgrade: CONDUIT },
+    { wave: 10, upgrade: YARD_S },
+    { wave: 10, upgrade: HOPPER_N },
+    { wave: 11, upgrade: CATWALK_E },
+    { wave: 11, upgrade: YARD_N },
+    { wave: 12, upgrade: CONDUIT },
+    { wave: 12, specialize: INTAKE_W, spec: 'a' },
+    { wave: 13, upgrade: SLUICE_N },
+    { wave: 13, upgrade: SLUICE_S },
+    { wave: 14, build: 'harpoon', tile: VAT_E },
+    { wave: 15, upgrade: CATWALK_E },
+    { wave: 15, upgrade: VAT_E },
   ];
 }
 
@@ -119,8 +129,8 @@ export const builds = defineBuilds({
       steps: swapped(PAR.steps, { choir: 'prism', bloom: 'sproing' }, false),
     },
     armor: {
-      loadout: ['choir', 'mindspike', 'thumper', 'bloom'],
-      steps: swapped(PAR.steps, { harpoon: 'mindspike' }),
+      loadout: ['choir', 'sproing', 'thumper', 'bloom'],
+      steps: swapped(PAR.steps, { harpoon: 'sproing' }),
     },
     splash: {
       loadout: ['choir', 'harpoon', 'prism', 'bloom'],

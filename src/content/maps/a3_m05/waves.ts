@@ -71,7 +71,7 @@ export const waves = defineWaves([
   // W3 · Fractures + Motes
   { ...CALL, groups: [fractures(2, 'road', 0), motes(6, 'road', 4), drones(3, 8)] },
   // W4 · one Auditor [T: ring tell; interrupt with Stillness or Bloom; Choir]
-  { ...NO_CALL, teach: true, groups: [drones(3, 0), auditors(1, 3), drones(3, 7)] },
+  { ...NO_CALL, groups: [drones(3, 0), auditors(1, 3), drones(3, 7)] },
   // W5 · Kip opens the vats: the first bearers walk; the Hollow hunt them
   {
     ...NO_CALL,
