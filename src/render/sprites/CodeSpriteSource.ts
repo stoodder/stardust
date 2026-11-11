@@ -15,6 +15,7 @@ import {
   type BakedSprite,
 } from './bake.ts';
 import { drawImageAt } from './canvas.ts';
+import type { RgbaImage } from './rasterize.ts';
 import type { FrameRef, SpriteSource } from './SpriteSource.ts';
 
 /** Texture key prefix for atlas pages (`sprites.0`, `sprites.1`, …). */
@@ -74,13 +75,24 @@ export class CodeSpriteSource implements SpriteSource {
       c.getContext('2d', { willReadFrequently: true });
       return c;
     });
+    // Each page's pixels are composed in memory, then put once (T764): a put per frame (thousands
+    // of them) cost ~0.15 s a boot. Placements never overlap, so this is the same image.
     const byKey = new Map(frames.map((f) => [f.key, f]));
+    const pixels = packed.pages.map((p) => ({
+      w: Math.max(1, p.w),
+      h: Math.max(1, p.h),
+      data: new Uint8ClampedArray(Math.max(1, p.w) * Math.max(1, p.h) * 4),
+    }));
     for (const pl of packed.placements) {
       const f = byKey.get(pl.key);
-      const canvas = canvases[pl.page];
-      if (f === undefined || canvas === undefined) continue;
-      drawImageAt(canvas, f.image, pl.x, pl.y);
+      const page = pixels[pl.page];
+      if (f === undefined || page === undefined) continue;
+      blit(page, f.image, pl.x, pl.y);
     }
+    pixels.forEach((page, i) => {
+      const canvas = canvases[i];
+      if (canvas !== undefined) drawImageAt(canvas, page, 0, 0);
+    });
     const textures = canvases.map((canvas, i) => {
       const key = `${PAGE_PREFIX}${i}`;
       const tex = scene.textures.addCanvas(key, canvas);
@@ -141,5 +153,16 @@ export class CodeSpriteSource implements SpriteSource {
     const r = this.#where.get(key);
     if (r === undefined) throw new Error(`sprites: unknown frame '${key}'`);
     return r;
+  }
+}
+
+/** Copies `img` into `page` at (x, y), replacing what was there (it must fit): whole pixels. */
+function blit(page: RgbaImage, img: RgbaImage, x: number, y: number): void {
+  const dst = new Uint32Array(page.data.buffer);
+  const src = new Uint32Array(img.data.buffer, img.data.byteOffset, img.w * img.h);
+  for (let r = 0; r < img.h; r++) {
+    const from = r * img.w;
+    const to = (y + r) * page.w + x;
+    for (let c = 0; c < img.w; c++) dst[to + c] = src[from + c] ?? 0;
   }
 }

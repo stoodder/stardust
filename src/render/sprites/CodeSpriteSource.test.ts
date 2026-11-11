@@ -2,6 +2,9 @@
 // asks for `willReadFrequently`, so the bake's puts and Phaser's readback stay off the GPU. The
 // browser is stood in for by stubs (a canvas that records its context requests, an ImageData).
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { PALETTES } from '../../content/palettes/index.ts';
+import { SPRITES } from '../../content/sprites/index.ts';
+import { bakeAll } from './bake.ts';
 import { CodeSpriteSource, PAGE_PREFIX, type SpriteScene } from './CodeSpriteSource.ts';
 
 interface FakeCanvas {
@@ -68,5 +71,70 @@ describe('CodeSpriteSource', () => {
     for (const c of canvases) {
       expect(c.contexts[0]).toEqual(['2d', { willReadFrequently: true }]);
     }
+  });
+
+  it('puts each atlas page once, holding every frame at its placement (T764)', () => {
+    const puts: { page: number; x: number; y: number; w: number; data: Uint8ClampedArray }[] = [];
+    let made = 0;
+    vi.stubGlobal('document', {
+      createElement: () => {
+        const page = made++;
+        return {
+          width: 0,
+          height: 0,
+          getContext: () => ({
+            putImageData: (img: { data: Uint8ClampedArray; w: number }, x: number, y: number) =>
+              puts.push({ page, x, y, w: img.w, data: img.data }),
+          }),
+        };
+      },
+    });
+    vi.stubGlobal(
+      'ImageData',
+      class {
+        readonly data: Uint8ClampedArray;
+        readonly w: number;
+        constructor(data: Uint8ClampedArray, w: number) {
+          this.data = data;
+          this.w = w;
+        }
+      },
+    );
+    const frames = new Map<string, { page: number; x: number; y: number; w: number; h: number }>();
+    const scene: SpriteScene = {
+      textures: {
+        addCanvas: (key: string) => {
+          const page = Number(key.slice(PAGE_PREFIX.length));
+          return {
+            add: (name: string, _src: number, x: number, y: number, w: number, h: number) =>
+              frames.set(name, { page, x, y, w, h }),
+          };
+        },
+      },
+      anims: { create: () => undefined },
+    };
+    new CodeSpriteSource().register(scene);
+
+    expect(puts.map((p) => [p.page, p.x, p.y])).toEqual(
+      Array.from({ length: made }, (_, i) => [i, 0, 0]),
+    );
+    // Every frame's pixels, row by row, where its texture frame says it is.
+    let checked = 0;
+    for (const b of bakeAll(SPRITES, PALETTES)) {
+      for (const f of b.frames) {
+        const at = frames.get(f.key);
+        const put = at === undefined ? undefined : puts[at.page];
+        if (at === undefined || put === undefined) throw new Error(`no placement for ${f.key}`);
+        expect([at.w, at.h]).toEqual([f.image.w, f.image.h]);
+        for (let r = 0; r < f.image.h; r++) {
+          const start = ((at.y + r) * put.w + at.x) * 4;
+          const row = put.data.subarray(start, start + f.image.w * 4);
+          const want = f.image.data.subarray(r * f.image.w * 4, (r + 1) * f.image.w * 4);
+          if (!row.every((v, i) => v === want[i])) throw new Error(`${f.key}: row ${r} differs`);
+        }
+        checked++;
+      }
+    }
+    expect(checked).toBe(frames.size);
   });
 });

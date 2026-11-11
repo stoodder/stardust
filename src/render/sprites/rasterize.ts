@@ -164,8 +164,16 @@ export function outlinePass(
 /** Converts an indexed image to RGBA through a color lookup. */
 export function colorize(img: IndexedImage, lookup: ColorLookup): RgbaImage {
   const data = new Uint8ClampedArray(img.w * img.h * 4);
+  // A lookup is a pure function of the code, so each code is looked up once per image, not once
+  // per pixel: the boot bakes thousands of frames (conventions.md § Gate time, keep boot cheap).
+  const seen: (Rgba | null | undefined)[] = [];
   for (let i = 0; i < img.px.length; i++) {
-    const c = lookup(img.px[i] ?? DOT);
+    const code = img.px[i] ?? DOT;
+    let c = seen[code];
+    if (c === undefined) {
+      c = lookup(code);
+      seen[code] = c;
+    }
     if (c === null) continue;
     data[i * 4] = c.r;
     data[i * 4 + 1] = c.g;

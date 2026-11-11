@@ -7,14 +7,7 @@ import type {
   CompiledBuilds,
 } from './compiled.ts';
 import { checkId, ticks, type Ctx, type Refs } from './compileHelpers.ts';
-import type {
-  BuildStep,
-  CounterId,
-  IdSpace,
-  MapDef,
-  ProfileDef,
-  ScriptedBuild,
-} from './types.ts';
+import type { BuildStep, CounterId, IdSpace, MapDef, ProfileDef, ScriptedBuild } from './types.ts';
 
 export function compileBuilds<K extends IdSpace>(
   ctx: Ctx,

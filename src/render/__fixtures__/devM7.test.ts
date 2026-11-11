@@ -146,7 +146,7 @@ describe('validation of the M7 map seams', () => {
 
   it('[script-group], [script]: spawnWave names a group; `cleared` names wreckage before a wave', () => {
     const events = bearersMap.events!.map((e) =>
-      e.id === 'surge' ? { ...e, actions: [{ spawnWave: 'nope' }] } : e,
+      e.id === 'surge' ? Object.assign({}, e, { actions: [{ spawnWave: 'nope' }] }) : e,
     );
     expect(errors(bearers({ events }), 'script-group')).toEqual([
       "[script-group] maps.dev_bearers.events: spawnWave names no script group 'nope'",
