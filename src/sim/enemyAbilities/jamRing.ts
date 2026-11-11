@@ -21,7 +21,7 @@
 // - No allocation but the JamTell event's tower list, on a ring's start.
 import type { CompiledJam } from '../../content/compiled.ts';
 import type { Enemy } from '../entities.ts';
-import { canJam, JAM_FIRST_READY_TICKS, jamTower } from '../jam.ts';
+import { canJam, JAM_FIRST_READY_TICKS, jamRoom, jamTower } from '../jam.ts';
 import { emit, type SimState } from '../state.ts';
 import { cooldownHeld, isInterrupted } from '../systems/status.ts';
 import type { TickContext } from '../tick.ts';
@@ -101,7 +101,9 @@ export function ringStep(state: SimState, e: Enemy, j: CompiledJam): void {
     const pool = state.towers;
     for (let i = 0; i < pool.used; i++) {
       const t = pool.items[i]!; // i < used ≤ items.length
-      if (canJam(t) && inJamReach(e, t, j)) jamTower(state, t, j.durationTicks, e.uid);
+      if (!canJam(t) || !inJamReach(e, t, j)) continue;
+      if (jamRoom(state) <= 0) break; // the jam limit: the rest of the ring lands on nothing
+      jamTower(state, t, j.durationTicks, e.uid);
     }
     restart(e, j);
     return;

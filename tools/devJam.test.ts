@@ -61,11 +61,13 @@ describe('dev_silence (T702)', () => {
     expect(s.state.outcome).toBe('won');
   });
 
-  it('the Silencers tell on the Choir first, and their jams land and end', () => {
+  it('the Silencers tell on the Choir once it is in reach, and their jams land and end', () => {
+    // A Silencer tells as soon as a tower is in reach (T760), so its first tendril takes the first
+    // tower on the road; the Choir is picked over the Rivets beside it once the Silencer reaches it.
     const tells = events.filter((e) => e.type === 'JamTell');
     const choir = towerAt(s, 7, 2);
     expect(tells.length).toBeGreaterThan(0);
-    expect(tells[0]).toMatchObject({ kind: 'tendril', towers: [choir.uid] });
+    expect(tells.some((e) => e.kind === 'tendril' && e.towers[0] === choir.uid)).toBe(true);
     const jammed = events.filter((e) => e.type === 'TowerJammed');
     const freed = events.filter((e) => e.type === 'TowerUnjammed');
     expect(jammed.length).toBeGreaterThan(0);

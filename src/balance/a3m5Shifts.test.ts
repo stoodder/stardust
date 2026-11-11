@@ -11,6 +11,7 @@ import { bothWays, delay, shiftedContent } from './__fixtures__/shifts.ts';
 import { HARNESS_TEST_TIMEOUT_MS } from './rules.ts';
 
 const WAVES = 17;
+const BAND = compileContent(RAW_CONTENT).maps.a3_m05.builds.marginBand!;
 /** The furthest down the road (of 38 tiles) any shifted par drives the platform off. */
 const WORST_DRIVE_OFF = 37.5;
 
@@ -48,8 +49,9 @@ describe('A3M5 shifts', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
     const r = runA3m5(c, 'par');
     expect(beatMisses(r), 'par').toEqual([]);
     const margin = Math.min(r.integrity / 22, r.asset / 12) * 100;
-    expect(margin).toBeGreaterThanOrEqual(50);
-    expect(margin).toBeLessThanOrEqual(70);
+    // The map's band (50–75: its marginBand; T760's par sits at 63.6 and moves 58.3–72.7 here).
+    expect(margin).toBeGreaterThanOrEqual(BAND.minPct);
+    expect(margin).toBeLessThanOrEqual(BAND.maxPct);
     expect(r.droveOffAt!).toBeLessThan(WORST_DRIVE_OFF);
     expect(WORST_DRIVE_OFF).toBeLessThan(ROAD_TILES);
   });

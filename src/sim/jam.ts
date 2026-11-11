@@ -97,11 +97,11 @@ export function jamTicksFor(t: Readonly<Pick<Tower, 'jamMul'>>, durationTicks: n
 
 /**
  * Jams `t` for `durationTicks` (before its `jamMul`) from `source` (a jammer's uid, or a boss's):
- * lands only when `canJam` and within the jam limit (`jamRoom`). Returns the ticks it landed for,
- * or 0 when it didn't.
+ * lands only when `canJam`. Returns the ticks it landed for, or 0 when it didn't. The jammers land
+ * through it only within the jam limit (`jamRoom`; the tendril, the ring, and the Takeover check).
  */
 export function jamTower(state: SimState, t: Tower, durationTicks: number, source: number): number {
-  if (!canJam(t) || jamRoom(state) <= 0) return 0;
+  if (!canJam(t)) return 0;
   const ticks = jamTicksFor(t, durationTicks);
   if (ticks <= 0) return 0;
   t.jamTicks = ticks;

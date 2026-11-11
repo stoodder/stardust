@@ -20,6 +20,7 @@ import type { SimEvent } from './events.ts';
 import { FEATURE_GATES } from './gates.ts';
 import {
   canJam,
+  JAM_FIRST_READY_TICKS,
   JAM_IMMUNITY_TICKS,
   JAM_MAX_TICKS,
   jamImmune,
@@ -41,7 +42,13 @@ const RIVET = LIVE.towers.rivet!;
 const MINDSPIKE = LIVE.towers.mindspike!;
 const LULLABY: CompiledTier = CHOIR.specs!.a;
 const RALLY: CompiledTier = CHOIR.specs!.b;
-const WAIT = JAM.periodTicks - JAM.tellTicks; // 600: the first tell starts this long after the spawn
+/** After a landing, the next tell starts this long after it (the period less the tell: 600). */
+const WAIT = JAM.periodTicks - JAM.tellTicks;
+/**
+ * The first tell starts this many ticks after the Silencer's first tick alive (T760: ready at once,
+ * JAM_FIRST_READY_SEC 0, so the tick after; it tells as soon as a tower is in reach).
+ */
+const FIRST = Math.max(1, JAM_FIRST_READY_TICKS);
 
 function world(): { state: SimState; ctx: TickContext } {
   const config = fixtureConfig();
@@ -126,7 +133,7 @@ describe('the Jammed state (enemies.md § 4; sim/jam.ts)', () => {
   it('is capped at JAM_MAX_SEC and scaled by the tower’s jamMul as it starts', () => {
     const t = { jamMul: 1 };
     expect(JAM_MAX_TICKS).toBe(JAM_MAX_SEC * 60);
-    expect(jamTicksFor(t, 600)).toBe(240); // capped
+    expect(jamTicksFor(t, 600)).toBe(JAM_MAX_TICKS); // capped (6 s: 360)
     expect(jamTicksFor({ jamMul: 0.5 }, 240)).toBe(120); // Choir T1–T2
     expect(jamTicksFor({ jamMul: 0.25 }, 240)).toBe(60); // Choir T3, Lullaby
     expect(jamTicksFor({ jamMul: 0 }, 240)).toBe(0); // Rally Chorus: immune
@@ -229,23 +236,23 @@ describe('the Jammed state (enemies.md § 4; sim/jam.ts)', () => {
 });
 
 describe('the Silencer’s tendril (enemies.md § 5.4; jamTendril.ts)', () => {
-  it('its numbers: every 12 s, a 2 s tell, 2.5 tiles, 4 s, Choir first', () => {
+  it('its numbers: every 12 s, a 2 s tell, 2.5 tiles, 6 s, Choir first', () => {
     expect(JAM).toMatchObject({
       kind: 'tendril',
       periodTicks: 720,
       tellTicks: 120,
       radiusTiles: 2.5,
-      durationTicks: 240,
+      durationTicks: 360,
       preferChoir: true,
     });
   });
 
-  it('tells one period after its spawn, holds still through it, then jams its pick for 4 s', () => {
+  it('tells as soon as a tower is in reach, holds still through it, then jams its pick for 6 s', () => {
     const { state, ctx } = world();
     const rivet = placeTower(state, RIVET, 3, 1);
     const e = spawn(state, SILENCER, { dist: 2 });
-    run(state, ctx, 1); // first tick alive: the period starts
-    let events = run(state, ctx, WAIT - 1);
+    run(state, ctx, 1); // first tick alive: it is ready
+    let events = run(state, ctx, FIRST - 1);
     expect(events).toEqual([]);
     events = run(state, ctx, 1);
     expect(events).toEqual([{ type: 'JamTell', uid: e.uid, kind: 'tendril', towers: [rivet.uid] }]);
@@ -254,7 +261,7 @@ describe('the Silencer’s tendril (enemies.md § 5.4; jamTendril.ts)', () => {
     expect(events).toEqual([]);
     expect(e.jamTellTicks).toBe(1);
     events = run(state, ctx, 1);
-    expect(events).toEqual([{ type: 'TowerJammed', uid: rivet.uid, ticks: 240, source: e.uid }]);
+    expect(events).toEqual([{ type: 'TowerJammed', uid: rivet.uid, ticks: 360, source: e.uid }]);
     expect([tendrilTelling(e), e.jamTarget, e.jamTicks]).toEqual([false, 0, JAM.periodTicks]);
     // The next tell starts a whole period after this one did.
     expect(types(run(state, ctx, WAIT - 1))).not.toContain('JamTell');
@@ -286,7 +293,7 @@ describe('the Silencer’s tendril (enemies.md § 5.4; jamTendril.ts)', () => {
     const { state, ctx } = world();
     const e = spawn(state, SILENCER, { dist: 2 });
     placeTower(state, RIVET, 4, 2); // out of reach
-    run(state, ctx, WAIT + 30);
+    run(state, ctx, FIRST + 30);
     expect([e.jamTicks, e.jamTarget]).toEqual([JAM.tellTicks, 0]);
     const t = placeTower(state, RIVET, 3, 1);
     expect(run(state, ctx, 1)).toEqual([
@@ -299,7 +306,7 @@ describe('the Silencer’s tendril (enemies.md § 5.4; jamTendril.ts)', () => {
       const { state, ctx } = world();
       const t = placeTower(state, RIVET, 3, 1);
       const e = spawn(state, SILENCER, { dist: 2 });
-      run(state, ctx, WAIT + 1);
+      run(state, ctx, FIRST + 1);
       expect(e.jamTarget).toBe(t.uid);
       if (spoil === 'sold') t.alive = false;
       if (spoil === 'pulled') [e.x, e.y] = [5.5, 4.5]; // a Gravity Well carried it off
@@ -316,7 +323,7 @@ describe('the Silencer’s tendril (enemies.md § 5.4; jamTendril.ts)', () => {
       const { state, ctx } = world();
       const t = placeTower(state, RIVET, 3, 1);
       const e = spawn(state, SILENCER, { dist: 2 });
-      run(state, ctx, WAIT + 1 + 50);
+      run(state, ctx, FIRST + 1 + 50);
       e[status] = 30;
       expect(run(state, ctx, 1)).toEqual([{ type: 'JamInterrupted', uid: e.uid }]);
       expect([e.jamTarget, e.jamTellTicks, e.jamTicks]).toEqual([0, 0, JAM.periodTicks]);
@@ -332,7 +339,7 @@ describe('the Silencer’s tendril (enemies.md § 5.4; jamTendril.ts)', () => {
     const { state, ctx } = world();
     placeTower(state, RIVET, 3, 1);
     const e = spawn(state, SILENCER, { dist: 2 });
-    run(state, ctx, WAIT);
+    run(state, ctx, FIRST); // its first tick alive: ready from the next
     e.stasisTicks = 5;
     expect(run(state, ctx, 1)).toEqual([]);
     expect(e.jamTicks).toBe(JAM.periodTicks);
@@ -342,25 +349,27 @@ describe('the Silencer’s tendril (enemies.md § 5.4; jamTendril.ts)', () => {
     const { state, ctx } = world();
     placeTower(state, RIVET, 3, 1);
     const e = spawn(state, SILENCER, { dist: 2 });
-    let tellAt = -1;
-    let landAt = -1;
-    for (let i = 0; i < 2000 && landAt < 0; i++) {
+    const tells: number[] = [];
+    const lands: number[] = [];
+    for (let i = 0; i < 3000 && lands.length < 2; i++) {
       // lullPass's beat, as a Lullaby holds it every tick
       e.lulled = true;
       e.lullBeat = (e.lullBeat + 1) % 3;
       const events = run(state, ctx, 1);
-      if (types(events).includes('JamTell')) tellAt = i;
-      if (types(events).includes('TowerJammed')) landAt = i;
+      if (types(events).includes('JamTell')) tells.push(i);
+      if (types(events).includes('TowerJammed')) lands.push(i);
     }
-    expect(tellAt).toBe(1 + WAIT * 1.5 - 1);
-    expect(landAt - tellAt).toBe(JAM.tellTicks);
+    // The first tell has no wait to stretch; the wait after a landing runs ×1.5.
+    expect(tells[0]).toBe(FIRST);
+    expect(tells[1]! - lands[0]!).toBe(WAIT * 1.5);
+    expect(lands.map((l, k) => l - tells[k]!)).toEqual([JAM.tellTicks, JAM.tellTicks]);
   });
 
   it('a leaving Silencer drops its tell quietly', () => {
     const { state, ctx } = world();
     placeTower(state, RIVET, 3, 1);
     const e: Enemy = spawn(state, SILENCER, { dist: 2 });
-    run(state, ctx, WAIT + 1);
+    run(state, ctx, FIRST + 1);
     e.leaving = true;
     expect(run(state, ctx, JAM.tellTicks)).toEqual([]);
     expect(e.jamTarget).toBe(0);

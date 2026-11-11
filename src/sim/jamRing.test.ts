@@ -16,7 +16,7 @@ import { castReboot } from './abilities/reboot.ts';
 import { ringGrowth, ringTelling } from './enemyAbilities/jamRing.ts';
 import type { SimEvent } from './events.ts';
 import { FEATURE_GATES } from './gates.ts';
-import { jams, jamTower } from './jam.ts';
+import { JAM_FIRST_READY_TICKS, jams, jamTower } from './jam.ts';
 import { createState, type SimState } from './state.ts';
 import { links } from './systems/links.ts';
 import { createScratch, type TickContext } from './tick.ts';
@@ -26,7 +26,18 @@ const AUDITOR = LIVE.enemies.auditor!;
 const RING = AUDITOR.jam!;
 const CHOIR = LIVE.towers.choir!;
 const RIVET = LIVE.towers.rivet!;
-const WAIT = RING.periodTicks - RING.tellTicks; // 480: the first ring starts this long after the spawn
+/** After a landing, the next ring starts this long after it (the period less the tell: 480). */
+const WAIT = RING.periodTicks - RING.tellTicks;
+/** The first ring may start this many ticks after its first tick alive (T760: at once, in reach). */
+const FIRST = Math.max(1, JAM_FIRST_READY_TICKS);
+
+/**
+ * `n` Rivets out of the Auditor's reach (rows 3–4): towers placed count toward the jam limit,
+ * max(1, floor(25% × placed)), so a test of a ring landing on several towers fills the map first.
+ */
+function fill(state: SimState, n: number): void {
+  for (let i = 0; i < n; i++) placeTower(state, RIVET, i % 6, 3 + Math.floor(i / 6));
+}
 
 function world(): { state: SimState; ctx: TickContext } {
   const config = fixtureConfig();
@@ -49,27 +60,28 @@ function run(state: SimState, ctx: TickContext, n: number): SimEvent<IdSpace>[] 
 }
 
 describe('the Auditor’s ring (enemies.md § 4)', () => {
-  it('is the roster row: every 10 s a 2 s ring, 2 tiles, 3 s; the tell is at least 1.5 s', () => {
+  it('is the roster row: every 10 s a 2 s ring, 2 tiles, 4 s; the tell is at least 1.5 s', () => {
     expect(RING).toMatchObject({
       kind: 'ring',
       periodTicks: 600,
       tellTicks: 120,
       radiusTiles: 2,
-      durationTicks: 180,
+      durationTicks: 240,
       preferChoir: false,
     });
     expect(RING.tellTicks).toBeGreaterThanOrEqual(secToTicks(JAM_MIN_TELL_SEC));
     expect(FEATURE_GATES['enemy.jam.ring']).toBeNull();
   });
 
-  it('rings 8 s after its spawn, holds still, then jams every tower in reach for 3 s', () => {
+  it('rings as soon as a tower is in reach, holds still, then jams every tower in reach for 4 s', () => {
     const { state, ctx } = world();
     const a = placeTower(state, RIVET, 1, 1);
     const b = placeTower(state, RIVET, 3, 1);
     const edge = placeTower(state, RIVET, 4, 0);
     const far = placeTower(state, RIVET, 3, 2);
+    fill(state, 8); // 12 placed: the jam limit is 3
     const e = spawn(state, AUDITOR, { dist: 2 });
-    expect(run(state, ctx, WAIT)).toEqual([]);
+    expect(run(state, ctx, FIRST)).toEqual([]);
     const tell = run(state, ctx, 1);
     expect(tell).toEqual([
       { type: 'JamTell', uid: e.uid, kind: 'ring', towers: [a.uid, b.uid, edge.uid] },
@@ -82,12 +94,12 @@ describe('the Auditor’s ring (enemies.md § 4)', () => {
     expect(ringGrowth(e)).toBeCloseTo(1 - 1 / RING.tellTicks);
     const landed = run(state, ctx, 1);
     expect(landed).toEqual(
-      [a, b, edge].map((t) => ({ type: 'TowerJammed', uid: t.uid, ticks: 180, source: e.uid })),
+      [a, b, edge].map((t) => ({ type: 'TowerJammed', uid: t.uid, ticks: 240, source: e.uid })),
     );
-    expect([a.jamTicks, b.jamTicks, edge.jamTicks, far.jamTicks]).toEqual([180, 180, 180, 0]);
+    expect([a.jamTicks, b.jamTicks, edge.jamTicks, far.jamTicks]).toEqual([240, 240, 240, 0]);
     expect(ringTelling(e)).toBe(false);
-    // Landing to landing is the period: the next ring lands 480 ticks on, and the towers are
-    // jammable again by then (3 s jams, then JAM_IMMUNITY_SEC's 3 s of immunity: free at 360).
+    // Landing to landing is the period: the next ring lands 600 ticks on, and the towers are
+    // jammable again by then (4 s jams, then JAM_IMMUNITY_SEC's 3 s of immunity: free at 420).
     const next = run(state, ctx, RING.periodTicks);
     const kinds = next.map((ev) => ev.type);
     expect(kinds.filter((k) => k === 'TowerUnjammed')).toHaveLength(3);
@@ -95,12 +107,13 @@ describe('the Auditor’s ring (enemies.md § 4)', () => {
     expect(kinds.filter((k) => k === 'TowerJammed')).toHaveLength(3); // immunity spent
   });
 
-  it('skips Jammed and immune towers, and a Choir at T3 makes it 0.75 s', () => {
+  it('skips Jammed and immune towers, and a Choir at T3 makes it 1 s', () => {
     const { state, ctx } = world();
     const choir = placeTower(state, CHOIR, 3, 1, 3);
     const shielded = placeTower(state, RIVET, 1, 1); // within the Choir's 2 tiles
     const jammed = placeTower(state, RIVET, 4, 0);
     const immune = placeTower(state, RIVET, 1, 0);
+    fill(state, 8); // 12 placed: the jam limit is 3, one Jammed already
     state.linksDirty = true;
     links(state, ctx);
     state.events.length = 0;
@@ -108,13 +121,13 @@ describe('the Auditor’s ring (enemies.md § 4)', () => {
     jammed.jamTicks = 5000; // still Jammed when the ring lands
     immune.jamImmuneTicks = 5000; // a jam's end or a Reboot
     const e = spawn(state, AUDITOR, { dist: 2 });
-    run(state, ctx, WAIT);
+    run(state, ctx, FIRST);
     const tell = run(state, ctx, 1);
     expect(tell[0]).toMatchObject({ kind: 'ring', towers: [choir.uid, shielded.uid] });
     const landed = run(state, ctx, RING.tellTicks);
     expect(landed).toEqual([
-      { type: 'TowerJammed', uid: choir.uid, ticks: 180, source: e.uid }, // no Choir guards a Choir
-      { type: 'TowerJammed', uid: shielded.uid, ticks: 45, source: e.uid }, // × 0.25
+      { type: 'TowerJammed', uid: choir.uid, ticks: 240, source: e.uid }, // no Choir guards a Choir
+      { type: 'TowerJammed', uid: shielded.uid, ticks: 60, source: e.uid }, // × 0.25
     ]);
   });
 
@@ -122,7 +135,7 @@ describe('the Auditor’s ring (enemies.md § 4)', () => {
     const { state, ctx } = world();
     const far = placeTower(state, RIVET, 3, 2);
     const e = spawn(state, AUDITOR, { dist: 2 });
-    expect(run(state, ctx, WAIT + 200)).toEqual([]); // ready, but nothing to ring
+    expect(run(state, ctx, FIRST + 200)).toEqual([]); // ready, but nothing to ring
     expect(e.jamTellTicks).toBe(0);
     const near = placeTower(state, RIVET, 1, 1);
     expect(run(state, ctx, 1)).toEqual([
@@ -140,7 +153,7 @@ describe('the Auditor’s ring (enemies.md § 4)', () => {
     const { state, ctx } = world();
     placeTower(state, RIVET, 1, 1);
     const e = spawn(state, AUDITOR, { dist: 2 });
-    run(state, ctx, WAIT + 1 + 30);
+    run(state, ctx, FIRST + 1 + 30);
     expect(ringTelling(e)).toBe(true);
     e.stasisTicks = 5;
     expect(run(state, ctx, 1)).toEqual([{ type: 'JamInterrupted', uid: e.uid }]);
@@ -157,9 +170,34 @@ describe('the Auditor’s ring (enemies.md § 4)', () => {
     const { state, ctx } = world();
     placeTower(state, RIVET, 1, 1);
     const e = spawn(state, AUDITOR, { dist: 2 });
-    run(state, ctx, WAIT + 10);
+    run(state, ctx, FIRST + 10);
     e.leaving = true;
     expect(run(state, ctx, RING.tellTicks + 5)).toEqual([]);
     expect(e.jamTellTicks).toBe(0);
+  });
+
+  it('lands within the jam limit: max(1, 25% of the towers placed), counting the Jammed', () => {
+    // Four towers placed (three in reach): the limit is 1, so the ring lands on the first only.
+    const { state, ctx } = world();
+    const a = placeTower(state, RIVET, 1, 1);
+    const b = placeTower(state, RIVET, 3, 1);
+    const edge = placeTower(state, RIVET, 4, 0);
+    placeTower(state, RIVET, 3, 2);
+    spawn(state, AUDITOR, { dist: 2 });
+    run(state, ctx, FIRST + RING.tellTicks + 1); // the init, then the whole ring
+    expect([a.jamTicks, b.jamTicks, edge.jamTicks]).toEqual([240, 0, 0]); // landed this tick
+    expect(state.stats.jamOverLimitTicks).toBe(0);
+    // Eight placed with one Jammed elsewhere: room for one more.
+    const w = world();
+    const x = placeTower(w.state, RIVET, 1, 1);
+    const y = placeTower(w.state, RIVET, 3, 1);
+    fill(w.state, 6);
+    const other = w.state.towers.items[w.state.towers.used - 1]!;
+    jamTower(w.state, other, 6000, 1);
+    w.state.events.length = 0;
+    spawn(w.state, AUDITOR, { dist: 2 });
+    run(w.state, w.ctx, FIRST + RING.tellTicks + 1);
+    expect([x.jamTicks, y.jamTicks]).toEqual([240, 0]); // landed this tick
+    expect(w.state.stats.jamOverLimitTicks).toBe(0);
   });
 });

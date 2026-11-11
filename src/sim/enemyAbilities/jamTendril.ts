@@ -26,7 +26,7 @@
 // - No allocation but the JamTell event's one-tower list, on a tell's start.
 import type { CompiledJam } from '../../content/compiled.ts';
 import type { Enemy, Tower } from '../entities.ts';
-import { canJam, JAM_FIRST_READY_TICKS, jamTower, towerByUid } from '../jam.ts';
+import { canJam, JAM_FIRST_READY_TICKS, jamRoom, jamTower, towerByUid } from '../jam.ts';
 import { emit, type SimState } from '../state.ts';
 import { projectsAura } from '../systems/auras.ts';
 import { cooldownHeld, isInterrupted } from '../systems/status.ts';
@@ -112,7 +112,9 @@ export function tendrilStep(state: SimState, e: Enemy, j: CompiledJam): void {
       return;
     }
     const t = towerByUid(state, e.jamTarget);
-    if (t !== null && inJamReach(e, t, j)) jamTower(state, t, j.durationTicks, e.uid);
+    if (t !== null && inJamReach(e, t, j) && jamRoom(state) > 0) {
+      jamTower(state, t, j.durationTicks, e.uid);
+    }
     restart(e, j);
     return;
   }
