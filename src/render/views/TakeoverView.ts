@@ -69,15 +69,14 @@ const WHITE = hexOf('white.1');
 const FILL = hexOf(PLATE_FILL);
 const EDGE = hexOf(PLATE_EDGE);
 const DOOR_TELL_TICKS = secToTicks(BOSS_ABILITY_TELL_SEC);
-/** Without a drawn body: the lens this far above the platform's ground point; a tower's hit here. */
-const PLATFORM_PX = 39;
+/** The laser hits a tower this far above its tile's centre (px). */
 const TOWER_PX = 8;
 /** The jettison's burst sits this far up the hull (px). */
 const HULL_PX = 18;
 
 const a: Vec2 = { x: 0, y: 0 };
 const b: Vec2 = { x: 0, y: 0 };
-const off = { dx: 0, dy: 0 };
+const spot = { dx: 0, dy: 0 };
 const body = blankBox();
 
 /** No enemies (a view bound without them: no jettison burst). */
@@ -206,7 +205,7 @@ export class TakeoverView {
         this.#drawDoor(g, doorShare(e.abilityTicks, DOOR_TELL_TICKS), state.tick ?? 0);
       }
       if (aiming) {
-        const progress = tellProgress(e.jamTellTicks, p.takeover!.tellTicks); // aiming: non-null
+        const progress = tellProgress(e.jamTellTicks, p.takeover.tellTicks);
         for (let k = 0; k < e.takeoverTowers.length; k++) {
           const t = findTower(state.towers, e.takeoverTowers[k]!); // k < length
           if (t === null) continue;
@@ -222,13 +221,18 @@ export class TakeoverView {
 
   /** The hangar door's hazard frame (blinking on the tell step) and its launch gauge under it. */
   #drawDoor(g: Phaser.GameObjects.Graphics, share: number, tick: number): void {
-    doorOffset(body.facing, off);
-    const cx = Math.round(body.x + off.dx);
-    const cy = Math.round(body.groundY + off.dy);
+    doorOffset(body.facing, spot);
+    const cx = Math.round(body.x + spot.dx);
+    const cy = Math.round(body.groundY + spot.dy);
     const half = DOOR_FRAME_PX >> 1;
     const lit = this.#reducedMotion() || Math.floor(tick / TELL_STEP_TICKS) % 2 === 0;
     g.lineStyle(4, INK, 0.85).strokeRect(cx - half, cy - half, DOOR_FRAME_PX, DOOR_FRAME_PX);
-    g.lineStyle(2, DOOR, lit ? 1 : 0.55).strokeRect(cx - half, cy - half, DOOR_FRAME_PX, DOOR_FRAME_PX);
+    g.lineStyle(2, DOOR, lit ? 1 : 0.55).strokeRect(
+      cx - half,
+      cy - half,
+      DOOR_FRAME_PX,
+      DOOR_FRAME_PX,
+    );
     // The gauge: an ink well under the door, filling orange as the launch comes.
     const x = cx - (DOOR_PX >> 1);
     const y = cy + half + 3;
@@ -237,9 +241,9 @@ export class TakeoverView {
   }
 
   #drawLaser(g: Phaser.GameObjects.Graphics, t: DeepReadonly<Tower>, progress: number): void {
-    lensOffset(body.facing, off);
-    a.x = body.x + off.dx;
-    a.y = body.groundY + off.dy;
+    lensOffset(body.facing, spot);
+    a.x = body.x + spot.dx;
+    a.y = body.groundY + spot.dy;
     gridToScreen(t.x, t.y, this.#ctx.origin, b);
     b.y -= this.#liftPx(t.col, t.row) + TOWER_PX;
     const w = laserWidth(progress);

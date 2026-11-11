@@ -137,6 +137,8 @@ export interface RenderState {
   readonly jams: {
     readonly tells: number;
     readonly jammed: number;
+    /** System Reboot's power-on columns showing now (T730a). */
+    readonly columns: number;
     readonly tellsSeen: number;
     readonly jamsSeen: number;
     readonly reboots: number;
@@ -169,7 +171,12 @@ export interface RenderState {
     readonly mergesSeen: number;
   };
   /** Big Glorp's puddles showing now, and seen since the battle began (T705). */
-  readonly gloop: { readonly puddles: number; readonly spawned: number };
+  readonly gloop: {
+    readonly puddles: number;
+    readonly spawned: number;
+    /** Green splats played since the battle began (T730a). */
+    readonly splats: number;
+  };
   /**
    * LeaperView (T704): the Sproing Pad's leapers in the air now and grounded flyers marked now,
    * and bonks and groundings seen since the battle began.

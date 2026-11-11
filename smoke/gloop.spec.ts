@@ -1,8 +1,9 @@
 // T705: the Gloop Spitter on its dev range (`?map=dev_gloop`, render/__fixtures__/devGloop.ts). A
 // Big Glorp Gloop in the road's corner spits green globs (`projectile.gloop_glob`) at the Compliance
 // Officers and the Liability-Class Enforcer: each landing leaves a pool of acid (PuddleView: a
-// translucent green ellipse with a solid rim and glints) that dries in steps, and the units it hits
-// carry Corroded. A Skyhook beside it forms Sticky Flak (its callout and tether). Screenshots in
+// dithered green pool with a ragged rim and bubbles, `fx.puddle`) that dries in steps, and the units it hits
+// carry Corroded; each glob lands in a green splat (T730a: TransientFx `splat`, over the pools, a
+// green ring at its splash, never the Thumper's orange explosion). A Skyhook beside it forms Sticky Flak (its callout and tether). Screenshots in
 // <out>/screens/gloop/ (look at them: the pools under the units and the tether are the point).
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
@@ -71,6 +72,7 @@ test('gloop: the spit, Big Glorp’s puddles, Corroded, and Sticky Flak', async 
   const look = await page.evaluate(() => globalThis.__sd!.render()!.gloop);
   expect(look.puddles).toBeGreaterThanOrEqual(2);
   expect(look.spawned).toBeGreaterThanOrEqual(2);
+  expect(look.splats).toBeGreaterThan(0); // T730a: each glob splats green (not an orange boom)
   const corroded = await page.evaluate(() => {
     const st = globalThis.__sd!.state()!;
     return st.enemies.items.filter((e) => e.alive && e.corrodedStacks > 0).length;

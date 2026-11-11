@@ -19,7 +19,7 @@
 //   MAX_MOTES, its `drift` twinkle started a frame apart per mote; held on its `m0` cross under
 //   reduced motion), drifting up and away, stepping down the alpha ladder over their life.
 // - Splats (T730a; gloopLook.ts): a Gloop glob's green splat on the ground where it lands (its own
-//   pool of SPLAT_POOL, stepping out), its splash's reach in a green ring, and green drops flung up
+//   pool of SPLAT_POOL, made on the first splat so it draws over the puddles; stepping out), its splash's reach in a green ring, and green drops flung up
 //   (none under reduced motion).
 // FxView adds the abilities' effects on top (the Orbital Strike, Suppressing Fire).
 import type * as Phaser from 'phaser';
@@ -52,13 +52,7 @@ import {
 import { FLOAT_ROW_PX, stackFloat, type FloatSlot } from '../vfx/floatStack.ts';
 import type { KeepClear } from '../vfx/keepClear.ts';
 import { imageToCanvas } from '../sprites/canvas.ts';
-import {
-  SPLAT_DROP_COLORS,
-  SPLAT_DROPS,
-  SPLAT_MS,
-  SPLAT_RING,
-  splatImage,
-} from './gloopLook.ts';
+import { SPLAT_DROP_COLORS, SPLAT_DROPS, SPLAT_MS, SPLAT_RING, splatImage } from './gloopLook.ts';
 import type { ViewContext } from './ViewContext.ts';
 
 /** Pool sizes: the oldest effect of a kind is reused when its pool is full. */
@@ -336,15 +330,6 @@ export class TransientFx {
       layers.vfx.add(sprite);
       this.#motes.push({ active: false, ms: 0, lifeMs: 0, x: 0, y: 0, vx: 0, vy: 0, sprite });
     }
-    if (!scene.textures.exists(SPLAT_KEY)) {
-      scene.textures.addCanvas(SPLAT_KEY, imageToCanvas(splatImage()));
-    }
-    for (let i = 0; i < SPLAT_POOL; i++) {
-      const img = scene.make.image({}, false).setTexture(SPLAT_KEY);
-      img.setDisplayOrigin(SPLAT_OX, SPLAT_OY).setVisible(false);
-      layers.decal.add(img);
-      this.#splats.push({ active: false, ms: 0, durationMs: SPLAT_MS, img });
-    }
     const px1 = debrisTexture(scene, 1);
     for (let i = 0; i < MAX_DEBRIS; i++) {
       const img = scene.make.image({}, false).setTexture(px1).setOrigin(0, 0).setVisible(false);
@@ -370,6 +355,7 @@ export class TransientFx {
    * splash's reach `radiusTiles` in a green ring, and green drops flung up (none, reduced motion).
    */
   splat(x: number, y: number, radiusTiles: number): void {
+    if (this.#splats.length === 0) this.#makeSplats();
     const s = this.#splats[this.#nextSplat]!; // index < SPLAT_POOL
     this.#nextSplat = (this.#nextSplat + 1) % SPLAT_POOL;
     gridToScreen(x, y, this.ctx.origin, pos);
@@ -385,6 +371,23 @@ export class TransientFx {
 
   /** Splats played since the view was made (the smoke flow's check). */
   splatsShown = 0;
+
+  /**
+   * The splat pool, made on the first splat: added to `decal` after the views built with the
+   * scene (Big Glorp's puddles among them), so a splat lands over a puddle, not under it.
+   */
+  #makeSplats(): void {
+    const { scene, layers } = this.ctx;
+    if (!scene.textures.exists(SPLAT_KEY)) {
+      scene.textures.addCanvas(SPLAT_KEY, imageToCanvas(splatImage()));
+    }
+    for (let i = 0; i < SPLAT_POOL; i++) {
+      const img = scene.make.image({}, false).setTexture(SPLAT_KEY);
+      img.setDisplayOrigin(SPLAT_OX, SPLAT_OY).setVisible(false);
+      layers.decal.add(img);
+      this.#splats.push({ active: false, ms: 0, durationMs: SPLAT_MS, img });
+    }
+  }
 
   /** Debris pixels in flight (the render-state hook's count). */
   get debrisLive(): number {

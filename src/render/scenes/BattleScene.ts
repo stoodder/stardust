@@ -493,11 +493,22 @@ export class BattleScene extends Phaser.Scene {
     );
     this.#blinks = new BlinkView(ctx, this.#fx, prefersReducedMotion);
     this.#phases = new PhaseView(ctx, this.#fx, prefersReducedMotion, anchors);
-    this.#jams = new JamView(ctx, this.#fx, prefersReducedMotion, (c, r) => this.#liftPx(c, r), (uid) =>
-      this.#towers.get(uid)?.flash(), // T730a: System Reboot's flash
+    this.#jams = new JamView(
+      ctx,
+      this.#fx,
+      prefersReducedMotion,
+      (c, r) => this.#liftPx(c, r),
+      (uid) => this.#towers.get(uid)?.flash(), // T730a: System Reboot's flash
     ); // T702
     this.#rings = new JamRingView(ctx, prefersReducedMotion); // T707
-    this.#takeover = new TakeoverView(ctx, map.markers, (c, r) => this.#liftPx(c, r), anchors, this.#fx, prefersReducedMotion); // T707; T730a
+    this.#takeover = new TakeoverView(
+      ctx,
+      map.markers,
+      (c, r) => this.#liftPx(c, r),
+      anchors,
+      this.#fx,
+      prefersReducedMotion,
+    ); // T707; T730a
     this.#gmaw = new GatheringMawView(ctx, prefersReducedMotion, anchors, this.#fx); // T708; T730a
     this.#hollow = new HollowView(ctx, prefersReducedMotion); // T602
     this.#blocker = new BlockerView(ctx, prefersReducedMotion); // T605
@@ -947,7 +958,7 @@ export class BattleScene extends Phaser.Scene {
         lulled: this.#choir.lulled,
       }, // T607
       bloom: { fields: this.#bloom.fields, flashing: this.#bloom.flashing }, // T608
-      gloop: this.#puddles.shown, // T705
+      gloop: { ...this.#puddles.shown, splats: this.#fx.splatsShown }, // T705; T730a: splats
       sproing: {
         ...this.#leapers.shown,
         bonks: this.#leapers.bonks,
@@ -1224,7 +1235,8 @@ export class BattleScene extends Phaser.Scene {
       if (t.uid === selected) selectedTower = t;
       const target = t.targetUid === 0 ? undefined : this.#enemies.get(t.targetUid);
       if (target !== undefined) v.setFacing(facingOf(target.x - t.x, target.y - t.y));
-      if (t.tierDef?.attack?.kind === 'leaper') v.setPad(leapersAway(state.allies, t.uid), t.swarmAlive); // T730a
+      if (t.tierDef?.attack?.kind === 'leaper')
+        v.setPad(leapersAway(state.allies, t.uid), t.swarmAlive); // T730a
       v.sync(t);
     }
     this.#revoked.hold(this.#towers, stamp); // T606: powered down under the stamp for 1 s

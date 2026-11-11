@@ -235,6 +235,10 @@ export const builds = defineBuilds({
   },
 });
 
+/** A step that builds or upgrades on the barricade's east pad. */
+const atBarricade = (st: BuildStep): boolean =>
+  ('build' in st && st.tile === BAR_E) || ('upgrade' in st && st.upgrade === BAR_E);
+
 /**
  * The Flak Curtain alt (T501c-M6): `hooks` with its gate Skyhook made Flak Curtain for the last two
  * waves (W17–W18: the Rift Moths and gunships over the road filling behind the Maw, where both air
@@ -245,8 +249,6 @@ export const builds = defineBuilds({
 export function flakAlt(): ScriptedBuild {
   const hooks = builds.altBuilds?.['hooks'];
   if (hooks === undefined) throw new Error('A3M6 has no hooks alt');
-  const atBarricade = (st: BuildStep): boolean =>
-    ('build' in st && st.tile === BAR_E) || ('upgrade' in st && st.upgrade === BAR_E);
   const flak: BuildStep[] = [
     { wave: 17, upgrade: GATE_E },
     { wave: 17, specialize: GATE_E, spec: 'a' },

@@ -2,9 +2,10 @@
 // view, T730a in T740b's `fx.puddle`; puddleLook.ts has the rules). While a `puddle` zone lives, a
 // pool of acid lies at its centre at its reach in `decal` (under the units), bubbling until its
 // last half second and then drying through the sprite's frames. Read from the sim each frame, so it
-// holds while paused. The spit itself is ProjectileView's (`projectile.gloop_glob`, a lobbed glob),
-// its landing TransientFx's green splat (gloopLook.ts). Allocation-free per frame: a fixed pool of
-// images set up once, each frame's texture looked up once.
+// holds while paused. Each pool sits on even pixels, so overlapping pools share the dither's phase.
+// The spit itself is ProjectileView's (`projectile.gloop_glob`, a lobbed glob), its landing
+// TransientFx's green splat (gloopLook.ts). Allocation-free per frame: a fixed pool of images set
+// up once, each frame's texture looked up once.
 import type * as Phaser from 'phaser';
 import type { DeepReadonly } from '../../shared/types.ts';
 import type { Zone } from '../../sim/index.ts';
@@ -29,6 +30,7 @@ interface FrameRef {
 }
 
 const pos: Vec2 = { x: 0, y: 0 };
+const evenPx = (v: number): number => Math.round(v / 2) * 2;
 
 export class PuddleView {
   readonly #ctx: ViewContext;
@@ -82,7 +84,9 @@ export class PuddleView {
       const scale = puddleScale(Math.sqrt(z.radiusSq));
       if (img.scaleX !== scale) img.setScale(scale);
       gridToScreen(z.x, z.y, this.#ctx.origin, pos);
-      img.setPosition(Math.round(pos.x), Math.round(pos.y)).setVisible(true);
+      // Snapped to even pixels, so overlapping pools keep one dither phase (it stays a pool, not
+      // a solid green blob where two lie over each other).
+      img.setPosition(evenPx(pos.x), evenPx(pos.y)).setVisible(true);
     }
     this.#lastUid = top;
     this.#shown = n;

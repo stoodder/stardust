@@ -148,11 +148,12 @@ async function parLoadout(page: Page): Promise<void> {
   await expect(page.getByTestId('hud')).toBeVisible();
 }
 
-/** Waits for Sterling's cue `text` on the comms line, then reads the panel through. */
+/** Waits for Sterling's cue `text` on the radio. */
 async function sterling(page: Page, text: string): Promise<void> {
-  await expect(page.getByTestId('line-announce')).toContainText(`Sterling: ${text}`, {
-    timeout: 15_000,
-  });
+  // The cue plays the tick after its phase begins.
+  await page.evaluate(() => globalThis.__sd!.fastForward(2));
+  await nextFrames(page);
+  await expect(page.getByRole('log', { name: 'Radio' })).toContainText(text, { timeout: 15_000 });
 }
 
 test('A3M5: from the Sector map, the bearers, the rings, Sterling on each phase, the win', async ({
@@ -219,10 +220,12 @@ test('A3M5: from the Sector map, the bearers, the rings, Sterling on each phase,
   expect(plates).toBe(4);
   await shot(page, 'a3m5', 7, 'jettison');
 
-  // The win: every bearer group carried or lost, the card.
+  // The win, and the card: the bearers' meter, Cut the Feed.
   expect(await until(page, 'end', 60 * 900)).toBe(true);
   expect(await page.evaluate(() => globalThis.__sd!.state()!.outcome)).toBe('won');
-  const card = page.getByRole('dialog').filter({ hasText: 'Unsung' });
-  await expect(card.first()).toBeVisible({ timeout: 30_000 });
+  const card = page.getByRole('dialog', { name: 'PERIMETER SECURED.' });
+  await expect(card).toBeVisible({ timeout: 30_000 });
+  await expect(card).toContainText('Bearers');
+  await expect(card).toContainText('Cut the Feed');
   await shot(page, 'a3m5', 8, 'won');
 });

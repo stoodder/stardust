@@ -142,7 +142,15 @@ export class JamView {
           if (!t.alive) continue;
           const lift = this.#liftPx(t.col, t.row);
           const freed = ev.towers.includes(t.uid);
-          this.#fx.ring(t.x, t.y, freed ? 0.8 : 0.45, freed ? REBOOT_COLOR : ARC_COLOR, 420, true, lift);
+          this.#fx.ring(
+            t.x,
+            t.y,
+            freed ? 0.8 : 0.45,
+            freed ? REBOOT_COLOR : ARC_COLOR,
+            420,
+            true,
+            lift,
+          );
           if (!freed) continue;
           this.#flashTower(t.uid);
           const c = this.#columns[this.#nextColumn]!; // index < MAX_COLUMNS
@@ -286,7 +294,12 @@ export class JamView {
   }
 
   /** System Reboot's power-on columns rising through the towers it freed; returns how many show. */
-  #drawColumns(g: Phaser.GameObjects.Graphics, towers: Pool<Tower>, dt: number, still: boolean): number {
+  #drawColumns(
+    g: Phaser.GameObjects.Graphics,
+    towers: Pool<Tower>,
+    dt: number,
+    still: boolean,
+  ): number {
     let shown = 0;
     for (const c of this.#columns) {
       if (!c.active) continue;

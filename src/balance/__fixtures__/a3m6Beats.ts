@@ -165,4 +165,3 @@ export function expectBeats(b: A3m6Beats, label: string, roadLeftMin = MAW_ROAD_
   // W17's road fills only as the merged Maw reaches the last bend.
   expect(start(17) - maw, label).toBeGreaterThanOrEqual((BOSS_COUNTDOWN - BOSS_SEC) * TICK_HZ);
 }
-

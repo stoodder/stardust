@@ -156,7 +156,12 @@ export class LeaperView {
         const name = leaperFrame(pose, f);
         const ref = ctx.sprites.frame(BODY, name, DEFAULT_VARIANT);
         const a = ctx.sprites.frameAnchor(BODY, name);
-        this.#frames.set(pose + '|' + f, { texture: ref.texture, frame: ref.frame, ax: a.x, ay: a.y });
+        this.#frames.set(pose + '|' + f, {
+          texture: ref.texture,
+          frame: ref.frame,
+          ax: a.x,
+          ay: a.y,
+        });
       }
     }
     for (let i = 0; i < SLOTS; i++) this.#grow();

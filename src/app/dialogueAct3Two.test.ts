@@ -331,5 +331,4 @@ describe('in a battle', () => {
     expect(comms()?.text).toContain('supposed to ask');
     expect(speakers()).toEqual(['pebble', 'goldie', 'bricks (dark)']);
   });
-
 });

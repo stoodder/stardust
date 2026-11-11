@@ -1,8 +1,9 @@
 // T702: the jamming core on its dev range (`?map=dev_silence`, render/__fixtures__/devJam.ts). A
 // Hum Choir beside the road with Rivets around it; W1's Silencer stops and sends its tendril
-// creeping toward the Choir (JamView: an ink-and-violet rope with a bead at its tip), then the
-// Choir is Jammed (static over it, a white countdown arc round its base); System Reboot, cast from
-// slot 1, clears it and pops a teal ring on it. Screenshots in <out>/screens/jam/ (look at them:
+// creeping toward the Choir (JamView: an ink-and-violet rope with a swelling bead at its tip), then
+// the Choir is Jammed (T730a: drawn in its steel `+jammed` variant under `fx.jam_static`, a white
+// countdown ring round its base); System Reboot, cast from slot 1, clears it: a white flash, a teal
+// power-on column and ring. Screenshots in <out>/screens/jam/ (look at them:
 // the tendril, the static, and the arc are the point).
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
@@ -83,5 +84,6 @@ test('jam: the tendril tell, the Jammed Choir, and System Reboot clearing it', a
   await nextFrames(page);
   look = await page.evaluate(() => globalThis.__sd!.render()!.jams);
   expect(look).toMatchObject({ jammed: 0, reboots: 1 });
+  expect(look.columns).toBeGreaterThan(0); // T730a: the teal power-on column through the Choir
   await shot(page, 'jam', 3, 'rebooted');
 });
