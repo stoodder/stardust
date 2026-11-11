@@ -278,15 +278,28 @@ export const HOLDOUT_PERFECT = {
 } as const;
 
 /**
- * Perfect Core's name on `map`: "Perfect" on an Escort or a map that pivots to one, "Held the
- * Door" on a Holdout.
+ * Perfect's one-liner on a Protect map whose asset is its bearers (act3.md § A3M5, "Perfect (core
+ * and bearers undamaged)"; T712): the core and the bearers both whole.
+ */
+export const BEARER_PERFECT = 'Win with the core and the bearers unhurt.';
+
+/** Whether `map` is a Protect map whose escort walks (A3M5's bearers). */
+function protectsBearers(map: Partial<Pick<CompiledMapDef<IdSpace>, 'objective' | 'escort'>>) {
+  return map.objective === 'protect' && (map.escort ?? null) !== null;
+}
+
+/**
+ * Perfect Core's name on `map`: "Perfect" on an Escort or a map that pivots to one, and on a
+ * Protect map with bearers (A3M5: no core alone to keep), "Held the Door" on a Holdout.
  */
 export function perfectMedalName(
   map: Partial<Pick<CompiledMapDef<IdSpace>, 'objective' | 'escort'>>,
 ): string {
   if (map.objective === 'holdout') return HOLDOUT_PERFECT.name;
   const escort =
-    map.objective === 'escort' || (map.objective === 'defend' && (map.escort ?? null) !== null);
+    map.objective === 'escort' ||
+    (map.objective === 'defend' && (map.escort ?? null) !== null) ||
+    protectsBearers(map);
   return escort ? ESCORT_PERFECT_NAME : MEDAL_TEXT.perfectCore.name;
 }
 
@@ -302,6 +315,7 @@ function perfectText(map: Partial<Pick<CompiledMapDef<IdSpace>, 'objective' | 'e
   if (map.objective === 'defend' && (map.escort ?? null) !== null) {
     return { name, description: ESCORT_PERFECT.pivot };
   }
+  if (protectsBearers(map)) return { name, description: BEARER_PERFECT };
   return core;
 }
 

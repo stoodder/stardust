@@ -3,8 +3,12 @@
    their plates at their chart positions, and the node panel beside the selected node. The theme
    is the chart phase's act (`data-act` on the screen). */
 
+/* Its own stacking context (`isolation`), so the plates, the marker, and the node panel stack
+   inside the screen and a scene played over it (the scene layer, after the screen) covers them
+   all (T712). */
 .sd-screen.sd-starmap {
   display: block;
+  isolation: isolate;
   background: var(--sd-ink-0);
 }
 
