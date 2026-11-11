@@ -21,6 +21,8 @@ import { setIntakeEnabled } from './profile.ts';
 import { dialogueTestHooks, setDevDialogue, setDialogueEnabled, skipScene } from './dialogue.ts';
 import { audioTestHooks, installAudio } from './audio.ts';
 import { activeSave, browserKeyValueStore, initSaves, loadDevSave } from './save.ts';
+import { hasBattleMap } from './battleSetup.ts';
+import { loadDevFixtures } from './devRegistry.ts';
 import { initSettings } from './settings.ts';
 import { createTestHooks, installTestHooks } from './testHooks.ts';
 import type { BootParams } from './testHookTypes.ts';
@@ -66,6 +68,9 @@ export async function boot(): Promise<void> {
   initSettings();
   installAudio(params.audio);
   initSaves(browserKeyValueStore());
+  // The dev fixtures (the dev battles and saves) stay out of the initial JS: a dev URL (`?test=1`,
+  // or `?map=` naming no live map) loads their chunk first (devRegistry.ts; D150).
+  if (params.test || (params.map !== null && !hasBattleMap(params.map))) await loadDevFixtures();
   const devSave = params.save !== null && loadDevSave(params.save);
   if (params.save !== null && !devSave) logError(`boot: unknown dev save '${params.save}'`);
   const gameRoot = requireElement('game');

@@ -12,8 +12,8 @@
 // radio group; Enter or Space toggles a tower or a protocol; Lock in has the focus on arrival, so
 // Enter goes straight on with the remembered pick; Esc goes back to the Shift board.
 import { MenuNotice } from './MenuNotice.tsx';
-import { Fragment } from 'preact';
-import { useEffect, useRef, useState, type MutableRef } from 'preact/hooks';
+import { Fragment, type RefObject } from 'preact';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import {
   formedLinks,
   pickWarnings,
@@ -338,7 +338,7 @@ function Links({ view, pick }: { view: LoadoutView; pick: LoadoutPickView }) {
  * Whether the scrolling tower grid has cards below what shows (D150: A3M5's 16 towers at
  * 1280×720), kept up to date as it scrolls or resizes.
  */
-function useMoreBelow(ref: MutableRef<HTMLElement | null>): boolean {
+function useMoreBelow(ref: RefObject<HTMLElement | null>): boolean {
   const [more, setMore] = useState(false);
   useEffect(() => {
     const el = ref.current;
