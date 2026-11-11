@@ -53,22 +53,12 @@ function parSteps(): BuildStep[] {
   ];
 }
 
-/**
- * Par's placements and spending with each tower swapped by `swap` (a no-counter or alt build),
- * and `extra` steps, each placed after the last step of its wave.
- */
-function swapped(
-  swap: Readonly<Partial<Record<TowerId, TowerId>>>,
-  extra: readonly BuildStep[] = [],
-): BuildStep[] {
+/** Par's placements and spending with each tower swapped by `swap` (a no-counter or alt build). */
+function swapped(swap: Readonly<Partial<Record<TowerId, TowerId>>>): BuildStep[] {
   const out: BuildStep[] = [];
   for (const st of parSteps()) {
     const to = 'build' in st ? swap[st.build] : undefined;
     out.push('build' in st && to !== undefined ? { ...st, build: to } : st);
-  }
-  for (const st of extra) {
-    const at = out.findIndex((o) => o.wave > st.wave);
-    out.splice(at < 0 ? out.length : at, 0, st);
   }
   return out;
 }
@@ -87,7 +77,7 @@ export const builds = defineBuilds({
       steps: swapped({ thumper: 'rivet' }),
     },
     // No air: nothing in reach of the Moths' lane (Scuttle Den, Thumper, Sprinkler without
-    // Cloudburst, Lookout: a Lookout where par's Skyhook stands, a Sprinkler for its Prism).
+    // Cloudburst, Lookout: a Lookout where each of par's Skyhooks stands, a Sprinkler for its Prism).
     air: {
       loadout: ['burrow', 'thumper', 'sprinkler', 'lookout'],
       steps: swapped({ skyhook: 'lookout', prism: 'sprinkler' }),

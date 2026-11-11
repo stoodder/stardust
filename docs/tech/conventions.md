@@ -182,14 +182,14 @@ Run this after implementing and **before any review** (D002). It's also re-run a
 
 The whole gate's budget is **8 minutes**, under the 10-minute command cap (D137). `tools/gate.ts` holds each step's share and, after every `npm run check`, prints a table of each step's time against it. A step over its share prints a warning, not a failure: wall time is noisy when other agents share the machine, and a red gate must mean broken code. **Read the table on every run.** The task that pushes a step over its share brings it back (with the levers below) or reports it as a follow-up.
 
-| Step | Share | M4 content after T501j (4 cores; busy = load 10–23 from other agents, quiet = load ≤ 3) | Guardrail |
+| Step | Share | M5 content (4 cores; quiet = load ≤ 3 from other agents, busy = load 10–25) | Guardrail |
 |---|---|---|---|
-| `typecheck` + `lint` | 10 s + 25 s | 5 s + 24 s busy | — |
-| `test` | 60 s | 63 s busy; 37–45 s quiet (106 s quiet before) | See **The `test` step** below |
-| `build` | 15 s | 2 s | — |
-| `sim` | 40 s | 32 s busy, 17 s quiet | Maps run in parallel ([Sim time](#balance-sims-npm-run-sim)); a map's runs are bounded by assertion 13 |
-| `smoke` | 325 s | 489 s busy (131 flows, 2 workers); before T501j, 380 s quiet and 739 s at load 23. No quiet run yet: a follow-up | See **The `smoke` step** below |
-| `check:docs` | 5 s | 1 s | — |
+| `typecheck` + `lint` | 10 s + 25 s | 4–6 s + 23–30 s quiet. `lint`'s Prettier half is cached (`--cache`, [architecture.md §5](architecture.md#5-build-test-and-deploy)), so a warm run is mostly oxlint's | — |
+| `test` | 60 s | 62–73 s quiet; 129 s busy | See **The `test` step** below |
+| `build` | 15 s | 1–2 s | — |
+| `sim` | 40 s | 23–26 s quiet, 31 s busy | Maps run in parallel ([Sim time](#balance-sims-npm-run-sim)); a map's runs are bounded by assertion 13 |
+| `smoke` | 325 s | 284 s quiet (179 flows, 3 workers; T564); before T564, 486 s quiet with 2 workers. 358 s when other agents' load reached 15 mid-run, 528 s at load 20–25 | See **The `smoke` step** below |
+| `check:docs` | 5 s | 0.2–0.4 s | — |
 
 **The `test` step.** Vitest runs two projects (`vite.config.ts`). Module import, not the tests, was two thirds of the step: an isolated file re-evaluates the whole content graph (maps, sprites, dialogue). So most files run in the **`shared`** project (`isolate: false`: one module graph per worker, reused across files), and a test must leave module state as it found it: restore fake timers (`vi.useRealTimers()`), unstub globals (`vi.unstubAllGlobals()` in `afterEach`), reset what it sets. A file that mocks modules (`vi.mock`, `vi.doMock`, `vi.resetModules`), or that needs its modules' first evaluation, runs in the **`isolated`** project; `vite.config.ts` finds them by reading the files, and a file opts in with a `// vitest: isolate` comment. A test that passes alone and fails in the full run is leaking state: fix the leak (`npx vitest run --sequence.shuffle.files --sequence.seed=<n>` reproduces order effects). The balance test files (`src/balance/<map>.test.ts`) are the heaviest work: each re-runs a whole map's harness per robustness shift. Shift several waves at once (a *compound* shift, `src/balance/__fixtures__/shifts.ts`: `shiftedContent`, `bothWays`, `judgeShift`), so a file runs its tuned harness once plus about 2–6 shifted ones (A1M4's 6 is the most, T460); one harness run per test, so `HARNESS_TEST_TIMEOUT_MS` (60 s) holds under load; use `runMap(…, { seeds: 1 })`, filter with `build:`, or a single `runHeadless` when a shift concerns one build. A compound that fails where each part alone passes is a finding (report it), not a reason to drop the shift. Vitest runs files in parallel, so the total and the longest file (A1M4's, ~15 s) both bound the step. The default per-test timeout is 20 s (`testTimeout`), so heavy pure tests hold under load.
 
