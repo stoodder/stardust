@@ -151,6 +151,14 @@ export const tune_burrow = tuneUp('tune_burrow', 'burrow', 'Scuttle Den Tune-up'
 export const tune_choir = supportTuneUp('tune_choir', 'choir', 'Hum Choir Tune-up', 'a3_m01');
 
 /**
+ * The Stasis Bloom's tune-up (T608): a support tower's three ranks, read by its field
+ * (sim/systems/fields.ts): +5% field strength (its chill, the `supportStat` aura grant), −5% cost,
+ * +5% field radius (the `supportStat` radius grant). Zibzab's; stocked after A3M1 with the
+ * attunement, and off the shelf until the Bloom is attuned (meta/purchase.ts `shelf`).
+ */
+export const tune_bloom = supportTuneUp('tune_bloom', 'bloom', 'Stasis Bloom Tune-up', 'a3_m01');
+
+/**
  * The Zibzab Tune-up (design/progression.md § 2.1, C2 Sell; "Ten percent. Honestly, eight."): +8%
  * damage for every Vrell tower, permanently: one `towerStat` grant per Vrell tower in the registry,
  * so a later Vrell tower joins by itself. Never sold (`kind: 'grant'`, price 0): A2M4's C2 Sell

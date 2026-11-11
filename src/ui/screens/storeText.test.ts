@@ -72,6 +72,7 @@ describe('effect summaries', () => {
       'Unlocks tier 4: All-Seeing or Truthlight', // the Lantern's (T508)
       'Unlocks tier 4: Big Family or Brave Hearts', // the Scuttle Den's (T604)
       'Unlocks tier 4: Lullaby or Rally Chorus', // the Hum Choir's (T607)
+      'Unlocks tier 4: Gravity Well or Timeless Garden', // the Stasis Bloom's (T608)
     ]);
     // R&D's Technician ability (T406).
     const sweep = rnd.find((o) => o.item.kind === 'ability');

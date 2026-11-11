@@ -72,6 +72,9 @@ export const ITEM_COPY: Readonly<Record<string, string>> = {
     'Price first: 40 stardust, rising. Sharper little teeth, a wider yard. They paid in moss. I took it.',
   tune_choir:
     'Price first: 40 stardust, rising. Louder, cheaper, wider. I tried tuning the song. They let me.',
+  // The Stasis Bloom's (T608; T609 settles the copy): shown once the Bloom is attuned.
+  tune_bloom:
+    'Price first: 40 stardust, rising. Colder garden, cheaper seeds, a wider bed. I stood in it. Once.',
   // Granted, never sold: C2 Sell's (progression.md § 2.1; T510).
   tune_zibzab: 'Ten percent. Honestly, eight.',
 

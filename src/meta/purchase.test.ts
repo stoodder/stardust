@@ -77,13 +77,13 @@ describe('offers', () => {
     expect(offerFor(fresh, MK2)?.refusal).toBe('pane_locked');
     const shop = shelf(DEV_SAVES.after_a1m1.build(), 'shop');
     // Every shop upgrade but the Aelari tune-ups (kept off the shelf until A2M5: they'd name
-    // Ves'thara's towers early, T509), the Scuttle Den's (until it's given, T604), and the Hum
-    // Choir's (until it's given, T607), every
+    // Ves'thara's towers early, T509), the Scuttle Den's (until it's given, T604), the Hum
+    // Choir's (until it's given, T607), and the Stasis Bloom's (until it's attunable, T608), every
     // protocol, and the four Vrell licenses (T408: the Harpoon's and Crane's joined the Zapcoil's
     // and Lookout's). Granted-only upgrades (C2's Zibzab Tune-up) never reach a shelf: the story
     // gives them.
     const shopUpgrades = Object.values(UPGRADES).filter((u) => u.kind === 'shop').length;
-    expect(shop.length).toBe(shopUpgrades - 5 + Object.keys(PROTOCOLS).length + 4);
+    expect(shop.length).toBe(shopUpgrades - 6 + Object.keys(PROTOCOLS).length + 4);
     expect(new Set(shop.map((o) => o.refusal))).toEqual(new Set(['pane_locked']));
     expect(shelf(DEV_SAVES.after_a1m1.build(), 'engineering')[0]?.refusal).toBe('pane_locked');
   });
@@ -188,7 +188,12 @@ describe("Xenotech (progression.md § 7.2: Ves'thara's attunements, T509)", () =
   it('before A2M5: Xenotech is locked, and no shelf names an Aelari tower or her Rapport', () => {
     const save = DEV_SAVES.after_a2m4_returned.build();
     save.currencies = { stardust: 1000, intel: 20 };
-    expect(shelf(save, 'xenotech').map((o) => o.refusal)).toEqual(['pane_locked', 'pane_locked']);
+    // The Mindspike's, the Lantern's, and the Stasis Bloom's attunements (T608), greyed.
+    expect(shelf(save, 'xenotech').map((o) => o.refusal)).toEqual([
+      'pane_locked',
+      'pane_locked',
+      'pane_locked',
+    ]);
     // The Prism isn't given yet, so its row isn't there at all.
     expect(offerFor(save, PRISM)).toBeNull();
     const aelari = new Set(['prism', 'mindspike', 'lantern']);
@@ -209,6 +214,7 @@ describe("Xenotech (progression.md § 7.2: Ves'thara's attunements, T509)", () =
       [PRISM, 'maxed'],
       [MINDSPIKE, null],
       [LANTERN, null],
+      [{ kind: 'attune', tower: 'bloom' }, 'not_stocked'], // after A3M1 (T608)
     ]);
     expect(xeno[0]).toMatchObject({ gift: true, price: 0, owned: 1, pane: 'xenotech' });
     expect(xeno[1]).toMatchObject({
@@ -251,6 +257,7 @@ describe("Xenotech (progression.md § 7.2: Ves'thara's attunements, T509)", () =
     expect(items(shelf(save, 'xenotech'))).toEqual([
       JSON.stringify(MINDSPIKE),
       JSON.stringify(LANTERN),
+      JSON.stringify({ kind: 'attune', tower: 'bloom' }), // T608
     ]);
     expect(buy(save, PRISM)).toMatchObject({ ok: false, reason: 'unknown' });
   });

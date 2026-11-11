@@ -123,6 +123,9 @@ describe('M4 towers, ability, links, and catalog rows', () => {
       'finders_keepers',
       // The Hum Choir's (T607; sim/systems/auras.test.ts).
       'harmony',
+      // The Stasis Bloom's (T608; sim/bloom.test.ts).
+      'pinned_down',
+      'stillmind',
     ]);
     expect(TOWER_ACCESS.lookout).toMatchObject({ price: 150, availableAfter: 'a1_m05' });
     expect(TOWER_ACCESS.harpoon).toMatchObject({ price: 250, availableAfter: 'a2_m01' });

@@ -5,9 +5,9 @@
 // 2.5, 2.0 s. Gravity Well (420): each pulse also pulls enemies back 1.5 tiles along their route
 // (each at most once every 20 s; bosses immune). Timeless Garden (420): Chilled 45%, every 6 s.
 //
-// A stub registered ahead of its task (T600a; the cut lever, D141): T608 confirms the numbers, runs
-// the field (`tower.field`) and lifts it from towers/index.ts STUB_TOWER_TASKS. Sprites:
-// placeholders under their final ids (T640b).
+// The field's rules are sim/systems/fields.ts's header (T608): reach, the chill, the pulse (no
+// attack: `Tower.cooldownTicks` is its timer), Gravity Well's pull. Links: Pinned Down (Harpoon),
+// Stillmind (Mindspike). Its tune-up is `tune_bloom` (upgrades/tuneUps.ts). Sprites: T640b's.
 import { defineTower } from '../define.ts';
 
 export const bloom = defineTower({

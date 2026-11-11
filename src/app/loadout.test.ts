@@ -56,6 +56,7 @@ describe('the loadout screen (app side)', () => {
       ['lantern', []], // plays since T508: detection, air, and (Truthlight) burrowed; A1M2 asks armor
       ['burrow', []], // plays since T604: burrowed (and Brave Hearts air); A1M2 asks armor
       ['choir', []], // plays since T607: a support aura, no answer; A1M2 asks armor
+      ['bloom', []], // plays since T608: burrowed and jam (its Stasis); A1M2 asks armor
     ]);
     // Costs after the save's tune-ups (the sim charges the same: costFor).
     const cfg = battleConfig('a1_m02', 0, activeSave());

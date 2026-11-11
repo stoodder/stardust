@@ -64,6 +64,10 @@ export const LINK_CALLOUT: Readonly<Record<string, { ring: ColorName; text: Colo
   finders_keepers: { ring: 'gold.3', text: 'green.4' },
   // The Hum Choir's (T607 first pass): the song's warm gold over the Mindspike's violet.
   harmony: { ring: 'violet.3', text: 'gold.4' },
+  // The Stasis Bloom's (T608 first pass): the field's pale ice, over the Harpoon's rope and the
+  // Mindspike's violet.
+  pinned_down: { ring: 'blue.4', text: 'white.0' },
+  stillmind: { ring: 'violet.3', text: 'blue.4' },
 };
 
 /** A link's callout text: its name in capitals, with feeling ("CROSSFIRE!"). */

@@ -568,6 +568,7 @@ export function createEventSounds(
         case 'ClassRevoked':
         case 'AbilityRevoked':
         case 'ModifierChanged':
+        case 'PulledBack': // Gravity Well (T608)
           return;
         default:
           assertNever(e);
