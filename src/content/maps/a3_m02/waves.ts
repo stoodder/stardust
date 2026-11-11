@@ -35,31 +35,39 @@ const expediters = (count: number, delaySec: number, intervalSec?: number): Wave
 export const COUNTDOWN = 30;
 /** W7's drone column: ten, this far apart, so the Clean Exit (map.ts, 12 s in) lands mid-column. */
 export const W7_GAP = 2;
-/** The late drone columns, each sent twice (W12's, W14's, W15's). */
-export const W12_DRONES = Number(process.env.W12 ?? 16);
-export const W14_DRONES = Number(process.env.W14 ?? 18);
-export const W15_DRONES = Number(process.env.W15 ?? 12);
-export const GAP = Number(process.env.GAP ?? 1);
+/** The late drone columns, each sent twice (W12's, W14's, W15's), one drone a second. */
+const E = (k: string, d: number): number => Number(process.env[k] ?? d);
+export const W12_DRONES = E('W12', 24);
+export const W14_DRONES = E('W14', 26);
+export const W15_DRONES = E('W15', 16);
+const GAP = 1;
+const MOTES4 = E('M4', 22);
+const MOTES6 = E('M6', 16);
+const MOTES8 = E('M8', 18);
+const MOTES10 = E('M10', 16);
+const M_GAP = E('MG', 0.25);
+const MOTES1 = E('M1', 12);
+const MOTES2 = E('M2', 20);
 
 export const waves = defineWaves([
   // W1 · Motes down the old road
-  { groups: [motes(24, 'road', 0, 0.25), motes(12, 'road', 14, 0.25)] },
+  { groups: [motes(24, 'road', 0, 0.25), motes(MOTES1, 'road', 14, M_GAP)] },
   // W2 · Motes through the west rift [T: rift opens; it cracked as W1 started]
   {
     countdownSec: COUNTDOWN,
     noCall: true,
-    groups: [motes(20, 'rift_w', 0, 0.2), motes(12, 'road', 10, 0.25)],
+    groups: [motes(MOTES2, 'rift_w', 0, M_GAP), motes(12, 'road', 10, 0.25)],
   },
   // W3 · Compliance Drones ×4 [T: Everglow Security; armor 4]
   { countdownSec: COUNTDOWN, groups: [drones(4, 0, 2), motes(14, 'rift_w', 8, 0.2)] },
   // W4 · drones + Motes [X]
-  { countdownSec: COUNTDOWN, groups: [drones(6, 0, 1.5), motes(22, 'road', 6, 0.2)] },
+  { countdownSec: COUNTDOWN, groups: [drones(6, 0, 1.5), motes(MOTES4, 'road', 6, M_GAP)] },
   // W5 · one Expediter + drones [T: haste aura; kill it first]
   { countdownSec: COUNTDOWN, groups: [drones(3, 0, 1.2), expediters(1, 3), drones(4, 4.5, 1.2)] },
   // W6 · a drone column + Expediters [X]
   {
     countdownSec: COUNTDOWN,
-    groups: [drones(10, 0, 1.0), expediters(2, 4, 4), motes(16, 'rift_w', 14, 0.2)],
+    groups: [drones(10, 0, 1.0), expediters(2, 4, 4), motes(MOTES6, 'rift_w', 14, M_GAP)],
   },
   // W7 · drones ×10; mid-column, the Clean Exit cue (map.ts `clean_exit`)
   { countdownSec: COUNTDOWN, groups: [drones(10, 0, W7_GAP)] },
@@ -67,57 +75,65 @@ export const waves = defineWaves([
   {
     countdownSec: COUNTDOWN,
     groups: [
-      motes(20, 'road', 0, 0.25),
-      g('fracture', 2, 'rift_w', 5, 3),
-      motes(16, 'rift_w', 12, 0.25),
+      motes(MOTES8, 'road', 0, M_GAP),
+      g('fracture', 2, 'rift_w', 6, 4),
+      motes(MOTES8, 'rift_w', 18, M_GAP),
     ],
   },
   // W9 · Expediters + drones
   {
     countdownSec: COUNTDOWN,
-    groups: [drones(8, 0, 0.8), expediters(3, 2, 3), drones(8, 9, 0.8)],
+    groups: [drones(8, 0, 1.0), expediters(3, 2, 4), drones(8, 16, 1.0)],
   },
   // W10 · Motes through both rifts [the east rift opens; it cracked as W9 started]
   {
     countdownSec: COUNTDOWN,
     noCall: true,
-    groups: [motes(16, 'rift_w', 0, 0.3), motes(16, 'rift_e', 8, 0.3)],
+    groups: [motes(MOTES10, 'rift_w', 0, M_GAP), motes(MOTES10, 'rift_e', 16, M_GAP)],
   },
   // W11 · drones + Motes
   {
     countdownSec: COUNTDOWN,
-    groups: [drones(6, 0, 1.0), expediters(1, 3), motes(14, 'rift_e', 6, 0.3)],
+    groups: [drones(8, 0, 1.2), expediters(1, 4), motes(14, 'rift_e', 20, 0.3)],
   },
   // W12 · the big drone wave (Sterling's shuttle leaves: map.ts `shuttle`)
   {
     countdownSec: COUNTDOWN,
-    groups: [drones(W12_DRONES, 0, GAP), expediters(4, 2, 4), drones(W12_DRONES, W12_DRONES * GAP + 4, GAP)],
+    groups: [
+      drones(W12_DRONES, 0, GAP),
+      expediters(4, 2, 4),
+      drones(W12_DRONES, W12_DRONES * GAP + 4, GAP),
+    ],
   },
   // W13 · the Hollow, both rifts
   {
     countdownSec: COUNTDOWN,
     groups: [
       g('fracture', 2, 'rift_e', 0, 4),
-      motes(18, 'rift_w', 4, 0.3),
-      motes(18, 'rift_e', 12, 0.3),
-      g('fracture', 2, 'rift_w', 16, 4),
+      motes(18, 'rift_w', 6, 0.3),
+      motes(18, 'rift_e', 18, 0.3),
+      g('fracture', 2, 'rift_w', 26, 4),
     ],
   },
   // W14 · everything Everglow
   {
     countdownSec: COUNTDOWN,
-    groups: [drones(W14_DRONES, 0, GAP), expediters(5, 2, 4), drones(W14_DRONES, W14_DRONES * GAP + 4, GAP)],
+    groups: [
+      drones(W14_DRONES, 0, GAP),
+      expediters(5, 2, 4),
+      drones(W14_DRONES, W14_DRONES * GAP + 4, GAP),
+    ],
   },
   // W15 · everything
   {
     countdownSec: COUNTDOWN,
     groups: [
       drones(W15_DRONES, 0, GAP),
-      expediters(4, 2, 3),
-      motes(18, 'rift_w', 8, 0.3),
-      g('fracture', 2, 'rift_e', 10, 4),
-      motes(18, 'rift_e', 16, 0.3),
-      drones(W15_DRONES, 20, GAP),
+      expediters(4, 2, 4),
+      motes(18, 'rift_w', 10, 0.3),
+      g('fracture', 2, 'rift_e', 14, 4),
+      motes(18, 'rift_e', 24, 0.3),
+      drones(W15_DRONES, 30, GAP),
     ],
   },
 ]);

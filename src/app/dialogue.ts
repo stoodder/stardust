@@ -74,6 +74,7 @@ import {
   type DialogueCursor,
   type DialogueEffects,
 } from '../story/runner.ts';
+import { escortLow, integrityLow } from '../story/meters.ts';
 import { giveTag, newTagState, tagIndexAfter, tagStep, type TagState } from '../story/tags.ts';
 import { resolveText, type TextContext } from '../story/text.ts';
 import {
@@ -119,8 +120,6 @@ export const RADIO_MIN_READ_MS = 1500;
 /** A typed comms line's minimum read time (D135): this, plus MIN_READ_PER_CHAR_MS a character. */
 export const MIN_READ_BASE_MS = 1500;
 export const MIN_READ_PER_CHAR_MS = 45;
-/** Integrity at or below this share of the maximum fires `low_integrity` (core-loop.md § 6.3). */
-export const LOW_INTEGRITY_SHARE = 0.25;
 
 let enabled = true;
 
@@ -1392,7 +1391,8 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
         offerBarks([{ on: 'ally_hushed', ally: e.victimAlly }]);
     }),
     // On an Escort the meter is the refugees (T513): `low_integrity` once the losses left before
-    // defeat are LOW_INTEGRITY_SHARE of `maxLost` or fewer (`escortLow`), the core's rule's twin.
+    // defeat are LOW_INTEGRITY_SHARE of `maxLost` or fewer (story/meters.ts `escortLow`), the core's
+    // rule's twin.
     bus.on('RefugeeLost', () => {
       const st = sim.state;
       if (lowFired || st.objective !== 'escort' || !escortLow(st.stats.refugeesLost, maxLost)) {
@@ -1416,7 +1416,7 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
         if (isEnemy(e.enemy)) triggers.push({ on: 'enemy_leaked', enemy: e.enemy });
       }
       const st = sim.state;
-      if (!lowFired && st.integrity > 0 && st.integrity <= st.maxIntegrity * LOW_INTEGRITY_SHARE) {
+      if (!lowFired && integrityLow(st.integrity, st.maxIntegrity)) {
         lowFired = true;
         triggers.push({ on: 'low_integrity' });
       }
@@ -1570,15 +1570,6 @@ export function hostileWaves(
   waves: readonly { readonly groups: readonly { readonly tags: readonly string[] }[] }[],
 ): boolean[] {
   return waves.map((w) => w.groups.some((g) => !g.tags.includes('fleeing')));
-}
-
-/**
- * Whether an Escort's losses are low on the meter (`low_integrity`, T513): the losses left before
- * defeat (lost reaching `maxLost`, D138) are LOW_INTEGRITY_SHARE of `maxLost` or fewer. Never
- * without a `maxLost` (no limit, no defeat) or before the first loss.
- */
-export function escortLow(lost: number, maxLost: number | null): boolean {
-  return maxLost !== null && lost > 0 && maxLost - lost <= maxLost * LOW_INTEGRITY_SHARE;
 }
 
 /** Whether a Hollow unit is alive on route `route` (the runners' reason to run; D134). */

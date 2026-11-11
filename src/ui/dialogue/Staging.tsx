@@ -4,6 +4,7 @@
 // muzzles, and the record counter ticking up at the top). Sprites are the canvas art's own, baked into data URLs once per
 // frame (hud/Icon.tsx), drawn 2× with `image-rendering: pixelated`. Silent: nothing here plays a
 // sound, so muted play loses nothing. Reduced motion holds still frames and the counter lands.
+// A3M2's Asset Yield Log is its own stage (YieldLogStage.tsx, T614).
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { SPRITES } from '../../content/sprites/index.ts';
 import type { SpriteDef } from '../../content/sprites/types.ts';
@@ -32,6 +33,7 @@ import {
   type StagingKind,
 } from './staging.ts';
 import type { StagingView } from './state.ts';
+import { YieldLogStage } from './YieldLogStage.tsx'; // T614
 
 /** How often a moving stage redraws (ms): faster than the quickest anim (12 fps). */
 const STAGE_TICK_MS = 40;
@@ -218,6 +220,8 @@ function Cannon({
 
 /** Every timeline a staging runs, to know when it has settled. */
 function beatsOf(kind: StagingKind, still: boolean): [string, readonly Beat[]][] {
+  // The Yield Log has no sprite beats: its stage runs its own clock (YieldLogStage.tsx).
+  if (kind === 'yield_log') return [];
   if (kind === 'rig9_feed') return [[FEED_SPRITE, still ? FEED_BEATS_STILL : FEED_BEATS]];
   return still
     ? [[CONFETTI_SPRITE, FALL_BEATS_STILL]]
@@ -238,6 +242,7 @@ export function Staging({ staging }: { staging: StagingView }) {
       (kind === 'party' && !still && t < COUNTER_TICK_MS) ||
       beatsOf(kind, still).some(([id, beats]) => stillMoving(beats, animsOf(id), t)),
   );
+  if (kind === 'yield_log') return <YieldLogStage from={staging.from} />;
   return kind === 'rig9_feed' ? (
     <FeedStage ms={ms} still={still} />
   ) : (

@@ -10,7 +10,7 @@
 import type { IdSpace } from '../content/types.ts';
 import { evaluateCondition, type Sim } from '../sim/index.ts';
 import { hud, type EscortMeterView } from '../ui/state.ts';
-import { escortLow } from './dialogue.ts';
+import { escortLow } from '../story/meters.ts';
 import { meterLabelText } from './hudText.ts';
 import type { Host } from './host.ts';
 

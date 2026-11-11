@@ -1,7 +1,7 @@
 // Dev dialogue for the smoke flows and agents (`__sd.dialogue`, only with `?test=1`): a cue scene
-// with a choice (it pauses play), C3's door choice, a full-screen scene, and a bark with a reply
-// button. Never in the
-// registries, so the game never plays them; dev.test.ts validates them like real dialogue.
+// with a choice (it pauses play), C3's door choice, a full-screen scene, the Asset Yield Log's
+// staging (T614), and a bark with a reply button. Never in the registries, so the game never plays
+// them; dev.test.ts validates them like real dialogue.
 import { defineBarks, defineScene, defineScenes } from '../../content/dialogue/define.ts';
 
 export const DEV_SCENES = defineScenes([
@@ -82,6 +82,13 @@ export const DEV_SCENES = defineScenes([
         { text: 'The warren tunnel.', tone: 'quiet', set: { door_choice: 'warren' } },
       ],
     },
+  ]),
+  // The Asset Yield Log's staging (staging.ts `yield_log`, T614) over stand-in lines, so the smoke
+  // flow sees the scroll and its first-pass lock before A3M2's own scene is written.
+  defineScene('a1_m01_scene_dev_yield_log', [
+    { kind: 'line', speaker: 'quill', text: 'I thought it was inventory.' },
+    { kind: 'line', speaker: 'system', text: 'DIRECTIVE 3: LOG ASSET YIELD.' },
+    { kind: 'line', speaker: 'quill', text: "Don't decide about me yet." },
   ]),
 ]);
 

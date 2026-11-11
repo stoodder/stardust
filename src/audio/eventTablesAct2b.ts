@@ -131,7 +131,7 @@ export const INCOME_SOUNDS = { coin: 'income_coin', killPitch: 3 } as const sati
 /**
  * A map meter's alarm (T501h): the core's low-integrity klaxon also sounds, once per crossing, as
  * a Protect map's asset enters its `critical` band (sim `assetDamage`: half the meter, one rig of
- * two) and as an Escort's losses reach its low mark (app/dialogue.ts `escortLow`, the meter's own
+ * two) and as an Escort's losses reach its low mark (story/meters.ts `escortLow`, the meter's own
  * alarm). One alarm voice means one thing: your meter is low.
  */
 export const METER_ALARM = 'low_integrity' as const satisfies SfxId;

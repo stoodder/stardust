@@ -1,0 +1,81 @@
+/* The Asset Yield Log's stage (YieldLogStage.tsx; T614; art-direction.md § Dialogue presentation):
+   Everglow's ledger in deep ink, the others' entries dim steel, yours lighting warm gold as they
+   cross the reading line. The scene's lines sit at the bottom on a dark panel over the scroll. */
+.dlg-stage[data-staging='yield_log'] {
+  box-sizing: border-box;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding-bottom: 8px;
+  background: var(--sd-ink-0);
+}
+
+.dlg-stage[data-staging='yield_log'] .dlg-fullscreen {
+  position: relative;
+  background: var(--panel-fill);
+  box-shadow: 0 0 0 1px var(--sd-steel-1);
+}
+
+.yl {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 6px;
+  pointer-events: none;
+}
+
+.yl-header {
+  margin: 0 0 4px;
+  font-family: var(--font-heading);
+  color: var(--sd-steel-4);
+  letter-spacing: 1px;
+}
+
+.yl-window {
+  position: relative;
+  width: 404px;
+  overflow: hidden;
+  box-shadow:
+    0 -1px 0 var(--sd-steel-1),
+    0 1px 0 var(--sd-steel-1);
+}
+
+/* Where your entries light: a hairline across the window. */
+.yl-read-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--sd-gold-1);
+}
+
+.yl-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.yl-row {
+  display: grid;
+  grid-template-columns: 52px 96px 76px 80px 1fr;
+  height: 9px;
+  padding: 0 4px;
+  line-height: 9px;
+  white-space: nowrap;
+  color: var(--sd-steel-2);
+}
+
+/* Yours, before the reading line: a shade brighter than the others', not yet lit. */
+.yl-row.yours {
+  color: var(--sd-steel-3);
+}
+
+.yl-row.yours.lit {
+  color: var(--sd-gold-4);
+  background: var(--sd-gold-0);
+}
+
+.yl-tech {
+  text-align: right;
+}

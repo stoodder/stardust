@@ -39,6 +39,8 @@ const BAND_S: GridPos = [11, 12];
 /** Orbital Strike points: the west side and the south side. */
 const WEST_SIDE: GridPos = [6, 6];
 const SOUTH_SIDE: GridPos = [10, 9];
+/** Suppressing Fire: the east edge above the gate, where the drone columns arrive. */
+const GATE_ROAD: GridPos = [17, 7];
 
 function parSteps(): BuildStep[] {
   return [
@@ -68,12 +70,13 @@ function parSteps(): BuildStep[] {
     { wave: 11, upgrade: BEND },
     { wave: 11, upgrade: SOUTH_W },
     { wave: 12, upgrade: NW },
+    { wave: 12, ability: 2, target: GATE_ROAD, when: { afterSec: 30 } },
     { wave: 12, build: 'harpoon', tile: EDGE_S },
     { wave: 13, upgrade: WEST_S },
     { wave: 13, upgrade: EDGE_S },
     { wave: 14, upgrade: EDGE_S },
     { wave: 14, build: 'harpoon', tile: EDGE_N },
-    { wave: 15, upgrade: EDGE_N },
+    { wave: 15, ability: 2, target: GATE_ROAD, when: { afterSec: 32 } },
   ];
 }
 
@@ -101,7 +104,7 @@ export const builds = defineBuilds({
         { wave: 5, upgrade: NW },
         { wave: 6, upgrade: BEND },
         { wave: 6, upgrade: NW },
-        { wave: 8, build: 'thumper', tile: SOUTH_W },
+        { wave: 8, build: 'zapcoil', tile: SOUTH_W },
         { wave: 8, upgrade: SOUTH_W },
         { wave: 9, upgrade: COURT_W },
       ],
@@ -156,20 +159,21 @@ export const builds = defineBuilds({
     beam_and_spike: {
       loadout: ['mindspike', 'prism', 'zapcoil', 'rivet'],
       steps: [
+        { wave: 1, build: 'zapcoil', tile: WEST_N },
         { wave: 1, build: 'zapcoil', tile: COURT_W },
-        { wave: 1, build: 'rivet', tile: WEST_N },
         { wave: 1, build: 'prism', tile: BEND },
-        { wave: 1, upgrade: COURT_W },
+        { wave: 1, upgrade: WEST_N },
         { wave: 1, ability: 1, target: WEST_SIDE, when: { afterSec: 6 } },
-        { wave: 2, build: 'zapcoil', tile: SOUTH_W },
-        { wave: 2, upgrade: WEST_N },
-        { wave: 3, upgrade: WEST_N },
+        { wave: 2, build: 'rivet', tile: NW },
+        { wave: 2, upgrade: COURT_W },
+        { wave: 3, upgrade: NW },
+        { wave: 3, upgrade: NW },
         { wave: 4, build: 'rivet', tile: COURT_E },
         { wave: 4, upgrade: COURT_E },
         { wave: 4, ability: 1, target: SOUTH_SIDE, when: { afterSec: 8 } },
         { wave: 5, upgrade: COURT_E },
+        { wave: 6, build: 'zapcoil', tile: SOUTH_W },
         { wave: 6, upgrade: BEND },
-        { wave: 6, build: 'prism', tile: NW },
         { wave: 8, build: 'prism', tile: COURT_N },
         { wave: 8, build: 'mindspike', tile: WEST_S },
         { wave: 8, upgrade: COURT_N },
@@ -177,7 +181,7 @@ export const builds = defineBuilds({
         { wave: 9, upgrade: WEST_S },
         { wave: 10, build: 'zapcoil', tile: GATE_S },
         { wave: 10, upgrade: GATE_S },
-        { wave: 11, upgrade: NW },
+        { wave: 11, upgrade: SOUTH_W },
         { wave: 11, upgrade: COURT_W },
         { wave: 12, upgrade: COURT_N },
         { wave: 12, build: 'prism', tile: EDGE_S },

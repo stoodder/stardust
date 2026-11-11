@@ -329,7 +329,7 @@ export interface EscortMeterView {
    * when there's no `maxLost` or too many to draw (the row then reads "3/20" in words).
    */
   readonly pips: readonly boolean[] | null;
-  /** Few losses left before defeat (app/dialogue.ts `escortLow`): the lost row's alarm. */
+  /** Few losses left before defeat (story/meters.ts `escortLow`): the lost row's alarm. */
   readonly low: boolean;
 }
 

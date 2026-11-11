@@ -4,14 +4,20 @@
 // stage (the confetti cannon fires, confetti falls, and the record counter ticks). Pure: the
 // timelines are data, and `frameAt` says which sprite frame shows at a moment, so the components
 // (Staging.tsx) only draw. Reduced motion holds still frames (no static, no blink, no flicker).
+// A3M2's Asset Yield Log (T614) is a third: its scroll is yieldLog.ts's.
+
+import { yieldLogLeadInMs, yieldLogLockMs } from './yieldLog.ts';
 
 /** A scene's staging, by kind. */
-export type StagingKind = 'rig9_feed' | 'party';
+export type StagingKind = 'rig9_feed' | 'party' | 'yield_log';
 
 /** Which scenes are staged (a UI-owned table, keyed by scene id; K6). */
 export const SCENE_STAGING: Readonly<Record<string, StagingKind>> = {
   a1_m05_scene_stinger: 'rig9_feed',
   a1_m05_scene_party: 'party',
+  // The Asset Yield Log (act3.md § A3M2, T614), and its dev twin (dev.ts) for the smoke flow.
+  a3_m02_scene_confession: 'yield_log',
+  a1_m01_scene_dev_yield_log: 'yield_log',
 };
 
 /** The staging for `sceneId`, or null for a plain scene. */
@@ -82,17 +88,22 @@ export function leadInMs(beats: readonly Beat[]): number {
   return ms;
 }
 
-/** How long a staging holds its scene's first line back, by kind (the stinger's feed plays first). */
+/**
+ * How long a staging holds its scene's first line back, by kind: the stinger's feed plays first,
+ * and the Asset Yield Log scrolls alone (yieldLog.ts).
+ */
 export function stagingLeadInMs(kind: StagingKind, still: boolean): number {
-  return kind === 'rig9_feed' ? leadInMs(still ? FEED_BEATS_STILL : FEED_BEATS) : 0;
+  if (kind === 'rig9_feed') return leadInMs(still ? FEED_BEATS_STILL : FEED_BEATS);
+  if (kind === 'yield_log') return yieldLogLeadInMs(still);
+  return 0;
 }
 
 /**
- * How long after a staging's start Next and Esc are swallowed (ms), by kind: a scene that must not
- * be skipped past at once (T614 fills it in; 0 for every kind until then).
+ * How long after a staging's start Next and Esc are swallowed (ms), by kind: the Asset Yield Log
+ * can be skipped only after its first pass (T614, yieldLog.ts); every other staging at once.
  */
-export function stagingLockMs(_kind: StagingKind, _still: boolean): number {
-  return 0;
+export function stagingLockMs(kind: StagingKind, still: boolean): number {
+  return kind === 'yield_log' ? yieldLogLockMs(still) : 0;
 }
 
 /**

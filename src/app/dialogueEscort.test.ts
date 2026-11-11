@@ -11,13 +11,8 @@ import { dialogue } from '../ui/dialogue/state.ts';
 import { hud, screen } from '../ui/state.ts';
 import { battleConfig } from './battleSetup.ts';
 import { setSpeed } from './commands.ts';
-import {
-  bindDialogue,
-  escortLow,
-  isHushableAlly,
-  setDialogueEnabled,
-  skipScene,
-} from './dialogue.ts';
+import { escortLow } from '../story/meters.ts';
+import { bindDialogue, isHushableAlly, setDialogueEnabled, skipScene } from './dialogue.ts';
 import { createHost, type Host } from './host.ts';
 import { initSaves } from './save.ts';
 

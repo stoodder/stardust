@@ -2,7 +2,7 @@
 // for the core's meter. Three rows: the label the map gives it ("Evacuated", "Sheltered") with the
 // refugees safe as the big number; "of 36", the map's total; and the lost row, one pip per loss the
 // map allows (`maxLost`), filled `red.3` as refugees are lost, with the blinking alarm box once
-// few are left (app/dialogue.ts `escortLow`, the bark's threshold). Without `maxLost`, or with too
+// few are left (story/meters.ts `escortLow`, the bark's threshold). Without `maxLost`, or with too
 // many to draw, the lost row reads in words ("3", "3/20"). Each refugee lost flashes the meter
 // red (like the core's leak flash, D026), and when a map turns Escort mid-map (A2M5's pivot) the
 // relabel moment plays: first the old meter whole, as it was (the core's glyph and label with its
