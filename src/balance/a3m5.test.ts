@@ -13,9 +13,8 @@ import { describe, expect, it } from 'vitest';
 import { compileContent } from '../content/compile.ts';
 import type { CompiledBuild } from '../content/compiled.ts';
 import { PADS } from '../content/maps/a3_m05/builds.ts';
-import { BEARER_WAVES } from '../content/maps/a3_m05/map.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
-import { TICK_HZ, one, runA3m5, type A3m5Run } from './__fixtures__/a3m5.ts';
+import { ROAD_TILES, TICK_HZ, expectBeats, one, runA3m5 } from './__fixtures__/a3m5.ts';
 import { runMap } from './harness.ts';
 import { HARNESS_TEST_TIMEOUT_MS } from './rules.ts';
 
@@ -23,41 +22,6 @@ const content = compileContent(RAW_CONTENT);
 const map = content.maps.a3_m05;
 const PAR_ASSET = 7;
 const PAR_CORE = 16;
-/** The platform's route length (A2M4's road): where it would leak. */
-const ROAD_TILES = 38;
-
-/** The beats every winning reference run lands (act3.md § A3M5). */
-export function expectBeats(r: A3m5Run, label: string): void {
-  expect(r.outcome, label).toBe('won');
-  const start = (w: number): number => one(r, `WaveStarted ${w}`);
-  // Each bearer group walks as its wave starts.
-  const walks = r.at.BearerSpawned ?? [];
-  for (const [w] of BEARER_WAVES) {
-    expect(walks.filter((t) => t === start(w)).length, `${label}: W${w}'s bearers`).toBeGreaterThan(
-      0,
-    );
-  }
-  expect(
-    walks.every((t) => BEARER_WAVES.some(([w]) => t === start(w))),
-    label,
-  ).toBe(true);
-  // The platform: three phases inside W14, each cue the tick after its phase begins.
-  const cues = ['a3_m05_cue_sv_spawn', 'a3_m05_cue_takeover', 'a3_m05_cue_jettison'];
-  let last = start(14);
-  for (const [i, cue] of cues.entries()) {
-    const phase = one(r, `BossPhase ${i + 1}`);
-    expect(phase, `${label}: phase ${i + 1}`).toBeGreaterThanOrEqual(last);
-    expect(one(r, `ScriptCue ${cue}`), `${label}: ${cue}`).toBe(phase + 1);
-    last = phase;
-  }
-  // Driven off before the core, and W15's countdown waits for it.
-  const ended = one(r, 'BossEnded');
-  expect(ended, label).toBeGreaterThan(last);
-  expect(r.droveOffAt!, label).toBeLessThan(ROAD_TILES);
-  expect(one(r, 'CountdownStarted 15'), label).toBeGreaterThanOrEqual(ended);
-  // The plates land on the crash site.
-  expect(r.plates.toSorted(), label).toEqual(['crash_1', 'crash_2', 'crash_3', 'crash_4']);
-}
 
 describe('A3M5 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
   const report = runMap(content, 'a3_m05', { seeds: 1 });

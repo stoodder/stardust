@@ -2,7 +2,9 @@
 // on A3M5, logging what its beats need: the waves' starts and countdowns, the bearer groups' walks,
 // Cut the Feed and its surge, the platform's phases, cues, jams (by source and wave), plates, and
 // where it was driven off.
+import { expect } from 'vitest';
 import type { CompiledBuild, CompiledContent } from '../../content/compiled.ts';
+import { BEARER_WAVES } from '../../content/maps/a3_m05/map.ts';
 import type { ScriptFlags } from '../../sim/index.ts';
 import { createBuildExecutor, createSim, type SimEvent, type SimState } from '../../sim/index.ts';
 import type { DeepReadonly } from '../../shared/types.ts';
@@ -11,6 +13,8 @@ import { buildFor } from '../harness.ts';
 import { referenceRunProfile, runConfig, type RunProfile } from '../profile.ts';
 
 export const TICK_HZ = 60;
+/** The platform's route length (A2M4's road, in tiles to the core): where it would leak. */
+export const ROAD_TILES = 38;
 
 /** What one A3M5 run shows. */
 export interface A3m5Run {
@@ -182,4 +186,37 @@ export function one(r: A3m5Run, key: string): number {
   const ticks = r.at[key] ?? [];
   if (ticks.length !== 1) throw new Error(`${key}: ${ticks.length} ticks`);
   return ticks[0]!;
+}
+
+/** The beats every winning reference run lands (act3.md § A3M5). */
+export function expectBeats(r: A3m5Run, label: string): void {
+  expect(r.outcome, label).toBe('won');
+  const start = (w: number): number => one(r, `WaveStarted ${w}`);
+  // Each bearer group walks as its wave starts.
+  const walks = r.at.BearerSpawned ?? [];
+  for (const [w] of BEARER_WAVES) {
+    expect(walks.filter((t) => t === start(w)).length, `${label}: W${w}'s bearers`).toBeGreaterThan(
+      0,
+    );
+  }
+  expect(
+    walks.every((t) => BEARER_WAVES.some(([w]) => t === start(w))),
+    label,
+  ).toBe(true);
+  // The platform: three phases inside W14, each cue the tick after its phase begins.
+  const cues = ['a3_m05_cue_sv_spawn', 'a3_m05_cue_takeover', 'a3_m05_cue_jettison'];
+  let last = start(14);
+  for (const [i, cue] of cues.entries()) {
+    const phase = one(r, `BossPhase ${i + 1}`);
+    expect(phase, `${label}: phase ${i + 1}`).toBeGreaterThanOrEqual(last);
+    expect(one(r, `ScriptCue ${cue}`), `${label}: ${cue}`).toBe(phase + 1);
+    last = phase;
+  }
+  // Driven off before the core, and W15's countdown waits for it.
+  const ended = one(r, 'BossEnded');
+  expect(ended, label).toBeGreaterThan(last);
+  expect(r.droveOffAt!, label).toBeLessThan(ROAD_TILES);
+  expect(one(r, 'CountdownStarted 15'), label).toBeGreaterThanOrEqual(ended);
+  // The plates land on the crash site.
+  expect(r.plates.toSorted(), label).toEqual(['crash_1', 'crash_2', 'crash_3', 'crash_4']);
 }
