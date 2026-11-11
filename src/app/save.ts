@@ -2,11 +2,12 @@
 // its slot, and every read and write of it, through meta/'s save API over a localStorage
 // KeyValueStore. It keeps the menus' view models (ui/screens/state.ts: `campaign`, `slots`) in
 // step. The dev hook `?test=1&save=<id>` plays a dev save in an in-memory scratch slot that never
-// touches localStorage, with the dev save's `devUnlocks`.
+// touches localStorage, with the dev save's `devUnlocks` (the dev saves load on demand, before
+// boot: devRegistry.ts).
 import { CAMPAIGN, CAMPAIGN_PLAN } from '../content/campaign.ts';
 import { MAPS } from '../content/maps/index.ts';
 import type { MapId } from '../content/types.ts';
-import { DEV_SAVES, type DevSaveId } from '../meta/__fixtures__/devSaves.ts';
+import { devFixtures } from './devRegistry.ts';
 import {
   type HintId,
   type ImportProblemCode,
@@ -218,11 +219,13 @@ export function openSlot(slot: SlotId): SaveResult {
 
 /**
  * Loads a dev save into the in-memory scratch slot (`?test=1&save=<id>` only: boot checks the
- * flag). Its `devUnlocks` open the gated systems. False for an unknown id.
+ * flag and loads the dev fixtures first). Its `devUnlocks` open the gated systems. False for an
+ * unknown id, or before the dev fixtures are loaded.
  */
 export function loadDevSave(id: string): boolean {
-  if (!isDevSaveId(id)) return false;
-  const dev = DEV_SAVES[id];
+  const saves = devFixtures()?.saves;
+  if (saves === undefined || !Object.hasOwn(saves, id)) return false;
+  const dev = saves[id]!; // hasOwn above
   const scratch = new MemoryStore();
   session = {
     store: scratch,
@@ -236,10 +239,6 @@ export function loadDevSave(id: string): boolean {
   if (!w.ok) logError(`save: dev save '${id}' failed to write`, w.errors);
   refresh();
   return true;
-}
-
-function isDevSaveId(id: string): id is DevSaveId {
-  return Object.hasOwn(DEV_SAVES, id);
 }
 
 /** Leaves the save in play (back to the Title). */

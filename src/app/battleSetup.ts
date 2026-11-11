@@ -3,8 +3,10 @@
 // battles), from the map's par build on its reference profile, so `__sd.autoplay('par')` replays
 // the harness's par run (T332). The live registries win; the dev battle
 // (render/__fixtures__/devBattle.ts, `?map=dev_range`) stays reachable for development and for the
-// smoke flows that need its unlocked towers.
+// smoke flows that need its unlocked towers, once a dev URL has loaded it (devRegistry.ts; D150).
+// A production build compiles without validate(): the gate validates every content set it ships.
 import { compileContent } from '../content/compile.ts';
+import { compileContentUnchecked } from '../content/compileCore.ts';
 import type { CompiledContent, CompiledMapDef } from '../content/compiled.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
 import { MAX_LOADOUT } from '../content/rules.ts';
@@ -20,7 +22,7 @@ import {
   type LoadoutPick,
   type SaveData,
 } from '../meta/index.ts';
-import { DEV_CONTENT } from '../render/__fixtures__/devBattle.ts';
+import { devFixtures } from './devRegistry.ts';
 import { scriptFlagsOf } from '../story/flags.ts';
 import {
   companionSlot,
@@ -39,30 +41,44 @@ export const DEFAULT_MAP_ID = 'a1_m01';
 /** The development battle (render/__fixtures__/devBattle.ts): `?map=dev_range`. */
 export const DEV_MAP_ID = 'dev_range';
 
-/**
- * Content sets searched for a map id, in order: the live game first, then the dev battle. Each
- * compiles on first use, so an A1M1 run never compiles the dev content.
- */
-const CONTENT_SETS: readonly {
+interface ContentSet {
   readonly raw: { readonly maps: object };
   readonly compile: () => CompiledContent<IdSpace>;
-}[] = [lazy(RAW_CONTENT), lazy(DEV_CONTENT)];
+}
 
-function lazy<K extends IdSpace>(
-  raw: RawContent<K>,
-): { readonly raw: RawContent<K>; readonly compile: () => CompiledContent<IdSpace> } {
+function lazy<K extends IdSpace>(raw: RawContent<K>): ContentSet & { readonly raw: RawContent<K> } {
   let compiled: CompiledContent<IdSpace> | null = null;
-  return { raw, compile: () => (compiled ??= compileContent(raw)) };
+  // Vite folds `import.meta.env.DEV` to false in a production build, so validate() isn't bundled;
+  // plain Node (the smoke specs' imports) has no `import.meta.env` and validates.
+  // oxlint-disable-next-line typescript/no-unnecessary-condition -- undefined outside Vite
+  const dev = import.meta.env === undefined || import.meta.env.DEV;
+  const compile = dev ? compileContent : compileContentUnchecked;
+  return { raw, compile: () => (compiled ??= compile(raw)) };
+}
+
+const LIVE_SET = lazy(RAW_CONTENT);
+let devSet: (ContentSet & { readonly raw: RawContent<IdSpace> }) | null = null;
+
+/**
+ * Content sets searched for a map id, in order: the live game first, then the dev battle once its
+ * fixtures are loaded (devRegistry.ts). Each compiles on first use, so an A1M1 run never compiles
+ * the dev content.
+ */
+function contentSets(): readonly ContentSet[] {
+  const dev = devFixtures();
+  if (dev === null) return [LIVE_SET];
+  if (devSet === null || devSet.raw !== dev.content) devSet = lazy(dev.content);
+  return [LIVE_SET, devSet];
 }
 
 /** Every map id a battle can open (the smoke tests boot each one). Compiles nothing. */
 export function battleMapIds(): readonly string[] {
-  return CONTENT_SETS.flatMap((c) => Object.keys(c.raw.maps));
+  return contentSets().flatMap((c) => Object.keys(c.raw.maps));
 }
 
 /** True when a battle can open `mapId`. Compiles nothing. */
 export function hasBattleMap(mapId: string): boolean {
-  return CONTENT_SETS.some((c) => Object.hasOwn(c.raw.maps, mapId));
+  return contentSets().some((c) => Object.hasOwn(c.raw.maps, mapId));
 }
 
 /** True for a feature the sim simulates today (its FEATURE_GATES row is lifted). */
@@ -163,7 +179,7 @@ export function battleConfig(
   seed: number,
   save: SaveData | null = null,
 ): SimConfig<IdSpace> {
-  for (const [setIndex, set] of CONTENT_SETS.entries()) {
+  for (const [setIndex, set] of contentSets().entries()) {
     if (!Object.hasOwn(set.raw.maps, mapId)) continue;
     const content = set.compile();
     const map = content.maps[mapId]!; // hasOwn above
