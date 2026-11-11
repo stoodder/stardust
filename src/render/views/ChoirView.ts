@@ -141,13 +141,15 @@ export class ChoirView {
       gridToScreen(t.x, t.y, this.#ctx.origin, pos);
       const x = Math.round(pos.x);
       const y = Math.round(pos.y);
-      this.#ring(r++, reach, SONG_COLOR, shift, x, y);
-      songs++;
+      // The Lullaby's first, its dashes a step off the song's, so where the two coincide (Harmony
+      // widens the song to the Lullaby's 2.5) they interleave gold and blue.
       const lull = lullReach(t);
       if (lull > 0) {
-        this.#ring(r++, lull, LULL_RING_COLOR, shift, x, y);
+        this.#ring(r++, lull, LULL_RING_COLOR, shift === 0 ? 1 : 0, x, y);
         lulls++;
       }
+      this.#ring(r++, reach, SONG_COLOR, shift, x, y);
+      songs++;
       const note = this.#notes[n++]!; // n < MAX_CHOIRS
       note.setPosition(x, y - NOTE_LIFT_PX + noteBobPx(tick, t.uid, reduced)).setVisible(true);
     }

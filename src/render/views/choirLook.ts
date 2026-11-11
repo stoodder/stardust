@@ -7,7 +7,9 @@
 //   reads as a tower's range. Its dashes crawl a step on the hum's beat (HUM_BEAT_TICKS, sim time:
 //   holds while paused, keeps pace at 2×); still under reduced motion.
 // - **The Lullaby ring:** a Lullaby's own radius (`lullReach`) in a dashed `blue.4` ring, the
-//   sleepy blue of the Lulled note, so its reach (2.5, past the aura's 2) reads apart.
+//   sleepy blue of the Lulled note, so its reach (2.5, past the aura's 2) reads apart. It's drawn
+//   under the song ring with its dashes a step off, so where the two coincide (Harmony widens the
+//   song to 2.5) the dashes interleave gold and blue.
 // - **Notes:** a small `gold.4` eighth note over each Choir, bobbing a pixel up and down on the
 //   beat (offset per uid so two Choirs don't bob in unison); still under reduced motion.
 // - **Lulled:** a small `blue.4` note on an `ink.0` rim over each Lulled unit's head
