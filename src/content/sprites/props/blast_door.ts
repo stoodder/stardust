@@ -2,8 +2,8 @@
 // `door_east` on the two door cores): the shelters' doors at the foot of the old mining cut, each
 // a squat ferrocrete portal across its road, so the road runs in through it. The portal is a wall
 // along the grid's x axis (its face toward the viewer, the road's way in), two hazard-chevroned
-// pillars and a lintel round a doorway as wide as the road, an alarm beacon on top, and the
-// Everglow stencil "2346" (the survey year) on the lintel's shaded end.
+// pillars round a doorway as wide as the road, an alarm beacon on top, and Everglow's teal chevron
+// stencilled on the wall's right end.
 // - `open`: the leaves slid back into the pillars, the doorway lit warm from inside (the shelter's
 //   lamps), a teal status lamp: the door C3 chose.
 // - `shut`: the two leaves met in the doorway (steel, hazard-striped at the seam), the inside dark,
@@ -15,7 +15,6 @@
 // Everglow-owned (the faction's palette) with ferrocrete (`grime`) and the alarm reds in its own
 // legend, so it keeps its colours in every act.
 import { defineSprite } from '../defineSprite.ts';
-import { textPixels as fontPixels } from '../font3x5.ts';
 import { grid, plot, rows, type CharGrid } from '../helpers.ts';
 
 const W = 44;
@@ -105,15 +104,20 @@ function door(look: Look): string[] {
       const seam = k === leaf - 1 && leaf === GAP;
       for (let y = foot - DOOR_H + 2; y <= foot; y++) {
         const stripe = seam || k === leaf - 1;
-        plot(g, x, y, stripe ? ((y + 64) % 3 === 0 ? 'k' : 'c') : side < 0 ? '3' : '2');
+        plot(g, x, y, stripe ? ((y + 64) % 3 === 0 ? 'k' : 'c') : side < 0 ? '2' : '1');
       }
       plot(g, x, foot - DOOR_H + 6, '1'); // a rib across each leaf
     }
   }
-  // The lintel's stencil: the survey year, in steel on the shaded end.
-  for (const p of fontPixels('2346', AX + GAP + 2, footAt(AX + GAP + 4) - TALL + 3)) {
-    plot(g, p.x, p.y, '2');
-  }
+  // The Everglow chevron, stencilled teal on the wall's right end.
+  const sx = AX + GAP + 6;
+  const sy = footAt(sx) - TALL + 6;
+  plot(g, sx, sy, '7');
+  plot(g, sx + 2, sy + 1, '7');
+  plot(g, sx + 1, sy + 1, '7');
+  plot(g, sx + 1, sy + 2, '7');
+  plot(g, sx + 4, sy + 2, '7');
+  plot(g, sx + 3, sy + 2, '7');
   // The status lamp over the doorway, and the alarm beacon on top.
   const lampX = AX - 1;
   const lampY = footAt(lampX) - DOOR_H - 2;

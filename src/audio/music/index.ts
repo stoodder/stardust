@@ -6,6 +6,13 @@ import type { Song } from '../types.ts';
 import { ACT1_BATTLE, TITLE_THEME } from './act1.ts';
 import { ACT2_BATTLE } from './act2.ts';
 import {
+  ACT3_BATTLE,
+  LEAVING_HUM,
+  LEAVING_HUM_ALONG,
+  LEAVING_HUM_TWO,
+  LOSE_HUSH,
+} from './act3.ts';
+import {
   BOSS_STING,
   BRIGHT_MINOR,
   BRIGHT_STING,
@@ -24,6 +31,7 @@ export const THEMES = {
   title: TITLE_THEME,
   act1_battle: ACT1_BATTLE,
   act2_battle: ACT2_BATTLE,
+  act3_battle: ACT3_BATTLE,
 } as const satisfies Readonly<Record<string, Song>>;
 export type ThemeId = keyof typeof THEMES;
 
@@ -40,13 +48,31 @@ export const CUES = {
   home_hum: HOME_HUM,
   c2_sold: C2_SOLD,
   c2_returned: C2_RETURNED,
+  leaving_hum: LEAVING_HUM,
+  leaving_hum_two: LEAVING_HUM_TWO,
+  leaving_hum_along: LEAVING_HUM_ALONG,
+  lose_hush: LOSE_HUSH,
 } as const satisfies Readonly<Record<string, Song>>;
 export type CueId = keyof typeof CUES;
 
-/** The battle theme for each act (Act III and the finale add theirs as they're built). */
+/** The battle theme for each act (the finale adds its own as it's built; until then Act I's). */
 export const BATTLE_THEME: Readonly<Partial<Record<Act, ThemeId>>> = {
   1: 'act1_battle',
   2: 'act2_battle',
+  3: 'act3_battle',
+};
+
+/**
+ * The loss cue by the map's jingle dial (the act's arrangement of the song): the sad trombone
+ * while the jingle still plays; with no jingle (Act III) the song's last notes hummed, unfinished
+ * (`lose_hush`), never a laugh.
+ */
+export const LOSE_CUE: Readonly<Record<JingleVariant, CueId>> = {
+  bright: 'lose',
+  minor_bridges: 'lose',
+  minor: 'lose',
+  none: 'lose_hush',
+  song: 'lose',
 };
 
 /**
