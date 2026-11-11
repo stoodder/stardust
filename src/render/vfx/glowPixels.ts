@@ -23,8 +23,11 @@ import type { Rgb } from './lighting.ts';
 export interface PropGlow {
   /** The frames that glow (any frame when absent). */
   readonly frames?: readonly string[];
-  /** The frames whose emissive pixels make one glow (an animated prop's anim). */
-  readonly union?: readonly string[];
+  /**
+   * Each anim whose frames' emissive pixels make one glow (an animated prop): a frame in one of
+   * them glows with the whole anim's union (`glowFrames`), so the light covers wherever it turns.
+   */
+  readonly unions?: readonly (readonly string[])[];
   /** The master colors that give light. */
   readonly colors: readonly ColorName[];
   /** The halo's reach (px), stepped down GLOW_STEPS. */
@@ -45,17 +48,22 @@ export const PROP_GLOWS: Readonly<Record<string, PropGlow>> = {
     halo: 'gold.4',
     dusk: 0.35,
   },
-  // A2M6's Dome 3: its round window, warm, the lettuce and Pebble asleep in it lit by it.
+  // A2M6's Dome 3: its round window, warm, the lettuce and Pebble asleep in it lit by it. A3M6's
+  // Dome 1, open (and frosting over, T730b): the warm light in its door and its slits lit again.
   'prop.dome': {
-    frames: ['window'],
+    frames: ['window', 'open', 'frost_1', 'frost_2'],
     colors: ['gold.4', 'green.3', 'green.2', 'coral.3', 'coral.4'],
     radius: 5,
     halo: 'orange.4',
     dusk: 0.25,
   },
-  // A2M4's vats: the slurry, cold violet (unsung), wherever it churns.
+  // A2M4's vats: the slurry, cold violet (unsung), wherever it churns; at full blaze (A3M5) over
+  // the blaze's frames, its overflow runs included (T730b).
   'prop.vat': {
-    union: ['v0', 'v1', 'v2'],
+    unions: [
+      ['v0', 'v1', 'v2'],
+      ['blaze_0', 'blaze_1', 'blaze_2'],
+    ],
     colors: ['violet.3', 'violet.4'],
     radius: 3,
     halo: 'violet.3',
@@ -63,10 +71,18 @@ export const PROP_GLOWS: Readonly<Record<string, PropGlow>> = {
   },
   // A2M4's seams: the stardust veins in the cliff, warm gold flushed pink (sung).
   'prop.seam': {
-    union: ['v0', 'v1'],
+    unions: [['v0', 'v1']],
     colors: ['gold.3', 'gold.4', 'pink.3'],
     radius: 2,
     dusk: 0.3,
+  },
+  // A3M5's burst feed lines (wreckage `v6`/`v7`, T730b): the slurry welling up where it bleeds.
+  'prop.wreckage': {
+    frames: ['v6', 'v7', 'v6_lit', 'v7_lit', 'v6_half', 'v7_half'],
+    colors: ['violet.4'],
+    radius: 2,
+    halo: 'violet.3',
+    dusk: 0.25,
   },
   // Act III's emergency lamps (the apron's): the caged red lamp and its light down the post
   // (T630b; the Long Night lights them, vfx/nightGlow.ts).
@@ -77,6 +93,20 @@ export const PROP_GLOWS: Readonly<Record<string, PropGlow>> = {
     dusk: 0,
   },
 };
+
+/**
+ * The frames whose emissive pixels make `frame`'s glow: the union of the anim it is in, else the
+ * frame alone.
+ */
+export function glowFrames(glow: PropGlow, frame: string): readonly string[] {
+  for (const u of glow.unions ?? []) if (u.includes(frame)) return u;
+  return [frame];
+}
+
+/** Whether `frame` of a prop with `glow` wears it (every frame, unless it names its frames). */
+export function glowsOn(glow: PropGlow, frame: string): boolean {
+  return glow.frames === undefined || glow.frames.includes(frame);
+}
 
 /**
  * The buildable pads' teal corner brackets (Everglow plates): they glow faintly in the dark only,

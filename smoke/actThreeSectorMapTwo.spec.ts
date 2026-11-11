@@ -146,7 +146,7 @@ test('a scene played over the Sector map covers its node panel, plates, and mark
   // What the player sees at the panel's centre and on the marker is the scene, not the map.
   const onTop = (x: number, y: number) =>
     page.evaluate(
-      ([px, py]) => document.elementFromPoint(px!, py!)?.closest('.dlg-stage') != null,
+      ([px, py]) => Boolean(document.elementFromPoint(px!, py!)?.closest('.dlg-stage')),
       [x, y],
     );
   expect(await onTop(box.x + box.width / 2, box.y + box.height / 2)).toBe(true);

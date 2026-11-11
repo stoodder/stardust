@@ -11,6 +11,7 @@ import { presentationFor } from '../story/presentation.ts';
 import { medalMarks, resultsHeader, spokenCounter } from '../ui/screens/presentationText.ts';
 import { bearerTotal } from '../sim/index.ts';
 import { battleConfig } from './battleSetup.ts';
+import type { RunEscort } from '../ui/screens/state.ts';
 import { fixtureResult } from './resultsFixture.ts';
 import { bearersAtEnd } from './resultsStory.ts';
 import {
@@ -51,8 +52,14 @@ describe("A3M5's Carried line", () => {
 
   it("is the run's meter on a map with bearers; an Escort's meter still wins", () => {
     expect(meterOf({ bearers: PROTECT.bearers! })).toEqual({ kind: 'carried', n: 23, total: 26 });
-    const escort = { kind: 'evacuated', label: 'Evacuated', evacuated: 5, total: 9, lost: 4 };
-    expect(meterOf({ escort: escort as never, bearers: PROTECT.bearers! })).toEqual({
+    const escort: RunEscort = {
+      kind: 'evacuated',
+      label: 'Evacuated',
+      evacuated: 5,
+      total: 9,
+      lost: 4,
+    };
+    expect(meterOf({ escort, bearers: PROTECT.bearers! })).toEqual({
       kind: 'evacuated',
       n: 5,
     });
@@ -72,28 +79,19 @@ describe("A3M5's Carried line", () => {
   });
 
   it('reads the finished battle through bearersCarried; none on a map without bearers', () => {
-    const map = {
-      escort: {
-        groups: [
-          { kind: 'bearer', count: 6, when: null },
-          { kind: 'refugee', count: 4, when: null },
-          { kind: 'bearer', count: 8, when: { flag: 'door_choice', eq: 'warren' } },
-        ],
-      },
-    };
-    const state = { stats: { bearersHome: 5, lostByGroup: [1, 2, 0] } };
-    const sim = (flags: Record<string, string>) =>
-      ({ state, map, config: { scriptFlags: flags } }) as unknown as Parameters<
-        typeof bearersAtEnd
-      >[0];
-    expect(bearersAtEnd(sim({ door_choice: 'convoy' }))).toEqual({
-      bearers: { home: 5, lost: 1, total: 6 },
+    const save = DEV_SAVES.after_a3m4_keep.build();
+    const config = battleConfig('a3_m05', 0, save);
+    const map = config.content.maps.a3_m05!;
+    const total = bearerTotal(map, config.scriptFlags);
+    const bearerGroups = (map.escort?.groups ?? []).map((g) => g.kind === 'bearer');
+    // One bearer lost from the first bearer group; a lost refugee elsewhere would not count.
+    const lostByGroup = bearerGroups.map((b, i) => (b && i === bearerGroups.indexOf(true) ? 1 : 0));
+    const state = { stats: { bearersHome: 5, lostByGroup } };
+    expect(bearersAtEnd({ state, map, config })).toEqual({
+      bearers: { home: 5, lost: 1, total },
     });
-    expect(bearersAtEnd(sim({ door_choice: 'warren' }))).toEqual({
-      bearers: { home: 5, lost: 1, total: 14 },
-    });
-    const none = { state, map: { escort: null }, config: { scriptFlags: {} } };
-    expect(bearersAtEnd(none as unknown as Parameters<typeof bearersAtEnd>[0])).toEqual({});
+    const other = battleConfig('a3_m02', 0, save);
+    expect(bearersAtEnd({ state, map: other.content.maps.a3_m02!, config: other })).toEqual({});
   });
 
   it('the results fixture walks every bearer home on a win, half on a loss', () => {

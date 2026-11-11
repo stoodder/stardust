@@ -88,6 +88,11 @@ export interface GroundGrid {
    * its tiles touch.
    */
   readonly routeList?: readonly { readonly kind: string; readonly tiles: readonly GridPos[] }[];
+  /**
+   * The map's id (CompiledMapDef.id): the few looks one map has of its own (`CORE_BY_MAP`,
+   * `PERCH_MAPS`). Absent: none.
+   */
+  readonly id?: string;
 }
 
 /** Each grid's route steps (tile index pairs, low × 65536 + high), built once per grid. */
@@ -257,6 +262,8 @@ const DECOR_LOOKS: Readonly<Partial<Record<SpriteId, { frame: string; anim: stri
   'prop.held_door': { frame: 'v0', anim: 'flicker' },
   'prop.humming_ring': { frame: 'hum_0', anim: 'hum' },
   'prop.hangar': { frame: 'shut_0', anim: 'idle' },
+  // Pebble on the Peeker's rock, looking out, blinking, bouncing (A3M6, T730b).
+  'prop.pebble_rock': { frame: 'perch_0', anim: 'perch' },
 };
 
 /**
@@ -311,6 +318,41 @@ export function peekerShows(env: string | undefined): boolean {
  * (PeekerView, T309).
  */
 export const VIEW_MARKERS: readonly MarkerId[] = ['peeker'];
+const PEEKER_MARKER: MarkerId = 'peeker';
+
+/**
+ * Each map's core, where it isn't the colony's core beacon (T730b): A3M4's is the shelter
+ * generator in the hall (act3.md § A3M4). It shares the core's frames and glow slots, so CoreView's
+ * flash and red heart draw over it unchanged.
+ */
+const CORE_BY_MAP: Readonly<Record<string, SpriteId>> = { a3_m04: 'prop.generator' };
+
+/** The sprite drawn on map `mapId`'s core tiles (`prop.core` unless `CORE_BY_MAP` names one). */
+export function coreSprite(mapId: string | undefined): SpriteId {
+  return mapId !== undefined && Object.hasOwn(CORE_BY_MAP, mapId)
+    ? CORE_BY_MAP[mapId]! // hasOwn
+    : 'prop.core';
+}
+
+/**
+ * Maps where Pebble sits on top of the Peeker's rock in plain sight (T730b; act3.md § A3M6: "Pebble
+ * sits on top of the Peeker rock from W1"): its `peeker` marker's tile shows `prop.pebble_rock`
+ * perched, where elsewhere in the Long Night it stays bare (`peekerShows`).
+ */
+const PERCH_MAPS: ReadonlySet<string> = new Set(['a3_m06']);
+
+/** Whether Pebble perches on the Peeker's rock on map `mapId`. */
+export function pebblePerches(mapId: string | undefined): boolean {
+  return mapId !== undefined && PERCH_MAPS.has(mapId);
+}
+
+/**
+ * A marker whose tile a jettisoned boss's plate lands on (`crash_<n>`, A3M5's crash site; T707):
+ * its tile stays bare of sparse decor, and CrashSiteView lands the plate there (T730b).
+ */
+export function isPlateMarker(id: MarkerId): boolean {
+  return /^crash_\d+$/.test(id);
+}
 
 /** A prop that arrives on a cue: its sprite, and the wave whose countdown brings it on. */
 export interface CueDecor {
@@ -351,6 +393,28 @@ function decorSprite(id: MarkerId): SpriteId | undefined {
     if (shorter === base) return undefined;
     base = shorter;
   }
+}
+
+/**
+ * A spawn tile's look: `hatch` off every edge of the map (or, on a revisit, of the original map's
+ * footprint, where its own spawns stand: `revisitAt`/`revisitSize`), else `v0`, a burrow at the
+ * head of the road.
+ */
+export function spawnFrame(g: GroundGrid, col: number, row: number): 'hatch' | 'v0' {
+  const at = g.revisitAt ?? null;
+  const size = g.revisitSize ?? null;
+  const inFoot =
+    at !== null &&
+    size !== null &&
+    col >= at[0] &&
+    row >= at[1] &&
+    col < at[0] + size.cols &&
+    row < at[1] + size.rows;
+  const [c0, r0, c1, r1] =
+    inFoot && at !== null && size !== null
+      ? [at[0], at[1], at[0] + size.cols - 1, at[1] + size.rows - 1]
+      : [0, 0, g.cols - 1, g.rows - 1];
+  return col > c0 && row > r0 && col < c1 && row < r1 ? 'hatch' : 'v0';
 }
 
 /** The wall's ends (A2M6): markers on one row; the wall runs between them (inclusive). */
@@ -402,7 +466,14 @@ function decorAt(g: GroundGrid, col: number, row: number): MarkerDecor | 'bare' 
   if (g.markers === undefined) return null;
   for (const [id, [c, r]] of Object.entries(g.markers)) {
     if (c !== col || r !== row) continue;
-    if (VIEW_MARKERS.includes(id) || Object.hasOwn(CUE_DECOR, id) || g.asset?.marker === id)
+    if (id === PEEKER_MARKER && pebblePerches(g.id))
+      return { sprite: 'prop.pebble_rock', frame: null };
+    if (
+      VIEW_MARKERS.includes(id) ||
+      Object.hasOwn(CUE_DECOR, id) ||
+      g.asset?.marker === id ||
+      isPlateMarker(id)
+    )
       return 'bare';
     const sprite = decorSprite(id);
     if (sprite === 'prop.wall') return { sprite, frame: wallFrame(g, id, col, row) };
@@ -628,14 +699,15 @@ function dressBase(g: GroundGrid, col: number, row: number): TileDressing {
       const ground: TileLook = { sprite: 'tile.path', frame: alongY ? 'tread_y' : 'tread_x' };
       return {
         ground,
-        prop: t === 'C' ? { sprite: 'prop.core', frame: 'idle_0', anim: 'idle' } : null,
+        prop: t === 'C' ? { sprite: coreSprite(g.id), frame: 'idle_0', anim: 'idle' } : null,
       };
     }
     case 'S': {
       // A spawn inside the map, off every edge, is a hatch the enemy comes up out of (A2M4's vat
-      // drain hatch); one on the edge is a burrow at the head of the road.
-      const inside = col > 0 && row > 0 && col < g.cols - 1 && row < g.rows - 1;
-      return { ground: { sprite: 'tile.spawn', frame: inside ? 'hatch' : 'v0' }, prop: null };
+      // drain hatch); one on the edge is a burrow at the head of the road. On a revisit the edge
+      // is the original map's (T730b): A1M1's road still comes down out of its burrow on A3M6,
+      // A2M4's out of its own on A3M5, wherever the band puts them.
+      return { ground: { sprite: 'tile.spawn', frame: spawnFrame(g, col, row) }, prop: null };
     }
     case 'o':
       // A pad on the wall walk (A2M6) keeps the parapet behind its plate; a tower on it draws in

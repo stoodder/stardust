@@ -4,7 +4,8 @@
 // tile the core's sprite hides, the core draws at 60% so the tower shows through. The leak's ring,
 // shake, and "−N" are FxView's; the HUD meter has its own flash. A3M3's door cores are drawn as
 // blast doors (BlastDoorView, T630b): on those tiles the core keeps its place for a leak's effects
-// and fades a door that hides a tower, but wears no flash or red heart.
+// and fades a door that hides a tower, but wears no flash or red heart. A3M4's core is the shelter
+// generator (groundTiles' `coreSprite`, T730b): its flash and heart are cut from its own frames.
 import * as Phaser from 'phaser';
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
@@ -12,7 +13,8 @@ import { pulseOn } from '../motion.ts';
 import { imageToCanvas } from '../sprites/canvas.ts';
 import { DEFAULT_VARIANT } from '../sprites/bake.ts';
 import type { SpriteSource } from '../sprites/SpriteSource.ts';
-import { tilesBehind } from './groundTiles.ts';
+import { coreSprite, tilesBehind } from './groundTiles.ts';
+import type { SpriteId } from '../../content/sprites/index.ts';
 import type { ViewContext } from './ViewContext.ts';
 
 /** Integrity at or below this turns the core's heart red (art-direction §9: red at 5). */
@@ -21,7 +23,6 @@ export const LOW_INTEGRITY = 5;
 const LEAK_FLASH_FRAMES = 2;
 /** Stepped alpha (art-direction §7): a core hiding a tower draws at 60%. */
 export const OCCLUDING_ALPHA = 0.6;
-const CORE = 'prop.core';
 const FRAME = 'idle_0';
 /** `white.1` as a tint. */
 const WHITE = 0xffffff;
@@ -37,6 +38,8 @@ const RED_4 = hex('red.4');
 export interface CoreGrid {
   readonly cols: number;
   readonly tiles: readonly string[];
+  /** The map's id: which sprite its core is (`coreSprite`). */
+  readonly id?: string;
 }
 
 /**
@@ -48,13 +51,14 @@ export interface CoreGrid {
 function lowTextures(
   scene: Phaser.Scene,
   sprites: SpriteSource,
+  core: SpriteId,
 ): { orb: string; halo: string } | null {
-  const orbKey = 'core.low.orb';
-  const haloKey = 'core.low.halo';
+  const orbKey = `core.low.orb.${core}`;
+  const haloKey = `core.low.halo.${core}`;
   if (scene.textures.exists(orbKey) && scene.textures.exists(haloKey)) {
     return { orb: orbKey, halo: haloKey };
   }
-  const ref = sprites.glowFrame(CORE, FRAME);
+  const ref = sprites.glowFrame(core, FRAME);
   if (ref === null) return null;
   const fr = scene.textures.getFrame(ref.texture, ref.frame);
   const src: unknown = fr?.source.image;
@@ -114,12 +118,13 @@ export class CoreView {
   ) {
     this.#reducedMotion = reducedMotion;
     const { scene, sprites, layers, origin } = ctx;
-    const f = sprites.frame(CORE, FRAME, DEFAULT_VARIANT);
-    const a = sprites.frameAnchor(CORE, FRAME);
-    const height = sprites.meta(CORE).anchor.y;
-    const glow = sprites.glowFrame(CORE, FRAME);
-    const ga = glow === null ? null : sprites.frameAnchor(CORE, `${FRAME}@glow`);
-    const low = glow === null ? null : lowTextures(scene, sprites);
+    const core = coreSprite(grid.id);
+    const f = sprites.frame(core, FRAME, DEFAULT_VARIANT);
+    const a = sprites.frameAnchor(core, FRAME);
+    const height = sprites.meta(core).anchor.y;
+    const glow = sprites.glowFrame(core, FRAME);
+    const ga = glow === null ? null : sprites.frameAnchor(core, `${FRAME}@glow`);
+    const low = glow === null ? null : lowTextures(scene, sprites, core);
     const overlay = (texture: string, frame?: string): Phaser.GameObjects.Image => {
       const img = scene.make
         .image({}, false)

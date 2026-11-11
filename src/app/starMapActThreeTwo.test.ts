@@ -83,9 +83,12 @@ describe('starMapView, Act III part two', () => {
   });
 });
 
-describe('the chart after a win', () => {
-  const at = (v: { x: number; y: number }) => ({ x: PLANT.x + v.x, y: PLANT.y + v.y });
+/** A vat's centre on the chart. */
+const at = (v: { x: number; y: number }) => ({ x: PLANT.x + v.x, y: PLANT.y + v.y });
+/** Pixels of `c` in Dome Row: the band inside the colony's south wall (y 291–303). */
+const row = (img: RgbaImage, c: ColorName) => count(img, c, 270, 291, 422, 303);
 
+describe('the chart after a win', () => {
   it("the vats: violet by day, at full blaze through the Long Night, cold once A3M5's won", () => {
     const day = starMapChart('act2.gold');
     const blaze = starMapChart('act3');
@@ -103,8 +106,6 @@ describe('the chart after a win', () => {
   it("Dome Row's domes open and warm once A3M6 is won: gold windows, doors, light on the yard", () => {
     const shut = starMapChart('act3', [], ['plant_dark']);
     const open = starMapChart('act3', [], ['plant_dark', 'domes_open']);
-    // Dome Row: the band inside the colony's south wall (y 291–303).
-    const row = (img: RgbaImage, c: ColorName) => count(img, c, 270, 291, 422, 303);
     expect(row(shut, 'gold.1')).toBe(0);
     expect(row(open, 'gold.3')).toBeGreaterThanOrEqual(8);
     expect(row(open, 'gold.2')).toBeGreaterThanOrEqual(8);

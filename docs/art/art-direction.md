@@ -590,7 +590,7 @@ North is up. It is a top-down survey with hill shading lit from the north-west, 
 | **The Spires** | A ridge band across the north, about y 32–120 | Jagged peaks 8–20 px tall in the phase's clay ramp, shaded south-east |
 | **Rigs** | Ridge Rigs about (400, 100), Rigs 7 and 8 on the ledge east of it; the Diggings about (500, 88) | Derricks 5×7 in `steel.2`/`steel.3` with a 1 px `orange.3` light |
 | **Rig Nine's bore** | (520, 76) | A 9×6 `ink.0` mouth on a `grime` spoil heap with 3–4 `violet.3` pixels in it (drill spoil is unsung: §1, principle 6) |
-| **Reclamation Facility 2** | (472, 168), under the north-east cliff | Three squat `steel.1`/`steel.2` blocks, three 5 px vats with `violet.3` cores and one `violet.4` pixel each, a 1 px stack. Drawn from the start and unlabeled: a fair-play clue |
+| **Reclamation Facility 2** | (472, 168), under the north-east cliff | Three squat `steel.1`/`steel.2` blocks, three 5 px vats with `violet.3` cores and one `violet.4` pixel each, a 1 px stack. Drawn from the start and unlabeled: a fair-play clue. In the `act3` and `dawn` phases the vats burn at full blaze (A3M5's maximum throughput): the whole core `violet.4` in a dithered `violet.2` halo. **Once A3M5 is won** they are opened and cold ("Reclamation Facility 2: offline"): `ink.0` cores in `steel.1` rings, nothing burning |
 | **Gold seams** | The cliff face above the plant | 4–6 pixels of `pink.3` and `gold.4` (sung) |
 | **The Terraces** | x 228–300, y 140–188 | Four stepped strips of grass with clay lips. From the `act2.dusk` phase a `grime` mining scar cuts across them (A2M3's revisit) |
 | **The colony** | Walled, x 268–424, y 196–304; gates north (312, 196), east (424, 240), south (304, 304) | A 1 px `steel.2` wall with gaps at the gates; domes 3–7 px across in `white.0` with `teal.3` rims and `ink.1` shade on the south-east; Dome Row along the south wall; Admin Plaza a 12×10 paved square in the path ramp's top step at (336, 252) with three 1 px `gold.4` billboard ticks on its north side. Dome windows are 1 px `gold.3` from the dusk phase on |
@@ -599,6 +599,7 @@ North is up. It is a top-down survey with hill shading lit from the north-west, 
 | **The Long Walk** | The content polyline: the north edge, the Halls' mouth (412, 60), Okonkwo's Gap, the north gate, the south gate, the south edge | A 1 px dotted trail (1 on, 1 off) in the path ramp's top step, drawn under the roads, leaving across both edges |
 | **Okonkwo's Gap** (`act3` and `dawn` phases) | A notch in the ridge's lowest edge above A3M3's node, its foot at (372, 106) | An `ink.0` cut 14 px deep, narrowing as it climbs, its west wall lit in the phase's clay and its east wall a step down; at its foot the two doors as 2 px lit ticks, the convoy's `gold.3` west and the warren's `green.3` east |
 | **The shelters** (`act3` and `dawn` phases) | Above A3M4's node, from (283, 229) | Three low flat steel bunkers 7×3 px, 9 px apart (`steel.3` tops, `steel.2`/`steel.1` sides), each with an `ink.0` doorway under a `gold.3` lamp among the domes' emergency red |
+| **Dome Row open** (once A3M6 is won) | The domes along the colony's south wall | Goldie opened them all: each burns a `gold.3` window whatever the phase (no emergency red), its door a `gold.2` pixel on its south rim, and its light spills onto the yard in a dithered `gold.1` fan 2 px deep. Act III's first warmth on the chart |
 | **The lowlands** | South of the colony | Ground dithered with `blue.1` pools toward the south edge; a 1–2 px `blue.2` creek from the west hills down past the colony's west side |
 | **Edges** | West, east, and south | Dither into `ink.0` over 4 px with the apron's pattern (§3 *The apron*) |
 | **Reserved corners** | The header (x 8–216, y 8–48), the banks (x 512–632, y 8–36), the footer (x 392–632, y 328–352) | Ground only: no landmark, label, or node under them |
@@ -611,10 +612,11 @@ North is up. It is a top-down survey with hill shading lit from the north-west, 
 | A1M2 | (264, 160) | A2M2 | (400, 100) | A3M2 | (352, 260), 16 px east of A1M4 |
 | A1M3 | (440, 236) | A2M3 | (280, 152) | A3M3 | (372, 136), on the Long Walk |
 | A1M4 | (336, 252) | A2M4 | (472, 168) | A3M4 | (296, 248), the colony's west quarter |
-| A1M5 | (312, 204) | A2M5 | (176, 164) | | |
-| | | A2M6 | (352, 200) | | |
+| A1M5 | (312, 204) | A2M5 | (176, 164) | A3M5 | (488, 176), 16 px east and 8 south of A2M4, on the plant |
+| | | A2M6 | (352, 200) | A3M6 | (320, 300), 16 px east and 8 south of A1M1, on Dome Row |
+| | | | | FIN | (412, 60), at the Deep Halls' mouth on the Long Walk |
 
-Provisional, settled with their milestones: A3M5 (488, 176), A3M6 (320, 300), the finale (412, 60).
+A revisit stands 16 px east of the map it revisits, so the two read as one place on two nights. The changes a win makes (the plant dark, Dome Row open) are `STAR_MAP_CHANGES` in the same file; the chart repaints when they change.
 
 ### The north edge and the palette by phase
 
@@ -627,7 +629,7 @@ The chart's **phase** is the frontier's (core-loop §1.1). Its ramps are the act
 | `act3` | A3M1–the finale (first shown at Act II's close, A2M6 won) | `act3.ground`, `act3.path`; the cliffs dark rock from the ground ramp, `act3.crystal`'s low steps on their lit upper faces, and a crystal glint (a `crystal.3` point over a `crystal.2`) on about half the peaks | `act3`'s; the domes' shells go dark (`steel.0`, `ink.3` shade, `steel.1` rims), their windows `act3.emergency`, half of them dark | `red.3` | 72 px across the Spires, with two or three 1 px `violet.2`/`violet.3` cracks reaching south to the Terraces |
 | `dawn` | None (post-game) | `finale.ground`, Act III's path | `finale`'s | `gold.3` | Recedes to 16 px; the Halls' mouth glows `gold.3` and `pink.3` (sung) in a 9 px dither, and the north faces take the warm light |
 
-The `act3` row is built (T512, T612): from Act II's close, where A3M1 is a teaser, through A3M3 won, where A3M4 is (the `soon` glyph, so only the frontier's leg, the plates, and the panel wear the accent); between them the `next` glyph's core and ping are `red.3`. The `dawn` row is a sketch the finale's milestone settles.
+The `act3` row is built (T512, T612, T712): from Act II's close, where A3M1 is a teaser, through A3M6 won, where the finale is (the `soon` glyph, so only the frontier's leg, the plates, and the panel wear the accent); between them the `next` glyph's core and ping are `red.3`. The `dawn` row is a sketch the finale's milestone settles.
 
 ### Nodes, legs, and the marker
 
@@ -640,7 +642,7 @@ The `act3` row is built (T512, T612): from Act II's close, where A3M1 is a tease
 
 ### The panel and the chrome
 
-- **The node panel:** a HUD panel (§9 *Look*: `ink.1` at 92%, a 1 px act-accent edge, 3 px chamfer), 176 px wide, placed beside the selected node by the tower panel's rule (away from the screen centre; never over its node; clear of the other nodes and the reserved corners when it can be). Top to bottom: the kicker in `steel.3`; the name in `gold.4`; the state (*Next up* in the accent, *Cleared* in `gold.3`, *Coming soon* in `steel.3` beside the padlock); the tagline in `white.0` at a 9 px line; an `ink.3` rule; the threat glyphs with their names in `white.1` and the "Required" line in the act's secondary color (the briefing strip's grammar, §9); the three medals as rows (the medal tracker's 6 px diamonds, names in `gold.3`); the optional objectives' squares; then the button, right-aligned and primary. A teaser stops after its tagline.
+- **The node panel:** a HUD panel (§9 *Look*: `ink.1` at 92%, a 1 px act-accent edge, 3 px chamfer), 176 px wide, placed beside the selected node by the tower panel's rule (away from the screen centre; never over its node or its name plate, up to 96 px wide; clear of the other nodes and the reserved corners when it can be). Top to bottom: the kicker in `steel.3`; the name in `gold.4`; the state (*Next up* in the accent, *Cleared* in `gold.3`, *Coming soon* in `steel.3` beside the padlock); the tagline in `white.0` at a 9 px line; an `ink.3` rule; the threat glyphs with their names in `white.1` and the "Required" line in the act's secondary color (the briefing strip's grammar, §9); the three medals as rows (the medal tracker's 6 px diamonds, names in `gold.3`); the optional objectives' squares; then the button, right-aligned and primary. A teaser stops after its tagline.
 - **The header** (top left) and **the banks** (top right) are the menu panel's header (§9) split into two HUD plates over the chart; **the footer**'s buttons sit bottom right; the menu notice sits under the header plate.
 - **The theme** is the phase's act: the screen root carries its own `data-act`.
 - **The first-visit sweep:** a 1 px accent line runs from the top of the chart to the bottom in 1.2 s, stepping 2 px at a time, revealing the chart behind it with a 4 px dithered afterglow; then the notice shows top center for 4 s. Reduced motion skips the sweep.

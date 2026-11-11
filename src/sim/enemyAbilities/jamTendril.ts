@@ -117,7 +117,7 @@ export function tendrilStep(state: SimState, e: Enemy, j: CompiledJam): void {
     return;
   }
   if (e.jamTicks <= 0) {
-    e.jamTicks = tell + JAM_FIRST_READY_TICKS; // first tick alive: ready (T760)
+    e.jamTicks = JAM_FIRST_READY_TICKS < 0 ? periodTicksOf(j) : tell + JAM_FIRST_READY_TICKS; // EXPTMP first tick alive: ready (T760)
     return;
   }
   if (e.jamTicks > tell && !cooldownHeld(e)) e.jamTicks--; // Lulled (T607): its beat

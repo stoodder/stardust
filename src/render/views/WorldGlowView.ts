@@ -16,6 +16,10 @@
 //   world glows as in a full night all the same (baked `@glow`s at NIGHT_GLOW, the moons steady
 //   and full); the props that swap frames on a cue (`OWN_GLOW`) carry their own (frameGlow.ts).
 //   Every other env reads exactly as before.
+// - **A prop's glow follows its frame** (T730b): a sprite's frame is watched, and when it moves on
+//   (its anim, or a view's cue: A3M6's Dome 1 frosting, A3M5's hangar opening, a wreck's beacon)
+//   its glow re-points to that frame's (its `PROP_GLOWS` light over its anim's union, else its
+//   baked `@glow`), each frame's texture made once a battle; a frame with none shows none.
 // Render-only and cosmetic. Allocation-free per frame: textures are baked once, images pooled,
 // and nothing is set that hasn't changed.
 import * as Phaser from 'phaser';
@@ -28,6 +32,8 @@ import type { RgbaImage } from '../sprites/rasterize.ts';
 import {
   emissiveGlow,
   glowAlpha,
+  glowFrames,
+  glowsOn,
   PAD_GLOW,
   poolImage,
   prismHaloImage,
@@ -68,16 +74,34 @@ const GLOW_DEPTH = 0.00005;
 const OVERHANG_PX = 8;
 /** A baked `@glow`'s strength in the full dark: the world's small lights, under the lamps'. */
 const BAKED_PEAK = 0.6;
-/** Baked glows that shine at full strength in the dark: the core's heart (what you defend). */
-const FULL_BAKED: ReadonlySet<string> = new Set(['prop.core']);
+/**
+ * Baked glows that shine at full strength in the dark: the core's heart (what you defend), A3M4's
+ * generator's too (it is the core there, T730b).
+ */
+const FULL_BAKED: ReadonlySet<string> = new Set(['prop.core', 'prop.generator']);
 
 interface PropLight {
   readonly prop: Phaser.GameObjects.Sprite | Phaser.GameObjects.Image;
   readonly img: Phaser.GameObjects.Image;
   /** Its dusk strength (0: it shines only in the dark), and its strength in the full dark. */
+  dusk: number;
+  peak: number;
+  alpha: number;
+  /**
+   * A prop's glow follows its frame (T730b: Dome 1 frosting, the hangar opening, a wreck's beacon,
+   * an anim's frames): the frame name it shows (`''` for a pad's, which never changes), and
+   * whether that frame has no glow.
+   */
+  shown: string;
+  none: boolean;
+}
+
+/** A glow texture, its padding, and how it shines (`peak` in the full dark). */
+interface GlowTex {
+  readonly key: string;
+  readonly radius: number;
   readonly dusk: number;
   readonly peak: number;
-  alpha: number;
 }
 
 const pos: Vec2 = { x: 0, y: 0 };
@@ -108,6 +132,10 @@ export class WorldGlowView {
   readonly #moons: Phaser.GameObjects.Image | null = null;
   /** The map's env (the Long Night glows without darkness; nightGlow.ts). */
   readonly #env: string | undefined;
+  /** Whether scenery's baked `@glow`s shine (with darkness, or in the Long Night). */
+  readonly #bakes: boolean;
+  /** Each prop frame's glow texture by its frame name (null: none), made once a battle. */
+  readonly #tex = new Map<string, GlowTex | null>();
   #dark = -1;
   #pooled = 0;
   #lit = 0;
@@ -129,6 +157,7 @@ export class WorldGlowView {
     this.#darkness = darkness;
     this.#lamps = map.lights.length;
     this.#liftPx = liftPx;
+    this.#bakes = bakesSceneryGlow(map.env, map.dark);
     const { scene, layers } = ctx;
     for (const obj of layers.world.list) {
       if (!isScenery(obj)) continue;
@@ -137,12 +166,12 @@ export class WorldGlowView {
       }
       const key = parseFrameKey(obj.frame.name);
       if (key === null || (longNight && OWN_GLOW.has(key.id))) continue;
-      const glow = PROP_GLOWS[key.id];
-      if (glow !== undefined && (glow.frames === undefined || glow.frames.includes(key.frame))) {
-        this.#addProp(obj, this.#propTexture(key.id, key.variant, key.frame, glow), glow);
-      } else if (bakesSceneryGlow(map.env, map.dark)) {
-        this.#addBaked(obj, key.id, key.variant, key.frame);
-      }
+      // A sprite's frame can change (its anim, a view's cue), so it is watched even when the
+      // frame it shows now has no glow; an image's never does.
+      const watch = obj instanceof Phaser.GameObjects.Sprite;
+      if (PROP_GLOWS[key.id] === undefined && !this.#bakes) continue;
+      if (!watch && this.#glowTex(obj.frame.name) === null) continue;
+      this.#addProp(obj);
     }
     if (!map.dark) {
       // The Long Night's moons (no lamps, pads, or pools without darkness).
@@ -164,7 +193,15 @@ export class WorldGlowView {
       );
       img.setOrigin(0, 0).setBlendMode(Phaser.BlendModes.ADD).setVisible(false);
       layers.decal.add(img);
-      this.#props.push({ prop: obj, img, dusk: 0, peak: PAD_GLOW.peak, alpha: 0 });
+      this.#props.push({
+        prop: obj,
+        img,
+        dusk: 0,
+        peak: PAD_GLOW.peak,
+        alpha: 0,
+        shown: '',
+        none: false,
+      });
     }
     for (let i = 0; i < MAX_POOLS; i++) {
       const img = scene.make.image({}, false).setBlendMode(Phaser.BlendModes.ADD).setVisible(false);
@@ -223,7 +260,9 @@ export class WorldGlowView {
     }
     for (let i = 0; i < this.#props.length; i++) {
       const p = this.#props[i]!; // i < length
-      const on = p.alpha > 0 && p.prop.visible;
+      // A prop's frame moved on: its glow follows (a pad's `shown` is '', never a frame's name).
+      if (p.shown !== '' && p.prop.frame.name !== p.shown) this.#repoint(p);
+      const on = p.alpha > 0 && !p.none && p.prop.visible;
       if (p.img.visible !== on) p.img.setVisible(on);
       if (on && p.img.alpha !== p.alpha * p.prop.alpha) p.img.setAlpha(p.alpha * p.prop.alpha);
     }
@@ -278,54 +317,77 @@ export class WorldGlowView {
     this.#lit = n;
   }
 
-  #addProp(
-    prop: Phaser.GameObjects.Sprite | Phaser.GameObjects.Image,
-    tex: { key: string; radius: number } | null,
-    glow: { readonly dusk: number },
-    peak = 1,
-  ): void {
-    if (tex === null) return;
+  /** Adds a prop's glow, in `world` just in front of it, on the frame it shows now. */
+  #addProp(prop: Phaser.GameObjects.Sprite | Phaser.GameObjects.Image): void {
     const { scene, layers } = this.#ctx;
-    const img = new Phaser.GameObjects.Image(scene, prop.x, prop.y, tex.key);
-    img
-      .setDisplayOrigin(prop.displayOriginX + tex.radius, prop.displayOriginY + tex.radius)
-      .setBlendMode(Phaser.BlendModes.ADD)
-      .setDepth(prop.depth + GLOW_DEPTH)
-      .setVisible(false);
+    const img = new Phaser.GameObjects.Image(scene, prop.x, prop.y, '__DEFAULT');
+    img.setBlendMode(Phaser.BlendModes.ADD).setDepth(prop.depth + GLOW_DEPTH).setVisible(false);
     layers.world.add(img);
-    this.#props.push({ prop, img, dusk: glow.dusk, peak, alpha: 0 });
+    const p: PropLight = { prop, img, dusk: 0, peak: 1, alpha: 0, shown: '', none: true };
+    this.#props.push(p);
+    this.#repoint(p);
   }
 
-  /** A baked `@glow` frame (shines only in the dark), if the prop has one. */
-  #addBaked(
-    prop: Phaser.GameObjects.Sprite | Phaser.GameObjects.Image,
-    id: SpriteId,
-    variant: string,
-    frame: string,
-  ): void {
+  /** Points a prop's glow at the frame its prop shows now (only when the frame changes). */
+  #repoint(p: PropLight): void {
+    const name = p.prop.frame.name;
+    p.shown = name;
+    const tex = this.#glowTex(name);
+    p.none = tex === null;
+    if (tex === null) return;
+    p.img
+      .setTexture(tex.key)
+      .setDisplayOrigin(p.prop.displayOriginX + tex.radius, p.prop.displayOriginY + tex.radius);
+    p.dusk = tex.dusk;
+    p.peak = tex.peak;
+    if (this.#dark >= 0) p.alpha = p.peak * glowAlpha(p, this.#dark);
+  }
+
+  /**
+   * The glow of a prop frame (`<id>#<variant>:<frame>`; null: none): its `PROP_GLOWS` light when
+   * that frame wears one (over its anim's union), else its baked `@glow` where scenery's shine.
+   * Made once per frame name a battle.
+   */
+  #glowTex(name: string): GlowTex | null {
+    const cached = this.#tex.get(name);
+    if (cached !== undefined) return cached;
+    const key = parseFrameKey(name);
+    let tex: GlowTex | null = null;
+    if (key !== null) {
+      const glow = PROP_GLOWS[key.id];
+      if (glow !== undefined && glowsOn(glow, key.frame)) {
+        tex = this.#propTexture(key.id, key.variant, key.frame, glow);
+      } else if (this.#bakes) {
+        tex = this.#bakedTexture(key.id, key.variant, key.frame);
+      }
+    }
+    this.#tex.set(name, tex);
+    return tex;
+  }
+
+  /** A baked `@glow` frame's texture (it shines only in the dark), if the frame has one. */
+  #bakedTexture(id: SpriteId, variant: string, frame: string): GlowTex | null {
     const ref = this.#ctx.sprites.glowFrame(id, frame, variant);
-    if (ref === null) return;
-    const { scene } = this.#ctx;
+    if (ref === null) return null;
+    const { scene, sprites } = this.#ctx;
     const g = scene.textures.getFrame(ref.texture, ref.frame);
-    const radius = Math.round((g.cutWidth - prop.frame.cutWidth) / 2);
+    const body = sprites.frame(id, frame, variant);
+    const radius = Math.round(
+      (g.cutWidth - scene.textures.getFrame(body.texture, body.frame).cutWidth) / 2,
+    );
     const key = `glow.baked.${id}.${variant}.${frame}`;
     if (!scene.textures.exists(key)) {
       const src = framePixels(scene, ref.texture, ref.frame);
-      if (src === null) return;
+      if (src === null) return null;
       scene.textures.addCanvas(key, imageToCanvas(src));
     }
-    this.#addProp(prop, { key, radius }, { dusk: 0 }, FULL_BAKED.has(id) ? 1 : BAKED_PEAK);
+    return { key, radius, dusk: 0, peak: FULL_BAKED.has(id) ? 1 : BAKED_PEAK };
   }
 
   /** The glow texture of a prop's frame (or its anim's union), baked once per battle's scene. */
-  #propTexture(
-    id: SpriteId,
-    variant: string,
-    frame: string,
-    glow: PropGlow,
-  ): { key: string; radius: number } | null {
+  #propTexture(id: SpriteId, variant: string, frame: string, glow: PropGlow): GlowTex | null {
     const { scene, sprites } = this.#ctx;
-    const names = glow.union ?? [frame];
+    const names = glowFrames(glow, frame);
     const key = `glow.prop.${id}.${variant}.${names.join('+')}`;
     if (!scene.textures.exists(key)) {
       const frames: RgbaImage[] = [];
@@ -338,7 +400,7 @@ export class WorldGlowView {
       const img = emissiveGlow(frames, glow.colors, glow.radius, glow.halo ?? null);
       scene.textures.addCanvas(key, imageToCanvas(img));
     }
-    return { key, radius: glow.radius };
+    return { key, radius: glow.radius, dusk: glow.dusk, peak: 1 };
   }
 
   #poolTexture(radiusSq: number, color: 'orange.4' | 'blue.4'): string {

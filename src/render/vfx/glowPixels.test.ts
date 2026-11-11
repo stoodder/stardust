@@ -2,12 +2,17 @@
 // lamp pools that stay inside the sim's lit disc (D137: glow never reads as range), the Prism's
 // crystal halo, and how strong each shines from dusk to the full dark.
 import { describe, expect, it } from 'vitest';
+import { PALETTES } from '../../content/palettes/index.ts';
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
+import { SPRITES } from '../../content/sprites/index.ts';
+import { bakeSprite, DEFAULT_VARIANT, frameKey } from '../sprites/bake.ts';
 import { HALF_H, HALF_W } from '../iso.ts';
 import { GLOW_STEPS, type RgbaImage } from '../sprites/rasterize.ts';
 import {
   emissiveGlow,
   glowAlpha,
+  glowFrames,
+  glowsOn,
   PAD_GLOW,
   poolImage,
   POOL_BANDS,
@@ -81,9 +86,67 @@ describe('prop glows', () => {
 
   it('light the lamps, Dome 3’s window, the vats and the seams', () => {
     expect(PROP_GLOWS['prop.wall']?.frames).toEqual(['lamp_w', 'lamp_e']);
-    expect(PROP_GLOWS['prop.dome']?.frames).toEqual(['window']);
-    expect(PROP_GLOWS['prop.vat']?.union).toEqual(['v0', 'v1', 'v2']);
-    expect(PROP_GLOWS['prop.seam']?.union).toEqual(['v0', 'v1']);
+    expect(PROP_GLOWS['prop.dome']?.frames).toEqual(['window', 'open', 'frost_1', 'frost_2']);
+    expect(PROP_GLOWS['prop.vat']?.unions?.[0]).toEqual(['v0', 'v1', 'v2']);
+    expect(PROP_GLOWS['prop.seam']?.unions).toEqual([['v0', 'v1']]);
+  });
+});
+
+/** A sprite's baked frame (default variant). */
+function baked(id: string, frame: string): RgbaImage {
+  const def = SPRITES.find((d) => d.id === id);
+  if (def === undefined) throw new Error(`no ${id}`);
+  const f = bakeSprite(def, PALETTES).frames.find(
+    (b) => b.key === frameKey(id, DEFAULT_VARIANT, frame),
+  );
+  if (f === undefined) throw new Error(`no ${id}:${frame}`);
+  return f.image;
+}
+
+/** How many pixels of `img` give light (re-lit opaque) in `glow`'s glow of `frames`. */
+function litPixels(id: string, frames: readonly string[]): number {
+  const glow = PROP_GLOWS[id]!;
+  const g = emissiveGlow(
+    frames.map((f) => baked(id, f)),
+    glow.colors,
+    glow.radius,
+    glow.halo ?? null,
+  );
+  let n = 0;
+  for (let i = 3; i < g.data.length; i += 4) if (g.data[i] === 255) n++;
+  return n;
+}
+
+describe('M7’s world glows (T730b)', () => {
+  it('lights the vats at full blaze over the blaze’s own frames', () => {
+    const vat = PROP_GLOWS['prop.vat']!;
+    expect(glowFrames(vat, 'blaze_1')).toEqual(['blaze_0', 'blaze_1', 'blaze_2']);
+    expect(glowFrames(vat, 'v2')).toEqual(['v0', 'v1', 'v2']);
+    // The overflow runs down the tank glow too: the blaze lights more than the churn.
+    expect(litPixels('prop.vat', glowFrames(vat, 'blaze_0'))).toBeGreaterThan(
+      litPixels('prop.vat', glowFrames(vat, 'v0')),
+    );
+    expect(glowFrames(PROP_GLOWS['prop.wall']!, 'lamp_w')).toEqual(['lamp_w']);
+  });
+
+  it('lights Dome 1’s open door through the frost, and not the Long Night’s dark domes', () => {
+    const dome = PROP_GLOWS['prop.dome']!;
+    for (const f of ['open', 'frost_1', 'frost_2']) {
+      expect(glowsOn(dome, f), f).toBe(true);
+      expect(litPixels('prop.dome', [f]), f).toBeGreaterThan(12);
+    }
+    // The frost rimes the slits: less light gets out.
+    expect(litPixels('prop.dome', ['frost_2'])).toBeLessThan(litPixels('prop.dome', ['open']));
+    expect(glowsOn(dome, 'dark')).toBe(false);
+  });
+
+  it('lights only the feed lines’ slurry among the wrecks', () => {
+    const wreck = PROP_GLOWS['prop.wreckage']!;
+    for (const f of ['v6', 'v7', 'v6_half']) {
+      expect(glowsOn(wreck, f)).toBe(true);
+      expect(litPixels('prop.wreckage', [f]), f).toBeGreaterThan(0);
+    }
+    for (const f of ['v0', 'v2', 'v4']) expect(glowsOn(wreck, f)).toBe(false);
   });
 });
 
