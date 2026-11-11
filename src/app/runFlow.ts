@@ -62,6 +62,18 @@ export function jingleDue(
 /** The watch over the playing flow's lines for its jingles (one flow at a time). */
 let stopJingles: (() => void) | null = null;
 
+/**
+ * Plays a flow's jingle: the audio's `playJingle`, which boot.ts installs (`setJinglePlayer`).
+ * Injected, not imported: a static import of the audio here closes an import cycle (audio → save →
+ * … → router → runFlow) that changes the app's module order at boot. Nothing plays until then.
+ */
+let jinglePlayer: (jingle: FlowJingle['jingle']) => void = () => {};
+
+/** Installs the flow jingles' player (boot.ts: the audio's `playJingle`; tests: a recorder). */
+export function setJinglePlayer(play: (jingle: FlowJingle['jingle']) => void): void {
+  jinglePlayer = play;
+}
+
 /** Plays each of `jingles` once, as its line shows, until `stop` (the flow's end). */
 function watchJingles(jingles: readonly FlowJingle[]): void {
   stopJingles?.();
@@ -72,9 +84,7 @@ function watchJingles(jingles: readonly FlowJingle[]): void {
     const j = jingleDue(dialogue.scene.value, waiting);
     if (j === null) return;
     waiting.splice(waiting.indexOf(j), 1);
-    // Loaded on demand: a static import of the audio here closes an import cycle (audio → save →
-    // … → router → runFlow) that changes the app's module order at boot.
-    void import('./audio.ts').then((audio) => audio.playJingle(j.jingle));
+    jinglePlayer(j.jingle);
   });
 }
 

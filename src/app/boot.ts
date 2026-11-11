@@ -19,7 +19,8 @@ import { meterFrames } from './perf.ts';
 import { createRouter, type Router } from './router.ts';
 import { setIntakeEnabled } from './profile.ts';
 import { dialogueTestHooks, setDevDialogue, setDialogueEnabled, skipScene } from './dialogue.ts';
-import { audioTestHooks, installAudio } from './audio.ts';
+import { audioTestHooks, installAudio, playJingle } from './audio.ts';
+import { setJinglePlayer } from './runFlow.ts';
 import { activeSave, browserKeyValueStore, initSaves, loadDevSave } from './save.ts';
 import { hasBattleMap } from './battleSetup.ts';
 import { loadDevFixtures } from './devRegistry.ts';
@@ -67,6 +68,7 @@ export async function boot(): Promise<void> {
   setIntakeEnabled(params.intake);
   initSettings();
   installAudio(params.audio);
+  setJinglePlayer(playJingle);
   initSaves(browserKeyValueStore());
   // The dev fixtures (the dev battles and saves) stay out of the initial JS: a dev URL (`?test=1`,
   // or `?map=` naming no live map) loads their chunk first (devRegistry.ts; D150).

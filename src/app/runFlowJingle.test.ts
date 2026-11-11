@@ -1,18 +1,16 @@
 // A flow scene's jingle (T512): Act II's close plays the colony jingle once, in minor, as the A2M6
 // stinger's caption shows, never before it and never twice; a skipped stinger plays nothing.
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { SCENES } from '../content/dialogue/index.ts';
 import { dialogue } from '../ui/dialogue/state.ts';
 import { advanceScene, setDialogueEnabled, skipScene } from './dialogue.ts';
-import { jingleDue, jinglesOf, playInOrder } from './runFlow.ts';
+import { jingleDue, jinglesOf, playInOrder, setJinglePlayer } from './runFlow.ts';
 
-const played = vi.hoisted(() => [] as string[]);
-vi.mock('./audio.ts', () => ({
-  playJingle: (variant: string) => played.push(variant),
-}));
+const played: string[] = [];
+setJinglePlayer((variant) => played.push(variant));
 
 const stinger = SCENES.a2_m06_scene_stinger!;
-/** Lets the audio's on-demand import settle. */
+/** Lets any pending effect settle. */
 const settle = () => new Promise((r) => setTimeout(r, 0));
 const lineIndex = (): number | null =>
   dialogue.scene.value?.line === null ? null : (dialogue.scene.value?.transcript.length ?? null);
@@ -22,6 +20,8 @@ afterEach(() => {
   setDialogueEnabled(true);
   played.length = 0;
 });
+
+afterAll(() => setJinglePlayer(() => {}));
 
 describe("the A2M6 stinger's jingle", () => {
   it('belongs to the stinger, on its caption line', () => {

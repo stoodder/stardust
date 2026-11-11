@@ -36,6 +36,8 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
+    // The dev fixtures, which the game loads on demand (app/devRegistry.ts), registered up front.
+    setupFiles: ['tools/vitestSetup.ts'],
     // Vitest's 5 s default is a wall-time limit, and the heavier pure tests (the determinism hash,
     // the star map chart, the backdrop pixels: about 1 s each on a quiet machine) overran it while
     // other agents loaded the machine (load 5×+). A hang still fails, just later; the balance tests
