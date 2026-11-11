@@ -1,18 +1,17 @@
 /* What the script revoked (T606's minimal hook; T631 restyles it, T640b draws the stamp icons):
-   a REVOKED stamp over a dead build slot or ability slot, and the hidden preview's ACCESS
-   RESTRICTED with QUILL's leak line under it. */
-.hud-revoked-stamp {
+   a REVOKED tab on a dead build or ability slot's top edge (outside the chamfer's clip, like the
+   NEW tag) over its dimmed, struck-through icon, and the hidden preview's ACCESS RESTRICTED with
+   QUILL's leak line under it. */
+.hud-revoked-tab {
   position: absolute;
   left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%) rotate(-8deg);
-  padding: 0 1px;
-  font-size: 8px;
-  line-height: 8px;
-  letter-spacing: 0;
-  color: var(--sd-red-3);
-  background: var(--sd-ink-0);
-  border: 1px solid var(--sd-red-3);
+  top: -7px;
+  transform: translateX(-50%);
+  padding: 1px 1px 0;
+  white-space: nowrap;
+  color: var(--sd-white-1);
+  background: var(--sd-red-2);
+  box-shadow: 0 0 0 1px var(--sd-ink-0);
   pointer-events: none;
 }
 
@@ -20,15 +19,30 @@
   opacity: 0.2;
 }
 
+/* A red rim, and a red strike across the dead icon (::after is the chamfer's edge). */
+.hud-slot.revoked {
+  --edge: var(--sd-red-3);
+}
+
+.hud-slot.revoked::before {
+  content: '';
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  top: 50%;
+  height: 2px;
+  background: var(--sd-red-3);
+  transform: rotate(-35deg);
+  z-index: 1;
+  pointer-events: none;
+}
+
 .hud-restricted {
-  font-size: 8px;
-  line-height: 8px;
   color: var(--sd-red-3);
 }
 
 .hud-leak-line {
   flex-basis: 100%;
-  font-size: 8px;
   line-height: 9px;
   color: var(--sd-white-1);
 }

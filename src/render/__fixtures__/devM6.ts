@@ -11,7 +11,7 @@
 //   (burrowed: the swarmlings follow them down, the trap reaches them).
 // - `dev_revoke` (T603, T606): Compliance Drones with an Expediter (its haste ring), then a W2
 //   revocation inside the wave's spawn window, 5 s into its 10-drone column: the Everglow class
-//   with the most credits invested (100% refund), the slot-1 ability, and QUILL's lockout (the
+//   with the most credits invested (100% refund), the slot-1 ability, and QUILL's lockout (W3's
 //   preview hidden). The profile owns a Prism, so it keeps an armor answer whichever Everglow
 //   class goes (validateBuilds [revocation]).
 // - `dev_holdout` (T605): a Holdout with two doors; the `door_choice` side's refugees walk to
@@ -177,6 +177,8 @@ export const revokeMap = dev.defineMap({
       ],
     },
     { countdownSec: 10, groups: [{ enemy: 'compliance', count: 10, route: 'a' }] },
+    // After the cue: its countdown shows the hidden preview (ACCESS RESTRICTED).
+    { countdownSec: 10, groups: [{ enemy: 'compliance', count: 4, route: 'a' }] },
   ]),
   // The Clean Exit's shape (A3M2's cue, act3.md): one event, inside W2's spawn window.
   events: [
@@ -193,13 +195,17 @@ export const revokeMap = dev.defineMap({
   ],
   referenceProfile: { ...PROFILE, towers: ['rivet', 'sprinkler', 'zapcoil', 'prism'] },
   parBuild: {
-    loadout: ['rivet', 'sprinkler', 'zapcoil'],
+    loadout: ['rivet', 'sprinkler', 'zapcoil', 'prism'],
     steps: [
       // Two Rivets out-invest the Sprinkler, so the cue takes the Rivet class.
       { wave: 1, build: 'rivet', tile: [7, 2] },
       { wave: 1, build: 'rivet', tile: [12, 4] },
       { wave: 1, build: 'sprinkler', tile: [7, 4] },
       { wave: 2, build: 'zapcoil', tile: [5, 2] },
+      // After the cue: the refund rebuilds as a Prism at the bend.
+      { wave: 3, build: 'prism', tile: [12, 2] },
+      { wave: 3, upgrade: [12, 2] },
+      { wave: 3, upgrade: [12, 2] },
     ],
   },
   noCounterBuilds: {

@@ -75,6 +75,7 @@ export function fakeResult(
     credits: 0,
     lostAtWave,
     forcedInputs: [],
+    revoked: { towers: [], abilities: [] },
     stats: {
       skitterkinKilled: 0,
       killsByEnemy: {},

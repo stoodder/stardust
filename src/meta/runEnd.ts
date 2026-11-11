@@ -22,6 +22,7 @@ import {
 import type { MapRecord, SaveData } from './saveData.ts';
 import { enemiesMet, isEnemyId, withStoryUnlocks } from './story.ts';
 import {
+  revokedClassFactions,
   runEndRevocations,
   runEndTransactions,
   type RevocationTransaction,
@@ -81,6 +82,12 @@ export interface RunEndInput {
    * A3M2's Clean Exit). Step 3 saves them on the run that first wins the map. Default none.
    */
   readonly revoked?: RunRevocations;
+  /**
+   * The tower type under Bricks's `{name}` plate as the map ended (A3M3's last tag; towers.md § 8),
+   * or null/absent when none carries it. Saved as `story.memorialTower` by the run that first wins
+   * the map (its wreck is the finale's memorial); a replay never moves it.
+   */
+  readonly memorialTower?: TowerId | null;
 }
 
 /**
@@ -152,6 +159,14 @@ export interface RunEndResult {
   readonly summary: RunEndSummary;
 }
 
+/** A registered map's script events (none for a map not registered yet). */
+function mapEvents(mapId: MapId): Parameters<typeof revokedClassFactions>[0] {
+  const maps: Readonly<
+    Record<string, { readonly events?: Parameters<typeof revokedClassFactions>[0] }>
+  > = MAPS;
+  return Object.hasOwn(maps, mapId) ? maps[mapId]!.events : undefined;
+}
+
 function emptyRecord(): MapRecord {
   return { completed: false, medals: [], bestMeter: 0 };
 }
@@ -219,9 +234,18 @@ export function runEnd(
   const intel =
     medals.reduce((sum, m) => sum + m.intel, 0) + objectives.reduce((sum, o) => sum + o.intel, 0);
 
+  // 2b. The memorial (towers.md § 8): the `{name}` turret's type, on the map's first win only.
+  const memorial =
+    won && !wonBefore && input.memorialTower !== undefined && input.memorialTower !== null
+      ? input.memorialTower
+      : save.story.memorialTower;
   const folded: SaveData = {
     ...save,
-    story: { ...save.story, flags: { ...save.story.flags, ...flags } },
+    story: {
+      ...save.story,
+      flags: { ...save.story.flags, ...flags },
+      memorialTower: memorial,
+    },
     campaign: { ...save.campaign, maps: { ...save.campaign.maps, [input.mapId]: record } },
     currencies: {
       stardust: clampCurrency(save.currencies.stardust + stardust.amount),
@@ -231,10 +255,12 @@ export function runEnd(
   };
   // 3. The classes and abilities this run revoked, saved on the run that first wins the map
   //    (A3M2's Clean Exit; D141), Orbital Strike Mk II's Intel refunded with the uplink.
+  //    A map-end class (towers.md § 9: the loadout held none of the cue's faction) is taken here too.
   const revoked = runEndRevocations(folded, {
     won,
     wonBefore,
     ...(input.revoked === undefined ? {} : { revoked: input.revoked }),
+    atMapEnd: revokedClassFactions(mapEvents(input.mapId)),
   });
   // 6. The map's story transactions on its first win (meta/storyTransactions.ts: A2M4's Q3 Bonus,
   //    A2M5's Prism gift, A3M1's Hum Choir if spared). C2 isn't here: it is the debrief's choice,

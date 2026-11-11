@@ -22,7 +22,7 @@ const pa: Bark = {
 
 describe("Prim's PA", () => {
   it('a wave that sends Everglow Security says so; one of Hollow or Aelari alone does not', () => {
-    expect(everglowWaves(maps.dev_revoke!.waves)).toEqual([true, true]);
+    expect(everglowWaves(maps.dev_revoke!.waves)).toEqual([true, true, true]);
     expect(everglowWaves(maps.dev_aura!.waves).some(Boolean)).toBe(false);
     const mixed = [
       { groups: [{ enemy: { faction: 'hollow' } }] },

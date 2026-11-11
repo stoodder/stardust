@@ -59,6 +59,12 @@ export interface RunResult {
    * null. While it waits (`picked` null) the card's way on is the choice.
    */
   readonly choice: ResultsChoice | null;
+  /**
+   * The card holds back its reward fanfare (the map's `holdRewardToasts` dial: A3M3's Holdout,
+   * core-loop.md § 6.2 *Held-back toasts*): no payroll, medals, or objectives on it. The rewards
+   * are recorded all the same, and the base shows them afterwards (`heldRewards`).
+   */
+  readonly heldRewards: boolean;
 }
 
 /** An Escort's meter at the run's end ("Evacuated 9 / 12"). */
@@ -71,6 +77,8 @@ export interface RunEscort {
   readonly total: number;
   /** Refugees lost (`stats.refugeesLost`): the row's " · lost N". */
   readonly lost: number;
+  /** The map ended as a Holdout (A3M3: scored by Evacuated, ended on the SEAL). Default false. */
+  readonly holdout?: boolean;
 }
 
 /** A debrief's story choice on the card (C2: Zibzab's Price), or at the base (app/baseChoice.ts). */
@@ -213,7 +221,43 @@ export interface RunRewards {
   readonly transactions: readonly ResultsTransaction[];
   /** Memos that arrive on the card itself (the Q3 Bonus's), in delivery order. Usually none. */
   readonly memos: readonly ResultsMemo[];
+  /**
+   * What run end's step 3 saved (A3M2's Clean Exit): each class and ability this run revoked for
+   * good, the ability with what came back for it. Empty on most runs, every replay, and a loss.
+   */
+  readonly revocations: readonly ResultsRevocation[];
+  /**
+   * The Stardust arrives as the warrens' gift stones (Act III and the finale; progression.md § 1),
+   * not as Everglow's pay: the card names it so and draws the stone.
+   */
+  readonly stones: boolean;
 }
+
+/** A revocation as the card shows it (meta/storyTransactions.ts `RevocationTransaction`). */
+export type ResultsRevocation =
+  | { readonly kind: 'tower'; readonly name: string }
+  | {
+      readonly kind: 'ability';
+      readonly name: string;
+      /** What came back for it (Orbital Strike Mk II's Intel), by the upgrade's name; or null. */
+      readonly refund: {
+        readonly name: string;
+        readonly currency: 'stardust' | 'intel';
+        readonly amount: number;
+      } | null;
+    };
+
+/**
+ * A run whose card held its rewards back (A3M3's Holdout): what it recorded, shown once in the base
+ * it leads to (core-loop.md § 6.2 *Held-back toasts*); null when none waits.
+ */
+export interface HeldRewardsView {
+  readonly mapId: string;
+  readonly rewards: RunRewards;
+}
+
+/** The held rewards the base shows next (set at the Holdout's run end, cleared once shown). */
+export const heldRewards = signal<HeldRewardsView | null>(null);
 
 /** The last finished run, or null before any run has ended. */
 export const runResult = signal<RunResult | null>(null);

@@ -127,6 +127,11 @@ export type { KeyValueStore, SlotId } from './store.ts';
 export type { StoryUnlocks } from './story.ts';
 export type {
   C2Choice,
+  C3Choice,
+  C3Transaction,
+  RevocationTransaction,
+  RunEndRevocationInput,
+  RunRevocations,
   RunEndTransactionDef,
   RunEndTransactions,
   StoryTransaction,
@@ -144,6 +149,11 @@ export {
   resolveC2,
   runEndTransactions,
   ZIBZAB_TUNE_UP,
+  BRIEFING_GIFTS,
+  briefingGifts,
+  revokedClassFactions,
+  runEndRevocations,
+  setDoorChoice,
 } from './storyTransactions.ts';
 export {
   baseStoryContext,

@@ -55,11 +55,7 @@ function BuildSlot({ index, slot }: { index: number; slot: BuildSlotView | undef
     >
       <Key k={String(index + 1)} />
       <Icon id={slot.icon} class="slot-icon" />
-      {revoked ? (
-        <span class="hud-revoked-stamp" data-testid="slot-revoked">
-          REVOKED
-        </span>
-      ) : locked ? (
+      {locked ? (
         <span class="hud-locked">
           <Icon id="icon.lock" />
         </span>
@@ -70,6 +66,17 @@ function BuildSlot({ index, slot }: { index: number; slot: BuildSlotView | undef
       )}
     </button>
   );
+  // T606: a revoked class wears a REVOKED tab on the slot's top edge, outside the chamfer's clip.
+  if (revoked) {
+    return (
+      <div class="hud-slot-holder">
+        {button}
+        <span class="hud-revoked-tab" data-testid="slot-revoked" aria-hidden="true">
+          REVOKED
+        </span>
+      </div>
+    );
+  }
   if (!slot.isNew) return button;
   // Newly issued, in its first battle for this save (D061): a NEW tag sits on the slot's top
   // edge, outside the chamfer's clip.

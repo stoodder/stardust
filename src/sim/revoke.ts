@@ -26,6 +26,7 @@
 // § Run end, step 3).
 import type { CompiledScriptAction } from '../content/compiled.ts';
 import type { IdSpace, TowerFaction } from '../content/types.ts';
+import { assertNever } from '../shared/types.ts';
 import type { Command, RejectReason } from './commands.ts';
 import type { SimConfig } from './config.ts';
 import { tileIndex } from './grid.ts';
@@ -48,7 +49,17 @@ const QUILL = 'quill';
  * the earliest loadout slot.
  */
 export function selectRevokedClass(
-  state: Pick<SimState, 'towers' | 'revoked'>,
+  state: {
+    readonly towers: {
+      readonly used: number;
+      readonly items: readonly {
+        readonly alive: boolean;
+        readonly def: { readonly id: string } | null;
+        readonly invested: number;
+      }[];
+    };
+    readonly revoked: { readonly towers: readonly string[] };
+  },
   ctx: Pick<TickContext, 'content' | 'config'>,
   faction: TowerFaction | null,
 ): string | null {
@@ -132,7 +143,9 @@ export function setScriptModifier(state: SimState, modifier: ScriptModifier, on:
 }
 
 /** Whether the wave preview is hidden now ("ACCESS RESTRICTED"): QUILL's lockout, or `previewHidden`. */
-export function previewHidden(state: Pick<SimState, 'scriptModifiers'>): boolean {
+export function previewHidden(state: {
+  readonly scriptModifiers: Readonly<SimState['scriptModifiers']>;
+}): boolean {
   return state.scriptModifiers.quillLockout || state.scriptModifiers.previewHidden;
 }
 
@@ -141,7 +154,10 @@ export function previewHidden(state: Pick<SimState, 'scriptModifiers'>): boolean
  * under her lockout. An empty slot isn't revoked.
  */
 export function slotRevoked(
-  state: Pick<SimState, 'revoked' | 'scriptModifiers'>,
+  state: {
+    readonly revoked: { readonly abilities: readonly string[] };
+    readonly scriptModifiers: { readonly quillLockout: boolean };
+  },
   config: Pick<SimConfig<IdSpace>, 'abilities' | 'companion'>,
   slot: 1 | 2,
 ): boolean {
@@ -175,7 +191,12 @@ export function revokedReason(
       return cmd.target !== 'all' && r.uids.includes(cmd.target) ? 'revoked' : null;
     case 'ability':
       return slotRevoked(state, config, cmd.slot) ? 'revoked' : null;
-    default:
+    case 'callWave':
+    case 'clear':
+    case 'interact':
+    case 'scriptInput':
       return null;
+    default:
+      return assertNever(cmd);
   }
 }

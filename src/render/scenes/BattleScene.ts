@@ -560,6 +560,8 @@ export class BattleScene extends Phaser.Scene {
         if (v !== undefined && !Number.isNaN(v.x)) {
           const lift = this.#liftPx(Math.floor(v.x), Math.floor(v.y));
           this.#revoked.stamp(e.uid, v.x, v.y, lift);
+          // The refund, as a sell's (100% of what was paid).
+          if (e.refund > 0) this.#fx.floatText(`+${e.refund}`, 'gold.4', v.x, v.y, 24);
         }
         if (interaction.selectedTower === e.uid) interaction.selectTower(0);
       }),

@@ -43,7 +43,7 @@ import {
   type SpeakerId,
 } from '../content/dialogue/types.ts';
 import type { AllyKind, EnemyId, IdSpace, MapDef, TowerId } from '../content/types.ts';
-import type { SaveData } from '../meta/index.ts';
+import { setDoorChoice, type SaveData } from '../meta/index.ts';
 import { baseStoryContext } from '../meta/story.ts';
 import { isBossWave } from '../sim/index.ts';
 import { TICK_HZ } from '../shared/time.ts';
@@ -74,7 +74,7 @@ import {
   type DialogueCursor,
   type DialogueEffects,
 } from '../story/runner.ts';
-import { newTagState, tagIndexAfter, tagStep, type TagState } from '../story/tags.ts';
+import { giveTag, newTagState, tagIndexAfter, tagStep, type TagState } from '../story/tags.ts';
 import { resolveText, type TextContext } from '../story/text.ts';
 import {
   dialogue,
@@ -175,8 +175,22 @@ export function holdAtSpeedMs(ms: number, text: string, gameSpeed: number): numb
   return Math.max(ms / gameSpeed, Math.min(ms, typeMs(text) + RADIO_MIN_READ_MS));
 }
 
-/** What a scene changed, applied to `save`: flags, the callsign, and (for a real scene id) seen. */
+/**
+ * What a scene changed, applied to `save`: flags, the callsign, and (for a real scene id) seen. C3's
+ * `door_choice` (A3M3's briefing) is committed through meta's `setDoorChoice`, so a door already
+ * chosen is never changed (D141: asked once; T610).
+ */
 export function withSceneEffects(
+  save: SaveData,
+  sceneId: string,
+  effects: DialogueEffects,
+): SaveData {
+  const { door_choice: door, ...rest } = effects.flags;
+  const base = withPlainSceneEffects(save, sceneId, { ...effects, flags: rest });
+  return door === undefined ? base : setDoorChoice(base, door).save;
+}
+
+function withPlainSceneEffects(
   save: SaveData,
   sceneId: string,
   effects: DialogueEffects,
@@ -1190,9 +1204,11 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
   };
 
   /** Steps Bricks's name tag past a sim event; returns whether a tagged turret was just sold. */
-  const stepTags = (e: Parameters<typeof tagStep>[1]): boolean => {
-    if (tags === null) return false;
-    const step = tagStep(tags, e);
+  const stepTags = (e: Parameters<typeof tagStep>[1]): boolean =>
+    tags === null ? false : applyTags(tagStep(tags, e));
+
+  /** Applies a tagging step: the plate, and the tag moment's scene the first time it lands. */
+  const applyTags = (step: ReturnType<typeof tagStep>): boolean => {
     tags = step.state;
     let sold = false;
     for (const fx of step.effects) {
@@ -1379,6 +1395,12 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
     bus.on('BossPhase', (e) => offerBarks([{ on: 'boss_phase', phase: e.phase }])),
     // A map script's cue: the scene with its id (`<map>_cue_*`, `<map>_scene_*`), or a bark.
     bus.on('ScriptCue', (e) => {
+      // A `latest` tag's moment (A3M3's {name}; T610): the map's `<map>_cue_name_tag` cue gives
+      // the tag, and its scene plays as the plate goes on (`applyTags`), once.
+      if (map !== null && e.cueId === `${map}_cue_name_tag` && tags?.def?.pick === 'latest') {
+        applyTags(giveTag(tags));
+        return;
+      }
       const scene = SCENES[e.cueId];
       if (scene !== undefined) {
         // A cue scene plays once a battle, however many events cue it (A2M1's crew-log line is

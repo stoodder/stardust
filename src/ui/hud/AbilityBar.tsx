@@ -73,26 +73,28 @@ function AbilitySlot({ a, cd }: { a: AbilitySlotView; cd: AbilityCooldownView | 
   // T606: a revoked slot (the uplink; QUILL's under her lockout) is dark, under a REVOKED stamp.
   if (revokedHud.value.slots.includes(a.slot)) {
     return (
-      <button
-        type="button"
-        class={`hud-btn hud-slot hud-ability chamfer absent revoked${a.companion === null ? '' : ' companion'}`}
-        data-testid={`ability-${a.slot}`}
-        aria-disabled="true"
-        aria-label={`${a.label}, ${a.slot === 1 ? 'uplink revoked' : 'locked out'}`}
-        title={a.slot === 1 ? 'Uplink revoked' : 'Locked out'}
-        onMouseDown={noFocusOnPress}
-        onClick={() => pressAbility(a.slot)}
-      >
-        <span class="ability-row">
-          <SlotFace a={a} />
-          <span class="ability-icon">
-            <Icon id={a.icon} class="slot-icon" />
+      <div class="hud-slot-holder">
+        <button
+          type="button"
+          class={`hud-btn hud-slot hud-ability chamfer absent revoked${a.companion === null ? '' : ' companion'}`}
+          data-testid={`ability-${a.slot}`}
+          aria-disabled="true"
+          aria-label={`${a.label}, ${a.slot === 1 ? 'uplink revoked' : 'locked out'}`}
+          title={a.slot === 1 ? 'Uplink revoked' : 'Locked out'}
+          onMouseDown={noFocusOnPress}
+          onClick={() => pressAbility(a.slot)}
+        >
+          <span class="ability-row">
+            <SlotFace a={a} />
+            <span class="ability-icon">
+              <Icon id={a.icon} class="slot-icon" />
+            </span>
           </span>
-        </span>
-        <span class="hud-revoked-stamp" data-testid={`ability-${a.slot}-revoked`}>
+        </button>
+        <span class="hud-revoked-tab" data-testid={`ability-${a.slot}-revoked`} aria-hidden="true">
           REVOKED
         </span>
-      </button>
+      </div>
     );
   }
   if (a.absent) {

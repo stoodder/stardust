@@ -1,10 +1,10 @@
-// [revocation] (validateRevocation.ts; T606): the counter guarantee treats a revoked class as
+// [revocation] (content/validateRevocation.ts; T606): the counter guarantee treats a revoked class as
 // unowned, whichever class the cue could take, on the revoking map (the dev revoke range's W2
 // Clean Exit) and on the campaign maps after it until the class is back.
 import { describe, expect, it } from 'vitest';
-import { DEV_CONTENT } from '../render/__fixtures__/devBattle.ts';
-import type { IdSpace, MapDef, RawContent } from './types.ts';
-import { validate } from './validate.ts';
+import { DEV_CONTENT } from './devBattle.ts';
+import type { IdSpace, MapDef, RawContent } from '../../content/types.ts';
+import { validate } from '../../content/validate.ts';
 
 const RAW: RawContent<IdSpace> = DEV_CONTENT;
 const REVOKE: MapDef<IdSpace> = RAW.maps.dev_revoke!;

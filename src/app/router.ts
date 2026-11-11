@@ -47,6 +47,14 @@ import {
   type RunEndInput,
 } from './runResult.ts';
 import { flowScenes, playInOrder, setAfterResults } from './runFlow.ts';
+import {
+  grantBriefingGifts,
+  memorialAtEnd,
+  revokedAtEnd,
+  scriptFlagsChanged,
+} from './storyMeta.ts';
+import { hud } from '../ui/state.ts';
+import { heldRewards } from '../ui/screens/state.ts';
 import { withResultsChoice } from './resultsFlow.ts';
 import { escortAtEnd } from './resultsStory.ts';
 import type { RunOutcome, ScreenId } from './testHookTypes.ts';
@@ -207,6 +215,8 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
     // The URL's seed (`?seed=`) seeds every battle it doesn't override, so smoke runs repeat.
     const mapId = mapOf(request);
     const seed = request.seed ?? defaults.seed ?? randomSeed();
+    // A fresh start with no loadout screen before it: the map's briefing gifts arrive now (D141).
+    if (briefing) grantBriefingGifts(mapId);
     let cfg: ReturnType<typeof battleConfig>;
     try {
       cfg = battleConfig(mapId, seed, activeSave());
@@ -304,6 +314,7 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
     battle = next;
     // The briefing's Change loadout: only where the loadout screen came before it.
     loadoutChangeable.value = briefing && loadoutOffered(mapId);
+    if (briefing) restartOnBriefingFlags(request, cfg, next);
     screen.value = 'battle';
     if (resume !== null) {
       // A checkpoint retry waits, paused, in the wave's countdown: the player looks, rebuilds,
@@ -312,6 +323,37 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
       showNotice(resumedNotice(resume.checkpoint.wave), RESUMED_NOTICE_MS, true);
     }
     return next.firstFrame;
+  };
+
+  /**
+   * As `b`'s briefing closes: when it committed a story flag the sim reads (C3's `door_choice` in
+   * A3M3's briefing; app/storyMeta.ts), the battle, built before the answer, restarts on the same
+   * seed with no briefing. It is still on its first tick (the briefing holds it), so nothing is lost.
+   */
+  const restartOnBriefingFlags = (
+    request: BattleRequest,
+    cfg: SimConfig<IdSpace>,
+    b: Battle,
+  ): void => {
+    let off: (() => void) | null = null;
+    const closed = (): void => {
+      off?.();
+      // After the dialogue's own close (which commits the briefing's effects to the save).
+      queueMicrotask(() => {
+        if (battle !== b || ended || !scriptFlagsChanged(cfg, activeSave())) return;
+        let next: SimConfig<IdSpace>;
+        try {
+          next = battleConfig(cfg.mapId, cfg.seed, activeSave());
+        } catch {
+          return;
+        }
+        void launch(request, next, false, null);
+      });
+    };
+    off = hud.briefing.subscribe((v) => {
+      if (v === null && off !== null) closed();
+    });
+    if (hud.briefing.value === null) closed();
   };
 
   /** After a battle failed to start: the Shift board, where the notice shows (the Title without a save). */
@@ -374,6 +416,9 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
       met,
       resumedFromWave: resumed?.wave ?? null,
       checkpointWave: usableCheckpoint(b.host.checkpoints, s.tick)?.wave ?? null,
+      // Act III part one (T610): what the script revoked, and the turret under the {name} plate.
+      revoked: revokedAtEnd(s.revoked),
+      memorialTower: memorialAtEnd(sim, hud.nameTag.value),
     };
     const summary = recordRun(metaRunEndOf(input, outcome));
     // The battle freezes where it ended and stays drawn behind the results.
@@ -420,6 +465,8 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
           if (activeSave() === null) {
             return Promise.reject(new Error('router: the loadout screen needs a loaded save'));
           }
+          // The map's briefing gifts arrive as its loadout first opens (D141: A3M1's Scuttle Den).
+          grantBriefingGifts(mapOf(request));
           if (!openLoadout(mapOf(request))) {
             return Promise.reject(new Error(`router: no loadout for map '${mapOf(request)}'`));
           }
@@ -438,6 +485,8 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
       }
     },
     play(request) {
+      // Gifts first: a gift can be the fifth tower that makes the loadout screen a choice.
+      grantBriefingGifts(mapOf(request));
       return router.goto(loadoutOffered(mapOf(request)) ? 'loadout' : 'battle', request);
     },
     closeSettings() {
@@ -481,6 +530,11 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
       // Then a won debrief's effects reach the save (A2M2's Thorn), and the scenes around Results
       // read this run (T413).
       endRunStory(input.input, outcome);
+      // A card that holds its rewards back (A3M3) leaves them for the base to show.
+      heldRewards.value =
+        result.heldRewards && result.rewards !== null
+          ? { mapId: result.mapId, rewards: result.rewards }
+          : null;
       return router.presentResults(result);
     },
     abandon() {

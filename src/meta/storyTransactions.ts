@@ -25,7 +25,16 @@ import type { CampaignMapId } from '../content/campaign.ts';
 import type { FlagValueOf } from '../content/dialogue/flags.ts';
 import type { Condition } from '../content/dialogue/types.ts';
 import type { MemoId } from '../content/memos/types.ts';
-import type { AbilityId, MapId, TowerId, UpgradeId } from '../content/types.ts';
+import { TOWERS } from '../content/towers/index.ts';
+import type {
+  AbilityId,
+  IdSpace,
+  MapId,
+  ScriptedEvent,
+  TowerFaction,
+  TowerId,
+  UpgradeId,
+} from '../content/types.ts';
 import { UPGRADES } from '../content/upgrades/index.ts';
 import type { Currency } from '../content/upgrades/types.ts';
 import { evaluateCondition } from '../story/conditions.ts';
@@ -367,14 +376,54 @@ export interface RunRevocations {
 }
 
 /**
+ * The factions of a map's `revokeTowerClass` actions, in event order (null: any class), which run
+ * end's step 3 reads for towers.md § 9's map-end rule (`runEndRevocations`' `atMapEnd`).
+ */
+export function revokedClassFactions(
+  events: readonly ScriptedEvent<IdSpace>[] | undefined,
+): (TowerFaction | null)[] {
+  const out: (TowerFaction | null)[] = [];
+  for (const e of events ?? []) {
+    for (const a of e.actions) {
+      if ('revokeTowerClass' in a) out.push(a.revokeTowerClass.faction ?? null);
+    }
+  }
+  return out;
+}
+
+/** What run end's step 3 reads about the run. */
+export interface RunEndRevocationInput {
+  readonly won: boolean;
+  readonly wonBefore: boolean;
+  /** What the run's script revoked (the sim's `state.revoked`); absent: nothing is saved. */
+  readonly revoked?: RunRevocations;
+  /**
+   * The map's `revokeTowerClass` factions (`revokedClassFactions`): one the run took no class of
+   * (the loadout held none, so the cue took nothing mid-map) takes the save's first owned class of
+   * it at map end instead (towers.md § 9). Default none.
+   */
+  readonly atMapEnd?: readonly (TowerFaction | null)[];
+}
+
+/** Whether `tower` belongs to `faction` (null: any). Unknown ids belong to none. */
+function ofFaction(tower: string, faction: TowerFaction | null): boolean {
+  if (faction === null) return true;
+  const def = Object.values(TOWERS).find((d) => d.id === tower);
+  return def?.faction === faction;
+}
+
+/**
  * Run end's step 3 (meta-runtime.md § Run end): on the run that first wins the map, every class and
  * ability it revoked, in order (`revokeTower`, `revokeAbility`); nothing on a loss or a replay
  * (D141: saved only on a win; a replay's Clean Exit, which may take another class, changes
- * nothing, like the flags and transactions of a replay).
+ * nothing, like the flags and transactions of a replay). Between the two, towers.md § 9's map-end
+ * rule: for each `atMapEnd` faction the run revoked no class of, the save's first owned, unrevoked
+ * class of that faction (its `unlocks.towers` order: the order it was acquired) is revoked, with
+ * no refund (nothing was built). A save owning none loses nothing.
  */
 export function runEndRevocations(
   save: SaveData,
-  input: { readonly won: boolean; readonly wonBefore: boolean; readonly revoked?: RunRevocations },
+  input: RunEndRevocationInput,
 ): { readonly save: SaveData; readonly revocations: readonly RevocationTransaction[] } {
   if (!input.won || input.wonBefore || input.revoked === undefined) {
     return { save, revocations: [] };
@@ -384,6 +433,17 @@ export function runEndRevocations(
   for (const tower of input.revoked.towers) {
     const r = revokeTower(next, tower);
     next = r.save;
+    if (r.applied !== null) revocations.push(r.applied);
+  }
+  const taken: string[] = [...input.revoked.towers];
+  for (const faction of input.atMapEnd ?? []) {
+    if (taken.some((t) => ofFaction(t, faction))) continue;
+    const u = next.unlocks;
+    const first = u.towers.find((t) => !u.revokedTowers.includes(t) && ofFaction(t, faction));
+    if (first === undefined) continue;
+    const r = revokeTower(next, first);
+    next = r.save;
+    taken.push(first);
     if (r.applied !== null) revocations.push(r.applied);
   }
   for (const ability of input.revoked.abilities) {

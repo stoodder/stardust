@@ -63,29 +63,34 @@ export function storyRewardsOf(summary: {
 
 /** What `escortAtEnd` reads of a finished battle. */
 interface EscortSim {
-  readonly map: { readonly escort: { readonly total: number } | null };
   readonly state: {
     readonly objective: string;
     readonly meterLabel: MeterLabel | null;
+    /** The run's refugees: the map's, less any group a story flag left out (A3M3's other door). */
+    readonly refugeeTotal: number;
     readonly stats: { readonly evacuated: number; readonly refugeesLost: number };
   };
 }
 
 /**
  * The run's Escort meter as the map ended (`RunEndInput.escort`): only when the map was an Escort
- * then (from the start, or after a pivot like A2M5's); `{}` otherwise.
+ * then (from the start, or after a pivot like A2M5's) or a Holdout (A3M3, scored by Evacuated);
+ * `{}` otherwise. The total is the run's own (`state.refugeeTotal`), so a group a story flag left
+ * out (Thrum's under `cleared`, the door A3M3's C3 didn't pick) is never counted.
  */
 export function escortAtEnd(sim: EscortSim): { escort?: RunEscort } {
   const s = sim.state;
-  if (s.objective !== 'escort') return {};
+  const holdout = s.objective === 'holdout';
+  if (s.objective !== 'escort' && !holdout) return {};
   const kind = s.meterLabel === 'sheltered' ? 'sheltered' : 'evacuated';
   return {
     escort: {
       kind,
       label: meterLabelText(kind),
       evacuated: s.stats.evacuated,
-      total: sim.map.escort?.total ?? 0,
+      total: s.refugeeTotal,
       lost: s.stats.refugeesLost,
+      ...(holdout ? { holdout: true } : {}),
     },
   };
 }

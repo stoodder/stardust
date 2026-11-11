@@ -272,6 +272,7 @@ function sim(objective: string, start: string) {
     state: {
       objective,
       meterLabel: 'evacuated' as const,
+      refugeeTotal: 12,
       stats: { evacuated: 9, refugeesLost: 2 },
     },
   };
@@ -291,6 +292,22 @@ describe('escortAtEnd', () => {
     // After a pivot (A2M5's) the same: the map ended as an Escort.
     expect(escortAtEnd(sim('escort', 'defend'))).toEqual(escortAtEnd(sim('escort', 'escort')));
     expect(escortAtEnd(sim('defend', 'defend'))).toEqual({});
+  });
+
+  it("reads a Holdout's Evacuated over the run's own total (T610: A3M3's chosen door)", () => {
+    const holdout = sim('holdout', 'holdout');
+    // The map lists both doors' groups; the run counts only the door C3 picked.
+    const run = { ...holdout, state: { ...holdout.state, refugeeTotal: 11 } };
+    expect(escortAtEnd(run)).toEqual({
+      escort: {
+        kind: 'evacuated',
+        label: 'Evacuated',
+        evacuated: 9,
+        total: 11,
+        lost: 2,
+        holdout: true,
+      },
+    });
   });
 
   it("makes the Evacuated count run end's meter, the counter's meter, and `{evacuated}`", () => {

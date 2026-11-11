@@ -4,8 +4,8 @@
 // the caption as the jingle plays once in its minor arrangement, then a beat while it rings out)
 // → the base, with no Bounty tab (it retires with Act II, without
 // comment; after_a2m5's base still has it) → the Sector map at night: the `act3` phase and Act
-// III's theme, Sundown cleared under the marker, *The Preserve* (A3M1) as its Coming soon teaser
-// with no Start, the Long Walk named, and nothing past the teaser. Screenshots in
+// III's theme, Sundown cleared under the marker, *The Preserve* (A3M1) next up with its Start
+// focused, the Long Walk named, and nothing past The Preserve. Screenshots in
 // <out>/screens/act2-close/ (look at them: the dark stinger and the night chart are the point).
 import { expect, test } from './fixtures.ts';
 import { nextFrames, shot, waitForReady } from './hooks.ts';
@@ -84,7 +84,7 @@ test("act II's close: A2M6's card → the PA's minor stinger → the base → th
   );
   await expect(page.getByRole('button', { name: 'Start The Preserve' })).toBeFocused();
   await expect(page.getByText('The Long Walk', { exact: true })).toBeAttached();
-  // Nothing past the teaser is named anywhere on the page.
+  // Nothing past The Preserve is named anywhere on the page.
   for (const later of ['License Revoked', 'The Gap', 'Empty Slot']) {
     // oxlint-disable-next-line no-await-in-loop -- one assertion per name
     await expect(page.locator('body')).not.toContainText(later);

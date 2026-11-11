@@ -10,9 +10,11 @@ import {
   baseStoryContext,
   type RunEndInput as MetaRunEndInput,
   type RunEndSummary,
+  type RunRevocations,
   type SaveData,
 } from '../meta/index.ts';
-import type { Act } from '../content/types.ts';
+import type { StoryAct } from '../content/dialogue/types.ts';
+import type { Act, TowerId } from '../content/types.ts';
 import { TICK_HZ } from '../shared/time.ts';
 import {
   evaluateCondition,
@@ -38,6 +40,7 @@ import { dialogueEnabled, setStoryRun, withSceneEffects } from './dialogue.ts';
 import { towerName } from './hudText.ts';
 import { storyRewardsOf } from './resultsStory.ts';
 import { activeSave, updateActiveSave } from './save.ts';
+import { revocationView } from './storyMeta.ts';
 import type { RunOutcome } from './testHookTypes.ts';
 
 /**
@@ -112,6 +115,16 @@ export interface RunEndInput {
   readonly resumedFromWave?: number | null;
   /** The latest checkpoint's wave, which a loss offers to retry from ("Retry from wave N"). */
   readonly checkpointWave?: number | null;
+  /**
+   * What the run's script revoked (the sim's `state.revoked`; app/storyMeta.ts `revokedAtEnd`):
+   * meta's run end saves it on the run that first wins the map (step 3). Absent: nothing.
+   */
+  readonly revoked?: RunRevocations;
+  /**
+   * The tower type under Bricks's `{name}` plate as the map ended (A3M3; app/storyMeta.ts
+   * `memorialAtEnd`), saved as `memorialTower` on the map's first win. Absent or null: none.
+   */
+  readonly memorialTower?: TowerId | null;
 }
 
 /** An optional objective as the run left it. */
@@ -219,7 +232,17 @@ export function metaRunEndOf(
     ...(input.resumedFromWave === undefined || input.resumedFromWave === null
       ? {}
       : { usedCheckpoint: true, resumedFromWave: input.resumedFromWave }),
+    ...(input.revoked === undefined ? {} : { revoked: input.revoked }),
+    ...(input.memorialTower === undefined ? {} : { memorialTower: input.memorialTower }),
   };
+}
+
+/**
+ * Whether a card in act theme `theme` shows its Stardust as the warrens' gift stones (Act III and
+ * the finale: progression.md § 1, "the warrens give it"; art-direction.md § 2's gift-stone icon).
+ */
+export function giftStones(theme: StoryAct): boolean {
+  return theme === 3 || theme === 'finale';
 }
 
 /** What app/save.ts `recordRun` adds to meta's summary (absent in tests of meta's alone). */
@@ -275,6 +298,8 @@ export function runRewardsOf(
     firstPayday,
     saveNotice: summary.writeFailed ?? null,
     ...storyRewardsOf(summary),
+    revocations: summary.revocations.map(revocationView),
+    stones: giftStones(presentationOfMap({ id: input.mapId, act: input.act ?? 1 }).theme),
   };
 }
 
@@ -412,6 +437,8 @@ export function runResultOf(
     escort: input.escort ?? null,
     // The debrief's choice (C2) is app/resultsFlow.ts's `withResultsChoice`, over the save in play.
     choice: null,
+    // A3M3's Holdout plays the card identically at any score: its rewards wait for the base.
+    heldRewards: dials.holdRewardToasts,
   };
 }
 

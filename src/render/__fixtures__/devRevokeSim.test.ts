@@ -5,17 +5,18 @@
 // the lockout's hidden preview and QUILL's slot, the input edges (D141), the forced class of the
 // harness's story variants, the executor's skips, and a replay paying the refund once.
 import { describe, expect, it } from 'vitest';
-import type { CompiledBuild, CompiledMapDef } from '../content/compiled.ts';
-import { compileContent } from '../content/compile.ts';
-import type { GridPos, IdSpace } from '../content/types.ts';
-import { DEV_CONTENT } from '../render/__fixtures__/devBattle.ts';
-import type { Command } from './commands.ts';
-import type { SimConfig } from './config.ts';
-import type { SimEvent } from './events.ts';
-import { createBuildExecutor, runHeadless } from './headless.ts';
-import { previewHidden, selectRevokedClass, slotRevoked } from './revoke.ts';
-import { createSim, type Sim } from './sim.ts';
-import { unsupportedScript } from './systems/triggers.ts';
+import type { CompiledBuild, CompiledMapDef } from '../../content/compiled.ts';
+import { compileContent } from '../../content/compile.ts';
+import type { GridPos, IdSpace } from '../../content/types.ts';
+import { DEV_CONTENT } from './devBattle.ts';
+import type { Command } from '../../sim/commands.ts';
+import type { SimConfig } from '../../sim/config.ts';
+import type { SimEvent } from '../../sim/events.ts';
+import { createBuildExecutor, runHeadless } from '../../sim/headless.ts';
+import { previewHidden, selectRevokedClass, slotRevoked } from '../../sim/revoke.ts';
+import { createSim, type Sim } from '../../sim/sim.ts';
+import type { SimState } from '../../sim/state.ts';
+import { unsupportedScript } from '../../sim/systems/triggers.ts';
 
 const content = compileContent(DEV_CONTENT);
 const maps: Readonly<Record<string, (typeof content.maps)[keyof typeof content.maps]>> =
@@ -40,6 +41,10 @@ function config(over: Partial<SimConfig<IdSpace>> = {}): SimConfig<IdSpace> {
 
 type Ev = SimEvent<IdSpace>;
 
+/** The sim's state, writable: tests set credits and invested by hand. */
+// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the sim's own state, viewed
+const mut = (sim: Sim<IdSpace>): SimState => sim.state as unknown as SimState;
+
 /** A sim with `builds` placed in setup and (by uid order) `upgrades` applied, credits topped up. */
 function setup(
   builds: readonly [string, GridPos][],
@@ -47,7 +52,7 @@ function setup(
   over: Partial<SimConfig<IdSpace>> = {},
 ): { sim: Sim<IdSpace>; uids: number[] } {
   const sim = createSim(config(over));
-  sim.state.credits = 10_000;
+  mut(sim).credits = 10_000;
   for (const [tower, tile] of builds) sim.enqueue({ type: 'build', tower, tile });
   sim.applyPending();
   const uids: number[] = [];
@@ -57,7 +62,7 @@ function setup(
   }
   for (const i of upgrades) sim.enqueue({ type: 'upgrade', towerUid: uids[i]! });
   sim.applyPending();
-  sim.state.credits = 0;
+  mut(sim).credits = 0;
   return { sim, uids };
 }
 
@@ -112,7 +117,7 @@ describe('revokeTowerClass: mostInvested (towers.md § 9)', () => {
       ['sprinkler', [3, 2]],
       ['sprinkler', [5, 2]],
     ]);
-    const t = sim.state.towers.items;
+    const t = mut(sim).towers.items;
     const set = (uid: number, n: number): void => {
       t.find((x) => x.alive && x.uid === uid)!.invested = n;
     };
@@ -124,8 +129,8 @@ describe('revokeTowerClass: mostInvested (towers.md § 9)', () => {
     );
     // Same credits, same count: the earlier slot (Rivet, slot 1).
     set(uids[2]!, 0);
-    sim.state.towers.items.find((x) => x.alive && x.uid === uids[2])!.alive = false;
-    sim.state.towers.live--;
+    mut(sim).towers.items.find((x) => x.alive && x.uid === uids[2])!.alive = false;
+    mut(sim).towers.live--;
     set(uids[1]!, 200);
     expect(selectRevokedClass(sim.state, { content, config: sim.config }, 'everglow')).toBe(
       'rivet',
@@ -181,7 +186,7 @@ describe('revokeTowerClass: mostInvested (towers.md § 9)', () => {
     expect(sim.state.stats.revocations).toBe(2);
     expect(sim.state.towers.live).toBe(1); // the Zapcoil stands
     // The tiles are free on the cue's tick: a Prism goes up at once.
-    sim.state.credits = 10_000;
+    mut(sim).credits = 10_000;
     const log: Ev[] = [];
     sim.enqueue({ type: 'build', tower: 'prism', tile: [1, 2] });
     sim.applyPending();
@@ -274,8 +279,8 @@ describe('revokeAbility and setModifier', () => {
       ),
     ).toBe(false);
     // previewHidden alone hides it too.
-    sim.state.scriptModifiers.quillLockout = false;
-    sim.state.scriptModifiers.previewHidden = true;
+    mut(sim).scriptModifiers.quillLockout = false;
+    mut(sim).scriptModifiers.previewHidden = true;
     expect(previewHidden(sim.state)).toBe(true);
   });
 
@@ -304,7 +309,7 @@ describe('the input edges (D141)', () => {
   it('build, upgrade, spec, sell, targeting, and fire control on the revoked class are `revoked`', () => {
     const { sim, uids } = setup([['rivet', [1, 2]]]);
     toCue(sim);
-    sim.state.credits = 10_000;
+    mut(sim).credits = 10_000;
     const uid = uids[0]!;
     const cmds: Command<IdSpace>[] = [
       { type: 'build', tower: 'rivet', tile: [3, 2] },
@@ -341,7 +346,7 @@ describe('the input edges (D141)', () => {
     let next = 0;
     const log = sim.state.commandLog;
     // setup() wrote credits by hand; mirror it at the same points.
-    again.state.credits = 10_000;
+    mut(again).credits = 10_000;
     while (next < log.length && log[next]!.tick === 0 && log[next]!.cmd.type === 'build') {
       again.enqueue(log[next++]!.cmd);
     }
@@ -350,7 +355,7 @@ describe('the input edges (D141)', () => {
       again.enqueue(log[next++]!.cmd);
     }
     again.applyPending();
-    again.state.credits = 0;
+    mut(again).credits = 0;
     while (again.state.tick < sim.state.tick) {
       while (next < log.length && log[next]!.tick === again.state.tick) {
         again.enqueue(log[next++]!.cmd);

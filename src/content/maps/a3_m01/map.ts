@@ -47,7 +47,7 @@ export const map = defineMapLayout({
   meterLabel: 'evacuated',
   // The refugees lost (hushed or gathered on the road, or taken at the gate) that lose the map,
   // every pip full (D138).
-  maxLost: 11,
+  maxLost: 12,
   size: { cols: 22, rows: 14 },
   // prettier-ignore
   tiles: [

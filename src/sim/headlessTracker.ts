@@ -347,7 +347,6 @@ export function createRunTracker<K extends IdSpace>(
           case 'ForcedInputRequested':
           case 'AllyHealthChanged':
           case 'ForcedInputResolved':
-          case 'TowerRevoked':
           case 'ClassRevoked':
           case 'AbilityRevoked':
           case 'ModifierChanged':

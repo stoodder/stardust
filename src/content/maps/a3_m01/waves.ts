@@ -30,7 +30,7 @@ const motes = (count: number, route: RouteId, delaySec: number, intervalSec = 0.
   g('mote', count, route, delaySec, intervalSec);
 
 /** The build phase before most waves. */
-export const COUNTDOWN = 25;
+export const COUNTDOWN = 30;
 /** Most waves open this long after they start. */
 export const OPEN = 6;
 
@@ -38,16 +38,17 @@ export const waves = defineWaves([
   // W1 · Motes down the north road, the first group out of the basin
   {
     groups: [
-      motes(14, 'north', OPEN, 0.2),
-      motes(8, 'spiral', OPEN + 16, 0.25),
+      motes(20, 'north', OPEN, 0.2),
+      motes(6, 'spiral', OPEN + 16, 0.25),
     ],
   },
   // W2 · the first rift opens (the north fence) [T: rift lanes]
   {
     countdownSec: COUNTDOWN,
+    noCall: true,
     groups: [
-      motes(14, 'rift_n', OPEN, 0.2),
-      motes(10, 'north', OPEN + 10, 0.2),
+      motes(18, 'rift_n', OPEN, 0.2),
+      motes(12, 'north', OPEN + 12, 0.2),
     ],
   },
   // W3 · Fractures
@@ -55,7 +56,7 @@ export const waves = defineWaves([
     countdownSec: COUNTDOWN,
     groups: [
       g('fracture', 1, 'north', OPEN),
-      motes(14, 'rift_n', OPEN + 6, 0.2),
+      motes(14, 'rift_n', OPEN + 8, 0.2),
     ],
   },
   // W4 · one Maw, Motes catching it up [T: gathering; burst it, or kill the small ones near it; Underfoot]
@@ -64,23 +65,24 @@ export const waves = defineWaves([
     countdownSec: COUNTDOWN,
     groups: [
       g('maw', 1, 'north', OPEN),
-      motes(10, 'north', OPEN + 2, 0.3),
+      motes(12, 'north', OPEN + 2, 0.3),
     ],
   },
   // W5 · Rift Moths over the second group
   {
     countdownSec: COUNTDOWN,
     groups: [
-      motes(16, 'north', OPEN, 0.2),
+      motes(20, 'north', OPEN, 0.2),
       g('riftmoth', 3, 'sky', OPEN + 12, 2.5),
     ],
   },
   // W6 · Motes through two rifts [X]
   {
     countdownSec: COUNTDOWN,
+    noCall: true,
     groups: [
-      motes(18, 'rift_n', OPEN, 0.2),
-      motes(18, 'rift_e', OPEN + 5, 0.2),
+      motes(20, 'rift_n', OPEN, 0.2),
+      motes(20, 'rift_e', OPEN + 6, 0.2),
     ],
   },
   // W7 · Maw + Motes [X]
@@ -96,8 +98,8 @@ export const waves = defineWaves([
   {
     countdownSec: COUNTDOWN,
     groups: [
-      g('fracture', 2, 'rift_n', OPEN, 3),
-      g('riftmoth', 4, 'sky', OPEN + 8, 2),
+      g('fracture', 1, 'rift_n', OPEN),
+      g('riftmoth', 5, 'sky', OPEN + 8, 2.5),
     ],
   },
   // W9 · Bramble's own column + two Maws
@@ -106,7 +108,7 @@ export const waves = defineWaves([
     groups: [
       g('maw', 1, 'north', OPEN),
       motes(12, 'north', OPEN + 2, 0.3),
-      g('riftmoth', 3, 'sky', OPEN + 6, 2.5),
+      g('riftmoth', 4, 'sky', OPEN + 6, 2.5),
       g('maw', 1, 'rift_e', OPEN + 12),
       motes(12, 'rift_e', OPEN + 14, 0.3),
     ],
@@ -115,18 +117,19 @@ export const waves = defineWaves([
   {
     countdownSec: COUNTDOWN,
     groups: [
-      g('fracture', 2, 'north', OPEN, 3),
+      g('fracture', 1, 'north', OPEN, 3),
       motes(20, 'rift_n', OPEN + 10, 0.2),
+      motes(8, 'rift_e', OPEN + 30, 0.25),
     ],
   },
   // W11 · rifts everywhere
   {
     countdownSec: COUNTDOWN,
     groups: [
-      motes(20, 'rift_n', OPEN, 0.2),
-      motes(20, 'rift_e', OPEN + 3, 0.2),
+      motes(22, 'rift_n', OPEN, 0.2),
+      motes(22, 'rift_e', OPEN + 3, 0.2),
       g('riftmoth', 4, 'sky', OPEN + 6, 2),
-      g('fracture', 3, 'rift_e', OPEN + 10, 2),
+      g('fracture', 1, 'rift_e', OPEN + 10, 2.5),
     ],
   },
   // W12 · three Maws [X]
@@ -145,9 +148,9 @@ export const waves = defineWaves([
   {
     countdownSec: COUNTDOWN,
     groups: [
-      g('fracture', 4, 'north', OPEN, 2),
+      g('fracture', 2, 'north', OPEN, 2.5),
       motes(22, 'rift_e', OPEN + 4, 0.2),
-      g('riftmoth', 5, 'sky', OPEN + 8, 1.5),
+      g('riftmoth', 5, 'sky', OPEN + 8, 1.2),
       motes(22, 'rift_n', OPEN + 14, 0.2),
     ],
   },
@@ -155,9 +158,9 @@ export const waves = defineWaves([
   {
     countdownSec: COUNTDOWN,
     groups: [
-      motes(18, 'north', OPEN, 0.2),
-      g('riftmoth', 4, 'sky', OPEN + 6, 2),
-      motes(14, 'spiral', OPEN + 18, 0.25),
+      motes(20, 'north', OPEN, 0.2),
+      g('riftmoth', 6, 'sky', OPEN + 6, 1.2),
+      motes(16, 'spiral', OPEN + 16, 0.2),
     ],
   },
 ]);
