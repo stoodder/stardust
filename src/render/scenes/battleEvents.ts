@@ -513,13 +513,15 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
       if (splash === undefined) return;
       shells.delete(e.uid);
       if (splash < 0) {
-        // A bomblet: its own small pop, no ring (four rings would bury the shell's).
-        fx.burst(e.x, e.y, 0, true);
+        // A bomblet: its own small pop, no ring (four rings would bury the shell's); capped per tile.
+        fx.shellBurst(e.x, e.y, true);
         return;
       }
-      // The splash radius in orange under the burst, sized by the firing tier.
+      // The splash radius in orange under the burst, sized by the firing tier. The burst is capped per
+      // tile (TransientFx `shellBurst`), so a choke under several Thumpers isn't buried; the ring
+      // always shows what the shell covered.
       fx.ring(e.x, e.y, splash, 'orange.3', SPLASH_RING_MS, false);
-      fx.burst(e.x, e.y);
+      fx.shellBurst(e.x, e.y);
     }),
     bus.on('AbilityUsed', (e) => {
       // A strike's reticle and landing at its real radius (abilityStats: Mk II). A segment

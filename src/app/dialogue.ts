@@ -49,7 +49,7 @@ import {
 import type { AllyKind, EnemyId, IdSpace, MapDef, TowerId } from '../content/types.ts';
 import { setDoorChoice, type SaveData } from '../meta/index.ts';
 import { baseStoryContext } from '../meta/story.ts';
-import { isBossWave } from '../sim/index.ts';
+import { escortMaxLost, isBossWave } from '../sim/index.ts';
 import { TICK_HZ } from '../shared/time.ts';
 import {
   campaignBarksPlayed,
@@ -896,7 +896,11 @@ export function whenSceneTyped(id: string, then: () => void): () => void {
   typedWaiters.set(id, list);
   return () => {
     const now = typedWaiters.get(id);
-    if (now !== undefined) typedWaiters.set(id, now.filter((w) => w !== then));
+    if (now !== undefined)
+      typedWaiters.set(
+        id,
+        now.filter((w) => w !== then),
+      );
   };
 }
 
@@ -1370,7 +1374,6 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
   let tagGiven = false;
   let leaked = false;
   let lowFired = false;
-  const maxLost = mapDef.maxLost;
   /** Cue scenes this battle has played (a cue scene plays once a battle). */
   const cuedScenes = new Set<string>();
   /** The run's fleeing kills already offered as `skitterkin_killed_ahead` (the sim's tagKilled). */
@@ -1533,7 +1536,7 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
       const low =
         st.objective === 'holdout'
           ? holdoutLow(lost, st.refugeeTotal, mapDef.evacuatedFloor)
-          : st.objective === 'escort' && escortLow(lost, maxLost);
+          : st.objective === 'escort' && escortLow(lost, escortMaxLost(st, mapDef));
       if (lowFired || !low) {
         return;
       }

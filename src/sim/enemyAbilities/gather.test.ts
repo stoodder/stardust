@@ -18,9 +18,18 @@ import { createState, type SimState } from '../state.ts';
 import { allies } from '../systems/allies.ts';
 import { cleanup } from '../systems/cleanup.ts';
 import { movement } from '../systems/movement.ts';
-import { applyMarked, applyStasis, applyUnnerved } from '../systems/status.ts';
+import { applyMarked, applyStasis, applyUnnerved, isInterrupted } from '../systems/status.ts';
 import { createScratch, type TickContext } from '../tick.ts';
-import { gatherBounty, gatherLeak, gatherMaxHp, gatherScale, gatherTelling } from './gather.ts';
+import {
+  gatherBounty,
+  gatherLeak,
+  gatherMatches,
+  gatherMaxHp,
+  gatherScale,
+  gatherTelling,
+} from './gather.ts';
+import { isHushable, isHushableAlly } from './hush.ts';
+import { outOfReach } from './layers.ts';
 import { enemyAbilities } from './index.ts';
 
 const E = compileContent(RAW_CONTENT).enemies;
@@ -360,5 +369,164 @@ describe('gathering a refugee (Escort)', () => {
     m.gatheredSkitterkin = true;
     tick(state, ctx, EVERY * 2);
     expect([m.gatherUid, a.alive, state.stats.refugeesGathered]).toEqual([0, true, 0]);
+  });
+});
+
+// ── The matching's equivalence (R15 P1) ─────────────────────────────────────────────────────────
+// gather.ts matches in O(G·N); this is the pairwise rule it replaced (O(G²·N²)), kept here as the
+// reference: a ready gatherer takes its nearest unit (ties: the lower uid) among those it may take
+// whose nearest ready gatherer that may take them is it. The two must agree on every field.
+
+const NONE = Number.MIN_SAFE_INTEGER;
+
+function refReady(m: Enemy): boolean {
+  const g = m.def?.gather ?? null;
+  const tell = g === null ? 0 : g.tellTicks > 0 ? g.tellTicks : 1;
+  return (
+    g !== null &&
+    m.alive &&
+    !m.leaving &&
+    m.standDownTicks === 0 &&
+    m.gatherUid === 0 &&
+    m.absorbs < g.maxAbsorbs &&
+    m.gatherTicks > 0 &&
+    m.gatherTicks <= tell &&
+    !outOfReach(m) &&
+    !isInterrupted(m)
+  );
+}
+
+function refD2(m: Enemy, u: Pick<Enemy, 'route' | 'dist' | 'x' | 'y'>): number {
+  if (m.route !== null && m.route === u.route) return (m.dist - u.dist) ** 2;
+  return (m.x - u.x) ** 2 + (m.y - u.y) ** 2;
+}
+
+function refMayTake(state: SimState, m: Enemy, v: Enemy): boolean {
+  const def = v.def;
+  if (v === m || !v.alive || def === null || def.boss !== null || def.neutral) return false;
+  if (def.gather !== null || def.layer !== m.def!.layer || outOfReach(v) || v.standDownTicks > 0) {
+    return false;
+  }
+  if (def.faction === 'hollow') {
+    return !state.enemies.items.some(
+      (o, i) => i < state.enemies.used && o !== m && o.alive && o.gatherUid === v.uid,
+    );
+  }
+  return def.faction === 'skitterkin' && !m.gatheredSkitterkin && isHushable(v);
+}
+
+function refMayTakeAlly(m: Enemy, a: Ally): boolean {
+  return !m.gatheredSkitterkin && m.def!.layer === 'ground' && isHushableAlly(a);
+}
+
+function refBetter(d2: number, uid: number, bestD2: number, bestUid: number): boolean {
+  return bestD2 < 0 || d2 < bestD2 || (d2 === bestD2 && uid < bestUid);
+}
+
+function refNearest<U extends Pick<Enemy, 'route' | 'dist' | 'x' | 'y'>>(
+  state: SimState,
+  u: U,
+  may: (m: Enemy) => boolean,
+): Enemy | null {
+  let best: Enemy | null = null;
+  let bestD2 = -1;
+  for (const m of state.enemies.items.slice(0, state.enemies.used)) {
+    if (!refReady(m)) continue;
+    const d2 = refD2(m, u);
+    if (d2 > m.def!.gather!.radiusSq || !refBetter(d2, m.uid, bestD2, best?.uid ?? 0)) continue;
+    if (may(m)) {
+      best = m;
+      bestD2 = d2;
+    }
+  }
+  return best;
+}
+
+function refUnitFor(state: SimState, m: Enemy): number {
+  const r2 = m.def!.gather!.radiusSq;
+  let best = NONE;
+  let bestUid = 0;
+  let bestD2 = -1;
+  for (const v of state.enemies.items.slice(0, state.enemies.used)) {
+    if (!v.alive) continue;
+    const d2 = refD2(m, v);
+    if (d2 > r2 || !refBetter(d2, v.uid, bestD2, bestUid) || !refMayTake(state, m, v)) continue;
+    if (refNearest(state, v, (o) => refMayTake(state, o, v)) !== m) continue;
+    [best, bestUid, bestD2] = [v.slot, v.uid, d2];
+  }
+  for (const a of state.allies.items.slice(0, state.allies.used)) {
+    if (!a.alive) continue;
+    const d2 = refD2(m, a);
+    if (d2 > r2 || !refBetter(d2, a.uid, bestD2, bestUid) || !refMayTakeAlly(m, a)) continue;
+    if (refNearest(state, a, (o) => refMayTakeAlly(o, a)) !== m) continue;
+    [best, bestUid, bestD2] = [-(a.slot + 1), a.uid, d2];
+  }
+  return best;
+}
+
+describe('the matching (R15 P1: O(G·N), the pairwise rule exactly)', () => {
+  const ESCORT: Partial<MapDef<FixtureIds, 'fx_map'>> = {
+    objective: 'escort',
+    maxLost: 5,
+    markers: { rock: [0, 2], gate: [5, 4] },
+    safeExit: 'gate',
+    refugees: { g1: { route: 'a', count: 12 } },
+  };
+  const C: CompiledContent<FixtureIds> = compileContent({
+    ...SIM_FIXTURE,
+    maps: { fx_map: { ...SIM_FIXTURE.maps.fx_map, ...ESCORT } },
+  });
+  const MAP = C.maps.fx_map;
+  const road = MAP.routes.a!;
+
+  /** A dense random field: Maws (some telling, some full of Skitterkin), Motes, runners, refugees. */
+  function field(seed: number): SimState {
+    let r = seed;
+    const rnd = (): number => {
+      r = (Math.imul(r, 1664525) + 1013904223) >>> 0;
+      return r / 2 ** 32;
+    };
+    const state = createState(MAP, 1);
+    spawnRefugees(state, MAP, 'g1');
+    for (const a of state.allies.items.slice(0, state.allies.used)) {
+      a.dist = rnd() * road.lengthTiles;
+      a.seg = pointAt(road, a.dist, a, 0);
+    }
+    const maws: Enemy[] = [];
+    for (let i = 0; i < 40; i++) {
+      // Distances on a 0.05 grid, so equal distances (the uid tie-break) come up often.
+      const dist = Math.round(rnd() * road.lengthTiles * 20) / 20;
+      const k = rnd();
+      if (k < 0.3) {
+        const m = spawn(state, MAW, { dist, route: road });
+        m.gatherTicks = rnd() < 0.8 ? TELL : EVERY; // most ready
+        m.gatheredSkitterkin = rnd() < 0.3;
+        maws.push(m);
+      } else if (k < 0.75) spawn(state, MOTE, { dist, route: road });
+      else spawn(state, WALKER, { dist, route: road, tags: FLEE });
+    }
+    // A few Maws mid-tell, holding a Mote: no other Maw may take it.
+    const motes = state.enemies.items.filter((e) => e.alive && e.def === MOTE);
+    for (const m of maws.slice(0, 3)) {
+      const v = motes[Math.floor(rnd() * motes.length)];
+      if (v !== undefined) m.gatherUid = v.uid;
+    }
+    return state;
+  }
+
+  it('agrees with the pairwise rule on 200 random dense fields', () => {
+    const s = createScratch().gather;
+    let tells = 0;
+    for (let seed = 1; seed <= 200; seed++) {
+      const state = field(seed);
+      gatherMatches(state, s);
+      const want = state.enemies.items
+        .slice(0, state.enemies.used)
+        .filter(refReady)
+        .map((m) => [m.slot, refUnitFor(state, m)]);
+      expect(s.ready.map((slot, r) => [slot, s.code[r]])).toEqual(want);
+      tells += s.code.filter((c) => c !== NONE).length;
+    }
+    expect(tells).toBeGreaterThan(400); // the fields really match (refugees and runners included)
   });
 });

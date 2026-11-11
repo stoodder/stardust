@@ -24,7 +24,9 @@ import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
 import {
   BOMBLET_BURST_MS,
+  burstAlpha,
   BURST_MS,
+  BURSTS_PER_TILE,
   fadeAlpha,
   floatRise,
   lobVelocity,
@@ -127,6 +129,9 @@ interface Burst {
   ms: number;
   /** A bomblet's small pop (fx.bomblet_burst) instead of the shell's fx.explosion. */
   small: boolean;
+  /** The tile it bursts on (the per-tile cap's; −1 for one placed by screen offset). */
+  col: number;
+  row: number;
   sprite: Phaser.GameObjects.Sprite;
 }
 
@@ -194,10 +199,10 @@ const SHIELD_SHARDS = {
 const UNRAVEL = { count: 8, rise: [0.012, 0.024], drift: 0.012, ms: 780 } as const;
 const FLECK_MS = 1400;
 
-/** The two burst looks: the shell's explosion and a bomblet's pop, with how long each plays. */
+/** The two burst looks: the shell's explosion and a bomblet's pop, how long each plays, and its frames. */
 const BURST_LOOKS = {
-  big: { id: 'fx.explosion', ms: BURST_MS },
-  small: { id: 'fx.bomblet_burst', ms: BOMBLET_BURST_MS },
+  big: { id: 'fx.explosion', ms: BURST_MS, frames: 4 },
+  small: { id: 'fx.bomblet_burst', ms: BOMBLET_BURST_MS, frames: 3 },
 } as const;
 
 const pos: Vec2 = { x: 0, y: 0 };
@@ -238,6 +243,8 @@ export class TransientFx {
   #keepClear: KeepClear | null = null;
   /** Which shake runs: the strike's 2 px or a leak's 1 px. */
   #shakeSmall = false;
+  /** Shell bursts skipped by the per-tile cap since the view was made (the smoke flow's check). */
+  burstsCapped = 0;
 
   constructor(ctx: ViewContext, reducedMotion: () => boolean) {
     this.ctx = ctx;
@@ -299,7 +306,7 @@ export class TransientFx {
       sprite.setTexture(boomFrame.texture, boomFrame.frame).setDisplayOrigin(boom.x, boom.y);
       sprite.setVisible(false);
       layers.vfx.add(sprite);
-      this.#bursts.push({ active: false, ms: 0, small: false, sprite });
+      this.#bursts.push({ active: false, ms: 0, small: false, col: -1, row: -1, sprite });
     }
     const moteAnchor = sprites.meta(MOTE_SPRITE).anchor;
     const moteFrame = sprites.frame(MOTE_SPRITE, 'm0');
@@ -645,6 +652,8 @@ export class TransientFx {
    */
   burst(x: number, y: number, delayMs = 0, small = false, liftPx = 0): void {
     const b = this.#bursts[this.#nextBurst]!; // index < MAX_BURSTS
+    b.col = Math.floor(x);
+    b.row = Math.floor(y);
     this.#nextBurst = (this.#nextBurst + 1) % MAX_BURSTS;
     gridToScreen(x, y, this.ctx.origin, pos);
     if (small !== b.small) {
@@ -659,6 +668,25 @@ export class TransientFx {
     b.sprite.stop().setVisible(false);
     b.ms = -delayMs;
     b.active = true;
+  }
+
+  /**
+   * A shell's burst (a Thumper's, or a bomblet's pop) at grid (x, y), unless BURSTS_PER_TILE of its
+   * size already play on that tile (review R14); true when it bursts.
+   */
+  shellBurst(x: number, y: number, small = false, liftPx = 0): boolean {
+    const col = Math.floor(x);
+    const row = Math.floor(y);
+    let n = 0;
+    for (const b of this.#bursts) {
+      if (b.active && b.small === small && b.col === col && b.row === row) n++;
+    }
+    if (n >= BURSTS_PER_TILE[small ? 'small' : 'big']) {
+      this.burstsCapped++;
+      return false;
+    }
+    this.burst(x, y, 0, small, liftPx);
+    return true;
   }
 
   /** Advances every pooled effect by a frame of `dt` ms (FxView's update, before the abilities). */
@@ -714,13 +742,16 @@ export class TransientFx {
       b.ms += dt;
       // Starts once its delay is up (a burst with no delay starts on its first frame: −0 < 0 is
       // false, so the time alone can't say it hasn't started).
+      const look = BURST_LOOKS[b.small ? 'small' : 'big'];
       if (!b.sprite.visible && b.ms >= 0) {
-        const look = BURST_LOOKS[b.small ? 'small' : 'big'];
         b.sprite.setVisible(true).play(this.ctx.sprites.anim(look.id, 'burst'));
       }
-      if (b.ms >= BURST_LOOKS[b.small ? 'small' : 'big'].ms) {
+      if (b.ms >= look.ms) {
         b.active = false;
         b.sprite.stop().setVisible(false);
+      } else if (b.ms >= 0) {
+        // Its smoke thins by alpha over the last frame.
+        b.sprite.setAlpha(burstAlpha(b.ms, look.ms, look.frames));
       }
     }
     for (const d of this.#debris) {

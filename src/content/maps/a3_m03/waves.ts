@@ -115,20 +115,23 @@ export const waves = defineWaves([
       motes(10, 'cut_west', OPEN + 10, 0.25),
     ],
   },
-  // W10 · the last holdable wave, the fifth group on the road
+  // W10 · the last holdable wave, the fifth group on the road. Its cluster is the doom's preview (D143
+  // R4c): 18 Motes 0.15 s apart down the west fork, in among the Undertows. Splash holds it (par,
+  // a Zapcoil in the Thumpers' place); a single-target build (Mindspikes or Rivets there) loses
+  // people to it, so a build without splash shows it here, while the wave is still holdable.
   {
     countdownSec: COUNTDOWN,
     noCall: true,
     groups: [
       g('maw', 1, 'cut_east', OPEN),
-      motes(14, 'cut_east', OPEN + 2, 0.2),
       g('undertow', 2, 'cut_west', OPEN + 6, 2.5),
+      motes(18, 'cut_west', OPEN + 7, 0.15),
       g('riftmoth', 2, 'sky_west', OPEN + 12, 2),
     ],
   },
-  // W11 · the doomed escalation: the west rift opens too. From here the clusters come packed (26
-  // Motes 0.15 s apart; a holdable wave's come 0.2 s apart or wider): splash's real exam, which a
-  // single-target build (Mindspikes or Rivets where par's Thumpers stand) fails (T660).
+  // W11 · the doomed escalation: the west rift opens too. From here every cluster comes packed (26
+  // Motes 0.15 s apart, as W10's did): splash's real exam, which a single-target build (Mindspikes
+  // or Rivets where par's Thumpers stand) fails (T660).
   {
     countdownSec: COUNTDOWN,
     noCall: true,
@@ -159,7 +162,7 @@ export const waves = defineWaves([
       g('undertow', 1, 'rift_west', OPEN),
       motes(27, 'cut_west', OPEN + 2, 0.15),
       g('undertow', 2, 'rift_east', OPEN + 4, 2.5),
-      motes(17, 'cut_east', OPEN + 6, 0.15),
+      motes(14, 'cut_east', OPEN + 6, 0.15),
       g('fracture', 1, 'cut_west', OPEN + 8, 2),
       g('riftmoth', 3, 'sky_east', OPEN + 10, 1.5),
     ],

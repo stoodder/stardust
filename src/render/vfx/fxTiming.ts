@@ -71,6 +71,23 @@ export const BURST_MS = 4 * (1000 / 12);
 /** A Cluster Thumper bomblet's pop (fx.bomblet_burst): 3 frames at 12 fps. */
 export const BOMBLET_BURST_MS = 3 * (1000 / 12);
 
+/**
+ * Shell bursts playing at once on one tile, by size (review R14): a choke under several Thumpers
+ * shows a couple of blasts and their rings, not a wall of stacked fireballs burying the units. A
+ * shell over the cap still rings its splash; only its burst is skipped.
+ */
+export const BURSTS_PER_TILE = { big: 2, small: 3 } as const;
+
+/**
+ * A burst's alpha `ms` into its play of `frames` frames over `durationMs`: whole, then the stepped
+ * fade over its last frame, so the smoke thins by alpha (its puffs are solid, never a dither).
+ */
+export function burstAlpha(ms: number, durationMs: number, frames: number): number {
+  const lastFrom = durationMs * (1 - 1 / frames);
+  if (!(ms > lastFrom)) return STEPPED_ALPHA[0];
+  return fadeAlpha((ms - lastFrom) / (durationMs - lastFrom));
+}
+
 // ── Orbital Strike impact ────────────────────────────────────────────────────────────────────
 
 /** The beam's life after the strike lands, in ms. */

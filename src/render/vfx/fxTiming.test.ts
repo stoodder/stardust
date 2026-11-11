@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { SPRITES } from '../../content/sprites/index.ts';
 import {
   BEAM_MS,
+  BOMBLET_BURST_MS,
+  burstAlpha,
+  BURST_MS,
+  BURSTS_PER_TILE,
   FIELD_FLASH_TICKS,
   fieldAlpha,
   beamCore,
@@ -118,5 +123,32 @@ describe('lobVelocity (the shed spark, D139 S4)', () => {
       expect(dy / 2 - at(ms / 2)).toBeCloseTo((g * ms * ms) / 8, 9);
     }
     expect(lobVelocity(5, 0, g)).toBe(0);
+  });
+});
+
+describe('shell bursts (review R14)', () => {
+  it("time each burst by its sprite's anim", () => {
+    for (const [id, ms] of [
+      ['fx.explosion', BURST_MS],
+      ['fx.bomblet_burst', BOMBLET_BURST_MS],
+    ] as const) {
+      const burst = SPRITES.find((d) => d.id === id)?.anims?.['burst'];
+      expect(burst, id).toBeDefined();
+      expect(ms, id).toBeCloseTo((burst!.frames.length * 1000) / burst!.fps, 6);
+    }
+  });
+
+  it('play whole, then thin down the alpha ladder over their last frame', () => {
+    const frame = BURST_MS / 4;
+    expect(burstAlpha(0, BURST_MS, 4)).toBe(1);
+    expect(burstAlpha(3 * frame, BURST_MS, 4)).toBe(1);
+    expect(burstAlpha(3 * frame + frame * 0.6, BURST_MS, 4)).toBe(STEPPED_ALPHA[1]);
+    expect(burstAlpha(BURST_MS - 0.01, BURST_MS, 4)).toBe(STEPPED_ALPHA[3]);
+    expect(burstAlpha(2 * (BOMBLET_BURST_MS / 3) - 1, BOMBLET_BURST_MS, 3)).toBe(1);
+  });
+
+  it('cap how many play on one tile, a few more of the small pops than shells', () => {
+    expect(BURSTS_PER_TILE.big).toBeGreaterThanOrEqual(1);
+    expect(BURSTS_PER_TILE.small).toBeGreaterThanOrEqual(BURSTS_PER_TILE.big);
   });
 });

@@ -362,6 +362,20 @@ function startTell(state: SimState, m: Enemy, code: number): void {
   }
 }
 
+/**
+ * This tick's new tells, before any starts: `s.ready` the ready gatherers' slots (ascending), and
+ * `s.code` the unit each takes (an enemy's slot, −(an ally's slot + 1), or Number.MIN_SAFE_INTEGER
+ * for none). Exported for the matching's equivalence test (gather.test.ts).
+ */
+export function gatherMatches(state: SimState, s: GatherScratch): void {
+  const pool = state.enemies;
+  s.ready.length = 0;
+  for (let i = 0; i < pool.used; i++) {
+    if (isReady(pool.items[i]!)) s.ready.push(i); // i < used ≤ items.length
+  }
+  matchUnits(state, s);
+}
+
 /** One tick of gathering over every unit: tells under way, the cooldowns, then new tells. */
 export function gatherPass(state: SimState, ctx: TickContext): void {
   const pool = state.enemies;
@@ -395,11 +409,7 @@ export function gatherPass(state: SimState, ctx: TickContext): void {
   if (!anyReady) return;
   // New tells, matched on this state before any starts (order independence).
   const s = ctx.scratch.gather;
-  s.ready.length = 0;
-  for (let i = 0; i < pool.used; i++) {
-    if (isReady(pool.items[i]!)) s.ready.push(i); // i < used ≤ items.length
-  }
-  matchUnits(state, s);
+  gatherMatches(state, s);
   for (let r = 0; r < s.ready.length; r++) {
     const code = s.code[r]!; // r < ready.length = code.length
     if (code !== NO_UNIT) startTell(state, pool.items[s.ready[r]!]!, code); // a ready slot

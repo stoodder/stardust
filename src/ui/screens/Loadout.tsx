@@ -4,6 +4,9 @@
 // of the map's counters it answers, and the protocols sit under the towers; the side column shows
 // slot 2 (the map's companion), the synergy links the pool can form (lit when it forms them), and a heads-up
 // for any required counter the pick leaves unanswered (a warning, never a block or a scold).
+// A class revoked from the save (A3M2's Clean Exit) stays on the grid as a stamped, locked card,
+// "License revoked", never pickable; a revoked Orbital Strike reads "Uplink revoked" under its
+// stamp in the Technician column (towers.md § 9; D143 R4).
 // The router shows it only when there's a choice to make (meta/loadout.ts, the skip rule).
 // Keys: Tab moves between the groups; the arrows move within the tower grid and the ability
 // radio group; Enter or Space toggles a tower or a protocol; Lock in has the focus on arrival, so
@@ -20,6 +23,8 @@ import {
 } from '../../app/loadout.ts';
 import { lockInLoadout, toCampaign } from '../../app/navigation.ts';
 import { campaignScreenName } from '../../app/starMap.ts';
+import { UPLINK_STAMP } from '../hud/AbilityBar.tsx';
+import { LICENSE_STAMP } from '../hud/BuildBar.tsx';
 import { Icon } from '../hud/Icon.tsx';
 import { useEscape } from './escape.ts';
 import { focusOnce } from './focus.ts';
@@ -28,6 +33,7 @@ import {
   type LoadoutAbilityView,
   type LoadoutPickView,
   type LoadoutProtocolView,
+  type LoadoutRevokedView,
   type LoadoutTowerView,
   type LoadoutView,
 } from './loadoutView.ts';
@@ -102,6 +108,30 @@ function TowerCard(props: {
         </span>
       </button>
     </li>
+  );
+}
+
+/**
+ * A revoked class or ability: its icon dimmed under the stamp, its name, and what happened. Not a
+ * control (nothing to press); read as one line ("Thumper: License revoked").
+ */
+function RevokedCard({ r, stamp, what }: { r: LoadoutRevokedView; stamp: string; what: string }) {
+  return (
+    <div class="sd-lo-revoked" data-testid="loadout-revoked" data-revoked={r.id}>
+      <span class="sd-lo-revoked-art" aria-hidden="true">
+        <Icon id={r.icon} class="sd-lo-icon" />
+        <span class="sd-lo-revoked-stamp">
+          <Icon id={stamp} />
+        </span>
+      </span>
+      <span class="sd-lo-text">
+        <span class="sd-lo-name">
+          {r.name}
+          <span class="sd-visually-hidden">:</span>
+        </span>
+        <span class="sd-lo-revoked-what">{what}</span>
+      </span>
+    </div>
   );
 }
 
@@ -341,6 +371,11 @@ export function Loadout() {
                   />
                 );
               })}
+              {view.revoked.map((r) => (
+                <li key={r.id}>
+                  <RevokedCard r={r} stamp={LICENSE_STAMP} what="License revoked" />
+                </li>
+              ))}
             </ul>
             <p class="sd-lo-hint" role="status">
               {notice ?? 'Pick order is build-slot order (keys 1–4 in the shift).'}
@@ -373,15 +408,19 @@ export function Loadout() {
             <h2 id="sd-lo-ability-label" class="sd-panel-heading sd-lo-heading">
               Technician
             </h2>
-            {view.abilities.length === 0 ? (
+            {view.abilities.length === 0 && view.revokedAbilities.length === 0 && (
               <p class="sd-lo-dim">No abilities issued yet.</p>
-            ) : (
+            )}
+            {view.abilities.length > 0 && (
               <AbilityPicker
                 abilities={view.abilities}
                 picked={pick.ability}
                 onPick={(id) => setPick({ ...pick, ability: id })}
               />
             )}
+            {view.revokedAbilities.map((r) => (
+              <RevokedCard key={r.id} r={r} stamp={UPLINK_STAMP} what="Uplink revoked" />
+            ))}
             {view.companion !== null && (
               <p class="sd-lo-companion">
                 <span class="sd-lo-dim">Slot 2 </span>

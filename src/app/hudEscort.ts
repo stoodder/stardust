@@ -12,7 +12,7 @@
 // on A3M3 only the chosen door's), never the map's every group.
 // Otherwise `hud.escort` is null and the core's meter shows.
 import type { IdSpace } from '../content/types.ts';
-import { evaluateCondition, type Sim } from '../sim/index.ts';
+import { escortMaxLost, evaluateCondition, type Sim } from '../sim/index.ts';
 import { hud, type EscortMeterView } from '../ui/state.ts';
 import { escortLow, holdoutLow } from '../story/meters.ts';
 import { meterLabelText } from './hudText.ts';
@@ -115,7 +115,8 @@ export function bindEscortMeter(host: Host<IdSpace>): () => void {
       evacuated,
       lost,
       total,
-      sim.map.maxLost,
+      // The map's limit: its `maxLost`, or its `maxLostPct` of the run's refugees (D143 R7).
+      escortMaxLost(s, sim.map),
       sim.map.evacuatedFloor,
     );
     hud.meterLabel.value = meterLabelText(s.meterLabel);
