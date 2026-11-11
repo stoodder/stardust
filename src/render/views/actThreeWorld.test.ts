@@ -49,7 +49,8 @@ describe("A3M1's Preserve", () => {
         faces++;
         expect(['tile.grass', 'tile.pad']).toContain(d.ground.sprite);
         // A pad at a cliff's foot keeps its plate clear.
-        if (d.ground.sprite === 'tile.pad') expect(d.cliff.every((f) => f.includes('_pad'))).toBe(true);
+        if (d.ground.sprite === 'tile.pad')
+          expect(d.cliff.every((f) => f.includes('_pad'))).toBe(true);
       }
     }
     expect(faces).toBeGreaterThan(4);
@@ -123,10 +124,11 @@ describe("Act III's looks", () => {
   });
 });
 
-describe('the rift cracks', () => {
-  const rifts = (g: typeof m1): (typeof g.routeList)[number][] =>
-    g.routeList.filter((r) => r.kind === 'rift');
+function rifts(g: typeof m1): (typeof g.routeList)[number][] {
+  return g.routeList.filter((r) => r.kind === 'rift');
+}
 
+describe('the rift cracks', () => {
   it('crack only the off-road run of each lane, two halves a tile, joined edge to edge', () => {
     for (const g of [m1, m2, m3]) {
       for (const lane of rifts(g)) {

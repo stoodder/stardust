@@ -97,7 +97,8 @@ function ship(g: CharGrid, beat: 0 | 1, flying: boolean): void {
   // The canopy: a teal glass slope behind the nose, a glint, the cabin lit warm behind it.
   for (let x = cx - 12; x <= cx - 4; x++) {
     const mid = by - 6 + Math.round((x - cx) / 6);
-    for (let y = mid - 5; y <= mid - 3; y++) plot(g, x, y, x < cx - 9 ? '9' : y === mid - 5 ? '9' : '8');
+    for (let y = mid - 5; y <= mid - 3; y++)
+      plot(g, x, y, x < cx - 9 ? '9' : y === mid - 5 ? '9' : '8');
   }
   plot(g, cx - 10, by - 12, 'w');
   for (const wx of [cx - 1, cx + 3, cx + 7]) {

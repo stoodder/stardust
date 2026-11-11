@@ -3,6 +3,7 @@ import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
 import type { RgbaImage } from '../sprites/rasterize.ts';
 import {
   barMaxHp,
+  barMaxWith,
   HEALTH_BAR_H,
   HEALTH_BAR_MAX_W,
   healthBarFill,
@@ -91,5 +92,19 @@ describe('enemy health bars (art-direction §8, T328)', () => {
     expect(at(shield, 0, 0)).toEqual(rgba('blue.4'));
     expect(at(shield, SHIELD_SEGMENT_PX, 0)[3]).toBe(0);
     expect(at(shield, SHIELD_SEGMENT_PX + 1, 1)).toEqual(rgba('blue.4'));
+  });
+
+  it("measures a grown Maw against its def's HP plus its absorbs' (T630a)", () => {
+    // A Maw (400 HP) that took a 120-HP piece is at 520 of 520: a full bar, not an overfull one.
+    const max = barMaxWith(barMaxHp({ hp: 400, shield: null, boss: null, neutral: false }), 120);
+    expect(max).toBe(520);
+    healthBarFill(520, max, 0, 0, 16, out);
+    expect(out.hpPx).toBe(16);
+    expect(healthBarShown(520, max, 0, 0, false)).toBe(false);
+    // Hurt back to its base HP, it reads damaged.
+    expect(healthBarShown(400, max, 0, 0, false)).toBe(true);
+    // No bar stays no bar (a boss), and a bonus never shrinks it.
+    expect(barMaxWith(0, 120)).toBe(0);
+    expect(barMaxWith(40, -5)).toBe(40);
   });
 });

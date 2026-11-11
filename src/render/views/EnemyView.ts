@@ -77,6 +77,7 @@ import {
   healthBarFill,
   healthBarShown,
   healthBarWidth,
+  barMaxWith,
   type HealthBarFill,
 } from '../vfx/healthBar.ts';
 import { SHIMMER_MS, STEPPED_ALPHA, tellHigh } from '../vfx/fxTiming.ts';
@@ -314,6 +315,8 @@ export class EnemyView implements PooledView {
   /** The bar's width (px) for this body, and the maxima it measures against (0 HP: no bar). */
   #barW = 0;
   #maxHp = 0;
+  /** The max HP a gatherer's absorbs added (`Enemy.bonusMaxHp`; the sim's `gatherMaxHp`, T630a). */
+  #bonusMaxHp = 0;
   #maxShield = 0;
   #shieldHp = 0;
   /** What the bar shows (−1: not drawn yet), and whether it's up. */
@@ -620,6 +623,7 @@ export class EnemyView implements PooledView {
     this.#metaH = meta.h;
     this.#barW = healthBarWidth(meta.w);
     this.#maxHp = 0;
+    this.#bonusMaxHp = 0;
     this.#maxShield = 0;
     this.#hovered = false;
     this.#clear = false;
@@ -810,12 +814,12 @@ export class EnemyView implements PooledView {
       !this.#leaving &&
       !this.#clear &&
       !this.#burrowedLook() &&
-      healthBarShown(hp, this.#maxHp, this.#shieldHp, this.#maxShield, this.#hovered);
+      healthBarShown(hp, this.#barMax(), this.#shieldHp, this.#maxShield, this.#hovered);
     if (!show) {
       if (this.#barShown) this.#hideBar();
       return;
     }
-    healthBarFill(hp, this.#maxHp, this.#shieldHp, this.#maxShield, this.#barW, fill);
+    healthBarFill(hp, this.#barMax(), this.#shieldHp, this.#maxShield, this.#barW, fill);
     if (fill.hpPx !== this.#barHpPx || fill.shieldPx !== this.#barShieldPx) {
       this.#barHpPx = fill.hpPx;
       this.#barShieldPx = fill.shieldPx;
@@ -834,6 +838,14 @@ export class EnemyView implements PooledView {
       this.#barHp.visible = fill.hpPx > 0;
       this.#barShield.visible = fill.shieldPx > 0;
     }
+  }
+
+  /**
+   * The HP the bar measures against: its def's, plus what a gatherer's absorbs added (a Maw's max
+   * HP grows with each piece, so a grown Maw at full health reads full; 0 stays no bar).
+   */
+  #barMax(): number {
+    return barMaxWith(this.#maxHp, this.#bonusMaxHp);
   }
 
   #hideBar(): void {
@@ -902,7 +914,13 @@ export class EnemyView implements PooledView {
       this.#fray = band;
       dirty = true;
     }
-    // A Maw grows (T640a): each absorb count is its own, bigger body (gatherLook.ts `mawBody`).
+    // A Maw grows (T640a): each absorb count is its own, bigger body (gatherLook.ts `mawBody`),
+    // and its bar measures the max HP its absorbs added (T630a).
+    if (e.bonusMaxHp !== this.#bonusMaxHp) {
+      this.#bonusMaxHp = e.bonusMaxHp;
+      this.#barHpPx = -1;
+      this.#syncBar();
+    }
     if (e.def !== null && e.def.gather !== null) {
       const id = spriteId(mawBody(this.#baseBody, e));
       if (id !== this.#id) {

@@ -376,8 +376,39 @@ function blocker(facing: 'se' | 'ne', breath: 0 | 1, fire: boolean, stance: Stan
       if (ch !== '.') plot(g, x, y + drop, ch);
     }),
   );
+  if (stance === 'last') frontKnee(g);
   if (stance === 'strain' || stance === 'last') sweat(g, facing, drop, breath);
   return rows(g);
+}
+
+/**
+ * Down on one knee, the front leg is drawn over the jacket's hem (T630a): the thigh juts forward
+ * out of the hem, the knee up and lit on top, the shin dropping to a planted boot past the hem, so
+ * the kneel reads at 1× instead of a figure sunk into its plate.
+ */
+function frontKnee(g: CharGrid): void {
+  for (const [x, y, ch] of [
+    // The thigh, rising out of the hem to the knee.
+    [17, 22, 'N'],
+    [18, 22, 'N'],
+    [18, 21, 'N'],
+    [19, 21, 'N'],
+    [19, 20, 'N'],
+    [20, 20, 'N'],
+    [20, 21, 'M'],
+    [19, 22, 'M'],
+    // The shin, straight down to the boot.
+    [21, 21, 'M'],
+    [20, 22, 'N'],
+    [21, 22, 'M'],
+    [20, 23, 'N'],
+    [21, 23, 'M'],
+    // The boot, planted.
+    [20, 24, 'I'],
+    [21, 24, 'I'],
+    [22, 24, 'I'],
+  ] as const)
+    plot(g, x, y, ch);
 }
 
 /** A blocker stance's frames and anims (`<stance>_<facing>`, `<stance>_fire_<facing>`). */

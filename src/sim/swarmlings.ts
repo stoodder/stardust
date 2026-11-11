@@ -54,6 +54,14 @@ import { damageOn, rangeOf } from './systems/towers.ts';
 import type { TickContext } from './tick.ts';
 
 type Spawner = Extract<CompiledAttack, { kind: 'spawner' }>;
+// EXPERIMENT (T604c): toggles from env.
+const ENV: Record<string, string | undefined> = (globalThis as any).process?.env ?? {};
+const EXP = {
+  ride: ENV.RIDE === '1',
+  wake: ENV.WAKE === '1',
+  prefb: ENV.PREFB === '1',
+  hop: ENV.HOP === '1',
+};
 
 /** A swarmling's or Champion's dash and run home (the docs give none; T604's choice). */
 export const SWARM_DASH_TILES_PER_SEC = 4;
@@ -232,8 +240,14 @@ function home(state: SimState, ctx: TickContext, a: Ally, den: Tower, attack: Sp
     return;
   }
   // Its rest counts the arrival's pass: it heads out on the restTicks-th pass after.
-  if (a.swarmTicks > 0 && --a.swarmTicks > 0) return;
+  if (
+    a.swarmTicks > 0 &&
+    --a.swarmTicks > 0 &&
+    !(EXP.wake && burrowedInRange(state, ctx, den, attack, a))
+  )
+    return;
   if (den.holdFire) return;
+  a.swarmTicks = 0;
   const target = pick(state, ctx, den, attack, a);
   if (target === null) return;
   a.swarmState = 'out';
@@ -267,7 +281,7 @@ function dash(
   }
   if (moveToward(a, target.x, target.y, speed)) {
     a.swarmState = 'latched';
-    a.swarmTicks = attack.latchTicks + den.linkLatchTicks;
+    if (!(EXP.hop && a.swarmTicks > 0)) a.swarmTicks = attack.latchTicks + den.linkLatchTicks;
     a.cooldownTicks = 0;
     emit(state, { type: 'SwarmLatch', uid: a.uid, enemyUid: target.uid, on: true });
     hold(state, ctx, a, den, attack);
@@ -307,6 +321,21 @@ function hold(state: SimState, ctx: TickContext, a: Ally, den: Tower, attack: Sp
   if (target.alive) {
     target.swarmChillPct += attack.chillPct;
     target.latchCount++;
+  }
+  if (EXP.ride && target.alive && target.burrowed && a.swarmTicks <= 1) return;
+  if (EXP.hop && !target.alive && a.swarmTicks > 1) {
+    a.swarmTicks--;
+    emit(state, { type: 'SwarmLatch', uid: a.uid, enemyUid: a.targetUid, on: false });
+    const next = pick(state, ctx, den, attack, a);
+    if (next !== null) {
+      a.swarmState = 'out';
+      a.targetUid = next.uid;
+      a.targetSlot = next.slot;
+      a.cooldownTicks = 0;
+      return;
+    }
+    turnBack(a);
+    return;
   }
   if (--a.swarmTicks <= 0 || !target.alive) letGo(state, a);
 }
@@ -383,6 +412,8 @@ function pick(
   let bestLeft = 0;
   let open: Enemy | null = null;
   let openLeft = 0;
+  let bur: Enemy | null = null;
+  let burLeft = 0;
   for (let i = 0; i < enemies.used; i++) {
     const e = enemies.items[i]!; // i < used ≤ items.length
     if (!reachable(e, self.hitsGround, self.hitsAir)) continue;
@@ -394,13 +425,37 @@ function pick(
       best = e;
       bestLeft = left;
     }
+    if (EXP.prefb && e.burrowed && claims(state, e.uid, self) < spread) {
+      if (bur === null || left < burLeft) {
+        bur = e;
+        burLeft = left;
+      }
+    }
     if (open !== null && (left > openLeft || (left === openLeft && e.uid > open.uid))) continue;
     if (claims(state, e.uid, self) < spread) {
       open = e;
       openLeft = left;
     }
   }
-  return open ?? best;
+  return bur ?? open ?? best;
+}
+
+function burrowedInRange(
+  state: SimState,
+  ctx: TickContext,
+  den: Tower,
+  attack: Spawner,
+  self: Ally,
+): boolean {
+  const rangeSq = rangeOf(ctx, den, attack).rangeSq;
+  for (let i = 0; i < state.enemies.used; i++) {
+    const e = state.enemies.items[i]!;
+    if (!e.burrowed || !reachable(e, self.hitsGround, self.hitsAir)) continue;
+    const dx = e.x - den.x;
+    const dy = e.y - den.y;
+    if (dx * dx + dy * dy <= rangeSq) return true;
+  }
+  return false;
 }
 
 /** Swarmlings (any Den's, but `self`) dashing at or latched onto enemy `uid`. */

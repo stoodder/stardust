@@ -9,11 +9,12 @@ import type { AudioEngine } from '../audio/index.ts';
 import { silentEngine } from '../audio/index.ts';
 import { DARK_SOUNDS, METER_ALARM } from '../audio/eventTablesAct2b.ts';
 import { HOLLOW_DUCK } from '../audio/eventTablesAct2.ts';
+import { FORCED_INPUT_SOUNDS } from '../audio/eventTablesAct3.ts';
 import type { IdSpace } from '../content/types.ts';
 import { MemoryStore } from '../meta/index.ts';
 import { createSim, type SimState } from '../sim/index.ts';
 import { dialogue, type LineView, type SceneView } from '../ui/dialogue/state.ts';
-import { runResult, type RunResult } from '../ui/screens/state.ts';
+import { baseChoice, runResult, type BaseChoiceView, type RunResult } from '../ui/screens/state.ts';
 import { hud, screen } from '../ui/state.ts';
 import { bindBattleAudio, darkDuckLevel, installAudio, playJingle } from './audio.ts';
 import { battleConfig } from './battleSetup.ts';
@@ -32,6 +33,12 @@ function recorder(): { engine: AudioEngine; log: string[]; ducks: Map<string, nu
     },
     cue(id) {
       log.push(`cue:${id}`);
+    },
+    stop(id) {
+      log.push(`stop:${id}`);
+    },
+    stopCue(id) {
+      log.push(`stopCue:${id}`);
     },
     holdDuck(key, level) {
       if (level === null) ducks.delete(key);
@@ -71,6 +78,14 @@ const c2Card = (picked: number | null, choice: 'sold' | 'returned'): RunResult =
   return base as unknown as RunResult;
 };
 
+/** The base's C2 panel (D138), offered (`made` null) or taken. */
+const panel = (made: BaseChoiceView['made']): BaseChoiceView => ({
+  lines: [],
+  choice: c2Card(null, 'returned').choice!,
+  made,
+  notice: null,
+});
+
 let rec = recorder();
 let uninstall: () => void = noop;
 
@@ -86,6 +101,7 @@ afterEach(() => {
   dialogue.scene.value = null;
   dialogue.comms.value = null;
   runResult.value = null;
+  baseChoice.value = null;
   hud.asset.value = null;
   hud.escort.value = null;
   screen.value = null;
@@ -173,6 +189,18 @@ describe('bindBattleAudio', () => {
     expect(rec.log.filter((s) => s === `sfx:${METER_ALARM}`)).toHaveLength(2);
   });
 
+  it('falls the music away while the SEAL waits, cuts the door hum dead on its press, then slams', () => {
+    state.pendingInput = 'seal';
+    frame();
+    expect(rec.ducks.get(FORCED_INPUT_SOUNDS.duckKey)).toBe(FORCED_INPUT_SOUNDS.duck);
+    rec.log.length = 0;
+    host.bus.emit({ type: 'ForcedInputResolved', id: 'seal' });
+    expect(rec.log).toEqual(['stop:door_hum', 'sfx:door_seal']);
+    state.pendingInput = null;
+    frame();
+    expect(rec.ducks.has(FORCED_INPUT_SOUNDS.duckKey)).toBe(false);
+  });
+
   it("plays nothing while a resumed run's replay catches up", () => {
     const sim = createSim(battleConfig('a2_m01', 1, null));
     const replay = createHost(sim, {
@@ -254,6 +282,71 @@ describe("installAudio's speech and Results", () => {
     // The same line in another scene is spoken.
     show('a2_m06_base_loophole', 3, line('pebble', hum));
     expect(rec.log.at(-1)).toBe('sfx:blip.pebble');
+  });
+
+  it("sings the Leaving Song: Pebble alone, Thrum taking over from the top, the player's hum along", () => {
+    rec.log.length = 0;
+    const scene = 'a3_m01_scene_song';
+    const hum = { text: '(hum, six notes)' };
+    show(scene, 0, line('pebble', hum));
+    show(scene, 1, line('thrum', hum));
+    expect(rec.log).toEqual(['cue:leaving_hum', 'stopCue:leaving_hum', 'cue:leaving_hum_two']);
+    // QUILL speaks; the pick "(hum along)" joins the transcript as Ves'thara's line shows.
+    show(scene, 2, line('quill', { text: "Melody match: 'Everglow Bright.'" }));
+    rec.log.length = 0;
+    const transcript = [
+      ...Array.from({ length: 4 }, () => line('pebble')),
+      line('player', { text: '(hum along)' }),
+    ];
+    const view = dialogue.scene.value!;
+    dialogue.scene.value = { ...view, transcript, line: line('vesthara') };
+    expect(rec.log).toEqual([
+      'stopCue:leaving_hum_two',
+      'cue:leaving_hum_along',
+      'dip',
+      'sfx:blip.vesthara',
+    ]);
+  });
+
+  it("hums the SEAL's lines over the door hum: no blip, no dip, and the music hushed", () => {
+    rec.log.length = 0;
+    dialogue.comms.value = {
+      line: line('bricks', { text: '(hum, six notes, slow)' }),
+      cue: null,
+      button: null,
+    };
+    expect(rec.log).toEqual([]);
+    expect(rec.ducks.get('line_cue')).toBeLessThan(0.2);
+    dialogue.comms.value = {
+      line: line('bricks', { text: 'Do it, Thorn.' }),
+      cue: null,
+      button: null,
+    };
+    expect(rec.log).toEqual(['dip', 'sfx:blip.bricks']);
+    expect(rec.ducks.has('line_cue')).toBe(false);
+  });
+
+  it("lets the music fall away under Sterling's Clean Exit, and brings it back after", () => {
+    show('a3_m02_cue_revoke', 0, line('sterling'));
+    expect(rec.ducks.get('cue_hush')).toBeLessThan(0.1);
+    show('a3_m02_cue_revoke', 3, line('sterling', { silence: true, text: '' }));
+    expect(rec.ducks.has('cue_hush')).toBe(true);
+    dialogue.scene.value = null;
+    expect(rec.ducks.has('cue_hush')).toBe(false);
+    // Other pausing cues keep the music.
+    show('a2_m05_cue_pivot', 0, line('vesthara'));
+    expect(rec.ducks.has('cue_hush')).toBe(false);
+  });
+
+  it('stings C2 when it is answered at the base instead of on the card (T569)', () => {
+    rec.log.length = 0;
+    baseChoice.value = panel(null);
+    expect(rec.log).toEqual([]);
+    baseChoice.value = panel({ kind: 'c2', choice: 'returned', bank: 0, intel: 0, tuneUp: null });
+    expect(rec.log).toEqual(['cue:c2_returned']);
+    baseChoice.value = panel({ kind: 'c2', choice: 'returned', bank: 0, intel: 0, tuneUp: null });
+    baseChoice.value = null;
+    expect(rec.log).toEqual(['cue:c2_returned']);
   });
 
   it("stings C2's choice as it's taken on the card, by what it did, and never on its offer", () => {

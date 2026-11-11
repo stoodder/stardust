@@ -66,3 +66,132 @@ describe("Act III's sound dials (T613)", () => {
     ]);
   });
 });
+
+const withTowers = (towers: Readonly<Record<number, string>>) =>
+  createEventSounds(byAct[3], {
+    splits: () => false,
+    faction: (id) => FACTIONS[id] ?? null,
+    quietAt: () => false,
+    tower: (uid) => towers[uid] ?? null,
+  });
+const play = (s: ReturnType<typeof createEventSounds>, events: E[]): SoundCall[] => {
+  const out: SoundCall[] = [];
+  for (const e of events) s.sounds(e, out);
+  s.endFrame(out);
+  return out;
+};
+const ids = (calls: SoundCall[]): string[] => calls.map((c) => c.id);
+
+const burst = (towerUid: number, frozen: number): E => ({
+  type: 'PulseBurst',
+  towerUid,
+  x: 1,
+  y: 1,
+  radiusTiles: 2,
+  frozen,
+});
+
+describe("Act III's event sounds (T650)", () => {
+  it("draws a unit in on the Maw's breath and swallows it; a refugee sounds like a loss", () => {
+    const s = withTowers({});
+    expect(
+      ids(
+        play(s, [
+          { type: 'GatherTell', uid: 1, targetUid: 2, ally: false },
+          { type: 'Gathered', uid: 1, victimUid: 2, victim: 'mote', hp: 40, absorbs: 1 },
+        ]),
+      ),
+    ).toEqual(['maw_tell', 'maw_gulp']);
+    expect(
+      ids(
+        play(s, [{ type: 'Gathered', uid: 1, victimUid: 3, victim: 'refugee', hp: 0, absorbs: 2 }]),
+      ),
+    ).toEqual(['maw_gulp', 'hushed']);
+  });
+
+  it('cracks a rift a wave ahead and tears it open as its wave starts', () => {
+    const s = withTowers({});
+    expect(
+      ids(
+        play(s, [
+          { type: 'RiftOpening', route: 'r', wave: 4 },
+          { type: 'RiftOpened', route: 'r', wave: 4 },
+        ]),
+      ),
+    ).toEqual(['rift_crack', 'rift_open']);
+  });
+
+  it('bites as a swarmling latches (never as it lets go), chirps it home, and snaps a trap', () => {
+    const s = withTowers({});
+    expect(
+      ids(
+        play(s, [
+          { type: 'SwarmLatch', uid: 5, enemyUid: 1, on: true },
+          { type: 'SwarmLatch', uid: 5, enemyUid: 1, on: false },
+          { type: 'SwarmHome', uid: 5, towerUid: 2 },
+          { type: 'TrapSprung', zoneUid: 9, enemyUid: 1, x: 1, y: 1 },
+        ]),
+      ),
+    ).toEqual(['swarm_latch', 'swarm_home', 'trap_snap']);
+  });
+
+  it("rings the Bloom's crystal chime where Flash Freeze blows frost, and thrums Gravity Well's pull", () => {
+    const s = withTowers({ 1: 'bloom', 2: 'sprinkler' });
+    expect(ids(play(s, [burst(1, 2)]))).toEqual(['bloom_chime', 'stasis_lock']);
+    expect(ids(play(s, [burst(2, 0)]))).toEqual(['frost_burst']);
+    const pulled: E = {
+      type: 'PulledBack',
+      uid: 3,
+      towerUid: 1,
+      fromX: 2,
+      fromY: 2,
+      x: 1,
+      y: 1,
+      tiles: 1.5,
+    };
+    expect(ids(play(s, [pulled]))).toEqual(['gravity_pull']);
+  });
+
+  it('stamps each revoked tower one after another, then an equipped uplink; the rest is silent', () => {
+    const s = withTowers({});
+    const out = play(s, [
+      { type: 'TowerRevoked', uid: 1, tower: 'rivet', refund: 50 },
+      { type: 'TowerRevoked', uid: 2, tower: 'rivet', refund: 50 },
+      { type: 'ClassRevoked', tower: 'rivet', refund: 100 },
+      { type: 'AbilityRevoked', ability: 'orbital_strike', slot: 1 },
+      { type: 'ModifierChanged', modifier: 'quillLockout', on: true },
+    ]);
+    expect(ids(out)).toEqual(['revoke_stamp', 'revoke_stamp', 'revoke_stamp']);
+    const delays = out.map((c) => (c.kind === 'sfx' ? c.delay : -1));
+    expect(delays[0]).toBe(0);
+    expect(delays[1]).toBeGreaterThan(0);
+    expect(delays[2]).toBeGreaterThan(delays[1]!);
+    // An unequipped uplink has no slot to stamp; a new frame starts the stagger over.
+    expect(play(s, [{ type: 'AbilityRevoked', ability: 'orbital_strike', slot: null }])).toEqual(
+      [],
+    );
+    expect(play(s, [{ type: 'TowerRevoked', uid: 3, tower: 'thumper', refund: 0 }])).toMatchObject([
+      { id: 'revoke_stamp', delay: 0 },
+    ]);
+  });
+
+  it('braces Bricks as he takes a unit on, slams the door on the SEAL, and keeps the rest quiet', () => {
+    const s = withTowers({});
+    expect(
+      ids(
+        play(s, [
+          { type: 'ForcedInputRequested', id: 'seal' },
+          { type: 'Blocked', allyUid: 1, enemyUid: 2, on: true },
+          { type: 'Blocked', allyUid: 1, enemyUid: 2, on: false },
+          { type: 'AllyHealthChanged', uid: 1, health: 0.5 },
+          { type: 'ForcedInputResolved', id: 'seal' },
+          { type: 'ForcedInputResolved', id: 'unknown' },
+        ]),
+      ),
+    ).toEqual(['bricks_brace', 'door_seal']);
+  });
+
+  it('shuts an Everglow machine down with its price tag, pitched by size', () => {
+    expect(run(byAct[3], [died('compliance')])).toEqual(['sfx:everglow_shutdown']);
+  });
+});

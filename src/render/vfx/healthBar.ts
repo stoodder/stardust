@@ -116,3 +116,11 @@ export interface BarDef {
 export function barMaxHp(def: BarDef): number {
   return def.boss !== null || def.neutral ? 0 : def.hp;
 }
+
+/**
+ * The bar's maximum with `bonus` HP added (a gatherer's absorbs, the sim's `gatherMaxHp`: def HP +
+ * `bonusMaxHp`), or 0 (no bar) when the unit has none to start with (a boss, a neutral unit).
+ */
+export function barMaxWith(maxHp: number, bonus: number): number {
+  return maxHp > 0 ? maxHp + Math.max(0, bonus) : 0;
+}

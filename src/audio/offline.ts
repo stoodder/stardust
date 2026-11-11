@@ -197,6 +197,14 @@ const darkLevel = (dark: number): number => 1 - DARK_SOUNDS.duckDepth * dark;
  *   refugees reaching the exit (Pebble too) and two taken there, the meter's alarm, Stillness
  *   locking a freeze, the dusk's fall and the night's air, the hush, the Hollow's hum, and Goldie
  *   speaking in the dark.
+ * - **act3**: A3M2's hasted rush and A3M1's Maws at once, with A3M3's door (T650): the Act III bed
+ *   with every layer up (the Choir's line too) under Thrum and Pebble's Leaving Song, the rattle,
+ *   Everglow's machines shutting down and their servos and the Expediter's metronome, the Hollow
+ *   silent as they die but cracking as they split, Maws drawing in and swallowing (a refugee
+ *   among them), rifts cracking and tearing open, Undertows sinking and rising, swarmlings
+ *   latching and coming home, Underfoot and its traps, Bloom chimes with Stasis and Gravity Well,
+ *   Mindspikes and a Prism, three revocation stamps, Bricks bracing, the door hum and the SEAL,
+ *   refugees safe and the meter's alarm, the Hollow's hum, and Sterling speaking over it.
  */
 export const STORMS = {
   act1: {
@@ -373,6 +381,57 @@ export const STORMS = {
     line: { at: 7.6, blip: 'blip.goldie' },
     hollow: true,
     dark: 1,
+  },
+  act3: {
+    theme: 'act3_battle',
+    cue: 'leaving_hum_two',
+    sounds(at) {
+      for (let i = 1; i * 0.05 < STORM_SEC - 1; i++) {
+        const t = i * 0.05;
+        at(t, 'rivet_shot');
+        if (i % 2 === 0) at(t, 'everglow_shutdown', (i % 5) - 2);
+        if (i % 6 === 2) at(t + 0.04, 'void_crack');
+        if (i % 5 === 0) at(t, 'thumper_launch');
+        if (i % 5 === 2) at(t, 'thumper_impact');
+        if (i % 4 === 2) at(t, 'mindspike_shot');
+        if (i % 16 === 4) at(t, 'prism_lock');
+        if (i % 10 === 0 && t < 5) at(t, 'beam_hum', Math.min(4, Math.floor(t)));
+        if (i % 3 === 0) at(t, 'swarm_latch');
+        if (i % 7 === 3) at(t, 'swarm_home');
+        if (i % 9 === 4) at(t, 'trap_snap');
+        if (i % 10 === 0) at(t, 'haste_tick');
+        if (i % 16 === 8) at(t, 'compliance_step');
+        if (i % 14 === 5) at(t, 'gravity_pull');
+        if (i % 30 === 12) at(t, 'undertow_sink');
+        if (i % 30 === 27) at(t, 'undertow_rise');
+        if (i % 18 === 6) at(t, 'refugee_safe');
+        if (i % 12 === 7) at(t, 'armor_plink');
+      }
+      at(0.3, 'rift_crack');
+      at(1, 'wave_start');
+      at(1, 'rift_open');
+      at(1, 'hollow_hum');
+      at(1.4, 'maw_tell');
+      at(2.4, 'maw_gulp');
+      at(2.6, 'underfoot_cast');
+      at(3, 'bloom_chime');
+      at(3.05, 'stasis_lock');
+      at(3.4, 'maw_tell');
+      at(4.4, 'maw_gulp');
+      at(4.4, 'hushed');
+      at(4.6, 'low_integrity');
+      at(5, 'revoke_stamp');
+      at(5.14, 'revoke_stamp');
+      at(5.28, 'revoke_stamp');
+      at(5.6, 'bricks_brace');
+      at(6, 'door_hum');
+      at(6.5, 'bloom_chime');
+      at(7, 'hollow_hum');
+      at(7.2, 'upgrade');
+      at(8.6, 'door_seal');
+    },
+    line: { at: 7.6, blip: 'blip.sterling' },
+    hollow: true,
   },
 } as const satisfies Readonly<Record<string, Storm>>;
 export type StormId = keyof typeof STORMS;

@@ -452,7 +452,7 @@ export class BattleScene extends Phaser.Scene {
     this.#traps = new TrapView(ctx, this.#fx, prefersReducedMotion); // T604
     this.#revoked = new RevokedView(ctx, prefersReducedMotion); // T606
     this.#mind = new MindView(ctx, this.#fx, prefersReducedMotion, anchors);
-    this.#marks = new MarkView(ctx);
+    this.#marks = new MarkView(ctx, anchors); // T630a (T567): on the body as drawn
     this.#harpoon = new HarpoonView(ctx, prefersReducedMotion);
     this.#beams = new BeamView(ctx, prefersReducedMotion, (c, r) => this.#liftPx(c, r), anchors);
     this.#cueProps = new CuePropView(ctx, map, map.env, this.#fx);

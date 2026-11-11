@@ -1,9 +1,10 @@
 // The plaza fountain (A1M4 decor, act1.md § A1M4: the U-shaped road runs around it; A3M2 revisits
 // it dark): a round Everglow basin of white stone, bright blue water, and a steel pedestal crowned
 // with the gold Evie sun, spraying from a little bowl. A landmark, so it's the widest Act I decor.
-// Frames `f0`–`f2` step the spray and the ripples (anim `flow`).
+// Frames `f0`–`f2` step the spray and the ripples (anim `flow`); `night_0`–`night_2` (anim `night`)
+// are the same at night, for A3M2.
 import { defineSprite } from '../defineSprite.ts';
-import { disc, grid, line, plot, rows, stamp } from '../helpers.ts';
+import { disc, grid, line, plot, recolor, rows, stamp } from '../helpers.ts';
 
 const W = 34;
 const H = 30;
@@ -70,6 +71,17 @@ function fountain(step: 0 | 1 | 2): string[] {
   return rows(g);
 }
 
+/**
+ * The fountain at night (A3M2, T640c): still running, under the moons. Its stone two steps down,
+ * the water deep blue with its ripples a step lit, the Evie sun unlit brass.
+ */
+function night(step: 0 | 1 | 2): string[] {
+  // prettier-ignore
+  return recolor(fountain(step), {
+    B: 'E', D: 'I', C: 'D', G: 'K', H: 'L', w: '3', '4': '2', '3': '2', '2': '1', '1': '0',
+  });
+}
+
 export const propFountain = defineSprite({
   id: 'prop.fountain',
   size: { w: W, h: H },
@@ -77,7 +89,27 @@ export const propFountain = defineSprite({
   palette: 'everglow',
   variants: ['everglow.worn'],
   outline: 'auto',
-  legend: { B: 'blue.3', C: 'blue.4', D: 'blue.2', G: 'gold.3', H: 'gold.4' },
-  frames: { f0: fountain(0), f1: fountain(1), f2: fountain(2) },
-  anims: { flow: { frames: ['f0', 'f1', 'f2'], fps: 4 } },
+  legend: {
+    B: 'blue.3',
+    C: 'blue.4',
+    D: 'blue.2',
+    G: 'gold.3',
+    H: 'gold.4',
+    E: 'blue.1',
+    I: 'blue.0',
+    K: 'brass.1',
+    L: 'brass.2',
+  },
+  frames: {
+    f0: fountain(0),
+    f1: fountain(1),
+    f2: fountain(2),
+    night_0: night(0),
+    night_1: night(1),
+    night_2: night(2),
+  },
+  anims: {
+    flow: { frames: ['f0', 'f1', 'f2'], fps: 4 },
+    night: { frames: ['night_0', 'night_1', 'night_2'], fps: 4 },
+  },
 });

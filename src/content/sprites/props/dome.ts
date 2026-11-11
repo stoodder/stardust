@@ -3,7 +3,8 @@
 // `window` (A2M6's `dome_window`, act2.md § A2M6; T540c): Dome 3, an orange "3" on its band and a
 // round window on its lit side, warm inside, where rows of butterhead lettuce grow and a small
 // coral shape sleeps curled among them (Pebble; T530b lights it in the dark). `dark` (Act III's
-// apron, T640c): the Long Night's dome, its window slits out but one on emergency red.
+// apron, T640c): the Long Night's dome, its shell two steps darker under the moons and its window
+// slits out but one on emergency red.
 import { defineSprite } from '../defineSprite.ts';
 import { grid, isoBox, plot, rows, stamp } from '../helpers.ts';
 
@@ -27,7 +28,10 @@ function domeGrid(look: 'v0' | 'window' | 'dark' = 'v0'): string[] {
       const d = Math.hypot(dx, dy);
       if (d > 1) continue;
       const lit = -0.7 * dx - 0.7 * dy;
-      plot(g, x, y, lit > 0.75 && d < 0.8 ? 'w' : lit > 0.35 ? '4' : lit > -0.15 ? '3' : '2');
+      // In the Long Night (`dark`) the shell is lit only by the moons: two steps down.
+      const night = look === 'dark';
+      const shell = lit > 0.75 && d < 0.8 ? 'w' : lit > 0.35 ? '4' : lit > -0.15 ? '3' : '2';
+      plot(g, x, y, night ? ({ w: '3', '4': '2', '3': '1', '2': '0' }[shell] ?? shell) : shell);
     }
   }
   // The teal band, then window slits glowing along it.

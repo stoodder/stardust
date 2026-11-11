@@ -9,11 +9,11 @@ import { textPixels } from '../font3x5.ts';
 import { grid, line, plot, rows, type CharGrid } from '../helpers.ts';
 
 const W = 40;
-const H = 34;
+const H = 40;
 /** The anchor: the tile's center, between the posts' feet. */
 const AX = 20;
-const AY = 29;
-const POST = 24;
+const AY = 35;
+const POST = 30;
 
 function sign(): string[] {
   const g: CharGrid = grid(W, H);

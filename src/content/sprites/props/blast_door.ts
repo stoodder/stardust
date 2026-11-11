@@ -62,7 +62,7 @@ function door(look: Look): string[] {
   // The right end's face, in shade: from the face's right edge back up-right.
   for (let j = 0; j < DEPTH * 2; j++) {
     const x = AX + HALF + 1 + j;
-    const top = footAt(AX + HALF) - TALL - j + Math.floor(j / 2) * 0;
+    const top = footAt(AX + HALF) - TALL - j;
     for (let y = top; y <= footAt(AX + HALF) - j; y++) plot(g, x, y + Math.ceil(j / 2), 'L');
   }
   // The front face: ferrocrete, coursed, lit along its top.

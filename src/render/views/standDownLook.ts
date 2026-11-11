@@ -1,11 +1,11 @@
-// How a unit standing down looks (design/enemies.md § 6.1 `pivot`; T506's minimal view, T530a
-// polishes): it holds still where it stopped (the sim holds it) in its `flee` pose where it has one
-// (EnemyView's leaving pose) and fades out over the stand-down's 1 s down the stepped-alpha ladder
-// (art-direction §7): 80%, 60%, 40%, 20%, a rung per quarter second, then it's gone (the sim
-// removes it). enemyPose.ts `cloakAlpha` reads it first. A pivoted boss's Ward kneels in its place
-// over the same second, stepping the other way (`wardInAlpha`: 20%, 40%, 60%, 80%, then whole;
-// T530a), so the sinking boss and the kneeling Ward cross-fade into one figure instead of
-// doubling. Pure, so it's unit-tested.
+// How a unit standing down looks (design/enemies.md § 6.1 `pivot`; T506, T530a): it holds still
+// where it stopped (the sim holds it) in its `flee` pose where it has one (EnemyView's leaving
+// pose) and fades out over the stand-down's 1 s down the stepped-alpha ladder (art-direction §7):
+// 80%, 60%, 40%, 20%, a rung per quarter second, then it's gone (the sim removes it). enemyPose.ts
+// `cloakAlpha` reads it first. A pivoted boss's Ward kneels in its place over the same second,
+// stepping the other way (`wardInAlpha`: 20%, 40%, 60%, 80%, then whole; T530a), so the sinking
+// boss and the kneeling Ward cross-fade into one figure instead of doubling. Pure, so it's
+// unit-tested.
 import { STAND_DOWN_FADE_SEC } from '../../content/rules.ts';
 import { secToTicks } from '../../shared/time.ts';
 

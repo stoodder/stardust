@@ -169,8 +169,8 @@ export const LEAVING_HUM_TWO: Song = {
   bars: 1,
   loop: false,
   tracks: [
-    { layer: 'lead', instrument: 'hum', stepsPerToken: 2, gain: 0.7, pattern: LEAVING_BAR },
-    { layer: 'lead', instrument: 'hum', stepsPerToken: 2, gain: 0.85, pattern: TENTHS_BAR },
+    { layer: 'lead', instrument: 'hum', stepsPerToken: 2, gain: 0.55, pattern: LEAVING_BAR },
+    { layer: 'lead', instrument: 'hum', stepsPerToken: 2, gain: 0.65, pattern: TENTHS_BAR },
   ],
 };
 
@@ -184,8 +184,8 @@ export const LEAVING_HUM_ALONG: Song = {
   bars: 1,
   loop: false,
   tracks: [
-    { layer: 'lead', instrument: 'hum', stepsPerToken: 2, gain: 0.8, pattern: LOW_BAR },
-    { layer: 'lead', instrument: 'hum', stepsPerToken: 2, gain: 0.55, pattern: LEAVING_BAR },
+    { layer: 'lead', instrument: 'hum', stepsPerToken: 2, gain: 0.62, pattern: LOW_BAR },
+    { layer: 'lead', instrument: 'hum', stepsPerToken: 2, gain: 0.45, pattern: LEAVING_BAR },
   ],
 };
 

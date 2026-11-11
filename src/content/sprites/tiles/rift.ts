@@ -49,7 +49,8 @@ function spine(edge: VergeEdge): { x: number; y: number }[] {
     const x = CENTRE.x + dir * i - (dir < 0 ? 1 : 0);
     const straight = CENTRE.y + (end.y - CENTRE.y) * t;
     // The jag: a step off the line in the middle of the run, its side by edge.
-    const jag = i >= 2 && i <= steps - 2 ? Math.round(Math.sin(i * 1.3 + edge.charCodeAt(1)) * 1.4) : 0;
+    const jag =
+      i >= 2 && i <= steps - 2 ? Math.round(Math.sin(i * 1.3 + edge.charCodeAt(1)) * 1.4) : 0;
     out.push({ x, y: Math.floor(straight - 0.5) + jag });
   }
   return out;

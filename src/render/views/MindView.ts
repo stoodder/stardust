@@ -34,7 +34,8 @@ import {
   STILLNESS_RING_MS,
   UNNERVED_GAP_PX,
 } from './mindLook.ts';
-import { enemyBody, spriteId } from './spriteInfo.ts';
+import { drawnBody } from './gatherLook.ts';
+import { spriteId } from './spriteInfo.ts';
 import type { TransientFx } from './TransientFx.ts';
 import { blankBox, NO_ANCHORS, type UnitAnchors } from './unitAnchor.ts';
 import type { ViewContext } from './ViewContext.ts';
@@ -129,7 +130,7 @@ export class MindView {
         gridToScreen(e.x, e.y, this.#ctx.origin, pos);
         const lift = e.def.layer === 'air' ? FLY_LIFT_PX : 0;
         x = pos.x;
-        top = pos.y - lift - this.#headroomOf(enemyBody(e.def.sprites.body, e.tags));
+        top = pos.y - lift - this.#headroomOf(drawnBody(e));
       }
       if (mark.texture.key !== key) mark.setTexture(key);
       mark.setPosition(Math.round(x), Math.round(top - UNNERVED_GAP_PX)).setVisible(true);

@@ -1,9 +1,10 @@
-// The Seer's Lantern's minimal view (T508; markLook.ts has the rules; T530a polishes): an eye
-// beside the head of each Marked unit, a plain one for a Mark (the beam's, All-Seeing's, Crow's
-// Nest's) and Truthlight's filled one while the unit can't evade (`noEvadeTicks`). Read from the
-// sim's status fields each frame, so it holds while paused and goes the tick the status does. It
-// stands by the body as drawn (the lane offset, a flyer's lift; unitAnchor.ts), falling back to
-// the grid point without a view. A burrowed or Phased unit shows none (nothing reaches it).
+// The Seer's Lantern's marks (T508; markLook.ts has the rules): an eye beside the head of each
+// Marked unit, a plain one for a Mark (the beam's, All-Seeing's, Crow's Nest's) and Truthlight's
+// filled one while the unit can't evade (`noEvadeTicks`). Read from the sim's status fields each
+// frame, so it holds while paused and goes the tick the status does. It stands by the body as
+// EnemyView draws it (the lane offset, a flyer's lift, a grown Maw's height; unitAnchor.ts),
+// falling back to the grid point and the body's own headroom (gatherLook.ts `drawnBody`) without a
+// view. A burrowed or Phased unit shows none (nothing reaches it).
 // The beam itself is BeamView's (a Lantern's light-beam draws at its first step: no ramp).
 // Allocation-free per frame: a fixed pool of eye images in `overlay`, with the tell glyphs.
 import type * as Phaser from 'phaser';
@@ -12,7 +13,8 @@ import type { Enemy } from '../../sim/index.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
 import { imageToCanvas } from '../sprites/canvas.ts';
 import { EYE_H, EYE_OFFSET_X, eyeImage, eyeKindOf } from './markLook.ts';
-import { enemyBody, spriteId } from './spriteInfo.ts';
+import { drawnBody } from './gatherLook.ts';
+import { spriteId } from './spriteInfo.ts';
 import { blankBox, NO_ANCHORS, type UnitAnchors } from './unitAnchor.ts';
 import type { ViewContext } from './ViewContext.ts';
 
@@ -76,7 +78,7 @@ export class MarkView {
         gridToScreen(e.x, e.y, this.#ctx.origin, pos);
         const lift = e.def.layer === 'air' ? FLY_LIFT_PX : 0;
         x = pos.x;
-        top = pos.y - lift - this.#headroomOf(enemyBody(e.def.sprites.body, e.tags));
+        top = pos.y - lift - this.#headroomOf(drawnBody(e));
       }
       const key = EYE_KEYS[kind];
       if (eye.texture.key !== key) eye.setTexture(key);

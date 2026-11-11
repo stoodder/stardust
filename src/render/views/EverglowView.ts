@@ -1,24 +1,28 @@
-// Everglow Security on the field (T603's minimal view; everglowLook.ts holds the rules and pixels):
+// Everglow Security on the field (T603, polished by T630a; everglowLook.ts holds the rules and
+// pixels):
 // - **The Expediter's haste ring:** each frame, under every unit projecting a haste aura (the
 //   sim's `projectedHaste`: alive, not leaving, burrowed or Phased), a solid `orange.3` ring at the
-//   aura's radius over an `ink.0` under-stroke, beating bright and dim on the metronome. In
-//   `decal`, under the units, centred on the source's body as EnemyView draws it (unitAnchor.ts).
-// - **Speed lines** beside the source and every unit a ring is hasting now (`Enemy.auraHastePct`
-//   > 0; art-direction §8's `haste_aura` row), in `overlay` so the dark never hides them. No event drives either: they read sim state.
+//   aura's radius over an `ink.0` under-stroke, beating bright and dim on the metronome, and on each
+//   beat its `orange.4` swell ticking out past it. In `decal`, under the units, centred on the
+//   source's body as EnemyView draws it (unitAnchor.ts).
+// - **Speed marks** (a double chevron) behind the source and every unit a ring is hasting now
+//   (`Enemy.auraHastePct` > 0; art-direction §8's `haste_aura` row), pointing the way it walks on
+//   screen (read from its route just ahead of it), in `overlay` so the dark never hides them. No
+//   event drives either: they read sim state.
 // - **The shutdown** (deathLook.ts `shutdown`): on an `EnemyDied` whose unit shuts down, the
 //   power-off line at its body and the price tag dropping to the ground, on real time. Both are
 //   sprites (T640a): `fx.power_off`'s `w6`…`w1` and `dot` as the line collapses (`powerOffFrame`),
 //   and `fx.price_tag`'s `hang`, `flutter_0`/`flutter_1` as it drops, `lie` on the ground
 //   (`tagFrame`).
-// Allocation-free per frame: rings, lines, and shutdowns are pooled; each radius's two ring
-// textures (bright, dim are one texture at two alphas) are registered once.
+// Allocation-free per frame: rings, swells, marks, and shutdowns are pooled; each radius's ring
+// texture (bright and dim are one texture at two alphas) and its two swells are registered once.
 import type * as Phaser from 'phaser';
 import type { CompiledEnemyDef } from '../../content/compiled.ts';
 import type { SkitterkinDeath } from '../../content/presentation.ts';
 import type { IdSpace } from '../../content/types.ts';
 import type { Bus } from '../../shared/bus.ts';
 import type { DeepReadonly } from '../../shared/types.ts';
-import { projectedHaste, type Enemy, type SimEvent } from '../../sim/index.ts';
+import { pointAt, projectedHaste, type Enemy, type Point, type SimEvent } from '../../sim/index.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
 import { imageToCanvas } from '../sprites/canvas.ts';
 import type { SpriteSource } from '../sprites/SpriteSource.ts';
@@ -29,11 +33,16 @@ import {
   metronomeHigh,
   RING_ALPHA_HIGH,
   RING_ALPHA_LOW,
+  screenHeading,
   SHUTDOWN_MS,
   shutdownLine,
-  SPEED_LINES_SIZE,
+  SPEED_MARKS_H,
+  SPEED_MARKS_W,
   speedLinesFrame,
-  speedLinesImage,
+  speedMarksImage,
+  SWELL_ALPHA,
+  swellPx,
+  swellRingImage,
   TAG_FALL_MS,
   TAG_HANG_PX,
   TAG_MS,
@@ -53,7 +62,15 @@ export interface HastePool {
 const MAX_RINGS = 8;
 const MAX_LINES = 24;
 const MAX_SHUTDOWNS = 8;
-const LINE_KEYS = ['fx.haste_lines.0', 'fx.haste_lines.1'] as const;
+/** The speed marks' middle row (their display origin's y). */
+const MARK_MID = (SPEED_MARKS_H - 1) / 2;
+/** The speed marks' textures: [frame 0, frame 1] walking right, then walking left. */
+const MARK_KEYS = [
+  ['fx.haste_marks.0.r', 'fx.haste_marks.1.r'],
+  ['fx.haste_marks.0.l', 'fx.haste_marks.1.l'],
+] as const;
+/** How far ahead along its route a unit's heading is read (tiles). */
+const HEADING_AHEAD_TILES = 0.1;
 const TAG_SPRITE = 'fx.price_tag';
 const LINE_SPRITE = 'fx.power_off';
 /** The tag flutters a frame each this many ms as it drops. */
@@ -71,7 +88,7 @@ export function tagFrame(ms: number, reducedMotion: boolean): string {
 export function powerOffFrame(halfW: number): string {
   return halfW <= 0 ? 'dot' : `w${Math.min(6, Math.round(halfW))}`;
 }
-/** The speed lines sit this far left of the body's edge (px), at this share of its height. */
+/** The speed marks sit this far behind the body's edge (px), at this share of its height. */
 const LINES_GAP_PX = 1;
 const LINES_AT = 0.55;
 /** A dying body's centre over its ground point (px): battleEvents.ts's DEATH_BODY_PX. */
@@ -79,7 +96,19 @@ const SHUTDOWN_BODY_PX = 6;
 
 interface Ring {
   readonly img: Phaser.GameObjects.Image;
+  /** The swell's echo ring, shown on the beat. */
+  readonly swell: Phaser.GameObjects.Image;
   radius: number;
+  /** The swell texture it shows now (px out, snapped radius), so a frame rebuilds no key. */
+  swellPx: number;
+  swellR: number;
+}
+
+interface Mark {
+  readonly img: Phaser.GameObjects.Image;
+  /** Its unit's last screen heading (1 right, −1 left), kept while it walks straight up or down. */
+  uid: number;
+  heading: 1 | -1;
 }
 
 interface Shutdown {
@@ -98,6 +127,7 @@ interface Shutdown {
 }
 
 const pos: Vec2 = { x: 0, y: 0 };
+const ahead: Point = { x: 0, y: 0 };
 const body = blankBox();
 
 export class EverglowView {
@@ -106,7 +136,8 @@ export class EverglowView {
   readonly #anchors: UnitAnchors;
   readonly #rings: Ring[] = [];
   readonly #frames = new Map<number, { key: string; ox: number; oy: number }>();
-  readonly #lines: Phaser.GameObjects.Image[] = [];
+  readonly #swells = new Map<string, { key: string; ox: number; oy: number }>();
+  readonly #lines: Mark[] = [];
   readonly #shutdowns: Shutdown[] = [];
   #next = 0;
   #lining = 0;
@@ -120,24 +151,28 @@ export class EverglowView {
     this.#reducedMotion = reducedMotion;
     this.#anchors = anchors;
     const textures = ctx.scene.textures;
-    for (const [k, key] of LINE_KEYS.entries()) {
-      if (!textures.exists(key)) {
-        textures.addCanvas(key, imageToCanvas(speedLinesImage(k === 0 ? 0 : 1)));
+    for (const [h, keys] of MARK_KEYS.entries()) {
+      for (const [k, key] of keys.entries()) {
+        if (!textures.exists(key)) {
+          const img = speedMarksImage(k === 0 ? 0 : 1, h === 0 ? 1 : -1);
+          textures.addCanvas(key, imageToCanvas(img));
+        }
       }
     }
     this.#tagH = ctx.sprites.meta(TAG_SPRITE).h;
     this.#tagAy = ctx.sprites.frameAnchor(TAG_SPRITE, 'hang').y;
     for (let i = 0; i < MAX_RINGS; i++) {
       const img = ctx.scene.make.image({}, false).setVisible(false);
+      const swell = ctx.scene.make.image({}, false).setVisible(false);
+      ctx.layers.decal.add(swell);
       ctx.layers.decal.add(img);
-      this.#rings.push({ img, radius: 0 });
+      this.#rings.push({ img, swell, radius: 0, swellPx: 0, swellR: 0 });
     }
-    const half = (SPEED_LINES_SIZE - 1) / 2;
     for (let i = 0; i < MAX_LINES; i++) {
       const img = ctx.scene.make.image({}, false).setVisible(false);
-      img.setTexture(LINE_KEYS[0]).setDisplayOrigin(SPEED_LINES_SIZE - 1, half);
+      img.setTexture(MARK_KEYS[0][0]).setDisplayOrigin(SPEED_MARKS_W - 1, MARK_MID);
       ctx.layers.overlay.add(img);
-      this.#lines.push(img);
+      this.#lines.push({ img, uid: 0, heading: 1 });
     }
     for (let i = 0; i < MAX_SHUTDOWNS; i++) {
       const line = ctx.scene.make.image({}, false).setVisible(false);
@@ -217,6 +252,7 @@ export class EverglowView {
   update(enemies: HastePool, tick: number, dtMs: number): void {
     const reduced = this.#reducedMotion();
     const alpha = metronomeHigh(tick, reduced) ? RING_ALPHA_HIGH : RING_ALPHA_LOW;
+    const swell = swellPx(tick, reduced);
     let r = 0;
     let l = 0;
     for (let i = 0; i < enemies.used; i++) {
@@ -237,35 +273,63 @@ export class EverglowView {
         } else {
           gridToScreen(e.x, e.y, this.#ctx.origin, pos);
         }
-        ring.img.setPosition(Math.round(pos.x), Math.round(pos.y)).setAlpha(alpha).setVisible(true);
+        const x = Math.round(pos.x);
+        const y = Math.round(pos.y);
+        ring.img.setPosition(x, y).setAlpha(alpha).setVisible(true);
+        this.#swell(ring, aura.radiusTiles, swell, x, y);
       }
       if ((aura !== null || e.auraHastePct > 0) && placed && l < MAX_LINES) {
-        const img = this.#lines[l++]!; // l < MAX_LINES
-        const key = LINE_KEYS[speedLinesFrame(tick, e.uid, reduced)];
-        if (img.texture.key !== key) img.setTexture(key);
-        img
-          .setPosition(
-            Math.round(body.x - body.halfW - LINES_GAP_PX),
-            Math.round(body.top + (body.bottom - body.top) * LINES_AT),
-          )
+        const mark = this.#lines[l++]!; // l < MAX_LINES
+        if (mark.uid !== e.uid) {
+          mark.uid = e.uid;
+          mark.heading = 1;
+        }
+        const h = this.#heading(e);
+        if (h !== 0) mark.heading = h;
+        const right = mark.heading === 1;
+        const key = MARK_KEYS[right ? 0 : 1][speedLinesFrame(tick, e.uid, reduced)];
+        if (mark.img.texture.key !== key) {
+          // Behind the body: its tip on the body's trailing edge.
+          mark.img.setTexture(key).setDisplayOrigin(right ? SPEED_MARKS_W - 1 : 0, MARK_MID);
+        }
+        const edge = right
+          ? body.x - body.halfW - LINES_GAP_PX
+          : body.x + body.halfW + LINES_GAP_PX;
+        mark.img
+          .setPosition(Math.round(edge), Math.round(body.top + (body.bottom - body.top) * LINES_AT))
           .setVisible(true);
       }
     }
     for (; r < MAX_RINGS; r++) {
       const ring = this.#rings[r]!; // r < MAX_RINGS
       if (ring.img.visible) ring.img.setVisible(false);
+      if (ring.swell.visible) ring.swell.setVisible(false);
     }
     this.#lining = l;
     for (; l < MAX_LINES; l++) {
-      const img = this.#lines[l]!; // l < MAX_LINES
-      if (img.visible) img.setVisible(false);
+      const mark = this.#lines[l]!; // l < MAX_LINES
+      mark.uid = 0;
+      if (mark.img.visible) mark.img.setVisible(false);
     }
     this.#advance(Number.isFinite(dtMs) && dtMs > 0 ? dtMs : 0);
   }
 
+  /** How many swells show now (the smoke flow's check: the metronome keeps time). */
+  get swells(): number {
+    let n = 0;
+    for (const r of this.#rings) if (r.swell.visible) n++;
+    return n;
+  }
+
   reset(): void {
-    for (const r of this.#rings) r.img.setVisible(false);
-    for (const img of this.#lines) img.setVisible(false);
+    for (const r of this.#rings) {
+      r.img.setVisible(false);
+      r.swell.setVisible(false);
+    }
+    for (const m of this.#lines) {
+      m.uid = 0;
+      m.img.setVisible(false);
+    }
     for (const s of this.#shutdowns) {
       s.active = false;
       s.tag.setVisible(false);
@@ -316,6 +380,43 @@ export class EverglowView {
       .setPosition(s.x, s.y - TAG_HANG_PX + tag.dy)
       .setAlpha(tag.alpha)
       .setVisible(true);
+  }
+
+  /**
+   * Which way unit `e` walks on screen now (1 right, −1 left, 0 straight up or down): its route
+   * just ahead of where it stands against where it stands.
+   */
+  #heading(e: DeepReadonly<Enemy>): -1 | 0 | 1 {
+    const route = e.route;
+    if (route === null) return 0;
+    pointAt(route, e.dist + HEADING_AHEAD_TILES, ahead);
+    return screenHeading(ahead.x - e.x, ahead.y - e.y);
+  }
+
+  /** Shows `ring`'s swell `px` out (0: hidden) round screen (x, y), baking its texture once. */
+  #swell(ring: Ring, radiusTiles: number, px: number, x: number, y: number): void {
+    if (px <= 0) {
+      if (ring.swell.visible) ring.swell.setVisible(false);
+      return;
+    }
+    const r = snapRingRadius(radiusTiles);
+    if (ring.swellPx !== px || ring.swellR !== r) {
+      const id = `${r}.${px}`;
+      let f = this.#swells.get(id);
+      if (f === undefined) {
+        const key = `fx.haste_swell.${id}`;
+        const baked = swellRingImage(r, px);
+        if (!this.#ctx.scene.textures.exists(key)) {
+          this.#ctx.scene.textures.addCanvas(key, imageToCanvas(baked.image));
+        }
+        f = { key, ox: baked.cx, oy: baked.cy };
+        this.#swells.set(id, f);
+      }
+      ring.swell.setTexture(f.key).setDisplayOrigin(f.ox, f.oy);
+      ring.swellPx = px;
+      ring.swellR = r;
+    }
+    ring.swell.setPosition(x, y).setAlpha(SWELL_ALPHA).setVisible(true);
   }
 
   /** The ring texture for a radius, registered on first use. */

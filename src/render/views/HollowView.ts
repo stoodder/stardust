@@ -1,11 +1,11 @@
-// The Hollow's Act III view (T602's minimal view; the rules are gatherLook.ts): a Maw's tendril
-// tell and growth ring, a burrowed Undertow's ripple trail, and the rift cracks. The cracks, rings,
-// and ripples sit in `decal`, under the units; the tendrils in `vfx`, over them, from body to body
-// (a held unit is close enough that under the sprites they'd hide). Redrawn each frame into three
-// Graphics: allocation-free.
-// T630a polishes the unit marks (tendrils, growth, ripples), T630b the rift telegraph, and T640c
-// the props. The Maw's growth and tendril pose and the Undertow's `under` ripple are its sprites'
-// (T640a; EnemyView draws them, gatherLook.ts `mawBody`).
+// The Hollow's Act III view (T602, polished by T630a; the rules are gatherLook.ts): a Maw's tendril
+// tell (noose, tendrils, beads, the snap) and the gulp ring each absorb pulses, a burrowed
+// Undertow's ripple trail, and the rift cracks. The cracks, gulps, and ripples sit in `decal`,
+// under the units; the tendrils in `vfx`, over them, from body to body (a held unit is close
+// enough that under the sprites they'd hide). Redrawn each frame into three Graphics; the gulps
+// are a fixed pool and each Maw's absorb count one map entry: allocation-free per frame.
+// The rift telegraph is T630b's and the props T640c's. The Maw's growth and tendril pose and the
+// Undertow's `under` pose are its sprites' (T640a; EnemyView draws them, gatherLook.ts `mawBody`).
 import type * as Phaser from 'phaser';
 import type { CompiledMapDef } from '../../content/compiled.ts';
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
@@ -21,12 +21,18 @@ import {
 import type { DeepReadonly } from '../../shared/types.ts';
 import { gridToScreen, rangeEllipsePx, type Vec2 } from '../iso.ts';
 import {
-  RIPPLES,
+  beadAt,
+  GULP_MS,
   growthRingTiles,
-  riftLook,
-  showsRipples,
+  gulpRing,
+  nooseColor,
   nooseTiles,
+  riftLook,
+  rippleAt,
+  RIPPLES,
+  showsRipples,
   tendrilProgress,
+  type Ripple,
 } from './gatherLook.ts';
 import type { ViewContext } from './ViewContext.ts';
 
@@ -41,6 +47,8 @@ function hex(name: ColorName): number {
 }
 const INK = hex('ink.0');
 const TENDRIL = hex('violet.4');
+const SNAP = hex('white.1');
+const BEAD = hex('white.1');
 const GROWTH = hex('violet.3');
 const RIPPLE = hex('hollow.4');
 const OPENING = hex('violet.4');
@@ -53,7 +61,20 @@ const WAVE_SPEED = 0.012;
 /** Tendrils run between the bodies, this far above the ground points. */
 const BODY_LIFT_PX = 7;
 
+/** Gulps playing at once (more reuse the oldest). */
+const MAX_GULPS = 8;
+
+interface Gulp {
+  active: boolean;
+  ms: number;
+  /** The grid point it pulses from, and the size it grows to (tiles). */
+  x: number;
+  y: number;
+  tiles: number;
+}
+
 const a: Vec2 = { x: 0, y: 0 };
+const rip: Ripple = { back: 0, w: 0, alpha: 0 };
 const b: Vec2 = { x: 0, y: 0 };
 const semi: Vec2 = { x: 0, y: 0 };
 const pt: Point = { x: 0, y: 0 };
@@ -71,6 +92,13 @@ export class HollowView {
   #grown = 0;
   #ripples = 0;
   #status: RiftStatus[] = [];
+  /** Each live Maw's absorbs last frame, by uid (a rise pulses its gulp ring). */
+  readonly #absorbs = new Map<number, { n: number; frame: number }>();
+  readonly #gulps: Gulp[] = [];
+  #nextGulp = 0;
+  #frame = 0;
+  /** Gulps played since the view was made (the smoke flow's check). */
+  gulpsPlayed = 0;
   /** Tendril tells seen since the view was made (the smoke flow's check). */
   tellsSeen = 0;
 
@@ -91,6 +119,8 @@ export class HollowView {
     ctx.layers.decal.add(this.#marks);
     this.#tendrils = ctx.scene.make.graphics({}, false);
     ctx.layers.vfx.add(this.#tendrils);
+    for (let i = 0; i < MAX_GULPS; i++)
+      this.#gulps.push({ active: false, ms: 0, x: 0, y: 0, tiles: 0 });
   }
 
   /** Each frame: the cracks for this wave, then the Maws' and burrowers' marks. */
@@ -104,22 +134,20 @@ export class HollowView {
     let grown = 0;
     let ripples = 0;
     const still = this.#reducedMotion();
+    const frame = ++this.#frame;
     for (let i = 0; i < enemies.used; i++) {
       const e = enemies.items[i]!; // i < used ≤ items.length
       if (!e.alive || e.def === null) continue;
       if (showsRipples(e)) ripples += this.#drawRipples(g, e);
       if (e.def.gather === null) continue;
-      const ring = growthRingTiles(e);
-      if (ring > 0) {
-        grown++;
-        gridToScreen(e.x, e.y, this.#ctx.origin, a);
-        rangeEllipsePx(ring, semi);
-        g.lineStyle(3, INK, 0.5).strokeEllipse(a.x, a.y, semi.x * 2, semi.y * 2);
-        g.lineStyle(2, GROWTH, 1).strokeEllipse(a.x, a.y, semi.x * 2, semi.y * 2);
-      }
+      if (e.absorbs > 0) grown++;
+      this.#watchAbsorbs(e, frame);
       if (e.gatherUid !== 0 && this.#drawTendrils(this.#tendrils, e, enemies, allies, still))
         tells++;
     }
+    // Forget the Maws gone (dead, leaked).
+    for (const [uid, seen] of this.#absorbs) if (seen.frame !== frame) this.#absorbs.delete(uid);
+    this.#drawGulps(g, dtMs, still);
     if (tells > this.#tells) this.tellsSeen += tells - this.#tells;
     this.#tells = tells;
     this.#grown = grown;
@@ -140,6 +168,8 @@ export class HollowView {
     this.#cracks.clear();
     this.#marks.clear();
     this.#tendrils.clear();
+    this.#absorbs.clear();
+    for (const gulp of this.#gulps) gulp.active = false;
     this.#tells = 0;
     this.#grown = 0;
     this.#ripples = 0;
@@ -174,20 +204,61 @@ export class HollowView {
     }
   }
 
-  /** The ripples behind a burrowed unit along its route; how many drew. */
+  /** The ripples behind a burrowed unit along its route (gatherLook.ts `rippleAt`); how many drew. */
   #drawRipples(g: Phaser.GameObjects.Graphics, e: DeepReadonly<Enemy>): number {
     const route = e.route;
     if (route === null) return 0;
     let n = 0;
-    for (const rip of RIPPLES) {
-      const d = e.dist - rip.back;
-      if (d < 0) break;
-      pointAt(route, d, pt);
+    for (let k = 0; k < RIPPLES; k++) {
+      if (!rippleAt(e.dist, k, rip)) break;
+      pointAt(route, e.dist - rip.back, pt);
       gridToScreen(pt.x, pt.y, this.#ctx.origin, a);
-      g.lineStyle(1, RIPPLE, rip.alpha).strokeEllipse(a.x, a.y, 10, 5);
+      const x = Math.round(a.x);
+      const y = Math.round(a.y);
+      g.lineStyle(1, RIPPLE, rip.alpha).strokeEllipse(x, y, rip.w, rip.w / 2);
       n++;
     }
     return n;
+  }
+
+  /** Pulses a Maw's gulp ring when its absorbs rise since last frame. */
+  #watchAbsorbs(e: DeepReadonly<Enemy>, frame: number): void {
+    const seen = this.#absorbs.get(e.uid);
+    if (seen === undefined) {
+      this.#absorbs.set(e.uid, { n: e.absorbs, frame });
+      return;
+    }
+    seen.frame = frame;
+    if (e.absorbs <= seen.n) return;
+    seen.n = e.absorbs;
+    const gulp = this.#gulps[this.#nextGulp]!; // #nextGulp < MAX_GULPS
+    this.#nextGulp = (this.#nextGulp + 1) % MAX_GULPS;
+    gulp.active = true;
+    gulp.ms = 0;
+    gulp.x = e.x;
+    gulp.y = e.y;
+    gulp.tiles = growthRingTiles(e);
+    this.gulpsPlayed++;
+  }
+
+  /** Advances and draws the gulp rings (real time, a cosmetic beat). */
+  #drawGulps(g: Phaser.GameObjects.Graphics, dtMs: number, still: boolean): void {
+    for (const gulp of this.#gulps) {
+      if (!gulp.active) continue;
+      gulp.ms += Number.isFinite(dtMs) && dtMs > 0 ? dtMs : 0;
+      if (gulp.ms >= GULP_MS) {
+        gulp.active = false;
+        continue;
+      }
+      const ring = gulpRing(gulp.ms, gulp.tiles, still);
+      if (ring.alpha <= 0) continue;
+      gridToScreen(gulp.x, gulp.y, this.#ctx.origin, a);
+      rangeEllipsePx(ring.tiles, semi);
+      const x = Math.round(a.x);
+      const y = Math.round(a.y);
+      g.lineStyle(3, INK, 0.6 * ring.alpha).strokeEllipse(x, y, semi.x * 2, semi.y * 2);
+      g.lineStyle(1, GROWTH, ring.alpha).strokeEllipse(x, y, semi.x * 2, semi.y * 2);
+    }
   }
 
   /** The tendrils from a Maw to the unit it holds; false when the unit isn't found. */
@@ -203,13 +274,17 @@ export class HollowView {
     gridToScreen(b.x, b.y, this.#ctx.origin, b);
     a.y -= BODY_LIFT_PX; // body to body, not foot to foot
     b.y -= BODY_LIFT_PX;
-    // The noose: a ring round the held unit, closing as the tell runs (the unit drawn in).
-    rangeEllipsePx(nooseTiles(tendrilProgress(e)), semi);
+    // The noose: a ring round the held unit, closing as the tell runs (the unit drawn in), white
+    // for its snap (the gulp is coming).
+    const progress = tendrilProgress(e);
+    rangeEllipsePx(nooseTiles(progress), semi);
+    const noose = nooseColor(progress) === 'white.1' ? SNAP : TENDRIL;
     const phase = still ? 0 : this.#clockMs * WAVE_SPEED;
     for (let pass = 0; pass < 2; pass++) {
       if (pass === 0) g.lineStyle(4, INK, 0.7);
-      else g.lineStyle(2, TENDRIL, 1);
+      else g.lineStyle(2, noose, 1);
       g.strokeEllipse(b.x, b.y, semi.x * 2, semi.y * 2);
+      if (pass === 1) g.lineStyle(2, TENDRIL, 1);
       // The tendrils: from points on the noose (turning slowly) to the Maw's body, wavering.
       for (let t = 0; t < TENDRILS; t++) {
         const ang = phase * 0.25 + (t * Math.PI * 2) / TENDRILS;
@@ -231,6 +306,15 @@ export class HollowView {
           g.lineBetween(px, py, qx, qy);
           px = qx;
           py = qy;
+        }
+        // Its bead, riding in to the Maw as the tell runs (over the line, on the last pass).
+        if (pass === 1) {
+          const f = beadAt(progress, t);
+          const w = f > 0 && f < 1 ? Math.sin(phase + f * steps * 1.3 + t * 2) * WAVE_PX : 0;
+          const bx = Math.round(sx + dx * f + nx * w);
+          const by = Math.round(sy + dy * f + ny * w);
+          g.fillStyle(INK, 1).fillRect(bx - 2, by - 2, 4, 4);
+          g.fillStyle(BEAD, 1).fillRect(bx - 1, by - 1, 2, 2);
         }
       }
     }

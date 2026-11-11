@@ -465,3 +465,51 @@ describe('M5 field sounds (T550, T501h)', () => {
     expect(air()).toEqual([1]);
   });
 });
+
+/** A tower projecting `auras` (the Choir test). */
+const tower = (auras: { kind: string }[] | null, alive = true): Bank => ({
+  uid: 9,
+  alive,
+  tierDef: { attack: null, auras },
+  chargeTicks: 0,
+  flatRate: 0,
+  pctRate: 0,
+});
+
+describe('Act III field sounds (T650)', () => {
+  it("sinks and raises an Undertow on its own water, never the Digger's dig", () => {
+    const f = createFieldSounds(CLEAR);
+    const undertow = unit(1, plain('undertow', 'hollow'));
+    const w = world(undertow);
+    frame(f, w);
+    undertow.burrowed = true;
+    expect(frame(f, w)).toContain('undertow_sink');
+    undertow.burrowed = false;
+    expect(frame(f, w)).toContain('undertow_rise');
+  });
+
+  it("ticks an Expediter's metronome and a drone's servo while they walk", () => {
+    expect(ENEMY_LOOPS['expediter']?.id).toBe('haste_tick');
+    expect(ENEMY_LOOPS['compliance']?.id).toBe('compliance_step');
+    const f = createFieldSounds(CLEAR);
+    const w = world(unit(1, plain('expediter', 'everglow')));
+    expect(frame(f, w)).toEqual(['haste_tick']);
+    w.tick += Math.round((ENEMY_LOOPS['expediter']?.everySec ?? 0) * TICK_HZ);
+    expect(frame(f, w)).toEqual(['haste_tick']);
+  });
+
+  it('knows a Hum Choir stands while a live tower projects a choir aura, at any tier or spec', () => {
+    const f = createFieldSounds(CLEAR);
+    const w = world();
+    w.towers = { items: [tower([{ kind: 'lookout' }])], used: 1 };
+    frame(f, w);
+    expect(f.choirLive()).toBe(false);
+    w.towers = { items: [tower([{ kind: 'choir' }, { kind: 'choir' }])], used: 1 };
+    frame(f, w);
+    expect(f.choirLive()).toBe(true);
+    // Sold or revoked: the line stops.
+    w.towers = { items: [tower([{ kind: 'choir' }], false)], used: 1 };
+    frame(f, w);
+    expect(f.choirLive()).toBe(false);
+  });
+});

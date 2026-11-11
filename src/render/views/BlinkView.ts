@@ -32,7 +32,8 @@ import {
   GHOST_EDGE_TINT,
   GHOST_TINT,
 } from './blinkLook.ts';
-import { enemyBody, facingOf, spriteId, type Facing } from './spriteInfo.ts';
+import { drawnBody } from './gatherLook.ts';
+import { facingOf, spriteId, type Facing } from './spriteInfo.ts';
 import { AIR_LIFT_PX, type TransientFx } from './TransientFx.ts';
 import type { ViewContext } from './ViewContext.ts';
 
@@ -238,7 +239,7 @@ export class BlinkView {
   #dress(img: Silhouette, e: DeepReadonly<Enemy>, facing: Facing): void {
     const def = e.def;
     if (def === null) return;
-    const id = spriteId(enemyBody(def.sprites.body, e.tags));
+    const id = spriteId(drawnBody(e));
     const name = WALK_FRAME[facing];
     const f = this.#ctx.sprites.frame(id, name);
     const a = this.#ctx.sprites.frameAnchor(id, name);

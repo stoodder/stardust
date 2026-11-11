@@ -1,30 +1,41 @@
-// Everglow Security's looks (T603's minimal views; design/enemies.md § 3 `haste_aura`, § 5.3, § 8;
-// art-direction.md §8's `haste_aura` row: speed lines on the source and on affected allies,
-// `orange.3`). Pure rules and pixel images, unit-tested; EverglowView applies them. T630a polishes
-// the ring and lines, T640a draws the shutdown and the price tag as sprites.
+// Everglow Security's looks (T603, polished by T630a; design/enemies.md § 3 `haste_aura`, § 5.3,
+// § 8; art-direction.md §8's `haste_aura` row: speed lines on the source and on affected allies,
+// `orange.3`). Pure rules and pixel images, unit-tested; EverglowView applies them. The shutdown's
+// line and price tag are sprites (T640a: `fx.power_off`, `fx.price_tag`).
 // - **The haste ring:** a solid `orange.3` ring over a 1 px `ink.0` under-stroke at the aura's
 //   radius round every unit projecting one (the sim's `projectedHaste`), beating like a metronome:
 //   bright for METRONOME_HIGH_TICKS of every METRONOME_TICKS (2 beats a second, on sim time, so it
-//   holds while paused and keeps pace at 2×), dim between. Solid, where the Cantor's shield ring is
-//   dashed and crawling, so the two auras read apart at a glance. Steady (bright) under reduced
-//   motion.
-// - **Speed lines:** the source and every unit a ring is hasting (`Enemy.auraHastePct` > 0, the
-//   sim's own value) trail three `orange.3` streaks beside the body, stepping back a pixel on the beat (offset per
-//   uid, so a hasted column doesn't flicker in unison); still under reduced motion.
+//   holds while paused and keeps pace at 2×), a step dimmer between. On each beat it **swells**: an
+//   `orange.4` echo ring ticks out SWELL_PX beyond it, then a step further (`swellPx`), and is gone
+//   by the next beat, so the ring reads as keeping time. Solid, where the Cantor's shield ring is
+//   dashed and crawling, so the two auras read apart at a glance. Steady (bright, no swell) under
+//   reduced motion.
+// - **Speed marks:** the source and every unit a ring is hasting (`Enemy.auraHastePct` > 0, the
+//   sim's own value) trail a **double chevron** (the `haste_aura` glyph's », `orange.4` leading
+//   `orange.3`, in an `ink.0` rim) just behind the body, pointing the way it moves on screen
+//   (`screenHeading`: behind its left edge walking right, its right edge walking left), stepping
+//   back a pixel on the half-beat (offset per uid, so a hasted column doesn't flicker in unison);
+//   still under reduced motion.
 // - **The shutdown** (`deathLook.ts` `shutdown`, Everglow's death in every act: a clean shutdown and
 //   a falling price tag): an old-monitor power-off at the body, a `white.1` line collapsing to a
 //   dot over SHUTDOWN_LINE_MS that then winks out, and a white price tag on its string, hung over
 //   the body, dropping to the ground and fading out by TAG_MS. No pop, no debris, no sound of its own
 //   (audio is T650's). Under reduced motion the tag doesn't fall; it fades where it hung.
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
+import { rangeEllipsePx, type Vec2 } from '../iso.ts';
 import type { RgbaImage } from '../sprites/rasterize.ts';
 import { STEPPED_ALPHA } from '../vfx/fxTiming.ts';
+import { ellipseQuadrant, snapRingRadius, type RingImage } from '../vfx/overlayPixels.ts';
 
 export const HASTE_COLOR: ColorName = 'orange.3';
 export const HASTE_UNDER: ColorName = 'ink.0';
 /** The ring's alpha on the beat and between beats. */
 export const RING_ALPHA_HIGH = 1;
-export const RING_ALPHA_LOW = 0.7;
+export const RING_ALPHA_LOW = 0.6;
+/** The swell's echo ring: its colour and alpha, and how far out it ticks on the beat (px). */
+export const SWELL_COLOR: ColorName = 'orange.4';
+export const SWELL_ALPHA = 0.6;
+export const SWELL_PX = 2;
 /** The metronome: one beat every this many sim ticks (2 a second at 60 Hz), bright this long. */
 export const METRONOME_TICKS = 30;
 export const METRONOME_HIGH_TICKS = 6;
@@ -35,10 +46,62 @@ export function metronomeHigh(tick: number, reducedMotion: boolean): boolean {
   return tick % METRONOME_TICKS < METRONOME_HIGH_TICKS;
 }
 
-/** The speed lines' frame (0 or 1: stepped back a pixel) for unit `uid` at sim tick `tick`. */
+/**
+ * How far the swell's echo ring stands out past the ring at sim tick `tick` (px): SWELL_PX for the
+ * first half of the beat, twice that for the second, 0 between beats and under reduced motion.
+ */
+export function swellPx(tick: number, reducedMotion: boolean): number {
+  if (reducedMotion) return 0;
+  const t = tick % METRONOME_TICKS;
+  if (t >= METRONOME_HIGH_TICKS) return 0;
+  return t < METRONOME_HIGH_TICKS / 2 ? SWELL_PX : 2 * SWELL_PX;
+}
+
+/** The speed marks' frame (0 or 1: stepped back a pixel) for unit `uid` at sim tick `tick`. */
 export function speedLinesFrame(tick: number, uid: number, reducedMotion: boolean): 0 | 1 {
   if (reducedMotion) return 0;
   return Math.floor((tick + uid * 7) / (METRONOME_TICKS / 2)) % 2 === 0 ? 0 : 1;
+}
+
+/**
+ * Which way a move of (dx, dy) grid units runs on screen: 1 right, −1 left, 0 straight up or down
+ * (the iso camera's x is col − row; render/iso.ts).
+ */
+export function screenHeading(dx: number, dy: number): -1 | 0 | 1 {
+  const sx = dx - dy;
+  if (Math.abs(sx) < 1e-9) return 0;
+  return sx > 0 ? 1 : -1;
+}
+
+const semi: Vec2 = { x: 0, y: 0 };
+
+/**
+ * The swell's echo ring: a solid 1 px SWELL_COLOR ellipse `px` wider each side than the haste ring
+ * of `radiusTiles` (snapped as the ring is), `px / 2` taller, keeping the ground's 2:1; (cx, cy)
+ * sits on the source, as the ring's does.
+ */
+export function swellRingImage(radiusTiles: number, px: number): RingImage {
+  rangeEllipsePx(snapRingRadius(radiusTiles), semi);
+  const a = Math.max(1, Math.round(semi.x)) + px;
+  const b = Math.max(1, Math.round(semi.y)) + Math.round(px / 2);
+  const w = 2 * a + 1;
+  const h = 2 * b + 1;
+  const data = new Uint8ClampedArray(w * h * 4);
+  const { r, g, b: bl } = rgbOf(SWELL_COLOR);
+  const put = (x: number, y: number): void => {
+    const i = (y * w + x) * 4;
+    data[i] = r;
+    data[i + 1] = g;
+    data[i + 2] = bl;
+    data[i + 3] = 255;
+  };
+  for (const [x, y] of ellipseQuadrant(a, b)) {
+    put(a + x, b + y);
+    put(a - x, b + y);
+    put(a + x, b - y);
+    put(a - x, b - y);
+  }
+  return { image: { w, h, data }, cx: a, cy: b };
 }
 
 /** Turns rows of legend characters into an image ('.' clear); `rim` outlines every lit pixel. */
@@ -77,37 +140,27 @@ function pixels(
   return { w, h, data };
 }
 
-/** Speed lines, frame 0 and frame 1 (each streak a pixel further back): 'L' a streak. */
-const LINES: readonly (readonly string[])[] = [
-  ['.LLL.', '.....', 'LLLL.', '.....', '.LLL.'],
-  ['LLL..', '.....', 'LLL..', '.....', 'LLL..'],
+/**
+ * The speed marks, frame 0 and frame 1 (a pixel further back), for a unit walking right: a double
+ * chevron », 'A' the leading chevron (`orange.4`), 'B' the trailing one (`orange.3`).
+ */
+const MARKS: readonly (readonly string[])[] = [
+  ['.B..A..', '..B..A.', '...B..A', '..B..A.', '.B..A..'],
+  ['B..A...', '.B..A..', '..B..A.', '.B..A..', 'B..A...'],
 ];
 
-/** The speed lines' image for `frame`, in an `ink.0` rim (7×7). */
-export function speedLinesImage(frame: 0 | 1): RgbaImage {
-  return pixels(LINES[frame]!, { L: HASTE_COLOR }, HASTE_UNDER); // frame is 0 or 1
-}
-/** The speed lines' size with their rim (px). */
-export const SPEED_LINES_SIZE = 7;
+/** The speed marks' size with their rim (px). */
+export const SPEED_MARKS_W = 9;
+export const SPEED_MARKS_H = 7;
 
 /**
- * The price tag (7×10 with its rim): a `steel.4` string ('s') down to a white tag ('W') with a
- * punched hole ('o') and a `gold.3` price line ('$'): Everglow's product, priced to the last.
+ * The speed marks' image for `frame`, pointing `heading` (1 walking right, −1 walking left: the
+ * chevrons mirrored), in an `ink.0` rim (SPEED_MARKS_W × SPEED_MARKS_H).
  */
-const TAG: readonly string[] = [
-  '..s..',
-  '..s..',
-  '.WWW.',
-  'WWoWW',
-  'WWWWW',
-  'W$$$W',
-  'WWWWW',
-  '.WWW.',
-];
-
-/** The price tag's image, in an `ink.0` rim. */
-export function priceTagImage(): RgbaImage {
-  return pixels(TAG, { s: 'steel.4', W: 'white.1', o: 'ink.1', $: 'gold.3' }, 'ink.0');
+export function speedMarksImage(frame: 0 | 1, heading: 1 | -1): RgbaImage {
+  const rows = MARKS[frame]!; // frame is 0 or 1
+  const drawn = heading === 1 ? rows : rows.map((r) => [...r].toReversed().join(''));
+  return pixels(drawn, { A: 'orange.4', B: HASTE_COLOR }, HASTE_UNDER);
 }
 
 /** The power-off line's collapse, then its dot's wink (ms). */

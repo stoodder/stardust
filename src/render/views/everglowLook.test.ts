@@ -1,5 +1,6 @@
-// Everglow Security's looks (T603; everglowLook.ts): the haste ring's metronome, the speed lines,
-// the shutdown's power-off line and falling price tag, and the faction's death row.
+// Everglow Security's looks (T603, T630a; everglowLook.ts): the haste ring's metronome and swell,
+// the speed marks and their heading, the shutdown's power-off line and falling price tag, and the
+// faction's death row.
 import { describe, expect, it } from 'vitest';
 import { rgbOf } from '../../content/palettes/master.ts';
 import { PRESENTATION } from '../../content/presentation.ts';
@@ -10,14 +11,19 @@ import {
   METRONOME_HIGH_TICKS,
   METRONOME_TICKS,
   metronomeHigh,
-  priceTagImage,
+  screenHeading,
   SHUTDOWN_HALF_W,
   SHUTDOWN_LINE_MS,
   SHUTDOWN_MS,
   shutdownLine,
-  SPEED_LINES_SIZE,
+  SPEED_MARKS_H,
+  SPEED_MARKS_W,
   speedLinesFrame,
-  speedLinesImage,
+  speedMarksImage,
+  SWELL_COLOR,
+  SWELL_PX,
+  swellPx,
+  swellRingImage,
   TAG_FALL_MS,
   TAG_MS,
   tagDrop,
@@ -45,18 +51,57 @@ describe('the haste ring’s metronome', () => {
   });
 });
 
-describe('the speed lines', () => {
-  it('are three orange streaks in an ink rim, stepping back a pixel between frames', () => {
+describe('the swell (T630a)', () => {
+  it('ticks out on the beat, a step further for its second half, gone between beats', () => {
+    expect(swellPx(0, false)).toBe(SWELL_PX);
+    expect(swellPx(METRONOME_HIGH_TICKS - 1, false)).toBe(2 * SWELL_PX);
+    expect(swellPx(METRONOME_HIGH_TICKS, false)).toBe(0);
+    expect(swellPx(METRONOME_TICKS, false)).toBe(SWELL_PX);
+    for (let t = 0; t < 60; t++) expect(swellPx(t, true)).toBe(0);
+  });
+
+  it("is a solid orange.4 ellipse SWELL_PX outside the ring, on the ring's centre", () => {
+    const ring = swellRingImage(2, SWELL_PX);
+    const wide = swellRingImage(2, 2 * SWELL_PX);
+    expect(wide.image.w - ring.image.w).toBe(2 * SWELL_PX);
+    expect(ring.cx).toBe((ring.image.w - 1) / 2);
+    // Its rightmost pixel on the centre row is lit, in the swell colour.
+    expect(px(ring.image, ring.image.w - 1, ring.cy)).toEqual(rgba(SWELL_COLOR));
+    expect(px(ring.image, ring.cx, ring.cy)[3]).toBe(0);
+  });
+});
+
+describe('the speed marks (T630a: a double chevron, pointing the way the unit walks)', () => {
+  it('are a » in an ink rim, lit leading, stepping back a pixel between frames', () => {
     for (const f of [0, 1] as const) {
-      const img = speedLinesImage(f);
-      expect([img.w, img.h]).toEqual([SPEED_LINES_SIZE, SPEED_LINES_SIZE]);
+      const img = speedMarksImage(f, 1);
+      expect([img.w, img.h]).toEqual([SPEED_MARKS_W, SPEED_MARKS_H]);
     }
-    const a = speedLinesImage(0);
-    const b = speedLinesImage(1);
-    expect(px(a, 2, 1)).toEqual(rgba(HASTE_COLOR)); // frame 0's top streak starts at x 1 (+ rim)
-    expect(px(b, 1, 1)).toEqual(rgba(HASTE_COLOR)); // frame 1's a pixel further back
-    expect(px(a, 1, 1)).toEqual(rgba('ink.0'));
+    const a = speedMarksImage(0, 1);
+    const b = speedMarksImage(1, 1);
+    // Frame 0's leading chevron tip, on the middle row at the right edge (inside the rim).
+    expect(px(a, SPEED_MARKS_W - 2, 3)).toEqual(rgba('orange.4'));
+    expect(px(a, 2, 1)).toEqual(rgba(HASTE_COLOR)); // the trailing chevron's top
+    expect(px(b, 1, 1)).toEqual(rgba(HASTE_COLOR)); // a pixel further back
     expect(px(a, 0, 0)[3]).toBe(0); // clear outside the rim
+  });
+
+  it('mirror for a unit walking left', () => {
+    const r = speedMarksImage(0, 1);
+    const l = speedMarksImage(0, -1);
+    for (let y = 0; y < SPEED_MARKS_H; y++) {
+      for (let x = 0; x < SPEED_MARKS_W; x++) {
+        expect(px(l, x, y)).toEqual(px(r, SPEED_MARKS_W - 1 - x, y));
+      }
+    }
+  });
+
+  it("read the heading on screen: the iso camera's x is col − row", () => {
+    expect(screenHeading(1, 0)).toBe(1);
+    expect(screenHeading(0, -1)).toBe(1);
+    expect(screenHeading(-1, 0)).toBe(-1);
+    expect(screenHeading(0, 1)).toBe(-1);
+    expect(screenHeading(1, 1)).toBe(0);
   });
 
   it('alternate on the half-beat, offset per uid; frame 0 under reduced motion', () => {
@@ -101,15 +146,5 @@ describe('the shutdown (enemies.md § 8: a clean shutdown and a falling price ta
     expect(tagDrop(TAG_MS, 9, false).alpha).toBe(0);
     // Reduced motion: it fades where it hung.
     expect(tagDrop(TAG_FALL_MS, 9, true)).toEqual({ dy: 0, alpha: 1 });
-  });
-
-  it('the price tag: a white tag on a steel string, a punched hole, a gold price line, an ink rim', () => {
-    const img = priceTagImage();
-    expect([img.w, img.h]).toEqual([7, 10]);
-    expect(px(img, 3, 1)).toEqual(rgba('steel.4')); // the string
-    expect(px(img, 3, 4)).toEqual(rgba('ink.1')); // the hole
-    expect(px(img, 3, 6)).toEqual(rgba('gold.3')); // the price
-    expect(px(img, 1, 5)).toEqual(rgba('white.1'));
-    expect(px(img, 0, 5)).toEqual(rgba('ink.0'));
   });
 });

@@ -557,7 +557,7 @@ export const ACT3_SFX = {
    * phrase. Under speech like every moment; the SEAL's press cuts it dead (FORCED_INPUT_SOUNDS).
    */
   door_hum: {
-    gain: 0.4,
+    gain: 0.3,
     priority: 1,
     minGapMs: 2000,
     maxVoices: 2,

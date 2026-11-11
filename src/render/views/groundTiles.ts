@@ -250,12 +250,15 @@ const ACT2_LOOKS: Readonly<Partial<Record<SpriteId, { frame: string; anim: strin
 /**
  * Act III's looks (act3.md, T640c): Evie's billboards are `dark` (content/presentation.ts; T613
  * drew the frame), the audit podium stands empty at night (A3M2: Prim's voice comes from the
- * drones), the brush is crystal, and the domes are out but for an emergency light.
+ * drones) and the fountain runs dark, the brush is crystal and the rocks sit in the dark, and the
+ * domes are out but for an emergency light.
  */
 const ACT3_LOOKS: Readonly<Partial<Record<SpriteId, { frame: string; anim: string | null }>>> = {
   'prop.billboard': { frame: 'dark', anim: null },
   'prop.podium': { frame: 'v0', anim: null },
   'prop.flora': { frame: 'crystal', anim: null },
+  'prop.rock': { frame: 'night', anim: null },
+  'prop.fountain': { frame: 'night_0', anim: 'night' },
   'prop.dome': { frame: 'dark', anim: null },
 };
 
@@ -632,7 +635,8 @@ function dressBase(g: GroundGrid, col: number, row: number): TileDressing {
       let sprite: SpriteId | null = decor === 'bare' || decor === null ? null : decor.sprite;
       if (decor === null) {
         if (t === 'x') sprite = 'prop.wreckage';
-        else if (onCrack(g, col, row)) sprite = null; // a rift lane's crack runs here (T640c)
+        else if (onCrack(g, col, row))
+          sprite = null; // a rift lane's crack runs here (T640c)
         else if (onWall(g, col, row)) sprite = 'prop.wall';
         else if ((col * 3 + row * 5) % 7 === 0) sprite = 'prop.flora';
         else if ((col * 5 + row * 3) % 11 === 0) sprite = 'prop.rock';
@@ -831,7 +835,12 @@ export function apronCells(g: GroundGrid, env: string): ApronCell[] {
           if (p === null) {
             const h = (((col + 16) * 7 + (row + 16) * 11) >>> 0) % 9;
             const brush = prop('prop.flora', decorLook('prop.flora', env).frame);
-            p = h === 0 ? brush : h === 4 ? prop('prop.rock', 'v0') : null;
+            p =
+              h === 0
+                ? brush
+                : h === 4
+                  ? prop('prop.rock', decorLook('prop.rock', env).frame)
+                  : null;
           }
         }
       }

@@ -1,12 +1,13 @@
-// Audio (T205, T314, T450): off under ?test=1 unless &audio=1; unlocked by the first gesture; the
-// battle's music and sounds play from real events (Act I's, and Act II's on A2M1); a spoken line
-// blips and its typewriter ticks; M and the speaker button mute it, and the choice persists.
-// Nobody can listen in CI, so every sound, cue, and theme is also rendered offline through the real
-// master chain and its levels asserted, plus the worst-case storms (Act I's W7 and boss wave, Act
-// II's Witch fight), unducked and ducked as the game ducks them, which must keep 3 dB of headroom;
-// in the ducked storms every speaker's blip must stand 6 dB over the rest of the mix, while a lone
-// blip peaks at −10 dBFS or under, and the Peeker's rock lighting up sounds about 6 dB over the
-// squeaks around it (D134, D135; architecture.md § Audio).
+// Audio (T205, T314, T450, T650): off under ?test=1 unless &audio=1; unlocked by the first gesture;
+// the battle's music and sounds play from real events (Act I's, Act II's on A2M1 and A2M6, Act
+// III's quiet bed on A3M1); a spoken line blips and its typewriter ticks; M and the speaker button
+// mute it, and the choice persists. Nobody can listen in CI, so every sound, cue, and theme is also
+// rendered offline through the real master chain and its levels asserted, plus the worst-case
+// storms (Act I's W7 and boss wave, Act II's Witch fight and dusk, Act III's rush and door),
+// unducked and ducked as the game ducks them, which must keep 3 dB of headroom; in the ducked storms
+// every speaker's blip must stand 6 dB over the rest of the mix, while a lone blip peaks at −10
+// dBFS or under, and the Peeker's rock lighting up sounds about 6 dB over the squeaks around it
+// (D134, D135; architecture.md § Audio).
 import type { Page } from '@playwright/test';
 import type { AudioSample, RenderSample } from '../src/app/testHookTypes.ts';
 import { expect, test } from './fixtures.ts';
@@ -47,7 +48,7 @@ test('audio: unlocks on the first gesture and scores the battle', async ({ page 
       const s = await status(page);
       return s === null ? null : { theme: s.theme, layers: s.layers };
     })
-    .toEqual({ theme: 'act1_battle', layers: { base: 1, drums: 0, lead: 0 } });
+    .toEqual({ theme: 'act1_battle', layers: { base: 1, drums: 0, lead: 0, choir: 0 } });
   // Play par for a while: towers go up, the wave starts, shots fire, pests pop.
   await page.evaluate(() => {
     const sd = globalThis.__sd!;
@@ -175,6 +176,38 @@ test("audio: A2M6 plays Sundown's dusk and night, and the Prism's lock and hum",
   expect((await status(page))?.played ?? {}).not.toHaveProperty('zap_arc');
 });
 
+test("audio: A3M1 plays Act III's quiet bed: the Maw and the Den sound, the Hollow die silent", async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  await page.goto('/?test=1&audio=1&map=a3_m01&seed=1');
+  await waitForReady(page);
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId('hud')).toBeVisible();
+  await expect.poll(async () => (await status(page))?.state).toBe('running');
+  await expect.poll(async () => (await status(page))?.theme).toBe('act3_battle');
+  // Par into W5 (T650): the first Maw walks from W4, the Den's swarmlings latch, a rift cracks.
+  await page.evaluate(() => {
+    const sd = globalThis.__sd!;
+    sd.setSpeed(0);
+    sd.autoplay('par');
+    const st = sd.state()!;
+    for (let k = 0; k < 60 * 600 && !(st.wave >= 5 || st.outcome !== 'playing'); k++) {
+      sd.fastForward(1);
+    }
+  });
+  const played = (await status(page))?.played ?? {};
+  expect(played).toMatchObject({
+    wave_start: expect.any(Number),
+    swarm_latch: expect.any(Number),
+    maw_tell: expect.any(Number),
+  });
+  // The Quiet: no wave-clear sting, and the Hollow unravel with no sound.
+  for (const id of ['cue:bright_sting', 'cue:bright_minor', 'cue:minor_sting', 'hollow_unravel']) {
+    expect(played, id).not.toHaveProperty(id);
+  }
+});
+
 /** Renders `names` offline in the page (`__sd.audio.render`), by name. */
 async function renderAll(
   page: Page,
@@ -232,6 +265,9 @@ test('audio: every sound, cue, and theme renders at a sane level', async ({ page
   // under the Witch's arrival and the Penitent's own, and the night's air under a rivet shot.
   const kneel = peak('cue:witch_sting') - peak('sfx:penitent_kneel');
   rows.push(`penitent_kneel under the Witch's sting: ${kneel.toFixed(1)} dB`);
+  rows.push(
+    `act3_battle under act2_battle: ${(peak('theme:act2_battle') - peak('theme:act3_battle')).toFixed(1)} dB`,
+  );
   console.log(`audio levels (default volumes):\n${rows.join('\n')}`);
   expect(lightsUp).toBeGreaterThanOrEqual(5);
   expect(lightsUp).toBeLessThanOrEqual(8);
@@ -240,6 +276,15 @@ test('audio: every sound, cue, and theme renders at a sane level', async ({ page
     expect(peak(hushed), hushed).toBeLessThanOrEqual(peak('sfx:witch_arrive') - 3);
   }
   expect(peak('sfx:night_air')).toBeLessThan(peak('sfx:rivet_shot'));
+  // Act III (T650): the bed sits back (silence-forward, quieter than Act II's theme); the Leaving
+  // Song is a voice, never louder than a sting; the door hum sits under the SEAL's speech, under
+  // a blip's ceiling; the loss hums under the sad trombone it replaces.
+  expect(peak('theme:act3_battle')).toBeLessThanOrEqual(peak('theme:act2_battle') - 3);
+  for (const hum of ['cue:leaving_hum', 'cue:leaving_hum_two', 'cue:leaving_hum_along']) {
+    expect(peak(hum), hum).toBeLessThanOrEqual(peak('cue:bright_sting'));
+  }
+  expect(peak('sfx:door_hum')).toBeLessThanOrEqual(-10);
+  expect(peak('cue:lose_hush')).toBeLessThan(peak('cue:lose'));
   // Blips sit back (D135): a lone blip peaks at −10 dBFS or under, well under the strike's boom.
   const blips = Object.keys(report).filter((n) => n.startsWith('sfx:blip.'));
   expect(blips.length).toBeGreaterThanOrEqual(14);
@@ -248,9 +293,9 @@ test('audio: every sound, cue, and theme renders at a sane level', async ({ page
 
 /**
  * The storms (src/audio/offline.ts `STORMS`), one test each so they render in parallel: Act I's,
- * the Witch fight, and A2M5–A2M6's dusk (T550).
+ * the Witch fight, A2M5–A2M6's dusk (T550), and Act III's rush, Maws, and door (T650).
  */
-const STORM_IDS = ['act1', 'act2', 'act2_dusk'] as const;
+const STORM_IDS = ['act1', 'act2', 'act2_dusk', 'act3'] as const;
 
 for (const storm of STORM_IDS) {
   test(`audio: the ${storm} storm keeps 3 dB of headroom, and speech stays on top of it`, async ({

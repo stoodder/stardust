@@ -90,8 +90,8 @@ export const ENEMY_POP_PITCH: Readonly<Partial<Record<string, number>>> = {
   fracture: -4,
   fracture_shard: 4,
   riftmoth: 6,
-  // M6's units (T650): pitched by size like the rest (the Hollow's are silent in Act III, but
-  // keep their pitch for a replay in another act's dials; Everglow's shut down, enemies.md § 8).
+  // M6's units (T650): pitched by size like the rest (Everglow's shut down, enemies.md § 8; the
+  // Hollow's die silent under Act III's dials, and unravel at this pitch under any other's).
   maw: -6,
   undertow: -5,
   compliance: 1,

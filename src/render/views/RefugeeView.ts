@@ -1,12 +1,12 @@
-// Refugees on an Escort (design/maps.md § 5.2; T305c): the minimal readable view. Each refugee on
-// the field walks its route as a Skitterkin in the `skitterkin.ally` palette (the Act I body, as
-// maps.md says, carrying its belongings: `ally.refugee`, T540a; Pebble walks among them in her
-// bottle cap, `ally.pebble`), facing the way it moves. One still filing in at the route's start
-// (`dist` < 0) isn't drawn; one a Hollow unit is hushing freezes on its frame (its Hollow unit
-// tells). A hushed or evacuated refugee's view goes with it (the sweep). Depth-sorted in `world`
-// like an enemy. T530a (refugeeLook.ts): each walks a little to the side of the road's line by uid,
-// every third parent carries a little one (`carry_<facing>`), and Pebble walks on the near side of
-// her group, sorted in front of the parent ahead of her, so she is never hidden behind it.
+// Refugees on an Escort (design/maps.md § 5.2; T305c, T530a). Each refugee on the field walks its
+// route as a Skitterkin in the `skitterkin.ally` palette (the Act I body, as maps.md says, carrying
+// its belongings: `ally.refugee`, T540a; Pebble walks among them in her bottle cap, `ally.pebble`),
+// facing the way it moves. One still filing in at the route's start (`dist` < 0) isn't drawn; one a
+// Hollow unit is hushing freezes on its frame (its Hollow unit tells). A hushed or evacuated
+// refugee's view goes with it (the sweep). Depth-sorted in `world` like an enemy. T530a
+// (refugeeLook.ts): each walks a little to the side of the road's line by uid, every third parent
+// carries a little one (`carry_<facing>`), and Pebble walks on the near side of her group, sorted
+// in front of the parent ahead of her, so she is never hidden behind it.
 import type * as Phaser from 'phaser';
 import type { SpriteId } from '../../content/sprites/index.ts';
 import type { Ally } from '../../sim/index.ts';

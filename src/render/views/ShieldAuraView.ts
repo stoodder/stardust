@@ -1,15 +1,15 @@
 // The shield-recharge aura (design/enemies.md § 3 `shield_aura`; art-direction §8: a dashed
-// `blue.4` ring; D137: the Aegis Cantor's aura is continuous, not a pulse; T502's minimal view,
-// T530a polishes). Each frame, under every unit projecting an aura (the sim's `projectedAura`: alive,
-// not leaving or burrowed), a dashed `blue.4` ring at the aura's radius over a 1 px `ink.0`
-// under-stroke, its dashes crawling one pixel step every CRAWL_TICKS sim ticks (so it reads
-// as always on, unlike a pulse's held, stepping tell; held while paused, steady under reduced
-// motion). In `decal`, under the units, centred on the source's body as EnemyView draws it (its
-// lane offset; unitAnchor.ts). No event drives it: it reads sim state, like the huddle's ring.
-// T530a: every unit the aura is refilling glints (auraLook.ts): a small `white.1`/`blue.4` star at
-// the top right of its body, twinkling on the tell step, in `overlay` so the dark never hides it.
-// Allocation-free per frame: the rings and glints are pooled, each radius's DASH_PERIOD crawl
-// frames are registered once, and the sources' slots go in a fixed scratch array.
+// `blue.4` ring; D137: the Aegis Cantor's aura is continuous, not a pulse; T502, T530a). Each
+// frame, under every unit projecting an aura (the sim's `projectedAura`: alive, not leaving or
+// burrowed), a dashed `blue.4` ring at the aura's radius over a 1 px `ink.0` under-stroke, its
+// dashes crawling one pixel step every CRAWL_TICKS sim ticks (so it reads as always on, unlike a
+// pulse's held, stepping tell; held while paused, steady under reduced motion). In `decal`, under
+// the units, centred on the source's body as EnemyView draws it (its lane offset; unitAnchor.ts).
+// No event drives it: it reads sim state, like the huddle's ring. T530a: every unit the aura is
+// refilling glints (auraLook.ts): a small `white.1`/`blue.4` star at the top right of its body,
+// twinkling on the tell step, in `overlay` so the dark never hides it. Allocation-free per frame:
+// the rings and glints are pooled, each radius's DASH_PERIOD crawl frames are registered once, and
+// the sources' slots go in a fixed scratch array.
 import type * as Phaser from 'phaser';
 import { projectedAura, type Enemy } from '../../sim/index.ts';
 import type { DeepReadonly } from '../../shared/types.ts';

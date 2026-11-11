@@ -220,6 +220,9 @@ function bindSpeechAudio(ticker: TypeTicker): () => void {
   });
 }
 
+/** The music duck a hushing cue holds (CUE_HUSHES) while it shows. */
+const CUE_HUSH_DUCK = 'cue_hush';
+
 /**
  * A cue that hushes the music while it shows (CUE_HUSHES: Sterling's Clean Exit, so her held beat
  * is silence), released as it closes. Returns the unwiring.
@@ -238,9 +241,6 @@ function bindCueHushAudio(): () => void {
     }
   });
 }
-
-/** The music duck a hushing cue holds (CUE_HUSHES) while it shows. */
-const CUE_HUSH_DUCK = 'cue_hush';
 
 /** C2's sting for the transaction `t` made (C2_STINGS), or null. */
 function c2Sting(t: ResultsTransaction | undefined): CueId | null {
