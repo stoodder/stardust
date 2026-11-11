@@ -24,7 +24,7 @@
 //   so the trail reads as the ground disturbed in its wake rather than marks it carries. It moves
 //   only as the unit does (no clock), so reduced motion keeps it.
 import type { DeepReadonly } from '../../shared/types.ts';
-import { gatherOf, gatherScale, type Enemy } from '../../sim/index.ts';
+import { canGather, gatherOf, gatherScale, type Enemy } from '../../sim/index.ts';
 import { STEPPED_ALPHA } from '../vfx/fxTiming.ts';
 import { enemyBody } from './spriteInfo.ts';
 
@@ -47,7 +47,7 @@ export const GROWTH_STEPS = 5;
  * `<body>_g<n>` for `absorbs` = n (capped at GROWTH_STEPS). A unit that doesn't gather keeps `body`.
  */
 export function mawBody(body: string, e: DeepReadonly<Pick<Enemy, 'def' | 'absorbs'>>): string {
-  if ((e.def?.gather ?? null) === null || e.absorbs <= 0) return body;
+  if (!canGather(e.def) || e.absorbs <= 0) return body; // T708: a boss phase's gather too
   return `${body}_g${Math.min(GROWTH_STEPS, Math.floor(e.absorbs))}`;
 }
 

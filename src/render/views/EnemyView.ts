@@ -62,6 +62,7 @@
 import * as Phaser from 'phaser';
 import type { SpriteId } from '../../content/sprites/index.ts';
 import { activeBlink, activePulse, blinkTelling, pulseTelling } from '../../sim/index.ts';
+import { canGather } from '../../sim/index.ts'; // T708
 import { groundShadowFor } from '../../content/sprites/shadows.ts';
 import { TICK_HZ } from '../../shared/time.ts';
 import { worldDepth } from '../depth.ts';
@@ -921,7 +922,7 @@ export class EnemyView implements PooledView {
       this.#barHpPx = -1;
       this.#syncBar();
     }
-    if (e.def !== null && e.def.gather !== null) {
+    if (canGather(e.def)) { // T708: a boss phase's gather too (the Gathering Maw)
       const id = spriteId(mawBody(this.#baseBody, e));
       if (id !== this.#id) {
         this.#id = id;

@@ -86,6 +86,10 @@ describe("the Maw's growth sprites (T640a)", () => {
     expect(mawBody(body, unit({ def: E.maw, absorbs: 5 }))).toBe('enemy.maw_g5');
     expect(mawBody(body, unit({ def: E.maw, absorbs: 9 }))).toBe(`enemy.maw_g${GROWTH_STEPS}`);
     expect(mawBody('enemy.mote', unit({ def: E.mote, absorbs: 3 }))).toBe('enemy.mote');
+    // The Gathering Maw grows in its boss phase's gather (T708), by the same steps.
+    const gm = E.gathering_maw.sprites.body;
+    expect(mawBody(gm, unit({ def: E.gathering_maw, absorbs: 3 }))).toBe('enemy.gathering_maw_g3');
+    expect(mawBody(gm, unit({ def: E.gathering_maw, absorbs: 0 }))).toBe('enemy.gathering_maw');
     // Every step it can reach is a registered sprite, as many as the Maw's absorbs.
     const ids = new Set<string>(SPRITES.map((s) => s.id));
     expect(GROWTH_STEPS).toBe(E.maw.gather!.maxAbsorbs);

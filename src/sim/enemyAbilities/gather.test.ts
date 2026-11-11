@@ -292,7 +292,7 @@ describe('a gathered Maw leaks and pays more', () => {
   });
 
   it('adds nothing to a unit that doesn’t gather', () => {
-    const w = { def: WALKER, absorbs: 4, hollowAbsorbs: 4, bonusMaxHp: 0 };
+    const w = { def: WALKER, bossPhase: 0, absorbs: 4, hollowAbsorbs: 4, bonusMaxHp: 0 };
     expect([gatherLeak(w), gatherBounty(w), gatherScale(w), gatherMaxHp(w)]).toEqual([
       0,
       0,

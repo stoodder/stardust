@@ -74,7 +74,7 @@ describe('A3M4 · Empty Slot', () => {
   });
 
   it('carries its medal and objective: Keep the Lights On, Signature: Received', () => {
-    expect(map.medals.challenge).toMatchObject({
+    expect(map.medals?.challenge).toMatchObject({
       id: 'keep_the_lights_on',
       condition: { stat: 'jammedPeak', lte: 1 },
     });

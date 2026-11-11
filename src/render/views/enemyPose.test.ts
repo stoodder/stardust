@@ -26,6 +26,7 @@ const calm: PoseFacts = {
   heavy: false,
   phased: false,
   shieldDown: false,
+  aiming: false,
 };
 
 describe('statePose (T312b)', () => {
@@ -241,5 +242,52 @@ describe('poseFacts for the Maw (T640a)', () => {
     sim.enqueue({ type: 'callWave' });
     expect(poseWhen(sim, (e) => maw(e) && e.gatherUid === 0)).toBe('walk');
     expect(poseWhen(sim, (e) => maw(e) && e.gatherUid !== 0)).toBe('tell');
+  });
+});
+
+/** The first live enemy `pred` picks, stepping `sim` (calling every wave as it comes) until one. */
+function firstLive(sim: Sim<IdSpace>, pred: (e: Enemy) => boolean, max = 9000): Enemy {
+  for (let k = 0; k < max && sim.state.outcome === 'playing'; k++) {
+    if (k % 30 === 0) sim.enqueue({ type: 'callWave' });
+    sim.step();
+    const pool = sim.state.enemies;
+    for (let i = 0; i < pool.used; i++) {
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the test sets its state directly
+      const e = pool.items[i] as Enemy;
+      if (e.alive && e.def !== null && pred(e)) return e;
+    }
+  }
+  throw new Error('no such enemy');
+}
+
+describe('poseFacts for M7 units (T740a)', () => {
+  it("shows a jammer's tell as `tell` (the Silencer's tendril), and walks between tells", () => {
+    const sim = createSim(battleConfig('dev_jam', 1));
+    const s = firstLive(sim, (e) => e.def?.id === 'silencer');
+    const f = blankFacts();
+    s.jamTellTicks = 0;
+    expect(statePose(poseFacts(s, f))).toBe('walk');
+    s.jamTellTicks = 30;
+    expect(statePose(poseFacts(s, f))).toBe('tell');
+  });
+
+  it('"Shareholder Value": the hangar tell is `tell`, Takeover `aim` (a stride), the jettison `panic`', () => {
+    const sim = createSim(battleConfig('dev_takeover', 1));
+    const sv = firstLive(sim, (e) => e.def?.id === 'shareholder_value' && e.bossPhase === 1);
+    const f = blankFacts();
+    sv.invulnerableTicks = 0;
+    sv.abilityTicks = 999;
+    expect(statePose(poseFacts(sv, f))).toBe('walk');
+    sv.abilityTicks = 30; // inside the launch's 1.5 s tell
+    expect(statePose(poseFacts(sv, f))).toBe('tell');
+    sv.bossPhase = 2;
+    sv.abilityTicks = 0;
+    sv.jamTellTicks = 60; // its laser: still `aim`, never the jammers' `tell`
+    expect(statePose(poseFacts(sv, f))).toBe('aim');
+    expect(isStride('aim')).toBe(true);
+    sv.bossPhase = 3;
+    expect(statePose(poseFacts(sv, f))).toBe('panic');
+    sv.invulnerableTicks = 10;
+    expect(statePose(poseFacts(sv, f))).toBe('puff');
   });
 });

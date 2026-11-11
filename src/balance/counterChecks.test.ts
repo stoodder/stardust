@@ -75,21 +75,21 @@ describe('noCounterAnswerChecks', () => {
   });
 });
 
-describe('#6 on the jam teach map (D146 addendum, T720)', () => {
-  const withNoJam = (teachMap: boolean) => ({
-    ...map,
-    builds: { ...map.builds, teachMap, noCounterBuilds: { jam: steps() } },
-  });
-  const ids = (m: typeof map) => noCounterChecks(m, [1], []).map((c) => `#${c.id} ${c.subject}`);
+const withNoJam = (teachMap: boolean) => ({
+  ...map,
+  builds: { ...map.builds, teachMap, noCounterBuilds: { jam: steps() } },
+});
+const checkIds = (m: typeof map) => noCounterChecks(m, [1], []).map((c) => `#${c.id} ${c.subject}`);
 
+describe('#6 on the jam teach map (D146 addendum, T720)', () => {
   it("skips jam's full-catalog check on the map that teaches jam, and only there", () => {
-    expect(ids(withNoJam(true))).toEqual(['#5 noCounter:jam']);
-    expect(ids(withNoJam(false))).toEqual(['#5 noCounter:jam', '#6 noCounter:jam']);
+    expect(checkIds(withNoJam(true))).toEqual(['#5 noCounter:jam']);
+    expect(checkIds(withNoJam(false))).toEqual(['#5 noCounter:jam', '#6 noCounter:jam']);
     // Any other category keeps #6 on a teach map.
     const noSplash = {
       ...withNoSplash(steps()),
       builds: { ...withNoSplash(steps()).builds, teachMap: true },
     };
-    expect(ids(noSplash)).toEqual(['#5 noCounter:splash', '#6 noCounter:splash']);
+    expect(checkIds(noSplash)).toEqual(['#5 noCounter:splash', '#6 noCounter:splash']);
   });
 });

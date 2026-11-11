@@ -42,7 +42,7 @@ export { hangarTelling } from './enemyAbilities/hangar.ts'; // T707
 export { takeoverTelling } from './enemyAbilities/takeover.ts'; // T707
 export { openedTile } from './openTile.ts'; // T707
 export { gatherMaxHp, gatherScale, gatherTelling } from './enemyAbilities/gather.ts';
-export { gatherOf } from './enemyAbilities/gather.ts'; // T708
+export { canGather, gatherOf } from './enemyAbilities/gather.ts'; // T708
 export {
   isMergedBoss,
   isSplitPart,

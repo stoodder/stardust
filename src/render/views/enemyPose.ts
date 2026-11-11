@@ -17,6 +17,15 @@
 //   dithered and faint; its tell flickers the walk, phaseLook.ts).
 // - **Shield broken** (a boss in a shield-broken phase with its shield down, T530a): `broken`, the
 //   Penitent's march with its wall shattered; the re-formed shield marches in `walk`.
+// - **A jammer's tell** (T740a): a Silencer's tendril or an Auditor's ring (`jamTellTicks`) is
+//   `tell` (the tendril uncoiling, the emitter up); a boss's jam (Hostile Takeover) isn't: its
+//   laser is TakeoverView's, and the boss is `aim`ing through the whole phase.
+// - **"Shareholder Value"** (T740a): its hangar door opening (`hangarTelling`) is `tell`; its
+//   Takeover phase is `aim`, a stride (the dish raised, the lens lit); the jettison's haste is
+//   `panic` like any boss phase with haste.
+// - **The Gathering Maw** (T740a, on T708's sim): a part walking together in its merge's tell
+//   (`mergeTelling`) is `tell`; the merged Maw (`isMergedBoss`, phase 3, enraged) is `panic`; its
+//   phase-1 gather tell is the Maw's (`gatherTelling`, below).
 // - **Heavy** (it has hushed someone, T440a): `heavy`, the swollen walk with the victim inside.
 // - Else `walk`.
 // **Fray** (T501d, T530a; art-direction §4): an Aelari construct's walk has two hurt copies, and
@@ -37,6 +46,9 @@ import {
   burrowTelling,
   cloakedOut,
   gatherTelling,
+  hangarTelling,
+  isMergedBoss,
+  mergeTelling,
   pulseTelling,
   type Enemy,
 } from '../../sim/index.ts';
@@ -60,6 +72,7 @@ export const ENEMY_POSES = [
   'broken',
   'fray1',
   'fray2',
+  'aim',
 ] as const;
 export type EnemyPose = (typeof ENEMY_POSES)[number];
 
@@ -81,6 +94,7 @@ export const POSE_INDEX: Readonly<Record<EnemyPose, number>> = {
   broken: 13,
   fray1: 14,
   fray2: 15,
+  aim: 16,
 };
 
 /** The poses that stride along the route (their tempo follows the unit's pace, walkTempo.ts). */
@@ -90,6 +104,7 @@ export function isStride(pose: EnemyPose): boolean {
     pose === 'heavy' ||
     pose === 'glance' ||
     pose === 'broken' ||
+    pose === 'aim' ||
     pose === 'fray1' ||
     pose === 'fray2'
   );
@@ -129,6 +144,8 @@ export interface PoseFacts {
   readonly phased: boolean;
   /** A boss in a shield-broken phase with its shield down (the Penitent's phase 2, T506). */
   readonly shieldDown: boolean;
+  /** A boss in a Hostile Takeover phase ("Shareholder Value"'s phase 2, T740a). */
+  readonly aiming: boolean;
 }
 
 /** The pose the state alone calls for (no one-shots). */
@@ -140,6 +157,7 @@ export function statePose(f: PoseFacts): EnemyPose {
   if (f.telling !== null) return f.telling;
   if (f.panic) return 'panic';
   if (f.shieldDown) return 'broken';
+  if (f.aiming) return 'aim';
   return f.heavy ? 'heavy' : 'walk';
 }
 
@@ -172,6 +190,7 @@ export function poseFacts(e: PoseEnemy, out: MutablePoseFacts): MutablePoseFacts
   out.heavy = e.heavy;
   out.phased = e.phased;
   out.shieldDown = false;
+  out.aiming = false;
   if (def === null) return out;
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the sim's readers take a live Enemy and only read it
   const live = e as Enemy;
@@ -180,6 +199,14 @@ export function poseFacts(e: PoseEnemy, out: MutablePoseFacts): MutablePoseFacts
     const phase = def.boss.phases[e.bossPhase - 1];
     out.panic = phase !== undefined && (phase.hastePct > 0 || phase.huddle !== null);
     out.shieldDown = phase !== undefined && phase.onShieldBroken && e.shieldHp <= 0;
+    // "Shareholder Value" (T740a): the hangar door opening is its tell; Takeover, its `aim`.
+    if (phase !== undefined) {
+      if (out.telling === null && hangarTelling(live, phase.hangar)) out.telling = 'tell';
+      out.aiming = phase.takeover !== null;
+    }
+    // The Gathering Maw (T740a): a part's merge tell, and the merged Maw's rage.
+    if (out.telling === null && mergeTelling(live)) out.telling = 'tell';
+    if (isMergedBoss(live)) out.panic = true;
   } else if (def.burrow !== null && burrowTelling(live, def.burrow)) {
     out.telling = 'dig';
   }
@@ -200,6 +227,8 @@ export function poseFacts(e: PoseEnemy, out: MutablePoseFacts): MutablePoseFacts
   if (def.hushes && e.hushUid !== 0 && e.hushTicks > 0) out.telling = 'tell';
   // A Maw's gather tell (T640a): its tendril pose, `tell` (mouth agape, tendrils out).
   if (out.telling === null && gatherTelling(live)) out.telling = 'tell';
+  // A jammer's tell (T740a): the Silencer's tendril, the Auditor's ring (a boss's is its `aim`).
+  if (out.telling === null && def.boss === null && e.jamTellTicks > 0) out.telling = 'tell';
   return out;
 }
 
@@ -216,6 +245,7 @@ export function blankFacts(): MutablePoseFacts {
     heavy: false,
     phased: false,
     shieldDown: false,
+    aiming: false,
   };
 }
 

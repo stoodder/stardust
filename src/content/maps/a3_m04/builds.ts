@@ -2,8 +2,14 @@
 // Fire for Gerald's pass before W1 (`holdFireWhile: 'neutral'`: Hold Fire (all) while he is on the
 // field, W7), so par never hits him and earns Signature: Received. Bricks's slot is empty, so slot
 // 1 (System Reboot) is the only ability; par casts it on the Silencers' tells.
+//
+// Par (act3.md § A3M4, Par build, as built): Harpoons on the service switchback and the junction's
+// south-east corner from W1 (a third over the service tunnel's north run at W3), a Rivet at the
+// junction's north-east corner (T3 at W11), a Mindspike below the south-west corner; the Hum Choir
+// at W4 on the hall side of that Mindspike (Harmony), where the Silencers can't reach it until
+// they're in the corridor, so its aura cuts their jams on the junction to a second (T3 at W10);
+// a second Rivet under the Moths' lane at W5, a second Mindspike at the south-west corner at W9.
 import { defineBuilds } from '../../define.ts';
-import { W15_SIL_SEC } from './waves.ts';
 import { REFERENCE_PROFILES, REFERENCE_VARIANTS } from '../../upgrades/reference.ts';
 import type { BuildStep, GridPos, ScriptedBuild, TowerId } from '../../types.ts';
 
@@ -64,8 +70,9 @@ function swapped(
 
 /**
  * System Reboot as a pack's first tell starts, so that tell fizzles (sim/enemyAbilities/
- * jamTendril.ts): every Silencer wave but W4's teach and W14's rifts (it's still cooling down).
- * Each wave lists its cast ahead of its buys, so a cast never waits behind an upgrade.
+ * jamTendril.ts). Par casts it in W6, W9, W10, W12, W14 and W16 (40 s apart at least): W4's lone
+ * Silencer and W13's and W15's packs fall to the Choir alone. Each wave lists its cast ahead of
+ * its buys, and no wave's buys outrun its credits, so a cast never waits behind an upgrade.
  */
 const REBOOT_SEC = 27.5;
 /** W14's and W16's first packs come up the rifts, so their first tells are sooner. */
@@ -149,9 +156,10 @@ const PAR: ScriptedBuild = {
   steps: parSteps(),
 };
 
+const same = (a: GridPos, b: GridPos): boolean => a[0] === b[0] && a[1] === b[1];
+
 /** `steps` then, at W16, each of `tiles` upgraded to tier 3 and specialized as Bunker Buster. */
 function withBunkerBusters(steps: readonly BuildStep[], tiles: readonly GridPos[]): BuildStep[] {
-  const same = (a: GridPos, b: GridPos): boolean => a[0] === b[0] && a[1] === b[1];
   const tierOf = (tile: GridPos): number =>
     steps.filter(
       (st) => ('build' in st && same(st.tile, tile)) || ('upgrade' in st && same(st.upgrade, tile)),

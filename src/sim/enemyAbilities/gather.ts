@@ -98,6 +98,14 @@ export function gatherTelling(
   return e.alive && e.gatherUid !== 0 && gatherOf(e) !== null;
 }
 
+/**
+ * Whether a def ever gathers (its own gather, or one of its boss phases': the Gathering Maw; T708).
+ * Render keys a gatherer's growth sprites on it.
+ */
+export function canGather(def: Enemy['def']): boolean {
+  return def !== null && (def.gather !== null || bossGather(def) !== null);
+}
+
 /** The first gather among a boss def's phases, or null (its size after the phase). */
 function bossGather(def: Enemy['def']): CompiledGather | null {
   const phases = def?.boss?.phases ?? [];
