@@ -130,8 +130,9 @@ describe('A3M5 Gravity Well stacking', { timeout: HARNESS_TEST_TIMEOUT_MS }, () 
       }
     }
     expect(pulled).toBeGreaterThan(0);
+    // Not degenerate: the credits the two Wells cost buy less than par's own towers would.
     expect(r.outcome).toBe('won');
-    expect(margin(r)).toBeLessThanOrEqual(75);
+    expect(margin(r)).toBeLessThan(50);
   });
 });
 
