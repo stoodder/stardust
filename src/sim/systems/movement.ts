@@ -41,7 +41,7 @@ import { unnervedSpeedMul } from './status.ts';
  * An enemy's speed this tick, in tiles per tick, ground or air: its base speed (×HUSH_SPEED_MUL
  * once Heavy, enemies.md § 5.4), ×YOUNGLING_SPEED_MUL for a youngling, × its Chilled multiplier,
  * × its pace (`paceMul`: a huddle, a boss's or Skittish haste, a hush tell's stop), × 0.8 while
- * Unnerved (not a boss; T507); 0 in Stasis
+ * Unnerved (not a boss; T507), × (1 + its aura haste) inside an Expediter's ring (T603); 0 in Stasis
  * or Pinned (so a huddle's leader in either holds its group still too). Lead targeting and flak intercepts
  * predict with the same number.
  */
@@ -54,7 +54,8 @@ export function enemySpeedPerTick(e: Enemy): number {
     (e.tags.includes('youngling') ? base * YOUNGLING_SPEED_MUL : base) *
     e.chillMul *
     e.paceMul *
-    unnervedSpeedMul(e) // Unnerved's −20% on a non-boss (systems/status.ts; T507)
+    unnervedSpeedMul(e) * // Unnerved's −20% on a non-boss (systems/status.ts; T507)
+    (1 + e.auraHastePct) // a haste aura's, the strongest ring (enemyAbilities/hasteAura.ts; T603)
   );
 }
 

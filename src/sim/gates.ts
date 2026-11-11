@@ -251,7 +251,7 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   // M6 (D141): the Hollow's Maw and rift lanes (T602), Everglow Security's haste aura (T603), the
   // Holdout and Bricks's block (T605).
   'enemy.gather': 'T602',
-  'enemy.hasteAura': 'T603',
+  'enemy.hasteAura': null,
   'map.rift': 'T602',
   'map.holdout': 'T605',
   'ally.blocker': 'T605',

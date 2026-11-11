@@ -45,6 +45,7 @@ export { burrowTelling } from './burrow.ts';
 export { cloakedOut } from './cloak.ts';
 export { activeBlink, blinkLanding, blinkTelling } from './blink.ts';
 export { projectedAura } from './shieldAura.ts';
+export { projectedHaste } from './hasteAura.ts';
 export { phaseTelling, solidTicks } from './phase.ts';
 
 export function enemyAbilities(state: SimState, ctx: TickContext): void {
