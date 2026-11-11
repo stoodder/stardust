@@ -7,6 +7,7 @@
 // The view is pure over the offer (app/storyMeta.ts `crateOffer`) and the save; the card is
 // crateCard.tsx.
 import { signal } from '@preact/signals';
+import { sceneById } from '../../content/dialogue/index.ts';
 import { PROTOCOLS, UPGRADES } from '../../content/upgrades/index.ts';
 import type { ProtocolId, UpgradeId } from '../../content/types.ts';
 import { CRATE, type SaveData } from '../../meta/index.ts';
@@ -82,6 +83,20 @@ export function crateHere(mapId: string | null, save: SaveData | null): CrateVie
 
 /** The sticker on the crate, peeled off (act3.md § A3M6). */
 export const STICKER = 'No refunds';
+
+/**
+ * Zibzab's word on the card, under his plate (D150): "Price first: nothing.", the first beat of
+ * his line in A3M6's briefing (act3.md § A3M6), so it's read even when Clock in skips the rest.
+ * Taken from the scene, never a second copy; null if the briefing loses the line.
+ */
+export function crateQuote(): string | null {
+  const line = sceneById('a3_m06_brief')?.nodes.find(
+    (n) => n.kind === 'line' && n.speaker === 'zibzab',
+  );
+  if (line?.kind !== 'line') return null;
+  const first = /^Price first: [^.]*\./.exec(line.text);
+  return first === null ? null : first[0];
+}
 
 /** The card's line under its title, by what the crate holds. */
 export function crateLine(view: CrateView): string {

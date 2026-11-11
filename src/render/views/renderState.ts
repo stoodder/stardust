@@ -144,6 +144,8 @@ export interface RenderState {
     readonly tellsSeen: number;
     readonly jamsSeen: number;
     readonly reboots: number;
+    /** Tells cancelled (interrupted, or doomed by a System Reboot) and shown fizzling (D150). */
+    readonly fizzles: number;
   };
   /**
    * JamRingView and TakeoverView (T707): Auditor rings drawn now and seen since the battle began;

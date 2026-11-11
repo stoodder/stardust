@@ -1,16 +1,26 @@
 // The Auditor's ring, minimal (T707; takeoverLook.ts has the rules; T730a polishes it): each
 // Auditor ringing shows the whole reach it will jam as a faint outline from the tell's first tick
 // and an orange ring growing out to it, redrawn each frame into one Graphics on the vfx layer
-// (over the towers it reaches). The jams themselves show as JamView's static and arc.
+// (over the towers it reaches). The jams themselves show as JamView's static and arc. A ring that
+// can no longer land (jamLook.ts `ringDoomed`: a System Reboot in its tell) stops drawing, the
+// frame JamView fizzles it.
 // Allocation-free per frame: the scratch points are module-level, the Graphics redraws in place.
 import type * as Phaser from 'phaser';
 import type { IdSpace } from '../../content/types.ts';
 import type { Bus } from '../../shared/bus.ts';
 import type { DeepReadonly } from '../../shared/types.ts';
-import { ringGrowth, ringTelling, type Enemy, type SimEvent } from '../../sim/index.ts';
+import { ringGrowth, ringTelling, type Enemy, type SimEvent, type Tower } from '../../sim/index.ts';
 import { gridToScreen, rangeEllipsePx, type Vec2 } from '../iso.ts';
-import { hexOf } from './jamLook.ts';
-import { RING_COLOR, RING_OUTLINE, ringAlpha, ringTiles, UNDER } from './takeoverLook.ts';
+import { hexOf, ringDoomed } from './jamLook.ts';
+import {
+  RING_COLOR,
+  RING_OUTLINE,
+  RING_OUTLINE_PX,
+  RING_PX,
+  ringAlpha,
+  ringTiles,
+  UNDER,
+} from './takeoverLook.ts';
 import type { ViewContext } from './ViewContext.ts';
 
 interface Pool<T> {
@@ -46,8 +56,8 @@ export class JamRingView {
     });
   }
 
-  /** Each frame: every Auditor's ring under way. */
-  update(enemies: Pool<Enemy>): void {
+  /** Each frame: every Auditor's ring under way (but a doomed one: `towers` say which). */
+  update(enemies: Pool<Enemy>, towers: Pool<Tower>): void {
     const g = this.#g;
     g.clear();
     const still = this.#reducedMotion();
@@ -56,14 +66,16 @@ export class JamRingView {
       const e = enemies.items[i]!; // i < used ≤ items.length
       if (!ringTelling(e)) continue;
       const reach = e.def!.jam!.radiusTiles; // ringTelling: a ring jammer
+      if (ringDoomed(e.x, e.y, reach, e.jamTellTicks, towers)) continue; // JamView fizzles it
       const growth = ringGrowth(e);
       gridToScreen(e.x, e.y, this.#ctx.origin, at);
       rangeEllipsePx(reach, semi);
-      g.lineStyle(1, OUTLINE, 0.75).strokeEllipse(at.x, at.y, semi.x * 2, semi.y * 2);
+      g.lineStyle(RING_OUTLINE_PX + 2, INK, 0.45).strokeEllipse(at.x, at.y, semi.x * 2, semi.y * 2);
+      g.lineStyle(RING_OUTLINE_PX, OUTLINE, 0.8).strokeEllipse(at.x, at.y, semi.x * 2, semi.y * 2);
       rangeEllipsePx(ringTiles(growth, reach, still), semi);
       const alpha = ringAlpha(growth);
-      g.lineStyle(4, INK, 0.6 * alpha).strokeEllipse(at.x, at.y, semi.x * 2, semi.y * 2);
-      g.lineStyle(2, RING, alpha).strokeEllipse(at.x, at.y, semi.x * 2, semi.y * 2);
+      g.lineStyle(RING_PX + 2, INK, 0.6 * alpha).strokeEllipse(at.x, at.y, semi.x * 2, semi.y * 2);
+      g.lineStyle(RING_PX, RING, alpha).strokeEllipse(at.x, at.y, semi.x * 2, semi.y * 2);
       rings++;
     }
     this.#rings = rings;

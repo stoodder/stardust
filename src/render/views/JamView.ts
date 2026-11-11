@@ -3,24 +3,35 @@
 // `fx.jam_static` crackling over it (the tower itself draws in its steel `+jammed` variant:
 // TowerView) and its countdown ring round its base; and System Reboot's pops: each tower it freed
 // flashes white (`flashTower`, TowerView's upgrade flash) under a teal power-on column and ring,
-// every tower it covered a smaller white ring (TransientFx). The tendrils, rings, and columns
-// redraw each frame into one Graphics on the vfx layer, the static in pooled sprites over it.
-// Allocation-free per frame: the scratch points are module-level, the Graphics redraws in place,
-// the static and column slots are reused (the static pool grows the first time more towers are
-// Jammed at once than it holds).
+// every tower it covered a smaller white ring (TransientFx); and the fizzle (D150; jamLook.ts): a
+// tell interrupted (JamInterrupted) or doomed (`tellDoomed`, `ringDoomed`: a System Reboot in the
+// tell) snaps off with a puff and FIZZLED where its tendril's tip was, or over the jammer (an
+// Auditor's ring, Hostile Takeover's laser). The tendrils, rings, and columns redraw each frame
+// into one Graphics on the vfx layer, the static in pooled sprites over it. Allocation-free per
+// frame: the scratch points are module-level, the Graphics redraws in place, the static and column
+// slots are reused (the static pool grows the first time more towers are Jammed at once than it
+// holds), and the fizzle's books are fixed typed arrays (past FIZZLE_SLOTS a fizzle goes unshown).
 import type * as Phaser from 'phaser';
 import type { IdSpace } from '../../content/types.ts';
 import type { Bus } from '../../shared/bus.ts';
 import type { DeepReadonly } from '../../shared/types.ts';
-import type { Enemy, SimEvent, Tower } from '../../sim/index.ts';
+import { ringTelling, type Enemy, type SimEvent, type Tower } from '../../sim/index.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
 import {
   ARC_COLOR,
+  FIZZLE_BODY_LIFT_PX,
+  FIZZLE_BOSS_LIFT_PX,
+  FIZZLE_COLOR,
+  FIZZLE_MS,
+  FIZZLE_PUFF,
+  FIZZLE_PUFF_TILES,
+  FIZZLE_TEXT,
   hexOf,
   jamArc,
   REBOOT_COLOR,
   REBOOT_COLUMN_W,
   rebootColumn,
+  ringDoomed,
   RING_SEGMENTS,
   ringPoint,
   STATIC_ANIM,
@@ -29,6 +40,7 @@ import {
   TENDRIL_CORE,
   TENDRIL_TIP,
   TENDRIL_UNDER,
+  tellDoomed,
   tendrilBeadPx,
   tendrilReach,
 } from './jamLook.ts';
@@ -62,6 +74,8 @@ const STATIC_SLOTS = 8;
 /** Reboot columns at once (the oldest is reused). */
 const MAX_COLUMNS = 24;
 const STATIC = STATIC_SPRITE;
+/** Tells the fizzle keeps books on at once (doomed tells, drawn tips, interrupts in a frame). */
+const FIZZLE_SLOTS = 32;
 
 const a: Vec2 = { x: 0, y: 0 };
 const b: Vec2 = { x: 0, y: 0 };
@@ -102,10 +116,25 @@ export class JamView {
   #tells = 0;
   #jammed = 0;
   #columnsShown = 0;
-  /** Tendril tells and jams seen since the view was made, and Reboots played (smoke's checks). */
+  /** The jammers whose tell is doomed (already fizzled), last frame's and this frame's. */
+  #doomed = new Int32Array(FIZZLE_SLOTS);
+  #doomedN = 0;
+  #nextDoomed = new Int32Array(FIZZLE_SLOTS);
+  #nextDoomedN = 0;
+  /** Each tendril drawn last frame: its jammer and its tip (grid, and its lift in px). */
+  readonly #tipUid = new Int32Array(FIZZLE_SLOTS);
+  readonly #tipX = new Float64Array(FIZZLE_SLOTS);
+  readonly #tipY = new Float64Array(FIZZLE_SLOTS);
+  readonly #tipLift = new Float64Array(FIZZLE_SLOTS);
+  #tipN = 0;
+  /** Jammers interrupted since the last frame (JamInterrupted). */
+  readonly #interrupted = new Int32Array(FIZZLE_SLOTS);
+  #interruptedN = 0;
+  /** Tendril tells and jams seen since the view was made, Reboots played, fizzles (smoke's). */
   tellsSeen = 0;
   jamsSeen = 0;
   reboots = 0;
+  fizzles = 0;
 
   constructor(
     ctx: ViewContext,
@@ -133,6 +162,9 @@ export class JamView {
       }),
       bus.on('TowerJammed', () => {
         this.jamsSeen++;
+      }),
+      bus.on('JamInterrupted', (ev) => {
+        if (this.#interruptedN < FIZZLE_SLOTS) this.#interrupted[this.#interruptedN++] = ev.uid;
       }),
       bus.on('Rebooted', (ev) => {
         this.reboots++;
@@ -171,18 +203,51 @@ export class JamView {
     const still = this.#reducedMotion();
     const g = this.#g;
     g.clear();
-    let tells = 0;
     const enemies = state.enemies;
+    this.#fizzleInterrupted(enemies);
+    let tells = 0;
+    this.#tipN = 0;
+    this.#nextDoomedN = 0;
     for (let i = 0; i < enemies.used; i++) {
       const e = enemies.items[i]!; // i < used ≤ items.length
       const jam = e.def?.jam ?? null;
-      if (!e.alive || jam === null || jam.kind !== 'tendril' || e.jamTarget === 0) continue;
-      if (e.jamTellTicks <= 0) continue;
+      if (!e.alive || jam === null) continue;
+      if (jam.kind === 'ring') {
+        if (!ringTelling(e)) continue;
+        if (ringDoomed(e.x, e.y, jam.radiusTiles, e.jamTellTicks, state.towers)) {
+          this.#doom(e.uid, e.x, e.y, FIZZLE_BODY_LIFT_PX);
+        }
+        continue;
+      }
+      if (jam.kind !== 'tendril' || e.jamTarget === 0 || e.jamTellTicks <= 0) continue;
       const t = findTower(state.towers, e.jamTarget);
       if (t === null) continue;
+      const reach = tendrilReach(e.jamTellTicks, jam.tellTicks);
+      // Where its tip is now (grid, and lifted from the body toward the tower's): the iso
+      // projection is affine, so the screen tip is this point's.
+      const tx = e.x + (t.x - e.x) * reach;
+      const ty = e.y + (t.y - e.y) * reach;
+      const towerLift = this.#liftPx(t.col, t.row) + TOWER_BODY_PX;
+      const lift = BODY_LIFT_PX + (towerLift - BODY_LIFT_PX) * reach;
+      if (tellDoomed(t.jamImmuneTicks, e.jamTellTicks)) {
+        this.#doom(e.uid, tx, ty, lift); // it snaps off: no tendril from here
+        continue;
+      }
       tells++;
-      this.#drawTendril(g, e, t, tendrilReach(e.jamTellTicks, jam.tellTicks), still, state.tick);
+      this.#drawTendril(g, e, t, reach, still, state.tick);
+      if (this.#tipN < FIZZLE_SLOTS) {
+        const k = this.#tipN++;
+        this.#tipUid[k] = e.uid;
+        this.#tipX[k] = tx;
+        this.#tipY[k] = ty;
+        this.#tipLift[k] = lift;
+      }
     }
+    // This frame's doomed tells become the books for the next.
+    const prev = this.#doomed;
+    this.#doomed = this.#nextDoomed;
+    this.#nextDoomed = prev;
+    this.#doomedN = this.#nextDoomedN;
     let jammed = 0;
     const towers = state.towers;
     for (let i = 0; i < towers.used; i++) {
@@ -202,6 +267,52 @@ export class JamView {
     this.#columnsShown = this.#drawColumns(g, towers, dt, still);
     this.#tells = tells;
     this.#jammed = jammed;
+  }
+
+  /** Whether `uid`'s tell was doomed (and fizzled) as of last frame. */
+  #wasDoomed(uid: number): boolean {
+    for (let k = 0; k < this.#doomedN; k++) if (this.#doomed[k] === uid) return true;
+    return false;
+  }
+
+  /** A doomed tell this frame: fizzles at grid (x, y), `liftPx` up, the first frame it's doomed. */
+  #doom(uid: number, x: number, y: number, liftPx: number): void {
+    if (!this.#wasDoomed(uid)) this.#fizzle(x, y, liftPx);
+    if (this.#nextDoomedN < FIZZLE_SLOTS) this.#nextDoomed[this.#nextDoomedN++] = uid;
+  }
+
+  /**
+   * The jammers interrupted since the last frame: each fizzles where its tendril's tip was drawn,
+   * else over its body (a ring's, a Takeover's); one already fizzled (doomed) doesn't again.
+   */
+  #fizzleInterrupted(enemies: Pool<Enemy>): void {
+    const n = this.#interruptedN;
+    this.#interruptedN = 0;
+    for (let q = 0; q < n; q++) {
+      const uid = this.#interrupted[q]!; // q < n ≤ FIZZLE_SLOTS
+      if (this.#wasDoomed(uid)) continue;
+      let shown = false;
+      for (let k = 0; k < this.#tipN; k++) {
+        if (this.#tipUid[k] !== uid) continue;
+        this.#fizzle(this.#tipX[k]!, this.#tipY[k]!, this.#tipLift[k]!); // k < tipN
+        shown = true;
+        break;
+      }
+      if (shown) continue;
+      for (let i = 0; i < enemies.used; i++) {
+        const e = enemies.items[i]!; // i < used ≤ items.length
+        if (!e.alive || e.uid !== uid) continue;
+        this.#fizzle(e.x, e.y, (e.def?.boss ?? null) !== null ? FIZZLE_BOSS_LIFT_PX : FIZZLE_BODY_LIFT_PX);
+        break;
+      }
+    }
+  }
+
+  /** The fizzle at grid (x, y), `liftPx` up: a violet puff and FIZZLED rising (jamLook.ts). */
+  #fizzle(x: number, y: number, liftPx: number): void {
+    this.fizzles++;
+    this.#fx.ring(x, y, FIZZLE_PUFF_TILES, FIZZLE_PUFF, FIZZLE_MS, !this.#reducedMotion(), liftPx);
+    this.#fx.floatText(FIZZLE_TEXT, FIZZLE_COLOR, x, y, liftPx + 4);
   }
 
   #drawTendril(
@@ -342,6 +453,10 @@ export class JamView {
       s.sprite.stop().setVisible(false);
     }
     for (const c of this.#columns) c.active = false;
+    this.#doomedN = 0;
+    this.#nextDoomedN = 0;
+    this.#tipN = 0;
+    this.#interruptedN = 0;
     this.#tells = 0;
     this.#jammed = 0;
     this.#columnsShown = 0;

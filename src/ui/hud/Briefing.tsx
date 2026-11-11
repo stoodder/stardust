@@ -150,9 +150,12 @@ export function Briefing({ view }: { view: SceneView }) {
               <BriefingRow key={l.id} line={l} />
             ))}
             {view.line !== null && (
-              <p class="hud-briefing-line now" onClick={step.next}>
+              <p
+                class={`hud-briefing-line now${view.line.frame === 'caption' ? ' caption' : ''}`}
+                onClick={step.next}
+              >
                 <NamePlate line={view.line} />
-                <LineText line={view.line} typed={step.typed} />
+                {view.line.silence ? <Held /> : <LineText line={view.line} typed={step.typed} />}
               </p>
             )}
             {view.choices !== null && <ChoiceList choices={view.choices} />}
@@ -207,9 +210,23 @@ export function Briefing({ view }: { view: SceneView }) {
 /** A line already said: its plate and words. */
 function BriefingRow({ line }: { line: LineView }) {
   return (
-    <p class="hud-briefing-line">
+    <p class={line.frame === 'caption' ? 'hud-briefing-line caption' : 'hud-briefing-line'}>
       <NamePlate line={line} />
-      <span class="dlg-text">{plainText(line.text)}</span>
+      {line.silence ? <Held /> : <span class="dlg-text">{plainText(line.text)}</span>}
     </p>
+  );
+}
+
+/**
+ * A silence in the log (D150): an ellipsis under the plate, as a full-screen scene's transcript
+ * keeps it, so a held silence (Kip leaving his pin in A3M5's briefing) is never a bare name plate.
+ * Screen readers hear "(silence)".
+ */
+function Held() {
+  return (
+    <span class="dlg-text dlg-silence-held">
+      <span aria-hidden="true">…</span>
+      <span class="dlg-sr">(silence)</span>
+    </span>
   );
 }

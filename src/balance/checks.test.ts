@@ -276,8 +276,14 @@ describe('balance checks', () => {
   });
 
   it('#9 on a Protect map also holds par on Story to its Standard median asset % (D150)', () => {
-    const asset = { name: 'Rig', integrity: 10, marker: 'rock', tile: [0, 2], routes: ['a'] };
-    const protect = { ...map, objective: 'protect' as const, asset } as typeof map;
+    const asset = {
+      name: 'Rig',
+      integrity: 10,
+      marker: 'rock',
+      tile: [0, 2] as const,
+      routes: ['a'],
+    };
+    const protect: typeof map = { ...map, objective: 'protect', asset };
     const nine = mapChecks(protect, [1, 2, 3], [1]).find((c) => c.id === '9')!;
     const run = (integrity: number, left: number, max = 10) => ({
       ...fakeResult('won', integrity),

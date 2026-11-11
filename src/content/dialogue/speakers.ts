@@ -32,6 +32,11 @@ export interface PortraitVariantRule {
   readonly silence?: 'blink';
   /** The variant has no `policy` tell (QUILL's `purge`: no directives, no gold flash). */
   readonly noPolicy?: true;
+  /**
+   * The rule holds only for the speaker's silences (`text: ''` lines): a change seen in the
+   * quiet itself (Kip's pin left on the console in A3M5's briefing; D150).
+   */
+  readonly silenceOnly?: true;
 }
 
 /** A name plate other than the speaker's own, and when it shows. The first rule that holds wins. */
@@ -201,10 +206,17 @@ export const SPEAKERS = {
     color: 'gold.3',
     frame: 'portrait',
     portrait: 'portrait.kip',
-    // The Reclamation Lead's coat from Act II; from A3M5, where he hands over the ledger and leaves
-    // the #1 pin on the console, `act3` (pinholes, no cap, the ledger), on every map after.
+    // The Reclamation Lead's coat from Act II. In A3M5's briefing he hands over the ledger with the
+    // #1 pin still on (`act2`), and his silence is where it's gone (`act3`: pinholes, no cap, the
+    // ledger), seen before nobody mentions it (D150). After the briefing, `act3` on every map.
     variants: [
-      { variant: 'act3', when: { mapAtLeast: 'a3_m05' } },
+      {
+        variant: 'act3',
+        when: {
+          any: [{ mapAtLeast: 'a3_m06' }, { all: [{ mapIs: 'a3_m05' }, { seen: 'a3_m05_brief' }] }],
+        },
+      },
+      { variant: 'act3', when: { mapIs: 'a3_m05' }, silenceOnly: true },
       { variant: 'act2', when: { any: [{ act: 2 }, { act: 3 }] } },
     ],
     blip: 'blip.kip',

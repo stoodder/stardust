@@ -1,12 +1,14 @@
 // Zibzab's crate card (act3.md § A3M6; T714; the rules are crate.ts): over A3M6's briefing once
-// Clock in is pressed. The crate's lid with the NO REFUNDS sticker peeled half off, a line, then
-// what it holds: the tune-ups it installs, listed, or the Field Protocols to pick one from (a
-// story choice's 700 ms lock first, CHOICE_LOCK_MS). "Take the crate" (focused, or once a pick is
+// Clock in is pressed. The crate's lid with the NO REFUNDS sticker peeling, Zibzab's "Price first:
+// nothing." under his plate (D150), a line, then what it holds: the tune-ups it installs, listed,
+// or the Field Protocols to pick one from (a story choice's 700 ms lock first, CHOICE_LOCK_MS). "Take the crate" (focused, or once a pick is
 // made) takes it and clocks in. A modal over the briefing: Tab stays inside it.
 import { useEffect, useState } from 'preact/hooks';
 import { dismissBriefing } from '../../app/commands.ts';
 import { activeSave } from '../../app/save.ts';
 import { trapTab } from '../dialogue/SceneParts.tsx';
+import { plateColor } from '../dialogue/plate.ts';
+import { SPEAKERS } from '../../content/dialogue/speakers.ts';
 import { hud } from '../state.ts';
 import { silkText } from '../silk.ts';
 import { focusOnce } from './focus.ts';
@@ -16,6 +18,7 @@ import {
   crate,
   crateHere,
   crateLine,
+  crateQuote,
   STICKER,
   takeCrate,
   type CrateView,
@@ -79,6 +82,7 @@ function Card({ view }: { view: CrateView }) {
     return () => clearTimeout(t);
   }, []);
   const can = canTake(view, crate.pick.value);
+  const quote = crateQuote();
   return (
     <div class="cr-layer">
       <section
@@ -102,6 +106,14 @@ function Card({ view }: { view: CrateView }) {
         >
           Zibzab's crate
         </h2>
+        {quote !== null && (
+          <p class="cr-quote" data-testid="crate-quote">
+            <span class="cr-quote-plate" style={{ color: plateColor(SPEAKERS.zibzab.color) }}>
+              {SPEAKERS.zibzab.name}
+            </span>
+            <span class="cr-quote-text">{quote}</span>
+          </p>
+        )}
         <p class="cr-line">{crateLine(view)}</p>
         <Contents view={view} ready={ready} />
         <div class="cr-actions">

@@ -9,6 +9,7 @@
 // the sim plays a moment at 1×. Fast text (`&fasttext=1`) shows each line whole. Screenshots in
 // <out>/screens/a3m5/ (look at them: the plant, the bearers, the rings, each phase, the card).
 import type { Page } from '@playwright/test';
+import { MAPS } from '../src/content/maps/index.ts';
 import { expect, test } from './fixtures.ts';
 import { nextFrames, shot, waitForReady } from './hooks.ts';
 
@@ -220,12 +221,12 @@ test('A3M5: from the Sector map, the bearers, the rings, Sterling on each phase,
   expect(plates).toBe(4);
   await shot(page, 'a3m5', 7, 'jettison');
 
-  // The win, and the card: the bearers' meter, Cut the Feed.
+  // The win, and the card: the bearers' meter (the Long Walk), Cut the Feed.
   expect(await until(page, 'end', 60 * 900)).toBe(true);
   expect(await page.evaluate(() => globalThis.__sd!.state()!.outcome)).toBe('won');
   const card = page.getByRole('dialog', { name: 'PERIMETER SECURED.' });
   await expect(card).toBeVisible({ timeout: 30_000 });
-  await expect(card).toContainText('Bearers');
+  await expect(card).toContainText(MAPS.a3_m05.asset!.name);
   await expect(card).toContainText('Cut the Feed');
   await shot(page, 'a3m5', 8, 'won');
 });

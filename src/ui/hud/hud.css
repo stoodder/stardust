@@ -880,6 +880,12 @@ section.chamfer,
   color: var(--sd-steel-4);
 }
 
+/* A caption (the narrator: Kip's ledger line, his pin) has no plate: its words stand in the
+   text column, under the lines, never squeezed into the plate's (D150). */
+.hud-briefing-line.caption > .dlg-text {
+  grid-column: 2;
+}
+
 .hud-briefing-line.now {
   cursor: pointer;
 }

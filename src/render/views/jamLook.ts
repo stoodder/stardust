@@ -17,6 +17,14 @@
 //   `teal.4` power-on column rises through it (`rebootColumn`: up over the first third of
 //   REBOOT_MS, then stepping out), with a `teal.4` ring (TransientFx); every tower it covered gets
 //   a smaller `white.1` ring. Under reduced motion the column stands whole and steps out.
+// - **The fizzle** (D150: a cancelled tell reads, so the counter teaches its timing): a tell that
+//   can no longer land snaps off at once, a `violet.4` puff where its tip was and `FIZZLED` rising
+//   over it in `teal.4` (the 3×5 font). A tell is cancelled when the sim interrupts it (Stasis on a
+//   non-boss, Unnerved: JamInterrupted; the ring's and Hostile Takeover's too), or the moment it is
+//   doomed (`tellDoomed`): a tendril whose tower stays jam-immune past its landing (a System Reboot
+//   during the tell), a ring whose every tower in reach does (`ringDoomed`). Doomed is read from
+//   the state each frame and holds once true (immunity and the tell count down together), so the
+//   sim needs no event for it. Under reduced motion the puff holds its size and fades.
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
 import type { SpriteId } from '../../content/sprites/index.ts';
 import { JAM_MAX_SEC } from '../../content/rules.ts';
@@ -44,6 +52,15 @@ export const RING_SEGMENTS = 24;
 export const REBOOT_MS = 480;
 export const REBOOT_COLUMN_PX = 34;
 export const REBOOT_COLUMN_W = 4;
+
+/** The fizzle: its word, colors, puff (tiles, ms), and how high the word rises from a body (px). */
+export const FIZZLE_TEXT = 'FIZZLED';
+export const FIZZLE_COLOR: ColorName = 'teal.4';
+export const FIZZLE_PUFF: ColorName = 'violet.4';
+export const FIZZLE_PUFF_TILES = 0.4;
+export const FIZZLE_MS = 360;
+export const FIZZLE_BODY_LIFT_PX = 22;
+export const FIZZLE_BOSS_LIFT_PX = 40;
 
 /** A palette color as a Phaser fill number. */
 export function hexOf(name: ColorName): number {
@@ -90,4 +107,50 @@ export function rebootColumn(ms: number, still: boolean): { height: number; alph
   const fade = t < 1 / 3 ? 0 : Math.floor(((t - 1 / 3) / (2 / 3)) * STEPPED_ALPHA.length);
   const alpha = STEPPED_ALPHA[Math.min(STEPPED_ALPHA.length - 1, fade)]!; // clamped index
   return { height: Math.round(REBOOT_COLUMN_PX * rise), alpha };
+}
+
+/**
+ * Whether a tell with `tellLeft` ticks to go can no longer land on a tower that is jam-immune for
+ * `immuneTicks` more: the sim counts the immunity down before the tell lands (sim/jam.ts), so the
+ * tower is still immune at the landing exactly when `immuneTicks` > `tellLeft`. Both count down a
+ * tick at a time, so once true it stays true.
+ */
+export function tellDoomed(immuneTicks: number, tellLeft: number): boolean {
+  return tellLeft > 0 && immuneTicks > tellLeft;
+}
+
+/** A tower as `ringDoomed` reads it. */
+interface RingTower {
+  readonly alive: boolean;
+  readonly def: unknown;
+  readonly x: number;
+  readonly y: number;
+  readonly jamImmuneTicks: number;
+}
+
+/**
+ * Whether a ring centred on (x, y) reaching `radiusTiles`, `tellLeft` ticks from landing, can no
+ * longer jam anything: at least one tower stands in its reach and every one of them is doomed
+ * (`tellDoomed`). With none in reach it isn't (the ring only starts with one; a tower sold
+ * mid-ring is the player's business, not a fizzle).
+ */
+export function ringDoomed(
+  x: number,
+  y: number,
+  radiusTiles: number,
+  tellLeft: number,
+  towers: { readonly used: number; readonly items: readonly RingTower[] },
+): boolean {
+  const r2 = radiusTiles * radiusTiles;
+  let inReach = 0;
+  for (let i = 0; i < towers.used; i++) {
+    const t = towers.items[i]!; // i < used ≤ items.length
+    if (!t.alive || t.def === null) continue;
+    const dx = t.x - x;
+    const dy = t.y - y;
+    if (dx * dx + dy * dy > r2) continue;
+    if (!tellDoomed(t.jamImmuneTicks, tellLeft)) return false;
+    inReach++;
+  }
+  return inReach > 0;
 }

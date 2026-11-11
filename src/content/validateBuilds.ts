@@ -34,15 +34,20 @@
 //   introduces a required-counter category); each `counterExemptions` entry names one of the map's
 //   required counters, once, with a reason.
 // - [flag-profile] (T700a): each `referenceProfileByFlag` cell names at least one flag, each with a
-//   `flagVariants` entry listing its value; no two cells name the same values; its profile follows
-//   [profile], and its par build (if any) [loadout] and [build-step] against that profile.
+//   `flagVariants` entry listing its value; no two cells name the same values, and no cell is
+//   unreachable (an earlier cell names a subset of its values: first match wins); its profile
+//   follows [profile], and its par build (if any) [loadout] and [build-step] against that profile.
+// - [locked-abilities] (D150): each `lockedAbilities` row's `when` reads story flags only (flag
+//   atoms and all/any/not over them; content/flagConditions.ts); no run the harness makes equips a
+//   slot-1 ability locked under its flags (createSim refuses one): par under every assignment of
+//   the `flagVariants` (each flag unset or one of its values; the cell's par where its cell gives
+//   one), and the alt and no-counter builds under the flags every run sets (a flag gating a
+//   refugee group or an ally post takes its first variant: sim/escort.ts `gatedFlagDefaults`).
 // - [revocation] (T606; validateRevocation.ts): the counter guarantee treats a revoked class as
 //   unowned, whichever class a `revokeTowerClass` could take, on its map and on the maps after it
 //   until the class is back.
 //
-// TODO stubs (their content can't exist yet): par is purchasable (availableAfter and the
-// Stardust/Intel totals; T204); a build's ability is never one of the map's lockedAbilities
-// under its flag variant (A3M5, M5).
+// Par is purchasable (availableAfter and the Stardust/Intel totals): validatePurchasable.ts.
 import {
   ALT_BUILD_MAX_SHARED_TOWERS,
   ALT_BUILDS_FROM_CAMPAIGN_INDEX,
@@ -63,6 +68,7 @@ import {
   type ScopeEnemy,
 } from './counterAnswers.ts';
 import { FLAG_RULES } from './dialogue/flags.ts';
+import { flagConditionHolds, isFlagCondition } from './flagConditions.ts';
 import type {
   BuildStep,
   CounterId,
@@ -88,6 +94,7 @@ export function validateBuilds(
   const where = `maps.${def.id}`;
   validateProfile(issues, ctx, def.referenceProfile, `${where}.referenceProfile`);
   validateFlagProfiles(issues, def, grid, ctx, where);
+  validateLockedAbilities(issues, def, where);
 
   const builds: [string, ScriptedBuild<IdSpace>][] = [
     ['parBuild', def.parBuild],
@@ -261,7 +268,6 @@ export function validateBuilds(
   }
   validateRunEndFlags(issues, def, where, campaignIndex !== null);
   // Par is purchasable (available by this map and affordable): validatePurchasable.ts.
-  // TODO(A3M5, M7): a build's technicianAbility is never in lockedAbilities under its variant.
 }
 
 /** [run-end-flags]: the runs each run-end flag check names exist, and every rule is covered. */
@@ -412,7 +418,8 @@ function validateFlagProfiles(
 ): void {
   const variants: Readonly<Record<string, readonly unknown[] | undefined>> = def.flagVariants ?? {};
   const seen = new Set<string>();
-  for (const [i, cell] of (def.referenceProfileByFlag ?? []).entries()) {
+  const cells = def.referenceProfileByFlag ?? [];
+  for (const [i, cell] of cells.entries()) {
     const w = `${where}.referenceProfileByFlag[${i}]`;
     const entries = Object.entries(cell.when).toSorted(([a], [b]) => (a < b ? -1 : 1));
     if (entries.length === 0) issues.add('flag-profile', `${w}.when`, 'names at least one flag');
@@ -426,12 +433,111 @@ function validateFlagProfiles(
     }
     const key = JSON.stringify(entries);
     if (seen.has(key)) issues.add('flag-profile', `${w}.when`, 'another cell names these values');
+    else {
+      const at = cells.slice(0, i).findIndex((earlier) => cellMatches(earlier.when, cell.when));
+      if (at >= 0) {
+        issues.add(
+          'flag-profile',
+          `${w}.when`,
+          `unreachable: referenceProfileByFlag[${at}] matches every run this cell does (first match wins)`,
+        );
+      }
+    }
     seen.add(key);
     validateProfile(issues, ctx, cell.profile, `${w}.profile`);
     if (cell.parBuild !== undefined) {
       const owned = { ...def, referenceProfile: cell.profile };
       validateBuild(issues, owned, grid, ctx, cell.parBuild, `${w}.parBuild`);
     }
+  }
+}
+
+/** Whether a cell whose `when` is `cell` matches a run under `flags` (balance/profile.ts `flagProfileCell`). */
+function cellMatches(
+  cell: Readonly<Record<string, unknown>>,
+  flags: Readonly<Record<string, unknown>>,
+): boolean {
+  return Object.entries(cell).every(([f, v]) => Object.hasOwn(flags, f) && flags[f] === v);
+}
+
+/** Every assignment of `variants`: each flag unset or one of its values (the empty one first). */
+function flagAssignments(
+  variants: Readonly<Record<string, readonly unknown[] | undefined>>,
+): Record<string, unknown>[] {
+  let out: Record<string, unknown>[] = [{}];
+  for (const [flag, values] of Object.entries(variants)) {
+    out = out.flatMap((a) => [a, ...(values ?? []).map((v) => ({ ...a, [flag]: v }))]);
+  }
+  return out;
+}
+
+const showFlags = (flags: Readonly<Record<string, unknown>>): string => {
+  const pairs = Object.entries(flags).map(([f, v]) => `${f}=${String(v)}`);
+  return pairs.length === 0 ? 'no story flags' : pairs.join(', ');
+};
+
+/** [locked-abilities] (D150; see the header). */
+function validateLockedAbilities(issues: Issues, def: MapDef<IdSpace>, where: string): void {
+  const locks = def.lockedAbilities ?? [];
+  for (const [i, l] of locks.entries()) {
+    if (!isFlagCondition(l.when)) {
+      issues.add(
+        'locked-abilities',
+        `${where}.lockedAbilities[${i}].when`,
+        'must read story flags only (flag atoms, and all/any/not over them): it is judged before the battle',
+      );
+    }
+  }
+  if (locks.length === 0) return;
+  const reported = new Set<string>();
+  const check = (
+    b: ScriptedBuild<IdSpace>,
+    owner: ProfileDef<IdSpace>,
+    flags: Readonly<Record<string, unknown>>,
+    at: string,
+  ): void => {
+    const ability = b.technicianAbility ?? owner.technicianAbility;
+    if (ability === null || reported.has(at)) return;
+    if (locks.some((l) => l.ability === ability && flagConditionHolds(l.when, flags))) {
+      reported.add(at);
+      issues.add(
+        'locked-abilities',
+        at,
+        `equips '${ability}' in slot 1 under ${showFlags(flags)}, where the map locks it`,
+      );
+    }
+  };
+  // Par under every assignment of the flag variants (#14, the cells' runs), the cell's where it has one.
+  const cells = def.referenceProfileByFlag ?? [];
+  for (const flags of flagAssignments(def.flagVariants ?? {})) {
+    const i = cells.findIndex((c) => cellMatches(c.when, flags));
+    const par = i >= 0 ? cells[i]!.parBuild : undefined; // i is an index of cells
+    if (par !== undefined) {
+      check(par, cells[i]!.profile, flags, `${where}.referenceProfileByFlag[${i}].parBuild`);
+    } else check(def.parBuild, def.referenceProfile, flags, `${where}.parBuild`);
+  }
+  // Every other build runs under the flags every run sets: a gate's flag at its first variant.
+  const gated: Record<string, unknown> = {};
+  const gates = [
+    ...Object.values(def.refugees ?? {}).map((g) => g.when),
+    ...(def.allies ?? []).map((a) => a.when),
+  ];
+  for (const g of gates) {
+    const first = g === undefined ? undefined : def.flagVariants?.[g.flag]?.[0];
+    if (g !== undefined && first !== undefined && !Object.hasOwn(gated, g.flag)) {
+      gated[g.flag] = first;
+    }
+  }
+  const i = cells.findIndex((c) => cellMatches(c.when, gated));
+  const par = i >= 0 ? cells[i]!.parBuild : undefined; // i is an index of cells
+  if (par !== undefined) {
+    check(par, cells[i]!.profile, gated, `${where}.referenceProfileByFlag[${i}].parBuild`);
+  } else check(def.parBuild, def.referenceProfile, gated, `${where}.parBuild`);
+  for (const [n, b] of Object.entries(def.altBuilds ?? {})) {
+    check(b, def.referenceProfile, gated, `${where}.altBuilds.${n}`);
+  }
+  for (const [c, b] of Object.entries(def.noCounterBuilds)) {
+    if (b !== undefined) check(b, def.referenceProfile, gated, `${where}.noCounterBuilds.${c}`);
   }
 }
 

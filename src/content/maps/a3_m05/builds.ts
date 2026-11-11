@@ -109,6 +109,7 @@ function parSteps(): BuildStep[] {
     { wave: 13, upgrade: SLUICE_S },
     { wave: 13, upgrade: CATWALK_E },
     slot1(13, HUNT_REBOOT_SEC),
+    ...(process.env.W13S ? [still(13, Number(process.env.W13S), (process.env.W13T ?? '0,6').split(',').map(Number) as unknown as GridPos)] : []),
     { wave: 13, build: 'thumper', tile: VAT_E },
     slot1(14, TAKEOVER_SEC),
     still(14, BOSS_STILL_SEC, [14, 10]),

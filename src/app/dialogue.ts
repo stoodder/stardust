@@ -254,7 +254,8 @@ function speakerGone(speaker: SpeakerId, ctx: StoryContext): boolean {
  * speaker's rules pick; the `dark` bake for a silence from an absent speaker), and its text with
  * tokens resolved. A line's `plateAs` names the plate instead (Bramble as "The Matriarch" until
  * Pebble names her). The variant's rule says whether a present speaker's silence blinks (`blink`)
- * and whether `policy` flashes (`noPolicy`: Purge's QUILL has no directives).
+ * and whether `policy` flashes (`noPolicy`: Purge's QUILL has no directives); a `silenceOnly`
+ * rule holds only for a silence (Kip's pin, gone in A3M5's briefing).
  * `present`: who is on the radio (a battle), or null (anyone not gone for good).
  */
 export function lineView(
@@ -267,7 +268,9 @@ export function lineView(
   const silence = s.text === '';
   const absent = present === null ? speakerGone(s.speaker, ctx) : !present.includes(s.speaker);
   const expression = s.expression ?? 'neutral';
-  const rule = def.variants.find((r) => evaluateCondition(r.when, ctx));
+  const rule = def.variants.find(
+    (r) => (r.silenceOnly !== true || silence) && evaluateCondition(r.when, ctx),
+  );
   const variant = rule?.variant ?? null;
   const name = s.plateAs ?? plateName(s.speaker, ctx);
   const dark = silence && absent;

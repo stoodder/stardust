@@ -1,22 +1,26 @@
 // Auditor (`auditor`, design/enemies.md § 5.3 and § 4): Everglow Security's jammer (A3M5 on), on
 // Compliance Officer Prim's chassis (story/characters.md: "Auditor units carry its chassis";
 // art-direction §5's `prim` portrait): a boxy white head-box with one wide dark visor whose two
-// orange LED eyes are the Auditor colour (§8, never QUILL's teal), a steel antenna with a teal tip,
-// an orange audit lamp on its crown, a hazard-striped collar, and her clipboard held out on a thin
+// orange LED eyes are the Auditor colour (§8, never QUILL's teal), a tall steel mast topped with a
+// violet jammer bulb (the jam's violet, the Silencer's tendril's: what sets it apart from the
+// Compliance Drone at 1×, D150), pulsing a step each stride, an orange audit lamp on its crown, a hazard-striped collar, and her clipboard held out on a thin
 // arm. A walker of a kind: the box rides a little tracked base, its tread lugs rolling. Squat on
 // treads where the Compliance Drone struts on legs and the Expediter balances on a wheel.
 // - `walk_<facing>` (4 frames, 8 fps): the treads roll (the lugs step along), the box nods.
 // - `tell_<facing>` (2 frames, 4 fps; its ring tell, enemyPose `tell`): it stops and audits: the
-//   antenna telescopes up into an orange emitter ring that flares on the second frame, the LED eyes
+//   mast telescopes up and the bulb opens into an orange emitter ring round a violet core that
+//   flares on the second frame, the LED eyes
 //   go wide and bright, the clipboard comes up (render's JamRingView grows the ring itself).
 // No death frames: Everglow Security shuts down (render's `shutdown`).
 import { defineSprite } from '../defineSprite.ts';
 import { grid, line, plot, rows, stamp, type CharGrid } from '../helpers.ts';
 
 const W = 16;
-const H = 20;
+/** Rows above the box for the mast and its bulb (and the tell's emitter over them). */
+const Y = 5;
+const H = 20 + Y;
 const AX = 7;
-const AY = 19;
+const AY = H - 1;
 
 type Look = 'walk' | 'tell';
 
@@ -27,22 +31,22 @@ function auditor(facing: 'se' | 'ne', step: 0 | 1 | 2 | 3, look: Look): string[]
   const nod = !tell && step % 2 === 1 ? 1 : 0;
   // The tracked base: a dark belt round two steel wheels, its lugs stepping back as it rolls.
   for (let x = 2; x <= 12; x++) {
-    plot(g, x, 16, '2');
-    plot(g, x, 19, '0');
+    plot(g, x, Y + 16, '2');
+    plot(g, x, Y + 19, '0');
     const lug = (x + (tell ? 0 : step)) % 3 === 0;
-    plot(g, x, 17, lug ? '0' : '1');
-    plot(g, x, 18, lug ? '0' : '1');
+    plot(g, x, Y + 17, lug ? '0' : '1');
+    plot(g, x, Y + 18, lug ? '0' : '1');
   }
-  plot(g, 1, 17, '1');
-  plot(g, 1, 18, '0');
-  plot(g, 13, 17, '1');
-  plot(g, 13, 18, '0');
+  plot(g, 1, Y + 17, '1');
+  plot(g, 1, Y + 18, '0');
+  plot(g, 13, Y + 17, '1');
+  plot(g, 13, Y + 18, '0');
   // Wheel hubs, lit, and the steel neck up to the box.
-  plot(g, 4, 17, '3');
-  plot(g, 10, 17, '3');
-  line(g, 6, 15, 8, 15, '1');
+  plot(g, 4, Y + 17, '3');
+  plot(g, 10, Y + 17, '3');
+  line(g, 6, Y + 15, 8, Y + 15, '1');
   // The box: white paint lit from the upper left, rounded corners, a steel panel line.
-  const top = 5 + nod;
+  const top = Y + 5 + nod;
   for (let y = top; y < top + 9; y++) {
     for (let x = 2; x < 13; x++) {
       const corner = (y === top || y === top + 8) && (x === 2 || x === 12);
@@ -53,21 +57,23 @@ function auditor(facing: 'se' | 'ne', step: 0 | 1 | 2 | 3, look: Look): string[]
   }
   // The hazard-striped collar along its bottom edge.
   for (let x = 3; x < 12; x++) plot(g, x, top + 8, (x + 1) % 4 < 2 ? 'c' : 'x');
-  // The antenna (telescoped up in the tell, an emitter ring at its tip) and the audit lamp.
+  // The mast (telescoped up in the tell, an emitter ring round its bulb) and the audit lamp.
   const ax = se ? 9 : 5;
   if (tell) {
     line(g, ax, top - 1, ax, 2, '3');
-    // The emitter: an orange ring round the tip, flaring wider on the second frame.
+    // The emitter: an orange ring round the violet core, flaring wider on the second frame.
     if (step === 0) {
-      stamp(g, ax - 1, 0, ['ded', 'e*e', 'ded']);
+      stamp(g, ax - 1, 0, ['ded', 'eUe', 'ded']);
     } else {
-      stamp(g, ax - 2, 0, ['.ded.', 'de*ed', '.ded.']);
+      stamp(g, ax - 2, 0, ['.ded.', 'deUed', '.ded.']);
       plot(g, ax - 3, 1, 'c');
       plot(g, ax + 3, 1, 'c');
     }
   } else {
-    line(g, ax, top - 1, ax, top - 4, '2');
-    plot(g, ax, top - 5, '*');
+    // A tall steel mast, lit on its near side, and the violet bulb pulsing a step each stride.
+    line(g, ax, top - 1, ax, top - 5, '2');
+    plot(g, ax, top - 2, '3');
+    stamp(g, ax - 1, top - 8, step % 2 === 0 ? ['.V.', 'VUV', '.V.'] : ['.U.', 'UwU', '.U.']);
   }
   plot(g, se ? 5 : 9, top - 1, tell || step === 0 ? 'e' : 'd');
   if (se) {
@@ -110,6 +116,7 @@ export const enemyAuditor = defineSprite({
   palette: 'everglow',
   outline: 'auto',
   glow: { slots: ['e0', 'e1'], radius: 1 },
+  legend: { V: 'violet.3', U: 'violet.4' },
   frames: {
     walk_se_0: auditor('se', 0, 'walk'),
     walk_se_1: auditor('se', 1, 'walk'),

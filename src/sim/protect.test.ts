@@ -171,7 +171,12 @@ describe('assetDamage (the rig props and the HUD meter)', () => {
 });
 
 describe('the asset meter under run modifiers (applyRunModifiers; D150 Story softens a Protect asset)', () => {
-  const story = { kind: 'economy', stat: 'assetIntegrity', pct: 0.5, source: 'difficulty' } as const;
+  const story = {
+    kind: 'economy',
+    stat: 'assetIntegrity',
+    pct: 0.5,
+    source: 'difficulty',
+  } as const;
 
   it("scales a Protect map's asset and its full value, as Story's ×1.5 does", () => {
     const map = protectMap(['a'], 12);

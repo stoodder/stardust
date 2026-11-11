@@ -1,10 +1,10 @@
 // Everglow's jammers' look (T707's minimal one, polished by T730a; design/enemies.md § 4 and § 6;
 // art-direction.md § 8's `disabler` tell): pure rules, unit-tested, applied
 // by JamRingView (the Auditor's ring) and TakeoverView ("Shareholder Value").
-// - **The Auditor's ring** (its tell): an `orange.3` ring over an `ink.0` under-stroke grows from
-//   the Auditor (`ringTiles`: from RING_START of its reach to all of it as the jams land), with
-//   a faint `orange.2` outline of the whole reach from the tell's first tick, so where it will
-//   land reads before it does. Still under reduced motion it holds the full outline and fills
+// - **The Auditor's ring** (its tell): an `orange.3` ring (RING_PX, 3 px) over an `ink.0`
+//   under-stroke grows from the Auditor (`ringTiles`: from RING_START of its reach to all of it as
+//   the jams land), with an `orange.2` outline of the whole reach (RING_OUTLINE_PX, 2 px, over a
+//   faint ink edge) from the tell's first tick, so where it will land reads at 1× before it does. Still under reduced motion it holds the full outline and fills
 //   only by alpha (`ringAlpha`).
 // - **Hostile Takeover's laser** (its tell): from the dish's red lens (`lensOffset`: where the
 //   `aim` frame draws it, by facing) to each tower it picked, a `red.3` beam over a wide faint
@@ -22,6 +22,9 @@ import type { ColorName } from '../../content/palettes/master.ts';
 
 export const RING_COLOR: ColorName = 'orange.3';
 export const RING_OUTLINE: ColorName = 'orange.2';
+/** The growing ring's and the reach outline's strokes (px; each over an ink stroke 2 px wider). */
+export const RING_PX = 3;
+export const RING_OUTLINE_PX = 2;
 export const UNDER: ColorName = 'ink.0';
 export const LASER_COLOR: ColorName = 'red.3';
 export const LASER_CORE: ColorName = 'red.4';

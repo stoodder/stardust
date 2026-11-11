@@ -177,7 +177,9 @@ describe('meta modifiers', () => {
       metaModifiers({ upgrades: maxRanks(), protocols: [], difficulty: 'standard' }),
     );
     save.settings.difficulty = 'story';
-    expect(saveModifiers(save).slice(-5)).toEqual(DIFFICULTY_MODIFIERS.story);
+    expect(saveModifiers(save).slice(-DIFFICULTY_MODIFIERS.story.length)).toEqual(
+      DIFFICULTY_MODIFIERS.story,
+    );
     expect(saveModifiers(createNewSave())).toEqual([]);
   });
 

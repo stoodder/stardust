@@ -116,7 +116,7 @@ export const map = defineMapLayout({
   requiredCounters: ['jam', 'armor', 'splash'],
   // Protect the bearers (design/maps.md § 5.2): their meter, 12; a hushed bearer costs it 1, and
   // a Hollow unit down the hunt its leak (sim/bearers.ts).
-  asset: { name: 'Bearers', integrity: 12, marker: 'long_walk', routes: ['hunt'], bearers: true },
+  asset: { name: 'Long Walk', integrity: 12, marker: 'long_walk', routes: ['hunt'], bearers: true },
   safeExit: 'bearer_door',
   refugees: {
     bearers_1: { route: 'home', count: 6, kind: 'bearer' },

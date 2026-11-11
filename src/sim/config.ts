@@ -251,7 +251,9 @@ export function validateConfig(cfg: SimConfig<IdSpace>): CompiledMapDef<IdSpace>
     // Reboot under C4 Rewrite; D150), so no run (the harness's included) plays what a player can't.
     for (const l of map.lockedAbilities) {
       if (l.ability === slot1 && flagConditionHolds(l.when, cfg.scriptFlags)) {
-        errors.push(`abilities.slot1: '${slot1}' is locked on '${cfg.mapId}' under these story flags`);
+        errors.push(
+          `abilities.slot1: '${slot1}' is locked on '${cfg.mapId}' under these story flags`,
+        );
       }
     }
   }

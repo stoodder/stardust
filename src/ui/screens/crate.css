@@ -62,15 +62,33 @@
   letter-spacing: 1px;
 }
 
-/* Peeled: only its left half still stuck, the rest a pale scar; never readable as a promise. */
+/* Peeling: the sticker whole and readable (the joke is that it's there at all: "the sticker was
+   the point"), its top-right corner folded back, the flap's pale underside showing and the lid
+   behind the fold. Static, so nothing on the card is ever caught mid-wipe (D150). */
 .cr-sticker {
   position: absolute;
   right: 14px;
   top: 5px;
-  padding: 2px 4px;
+  padding: 2px 8px 2px 4px;
   color: var(--sd-red-2);
-  background: linear-gradient(90deg, var(--sd-white-0) 0 46%, rgb(220 210 200 / 18%) 46% 100%);
-  box-shadow: 0 0 0 1px rgb(220 210 200 / 30%);
+  background: var(--sd-white-0);
+  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+}
+
+/* The flap: the corner's lower-left half, its underside, a shadow along the fold. */
+.cr-sticker::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 6px;
+  height: 6px;
+  background: linear-gradient(
+    to top right,
+    rgb(220 210 200) 0 calc(50% - 1px),
+    var(--sd-steel-2) calc(50% - 1px) 50%,
+    transparent 50%
+  );
 }
 
 .cr-title {
@@ -79,6 +97,18 @@
   font-size: 8px;
   font-weight: normal;
   color: var(--sd-orange-3);
+}
+
+/* Zibzab's word (D150), under his plate as a briefing line has it: plate column, then the words. */
+.cr-quote {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 6px;
+  margin: 0;
+}
+
+.cr-quote-text {
+  color: var(--sd-white-1);
 }
 
 .cr-line {

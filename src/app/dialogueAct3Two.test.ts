@@ -8,7 +8,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { parseSceneId } from '../content/dialogue/rules.ts';
 import { scenes as a3m06Scenes } from '../content/dialogue/a3/a3_m06/scenes.ts';
-import { barksFor } from '../content/dialogue/index.ts';
+import { barksFor, SCENES } from '../content/dialogue/index.ts';
 import type { Bark, Scene, SpeakerId } from '../content/dialogue/types.ts';
 import { SPRITES } from '../content/sprites/index.ts';
 import type { SpriteDef } from '../content/sprites/types.ts';
@@ -151,12 +151,27 @@ describe('portraits and frames', () => {
     expect(variantOf('sterling', ctxOn('a3_m06'))).toBeNull();
   });
 
-  it("Kip's coat through A3M4; from A3M5, the pin left on the console", () => {
+  it("Kip's coat through A3M4; in A3M5's briefing the pin is on, then gone in his silence", () => {
     expect(variantOf('kip', ctxOn('a1_m04'))).toBeNull();
     expect(variantOf('kip', ctxOn('a2_m04'))).toBe('act2');
     expect(variantOf('kip', ctxOn('a3_m04'))).toBe('act2');
-    expect(variantOf('kip', ctxOn('a3_m05'))).toBe('act3');
+    // The briefing (D150): the ledger line with the pin, the silence without it.
+    expect(variantOf('kip', ctxOn('a3_m05'))).toBe('act2');
+    const silence = lineView(
+      { speaker: 'kip', text: '', durationSec: 2 },
+      ctxOn('a3_m05'),
+      TEXT,
+      null,
+    );
+    expect(silence.portrait?.variant).toBe('act3');
+    // After the briefing (its radio, its debrief) and on every map after: pinholes.
+    expect(variantOf('kip', { ...ctxOn('a3_m05'), seen: ['a3_m05_brief'] })).toBe('act3');
     expect(variantOf('kip', ctxOn('a3_m06'))).toBe('act3');
+    // The real briefing has the silence, after the ledger line.
+    const brief = SCENES.a3_m05_brief!.nodes.filter(
+      (n) => n.kind === 'line' && n.speaker === 'kip',
+    );
+    expect(brief.map((n) => n.kind === 'line' && n.text === '')).toEqual([false, true]);
   });
 
   it("Ves'thara's laugh is drawn in her Act III frame (Night Shift)", () => {

@@ -2,6 +2,7 @@
 // Protocols to pick one from), Clock in opening the card first on A3M6 only, and the pick it owes.
 import { afterEach, describe, expect, it } from 'vitest';
 import { crateOffer } from '../../app/storyMeta.ts';
+import { sceneById } from '../../content/dialogue/index.ts';
 import { DEV_SAVES } from '../../meta/__fixtures__/devSaves.ts';
 import {
   canTake,
@@ -9,6 +10,7 @@ import {
   crateHere,
   crateIntercepts,
   crateLine,
+  crateQuote,
   crateView,
   ranksText,
   resetCrate,
@@ -68,5 +70,15 @@ describe("Zibzab's crate's card (T714)", () => {
     expect(ranksText(1, 3)).toBe('Ranks 2–3');
     expect(ranksText(2, 3)).toBe('Rank 3');
     expect(ranksText(0, 1)).toBe('Rank 1');
+  });
+});
+
+describe("Zibzab's word on the crate card (D150)", () => {
+  it('is the first beat of his A3M6 briefing line, not a second copy', () => {
+    expect(crateQuote()).toBe('Price first: nothing.');
+    const line = sceneById('a3_m06_brief')!.nodes.find(
+      (n) => n.kind === 'line' && n.speaker === 'zibzab',
+    );
+    expect(line?.kind === 'line' && line.text.startsWith(crateQuote()!)).toBe(true);
   });
 });
