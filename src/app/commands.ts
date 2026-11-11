@@ -16,13 +16,14 @@ import {
   peekerTile,
   slotAimsAtPath,
 } from '../render/input/tileFacts.ts';
-import { abilityReady, isBuildableTile, type Command } from '../sim/index.ts';
+import { abilityReady, isBuildableTile, slotRevoked, type Command } from '../sim/index.ts';
 import { hud, speed as speedSignal } from '../ui/state.ts';
 import { PRIORITY_LABEL } from '../ui/hud/words.ts';
 import type { Host } from './host.ts';
 import { announce, showNotice } from './hud.ts';
 import { lockedText, rejectText } from './hudText.ts';
 import { aimOf, priceOf, readyInWaves } from './hudViews.ts';
+import { revokedText } from './revoked.ts'; // T606
 import type { Speed } from './testHookTypes.ts';
 
 /** What commands act on: the running battle, or null outside one. */
@@ -90,6 +91,11 @@ export function pressBuildSlot(index: number): void {
     def === undefined
       ? Infinity
       : priceOf(state, host.sim.config.modifiers, tower, def.tiers[0].cost, 'build').cost;
+  // T606: a revoked class's slot is dead (its placement was cancelled as it went).
+  if (state.revoked.towers.includes(tower)) {
+    showNotice(revokedText('tower'));
+    return;
+  }
   if (state.lockedTowers.includes(tower)) {
     const slot = hud.slots.value[index];
     showNotice(slot === undefined ? (rejectText('towerLocked') ?? '') : lockedText(slot));
@@ -230,6 +236,11 @@ export function pressAbility(slot: 1 | 2): void {
   }
   const def = host.sim.config.content.abilities[id];
   const state = host.sim.state;
+  // T606: a revoked slot (the Orbital Strike's uplink; QUILL's under her lockout) is dark.
+  if (slotRevoked(state, host.sim.config, slot)) {
+    showNotice(revokedText(state.revoked.abilities.includes(id) ? 'uplink' : 'lockout'));
+    return;
+  }
   if (!abilityReady(state, slot)) {
     const waves = state.abilityCooldownWaves[slot - 1] ?? 0;
     showNotice(

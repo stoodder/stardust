@@ -6,6 +6,7 @@ import { hud, type BuildSlotView, type PriceTag } from '../state.ts';
 import { lockedText } from '../../app/hudText.ts';
 import { saleText } from '../../app/hudViews.ts';
 import { Icon } from './Icon.tsx';
+import { revokedHud } from './revokedState.ts'; // T606
 import { alignPulse } from './pulse.ts';
 import { Key, noFocusOnPress, Credits } from './parts.tsx';
 
@@ -24,13 +25,16 @@ function BuildSlot({ index, slot }: { index: number; slot: BuildSlotView | undef
   if (slot === undefined) {
     return <div class="hud-slot empty chamfer" aria-hidden="true" />;
   }
-  const locked = hud.lockedTowers.value.includes(slot.tower);
+  // T606: a revoked class's slot is dead for the rest of the map, under a REVOKED stamp.
+  const revoked = revokedHud.value.towers.includes(slot.tower);
+  const locked = revoked || hud.lockedTowers.value.includes(slot.tower);
   const poor = hud.credits.value < slot.cost;
   const armed = hud.armedTower.value === slot.tower;
   // Onboarding (D026): the first slot pulses until the first tower is built.
   const teach = index === 0 && !hud.built.value && !locked && !poor && !armed;
-  const state = `${locked ? 'locked' : poor ? 'poor' : ''}${teach ? ' pulse' : ''}`;
-  const status = `${slot.isNew ? ', new' : ''}${PRICE_WORDS[slot.price]}${locked ? `, ${lockedText(slot)}` : poor ? ', not enough credits' : ''}`;
+  const state = `${locked ? 'locked' : poor ? 'poor' : ''}${revoked ? ' revoked' : ''}${teach ? ' pulse' : ''}`;
+  const lockWords = revoked ? 'license revoked' : lockedText(slot);
+  const status = `${slot.isNew ? ', new' : ''}${PRICE_WORDS[slot.price]}${locked ? `, ${lockWords}` : poor ? ', not enough credits' : ''}`;
   const button = (
     <button
       type="button"
@@ -39,7 +43,7 @@ function BuildSlot({ index, slot }: { index: number; slot: BuildSlotView | undef
       aria-pressed={armed}
       aria-disabled={locked || poor}
       aria-label={`Build ${slot.label}, ${slot.cost} credits${status}`}
-      title={locked ? lockedText(slot) : `${slot.label} (${index + 1})`}
+      title={locked ? (revoked ? 'License revoked' : lockedText(slot)) : `${slot.label} (${index + 1})`}
       onMouseDown={noFocusOnPress}
       onClick={() => pressBuildSlot(index)}
       onContextMenu={(e) => {
@@ -49,7 +53,11 @@ function BuildSlot({ index, slot }: { index: number; slot: BuildSlotView | undef
     >
       <Key k={String(index + 1)} />
       <Icon id={slot.icon} class="slot-icon" />
-      {locked ? (
+      {revoked ? (
+        <span class="hud-revoked-stamp" data-testid="slot-revoked">
+          REVOKED
+        </span>
+      ) : locked ? (
         <span class="hud-locked">
           <Icon id="icon.lock" />
         </span>

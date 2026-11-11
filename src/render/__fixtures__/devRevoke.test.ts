@@ -1,6 +1,7 @@
-// dev_revoke (devM6.ts; T603's units, T606's revocation later) as a whole sim: the Expediter
-// catches the drone column up and hastes the drones in its ring (enemyAbilities/hasteAura.ts),
-// which then walk 1.3 tiles a second, and a drone that reaches the core repossesses 1 integrity.
+// dev_revoke (devM6.ts; T603's units) as a whole sim: the Expediter catches the drone column up
+// and hastes the drones in its ring (enemyAbilities/hasteAura.ts), which then walk 1.3 tiles a
+// second, and a drone that reaches the core repossesses 1 integrity. Its W2 Clean Exit (T606) is
+// sim/revoke.test.ts's.
 import { describe, expect, it } from 'vitest';
 import { compileContent } from '../../content/compile.ts';
 import type { IdSpace } from '../../content/types.ts';

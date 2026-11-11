@@ -13,7 +13,9 @@
 // live hostile unit of a faction stands down; enemyAbilities/pivot.ts), `setClickable` (T409), and
 // the Escort's `setObjective` and `spawnAllies` (T305c; sim/escort.ts), and the Holdout's
 // `forceInput` (T605: the SEAL; sim/forcedInput.ts) and `endMap` (T605: the map ends as won, on
-// the tick it runs; sim/objectives.ts `endMap`, from an event only). A pivot's event runs the
+// the tick it runs; sim/objectives.ts `endMap`, from an event only), and A3M2's Clean Exit (T606;
+// sim/revoke.ts): `revokeTowerClass` and `revokeAbility` (from an event only: they read the run's
+// loadout and slots) and `setModifier` (QUILL's lockout, the hidden preview). A pivot's event runs the
 // objective switch and the refugees beside it, in its action order. Before the events,
 // each clickable marker's fallback trigger is checked: reached, the sim interacts with it itself
 // (`byFallback`), so its `interacted` events fire on this same pass. createSim refuses a map that
@@ -41,6 +43,7 @@ import { forcedInputResolved, requestForcedInput } from '../forcedInput.ts';
 import { endMap } from '../objectives.ts';
 import { startBossEnding } from '../enemyAbilities/bossPhases.ts';
 import { standDown } from '../enemyAbilities/pivot.ts';
+import { revokeAbility, revokeTowerClass, setScriptModifier } from '../revoke.ts';
 import { emit, type SimState } from '../state.ts';
 import type { TickContext } from '../tick.ts';
 
@@ -56,8 +59,11 @@ export function triggers(state: SimState, ctx: TickContext): void {
     if (ev.when !== null && !evaluateCondition(ev.when, state, ctx)) continue;
     for (let a = 0; a < ev.actions.length; a++) {
       const action = ev.actions[a]!; // a < length
-      // The Holdout's end (T605) settles the medals, so it needs the whole context.
+      // The Holdout's end (T605) settles the medals, and a revocation (T606) reads the run's
+      // loadout and slots, so they need the whole context.
       if ('endMap' in action) endMap(state, ctx);
+      else if ('revokeTowerClass' in action) revokeTowerClass(state, ctx, action);
+      else if ('revokeAbility' in action) revokeAbility(state, ctx.config, action.revokeAbility);
       else runScriptAction(state, action, ctx.map);
     }
     if (state.outcome !== 'playing') return; // endMap: nothing after it runs
@@ -148,9 +154,11 @@ export function runScriptAction(
     spawnRefugees(state, map, action.spawnAllies);
   } else if ('forceInput' in action) {
     requestForcedInput(state, action.forceInput.id);
+  } else if ('setModifier' in action) {
+    setScriptModifier(state, action.setModifier, action.on);
   }
-  // `endMap` runs in triggers() (it needs the tick's context); anything else is refused by
-  // createSim (unsupportedScript).
+  // `endMap`, `revokeTowerClass`, and `revokeAbility` run in triggers() (they need the tick's
+  // context); anything else is refused by createSim (unsupportedScript).
 }
 
 /**
@@ -162,10 +170,7 @@ export const SCRIPT_GATES: Readonly<Record<string, string>> = Object.freeze({
   // Triggers (D141). `objectiveCompleted` waits for A3M5 (M7); the finale's rest (M8).
   objectiveCompleted: 'M7',
   restProgressPct: 'M8',
-  // Actions (D141). M6: Clean Exit's revocations and QUILL's lockout (T606).
-  revokeTowerClass: 'T606',
-  revokeAbility: 'T606',
-  setModifier: 'T606',
+  // Actions (D141). M6's Clean Exit (revocations, QUILL's lockout) runs since T606.
   // M7: A3M5's opened tile (Shareholder Value's jettison) and a scripted wave.
   openTile: 'M7',
   spawnWave: 'M7',
@@ -201,13 +206,19 @@ export function unsupportedScript(map: CompiledMapDef<IdSpace>): string[] {
   }
   for (const o of map.objectives) {
     for (const a of o.onComplete) {
-      // The Holdout's end runs from a map event, never from an objective (T605).
-      if ('endMap' in a) out.push(`objective '${o.id}': action endMap runs from map events only`);
-      else unsupportedAction(a, `objective '${o.id}'`, out);
+      // The Holdout's end (T605) and the revocations (T606) run from a map event, never from an
+      // objective.
+      const eventOnly = FROM_EVENTS_ONLY.find((k) => k in a);
+      if (eventOnly !== undefined) {
+        out.push(`objective '${o.id}': action ${eventOnly} runs from map events only`);
+      } else unsupportedAction(a, `objective '${o.id}'`, out);
     }
   }
   return out;
 }
+
+/** Actions an objective's `onComplete` can't run: they need the tick's context (triggers()). */
+const FROM_EVENTS_ONLY = ['endMap', 'revokeTowerClass', 'revokeAbility'] as const;
 
 function unsupportedTrigger(
   on: CompiledScriptTrigger<IdSpace>,
@@ -243,7 +254,10 @@ function unsupportedAction(a: CompiledScriptAction<IdSpace>, where: string, out:
     !('setObjective' in a) &&
     !('spawnAllies' in a) &&
     !('forceInput' in a) &&
-    !('endMap' in a)
+    !('endMap' in a) &&
+    !('revokeTowerClass' in a) &&
+    !('revokeAbility' in a) &&
+    !('setModifier' in a)
   ) {
     // An action is named by its first key (`revokeTowerClass`, not its `refundPct` beside it).
     const key = Object.keys(a)[0] ?? '?';

@@ -34,6 +34,7 @@ import {
   type RunProfile,
 } from './profile.ts';
 import { rndPickChecks } from './rndChecks.ts';
+import { revocableClasses, revokeClassOf, revokeVariantChecks } from './revokeChecks.ts'; // T606
 import {
   DEFAULT_SEED_COUNT,
   FEW_SEED_COUNT,
@@ -117,6 +118,10 @@ export function buildFor<K extends IdSpace>(
     const id = pick.find((c) => c === name);
     return id === undefined ? null : { ...b.parBuild, companion: id };
   }
+  // #14's revocation variants (T606): par with the cue forced onto one class it could take.
+  if (kind === 'revoke') {
+    return revocableClasses(map, b.parBuild, content).some((t) => t === name) ? b.parBuild : null;
+  }
   if (kind === 'noCounter') {
     const entry = Object.entries(b.noCounterBuilds).find(([c]) => c === name);
     return entry?.[1] ?? null;
@@ -185,6 +190,7 @@ export function runMap<K extends IdSpace = LiveIds>(
     ...noCounterAnswerChecks(map, content),
     ...medalChecks(map, every),
     ...rndPickChecks(map, rndPicks(map, content, catalog), few),
+    ...revokeVariantChecks(map, content, few), // T606
   ];
   const only = opts.build;
   if (only !== undefined) {
@@ -208,7 +214,13 @@ export function runMap<K extends IdSpace = LiveIds>(
     }
     const start = cpuNow();
     try {
-      const cfg = runConfig(content, map, build, profile, req.seed, flagsFor(req.build, map) ?? {});
+      const flags = flagsFor(req.build, map) ?? {};
+      const plain = runConfig(content, map, build, profile, req.seed, flags);
+      // A revocation variant forces the cue's class (T606; balance/revokeChecks.ts).
+      const forced = revocableClasses(map, build, content).find(
+        (t) => t === revokeClassOf(req.build),
+      );
+      const cfg = forced === undefined ? plain : { ...plain, revokeClass: forced };
       // A Holdout's run is judged against its Evacuated floor (balance/holdout.ts; T605).
       const result = judgeHoldout(
         map,

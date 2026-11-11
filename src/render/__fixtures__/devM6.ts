@@ -10,9 +10,10 @@
 // - `dev_den` (T604): a Scuttle Den beside the road and Bramble's Underfoot, against Undertows
 //   (burrowed: the swarmlings follow them down, the trap reaches them).
 // - `dev_revoke` (T603, T606): Compliance Drones with an Expediter (its haste ring), then a W2
-//   revocation inside the wave's spawn window: the Everglow class with the most credits invested
-//   (100% refund), the slot-1 ability, and QUILL's lockout. Registered by T603 with the units
-//   alone; T606 adds the revocation event.
+//   revocation inside the wave's spawn window, 5 s into its 10-drone column: the Everglow class
+//   with the most credits invested (100% refund), the slot-1 ability, and QUILL's lockout (the
+//   preview hidden). The profile owns a Prism, so it keeps an armor answer whichever Everglow
+//   class goes (validateBuilds [revocation]).
 // - `dev_holdout` (T605): a Holdout with two doors; the `door_choice` side's refugees walk to
 //   theirs while Hollow come down the choke past Bricks (a blocker, 2 at a time, his health on a
 //   three-wave timeline to the 5% floor); W3's start forces the SEAL, and its press ends the map
@@ -177,11 +178,20 @@ export const revokeMap = dev.defineMap({
     },
     { countdownSec: 10, groups: [{ enemy: 'compliance', count: 10, route: 'a' }] },
   ]),
-  // T606 adds the revocation here: an event `revoke` on `{ wave: 2, phase: { afterSec: 5 } }` with
-  // the cue `dev_revoke_cue_revoke`, `revokeTowerClass: { select: 'mostInvested', faction:
-  // 'everglow' }` at `refundPct: 100`, `revokeAbility: 'dev_strike'`, and `setModifier:
-  // 'quillLockout'` on. Until then the map runs Everglow Security alone (T603's smoke flow).
-  referenceProfile: { ...PROFILE, towers: ['rivet', 'sprinkler', 'zapcoil'] },
+  // The Clean Exit's shape (A3M2's cue, act3.md): one event, inside W2's spawn window.
+  events: [
+    {
+      id: 'revoke',
+      on: { wave: 2, phase: { afterSec: 5 } },
+      actions: [
+        { cue: 'dev_revoke_cue_revoke' },
+        { revokeTowerClass: { select: 'mostInvested', faction: 'everglow' }, refundPct: 100 },
+        { revokeAbility: 'dev_strike' },
+        { setModifier: 'quillLockout', on: true },
+      ],
+    },
+  ],
+  referenceProfile: { ...PROFILE, towers: ['rivet', 'sprinkler', 'zapcoil', 'prism'] },
   parBuild: {
     loadout: ['rivet', 'sprinkler', 'zapcoil'],
     steps: [

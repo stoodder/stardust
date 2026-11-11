@@ -41,6 +41,10 @@
 //   reject it `forcedInput`, as it does a player's): steps, macros, and wave calls wait, except
 //   that a later `scriptInput` step for the pending input is armed ahead of its turn (the freeze
 //   would otherwise stall the steps before it for good).
+// - After a scripted revocation (T606; sim/revoke.ts), a step for the revoked class is skipped
+//   (`skipped`, issued at the tick it was reached, no error) and the build goes on: a build of
+//   the class, a step on a tile whose last build was a tower of it that is gone now, and a cast
+//   from a revoked slot.
 import type { CompiledBuild, CompiledBuildStep } from '../content/compiled.ts';
 import { MAX_TIER_BEFORE_SPEC } from '../content/rules.ts';
 import type { GridPos, IdSpace, LiveIds, MedalKind, WaveTag } from '../content/types.ts';
@@ -58,6 +62,7 @@ import { createRunTracker, type RunSummary } from './headlessTracker.ts';
 import { assertNever } from '../shared/types.ts';
 import { createSim, type Sim } from './sim.ts';
 import { abilityReady } from './systems/abilities.ts';
+import { slotRevoked } from './revoke.ts';
 import { clearCommand, wreckageStatus } from './systems/wreckage.ts';
 import type { MedalStatus, ObjectiveStatus } from './state.ts';
 
@@ -94,6 +99,8 @@ export interface StepRecord {
   late: boolean;
   /** The sim rejected its command, or the executor couldn't form one (no tower on the tile). */
   error: RejectReason | null;
+  /** Skipped: a step for a class or ability slot the map's script revoked (T606). */
+  skipped: boolean;
 }
 
 export interface BuildExecutor {
@@ -133,6 +140,7 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
     issuedTick: -1,
     late: false,
     error: null,
+    skipped: false,
   }));
   const waveCalls: number[] = [];
   const state = sim.state;
@@ -206,6 +214,30 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
   const price = (tower: string, base: number, kind: PurchaseKind): number =>
     purchasePriceInto(state, sim.config.modifiers, tower, base, kind, quote).cost;
 
+  /** The tower each tile's last build step placed (by tile index), for revocation skips (T606). */
+  const builtAt = new Map<number, string>();
+  /** Whether step `s` is for a revoked class or ability slot (see the header). */
+  const forRevoked = (s: CompiledBuildStep<K>): boolean => {
+    const r = state.revoked;
+    if (r.towers.length === 0 && r.abilities.length === 0 && !state.scriptModifiers.quillLockout) {
+      return false;
+    }
+    if (s.kind === 'build') return r.towers.includes(s.tower);
+    if (s.kind === 'ability') return slotRevoked(state, sim.config, s.slot);
+    const tile =
+      s.kind === 'upgrade' ||
+      s.kind === 'specialize' ||
+      s.kind === 'sell' ||
+      s.kind === 'targeting'
+        ? s.tile
+        : (s.kind === 'holdFire' || s.kind === 'spareRunners') && s.target !== 'all'
+          ? s.target
+          : null;
+    if (tile === null || towerAt(tile) !== null) return false;
+    const was = builtAt.get(tileIndex(sim.map, tile[0], tile[1]));
+    return was !== undefined && r.towers.includes(was);
+  };
+
   /** Tries the head step: 'wait' keeps it (and everything behind it) for a later tick. */
   const tryStep = (s: CompiledBuildStep<K>, rec: StepRecord): 'wait' | 'done' => {
     const finish = (error: RejectReason | null, late: boolean): 'done' => {
@@ -215,6 +247,10 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
       return 'done';
     };
     const lateForPhase = state.wave >= s.wave;
+    if (forRevoked(s)) {
+      rec.skipped = true;
+      return finish(null, false);
+    }
     switch (s.kind) {
       case 'build': {
         if (state.lockedTowers.includes(s.tower)) return 'wait';
@@ -225,6 +261,7 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
         if (def !== undefined && state.credits < price(s.tower, def.tiers[0].cost, 'build')) {
           return 'wait';
         }
+        builtAt.set(tileIndex(sim.map, s.tile[0], s.tile[1]), s.tower);
         return finish(apply({ type: 'build', tile: s.tile, tower: s.tower }), lateForPhase);
       }
       case 'upgrade': {
@@ -479,6 +516,8 @@ export interface HeadlessResult extends RunSummary {
    * through its SEAL (harness #17).
    */
   readonly forcedInputs: readonly string[];
+  /** The classes and abilities the map's script revoked, in order (`state.revoked`; T606). */
+  readonly revoked: { readonly towers: readonly string[]; readonly abilities: readonly string[] };
 }
 
 /** 30 minutes of sim time: longer than any map (the finale is about 25). */
@@ -522,5 +561,9 @@ export function runHeadless<K extends IdSpace = LiveIds>(
     objectives: [...sim.state.objectives],
     hushes,
     forcedInputs: [...sim.state.forcedResolved],
+    revoked: {
+      towers: [...sim.state.revoked.towers],
+      abilities: [...sim.state.revoked.abilities],
+    },
   };
 }

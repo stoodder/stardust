@@ -7,6 +7,7 @@ import { hud, speed } from '../state.ts';
 import { Icon } from './Icon.tsx';
 import { alignPulse } from './pulse.ts';
 import { Glyph, HOLD_GLYPH, Key } from './parts.tsx';
+import { revokedHud } from './revokedState.ts'; // T606
 
 /** Top-right: speed and pause. */
 export function SpeedControls() {
@@ -57,6 +58,9 @@ export function WavePanel() {
   const countdown = hud.countdown.value;
   const bonus = hud.callBonus.value;
   const walking = hud.nextWalking.value;
+  // T606: QUILL's lockout hides the preview's threats (it never shows anything false).
+  const restricted = revokedHud.value.previewHidden;
+  const leak = revokedHud.value.leakLine;
   // A `noCall` wave walks in on its own (the Quiet Wave, D097; A2M5's W6): no button, no bonus.
   const callLabel =
     next === null || hud.nextNoCall.value
@@ -97,7 +101,18 @@ export function WavePanel() {
       {next !== null && (
         <ul class="hud-preview" aria-label={`Next: wave ${next.number}`}>
           <li class="hud-label">Next</li>
-          {next.groups.map((g) => {
+          {restricted && (
+            <li class="hud-restricted" data-testid="preview-restricted">
+              ACCESS RESTRICTED
+            </li>
+          )}
+          {restricted && leak !== null && (
+            <li class="hud-leak-line" data-testid="preview-leak">
+              {leak}
+            </li>
+          )}
+          {!restricted &&
+            next.groups.map((g) => {
             const where = `${g.air ? ', air' : ''}${g.spawn === null ? '' : `, from ${g.spawn}${g.newSpawn ? ', a new spawn' : ''}`}`;
             return (
               <li

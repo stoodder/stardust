@@ -10,6 +10,7 @@ import { TOWER_BLANK } from '../entities.ts';
 import { isBuildableTile, tileIndex } from '../grid.ts';
 import { interact } from '../clickables.ts';
 import { pressForcedInput } from '../forcedInput.ts';
+import { revokedReason } from '../revoke.ts'; // T606
 import { pay, sellValue } from '../economy.ts';
 import { isLateSell } from '../objectives.ts';
 import { poolAlloc, poolFind, poolKill } from '../pool.ts';
@@ -49,6 +50,9 @@ function applyCommand(
 ): RejectReason | null {
   // A forced input (T605; sim/forcedInput.ts): only its `scriptInput` applies until it's pressed.
   if (state.pendingInput !== null && cmd.type !== 'scriptInput') return 'forcedInput';
+  // A revoked class or ability slot (T606; sim/revoke.ts): `revoked`, before its own rules.
+  const revoked = revokedReason(state, ctx.config, cmd);
+  if (revoked !== null) return revoked;
   switch (cmd.type) {
     case 'build':
       return build(state, ctx, cmd);

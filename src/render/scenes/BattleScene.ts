@@ -104,6 +104,7 @@ import { BlockerView } from '../views/BlockerView.ts'; // T605
 import { ChoirView } from '../views/ChoirView.ts'; // T607
 import { SwarmView } from '../views/SwarmView.ts'; // T604
 import { TrapView } from '../views/TrapView.ts'; // T604
+import { RevokedView } from '../views/RevokedView.ts'; // T606
 import { MindView } from '../views/MindView.ts';
 import { MarkView } from '../views/MarkView.ts';
 import { BossBarView } from '../views/BossBarView.ts';
@@ -264,6 +265,7 @@ export class BattleScene extends Phaser.Scene {
   #choir!: ChoirView; // T607: the Hum Choir's song and Lullaby rings, its notes, Lulled notes
   #swarm!: SwarmView; // T604: the Scuttle Den's swarmlings dashing and latched
   #traps!: TrapView; // T604: Underfoot's trap ring and its springs
+  #revoked!: RevokedView; // T606: the LICENSE REVOKED stamp over a revoked class's towers
   /** Unnerved squiggles, Echo Spike rings, and Stillness's disc (T507). */
   #mind!: MindView;
   /** Marks and Truthlight's no-evade (T508). */
@@ -443,6 +445,7 @@ export class BattleScene extends Phaser.Scene {
     this.#choir = new ChoirView(ctx, prefersReducedMotion, anchors); // T607
     this.#swarm = new SwarmView(ctx, anchors, prefersReducedMotion); // T604
     this.#traps = new TrapView(ctx, this.#fx, prefersReducedMotion); // T604
+    this.#revoked = new RevokedView(ctx, prefersReducedMotion); // T606
     this.#mind = new MindView(ctx, this.#fx, prefersReducedMotion, anchors);
     this.#marks = new MarkView(ctx);
     this.#harpoon = new HarpoonView(ctx, prefersReducedMotion);
@@ -551,6 +554,15 @@ export class BattleScene extends Phaser.Scene {
         },
       }),
       interaction.onPoke(() => this.#peeker?.poke()),
+      // T606: a revoked class's towers stay under their stamp, then fold away; a selected one drops.
+      bus.on('TowerRevoked', (e) => {
+        const v = this.#towers.get(e.uid);
+        if (v !== undefined && !Number.isNaN(v.x)) {
+          const lift = this.#liftPx(Math.floor(v.x), Math.floor(v.y));
+          this.#revoked.stamp(e.uid, v.x, v.y, lift);
+        }
+        if (interaction.selectedTower === e.uid) interaction.selectTower(0);
+      }),
       this.#tidybots.bind(
         bus,
         (id) =>
@@ -611,6 +623,7 @@ export class BattleScene extends Phaser.Scene {
       this.#choir.reset(); // T607
       this.#swarm.reset(); // T604
       this.#traps.reset(); // T604
+      this.#revoked.reset(); // T606
       this.#mind.reset();
       this.#marks.reset();
       this.#harpoon.reset();
@@ -659,6 +672,7 @@ export class BattleScene extends Phaser.Scene {
     this.#choir.update(state, state.tick); // T607
     this.#swarm.update(state.allies, state.enemies); // T604
     this.#traps.update(state.zones, state.trapSprung); // T604
+    this.#revoked.update(dt); // T606
     this.#mind.update(dt, state.enemies);
     this.#marks.update(state.enemies);
     this.#harpoon.update(dt, state.enemies);
@@ -801,6 +815,7 @@ export class BattleScene extends Phaser.Scene {
         notes: this.#choir.notes,
         lulled: this.#choir.lulled,
       }, // T607
+      revoked: { shown: this.#revoked.shown, played: this.#revoked.played }, // T606
       mind: { unnerved: this.#mind.unnerved, echoes: this.#mind.echoes, stills: this.#mind.stills },
       marks: this.#marks.shown,
       harpoon: { pins: this.#harpoon.pins, skewered: this.#harpoon.skewered },
@@ -1070,6 +1085,7 @@ export class BattleScene extends Phaser.Scene {
       if (target !== undefined) v.setFacing(facingOf(target.x - t.x, target.y - t.y));
       v.sync(t);
     }
+    this.#revoked.hold(this.#towers, stamp); // T606: powered down under the stamp for 1 s
     this.#towers.sweep(stamp);
 
     const shots = state.projectiles;

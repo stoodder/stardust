@@ -16,6 +16,7 @@ import { bindBattleAudio } from './audio.ts';
 import { bindDialogue } from './dialogue.ts';
 import { bindClickables, bindPeeker } from './peeker.ts';
 import { bindForcedInput } from './forcedInput.ts'; // T605
+import { bindRevoked } from './revoked.ts'; // T606
 import type { Resume } from './checkpoints.ts';
 
 /** Successive battles get distinct scene keys, so a new one never collides with a queued removal. */
@@ -109,6 +110,7 @@ export function startBattle(
   const unbindPeeker = bindPeeker(sim.map, interaction);
   const unbindClickables = bindClickables(host);
   const unbindForcedInput = bindForcedInput(host); // T605
+  const unbindRevoked = bindRevoked(host, interaction); // T606
   setCommandTarget({ host, interaction, cancel: () => scene.cancel() });
   game.scene.add(key, scene, true);
   return {
@@ -126,6 +128,7 @@ export function startBattle(
       unbindPeeker();
       unbindClickables();
       unbindForcedInput();
+      unbindRevoked(); // T606
       game.scene.remove(key);
     },
   };

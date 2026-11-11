@@ -30,6 +30,9 @@
 //   `noCounterLoseByWave` override is a whole wave from 1 to waves − 1 (never the final wave) on a
 //   map with no-counter builds, or up to the final wave on a `teachMap` (a campaign map that
 //   introduces a required-counter category).
+// - [revocation] (T606; validateRevocation.ts): the counter guarantee treats a revoked class as
+//   unowned, whichever class a `revokeTowerClass` could take, on its map and on the maps after it
+//   until the class is back.
 //
 // TODO stubs (their content can't exist yet): par is purchasable (availableAfter and the
 // Stardust/Intel totals; T204); a build's ability is never one of the map's lockedAbilities
@@ -57,6 +60,7 @@ import { FLAG_RULES } from './dialogue/flags.ts';
 import type { BuildStep, CounterId, GridPos, IdSpace, MapDef, ScriptedBuild } from './types.ts';
 import type { MapCtx } from './validateMap.ts';
 import { BUILDABLE, Issues, duplicates, fmt, keyOf, type Grid } from './validateHelpers.ts';
+import { revocationCandidates, validateRevocation } from './validateRevocation.ts'; // T606
 
 export function validateBuilds(
   issues: Issues,
@@ -163,6 +167,15 @@ export function validateBuilds(
       }
     }
   }
+
+  validateRevocation(
+    issues,
+    def,
+    ctx,
+    enemies,
+    revocationCandidates(def, ctx.factionOf),
+    campaignIndex === null ? null : ctx.revocationWindow(campaignIndex),
+  );
 
   const loseBy = def.noCounterLoseByWave;
   if (loseBy !== undefined) {

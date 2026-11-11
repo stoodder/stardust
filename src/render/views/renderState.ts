@@ -98,6 +98,8 @@ export interface RenderState {
    * and the health the bar shows (NaN with none).
    */
   readonly blocker: { readonly shown: number; readonly holding: number; readonly health: number };
+  /** T606: LICENSE REVOKED stamps up now, and played this battle (RevokedView). */
+  readonly revoked: { readonly shown: number; readonly played: number };
   /**
    * ChoirView (T607): Hum Choir song rings and Lullaby rings drawn now, notes over Choirs, and
    * Lulled units wearing their note.

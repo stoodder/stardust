@@ -52,7 +52,7 @@ describe('M6 state and entity fields', () => {
     const state = createState(MAP, 1);
     expect(state).toMatchObject({
       refugeeTotal: 11, // createSim gates it by the run's flags
-      revoked: { towers: [], abilities: [] },
+      revoked: { towers: [], abilities: [], uids: [] },
       scriptModifiers: { quillLockout: false, previewHidden: false },
       pendingInput: null,
       forcedResolved: [],
@@ -164,11 +164,9 @@ describe('FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES (T600a rows; D141)', ()
       'tower.field': 'T608',
       'enemy.boss.layToRest': 'M8',
     });
-    // T605's forcedInputResolved, forceInput, and endMap run (sim/holdout.test.ts).
+    // T605's forcedInputResolved, forceInput, and endMap run (sim/holdout.test.ts), and T606's
+    // revokeTowerClass, revokeAbility, and setModifier (sim/revoke.test.ts).
     expect(SCRIPT_GATES).toEqual({
-      revokeTowerClass: 'T606',
-      revokeAbility: 'T606',
-      setModifier: 'T606',
       objectiveCompleted: 'M7',
       openTile: 'M7',
       spawnWave: 'M7',

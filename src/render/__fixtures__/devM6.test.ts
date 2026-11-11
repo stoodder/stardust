@@ -51,7 +51,8 @@ describe('the M6 dev maps', () => {
     expect(devMaps['dev_den']).toBe(DEV_M6_MAPS.dev_den);
   });
 
-  it('dev_revoke: Everglow Security runs (T603, registered); T606 adds the revocation', () => {
+  it('dev_revoke: Everglow Security and the Clean Exit inside W2 run (T603, T606)', () => {
+    expect(maps.dev_revoke!.events.map((e) => e.id)).toEqual(['revoke']);
     expect(refused('dev_revoke')).toEqual([]);
     expect(devMaps['dev_revoke']).toBe(DEV_M6_MAPS.dev_revoke);
   });

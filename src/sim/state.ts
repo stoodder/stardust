@@ -362,9 +362,10 @@ export interface SimState<K extends IdSpace = IdSpace> {
   /**
    * What this run's script revoked (towers.md § 9; T606), in the order revoked: tower class ids
    * (`revokeTowerClass`) and ability ids (`revokeAbility`). Empty on maps without a revocation.
-   * Classes revoked by an earlier map arrive as unowned config, never here.
+   * Classes revoked by an earlier map arrive as unowned config, never here. `uids` are the towers
+   * the revocations folded away, so a late command naming one is refused `revoked` (sim/revoke.ts).
    */
-  revoked: { towers: string[]; abilities: string[] };
+  revoked: { towers: string[]; abilities: string[]; uids: number[] };
   /**
    * Script modifiers on now (`setModifier`; T606): `quillLockout` (A3M2: QUILL locks you out; her
    * ability is disabled and the preview hidden, core-loop.md § 2.2 and § 2.11) and `previewHidden`
@@ -495,7 +496,7 @@ export function createState(map: CompiledMapDef<IdSpace>, seed: number): SimStat
     interacted: [],
     clickFallback: [],
     refugeeTotal: map.escort?.total ?? 0,
-    revoked: { towers: [], abilities: [] },
+    revoked: { towers: [], abilities: [], uids: [] },
     scriptModifiers: { quillLockout: false, previewHidden: false },
     pendingInput: null,
     forcedResolved: [],

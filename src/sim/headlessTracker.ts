@@ -237,7 +237,9 @@ export function createRunTracker<K extends IdSpace>(
             if (t !== undefined) t.tier = 4;
             break;
           }
-          case 'TowerSold': {
+          case 'TowerSold':
+          case 'TowerRevoked': {
+            // A revocation folds the tower away like a sell (T606; sim/revoke.ts).
             const t = towerByUid.get(e.uid);
             if (t !== undefined) t.soldTick = state.tick;
             liveTowers.delete(e.uid);
@@ -411,7 +413,8 @@ export function createRunTracker<K extends IdSpace>(
           violate(`projectile ${p.uid} has a NaN position`);
         }
       }
-      // Enemies never remove towers: the live towers are exactly the built ones not sold.
+      // Enemies never remove towers: the live towers are exactly the built ones not sold (or
+      // revoked).
       let alive = 0;
       const pool = state.towers;
       for (let i = 0; i < pool.used; i++) {

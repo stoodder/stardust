@@ -15,6 +15,7 @@ import {
 } from '../state.ts';
 import { baked, Icon } from './Icon.tsx';
 import { Key, noFocusOnPress } from './parts.tsx';
+import { revokedHud } from './revokedState.ts'; // T606
 import { alignPulse } from './pulse.ts';
 
 /** The icon's size in game px: the cooldown wipe steps one pixel per 1/16. */
@@ -69,6 +70,31 @@ function AbilitySlot({ a, cd }: { a: AbilitySlotView; cd: AbilityCooldownView | 
   const cue = hud.countdownCue.value;
   // The Time Dilation teach (A1M3's flock, D098): the slot pulses at 1 Hz until it's first cast.
   const teach = ready && hud.timeDilationTeach.value === a.slot;
+  // T606: a revoked slot (the uplink; QUILL's under her lockout) is dark, under a REVOKED stamp.
+  if (revokedHud.value.slots.includes(a.slot)) {
+    return (
+      <button
+        type="button"
+        class={`hud-btn hud-slot hud-ability chamfer absent revoked${a.companion === null ? '' : ' companion'}`}
+        data-testid={`ability-${a.slot}`}
+        aria-disabled="true"
+        aria-label={`${a.label}, ${a.slot === 1 ? 'uplink revoked' : 'locked out'}`}
+        title={a.slot === 1 ? 'Uplink revoked' : 'Locked out'}
+        onMouseDown={noFocusOnPress}
+        onClick={() => pressAbility(a.slot)}
+      >
+        <span class="ability-row">
+          <SlotFace a={a} />
+          <span class="ability-icon">
+            <Icon id={a.icon} class="slot-icon" />
+          </span>
+        </span>
+        <span class="hud-revoked-stamp" data-testid={`ability-${a.slot}-revoked`}>
+          REVOKED
+        </span>
+      </button>
+    );
+  }
   if (a.absent) {
     return (
       <button

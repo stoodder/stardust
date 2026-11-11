@@ -201,7 +201,9 @@ export const TRAIT_COUNTER: Readonly<Record<Trait, CounterId | null>> = {
   skittish: null,
   haste_aura: null,
   healer_aura: null,
-  gathering: null,
+  // A gatherer is a splash problem (enemies.md § 3: kill the small enemies first, or burst the
+  // gatherer), so a Maw is never soft where splash is required (A3M1; D141).
+  gathering: 'splash',
 };
 
 /** Each trait's art tell (enemies.md § 3 "Art tell id"): every ability has a tell (rule). */

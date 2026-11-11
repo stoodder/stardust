@@ -68,9 +68,10 @@
 //
 // Medals and conditions ([medals], [condition]) are validateMedals.ts's, run by validate.ts.
 import { BLOCKER_HEALTH_FLOOR, MAX_CAMPAIGN_GRID_SPAN, SALVAGE_MAX, SALVAGE_MIN } from './rules.ts';
-import type { EnemyDef, GridPos, IdSpace, MapDef, RawContent } from './types.ts';
+import type { EnemyDef, GridPos, IdSpace, MapDef, RawContent, TowerFaction } from './types.ts';
 import type { ValidationRules } from './validate.ts';
 import { validateBuilds } from './validateBuilds.ts';
+import { revocationCandidates, type RevocationWindow } from './validateRevocation.ts'; // T606
 import {
   Issues,
   duplicates,
@@ -126,9 +127,25 @@ export function validateCampaignMaps<K extends IdSpace>(
   const live = Object.entries<TargetedTower & AuraTower>(raw.towers).filter(
     ([id]) => !TOWERS_AHEAD_OF_TASK.includes(id),
   );
+  // [revocation] (T606): each campaign map's window, the latest earlier map whose cue revokes a
+  // class (validateRevocation.ts).
+  const factions = new Map<string, TowerFaction>(
+    Object.values<{ id: string; faction: TowerFaction }>(raw.towers).map((t) => [t.id, t.faction]),
+  );
+  const factionOf = (t: string): TowerFaction | undefined => factions.get(t);
+  const windows: (RevocationWindow | null)[] = [];
+  let lastCue: RevocationWindow | null = null;
+  for (const id of raw.campaign) {
+    windows.push(lastCue);
+    const def = maps.get(id);
+    const classes = def === undefined ? null : revocationCandidates(def, factionOf);
+    if (classes !== null) lastCue = { map: id, classes };
+  }
   const ctx = {
     enemies,
     towers,
+    factionOf,
+    revocationWindow: (index: number): RevocationWindow | null => windows[index] ?? null,
     // Each tower's tier-3 reach and range aura, by when it's first stocked ([quiet-wave-reach]).
     towerReaches: towerReaches(live, stockedAfter),
     rangeAuras: rangeAuras(live, stockedAfter),
@@ -168,6 +185,10 @@ export interface MapCtx {
   /** A map's index in the campaign plan (−1: not a campaign map). */
   readonly campaignIndex: (map: string) => number;
   readonly towersWithSpecs: ReadonlySet<string>;
+  /** A tower's faction (T606: the classes a `revokeTowerClass` could take). */
+  readonly factionOf: (tower: string) => TowerFaction | undefined;
+  /** The earlier cue whose revoked class campaign map `index` may lack ([revocation]; T606). */
+  readonly revocationWindow: (index: number) => RevocationWindow | null;
   /** Each companion with a slot-2 ability in the content → that ability's id. */
   readonly companionAbilities: ReadonlyMap<string, string>;
   readonly rules: ValidationRules;

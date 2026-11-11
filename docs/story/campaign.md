@@ -279,7 +279,7 @@ Per map: the **threat intel** (`threatIntel`: every trait present in the waves, 
 | A2M4 | Skittish (fleeing), Cloaked, Blink, Shielded, Flying + shielded, Hollow clusters | Detection, Shield, Splash | detection | — (every flyer is also shielded) | Lookout (150 ≤ 210), Scanner Sweep; Zapcoil; Thumper |
 | A2M5 | Shield aura, Shielded, Cloaked (boss shards), Blink, Hollow clusters | Shield, Detection, Splash | — | — | Zapcoil, Lookout, Thumper |
 | A2M6 | Splitting, Hollow clusters, Flying + Phasing | Air, Splash | — | — | Skyhook, Rivet, Prism (gift); Thumper |
-| A3M1 | Gathering, Flying + Phasing, Splitting, Hollow clusters, Rift | Splash, Air | — | — | Thumper, Zapcoil; Skyhook; Scuttle Den (gift) |
+| A3M1 | Gathering, Armored, Flying + Phasing, Splitting, Hollow clusters, Rift | Splash, Air | — | — | Thumper, Zapcoil; Skyhook; Scuttle Den (gift) |
 | A3M2 | Armored, Haste aura, Splitting, Hollow clusters, Rift | Armor, Splash | — | — | Harpoon (licensed before this map; 250 ≤ 280), Prism; Thumper or Zapcoil; survives either Everglow class revoked |
 | A3M3 | Burrowing, Gathering, Splitting, Hollow clusters, Flying + Phasing, Rift | Burrowed, Air, Splash | burrowed | — | Scuttle Den; non-Everglow air (Zapcoil, Prism, Harpoon); Thumper (the class not revoked) or Zapcoil |
 | A3M4 | Jammer, Heavy armor, Armored, Haste aura, Flying + Phasing, Splitting (light), Hollow clusters (light), Rift | Jam, Armor, Air | jam | Mote and Fracture screens | System Reboot (free), Hum Choir (gift by now on both C1 paths); Harpoon, Prism, Gloop (warren), the jailbroken class; Rivet, Harpoon, Mindspike |

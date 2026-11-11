@@ -172,6 +172,11 @@ export interface SimConfig<K extends IdSpace = LiveIds> {
    * meta-runtime.md § Meta). `specialize` is rejected `specLocked` for any other tower.
    */
   readonly specsUnlocked: readonly K['tower'][];
+  /**
+   * The balance harness's per-class story variant (T606; towers.md § 9): every `revokeTowerClass`
+   * takes this class instead of selecting one (`mostInvested`). Never set in play.
+   */
+  readonly revokeClass?: K['tower'];
 }
 
 export { MAX_LOADOUT };
@@ -208,6 +213,9 @@ export function validateConfig(cfg: SimConfig<IdSpace>): CompiledMapDef<IdSpace>
     if (!Object.hasOwn(cfg.content.towers, id)) errors.push(`specsUnlocked: unknown tower '${id}'`);
     if (specSeen.has(id)) errors.push(`specsUnlocked: '${id}' appears twice`);
     specSeen.add(id);
+  }
+  if (cfg.revokeClass !== undefined && !Object.hasOwn(cfg.content.towers, cfg.revokeClass)) {
+    errors.push(`revokeClass: unknown tower '${cfg.revokeClass}'`);
   }
   // The companion's slot and ability modifiers (systems/abilities.ts).
   errors.push(...abilityConfigErrors(cfg));
