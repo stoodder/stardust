@@ -194,17 +194,18 @@ export class SongView {
     const x = Math.round(a.x);
     const y = Math.round(a.y) - s.liftPx;
     if (flipShows(s.ms)) {
-      // The flip: a warm-gold body-sized glow, a plus of light at its heart.
-      g.fillStyle(FLIP_HEX, 0.85);
-      g.fillRect(x - 3, y - 6, 7, 7);
+      // The flip: a warm-gold star of light the size of the body, white at its heart.
+      g.fillStyle(FLIP_HEX, 0.9);
+      g.fillRect(x - 4, y - 4, 9, 3);
+      g.fillRect(x - 1, y - 7, 3, 9);
       g.fillStyle(REST_HEX[1]!, 1); // white.1
-      g.fillRect(x - 1, y - 4, 3, 3);
+      g.fillRect(x, y - 3, 1, 1);
     }
     for (let i = 0; i < REST_MOTES; i++) {
       restMoteAt(s.ms, i, still, mote);
       if (mote.alpha <= 0) continue;
       g.fillStyle(REST_HEX[i % REST_HEX.length]!, mote.alpha);
-      g.fillRect(x + mote.dx, y - 4 + mote.dy, i % 3 === 0 ? 2 : 1, i % 3 === 0 ? 2 : 1);
+      g.fillRect(x + mote.dx * 2, y - 4 + mote.dy, 2, 2);
     }
   }
 
@@ -221,7 +222,7 @@ export class SongView {
       const x = Math.round(a.x + (b.x - a.x) * smote.share) + smote.dx;
       const y = Math.round(a.y + (b.y - a.y) * smote.share) + smote.dy - s.liftPx;
       g.fillStyle(SCATTER_HEX[i % SCATTER_HEX.length]!, smote.alpha);
-      g.fillRect(x, y, i === 0 ? 2 : 1, i === 0 ? 2 : 1);
+      g.fillRect(x, y, 2, 2);
     }
     if (s.reformMs >= 0) {
       g.fillStyle(REFORM_HEX, 0.7);

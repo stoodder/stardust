@@ -7,7 +7,14 @@
 import { describe, expect, it } from 'vitest';
 import { battleConfig } from '../../app/battleSetup.ts';
 import { compileContent } from '../../content/compile.ts';
-import type { FlagValue, IdSpace, MapDef, RawContent } from '../../content/types.ts';
+import type {
+  ConditionDef,
+  FlagValue,
+  IdSpace,
+  MapDef,
+  RawContent,
+  ScriptedEvent,
+} from '../../content/types.ts';
 import { validate } from '../../content/validate.ts';
 import {
   createBuildExecutor,
@@ -51,7 +58,7 @@ function play(sim: Sim<IdSpace>, build = true): { tick: number; e: SimEvent<IdSp
 }
 
 /** An event list with one cue guarded by condition `c` (validation's probe). */
-const when = (c: unknown) => [
+const when = (c: ConditionDef<DevIds>): ScriptedEvent<DevIds>[] => [
   { id: 'probe', on: { wave: 1, phase: 'start' }, when: c, actions: [{ cue: 'x' }] },
 ];
 
@@ -136,10 +143,7 @@ describe('dev_song: the song end to end', () => {
   });
 
   it('validates the Laid to Rest atom: a share in (0, 1], on a map with a song', () => {
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- a malformed condition on purpose
-    const bad = patchedRaw({
-      events: when({ restedPct: 1.5 }) as NonNullable<MapDef<DevIds>['events']>,
-    });
+    const bad = patchedRaw({ events: when({ restedPct: 1.5 }) });
     expect(validate(bad).filter((e) => e.includes('restedPct'))).toEqual([
       '[condition] maps.dev_song.events[0].when.restedPct: 1.5 must be in (0, 1]',
     ]);
@@ -148,11 +152,7 @@ describe('dev_song: the song end to end', () => {
       ...DEV_CONTENT,
       maps: {
         ...DEV_CONTENT.maps,
-        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the atom on a songless map on purpose
-        dev_song: {
-          ...noSong,
-          events: when({ restedPct: 0.9 }) as NonNullable<MapDef<DevIds>['events']>,
-        },
+        dev_song: { ...noSong, events: when({ restedPct: 0.9 }) }, // the atom on a songless map
       },
     };
     expect(validate(raw).filter((e) => e.includes('restedPct'))).toEqual([

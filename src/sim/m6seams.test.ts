@@ -168,11 +168,9 @@ describe('FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES (T600a rows; D141)', ()
     // revokeTowerClass, revokeAbility, and setModifier (sim/revoke.test.ts).
     // Retargeted by D146 (T700a: sim/m7seams.test.ts); T706 runs objectiveCompleted, spawnWave,
     // and the `cleared` atom; T707 runs openTile. Retargeted by D154 (T800a: sim/m8seams.test.ts).
-    // T806 runs the finale's phases, timers, light, and checkpoint (sim/phases.test.ts).
-    expect(SCRIPT_GATES).toMatchObject({
-      restProgressPct: 'T805',
-      restoreTowerClass: 'T807',
-    });
+    // T805 runs the song's rest progress; T806 the finale's phases, timers, light, and checkpoint
+    // (sim/phases.test.ts).
+    expect(SCRIPT_GATES).toMatchObject({ restoreTowerClass: 'T807' });
     for (const k of ['setLighting', 'checkpoint', 'startTimer', 'setTimerRate', 'setPhase']) {
       expect(SCRIPT_GATES, k).not.toHaveProperty(k);
     }

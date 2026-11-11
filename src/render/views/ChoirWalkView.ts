@@ -2,11 +2,12 @@
 // polished by T830). It reads sim state only, so it holds while paused:
 // - **The column:** each choir member (allies of mode `choir`) walks the road in a body: Pebble in
 //   her bottle cap (`ally.pebble`), the singers as colonist Skitterkin (`ally.refugee` in the
-//   allies' palette), Old Thrum beside Pebble in the elder's body (`enemy.elder`). Each faces the
-//   way it moves; a hushed singer is dimmed and greyed, its walk held, as it trails at the back.
-//   One held in a hush tell freezes. The Returned are bearers: BearerView draws them.
-// - **The song's circles** (`songCircles`: the leader's, and each Returned's 1-tile aura), dashed
-//   warm gold in `decal`, on a map with a song.
+//   allies' palette, each a little to the side by uid), Old Thrum beside Pebble in the elder's body
+//   (`enemy.elder`). Each faces the way it moves; a hushed singer is dimmed and greyed, its walk
+//   held, as it trails at the back. One held in a hush tell freezes. The Returned are bearers:
+//   BearerView draws them.
+// - **The song's circles** (`songCircles`: the leader's, and each Returned's 1-tile aura), warm
+//   gold over a dark rim in `decal`, on a map with a song.
 // - **The halt window:** a line from the leader up the road for `haltTiles`, faint while she walks
 //   and red while the choir is halted (a Hollow unit inside it).
 // Pooled bodies; the circles and the line are one Graphics redrawn each frame (no allocation).
@@ -21,6 +22,7 @@ import { gridToScreen, rangeEllipsePx, type Vec2 } from '../iso.ts';
 import { DEFAULT_VARIANT } from '../sprites/bake.ts';
 import { hexOf } from './jamLook.ts';
 import { PEBBLE_SPRITE, REFUGEE_SPRITE, REFUGEE_VARIANT } from './RefugeeView.ts';
+import { refugeeLanePx } from './refugeeLook.ts';
 import { facingOf, hasAnim, type Facing } from './spriteInfo.ts';
 import type { ViewContext } from './ViewContext.ts';
 import { ViewPool, type PooledView } from './ViewPool.ts';
@@ -70,7 +72,9 @@ class MemberView implements PooledView {
     const thrum = a.kind === 'thrum';
     this.#sprite = thrum ? THRUM_SPRITE : a.pebble ? PEBBLE_SPRITE : REFUGEE_SPRITE;
     this.#variant = thrum ? DEFAULT_VARIANT : REFUGEE_VARIANT;
-    this.#side = thrum ? THRUM_SIDE_PX : 0;
+    // Thrum beside Pebble; each singer a little to the side by uid (the refugees' lanes, T530a),
+    // so the column waiting at the gate doesn't stack into one body.
+    this.#side = thrum ? THRUM_SIDE_PX : a.pebble ? 0 : refugeeLanePx(uid, false);
     this.#facing = 'ne';
     this.#x = Number.NaN;
     this.#y = Number.NaN;

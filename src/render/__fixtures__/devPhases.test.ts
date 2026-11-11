@@ -3,7 +3,7 @@
 // determinism of a replay whose log prefix ends inside Phase 2, after the checkpoint.
 import { describe, expect, it } from 'vitest';
 import { compileContent } from '../../content/compile.ts';
-import type { CompiledMapDef } from '../../content/compiled.ts';
+import type { CompiledContent, CompiledMapDef } from '../../content/compiled.ts';
 import type { IdSpace, MapDef, RawContent } from '../../content/types.ts';
 import { validate } from '../../content/validate.ts';
 import { createBuildExecutor } from '../../sim/headless.ts';
@@ -17,10 +17,19 @@ import {
 import { DEV_CONTENT, type DevIds } from './devBattle.ts';
 import { boreMap } from './devPhases.ts';
 
-const DEV = compileContent(DEV_CONTENT);
+// The dev registry's compiled type names only its first map; dev_bore is in it (as T702's tests).
+// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- dev_bore is registered
+const DEV = compileContent(DEV_CONTENT) as unknown as CompiledContent<IdSpace>;
+
+/** dev_bore as compiled in `content`. */
+function boreOf(content: typeof DEV): CompiledMapDef<IdSpace> {
+  const map = content.maps.dev_bore;
+  if (map === undefined) throw new Error('dev_bore is not registered');
+  return map;
+}
 
 function config(quill: string, content: typeof DEV = DEV): SimConfig<IdSpace> {
-  const map: CompiledMapDef<IdSpace> = content.maps.dev_bore;
+  const map = boreOf(content);
   return {
     content,
     mapId: 'dev_bore',
@@ -49,7 +58,7 @@ function patched(patch: Partial<MapDef<DevIds>>): typeof DEV {
 interface Run {
   readonly sim: Sim<IdSpace>;
   /** Every event, with the tick it was drained after (the tick just run). */
-  readonly events: (SimEvent<IdSpace> & { readonly at: number })[];
+  readonly events: (SimEvent<IdSpace> & { readonly ranAt: number })[];
   /** The hash after each tick in `hashAt` (the sim's `state.tick` then). */
   readonly hashes: Map<number, string>;
 }
@@ -77,7 +86,7 @@ function play(
     sim.step();
     out.length = 0;
     sim.drainEvents(out);
-    for (const e of out) events.push({ ...e, at });
+    for (const e of out) events.push({ ...e, ranAt: at });
     if (hashAt.includes(sim.state.tick)) hashes.set(sim.state.tick, sim.hash());
   }
   return { sim, events, hashes };
@@ -110,8 +119,8 @@ describe('dev_bore (T806)', () => {
   });
 
   it('compiles its sky-only key; a sky-only key carries no dark ([darkness])', () => {
-    expect(DEV.maps.dev_bore.lighting).toEqual([
-      { wave: 1, env: 'act3', dark: 0.6, skyOnly: false },
+    expect(boreOf(DEV).lighting).toEqual([
+      { wave: 1, env: 'act3', dark: 0.6 },
       { wave: 2, env: 'finale', dark: 0, skyOnly: true },
     ]);
     const lighting = [
@@ -136,7 +145,7 @@ describe('dev_bore (T806)', () => {
     // It fills one tick per tick from W1's start tick (the triggers start it after this tick's
     // timers pass) up to the tick Phase 2 stops it.
     const t = sim.state.timers[0]!;
-    expect(t.filled).toBe(phase2.at - w1.at);
+    expect(t.filled).toBe(phase2.ranAt - w1.ranAt);
     expect(t.running).toBe(true);
     expect(t.full).toBe(false);
     expect(t.ratePct).toBe(0);
@@ -155,7 +164,7 @@ describe('dev_bore (T806)', () => {
     const purge = play(config('purge'));
     const w1 = purge.events.find((e) => e.type === 'WaveStarted' && e.wave === 1)!;
     const phase2 = first(purge, 'PhaseChanged')!;
-    expect(purge.sim.state.timers[0]!.filled).toBeCloseTo(0.75 * (phase2.at - w1.at), 9);
+    expect(purge.sim.state.timers[0]!.filled).toBeCloseTo(0.75 * (phase2.ranAt - w1.ranAt), 9);
     expect(purge.sim.state.stats.boreProgress).toBeLessThan(keep.sim.state.stats.boreProgress);
   });
 
@@ -167,10 +176,10 @@ describe('dev_bore (T806)', () => {
     expect(full.id).toBe('deep_bore');
     const w1 = run.events.find((e) => e.type === 'WaveStarted' && e.wave === 1)!;
     // Started by W1's start trigger, it fills from the next tick: full 300 ticks on.
-    expect(full.at - w1.at).toBe(5 * 60);
+    expect(full.ranAt - w1.ranAt).toBe(5 * 60);
     // The `{ timerFull }` trigger fires on the same tick: the timers run before the triggers.
     const surge = first(run, 'ScriptGroupSpawned')!;
-    expect([surge.id, surge.at]).toEqual(['breakthrough', full.at]);
+    expect([surge.id, surge.ranAt]).toEqual(['breakthrough', full.ranAt]);
     const t = run.sim.state.timers[0]!;
     expect([t.full, t.filled, t.bossHpPct]).toEqual([true, 300, 0.5]);
     expect(run.sim.state.stats.boreProgress).toBe(100);
@@ -186,28 +195,33 @@ describe('dev_bore (T806)', () => {
     const cleared2 = run.events.find((e) => e.type === 'WaveCleared' && e.wave === 2)!;
     const phase2 = run.events.find((e) => e.type === 'PhaseChanged' && e.phase === 2)!;
     // `cleared` is reached in cleanup, so its event fires on the next tick's triggers.
-    expect(phase2.at).toBe(cleared2.at + 1);
+    expect(phase2.ranAt).toBe(cleared2.ranAt + 1);
     const cp = first(run, 'CheckpointReached')!;
-    expect(cp).toMatchObject({ wave: 2, label: 'halls', tick: phase2.at + 1, at: phase2.at });
+    expect(cp).toMatchObject({
+      wave: 2,
+      label: 'halls',
+      tick: phase2.ranAt + 1,
+      ranAt: phase2.ranAt,
+    });
     // 5 s into Phase 2, its own clock grants 50 (`{ phase: 2, afterSec: 5 }`).
     const clock = sim.map.events.findIndex((e) => e.id === 'phase2_clock');
-    const before = play(config('keep'), [], phase2.at + 300).sim.state;
-    const after = play(config('keep'), [], phase2.at + 301).sim.state;
+    const before = play(config('keep'), [], phase2.ranAt + 300).sim.state;
+    const after = play(config('keep'), [], phase2.ranAt + 301).sim.state;
     expect([before.scriptFired[clock], after.scriptFired[clock]]).toEqual([false, true]);
     expect(after.stats.creditsEarned - before.stats.creditsEarned).toBeGreaterThanOrEqual(50);
     const dawn = run.events.find((e) => e.type === 'PhaseChanged' && e.phase === 3)!;
     const light = first(run, 'LightingSet')!;
-    expect([light.key, light.at]).toEqual(['dawn', dawn.at]);
+    expect([light.key, light.ranAt]).toEqual(['dawn', dawn.ranAt]);
     expect(sim.state.lightingKey).toBe('dawn');
-    expect(sim.state.lightingTick).toBe(dawn.at);
+    expect(sim.state.lightingTick).toBe(dawn.ranAt);
     expect(sim.state.phase).toBe(3);
-    expect(sim.state.phaseTick).toBe(dawn.at);
-    expect(first(run, 'MapWon')!.at).toBe(dawn.at + 8 * 60);
+    expect(sim.state.phaseTick).toBe(dawn.ranAt);
+    expect(first(run, 'MapWon')!.ranAt).toBe(dawn.ranAt + 8 * 60);
     expect(sim.state.dark).toBe(0); // lifted with the light
   });
 
   it("the dark eases to 0 over the light set's 8 s", () => {
-    const dawnAt = first(play(config('keep')), 'LightingSet')!.at;
+    const dawnAt = first(play(config('keep')), 'LightingSet')!.ranAt;
     const half = play(config('keep'), [], dawnAt + 1 + 240);
     // At the end of the tick 4 s on: halfway, from W3's 0.6.
     expect(half.sim.state.dark).toBeCloseTo(0.6 * (1 - 241 / 480), 9);
@@ -230,7 +244,7 @@ describe('dev_bore (T806)', () => {
     const inside = cp.tick + 600;
     const log = full.sim.state.commandLog;
     expect(log.some((c) => c.tick >= cp.tick && c.tick < inside)).toBe(true);
-    expect(inside).toBeLessThan(dawn.at);
+    expect(inside).toBeLessThan(dawn.ranAt);
     const end = full.sim.state.tick;
     const ref = play(config('keep'), [cp.tick, inside, end], undefined, extra);
     expect(ref.sim.hash()).toBe(full.sim.hash());

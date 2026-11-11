@@ -197,9 +197,9 @@ describe('settling objectives', () => {
   });
 
   it('createSim refuses an onComplete action the sim cannot run', () => {
-    const map = contentWith([{ ...CLEAN_AUDIT, onComplete: [{ restAll: true }] }]).maps.fx_map!;
+    const map = contentWith([{ ...CLEAN_AUDIT, onComplete: [{ endMap: 'won' }] }]).maps.fx_map!;
     expect(unsupportedScript(map)).toEqual([
-      "objective 'clean_audit': action restAll runs from map events only",
+      "objective 'clean_audit': action endMap runs from map events only",
     ]);
   });
 });

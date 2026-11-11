@@ -179,7 +179,7 @@ export function compileMap<K extends IdSpace>(
       wave: k.wave,
       env: k.env,
       dark: k.dark ?? 0,
-      skyOnly: k.skyOnly === true, // T806
+      ...(k.skyOnly === true ? { skyOnly: true } : {}), // T806: the sky alone
     })),
     dark: (def.lighting ?? []).some((k) => (k.dark ?? 0) > 0),
     lights,

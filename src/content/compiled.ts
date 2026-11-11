@@ -824,7 +824,7 @@ export interface CompiledLightingKey {
   readonly wave: number;
   readonly env: EnvPaletteId;
   readonly dark: number;
-  /** It moves the sky alone (T806): the grade and the darkness skip it (compiled: always set). */
+  /** It moves the sky alone (T806): the grade and the darkness skip it. Absent: false. */
   readonly skyOnly?: boolean;
 }
 
