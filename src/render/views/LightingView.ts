@@ -12,9 +12,16 @@
 // Cosmetic: the sim never reads it. On a map without a schedule it draws nothing. Allocation-free
 // per frame: it only recolors when the shown position moves (or `relight` or `night` asks), and a
 // crossfade's mix and grade are written in place (T501k).
+// T806: a **sky-only** key (`skyOnly`, the finale's sky warming per wave) moves the sky alone; the
+// grade follows the keys that aren't, so it holds. A **lighting set** a map script turns to
+// (`setLighting`, content/lightingSets.ts: Dawn) is a last stop of both, reached from the tick
+// it ran (`state.lightingKey`, `state.lightingTick`) over the set's turn, from wherever the
+// schedule stood (stepped under reduced motion). A map whose script sets one draws even without a
+// schedule; its own env's sky stays void until the set's fades in.
 import * as Phaser from 'phaser';
+import { LIGHTING_SETS, lightingSetProgress, lightingSetsOf } from '../../content/lightingSets.ts';
 import { ENV_PALETTE_IDS } from '../../content/palettes/env.ts';
-import type { EnvPaletteId, LightingKeyDef } from '../../content/types.ts';
+import type { EnvPaletteId } from '../../content/types.ts';
 import { imageToCanvas } from '../sprites/canvas.ts';
 import { VIEW_H, VIEW_W } from '../scale.ts';
 import {
@@ -44,10 +51,28 @@ export interface NightTint {
   tintFor(obj: object, grade: number): number;
 }
 
+/** A schedule key as the view reads it (MapDef.lighting's, or its compiled form). */
+interface ViewLightingKey {
+  readonly wave: number;
+  readonly env: EnvPaletteId;
+  readonly skyOnly?: boolean;
+}
+
+/** A lighting set's stop: past every wave, so the schedule never reaches it on its own. */
+const SET_WAVE = Number.POSITIVE_INFINITY;
+
 export class LightingView {
+  /** The sky's stops: the map's env, every key, then each lighting set the script turns to. */
   readonly #stops: readonly LightStop[];
+  /** The grade's stops: the same without the sky-only keys (T806). */
+  readonly #worldStops: readonly LightStop[];
   readonly #grades: readonly number[];
+  /** The lighting sets' keys, in stop order (their stops end both lists). */
+  readonly #sets: readonly string[];
+  /** No schedule: the map's own env has no sky of its own to show (only a set's fades in). */
+  readonly #voidBase: boolean;
   readonly #mix: LightMix = { stop: 0, from: 'act1', to: 'act1', t: 0 };
+  readonly #worldMix: LightMix = { stop: 0, from: 'act1', to: 'act1', t: 0 };
   readonly #reducedMotion: () => boolean;
   readonly #world: Phaser.GameObjects.Layer;
   readonly #ground: Phaser.GameObjects.Layer;
@@ -58,19 +83,31 @@ export class LightingView {
   readonly #overGround: Phaser.GameObjects.GameObject[] = [];
   /** The position drawn (NaN: nothing drawn yet). */
   #shown = Number.NaN;
+  /** The grade's position drawn along the world stops. */
+  #shownWorld = Number.NaN;
   /** The grade's color now (white: none). */
   #color = WHITE;
   #night: NightTint | null = null;
 
   constructor(
     ctx: ViewContext,
-    map: { readonly env: string; readonly lighting: readonly LightingKeyDef[] },
+    map: {
+      readonly env: string;
+      readonly lighting: readonly ViewLightingKey[];
+      readonly events?: readonly { readonly actions: readonly object[] }[];
+    },
     reducedMotion: () => boolean,
   ) {
     const base = ENV_PALETTE_IDS.find((id) => id === map.env);
-    this.#stops =
-      map.lighting.length === 0 || base === undefined ? [] : lightStops(base, map.lighting);
-    this.#grades = base === undefined ? [] : stopGrades(base, this.#stops);
+    const sets = map.events === undefined ? [] : lightingSetsOf({ events: map.events });
+    const setStops = sets.map((k) => ({ wave: SET_WAVE, env: LIGHTING_SETS[k]!.env })); // a set
+    const draws = base !== undefined && (map.lighting.length > 0 || sets.length > 0);
+    this.#sets = sets;
+    this.#voidBase = map.lighting.length === 0;
+    this.#stops = draws ? [...lightStops(base, map.lighting), ...setStops] : [];
+    const world = map.lighting.filter((k) => k.skyOnly !== true);
+    this.#worldStops = draws ? [...lightStops(base, world), ...setStops] : [];
+    this.#grades = base === undefined ? [] : stopGrades(base, this.#worldStops);
     this.#reducedMotion = reducedMotion;
     const { scene, layers } = ctx;
     this.#ground = layers.ground;
@@ -111,24 +148,47 @@ export class LightingView {
     return this.#color;
   }
 
-  /**
-   * Follows the schedule from sim state: `wave` is the last wave started (0 before wave 1),
-   * `startTick` each wave's start tick (WaveSchedule.startTick), `tick` the sim's.
-   */
-  update(wave: number, startTick: readonly number[], tick: number): void {
-    if (this.#grade === null) return;
-    const started = wave > 0 ? (startTick[wave - 1] ?? tick) : tick;
-    const pos = lightAt(this.#stops, wave, started, tick, this.#reducedMotion());
-    if (pos === this.#shown) return;
-    this.#shown = pos;
-    this.#draw(pos);
+  /** The grade's position drawn along the world stops (the sky-only keys left out; T806). */
+  get shownWorld(): number {
+    return Number.isNaN(this.#shownWorld) ? 0 : this.#shownWorld;
   }
 
-  #draw(pos: number): void {
+  /**
+   * Follows the schedule from sim state: `wave` is the last wave started (0 before wave 1),
+   * `startTick` each wave's start tick (WaveSchedule.startTick), `tick` the sim's; and a script's
+   * lighting set (`state.lightingKey`, set on `state.lightingTick`; T806).
+   */
+  update(
+    wave: number,
+    startTick: readonly number[],
+    tick: number,
+    lightingKey: string | null = null,
+    lightingTick = 0,
+  ): void {
+    if (this.#grade === null) return;
+    const started = wave > 0 ? (startTick[wave - 1] ?? tick) : tick;
+    const reduced = this.#reducedMotion();
+    let pos = lightAt(this.#stops, wave, started, tick, reduced);
+    let world = lightAt(this.#worldStops, wave, started, tick, reduced);
+    const set = lightingKey === null ? -1 : this.#sets.indexOf(lightingKey);
+    if (set >= 0) {
+      const t = reduced ? 1 : lightingSetProgress(lightingKey, lightingTick, tick);
+      const skyAt = this.#stops.length - this.#sets.length + set;
+      const worldAt = this.#worldStops.length - this.#sets.length + set;
+      pos += (skyAt - pos) * t;
+      world += (worldAt - world) * t;
+    }
+    if (pos === this.#shown && world === this.#shownWorld) return;
+    this.#shown = pos;
+    this.#shownWorld = world;
+    this.#draw(pos, world);
+  }
+
+  #draw(pos: number, world: number): void {
     const grade = this.#grade;
     if (grade === null) return;
     const mix = lightMix(this.#stops, pos, this.#mix);
-    const color = gradeNumberAt(this.#grades, mix);
+    const color = gradeNumberAt(this.#grades, lightMix(this.#worldStops, world, this.#worldMix));
     this.#color = color;
     grade.setFillStyle(color).setVisible(color !== WHITE);
     this.#tintScenery();
@@ -136,7 +196,8 @@ export class LightingView {
     const skies = this.#skies;
     for (let k = 0; k < skies.length; k++) {
       const img = skies[k]!; // k < length
-      if (k === mix.stop) img.setVisible(true).setAlpha(1);
+      if (k === 0 && this.#voidBase) img.setVisible(false); // no schedule: no sky of its own
+      else if (k === mix.stop) img.setVisible(true).setAlpha(1);
       else if (k === mix.stop + 1) img.setVisible(mix.t > 0).setAlpha(mix.t);
       else img.setVisible(false);
     }
@@ -183,6 +244,7 @@ export class LightingView {
     if (grade !== null) this.#ground.bringToTop(grade);
     for (const obj of this.#overGround) this.#ground.bringToTop(obj);
     this.#shown = Number.NaN;
+    this.#shownWorld = Number.NaN;
     if (grade === null) this.#tintScenery();
   }
 
@@ -208,11 +270,14 @@ export class LightingView {
       scenery,
       tinted,
       tintedSprites: sprites,
+      sky: this.shown,
+      world: this.shownWorld,
     };
   }
 
   reset(): void {
     this.#shown = Number.NaN;
+    this.#shownWorld = Number.NaN;
   }
 }
 

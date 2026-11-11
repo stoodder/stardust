@@ -19,7 +19,9 @@
 //   `{ phase }` trigger and the `phaseAtLeast` atom name a whole phase ≥ 1 that the map reaches
 //   (phase 1 from the start, a later one by some `setPhase`), with `afterSec` ≥ 0; `setPhase`
 //   names a whole phase ≥ 2; a `checkpoint` label and an echo id are snake_case; `setLighting`
-//   names a key; `restoreTowerClass` needs a `revokeTowerClass` on the map.
+//   names a lighting set (content/lightingSets.ts: `dawn`); `restoreTowerClass` needs a
+//   `revokeTowerClass` on the map.
+import { LIGHTING_SETS, lightingSet } from './lightingSets.ts';
 import { checkFlagGate } from './validateM7.ts';
 import type {
   BossPhaseDef,
@@ -228,8 +230,9 @@ function validateFinaleScripts(issues: Issues, def: MapDef<IdSpace>, where: stri
     if ('checkpoint' in a && !SNAKE.test(a.checkpoint)) {
       issues.add('script', w, `checkpoint label '${a.checkpoint}' must be snake_case`);
     }
-    if ('setLighting' in a && a.setLighting.trim() === '') {
-      issues.add('script', w, 'setLighting names a key');
+    if ('setLighting' in a && lightingSet(a.setLighting) === null) {
+      const known = Object.keys(LIGHTING_SETS).join(', ');
+      issues.add('script', w, `setLighting '${a.setLighting}' names no lighting set (${known})`);
     }
     if ('spawnEcho' in a) {
       needsSong(w, 'spawnEcho');

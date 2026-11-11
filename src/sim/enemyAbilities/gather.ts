@@ -46,6 +46,7 @@
 //   so a Maw among Fractures and their Shards tops out at 400 + five units' HP (a test).
 import type { CompiledGather } from '../../content/compiled.ts';
 import type { Ally, Enemy } from '../entities.ts';
+import { hushSinger } from '../choir.ts';
 import { loseRefugee } from '../escort.ts';
 import { poolKill, type Pool } from '../pool.ts';
 import { emit, type SimState } from '../state.ts';
@@ -357,6 +358,7 @@ function gatherEnemy(state: SimState, m: Enemy, v: Enemy): void {
 
 /** Gathers refugee `a` into `m`: a loss, its group's, and Nothing Gathered's count. */
 function gatherRefugee(state: SimState, m: Enemy, a: Ally): void {
+  if (hushSinger(state, a)) return; // a choir singer is hushed, not gathered (sim/choir.ts; T804)
   poolKill(state.allies, a);
   a.hushUid = 0;
   absorb(m, 0, false);

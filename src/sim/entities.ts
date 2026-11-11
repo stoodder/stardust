@@ -449,6 +449,11 @@ export interface Enemy extends PoolEntity {
    */
   scatterTicks: number;
   scatteredOnce: boolean;
+  /**
+   * Damage a boss took this tick on a song map, summed for the song (sim/song.ts `songBossHit`,
+   * read and cleared by song(); T805). 0 elsewhere.
+   */
+  songDamage: number;
 }
 
 export const ENEMY_BLANK: Readonly<Enemy> = Object.freeze({
@@ -527,6 +532,7 @@ export const ENEMY_BLANK: Readonly<Enemy> = Object.freeze({
   splitMaxHp: 0,
   scatterTicks: 0,
   scatteredOnce: false,
+  songDamage: 0,
 });
 
 /**
@@ -691,8 +697,11 @@ export const ZONE_BLANK: Readonly<Zone> = Object.freeze({
   towerUid: 0,
 });
 
-/** How an ally moves (architecture.md § Entity model). */
-export type AllyMode = 'post' | 'route' | 'owner' | 'stationary';
+/**
+ * How an ally moves (architecture.md § Entity model): `choir` is the finale's column, walked as a
+ * group by sim/choir.ts (T804), never by the allies system.
+ */
+export type AllyMode = 'post' | 'route' | 'owner' | 'stationary' | 'choir';
 /** Who can hurt an ally: nobody, the Hollow's hush, or a scripted timeline (Bricks in A3M3). */
 export type AllyVulnerability = 'never' | 'hush' | 'scripted';
 

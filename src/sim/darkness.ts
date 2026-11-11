@@ -24,9 +24,14 @@
 //   draws, and the next tick's towers fire under it. A tower built this tick is lit or not by the
 //   tick's end (it deploys first, so it never fires in between).
 // - **DarknessShift** fires on the tick a wave starts whose level differs from the dark then.
+// - **Sky-only keys and lighting sets** (T806). A sky-only key (the finale's sky warming per wave)
+//   is skipped: the darkness steps between the keys round it. From the tick a `setLighting` turns
+//   the light to a lighting set (Dawn), the dark eases to 0 over the set's turn
+//   (content/lightingSets.ts), as render's light does.
 // On a map without darkness (no key with `dark` > 0; `map.dark`) the system does nothing: `dark`
 // stays 0, every tower `lit`, and no range changes, so no earlier map's numbers move.
 import type { CompiledLight, CompiledLightingKey, CompiledMapDef } from '../content/compiled.ts';
+import { lightingSetProgress } from '../content/lightingSets.ts';
 import { DARK_RANGE_PENALTY } from '../content/rules.ts';
 import type { IdSpace } from '../content/types.ts';
 import { emit, type SimState } from './state.ts';
@@ -52,6 +57,7 @@ export function darkTarget(keys: readonly CompiledLightingKey[], wave: number): 
   let prevDark = 0;
   for (let k = 0; k < keys.length; k++) {
     const key = keys[k]!; // k < length
+    if (key.skyOnly) continue; // the sky alone (T806)
     if (wave < key.wave) {
       return prevDark + ((key.dark - prevDark) * (wave - prevWave)) / (key.wave - prevWave);
     }
@@ -148,6 +154,10 @@ export function darkness(state: SimState, ctx: TickContext): void {
   const s = state.schedule;
   const before = state.dark;
   state.dark = darkAt(map.lighting, s.startTick, state.wave, state.tick + 1);
+  // A lighting set (Dawn; T806) lifts the dark to 0 as the light turns (content/lightingSets.ts).
+  if (state.lightingKey !== null) {
+    state.dark *= 1 - lightingSetProgress(state.lightingKey, state.lightingTick, state.tick + 1);
+  }
   if (state.wave > 0 && s.startTick[state.wave - 1] === state.tick) {
     const to = darkTarget(map.lighting, state.wave);
     if (to !== before) emit(state, { type: 'DarknessShift', wave: state.wave, dark: to });

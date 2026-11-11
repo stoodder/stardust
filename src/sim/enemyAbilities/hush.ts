@@ -32,6 +32,7 @@
 import { HUSH_CONTACT_TILES, HUSH_TELL_SEC } from '../../content/rules.ts';
 import { secToTicks } from '../../shared/time.ts';
 import type { Ally, Enemy } from '../entities.ts';
+import { hushSinger, isChoirSinger } from '../choir.ts';
 import { loseRefugee, onField } from '../escort.ts';
 import { poolKill, type Pool } from '../pool.ts';
 import { emit, type SimState } from '../state.ts';
@@ -293,7 +294,8 @@ function releaseAllies(state: SimState): void {
 /** The tell on refugee `a` ran out: it is lost, and `h` heals to full and turns Heavy. */
 function landHushAlly(state: SimState, h: Enemy, a: Ally): void {
   const def = h.def!; // hushPass checked it
-  poolKill(state.allies, a);
+  const singer = isChoirSinger(a); // a singer is kept, hushed (sim/choir.ts; T804)
+  if (!singer) poolKill(state.allies, a);
   emit(state, {
     type: 'Hushed',
     uid: h.uid,
@@ -304,8 +306,12 @@ function landHushAlly(state: SimState, h: Enemy, a: Ally): void {
     x: a.x,
     y: a.y,
   });
-  loseRefugee(state, a.uid, 'hushed', h.uid, a.group);
-  emit(state, { type: 'AllyRemoved', uid: a.uid });
+  if (singer) {
+    hushSinger(state, a);
+  } else {
+    loseRefugee(state, a.uid, 'hushed', h.uid, a.group);
+    emit(state, { type: 'AllyRemoved', uid: a.uid });
+  }
   h.hushUid = 0;
   h.hushTicks = 0;
   h.heavy = true;

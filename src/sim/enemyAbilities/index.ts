@@ -71,6 +71,7 @@ export function enemyAbilities(state: SimState, ctx: TickContext): void {
       leaveStep(state, ctx, e);
       continue;
     }
+    if (e.scatterTicks > 0) continue; // scattered: no abilities until it re-forms (sim/song.ts)
     if (def.burrow !== null) burrowStep(e, def.burrow);
     if (def.boss !== null) bossStep(state, ctx, e, def.boss);
     if (e.skittishTicks > 0) skittishStep(state, e);
@@ -85,7 +86,7 @@ export function enemyAbilities(state: SimState, ctx: TickContext): void {
   for (let i = 0; i < pool.used; i++) {
     const e = pool.items[i]!; // i < used ≤ items.length
     const def = e.def;
-    if (!e.alive || def === null || e.leaving || e.burrowed) continue;
+    if (!e.alive || def === null || e.leaving || e.burrowed || e.scatterTicks > 0) continue;
     const huddle = def.boss !== null ? bossHuddle(e) : def.huddle;
     if (huddle !== null) huddleStep(state, e, huddle);
   }

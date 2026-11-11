@@ -31,6 +31,9 @@
 //   once the wave has started without them all.
 // - `phaseAtLeast` (T800a): the map's script phase (`setPhase`; the finale's 1–3) is at least
 //   that. The phase only rises, so it settles true once reached (Ves'thara's `dawn` rule, T809).
+// - `restedPct` (T805; the Laid to Rest medal): Phase 2's Hollow kills laid to rest inside the
+//   song ÷ all of them (`stats.restedKills`, `scatteredKills`; sim/song.ts) is at least that, with
+//   at least one kill. Judged when evaluated, as the state atoms (the ratio moves both ways).
 // - `all`, `any`, `not`.
 //
 // settledCondition() says whether the rest of the run can still change a condition's value: a
@@ -123,7 +126,7 @@ export function settledCondition(c: Condition, state: View, ctx: ConditionContex
     if (clearedInTime(state, ctx.map, c.cleared, c.byWave)) return true;
     return state.wave >= c.byWave ? false : null;
   }
-  return null; // towers, linkActive, tagRatio: judged when evaluated
+  return null; // towers, linkActive, tagRatio, restedPct: judged when evaluated
 }
 
 function atom(c: Condition, state: View, ctx: ConditionContext): boolean {
@@ -143,6 +146,11 @@ function atom(c: Condition, state: View, ctx: ConditionContext): boolean {
   }
   if ('flag' in c) return ctx.config.scriptFlags[c.flag] === c.eq;
   if ('phaseAtLeast' in c) return state.phase >= c.phaseAtLeast;
+  if ('restedPct' in c) {
+    const rested = state.stats.restedKills;
+    const all = rested + state.stats.scatteredKills;
+    return all > 0 && rested / all >= c.restedPct;
+  }
   if ('leaks' in c) return within(leakCount(state, c.leaks), c.gte, c.lte);
   if ('wreckageCleared' in c) return wreckageClearedAt(state, ctx.map, c.wreckageCleared);
   if ('objectiveDone' in c) return objectiveStatus(state, ctx, c.objectiveDone) === 'done';

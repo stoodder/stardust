@@ -197,10 +197,9 @@ describe('settling objectives', () => {
   });
 
   it('createSim refuses an onComplete action the sim cannot run', () => {
-    const map = contentWith([{ ...CLEAN_AUDIT, onComplete: [{ setLighting: 'dawn' }] }]).maps
-      .fx_map!;
+    const map = contentWith([{ ...CLEAN_AUDIT, onComplete: [{ restAll: true }] }]).maps.fx_map!;
     expect(unsupportedScript(map)).toEqual([
-      "objective 'clean_audit': action setLighting is not simulated until T806",
+      "objective 'clean_audit': action restAll runs from map events only",
     ]);
   });
 });

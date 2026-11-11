@@ -71,6 +71,8 @@ export function fakeResult(
     maxAsset: 0,
     objective: 'defend',
     escortTotal: 0,
+    voices: 0,
+    choirSize: 0,
     maxLost: null,
     credits: 0,
     lostAtWave,

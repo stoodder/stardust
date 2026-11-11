@@ -819,11 +819,13 @@ export interface CompiledLight {
   readonly radiusSq: number;
 }
 
-/** A lighting key (LightingKeyDef) with `dark` resolved (0 when absent). */
+/** A lighting key (LightingKeyDef) with `dark` and `skyOnly` resolved (0 and false when absent). */
 export interface CompiledLightingKey {
   readonly wave: number;
   readonly env: EnvPaletteId;
   readonly dark: number;
+  /** It moves the sky alone (T806): the grade and the darkness skip it. */
+  readonly skyOnly: boolean;
 }
 
 /** A refugee group (RefugeeGroupDef) with its route resolved and its numbers by rule. */

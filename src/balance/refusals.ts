@@ -59,9 +59,10 @@ export type HarnessFeature =
  */
 export const HARNESS_GATES: Readonly<Record<HarnessFeature, string | null>> = Object.freeze({
   objectives: null,
-  // M6 (D141): the Holdout's floor (T605, live). The finale (D154): its Voices margins (T804).
+  // M6 (D141): the Holdout's floor (T605, live). The finale (D154): its Voices margins (T804,
+  // live: balance/checks.ts `marginOf`).
   holdout: null,
-  choir: 'T804',
+  choir: null,
   protect: null,
   flagVariants: null,
   companionPick: null,

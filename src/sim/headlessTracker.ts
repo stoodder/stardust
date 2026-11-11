@@ -72,6 +72,9 @@ export interface RunSummary {
   readonly objective: ObjectiveKind;
   readonly escortTotal: number;
   readonly maxLost: number | null;
+  /** A Choir map's Voices at the end and the run's choir (both 0 without one; T804). */
+  readonly voices: number;
+  readonly choirSize: number;
   /** Credits left at the end (unspent). */
   readonly credits: number;
   /** The last wave started when the map was lost, or null. */
@@ -506,6 +509,8 @@ export function createRunTracker<K extends IdSpace>(
         objective: state.objective,
         escortTotal: state.refugeeTotal,
         maxLost: escortMaxLost(state, map),
+        voices: state.choir.voices,
+        choirSize: state.choir.singers,
         credits: state.credits,
         lostAtWave,
         stats: {

@@ -40,6 +40,9 @@ export interface LightingLook {
   readonly scenery: number;
   readonly tinted: number;
   readonly tintedSprites: number;
+  /** Where the sky and the grade stand along their stops (T806: a sky-only key moves the sky). */
+  readonly sky: number;
+  readonly world: number;
 }
 
 /** One ally's view. */
@@ -283,6 +286,8 @@ export interface RenderState {
   readonly debris: number;
   /** The boss bar's fill (px of 160), or −1 while none shows. */
   readonly bossBar: number;
+  /** Each secondary timer's bar fill (px of 96; −1 before it starts; T806's TimerBarView). */
+  readonly timerBars: readonly number[];
   /**
    * The boss bar's shield strip fill (px of 160; −1: none shows, or the boss has no shield) and
    * its end mark (px; −1: none), where the Penitent kneels (review R6).

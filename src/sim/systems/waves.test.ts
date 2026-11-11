@@ -283,7 +283,8 @@ describe('createSim and map scripts', () => {
   it('refuses script parts it cannot simulate, naming them', () => {
     // The whole fixture runs since T409 (its clickable rock: sim/clickables.test.ts).
     expect(() => createSim({ ...fixtureConfig(), content: compileContent(FIXTURE) })).not.toThrow();
-    // A clickable's fallback is held to the same triggers as an event's.
+    // A clickable's fallback is held to the same triggers as an event's: a script phase's runs
+    // since T806 (sim/phases.test.ts), for both.
     expect(() =>
       createSim({
         ...fixtureConfig(),
@@ -307,12 +308,12 @@ describe('createSim and map scripts', () => {
           },
         }),
       }),
-    ).toThrow(/'rock': setClickable fallback phase is not simulated until T806/);
+    ).not.toThrow();
     expect(() =>
       simWith({
         events: [{ id: 'boss', on: { phase: 1 }, actions: [{ cue: 'fx_map_boss' }] }],
       }),
-    ).toThrow(/'boss': trigger phase is not simulated until T806/);
+    ).not.toThrow();
     // `bossEnd: 'pivot'` runs since T506 (sim/penitent.test.ts).
     expect(() =>
       simWith({ events: [{ id: 'pivot', on: { tick: 5 }, actions: [{ bossEnd: 'pivot' }] }] }),

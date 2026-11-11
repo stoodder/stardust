@@ -27,7 +27,6 @@ describe('the system pipeline', () => {
       'timers',
       'triggers',
       'forcedInput',
-      'phases',
       'status',
       'fields',
       'links',

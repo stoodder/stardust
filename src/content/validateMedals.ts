@@ -226,6 +226,12 @@ function validateCondition(
     const g = c.tagRatio.gte;
     if (!(g > 0 && g <= 1))
       issues.add('condition', `${where}.tagRatio.gte`, `${g} must be in (0, 1]`);
+  } else if ('restedPct' in c) {
+    const g = c.restedPct;
+    if (!(g > 0 && g <= 1)) issues.add('condition', `${where}.restedPct`, `${g} must be in (0, 1]`);
+    if (def.song === undefined) {
+      issues.add('condition', `${where}.restedPct`, 'reads the song: the map has no `song`');
+    }
   } else if ('passedMarker' in c) {
     passedMarker(issues, def, c.passedMarker.marker, c.passedMarker.enemy, where);
   } else if ('leaks' in c && c.leaks.waves !== undefined) {

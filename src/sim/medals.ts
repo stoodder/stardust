@@ -80,7 +80,11 @@ export function leakedThisTick(e: Enemy): boolean {
  */
 export function bookLeak(state: SimState, e: Enemy): void {
   if (isMedalExempt(e.tags)) state.stats.medalExemptLeaks++;
-  else if (state.objective !== 'escort' && state.objective !== 'holdout') {
+  else if (
+    state.objective !== 'escort' &&
+    state.objective !== 'holdout' &&
+    state.objective !== 'choir' // Perfect there: no singer hushed (sim/choir.ts; T804)
+  ) {
     forfeit(state, 'perfectCore');
   }
 }

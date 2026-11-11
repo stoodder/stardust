@@ -136,6 +136,7 @@ import { presentationOfMap } from '../../story/presentation.ts';
 import { EnemyView } from '../views/EnemyView.ts';
 import { FieldTintView } from '../views/FieldTintView.ts';
 import { LightingView } from '../views/LightingView.ts';
+import { TimerBarView } from '../views/TimerBarView.ts'; // T806
 import { DarknessView } from '../views/DarknessView.ts';
 import { WorldGlowView } from '../views/WorldGlowView.ts';
 import { SweepView } from '../views/SweepView.ts';
@@ -274,6 +275,8 @@ export class BattleScene extends Phaser.Scene {
   /** The Tidybots and the stardust specks they sweep after each wave (T410b; the map's dial). */
   #tidybots!: TidybotView;
   #bossBar!: BossBarView;
+  /** The secondary timers' minimal bar (the Deep Bore; T806). */
+  #timerBars!: TimerBarView;
   #huddles!: HuddleView;
   /** Aelari shields: the ripple, the pulse tell and ring (T403). */
   #shields!: ShieldView;
@@ -483,6 +486,7 @@ export class BattleScene extends Phaser.Scene {
       map.markers,
     );
     this.#bossBar = new BossBarView(ctx, prefersReducedMotion);
+    this.#timerBars = new TimerBarView(ctx, map.timers); // T806
     this.#huddles = new HuddleView(ctx, prefersReducedMotion, pulseOn);
     this.#shields = new ShieldView(ctx, this.#fx, prefersReducedMotion);
     // T530a: views that mark a unit find its body as EnemyView draws it (unitAnchor.ts).
@@ -705,6 +709,7 @@ export class BattleScene extends Phaser.Scene {
       this.#wreckage.reset();
       this.#tidybots.reset();
       this.#bossBar.reset();
+      this.#timerBars.reset(); // T806
       this.#huddles.reset();
       this.#shields.reset();
       this.#auras.reset();
@@ -760,13 +765,20 @@ export class BattleScene extends Phaser.Scene {
     this.#sweeps.update(state.zones);
     this.#wreckage.update(state.wreckage, this.#clearTicks);
     // After the wreckage, so a tile salvaged this frame is under the grade and tinted at once.
-    this.#lighting.update(state.wave, state.schedule.startTick, state.tick);
+    this.#lighting.update(
+      state.wave,
+      state.schedule.startTick,
+      state.tick,
+      state.lightingKey, // T806: a script's lighting set (Dawn)
+      state.lightingTick,
+    );
     this.#darkness.update(state.dark, state.towers);
     this.#glow.update(state.dark, state.towers);
     this.#lightGhosts.update(state.towers);
     this.#drone.update(state.wreckage, this.#clearTicks, state.tick);
     this.#tidybots.update(state.tick);
     this.#bossBar.update(dt, state.enemies);
+    this.#timerBars.update(state.timers); // T806
     this.#huddles.update(state.enemies);
     this.#shields.update(dt, state.enemies);
     this.#auras.update(state.enemies, state.tick);
@@ -993,6 +1005,7 @@ export class BattleScene extends Phaser.Scene {
       },
       debris: this.#fx.debrisLive,
       bossBar: this.bossBarFill,
+      timerBars: this.#timerBars.shown, // T806
       bossShield: this.#bossBar.shieldPx,
       bossEnd: this.#bossBar.endPx,
       bossCells: this.#bossBar.segments, // T731

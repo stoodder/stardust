@@ -25,6 +25,7 @@ import { poolAlloc } from '../pool.ts';
 import { factionArmorFlat, withFactionArmor } from '../factionArmor.ts';
 import { emit, takeUid, type SimState } from '../state.ts';
 import type { TickContext } from '../tick.ts';
+import { timerBossHpPct } from '../timers.ts'; // T806: a stopped timer's boss bonus
 import { reduceAbilityCooldowns } from './abilities.ts';
 
 export function waves(state: SimState, ctx: TickContext): void {
@@ -140,7 +141,7 @@ function beginCountdown(state: SimState, ctx: TickContext, next: CompiledWave<Id
  * Whether the countdown to `wave` records a retry checkpoint (core-loop.md § 2.12): every
  * CHECKPOINT_EVERY_WAVES-th wave on a campaign act's map from CHECKPOINTS_FROM_ACT on, never on a
  * Holdout (it has no defeat to retry). The finale isn't counted in waves: its one checkpoint is a
- * script action at Phase 2 (still refused, `SCRIPT_GATES`).
+ * `checkpoint` script action at Phase 2 (sim/phases.ts, T806).
  */
 export function checkpointAt(
   map: { readonly act: Act; readonly objective: ObjectiveKind },
@@ -316,7 +317,13 @@ export function spawn(
   g: CompiledWave<IdSpace>['groups'][number],
   scaled: ReadonlyMap<string, CompiledEnemyDef>,
 ): void {
-  const def = scaled.size === 0 ? g.enemy : (scaled.get(g.enemy.id) ?? g.enemy);
+  let def = scaled.size === 0 ? g.enemy : (scaled.get(g.enemy.id) ?? g.enemy);
+  // A boss spawning once a secondary timer has stopped takes its HP bonus (the Deep Bore's +5% per
+  // 10% on the Unsung; sim/timers.ts, T806).
+  if (def.boss !== null && state.timers.length > 0) {
+    const bonus = timerBossHpPct(state);
+    if (bonus > 0) def = scaledEnemy(def, { hp: bonus, shield: 0, speed: 0 });
+  }
   const e = poolAlloc(state.enemies, ENEMY_BLANK, takeUid(state));
   e.def = def;
   e.wave = wave;

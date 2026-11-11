@@ -204,16 +204,28 @@ export interface ChoirState {
   halted: boolean;
   /** The leader has reached the choir's `stopAt` marker (the Halls mouth). */
   arrived: boolean;
+  /** Where the leader stops: `dist` at the road's point nearest `stopAt` (T804, at createSim). */
+  stopDist: number;
+  /** Old Thrum walks beside the leader (`spared_quiet_wave`; T804): the song's radius bonus. */
+  thrum: boolean;
+  /** Ticks the choir has spent halted this run (T804; the ≤ 15% pin on par's Phase 1, D154). */
+  haltTicks: number;
 }
 
-/** A secondary timer now (T800a seam, T806 runs it), index-aligned with `map.timers`. */
+/** A secondary timer now (sim/timers.ts, T806), index-aligned with `map.timers`. */
 export interface TimerState {
   /** Ticks of fill so far, at 100% rate (full at the timer's `fillTicks`). */
   filled: number;
-  /** Its rate now, a share (1 = 100%; `setTimerRate`); 0 until `startTimer`. */
+  /** Its rate now, a share (1 = 100%, the default; `setTimerRate`: Purge's 0.75, 0 stops it). */
   ratePct: number;
+  /** A `startTimer` has started it (it fills while its rate is above 0 and it isn't full). */
   running: boolean;
   full: boolean;
+  /**
+   * The HP share a boss spawning now gains from it: fixed as it stops (rate 0, or full) at the
+   * timer's `bossHpPerTenth` × whole tenths filled (the Bore: +5% per 10%); 0 while it runs.
+   */
+  bossHpPct: number;
 }
 
 /** A count per enemy faction (fixed keys, so the shape is monomorphic and hash order is stable). */
@@ -480,8 +492,10 @@ export interface SimState<K extends IdSpace = IdSpace> {
   restTarget: number;
   /** The choir (T804); blank without one. */
   choir: ChoirState;
-  /** The lighting key a `setLighting` set (Dawn; T806), or null: render reads it. */
+  /** The lighting set a `setLighting` set (Dawn; T806), or null: render reads it. */
   lightingKey: string | null;
+  /** The tick that `setLighting` ran (0 while `lightingKey` is null): the light eases from it. */
+  lightingTick: number;
   /** Abilities a `lockAbility` locked for the phase (Directive 0's Time Dilation; T807). */
   abilitiesLocked: string[];
   /** Commands enqueued and not yet applied (FIFO). */
@@ -620,14 +634,27 @@ export function createState(map: CompiledMapDef<IdSpace>, seed: number): SimStat
     phaseTick: 0,
     timers: map.timers.map((): TimerState => ({
       filled: 0,
-      ratePct: 0,
+      ratePct: 1,
       running: false,
       full: false,
+      bossHpPct: 0,
     })),
     restPoints: 0,
     restTarget: map.song?.restTarget ?? 0,
-    choir: { singers: 0, voices: 0, dist: 0, x: 0, y: 0, halted: false, arrived: false },
+    choir: {
+      singers: 0,
+      voices: 0,
+      dist: 0,
+      x: 0,
+      y: 0,
+      halted: false,
+      arrived: false,
+      stopDist: 0,
+      thrum: false,
+      haltTicks: 0,
+    },
     lightingKey: null,
+    lightingTick: 0,
     abilitiesLocked: [],
     pending: [],
     commandLog: [],

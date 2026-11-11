@@ -111,7 +111,7 @@ export function validateEscort(issues: Issues, def: MapDef<IdSpace>, where: stri
 }
 
 /**
- * [darkness]: each lighting key's `dark` is in [0, 1]; each lamp (`lights`) names a marker of the
+ * [darkness]: each lighting key's `dark` is in [0, 1], and a sky-only key has none; each lamp (`lights`) names a marker of the
  * map, once, with a radius > 0 when it gives one (LAMP_RADIUS_TILES by default); lamps go with a darkening schedule (they light nothing otherwise).
  */
 export function validateDarkness(issues: Issues, def: MapDef<IdSpace>, where: string): void {
@@ -119,6 +119,9 @@ export function validateDarkness(issues: Issues, def: MapDef<IdSpace>, where: st
   for (const [i, k] of (def.lighting ?? []).entries()) {
     if (k.dark !== undefined && !(k.dark >= 0 && k.dark <= 1)) {
       bad(`${where}.lighting[${i}].dark`, `${k.dark} must be in [0, 1]`);
+    }
+    if (k.skyOnly === true && k.dark !== undefined) {
+      bad(`${where}.lighting[${i}].dark`, 'a sky-only key carries no dark (the darkness skips it)');
     }
   }
   const lights = def.lights ?? [];

@@ -59,6 +59,17 @@ export {
   refugeesRemaining, // T706
 } from './escort.ts'; // T605, T612; R7
 export { bearersCarried, bearerTotal, postManned } from './bearers.ts'; // T706
+export {
+  choirSize,
+  inSong,
+  isChoirSinger,
+  isHushedSinger,
+  minVoicesOf,
+  recoverSingers,
+  songCircles,
+  songRadius,
+  type SongCircle,
+} from './choir.ts'; // T804: the finale's choir
 export { blockable, blockerLevel, BLOCK_FRONT_TILES } from './blocker.ts'; // T605
 export { previewHidden, selectRevokedClass, slotRevoked, type ScriptModifier } from './revoke.ts'; // T606
 // Detection (T406): whether a cloaked unit is hidden now (render's shimmer), and a detector's ring.
@@ -96,6 +107,7 @@ export type {
   SimState,
   SimStats,
   TagCounts,
+  TimerState, // T806
   WaveSchedule,
 } from './state.ts';
 export {

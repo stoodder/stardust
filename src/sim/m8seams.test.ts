@@ -62,7 +62,9 @@ describe('the finale state and entity fields', () => {
       },
     };
     const state = createState(map, 1);
-    expect(state.timers).toEqual([{ filled: 0, ratePct: 0, running: false, full: false }]);
+    expect(state.timers).toEqual([
+      { filled: 0, ratePct: 1, running: false, full: false, bossHpPct: 0 },
+    ]);
     expect(state.restTarget).toBe(40);
     expect(restProgress(state)).toBe(0);
     state.restPoints = 50;
@@ -73,12 +75,10 @@ describe('the finale state and entity fields', () => {
 describe('the tick slots (T804–T807 fill them)', () => {
   it('run in the pipeline and change nothing yet', () => {
     const names = SYSTEMS.map((s) => s.name);
-    for (const n of ['timers', 'phases', 'choir', 'echo', 'song'] as const) {
+    for (const n of ['timers', 'choir', 'echo', 'song'] as const) {
       expect(names, n).toContain(n);
     }
-    const slots = SYSTEMS.filter((s) =>
-      ['timers', 'phases', 'choir', 'echo', 'song'].includes(s.name),
-    );
+    const slots = SYSTEMS.filter((s) => ['timers', 'choir', 'echo', 'song'].includes(s.name));
     const state = createState(MAP, 1);
     const before = hashState(state);
     const ctx = { content: FX, map: MAP, config: fixtureConfig(), scratch: createScratch() };
@@ -118,27 +118,17 @@ describe('FEATURE_GATES and SCRIPT_GATES (T800a rows; D154)', () => {
   it('name the task that lifts each finale mechanic', () => {
     expect(FEATURE_GATES).toMatchObject({
       'map.choir': 'T804',
-      'map.song': 'T805',
-      'map.timers': 'T806',
+      'map.song': null, // T805 lifted
+      'map.timers': null, // T806 (sim/timers.test.ts)
       'enemy.boss.layToRest': 'T808',
       'enemy.boss.floor': 'T808',
       'enemy.boss.burrowTo': 'T808',
       'enemy.boss.adds': 'T808',
     });
     expect(SCRIPT_GATES).toEqual({
-      restProgressPct: 'T805',
-      choirAt: 'T806',
-      timerFull: 'T806',
-      phase: 'T806',
-      setPhase: 'T806',
-      startTimer: 'T806',
-      setTimerRate: 'T806',
-      setLighting: 'T806',
-      checkpoint: 'T806',
       restoreTowerClass: 'T807',
       lockAbility: 'T807',
       spawnEcho: 'T807',
-      restAll: 'T805',
     });
     // HARNESS_GATES' finale rows (#2 Voices: T804; #18 song timing: T821): balance/refusals.m8.test.ts.
   });

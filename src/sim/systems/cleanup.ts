@@ -4,7 +4,8 @@
 // (design/core-loop.md § 2.1):
 // - Defeat the instant core integrity hits 0, or a Protect map's asset meter does (T305a), or, on
 //   an Escort (T305c; sim/escort.ts), a boss reaches the safe exit or the refugees lost pass the
-//   map's `maxLost`. It wins over a victory on the same tick.
+//   map's `maxLost`, or, on a Choir map, Voices fall below its floor (sim/choir.ts, T804). It wins
+//   over a victory on the same tick.
 // - A killed splitter releases its children here, before resolution, into its wave
 //   (enemyAbilities/split.ts), so a wave isn't cleared while the Bunchling's Nibblers run.
 // - A killed Skitterkin sets the Skittish units within reach bolting (enemyAbilities/skittish.ts).
@@ -14,7 +15,8 @@
 //   (waveClearBonusFor), then the Salvage Crane's income and interest (sim/towerEconomy.ts). Waves
 //   overlap, so they can resolve out of order; one tick resolves in wave order.
 // - Victory when every wave has resolved (the last wave's enemies are all gone, and so is
-//   everything before it) with integrity above 0, and no refugee is still on the road (T305c).
+//   everything before it) with integrity above 0, no refugee is still on the road (T305c), and
+//   the choir has reached its stop (T804).
 // It also keeps the medals (sim/medals.ts): leaks book against Perfect Core, `passedMarker`
 // conditions latch (sim/conditions.ts) while this tick's dead are still in their pools, a
 // Challenge that can no longer hold is forfeited, and a loss or win settles every medal just
@@ -22,6 +24,7 @@
 import type { CompiledWave } from '../../content/compiled.ts';
 import { waveClearBonusFor } from '../../content/rules.ts';
 import type { IdSpace } from '../../content/types.ts';
+import { choirLost, choirWalking } from '../choir.ts';
 import { trackConditions } from '../conditions.ts';
 import { earn } from '../economy.ts';
 import { bossAtExit, escortLost, refugeesOnRoad } from '../escort.ts';
@@ -71,7 +74,13 @@ export function cleanup(state: SimState, ctx: TickContext): void {
   poolReleaseDead(state.zones);
   poolReleaseDead(state.allies);
 
-  if (state.integrity <= 0 || isAssetLost(state) || breached || escortLost(state, ctx.map)) {
+  if (
+    state.integrity <= 0 ||
+    isAssetLost(state) ||
+    breached ||
+    escortLost(state, ctx.map) ||
+    choirLost(state, ctx.map) // too few Voices (sim/choir.ts; T804)
+  ) {
     state.outcome = 'lost';
     settleLoss(state, ctx.map);
     settleObjectivesLoss(state, ctx.map);
@@ -94,7 +103,8 @@ export function cleanup(state: SimState, ctx: TickContext): void {
     emit(state, { type: 'WaveCleared', wave: w + 1, bonus });
     payWaveIncome(state, ctx.config.modifiers, w + 1); // the Crane's, then interest (T408)
   }
-  if (allResolved && refugeesOnRoad(state) === 0) {
+  // Victory waits for the road to empty and the choir to arrive (T804).
+  if (allResolved && refugeesOnRoad(state) === 0 && !choirWalking(state, ctx.map)) {
     state.outcome = 'won';
     settleWin(state, ctx.map, ctx);
     settleObjectivesWin(state, ctx.map, ctx);

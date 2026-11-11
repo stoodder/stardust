@@ -175,7 +175,12 @@ export function compileMap<K extends IdSpace>(
       def.revisitOf === undefined || revisitSize === null
         ? null
         : { cols: revisitSize.cols, rows: revisitSize.rows },
-    lighting: (def.lighting ?? []).map((k) => ({ wave: k.wave, env: k.env, dark: k.dark ?? 0 })),
+    lighting: (def.lighting ?? []).map((k) => ({
+      wave: k.wave,
+      env: k.env,
+      dark: k.dark ?? 0,
+      skyOnly: k.skyOnly === true, // T806
+    })),
     dark: (def.lighting ?? []).some((k) => (k.dark ?? 0) > 0),
     lights,
     escort,

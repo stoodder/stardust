@@ -53,6 +53,7 @@ export const ALLY_SPRITES: Readonly<Record<AllyKind, SpriteId | null>> = {
   refugee: null,
   bearer: null,
   singer: null,
+  thrum: null, // Old Thrum in the finale's choir (T804: ChoirWalkView draws the choir)
   echo: null, // Thrum's echo (T800a kind; T841 draws it, T830 shows it)
   militia: null,
   ward: null,

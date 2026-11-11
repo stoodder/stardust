@@ -3,11 +3,16 @@
 import type { Act } from '../content/types.ts';
 
 /**
- * The par band's floor per act, for Defend and Protect maps (integrity %, maps.md § 6.1). The
- * band is `[floor, floor + PAR_BAND_WIDTH]`. Escort, Choir, and finale bands arrive with their
- * objectives (T305).
+ * The par band's floor per act (maps.md § 6.1): integrity % on Defend and Protect maps, the
+ * meter % on Escort maps, and Voices % on the finale's Choir (T804). The band is `[floor, floor +
+ * PAR_BAND_WIDTH]`.
  */
-export const PAR_BAND_FLOOR_PCT: Readonly<Partial<Record<Act, number>>> = { 1: 80, 2: 65, 3: 50 };
+export const PAR_BAND_FLOOR_PCT: Readonly<Partial<Record<Act, number>>> = {
+  1: 80,
+  2: 65,
+  3: 50,
+  finale: 40,
+};
 export const PAR_BAND_WIDTH = 20;
 
 /** Assertion 7: alwaysCallEarly's margin ≤ min(band top, par margin + this). */

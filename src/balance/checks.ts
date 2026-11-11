@@ -61,7 +61,8 @@ export interface CheckSpec {
  * map the lower of that and asset left ÷ max asset (D101: the weaker objective decides, as losing
  * either loses), so a loss is 0. A run that ends as an Escort (from the start, or by a pivot;
  * T305c) measures Evacuated instead: refugees evacuated ÷ the map's refugees × 100, 0 on a loss;
- * a Holdout measures it on every run (balance/holdout.ts; T605).
+ * a Holdout measures it on every run (balance/holdout.ts; T605). A Choir (the finale; T804)
+ * measures Voices: singers still singing ÷ the run's choir × 100, 0 on a loss.
  */
 export function marginOf(
   r: Pick<
@@ -72,10 +73,16 @@ export function marginOf(
     | 'maxAsset'
     | 'objective'
     | 'escortTotal'
+    | 'voices'
+    | 'choirSize'
     | 'stats'
     | 'outcome'
   >,
 ): number {
+  if (r.objective === 'choir') {
+    if (r.outcome === 'lost' || r.choirSize <= 0) return 0;
+    return (100 * r.voices) / r.choirSize;
+  }
   if (r.objective === 'escort') {
     if (r.outcome === 'lost' || r.escortTotal <= 0) return 0;
     return (100 * r.stats.evacuated) / r.escortTotal;

@@ -17,7 +17,6 @@ import { enemyAbilities } from './enemyAbilities/index.ts';
 import { forcedInput } from './forcedInput.ts';
 import { jams } from './jam.ts';
 import { leapers } from './leapers.ts';
-import { phases } from './phases.ts';
 import { puddles } from './puddles.ts';
 import { rifts } from './rifts.ts';
 import { song } from './song.ts';
@@ -90,7 +89,6 @@ export type SystemName =
   | 'timers'
   | 'triggers'
   | 'forcedInput'
-  | 'phases'
   | 'status'
   | 'fields'
   | 'links'
@@ -122,9 +120,10 @@ export type SystemName =
  * Lulled inside links and status (systems/auras.ts, systems/status.ts `lullPass`). M7's slots
  * (T700a): jams (sim/jam.ts, T702), puddles (sim/puddles.ts, T705), leapers (sim/leapers.ts,
  * T704), and bearers (sim/bearers.ts, T706); the healer aura and the M7 boss phases run inside
- * enemyAbilities. The finale's slots (T800a): timers (sim/timers.ts, T806), phases
- * (sim/phases.ts, T806), the choir (sim/choir.ts, T804), Thrum's echo (sim/echo.ts, T807), and
- * the song (sim/song.ts, T805); the Unsung's phase kinds run inside enemyAbilities (T808).
+ * enemyAbilities. The finale's slots (T800a): timers (sim/timers.ts, T806; script phases, the
+ * labelled checkpoint, and the light are script actions, sim/phases.ts), the choir (sim/choir.ts,
+ * T804), Thrum's echo (sim/echo.ts, T807), and the song (sim/song.ts, T805); the Unsung's phase
+ * kinds run inside enemyAbilities (T808).
  */
 export const SYSTEMS: readonly { readonly name: SystemName; readonly run: System }[] =
   Object.freeze([
@@ -135,7 +134,6 @@ export const SYSTEMS: readonly { readonly name: SystemName; readonly run: System
     { name: 'timers', run: timers }, // T806: a timer full this tick fires this tick's triggers
     { name: 'triggers', run: triggers },
     { name: 'forcedInput', run: forcedInput }, // T605: a forceInput action freezes this tick
-    { name: 'phases', run: phases }, // T806: a phase's own clock (Dawn's hold), after its script
     { name: 'status', run: status },
     { name: 'fields', run: fields }, // T608: the Bloom's chill and pulse, before the tells
     { name: 'links', run: links },

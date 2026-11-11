@@ -51,6 +51,7 @@ export function enemySpeedPerTick(e: Enemy): number {
   if (e.stasisTicks > 0) return 0; // frozen in Stasis (systems/status.ts; enemies.md § 2.4)
   if (e.pinnedTicks > 0) return 0; // held by a Pin (T408)
   if (e.blockerUid !== 0) return 0; // held by a blocker (Bricks at the Gap; sim/blocker.ts, T605)
+  if (e.scatterTicks > 0) return 0; // scattered, waiting to re-form (sim/song.ts; T805)
   const own = e.def === null ? 0 : e.def.speedTilesPerTick;
   const base = e.heavy ? own * HUSH_SPEED_MUL : own;
   return (

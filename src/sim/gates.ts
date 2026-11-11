@@ -313,9 +313,9 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   'ally.flagGated': null,
   // The finale (D154; T800a rows): the choir (T804), the song (T805), the timers (T806), and the
   // Unsung's phase kinds (T808).
-  'map.choir': 'T804',
-  'map.song': 'T805',
-  'map.timers': 'T806',
+  'map.choir': null, // T804 lifted: sim/choir.ts (the walk, the halt rule, Voices)
+  'map.song': null, // T805 lifted: sim/song.ts (rest, scatter and re-form, the countdown)
+  'map.timers': null, // T806 lifted: sim/timers.ts (the Deep Bore)
   'enemy.boss.floor': 'T808',
   'enemy.boss.burrowTo': 'T808',
   'enemy.boss.adds': 'T808',

@@ -13,24 +13,26 @@
 //   or reach (§ 2.6); it keeps flying its lane and leaks normally.
 // - Pinned (T408; systems/status.ts): a pinned flyer is grounded, so a tier that hits ground can
 //   hit it as well as one that hits air (`onLayers`).
+// - Scattered (T805; sim/song.ts, the finale's Phase 2): motes drifting back to re-form, out of
+//   play like a leaving unit until they do (`scatterTicks`).
 import type { Enemy } from '../entities.ts';
 import { cloakedOut } from './cloak.ts';
 
 /**
- * Whether no tower, ally, splash, or status can touch `e` (burrowed, Phased, leaving, or cloaked
- * out).
+ * Whether no tower, ally, splash, or status can touch `e` (burrowed, Phased, leaving, scattered,
+ * or cloaked out).
  */
 export function untargetable(e: Enemy): boolean {
-  return e.burrowed || e.phased || e.leaving || cloakedOut(e);
+  return e.burrowed || e.phased || e.leaving || e.scatterTicks > 0 || cloakedOut(e);
 }
 
 /**
  * Whether `e` is off the field for enemy-side effects too (a shield pulse or aura): burrowed,
- * Phased, or leaving (enemies.md § 2.6: nothing reaches those layers). A cloaked unit isn't: it
- * hides from the player's towers, not from its own side (§ 2.5).
+ * Phased, leaving, or scattered (enemies.md § 2.6: nothing reaches those layers). A cloaked unit
+ * isn't: it hides from the player's towers, not from its own side (§ 2.5).
  */
 export function outOfReach(e: Enemy): boolean {
-  return e.burrowed || e.phased || e.leaving;
+  return e.burrowed || e.phased || e.leaving || e.scatterTicks > 0;
 }
 
 /** Whether a hit on `e` deals nothing: untargetable, or a boss between phases. */

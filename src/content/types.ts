@@ -169,6 +169,8 @@ export type AllyKind =
   | 'refugee'
   | 'bearer'
   | 'singer'
+  /** Old Thrum beside Pebble in the finale's choir when spared (T804): a singer never hushed. */
+  | 'thrum'
   /** Thrum's echo in the finale (M8; T800a seam, T807 runs it): untargetable, laid to rest in gold. */
   | 'echo'
   | 'bricks'
@@ -1412,6 +1414,13 @@ export interface LightingKeyDef {
    * every light has its range × (1 − DARK_RANGE_PENALTY × d) (T505).
    */
   readonly dark?: number;
+  /**
+   * A sky-only key (T806; the finale's eastern sky warming per Phase 1 wave, D154's T701 ruling):
+   * it moves the sky backdrop alone, while the world's grade holds at the last key before it that
+   * isn't sky-only, and Sundown's darkness skips it (so it carries no `dark`). The world's light
+   * waits for a script's `setLighting` (Dawn; content/lightingSets.ts).
+   */
+  readonly skyOnly?: boolean;
 }
 
 /** A lamp (MapLayoutDef.lights): a light source on a decor marker. */
@@ -1774,6 +1783,12 @@ export type ConditionDef<K extends IdSpace = LiveIds> =
   | { readonly stat: RunStat; readonly gte?: number; readonly lte?: number }
   /** The map's script phase (`setPhase`; the finale's 1–3) is at least this (T800a; a run atom). */
   | { readonly phaseAtLeast: number }
+  /**
+   * Laid to Rest (the finale's medal; T805): at least this share, in (0, 1], of Phase 2's Hollow
+   * kills were inside the song (`restedKills` ÷ (`restedKills` + `scatteredKills`)), with at
+   * least one kill. A state atom: judged when evaluated.
+   */
+  | { readonly restedPct: number }
   | {
       /** Live towers of that tower (or faction; both optional, all towers if neither). */
       readonly towers: { readonly tower?: K['tower']; readonly faction?: TowerFaction };

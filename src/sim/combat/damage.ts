@@ -31,6 +31,7 @@ import type { Enemy } from '../entities.ts';
 import type { DamageSource } from '../events.ts';
 import { countTags } from '../fireControl.ts';
 import { poolKill } from '../pool.ts';
+import { songBossHit } from '../song.ts';
 import { emit, type SimState } from '../state.ts';
 import { applyMarked, applyPin, applyStasis, applyUnnerved } from '../systems/status.ts';
 import { payKillIncome } from '../towerEconomy.ts';
@@ -125,7 +126,10 @@ export function applyDamage(
 
   // A boss never dies here: its phases and its ending take the hit (enemyAbilities/bossPhases.ts).
   // A split boss's parts and its merged self die like units (T708; enemyAbilities/bossSplit.ts).
-  if (def.boss !== null && !isSplitBorn(enemy)) return bossDamage(state, enemy, damage);
+  if (def.boss !== null && !isSplitBorn(enemy)) {
+    songBossHit(state, enemy, damage); // the finale's song: a boss's damage feeds it (T805)
+    return bossDamage(state, enemy, damage);
+  }
   const before = enemy.hp;
   enemy.hp -= damage;
   if (enemy.hp <= DEAD_HP_EPS) {
@@ -182,7 +186,10 @@ function killEnemy(state: SimState, enemy: Enemy, source: DamageSource): void {
   // Youngling units pay 0 and fleeing ones 1 (core-loop.md § 2.3), then the bounty modifiers;
   // leaks pay nothing (movement).
   // A Maw's Hollow absorbs add to its bounty (+3 each; T602).
-  const bounty = payBounty(state, def.bounty + gatherBounty(enemy), enemy.tags);
+  // A unit that scattered and re-formed (the finale's song, T805) pays no bounty the second time.
+  const bounty = enemy.scatteredOnce
+    ? 0
+    : payBounty(state, def.bounty + gatherBounty(enemy), enemy.tags);
   emit(state, {
     type: 'EnemyDied',
     uid: enemy.uid,

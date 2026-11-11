@@ -22,7 +22,10 @@
 // system, after the events), and `openTile` (T707: a decor marker's tile opens, to anything but a
 // buildable tile; sim/openTile.ts). The finale's parts (T800a) dispatch to their slots
 // (sim/choir.ts, song.ts, phases.ts, timers.ts, echo.ts, revoke.ts) and stay refused until the
-// task SCRIPT_GATES names fills each. A pivot's event runs the
+// task SCRIPT_GATES names fills each; T806's run: the triggers `choirAt` (the choir's leader has
+// passed a marker), `timerFull`, and `{ phase, afterSec }` (the script phase reached, that long
+// after it began), and the actions `setPhase`, `checkpoint`, `setLighting`, `startTimer`, and
+// `setTimerRate` (sim/phases.ts, sim/timers.ts). A pivot's event runs the
 // objective switch and the refugees beside it, in its action order. Before the events,
 // each clickable marker's fallback trigger is checked: reached, the sim interacts with it itself
 // (`byFallback`), so its `interacted` events fire on this same pass; and on a map whose conditions
@@ -253,28 +256,18 @@ export function runScriptAction(
  * own rows when it lands, and a part not listed here waits for a later milestone.
  */
 export const SCRIPT_GATES: Readonly<Record<string, string>> = Object.freeze({
-  // Triggers (D141, D146, D154). A3M5's `objectiveCompleted` runs since T706. The finale's: the
-  // song's rest progress (T805), the choir at a marker, a full timer, and a script phase (T806).
-  restProgressPct: 'T805',
-  choirAt: 'T806',
-  timerFull: 'T806',
-  phase: 'T806',
+  // Triggers (D141, D146, D154). A3M5's `objectiveCompleted` runs since T706; the finale's choir
+  // at a marker (`choirAt`, sim/choir.ts), a full timer (`timerFull`), and a script phase
+  // (`phase`) since T806, and the song's rest progress (`restProgressPct`, sim/song.ts) since T805.
   // Actions (D141, D146, D154). M6's Clean Exit (revocations, QUILL's lockout) runs since T606,
-  // M7's script groups (`spawnWave`) since T706, opened tiles (`openTile`) since T707.
-  // The finale: phases, timers, a lighting change at a script moment (Dawn; wave-paced light is
-  // map data, `MapDef.lighting`, T410a, Sundown's darkness included, T505), and the Phase 2
-  // checkpoint (T305b runs the wave checkpoints, not this action) are T806's; the restored class
-  // after "Who's there?", the phase-scoped ability lock, and Thrum's echo T807's; Dawn's laying
-  // every Hollow unit to rest T805's.
-  setPhase: 'T806',
-  startTimer: 'T806',
-  setTimerRate: 'T806',
-  setLighting: 'T806',
-  checkpoint: 'T806',
+  // M7's script groups (`spawnWave`) since T706, opened tiles (`openTile`) since T707. The
+  // finale's phases, timers, a lighting set at a script moment (Dawn; wave-paced light is map
+  // data, `MapDef.lighting`), and the Phase 2 checkpoint run since T806 (sim/phases.ts,
+  // sim/timers.ts); the restored class after "Who's there?", the phase-scoped ability lock, and
+  // Thrum's echo are T807's. Dawn's laying every Hollow unit to rest (`restAll`) runs since T805.
   restoreTowerClass: 'T807',
   lockAbility: 'T807',
   spawnEcho: 'T807',
-  restAll: 'T805',
 });
 
 /** "not simulated yet", with the task that lifts it when SCRIPT_GATES names one. */
@@ -334,10 +327,13 @@ function unsupportedTrigger(
     !('interacted' in on) &&
     !('refugeesRemaining' in on) &&
     !('forcedInputResolved' in on) &&
-    !('objectiveCompleted' in on)
+    !('objectiveCompleted' in on) &&
+    !('choirAt' in on) && // T806
+    !('timerFull' in on) && // T806
+    !('phase' in on) && // T806
+    !('restProgressPct' in on) // T805 (sim/song.ts)
   ) {
-    // A script phase's trigger is named `phase` (its compiled `afterTicks` beside it).
-    const key = 'phase' in on ? 'phase' : Object.keys(on).join('/');
+    const key = Object.keys(on).join('/');
     out.push(`${where} ${key} ${notYet(key)}`);
   }
 }
@@ -365,7 +361,13 @@ function unsupportedAction(a: CompiledScriptAction<IdSpace>, where: string, out:
     !('revokeTowerClass' in a) &&
     !('revokeAbility' in a) &&
     !('setModifier' in a) &&
-    !('spawnWave' in a)
+    !('spawnWave' in a) &&
+    !('setPhase' in a) && // T806 (sim/phases.ts)
+    !('checkpoint' in a) &&
+    !('setLighting' in a) &&
+    !('startTimer' in a) && // T806 (sim/timers.ts)
+    !('setTimerRate' in a) &&
+    !('restAll' in a) // T805 (sim/song.ts; map events only, FROM_EVENTS_ONLY)
   ) {
     // An action is named by its first key (`revokeTowerClass`, not its `refundPct` beside it).
     const key = Object.keys(a)[0] ?? '?';

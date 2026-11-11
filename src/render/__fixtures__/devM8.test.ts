@@ -86,10 +86,6 @@ describe('the finale dev maps', () => {
     });
     expect(refused('dev_song')).toEqual([
       'the choir (Voices) is not simulated until T804',
-      'the Leaving Song is not simulated until T805',
-      "event 'song': action setPhase is not simulated until T806",
-      "event 'dawn': trigger restProgressPct is not simulated until T805",
-      "event 'dawn': action restAll is not simulated until T805",
     ]);
   });
 
@@ -107,30 +103,15 @@ describe('the finale dev maps', () => {
       'a burrow toward the choir (unsung) is not simulated until T808',
       "a phase's adds (unsung) is not simulated until T808",
       'the choir (Voices) is not simulated until T804',
-      'the Leaving Song is not simulated until T805',
-      'secondary timers (deep_bore) is not simulated until T806',
-      "event 'bore': action startTimer is not simulated until T806",
-      "event 'bore_purge': action setTimerRate is not simulated until T806",
-      "event 'breakthrough': trigger timerFull is not simulated until T806",
-      "event 'halls': trigger choirAt is not simulated until T806",
-      "event 'halls': action setPhase is not simulated until T806",
-      "event 'halls': action checkpoint is not simulated until T806",
-      "event 'halls': action setTimerRate is not simulated until T806",
-      "event 'directive0': trigger phase is not simulated until T806",
       "event 'directive0': action lockAbility is not simulated until T807",
       "event 'not_everglow': action restoreTowerClass is not simulated until T807",
-      "event 'echo': trigger restProgressPct is not simulated until T805",
       "event 'echo': action spawnEcho is not simulated until T807",
-      "event 'dawn': trigger restProgressPct is not simulated until T805",
-      "event 'dawn': action restAll is not simulated until T805",
-      "event 'dawn': action setPhase is not simulated until T806",
-      "event 'dawn': action setLighting is not simulated until T806",
-      "event 'won': trigger phase is not simulated until T806",
     ]);
   });
 
   it('are not in DEV_CONTENT until their tasks register them', () => {
-    for (const id of Object.keys(DEV_M8_MAPS)) {
+    expect(DEV_CONTENT.maps.dev_song).toBe(songMap); // T805
+    for (const id of Object.keys(DEV_M8_MAPS).filter((m) => m !== 'dev_song')) {
       expect(Object.hasOwn(DEV_CONTENT.maps, id), id).toBe(false);
     }
   });
@@ -291,7 +272,7 @@ describe('validation of the finale seams', () => {
       '[script] maps.dev_phases.events[0].actions[0]: setPhase 1 must be a whole phase ≥ 2',
       "[script] maps.dev_phases.events[1].actions[0]: checkpoint label 'Halls' must be snake_case",
       "[script] maps.dev_phases.events[2].actions[0]: echo id 'Thrum' must be snake_case",
-      '[script] maps.dev_phases.events[3].actions[0]: setLighting names a key',
+      "[script] maps.dev_phases.events[3].actions[0]: setLighting ' ' names no lighting set (dawn)",
       '[script] maps.dev_phases.events[4].actions[1]: restoreTowerClass needs a revokeTowerClass on the map',
       "[script] maps.dev_phases.events[0].on: unknown marker 'gate'",
       '[script] maps.dev_phases.events[1].on: no setPhase action reaches phase 4',

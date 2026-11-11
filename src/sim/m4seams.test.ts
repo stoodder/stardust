@@ -261,22 +261,17 @@ describe('wreckage by marker and objectives as conditions', () => {
     // Clickable objects run since T409 (sim/clickables.test.ts).
     expect(SCRIPT_GATES).not.toHaveProperty('interacted');
     expect(SCRIPT_GATES).not.toHaveProperty('setClickable');
-    expect(SCRIPT_GATES).toMatchObject({
-      // Wave-paced light is map data since T410a (MapDef.lighting); the action is the finale's
-      // (D154: T806; sim/m8seams.test.ts).
-      setLighting: 'T806',
-      checkpoint: 'T806',
-    });
+    // Wave-paced light is map data since T410a (MapDef.lighting); the finale's `setLighting` and
+    // `checkpoint` actions run since T806 (sim/phases.test.ts).
+    expect(SCRIPT_GATES).not.toHaveProperty('setLighting');
+    expect(SCRIPT_GATES).not.toHaveProperty('checkpoint');
     expect(SCRIPT_GATES).not.toHaveProperty('bossEnd.pivot'); // the pivot runs since T506
     // `objectiveCompleted` runs since T706 (render/__fixtures__/devBearers.test.ts).
     const events = [
       { id: 'b', on: { tick: 1 }, when: null, actions: [{ setLighting: 'dusk' }], once: true },
       { id: 'c', on: { tick: 1 }, when: null, actions: [{ checkpoint: 'halls' }], once: true },
     ] as const;
-    expect(unsupportedScript({ ...MAP, events })).toEqual([
-      "event 'b': action setLighting is not simulated until T806",
-      "event 'c': action checkpoint is not simulated until T806",
-    ]);
+    expect(unsupportedScript({ ...MAP, events })).toEqual([]);
   });
 });
 

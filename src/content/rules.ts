@@ -618,6 +618,12 @@ export const REFUGEE_GROUP_SIZE = 6;
 export const REFUGEE_SPACING_TILES = 0.6;
 export const REFUGEE_SPEED_TILES_PER_SEC = 0.7;
 /**
+ * The finale's choir (maps.md § 5.5; T804): its column files behind the leader this many tiles
+ * apart, and a member behind its place closes up at up to CHOIR_CATCHUP_MUL × the choir's pace.
+ */
+export const CHOIR_SPACING_TILES = 0.4;
+export const CHOIR_CATCHUP_MUL = 2;
+/**
  * Sundown (maps.md § 5.1; T505): at darkness d (0–1), a tower outside every light source has its
  * range × (1 − DARK_RANGE_PENALTY × d); −15% at full dark.
  */
@@ -646,3 +652,11 @@ export const BLOCKER_REACH_TILES = 1;
  * Evacuated ≥ this share of the run's refugees. Leaks and losses don't forfeit it on their own.
  */
 export const HELD_THE_DOOR_PCT = 0.85;
+
+// ── The finale (D154; T800a seams, each run by the task named) ────────────────────────────────
+
+/**
+ * The Leaving Song's scatter (maps.md § 5.5; sim/song.ts, T805): a Hollow unit broken outside the
+ * song in Phase 2 drifts back this many tiles along its route before it re-forms.
+ */
+export const SCATTER_DRIFT_TILES = 2;

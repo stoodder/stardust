@@ -174,7 +174,7 @@ describe('FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES (T500a rows; D137)', ()
     expect(SCRIPT_GATES).not.toHaveProperty('bossEnd.pivot');
     // No M5 map uses these (D137); retargeted by D141, then D146 (T706 runs objectiveCompleted),
     // then D154 (sim/m8seams.test.ts).
-    expect(SCRIPT_GATES).toMatchObject({ checkpoint: 'T806' });
+    expect(SCRIPT_GATES).not.toHaveProperty('checkpoint'); // T806 (sim/phases.test.ts)
     expect(SCRIPT_GATES).not.toHaveProperty('objectiveCompleted');
   });
 
