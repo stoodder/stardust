@@ -13,7 +13,9 @@ import type { IdSpace } from '../src/content/types.ts';
 import { DEV_CONTENT } from '../src/render/__fixtures__/devBattle.ts';
 import { bossDamage } from '../src/sim/enemyAbilities/bossPhases.ts';
 import { createSim, type Sim } from '../src/sim/index.ts';
+import type { Enemy } from '../src/sim/entities.ts';
 import type { SimEvent } from '../src/sim/events.ts';
+import type { SimState } from '../src/sim/state.ts';
 
 // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the dev ids are an IdSpace
 const CONTENT = compileContent(DEV_CONTENT) as unknown as CompiledContent<IdSpace>;
@@ -139,16 +141,17 @@ describe('dev_gmaw (T708): the Gathering Maw', () => {
     t.enqueue({ type: 'callWave' });
     t.step();
     t.enqueue({ type: 'callWave' }); // the boss's wave, at once
-    let boss = null;
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the test reaches into the live state
+    const state = t.state as unknown as SimState;
+    let boss: Enemy | null = null;
     while (t.state.tick < 60 * 200 && boss === null) {
       t.step();
       boss =
-        t.state.enemies.items.find(
-          (e) => e.alive && e.def?.id === 'gathering_maw' && e.dist > 15,
-        ) ?? null;
+        state.enemies.items.find((e) => e.alive && e.def?.id === 'gathering_maw' && e.dist > 15) ??
+        null;
     }
     if (boss === null) throw new Error('the boss never came 15 tiles down the road');
-    bossDamage(t.state, boss, boss.hp - 0.5 * 12000); // no towers: split it by hand
+    bossDamage(state, boss, boss.hp - 0.5 * 12000); // no towers: split it by hand
     const out: SimEvent<IdSpace>[] = [];
     while (t.state.outcome === 'playing' && t.state.tick < 60 * 400) {
       t.step();
