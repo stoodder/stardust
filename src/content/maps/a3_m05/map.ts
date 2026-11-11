@@ -30,11 +30,11 @@
 import { defineMapLayout } from '../../define.ts';
 import type { GridPos } from '../../types.ts';
 
-/** The bearers' back route: out of the sluice (1,0), south down the band to (1,12). */
+/** The bearers' back route: out of the sluice (0,0), south down the band's west edge to (0,11). */
 // prettier-ignore
 const BACK: readonly GridPos[] = [
-  [1, 0], [1, 1], [1, 2], [1, 3], [1, 4], [1, 5], [1, 6],
-  [1, 7], [1, 8], [1, 9], [1, 10], [1, 11], [1, 12],
+  [0, 0], [0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [0, 6],
+  [0, 7], [0, 8], [0, 9], [0, 10], [0, 11],
 ];
 
 /** The waves whose start releases a bearer group, and the group. */
@@ -56,19 +56,19 @@ export const map = defineMapLayout({
   // The band only: '*' is A2M4's footprint, composed in unchanged.
   // prettier-ignore
   tiles: [
-    '.S......x.x.x.........',
-    '.#******************..',
-    '.#******************..',
-    '.#******************..',
-    '.#******************..',
-    'o#******************..',
-    'o#******************..',
-    '.#******************..',
-    '.#******************..',
-    '.#******************..',
-    '.#******************..',
-    '.#******************..',
-    'C#******************..',
+    'S.......x.x.x.........',
+    '#.******************..',
+    '#.******************..',
+    '#.******************..',
+    '#.******************..',
+    '#.******************..',
+    '#o******************..',
+    '#.******************..',
+    '#o******************..',
+    '#.******************..',
+    '#.******************..',
+    '#.******************..',
+    'C.******************..',
     '.............o........',
   ],
   underWreckage: { '8,0': '.', '10,0': '.', '12,0': '.' },
@@ -84,9 +84,9 @@ export const map = defineMapLayout({
   // bearers come up out of, their door home and the Long Walk's waymark beside it (the asset),
   // the three feed lines, Shareholder Value's hangar, and its crash site.
   markers: {
-    sluice: [0, 0],
+    sluice: [1, 0],
     bearer_door: [0, 12],
-    long_walk: [1, 13],
+    long_walk: [1, 11],
     feed_1: [8, 0],
     feed_2: [10, 0],
     feed_3: [12, 0],

@@ -32,9 +32,9 @@ const CONDUIT: GridPos = [13, 10];
 const BEND_E: GridPos = [15, 10];
 /** Beside the control core. */
 const CORE_W: GridPos = [10, 11];
-/** The band: under the sluice, beside the bearers' route (a link pair), and the south gate. */
-const SLUICE_N: GridPos = [0, 5];
-const SLUICE_S: GridPos = [0, 6];
+/** The band: beside the bearers' route either side of the old intake (each touches INTAKE_W). */
+const SLUICE_N: GridPos = [1, 6];
+const SLUICE_S: GridPos = [1, 8];
 const SOUTH: GridPos = [13, 13];
 /** The feed lines (wreckage over decor). */
 const FEEDS: readonly GridPos[] = [
@@ -82,33 +82,32 @@ export function swapped(
 function parSteps(): BuildStep[] {
   return [
     ...CUT_FEED,
-    ...CLEAR_HOPPERS,
-    { wave: 1, build: 'thumper', tile: INTAKE_W },
-    { wave: 1, build: 'harpoon', tile: YARD_S },
-    { wave: 1, build: 'thumper', tile: YARD_N },
-    { wave: 2, upgrade: INTAKE_W },
-    { wave: 3, build: 'bloom', tile: SLUICE_N },
-    { wave: 4, build: 'harpoon', tile: SLUICE_S },
+    { wave: 1, build: 'thumper', tile: YARD_S },
+    { wave: 1, build: 'harpoon', tile: YARD_N },
+    { wave: 1, build: 'thumper', tile: SLUICE_S },
+    { wave: 2, upgrade: YARD_S },
+    { wave: 3, build: 'bloom', tile: INTAKE_W },
+    { wave: 4, build: 'harpoon', tile: SLUICE_N },
     { wave: 5, build: 'choir', tile: BEND },
-    { wave: 5, build: 'thumper', tile: CONDUIT },
-    { wave: 6, upgrade: YARD_S },
-    { wave: 7, build: 'thumper', tile: CATWALK_E },
+    { wave: 5, upgrade: SLUICE_S },
+    { wave: 6, build: 'thumper', tile: CONDUIT },
+    { wave: 6, upgrade: YARD_N },
     { wave: 7, upgrade: BEND },
-    { wave: 8, upgrade: CONDUIT },
-    { wave: 8, upgrade: SLUICE_S },
-    { wave: 9, upgrade: CATWALK_E },
-    { wave: 9, upgrade: INTAKE_W },
+    { wave: 8, build: 'harpoon', tile: CATWALK_E },
+    { wave: 8, upgrade: SLUICE_N },
+    { wave: 9, upgrade: CONDUIT },
+    { wave: 9, upgrade: YARD_N },
     { wave: 10, upgrade: BEND },
-    { wave: 10, upgrade: YARD_S },
+    { wave: 10, upgrade: CATWALK_E },
+    { wave: 11, upgrade: INTAKE_W },
     { wave: 11, upgrade: CONDUIT },
-    { wave: 11, build: 'harpoon', tile: VAT_E },
+    { wave: 12, upgrade: SLUICE_N },
     { wave: 12, upgrade: CATWALK_E },
-    { wave: 12, upgrade: VAT_E },
-    { wave: 13, upgrade: SLUICE_N },
-    { wave: 13, upgrade: SLUICE_S },
+    { wave: 13, upgrade: INTAKE_W },
+    { wave: 13, build: 'thumper', tile: VAT_E },
     { wave: 14, upgrade: VAT_E },
-    { wave: 14, specialize: CONDUIT, spec: 'a' },
-    { wave: 15, specialize: CATWALK_E, spec: 'a' },
+    { wave: 15, specialize: CONDUIT, spec: 'a' },
+    { wave: 16, upgrade: VAT_E },
   ];
 }
 

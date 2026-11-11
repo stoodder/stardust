@@ -48,7 +48,7 @@ export const AUD_GAP = 4;
 /** The build phase before most waves. */
 export const COUNTDOWN = 30;
 /** How long after a bearer group sets off the Hollow come out of the sluice behind it. */
-export const HUNT_SEC = 8;
+export const HUNT_SEC = 10;
 /** W14: "Shareholder Value" sets off this long in, behind its escort. */
 export const BOSS_SEC = 4;
 
@@ -75,7 +75,7 @@ export const waves = defineWaves([
   // W5 · Kip opens the vats: the first bearers walk; the Hollow hunt them
   {
     ...NO_CALL,
-    groups: [motes(6, 'hunt', HUNT_SEC), motes(6, 'road', 2), fractures(1, 'road', 6)],
+    groups: [motes(5, 'hunt', HUNT_SEC, 0.5), motes(6, 'road', 2), fractures(1, 'road', 6)],
   },
   // W6 · Liability + one Associate [X]
   { ...CALL, groups: [drones(3, 0), liabilities(1, 3), associates(1, 5), drones(3, 8)] },
