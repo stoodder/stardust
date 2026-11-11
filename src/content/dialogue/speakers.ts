@@ -124,8 +124,7 @@ export const SPEAKERS = {
     variants: [
       {
         variant: 'purge',
-        // From A3M4 on only: a replay of an earlier map (A1M5's party) looks as it first played.
-        when: { all: [{ flag: 'quill_choice', eq: 'purge' }, { mapAtLeast: 'a3_m04' }] },
+        when: { flag: 'quill_choice', eq: 'purge' },
         silence: 'blink',
         noPolicy: true,
       },
