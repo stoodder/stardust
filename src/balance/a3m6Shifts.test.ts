@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import type { WaveGroup } from '../content/types.ts';
 import { REFUGEES } from '../content/maps/a3_m06/map.ts';
-import { a3m6Beats, expectBeats } from './__fixtures__/a3m6Beats.ts';
+import { a3m6Beats, beatProblems } from './__fixtures__/a3m6Beats.ts';
 import { bothWays, delay, shiftedContent } from './__fixtures__/shifts.ts';
 import { HARNESS_TEST_TIMEOUT_MS } from './rules.ts';
 

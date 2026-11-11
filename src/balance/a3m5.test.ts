@@ -15,7 +15,7 @@ import { compileContent } from '../content/compile.ts';
 import type { CompiledBuild } from '../content/compiled.ts';
 import { PADS } from '../content/maps/a3_m05/builds.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
-import { ROAD_TILES, TICK_HZ, expectBeats, one, runA3m5 } from './__fixtures__/a3m5.ts';
+import { ROAD_TILES, TICK_HZ, beatMisses, one, runA3m5 } from './__fixtures__/a3m5.ts';
 import { runMap } from './harness.ts';
 import { HARNESS_TEST_TIMEOUT_MS } from './rules.ts';
 
@@ -79,9 +79,9 @@ describe('A3M5 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
 
   it('lands every beat in par, both alts, Story and alwaysCallEarly', () => {
     for (const label of ['par', 'alt:rivet_sproing', 'alt:beams', 'alwaysCallEarly']) {
-      expectBeats(runA3m5(content, label), label);
+      expect(beatMisses(runA3m5(content, label)), label).toEqual([]);
     }
-    expectBeats(runA3m5(content, 'par', { difficulty: 'story' }), 'par@story');
+    expect(beatMisses(runA3m5(content, 'par', { difficulty: 'story' })), 'par@story').toEqual([]);
   });
 
   it('drives the platform off after all three phases, a few tiles short of the core', () => {

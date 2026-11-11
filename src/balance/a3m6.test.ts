@@ -25,7 +25,14 @@ import { RAW_CONTENT } from '../content/registry.ts';
 import { REFUGEES } from '../content/maps/a3_m06/map.ts';
 import { REFERENCE_PROFILES, REFERENCE_STORY_PRICING } from '../content/upgrades/reference.ts';
 import { escortMaxLost } from '../sim/escort.ts';
-import { ALT_ROAD_LEFT_MIN, a3m6Beats, expectBeats, TICK_HZ } from './__fixtures__/a3m6Beats.ts';
+import {
+  ALT_ROAD_LEFT_MIN,
+  a3m6Beats,
+  beatProblems,
+  MAW_ROAD_LEFT_MIN,
+  TICK_HZ,
+  type A3m6Beats,
+} from './__fixtures__/a3m6Beats.ts';
 import { flagsFor } from './checks.ts';
 import { runMap } from './harness.ts';
 import { HARNESS_TEST_TIMEOUT_MS } from './rules.ts';

@@ -2,7 +2,6 @@
 // ticks, each refugee group's release, the first refugee sheltered and lost, QUILL's sheltered cue,
 // the rifts, the Gathering Maw's spawn, split, merge and death (and how much road it had left), and
 // the Operatives that reached the gate, by wave.
-import { expect } from 'vitest';
 import type { CompiledBuild, CompiledContent } from '../../content/compiled.ts';
 import { GROUPS } from '../../content/maps/a3_m06/map.ts';
 import { BOSS_COUNTDOWN, BOSS_SEC } from '../../content/maps/a3_m06/waves.ts';
@@ -126,42 +125,54 @@ export const MAW_ROAD_LEFT_MIN = 3;
 /** The same for the alts and alwaysCallEarly: dead before the gate's last tile. */
 export const ALT_ROAD_LEFT_MIN = 0.5;
 
-/** The beats every winning reference run lands. */
-export function expectBeats(b: A3m6Beats, label: string, roadLeftMin = MAW_ROAD_LEFT_MIN): void {
+/**
+ * What a winning reference run gets wrong of the map's beats (empty when it lands them all), each
+ * as `label: what`. The tests expect it empty (fixtures don't import vitest).
+ */
+export function beatProblems(b: A3m6Beats, label: string, roadLeftMin = MAW_ROAD_LEFT_MIN): string[] {
+  const out: string[] = [];
+  const want = (ok: boolean, what: string): void => {
+    if (!ok) out.push(`${label}: ${what}`);
+  };
   const one = (k: string): number => {
-    expect(b.at[k], `${label}: ${k}`).toHaveLength(1);
-    return b.at[k]![0]!;
+    want(b.at[k]?.length === 1, `${k} happens once (${String(b.at[k]?.length ?? 0)})`);
+    return b.at[k]?.[0] ?? NaN;
   };
   const start = (w: number): number => one(`WaveStarted ${w}`);
-  expect(b.outcome, label).toBe('won');
+  want(b.outcome === 'won', `won (${b.outcome})`);
+  if (b.outcome !== 'won') return out;
   // Each group sets off on its wave (the second W13 group 8 s in: its own tick).
-  expect(b.releases, label).toEqual(
-    [...new Set(GROUPS.map(([, wave, , sec]) => start(wave) + sec * TICK_HZ))].toSorted(
-      (x, y) => x - y,
-    ),
+  const releases = [...new Set(GROUPS.map(([, wave, , sec]) => start(wave) + sec * TICK_HZ))];
+  want(
+    JSON.stringify(b.releases) === JSON.stringify(releases.toSorted((x, y) => x - y)),
+    `groups set off on their waves (${b.releases.join(',')})`,
   );
-  // The first refugee home before W2's countdown, QUILL's cue on the same tick, nobody lost before.
-  const sheltered = b.at['evacuated']![0]!;
-  expect(sheltered, label).toBeLessThan(one('CountdownStarted 2'));
-  expect(one('cue a3_m06_cue_sheltered') - sheltered, label).toBe(1); // the trigger's next tick
-  expect(b.at['lost']?.[0] ?? Infinity, label).toBeGreaterThan(sheltered);
+  // The first refugee home before W2's countdown, QUILL's cue the tick after, nobody lost before.
+  const sheltered = b.at['evacuated']?.[0] ?? Infinity;
+  want(sheltered < one('CountdownStarted 2'), 'the first refugee home before W2\'s countdown');
+  want(one('cue a3_m06_cue_sheltered') - sheltered === 1, 'the sheltered cue the tick after');
+  want((b.at['lost']?.[0] ?? Infinity) > sheltered, 'nobody lost before the first is home');
   // The rifts crack as W11 starts and open as W12 does; nothing walks one before.
   for (const r of ['rift_w', 'rift_e']) {
-    expect(one(`RiftOpening ${r}`), label).toBe(start(11));
-    expect(one(`RiftOpened ${r}`), label).toBe(start(12));
-    expect(b.firstOnRift[r]!, label).toBeGreaterThanOrEqual(start(12));
+    want(one(`RiftOpening ${r}`) === start(11), `${r} cracks as W11 starts`);
+    want(one(`RiftOpened ${r}`) === start(12), `${r} opens as W12 starts`);
+    want((b.firstOnRift[r] ?? Infinity) >= start(12), `nothing walks ${r} before W12`);
   }
-  // The Maw: in W16's preview from its countdown, a wave ahead; then the split 91 ticks after its
-  // phase 2 begins (90 invulnerable), the merge 12 s after that, and the merged Maw dead in time.
+  // The Maw: in W16's preview from its countdown, a wave ahead (its spawn ±0.2 s when a shift moves
+  // it); then the split 91 ticks after its phase 2 begins (90 invulnerable), the merge 12 s after
+  // that, and the merged Maw dead with road to spare.
   const maw = one('MawSpawned');
-  // (±0.2 s when a shift moves it.)
-  expect(Math.abs(maw - start(16) - BOSS_SEC * TICK_HZ), label).toBeLessThanOrEqual(12);
-  expect(maw - one('CountdownStarted 16'), label).toBeGreaterThanOrEqual(30 * TICK_HZ);
-  expect(one('BossSplit') - one('BossPhase 2'), label).toBe(91);
-  expect(one('BossMerged') - one('BossSplit'), label).toBe(12 * TICK_HZ);
-  expect(one('MawDied'), label).toBeGreaterThan(one('BossMerged'));
-  expect(b.mawRoadLeft!, label).toBeGreaterThanOrEqual(roadLeftMin);
-  expect(b.bossAtGate, label).toBe(false);
+  want(Math.abs(maw - start(16) - BOSS_SEC * TICK_HZ) <= 12, 'the Maw walks in BOSS_SEC s in');
+  want(maw - one('CountdownStarted 16') >= 30 * TICK_HZ, 'the Maw in the preview ≥ 30 s');
+  want(one('BossSplit') - one('BossPhase 2') === 91, 'the split 91 ticks after phase 2');
+  want(one('BossMerged') - one('BossSplit') === 12 * TICK_HZ, 'the merge 12 s after the split');
+  want(one('MawDied') > one('BossMerged'), 'the merged Maw dies');
+  want(
+    (b.mawRoadLeft ?? -1) >= roadLeftMin,
+    `the merged Maw dies ≥ ${roadLeftMin} tiles out (${String(b.mawRoadLeft)})`,
+  );
+  want(!b.bossAtGate, 'no boss at the gate');
   // W17's road fills only as the merged Maw reaches the last bend.
-  expect(start(17) - maw, label).toBeGreaterThanOrEqual((BOSS_COUNTDOWN - BOSS_SEC) * TICK_HZ);
+  want(start(17) - maw >= (BOSS_COUNTDOWN - BOSS_SEC) * TICK_HZ, "W17 waits out the Maw's walk");
+  return out;
 }

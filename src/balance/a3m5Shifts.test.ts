@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import type { WaveGroup } from '../content/types.ts';
 import { compileContent } from '../content/compile.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
-import { ROAD_TILES, expectBeats, runA3m5 } from './__fixtures__/a3m5.ts';
+import { ROAD_TILES, beatMisses, runA3m5 } from './__fixtures__/a3m5.ts';
 import { bothWays, delay, shiftedContent } from './__fixtures__/shifts.ts';
 import { HARNESS_TEST_TIMEOUT_MS } from './rules.ts';
 
@@ -46,7 +46,7 @@ describe('A3M5 shifts', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
   it.each(bothWays(SHIFTS))('wins par in band with %s shifted %s', (_name, _way, patches) => {
     const c = shiftedContent('a3_m05', patches);
     const r = runA3m5(c, 'par');
-    expectBeats(r, 'par');
+    expect(beatMisses(r), 'par').toEqual([]);
     const margin = Math.min(r.integrity / 22, r.asset / 12) * 100;
     expect(margin).toBeGreaterThanOrEqual(50);
     expect(margin).toBeLessThanOrEqual(70);
@@ -55,6 +55,6 @@ describe('A3M5 shifts', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
   });
 
   it('lands every beat with every wave called the instant it can be', () => {
-    expectBeats(runA3m5(compileContent(RAW_CONTENT), 'alwaysCallEarly'), 'alwaysCallEarly');
+    expect(beatMisses(runA3m5(compileContent(RAW_CONTENT), 'alwaysCallEarly')), 'alwaysCallEarly').toEqual([]);
   });
 });

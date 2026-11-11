@@ -10,7 +10,7 @@ import { compileContent } from '../content/compile.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
 import { abilitiesOffOn, createNewSave, storyModifiers } from '../meta/index.ts';
 import { createBuildExecutor, createSim } from '../sim/index.ts';
-import { expectBeats, runA3m5 } from './__fixtures__/a3m5.ts';
+import { beatMisses, runA3m5 } from './__fixtures__/a3m5.ts';
 import { buildFor } from './harness.ts';
 import { referenceRunProfile, runConfig, storyRunModifiers } from './profile.ts';
 import { HARNESS_TEST_TIMEOUT_MS } from './rules.ts';
@@ -33,7 +33,7 @@ describe('A3M5 door × C4 cells', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
       expect(build.loadout).toEqual(['choir', 'harpoon', 'bloom', 'thumper']);
       expect(build.technicianAbility).toBe(c4 === 'rewrite' ? 'suppressing_fire' : 'system_reboot');
       const r = runA3m5(content, l);
-      expectBeats(r, l);
+      expect(beatMisses(r), l).toEqual([]);
       const margin = Math.min(r.integrity / 22, r.asset / 12) * 100;
       expect(margin, l).toBeGreaterThanOrEqual(50);
       // Act III's band, its top 75 for Purge's earned edge (builds.ts `marginBand`).

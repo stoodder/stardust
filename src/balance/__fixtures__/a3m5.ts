@@ -2,7 +2,6 @@
 // on A3M5, logging what its beats need: the waves' starts and countdowns, the bearer groups' walks,
 // Cut the Feed and its surge, the platform's phases, cues, jams (by source and wave), plates, and
 // where it was driven off.
-import { expect } from 'vitest';
 import type { CompiledBuild, CompiledContent } from '../../content/compiled.ts';
 import { BEARER_WAVES } from '../../content/maps/a3_m05/map.ts';
 import type { ScriptFlags } from '../../sim/index.ts';
@@ -183,34 +182,45 @@ export function one(r: A3m5Run, key: string): number {
 }
 
 /** The beats every winning reference run lands (act3.md § A3M5). */
-export function expectBeats(r: A3m5Run, label: string): void {
-  expect(r.outcome, label).toBe('won');
-  const start = (w: number): number => one(r, `WaveStarted ${w}`);
-  // Each bearer group walks as its wave starts.
+export function beatMisses(r: A3m5Run): string[] {
+  const miss: string[] = [];
+  const check = (ok: boolean, what: string): void => {
+    if (!ok) miss.push(what);
+  };
+  const at = (key: string): number | null => {
+    const ticks = r.at[key] ?? [];
+    return ticks.length === 1 ? ticks[0]! : null;
+  };
+  check(r.outcome === 'won', `outcome ${r.outcome}`);
+  // Each bearer group walks as its wave starts, and none at any other time.
   const walks = r.at.BearerSpawned ?? [];
-  for (const [w] of BEARER_WAVES) {
-    expect(walks.filter((t) => t === start(w)).length, `${label}: W${w}'s bearers`).toBeGreaterThan(
-      0,
-    );
+  const starts = BEARER_WAVES.map(([w]) => at(`WaveStarted ${w}`));
+  for (const [i, [w]] of BEARER_WAVES.entries()) {
+    check(walks.includes(starts[i] ?? -1), `W${w}'s bearers walk as it starts`);
   }
-  expect(
-    walks.every((t) => BEARER_WAVES.some(([w]) => t === start(w))),
-    label,
-  ).toBe(true);
+  check(
+    walks.every((t) => starts.includes(t)),
+    'bearers walk only as their waves start',
+  );
   // The platform: three phases inside W14, each cue the tick after its phase begins.
   const cues = ['a3_m05_cue_sv_spawn', 'a3_m05_cue_takeover', 'a3_m05_cue_jettison'];
-  let last = start(14);
+  let last = at('WaveStarted 14') ?? Infinity;
   for (const [i, cue] of cues.entries()) {
-    const phase = one(r, `BossPhase ${i + 1}`);
-    expect(phase, `${label}: phase ${i + 1}`).toBeGreaterThanOrEqual(last);
-    expect(one(r, `ScriptCue ${cue}`), `${label}: ${cue}`).toBe(phase + 1);
-    last = phase;
+    const phase = at(`BossPhase ${i + 1}`);
+    check(phase !== null && phase >= last, `phase ${i + 1} once, in order`);
+    check(phase !== null && at(`ScriptCue ${cue}`) === phase + 1, `${cue} the tick after it`);
+    last = phase ?? Infinity;
   }
   // Driven off before the core, and W15's countdown waits for it.
-  const ended = one(r, 'BossEnded');
-  expect(ended, label).toBeGreaterThan(last);
-  expect(r.droveOffAt!, label).toBeLessThan(ROAD_TILES);
-  expect(one(r, 'CountdownStarted 15'), label).toBeGreaterThanOrEqual(ended);
+  const ended = at('BossEnded');
+  check(ended !== null && ended > last, 'driven off after phase 3');
+  check(r.droveOffAt !== null && r.droveOffAt < ROAD_TILES, 'driven off short of the core');
+  const w15 = at('CountdownStarted 15');
+  check(w15 !== null && ended !== null && w15 >= ended, "W15's countdown waits for it");
   // The plates land on the crash site.
-  expect(r.plates.toSorted(), label).toEqual(['crash_1', 'crash_2', 'crash_3', 'crash_4']);
+  check(
+    r.plates.toSorted().join() === 'crash_1,crash_2,crash_3,crash_4',
+    'plates on the crash site',
+  );
+  return miss;
 }
