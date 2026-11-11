@@ -1,15 +1,20 @@
-// The Gathering Maw's split and merge, minimal (T708; design/enemies.md § 6; T730a polishes it):
-// pure rules, unit-tested, applied by GatheringMawView. Its phase-1 gather is the Maw's look
-// (gatherLook.ts, HollowView), at the boss's reach.
-// - **The tether** (the parts are still one thing): while a split's parts walk apart, a thin
-//   `violet.3` thread over an `ink.0` under-stroke runs from each part to the next along the road
-//   (nearest first), so three bodies read as one boss. Through the merge's tell (its last 1.5 s,
-//   the walk together) it pulls taut: `violet.4`, thicker as the merge comes (`tetherStroke`), with
-//   a `white.1` core in its last third, the snap the merge lands on.
-// - **The burst** (the split) and **the gulp** (the merge): a `violet.3` ring over an `ink.0`
-//   under-stroke round the unit, opening out from BURST_FROM_TILES to BURST_TO_TILES over
-//   BURST_MS and fading (`burstRing`); under reduced motion it holds at its full size and fades
-//   by STEPPED alpha only.
+// The Gathering Maw's split and merge (T708's minimal look, polished by T730a; design/enemies.md
+// § 6): pure rules, unit-tested, applied by GatheringMawView (and EnemyView's lane for the parts).
+// Its phase-1 gather is the Maw's look (gatherLook.ts, HollowView), at the boss's reach.
+// - **The parts side by side:** the sim spreads the three parts 0.6 tiles apart along the road;
+//   drawn there alone their bodies overlap into one blob, so each walks its own lane across the
+//   road (`partLanePx`: −PART_LANE_PX, 0, +PART_LANE_PX by uid), and three bodies read as three.
+// - **The tether** (the parts are still one thing): while a split's parts walk apart, a `violet.3`
+//   thread (2 px) over an `ink.0` under-stroke runs body to body (as drawn) from each part to the
+//   next along the road (nearest first), with a `violet.4` bead at its middle, so three bodies
+//   read as one boss. Through the merge's tell (its last 1.5 s, the walk together) it pulls taut:
+//   `violet.4`, thicker as the merge comes (`tetherStroke`), with a `white.1` core in its last
+//   third, the snap the merge lands on.
+// - **The burst** (the split) and **the gulp** (the merge): two `violet.3`/`violet.4` rings over
+//   an `ink.0` under-stroke round the unit, the second a step behind, opening out from
+//   BURST_FROM_TILES to BURST_TO_TILES over BURST_MS and fading (`burstRing`), and a spray of
+//   Hollow motes (TransientFx `unravel`); under reduced motion the rings hold at full size and
+//   fade by alpha only, and no motes fly.
 import type { ColorName } from '../../content/palettes/master.ts';
 
 export const UNDER: ColorName = 'ink.0';
@@ -17,7 +22,9 @@ export const TETHER: ColorName = 'violet.3';
 export const TETHER_TAUT: ColorName = 'violet.4';
 export const TETHER_CORE: ColorName = 'white.1';
 export const BURST: ColorName = 'violet.3';
-export const BURST_MS = 450;
+export const BURST_MS = 600;
+/** The second ring trails the first by this much of BURST_MS. */
+export const BURST_LAG = 0.25;
 export const BURST_FROM_TILES = 0.3;
 export const BURST_TO_TILES = 1.1;
 
@@ -28,12 +35,20 @@ export interface TetherStroke {
   readonly core: boolean;
 }
 
-const SLACK: TetherStroke = { px: 1, color: TETHER, core: false };
+const SLACK: TetherStroke = { px: 2, color: TETHER, core: false };
 const TAUT: readonly TetherStroke[] = [
-  { px: 1, color: TETHER_TAUT, core: false },
   { px: 2, color: TETHER_TAUT, core: false },
-  { px: 2, color: TETHER_TAUT, core: true },
+  { px: 3, color: TETHER_TAUT, core: false },
+  { px: 3, color: TETHER_TAUT, core: true },
 ];
+
+/** How far apart the parts' lanes are across the road (px). */
+export const PART_LANE_PX = 9;
+
+/** A split part's sideways lane (px) by its uid: −PART_LANE_PX, 0, or +PART_LANE_PX. */
+export function partLanePx(uid: number): number {
+  return ((uid % 3) - 1) * PART_LANE_PX;
+}
 
 /**
  * The tether between a split's parts with `mergeTicks` left of the clock (`tellTicks` its tell):

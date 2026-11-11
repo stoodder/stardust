@@ -3,9 +3,11 @@
 // bar, no `policy` tell, a silence that blinks), Sterling by remote on A3M5, Kip's `act3` from
 // A3M5, Ves'thara's laugh, Gerald's status line, Bricks's dark silences on A3M4, and the A3M6
 // knock-knock's reply button. The scenes are dev data shaped like the maps' (their lines are
-// T721's and T722's content); the A3M4 barks are its own.
+// T721's content), except A3M6's knock-knock, which is the map's own (T722); the A3M4 barks are its
+// own.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { parseSceneId } from '../content/dialogue/rules.ts';
+import { scenes as a3m06Scenes } from '../content/dialogue/a3/a3_m06/scenes.ts';
 import { barksFor } from '../content/dialogue/index.ts';
 import type { Bark, Scene, SpeakerId } from '../content/dialogue/types.ts';
 import { SPRITES } from '../content/sprites/index.ts';
@@ -80,28 +82,12 @@ const QUILL_BARK: Bark = {
   text: 'Directive conflict. Helping anyway.',
   trigger: { on: 'boss_phase' },
 };
-// A3M6's knock-knock (T722's lines): Pebble's radio line carries the button; ignored, the scene
-// runs on; pressed, its reply plays (a cue scene: `<map>_w02_reply` isn't a scene id).
-const KNOCK_REPLY: Scene = {
-  id: 'a3_m06_cue_knock_answer',
-  nodes: [
-    { kind: 'line', speaker: 'pebble', text: 'Lettuce! ...Lettuce in.' },
-    { kind: 'line', speaker: 'bricks', text: '', durationSec: 2 },
-  ],
-};
-const KNOCK: Scene = {
-  id: 'a3_m06_w02',
-  nodes: [
-    {
-      kind: 'line',
-      speaker: 'pebble',
-      text: 'Knock knock! (squeak)',
-      button: { label: "Who's there?", reply: KNOCK_REPLY.id },
-    },
-    { kind: 'line', speaker: 'pebble', text: "Lettuce! You're supposed to ask." },
-    { kind: 'line', speaker: 'bricks', text: '', durationSec: 2 },
-  ],
-};
+// A3M6's knock-knock (T722's scenes, as authored): Pebble's radio line carries the button; ignored,
+// the scene runs on to her own punchline; pressed, its reply plays (a cue scene: `<map>_w02_reply`
+// isn't a scene id). Both endings close on Goldie, then Bricks's 2 s dark silence.
+const A3M6 = (id: string): Scene => a3m06Scenes.find((x) => x.id === id)!;
+const KNOCK_REPLY: Scene = A3M6('a3_m06_cue_knock_answer');
+const KNOCK: Scene = A3M6('a3_m06_w02');
 
 /** Dev save `after_a3m4_<choice>`, loaded. */
 const c4Save = (choice: 'keep' | 'purge' | 'rewrite'): SaveData => {
@@ -320,19 +306,30 @@ describe('in a battle', () => {
 
   it("A3M6's knock-knock: pressed, its reply; ignored, the scene runs on", () => {
     bind('a3_m04', 'after_a3m3_convoy');
+    /** Who speaks, in order, until the panel empties (a run of the same line counts once). */
+    const speakers = (): string[] => {
+      const seen: string[] = [];
+      for (let i = 0; i < 60 && comms() !== null; i++) {
+        const c = comms()!;
+        const key = `${c.speaker}${c.dark ? ' (dark)' : ''}`;
+        if (seen.at(-1) !== key) seen.push(key);
+        vi.advanceTimersByTime(500);
+      }
+      return seen;
+    };
     playScene(KNOCK);
     expect(dialogue.comms.value?.button).toBe("Who's there?");
     pressCommsButton();
-    expect(comms()?.text).toContain('Lettuce in');
+    expect(comms()?.text).toContain('QUILL told me that one');
     expect(dialogue.comms.value?.button).toBeNull();
-    vi.advanceTimersByTime(4000);
-    // Bricks's dark silence closes it, then nothing.
-    expect(comms()).toEqual({ speaker: 'bricks', text: '', dark: true });
-    vi.advanceTimersByTime(10_000);
+    // Goldie at the door, then Bricks's dark silence closes it, then nothing.
+    expect(speakers()).toEqual(['pebble', 'goldie', 'bricks (dark)']);
     expect(comms()).toBeNull();
 
     playScene(KNOCK);
     vi.advanceTimersByTime(5000);
     expect(comms()?.text).toContain('supposed to ask');
+    expect(speakers()).toEqual(['pebble', 'goldie', 'bricks (dark)']);
   });
+
 });

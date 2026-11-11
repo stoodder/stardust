@@ -1,5 +1,6 @@
 // T721: A3M5 *Unsung* reached the normal way, from the Sector map on the reference profile after
-// A3M4 under C4 Keep (`save=after_a3m4_keep`): Unsung's Start, the loadout (the Sproing Pad given
+// A3M4 under C4 Keep (`save=after_a3m4_keep`): the base first (Night Shift, read through, then the
+// Stasis Bloom's attunement, the reference's buy), then Unsung's Start, the loadout (the Sproing Pad given
 // as it opens), par's four (Hum Choir, Grapple Harpoon, Stasis Bloom, Thumper), Lock in, Kip's
 // ledger, Pebble's Boing and QUILL's apology, then par (`autoplay('par')`). The plant at night
 // with the feed lines cut (W1), the first bearers out of the sluice with the Hollow behind them
@@ -51,7 +52,7 @@ async function until(page: Page, cond: Cond, max = 60 * 900): Promise<boolean> {
           case 'rings':
             return st.wave === 7 && ringing();
           case 'phase1':
-            return st.wave === 14 && boss() === 1 && st.tick % 60 === 0;
+            return st.wave === 14 && boss() === 1;
           case 'phase2':
             return boss() === 2;
           case 'phase3':
@@ -85,6 +86,30 @@ async function play(page: Page, ms: number): Promise<void> {
 
 const towerCard = (page: Page, name: string) =>
   page.getByRole('button', { name: new RegExp(`^${name},`) });
+
+/**
+ * The reference's purchase before A3M5: the Stasis Bloom's attunement (Xenotech, 3 Intel). The
+ * base plays Night Shift first (mandatory after C4): its lines are read through.
+ */
+async function prepare(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Base' }).click();
+  const scene = page.getByTestId('scene');
+  const next = page.getByRole('button', { name: /^(Skip|Next)$/ });
+  await expect(async () => {
+    if (await next.isVisible()) await next.click();
+    else if (await scene.isVisible()) await page.keyboard.press('Escape');
+    await expect(scene).toBeHidden({ timeout: 500 });
+  }).toPass({ timeout: 60_000 });
+  const tab = page.getByRole('tab', { name: /^Xenotech/ });
+  await tab.click();
+  const bloom = page
+    .getByRole('tabpanel')
+    .getByRole('listitem')
+    .filter({ hasText: 'Stasis Bloom' });
+  await bloom.getByRole('button', { name: /^Attune Stasis Bloom, 3 Intel/ }).click();
+  await expect(bloom.locator('.sd-offer-owned')).toHaveText('Owned');
+  await page.getByRole('button', { name: 'Sector map' }).click();
+}
 
 /** Picks par's loadout on the loadout screen and locks it in. */
 async function parLoadout(page: Page): Promise<void> {
@@ -137,6 +162,7 @@ test('A3M5: from the Sector map, the bearers, the rings, Sterling on each phase,
   await page.goto('/?test=1&dialogue=1&fasttext=1&seed=1&save=after_a3m4_keep');
   await waitForReady(page);
   await expect(page.getByRole('heading', { name: 'Sector map' })).toBeVisible();
+  await prepare(page);
 
   // The Sector map's normal flow: Unsung is next up; its Start, par's four.
   await page.getByRole('button', { name: 'Start Unsung' }).click();

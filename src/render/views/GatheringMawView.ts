@@ -1,8 +1,9 @@
-// The Gathering Maw's split and merge, minimal (T708; gmawLook.ts has the rules; T730a polishes
-// them, T740a draws the bodies): the burst as it splits, the tether running between its parts
-// along the road (slack, then pulled taut through the merge's tell as they walk together), and
-// the gulp as they merge. One Graphics on the vfx layer, redrawn each frame; allocation-free per
-// frame (the scratch points and the burst slots are reused). Its phase-1 gather is HollowView's
+// The Gathering Maw's split and merge (T708's view, polished by T730a; gmawLook.ts has the rules,
+// T740a draws the bodies, each part in its own lane: EnemyView `setLane`): the burst as it splits
+// (two violet rings and a spray of motes), the tether running body to body between its parts as
+// drawn (UnitAnchors; slack with a bead, then pulled taut through the merge's tell as they walk
+// together), and the gulp as they merge. One Graphics on the vfx layer, redrawn each frame;
+// allocation-free per frame (the scratch points and the burst slots are reused). Its phase-1 gather is HollowView's
 // (the Maw's tendrils, at the boss's reach); its one boss bar is BossBarView's (gmawLook.ts
 // `bossBarKey`, the sim's `splitHp`).
 import type * as Phaser from 'phaser';
@@ -19,6 +20,8 @@ import {
 import { gridToScreen, rangeEllipsePx, type Vec2 } from '../iso.ts';
 import {
   BURST,
+  BURST_LAG,
+  BURST_MS,
   burstRing,
   TETHER,
   TETHER_CORE,
@@ -27,6 +30,8 @@ import {
   UNDER,
 } from './gmawLook.ts';
 import { hexOf } from './jamLook.ts';
+import type { TransientFx } from './TransientFx.ts';
+import { blankBox, NO_ANCHORS, type UnitAnchors } from './unitAnchor.ts';
 import type { ViewContext } from './ViewContext.ts';
 
 interface Pool<T> {
@@ -40,21 +45,28 @@ const CORE = hexOf(TETHER_CORE);
 const SLACK_HEX = hexOf(TETHER);
 const TAUT_HEX = hexOf(TETHER_TAUT);
 /** The tether runs body to body, this far above each part's ground point. */
-const BODY_LIFT_PX = 6;
+const BODY_LIFT_PX = 8;
+/** The motes a burst sprays rise from this high on the body (px). */
+const MOTE_LIFT_PX = 10;
 
 const a: Vec2 = { x: 0, y: 0 };
 const b: Vec2 = { x: 0, y: 0 };
 const semi: Vec2 = { x: 0, y: 0 };
+const box = blankBox();
 
 interface Burst {
   active: boolean;
   uid: number;
   ms: number;
+  /** Its motes sprayed (once, the first frame its unit is found). */
+  motes: boolean;
 }
 
 export class GatheringMawView {
   readonly #ctx: ViewContext;
   readonly #reducedMotion: () => boolean;
+  readonly #anchors: UnitAnchors;
+  readonly #fx: TransientFx | null;
   readonly #g: Phaser.GameObjects.Graphics;
   readonly #bursts: Burst[] = [];
   #parts = 0;
@@ -64,9 +76,16 @@ export class GatheringMawView {
   splitsSeen = 0;
   mergesSeen = 0;
 
-  constructor(ctx: ViewContext, reducedMotion: () => boolean) {
+  constructor(
+    ctx: ViewContext,
+    reducedMotion: () => boolean,
+    anchors: UnitAnchors = NO_ANCHORS,
+    fx: TransientFx | null = null,
+  ) {
     this.#ctx = ctx;
     this.#reducedMotion = reducedMotion;
+    this.#anchors = anchors;
+    this.#fx = fx;
     this.#g = ctx.scene.make.graphics({}, false);
     ctx.layers.vfx.add(this.#g);
   }
@@ -124,12 +143,10 @@ export class GatheringMawView {
     p: DeepReadonly<Enemy>,
     q: DeepReadonly<Enemy>,
   ): void {
-    gridToScreen(p.x, p.y, this.#ctx.origin, a);
-    gridToScreen(q.x, q.y, this.#ctx.origin, b);
-    a.y -= BODY_LIFT_PX;
-    b.y -= BODY_LIFT_PX;
+    this.#bodyAt(p, a);
+    this.#bodyAt(q, b);
     const st = tetherStroke(p.mergeTicks, MERGE_TELL_TICKS);
-    g.lineStyle(st.px + 2, INK, 0.6).lineBetween(a.x, a.y, b.x, b.y);
+    g.lineStyle(st.px + 2, INK, 0.7).lineBetween(a.x, a.y, b.x, b.y);
     g.lineStyle(st.px, st.color === TETHER ? SLACK_HEX : TAUT_HEX, 1).lineBetween(
       a.x,
       a.y,
@@ -137,17 +154,34 @@ export class GatheringMawView {
       b.y,
     );
     if (st.core) g.lineStyle(1, CORE, 1).lineBetween(a.x, a.y, b.x, b.y);
+    // A bead at its middle, so a short tether between close bodies still reads.
+    const mx = Math.round((a.x + b.x) / 2);
+    const my = Math.round((a.y + b.y) / 2);
+    g.fillStyle(INK, 1).fillRect(mx - 2, my - 2, 4, 4);
+    g.fillStyle(TAUT_HEX, 1).fillRect(mx - 1, my - 1, 2, 2);
+  }
+
+  /** A unit's body point as drawn (its lane included), else its grid point, lifted. */
+  #bodyAt(e: DeepReadonly<Enemy>, out: Vec2): void {
+    if (this.#anchors.box(e.uid, box)) {
+      out.x = box.x;
+      out.y = box.groundY - BODY_LIFT_PX;
+      return;
+    }
+    gridToScreen(e.x, e.y, this.#ctx.origin, out);
+    out.y -= BODY_LIFT_PX;
   }
 
   #burst(uid: number): void {
     let slot = this.#bursts.find((s) => !s.active);
     if (slot === undefined) {
-      slot = { active: false, uid: 0, ms: 0 };
+      slot = { active: false, uid: 0, ms: 0, motes: false };
       this.#bursts.push(slot);
     }
     slot.active = true;
     slot.uid = uid;
     slot.ms = 0;
+    slot.motes = false;
   }
 
   #drawBursts(g: Phaser.GameObjects.Graphics, dtMs: number, enemies: Pool<Enemy>): void {
@@ -161,10 +195,21 @@ export class GatheringMawView {
         s.active = ring.alpha > 0 && e === null && s.ms < 100; // the unit may land a frame late
         continue;
       }
-      gridToScreen(e.x, e.y, this.#ctx.origin, a);
+      this.#bodyAt(e, a);
+      const gy = a.y + BODY_LIFT_PX;
+      if (!s.motes) {
+        s.motes = true;
+        if (!still) this.#fx?.unravel(e.x, e.y, MOTE_LIFT_PX);
+      }
       rangeEllipsePx(ring.tiles, semi);
-      g.lineStyle(3, INK, 0.6 * ring.alpha).strokeEllipse(a.x, a.y, semi.x * 2, semi.y * 2);
-      g.lineStyle(1, BURST_HEX, ring.alpha).strokeEllipse(a.x, a.y, semi.x * 2, semi.y * 2);
+      g.lineStyle(4, INK, 0.6 * ring.alpha).strokeEllipse(a.x, gy, semi.x * 2, semi.y * 2);
+      g.lineStyle(2, BURST_HEX, ring.alpha).strokeEllipse(a.x, gy, semi.x * 2, semi.y * 2);
+      // A second ring a step behind (T730a).
+      const second = burstRing(s.ms - BURST_MS * BURST_LAG, still);
+      if (second.alpha > 0) {
+        rangeEllipsePx(second.tiles * 0.7, semi);
+        g.lineStyle(1, TAUT_HEX, second.alpha).strokeEllipse(a.x, gy, semi.x * 2, semi.y * 2);
+      }
     }
   }
 

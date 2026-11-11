@@ -84,7 +84,7 @@ export function leaperFrame(pose: LeaperPose, facing: string): string {
 export interface PadAlly {
   readonly alive: boolean;
   readonly mode: string;
-  readonly kind: string;
+  readonly kind: string | null;
   readonly ownerUid: number;
   readonly swarmState: string;
 }
