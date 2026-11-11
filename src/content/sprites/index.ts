@@ -232,6 +232,7 @@ import { towerSproing, towerSproingHead } from './towers/sproing.ts';
 import { fxPuddle } from './fx/puddle.ts';
 import { M7_ALLIES, M7_UNIT_FX, M7_UNITS } from './enemies/m7.ts';
 import { M7_UNIT_ICONS } from './icons/m7_enemies.ts';
+import { M8_PLACEHOLDERS } from './placeholders/m8.ts'; // T800a
 import { iconStampLicenseRevoked, iconStampUplinkRevoked } from './icons/revoked.ts';
 import { towerBloom, towerBloomHead } from './towers/bloom.ts';
 import { towerChoir, towerChoirHead } from './towers/choir.ts';
@@ -377,6 +378,8 @@ export const SPRITES = [
   enemyExpediter,
   // M7's units (T740a: enemies/m7.ts).
   ...M7_UNITS,
+  // The finale's placeholders until T841 (placeholders/m8.ts).
+  ...M8_PLACEHOLDERS,
   allyBricks,
   // M5's escort: the refugees and Pebble among them (T540a).
   allyRefugee,

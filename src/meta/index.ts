@@ -132,6 +132,7 @@ export type {
   C3Choice,
   C3Transaction,
   C4Choice,
+  C5Choice,
   StoryOutcome,
   StoryRefusal,
   UpgradeRefund,
@@ -175,6 +176,9 @@ export {
   jailbreakPrice,
   openCrate,
   resolveC4,
+  C5,
+  C5_CHOICES,
+  resolveC5,
 } from './storyTransactions.ts';
 export {
   baseStoryContext,

@@ -13,6 +13,7 @@ import {
   REFERENCE_PROFILES,
   REFERENCE_STORY_PRICING,
   REFERENCE_VARIANTS,
+  FIN_CHOIR_CELLS,
   type StoryPricing,
 } from './reference.ts';
 import type { FlagProfileDef, ProfileDef } from '../types.ts';
@@ -257,19 +258,69 @@ describe('REFERENCE_PROFILES, Act III part two (M7, T700b)', () => {
   });
 });
 
+describe('REFERENCE_PROFILES, the finale (M8, T800b)', () => {
+  const { a3_m06, fin_m01 } = REFERENCE_PROFILES;
+
+  it('follows campaign.md § 4.9 into FIN: A3M6 plus the Mindspike specs (Intel 16)', () => {
+    expect(fin_m01.towers).toEqual(a3_m06.towers);
+    expect(fin_m01.specs).toEqual([...a3_m06.specs, 'mindspike']);
+    expect(fin_m01.shop).toEqual(a3_m06.shop);
+    expect(fin_m01.protocols).toEqual(['head_start']);
+    expect(fin_m01.technicianAbility).toBe('suppressing_fire');
+    // Intel spent by FIN: Thumper 2 + Sprinkler 2 + Zapcoil 3 + Mindspike attune 3 + Bloom 3 +
+    // Mindspike specs 3 = 16, under the 17 Victory medals won before it.
+    expect(fin_m01.specs).toHaveLength(4);
+  });
+
+  it('owns the same in every flag cell; the choir cells resolve to the FIN row', () => {
+    expect(REFERENCE_VARIANTS.fin_m01).toEqual([]);
+    for (const cell of Object.values(FIN_CHOIR_CELLS)) {
+      expect(firstMatch(REFERENCE_VARIANTS.fin_m01, cell) ?? fin_m01).toBe(fin_m01);
+    }
+    // The weakest choir is every flag's smaller-choir branch, the strongest its larger.
+    expect(FIN_CHOIR_CELLS.weakest).toEqual({
+      spared_quiet_wave: false,
+      stardust_choice: 'sold',
+      door_choice: 'convoy',
+      quill_choice: 'purge',
+    });
+    expect(FIN_CHOIR_CELLS.strongest).toEqual({
+      spared_quiet_wave: true,
+      stardust_choice: 'returned',
+      door_choice: 'warren',
+      quill_choice: 'rewrite',
+    });
+  });
+
+  it('prices the story into the finale as into A3M6 (the jailbreak by door, the crate)', () => {
+    expect(REFERENCE_STORY_PRICING.fin_m01).toEqual(REFERENCE_STORY_PRICING.a3_m06);
+  });
+
+  it('prices both choir cells on the campaign timeline, the finale included', () => {
+    for (const [name, cell] of Object.entries(FIN_CHOIR_CELLS)) {
+      const errors = pricedErrors(cell);
+      expect(errors, name).toEqual([]);
+    }
+    // Priced past what the campaign pays, the finale's row is refused too.
+    const errors = pricedErrors(FIN_CHOIR_CELLS.strongest, 1700);
+    expect(errors.join('\n')).toMatch(/fin_m01\.referenceProfile: spends \d+ Stardust/);
+  });
+});
+
 /** The first cell of `cells` whose `when` every flag in `flags` meets. */
 function firstMatch(
   cells: readonly FlagProfileDef[],
-  flags: Readonly<Record<string, string>>,
+  flags: Readonly<Record<string, string | boolean>>,
 ): ProfileDef | undefined {
   return cells.find((c) => Object.entries(c.when).every(([f, v]) => flags[f] === v))?.profile;
 }
 
-/** campaign.md § 4.9's first-clear Stardust for M7's maps. */
+/** campaign.md § 4.9's first-clear Stardust for M7's maps and the finale. */
 const M7_STARDUST = [
   ['a3_m04', 330],
   ['a3_m05', 355],
   ['a3_m06', 380],
+  ['fin_m01', 500],
 ] as const;
 
 /**
@@ -279,7 +330,9 @@ const M7_STARDUST = [
  * `StoryPricing.stardust`, plus `extra` to test the check reads it). Stub towers count as landed.
  */
 function pricedErrors(
-  flags: { door_choice: 'convoy' | 'warren'; quill_choice: string },
+  flags: { door_choice: 'convoy' | 'warren'; quill_choice: string } & Readonly<
+    Record<string, string | boolean>
+  >,
   extra = 0,
 ): string[] {
   const raw = withRows();

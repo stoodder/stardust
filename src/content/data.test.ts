@@ -338,6 +338,7 @@ describe('enemies', () => {
       'shareholder_value',
       'gathering_maw',
       'gathering_maw_part',
+      'unsung', // the finale's (T800a stub; sim/m8seams.test.ts)
     ]);
     expect(
       Object.values(content.enemies)

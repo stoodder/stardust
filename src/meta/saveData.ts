@@ -12,10 +12,12 @@ import { MAPS } from '../content/maps/index.ts';
 import type { MemoId } from '../content/memos/types.ts';
 import { TOWERS } from '../content/towers/index.ts';
 import { PROTOCOLS, UPGRADES } from '../content/upgrades/index.ts';
-import type { DifficultyId } from '../sim/index.ts';
+import type { CommandLogEntry, DifficultyId } from '../sim/index.ts';
 import { deliverMemos } from './story.ts';
+import type { VeteranModifierId } from './veteran.ts';
 import type {
   AbilityId,
+  CompanionId,
   EnemyId,
   FlagId,
   FlagValue,
@@ -145,6 +147,65 @@ export interface SaveData {
   };
   /** One-time hints already shown (meta/hints.ts). */
   seenHints: HintId[];
+  /**
+   * The finale's run in progress at its latest checkpoint (D154: the finale only, so a 20–25
+   * minute run survives a closed tab; every other map's checkpoints stay in memory). Absent with
+   * no run pending. Optional, like the post-game fields below, so it needs no SaveData bump.
+   */
+  pendingRun?: PendingRun;
+  /**
+   * Veteran records per map won (progression.md § 6; T860): the modifiers last picked and the
+   * best total bonus a replay victory carried. Absent until the first veteran replay.
+   */
+  veteran?: Partial<Record<MapId, VeteranRecord>>;
+  /** Endless mode's score table (maps.md § 8; T861): one best record per seed, at most 10. */
+  endless?: EndlessScore[];
+}
+
+/**
+ * A run persisted at a checkpoint (D154; app/checkpoints.ts): what rebuilds it is the map, the
+ * seed, the loadout and companion locked in, and the save (its config, rebuilt by
+ * app/battleSetup.ts); the replay is its command log up to the checkpoint. `configHash` fingerprints
+ * the config it ran on, so a resume whose save now builds another (a purchase since) starts over
+ * rather than replaying into a different run (T809 defines the hash and writes the field).
+ */
+export interface PendingRun {
+  map: MapId;
+  /** The run's seed: a 32-bit unsigned integer. */
+  seed: number;
+  loadout: LoadoutPreset;
+  /** The companion picked for the run (the finale's pick list), or null on a map without one. */
+  companion: CompanionId | null;
+  checkpoint: PendingCheckpoint;
+  /** The run's logged commands before the checkpoint (`checkpoint.commandCount` of them). */
+  log: CommandLogEntry[];
+  /** Skitterkin of this run already filed in the save's Pests Processed (app/checkpoints.ts). */
+  killsBefore: number;
+  /** 8 lowercase hex digits: the config's fingerprint (T809). */
+  configHash: string;
+}
+
+/** A persisted checkpoint (app/checkpoints.ts `Checkpoint`, with the sim's label). */
+export interface PendingCheckpoint {
+  /** `'halls'` at Phase 2's start ("Retry from the Halls"); absent on a wave checkpoint. */
+  label?: string;
+  wave: number;
+  tick: number;
+  commandCount: number;
+}
+
+/** One map's veteran record (meta/veteran.ts). */
+export interface VeteranRecord {
+  /** The modifiers last picked on the replay briefing, in table order, each once. */
+  mods: VeteranModifierId[];
+  /** The best total Stardust bonus (percent) a victory here carried; 0 before one. */
+  best: number;
+}
+
+/** One endless score: the waves held on a seed (maps.md § 8: a run can be shared by seed). */
+export interface EndlessScore {
+  seed: number;
+  wave: number;
 }
 
 /** Every difficulty a save can hold; the first is a new save's. */

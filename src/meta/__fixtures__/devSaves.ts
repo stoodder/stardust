@@ -32,11 +32,13 @@ import {
   openCrate,
   resolveC2,
   resolveC4,
+  resolveC5,
   runEndRevocations,
   runEndTransactions,
   setDoorChoice,
   type C3Choice,
   type C4Choice,
+  type C5Choice,
   type StoryOutcome,
 } from '../storyTransactions.ts';
 
@@ -73,6 +75,13 @@ export type DevSaveId =
   | 'after_a3m5_purge'
   | 'after_a3m5_rewrite'
   | 'after_a3m6'
+  | 'after_a3m6_keep'
+  | 'after_a3m6_purge'
+  | 'after_a3m6_rewrite'
+  | 'after_a3m6_weakest'
+  | 'after_a3m6_strongest'
+  | 'after_fin_stay'
+  | 'after_fin_go'
   | 'all_unlocked';
 
 export interface DevSave {
@@ -429,6 +438,8 @@ interface ActThreePlan {
   readonly door: C3Choice;
   /** C4, QUILL's directives, answered on A3M4's card (needed once a plan reaches A3M4). */
   readonly c4?: C4Choice;
+  /** C2's branch on A2M4's card (default Return, the reference's). */
+  readonly c2?: C2Branch;
 }
 
 /** `r`'s save; a refusal is a broken fixture and throws. */
@@ -447,7 +458,7 @@ function made(r: StoryOutcome): SaveData {
  * land the saves equal `after_a2m6` (with the plan's C1).
  */
 function actThreeThrough(last: ActThreeMap, plan: ActThreePlan): SaveData {
-  let save = actTwoThrough('a2_m06');
+  let save = actTwoThrough('a2_m06', plan.c2 === undefined ? {} : { c2: plan.c2 });
   save.story.flags.spared_quiet_wave = plan.c1 === 'spared';
   for (const step of ACT_THREE.slice(0, ACT_THREE.indexOf(last) + 1)) {
     const map: string = step;
@@ -524,6 +535,93 @@ function a3m4Save(door: C3Choice, c4: C4Choice): DevSave {
       `Reboot and the Hum Choir given in its briefing${gloop}; Gerald's mail (Suppressing Fire ` +
       `inherited), C4 ${c4}, and Night Shift seen. Skipped while A3M4 is not registered.`,
     build: () => actThreeThrough('a3_m04', { ...A3_REF, door, c4 }),
+  };
+}
+
+/**
+ * `r`'s save; or, while its transaction refuses `'unbuilt'` (its body waits for its task: C5's,
+ * T810), the save `intended` makes, the effect meta/storyTransactions.ts documents for it as data.
+ * Any other refusal is a broken fixture and throws. Once the task lands, the stand-in is never
+ * reached.
+ */
+function madeOrIntended(
+  save: SaveData,
+  r: StoryOutcome,
+  intended: (s: SaveData) => SaveData,
+): SaveData {
+  if (r.ok) return r.save;
+  if (r.reason === 'unbuilt') return intended(save);
+  throw new Error(`dev save: ${r.reason}: ${r.message}`);
+}
+
+/** C5 as `resolveC5` documents it: `ending_choice` set, nothing else. */
+function intendedC5(choice: C5Choice): (save: SaveData) => SaveData {
+  return (save) => ({
+    ...save,
+    story: { ...save.story, flags: { ...save.story.flags, ending_choice: choice } },
+  });
+}
+
+/** The stand-ins `madeOrIntended` applies while a transaction's body is unbuilt (T810's C5). */
+export const INTENDED = { c5: intendedC5 } as const;
+
+/** What the reference buys before the finale (campaign.md § 4.9): the Mindspike's specs. */
+const FIN_PREP: readonly PurchaseItem[] = [{ kind: 'specs', tower: 'mindspike' }];
+
+/**
+ * The finale's scenes a save that won it has seen: the briefing and Dawn (C5's scene is added with
+ * its answer).
+ */
+const FIN_SEEN: readonly SceneId[] = ['fin_m01_brief', 'fin_m01_scene_dawn'];
+
+/**
+ * `plan` through A3M6, then (once FIN is registered; until then the save equals A3M6's) the
+ * finale prepared for (its § 4.9 purchase) and won with Victory, Head Start on: its briefing
+ * gifts, run end's transactions, Dawn seen, then C5 answered `c5` on the way out
+ * (`resolveC5`, or its documented effect while T810's body is unbuilt) and its scene seen.
+ */
+function finaleThrough(plan: ActThreePlan, c5: C5Choice): SaveData {
+  let save = actThreeThrough('a3_m06', plan);
+  // Widened, so the registered check narrows to MapId while the finale isn't in it yet.
+  const map: string = 'fin_m01';
+  if (!isRegistered(map)) return save;
+  save = bought(save, FIN_PREP);
+  save.loadouts.protocols = ['head_start'];
+  save = briefingGifts(save, map).save;
+  save.campaign.maps[map] = won(map, medalIds(map).slice(0, 1));
+  save.currencies.intel += 1;
+  save.currencies.stardust += MAPS[map].stardust;
+  for (const e of mapEnemies(map)) {
+    if (!save.campaign.seenEnemies.includes(e)) save.campaign.seenEnemies.push(e);
+  }
+  save.stats = { pestsProcessed: save.stats.pestsProcessed, runs: save.stats.runs + 2 };
+  save = runEndTransactions(save, { mapId: map, won: true, wonBefore: false }).save;
+  save.story.seen.push(...FIN_SEEN.filter((id) => !save.story.seen.includes(id)));
+  save = madeOrIntended(save, resolveC5(save, c5), intendedC5(c5));
+  save.story.seen.push('fin_m01_scene_c5');
+  save.story.bricksTagIndex = tagIndexFor(save);
+  return caughtUp(save);
+}
+
+/** The `after_a3m6_<c4>` save: the reference (C1 cleared, Return, the convoy) with that C4. */
+function a3m6Save(c4: C4Choice): DevSave {
+  return {
+    description:
+      `after_a3m5_${c4}, then Harpoon tune 2 and A3M6 won (Victory): the reference into the ` +
+      `finale with C4 ${c4} (Phase 2's ${c4 === 'keep' ? 'Directive 0' : c4 === 'rewrite' ? 'log' : 'silence'}). ` +
+      'Skipped while A3M6 is not registered.',
+    build: () => actThreeThrough('a3_m06', { ...A3_REF, c4 }),
+  };
+}
+
+/** The `after_fin_<c5>` save. */
+function finSave(c5: C5Choice): DevSave {
+  return {
+    description:
+      `after_a3m6_rewrite, then the Mindspike specs bought and the finale won (Victory): Dawn ` +
+      `seen, C5 answered ${c5} (ending_choice = ${c5}); the post-game. Skipped while the finale ` +
+      'is not registered.',
+    build: () => finaleThrough({ ...A3_REF, c4: 'rewrite' }, c5),
   };
 }
 
@@ -702,6 +800,39 @@ export const DEV_SAVES: Readonly<Record<DevSaveId, DevSave>> = {
       'callsign Waykeeper. Skipped while A3M6 is not registered.',
     build: () => actThreeThrough('a3_m06', { ...A3_REF, c4: 'rewrite' }),
   },
+  // Into the finale (T800b): every C4 answer, and the choir's two extremes (reference.ts
+  // FIN_CHOIR_CELLS). Until A3M6 is registered each equals the save before it.
+  after_a3m6_keep: a3m6Save('keep'),
+  after_a3m6_purge: a3m6Save('purge'),
+  after_a3m6_rewrite: a3m6Save('rewrite'),
+  after_a3m6_weakest: {
+    description:
+      'The weakest choir into the finale: the Quiet Wave cleared, C2 Sell (no Returned), the ' +
+      'convoy, C4 Purge; A3M6 won (Victory).',
+    build: () =>
+      actThreeThrough('a3_m06', {
+        c1: 'cleared',
+        revoked: 'rivet',
+        door: 'convoy',
+        c4: 'purge',
+        c2: 'sold',
+      }),
+  },
+  after_a3m6_strongest: {
+    description:
+      'The strongest choir into the finale: the Quiet Wave spared (Thrum walks beside Pebble), C2 ' +
+      'Return (the Returned), the warren, C4 Rewrite; A3M6 won (Victory).',
+    build: () =>
+      actThreeThrough('a3_m06', {
+        c1: 'spared',
+        revoked: 'rivet',
+        door: 'warren',
+        c4: 'rewrite',
+        c2: 'returned',
+      }),
+  },
+  after_fin_stay: finSave('stay'),
+  after_fin_go: finSave('go'),
   all_unlocked: {
     description:
       'Every campaign map won with every medal; every registered tower, built spec, ability, protocol, ' +
@@ -724,8 +855,13 @@ export const DEV_SAVES: Readonly<Record<DevSaveId, DevSave>> = {
       // The story as far as the wins go: the intake done, the callsign and tags they gave, and
       // every memo due delivered and read (so no NEW badge pulls the base to the Inbox).
       save.profile = { ...DEV_PROFILE, callsign: callsignFor(save) };
-      // C4 answered (Keep, QUILL as it was), so the base never stops on A3M4's card (D146).
-      save.story.flags = { arrival_reason: 'lettuce', quill_choice: 'keep' };
+      // C4 answered (Keep, QUILL as it was), so the base never stops on A3M4's card (D146); and,
+      // once the finale is a map it has won, C5 (Stay), so it is in the post-game.
+      save.story.flags = {
+        arrival_reason: 'lettuce',
+        quill_choice: 'keep',
+        ...(isRegistered('fin_m01') ? { ending_choice: 'stay' as const } : {}),
+      };
       save.story.bricksTagIndex = tagIndexFor(save);
       const story = withStoryUnlocks(save).save;
       story.story.memosRead = [...story.story.memosDelivered];

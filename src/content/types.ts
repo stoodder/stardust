@@ -1151,7 +1151,16 @@ export interface MapLayoutDef<K extends IdSpace = LiveIds, Id extends string = s
    * In (0, 1]; never with `maxLost`.
    */
   readonly maxLostPct?: number;
+  /**
+   * A Choir's defeat (T804): fewer than this many singers still singing loses the map. At most
+   * one of the two; a choir map gives one.
+   */
   readonly minVoices?: number;
+  /**
+   * A Choir's defeat as a share of the run's choir (which story flags change; D154: 0.4): fewer
+   * than ⌈minVoicesPct × choir⌉ singing loses the map. In (0, 1]; never with `minVoices`.
+   */
+  readonly minVoicesPct?: number;
   readonly evacuatedFloor?: number;
   readonly size: { readonly cols: number; readonly rows: number };
   /** One string per row, one TileChar per tile. Wrap in `// prettier-ignore`. */

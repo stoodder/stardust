@@ -151,7 +151,7 @@ describe('the scriptInput command (T605)', () => {
 });
 
 describe('FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES (T600a rows; D141)', () => {
-  it('name the task that lifts each M6 mechanic, and M7/M8 for the later ones', () => {
+  it('name the task that lifts each M6 mechanic, and the later tasks for the rest', () => {
     expect(FEATURE_GATES).toMatchObject({
       'enemy.gather': null, // T602
       'map.rift': null, // T602
@@ -162,20 +162,20 @@ describe('FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES (T600a rows; D141)', ()
       'ally.blocker': null, // T605
       'status.lulled': null, // T607
       'tower.field': null, // T608
-      'enemy.boss.layToRest': 'M8',
+      'enemy.boss.layToRest': 'T808', // D154
     });
     // T605's forcedInputResolved, forceInput, and endMap run (sim/holdout.test.ts), and T606's
     // revokeTowerClass, revokeAbility, and setModifier (sim/revoke.test.ts).
     // Retargeted by D146 (T700a: sim/m7seams.test.ts); T706 runs objectiveCompleted, spawnWave,
-    // and the `cleared` atom; T707 runs openTile.
-    expect(SCRIPT_GATES).toEqual({
-      restProgressPct: 'M8',
-      setLighting: 'M8',
-      checkpoint: 'M8',
-      restoreTowerClass: 'M8',
-      startTimer: 'M8',
-      setTimerRate: 'M8',
-      setPhase: 'M8',
+    // and the `cleared` atom; T707 runs openTile. Retargeted by D154 (T800a: sim/m8seams.test.ts).
+    expect(SCRIPT_GATES).toMatchObject({
+      restProgressPct: 'T805',
+      setLighting: 'T806',
+      checkpoint: 'T806',
+      restoreTowerClass: 'T807',
+      startTimer: 'T806',
+      setTimerRate: 'T806',
+      setPhase: 'T806',
     });
   });
 

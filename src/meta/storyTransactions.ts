@@ -23,6 +23,8 @@
 //   A3M3), `inheritAbility` (A3M4's mail scene at run end's step 6; C4 Keep), `resolveC4` (A3M4's
 //   card), `openCrate` (as A3M6's briefing closes), each beside its table (`JAILBREAK`,
 //   `INHERITED_ABILITIES`, `C4_EFFECTS`, `CRATE`); C4's effects in play are `C4_IN_PLAY`.
+// - The finale (M8; T800b's seam, T810's body): `resolveC5` (C5, after the finale's card and
+//   Sterling's memo; `RESULTS_FLOW.fin_m01.ending`), which refuses `'unbuilt'` until T810.
 import { ABILITIES } from '../content/abilities/index.ts';
 import type { CampaignMapId } from '../content/campaign.ts';
 import { FLAGS, type FlagValueOf } from '../content/dialogue/flags.ts';
@@ -561,7 +563,9 @@ export type StoryRefusal =
    * The crate holds no tune-up and a Field Protocol is left to give: it opens on the player's
    * pick (`crateProtocols`), which the briefing asks for.
    */
-  | 'needs_pick';
+  | 'needs_pick'
+  /** The transaction's body waits for its task (`'unbuilt'`, naming it): the finale's C5, T810. */
+  | 'unbuilt';
 
 /** An upgrade's price paid back for every rank owned (Purge's Rapport, the uplink's Mk II). */
 export interface UpgradeRefund {
@@ -586,6 +590,8 @@ export type ActThreeTwoTransaction =
       readonly inherited: AbilityId | null;
       readonly refund: UpgradeRefund | null;
     }
+  /** C5 as committed: the ending (its only effect on the save is `ending_choice`). */
+  | { readonly kind: 'c5'; readonly choice: C5Choice }
   /** Zibzab's crate: the ranks it installed (each item's new rank), or the protocol picked. */
   | {
       readonly kind: 'crate';
@@ -918,4 +924,34 @@ export function openCrate(save: SaveData, pick?: ProtocolId): StoryOutcome {
     },
     applied: { kind: 'crate', upgrades: contents, protocol: pick ?? null },
   };
+}
+
+// ─── The finale (M8): C5's seam by T800b, its body by T810 ───────────────────────────────────────
+
+/** C5's two answers: the `ending_choice` flag's values (campaign.md § 6.1). */
+export type C5Choice = FlagValueOf<'ending_choice'>;
+/** C5's answers, in the ledger's order. */
+export const C5_CHOICES: readonly C5Choice[] = FLAGS.ending_choice.values;
+
+/** The map C5 follows, and the task that builds its body (T810: C5, the epilogue, the credits). */
+export const C5 = { map: 'fin_m01', task: 'T810' } as const satisfies {
+  readonly map: CampaignMapId;
+  readonly task: string;
+};
+
+/**
+ * C5, Stay or Go (bible.md § 9; campaign.md § 6.1), asked once after the finale's card and
+ * Sterling's memo (`RESULTS_FLOW.fin_m01.ending`), committed on the answer and never re-asked: sets
+ * `ending_choice`, and nothing else in the save (the ending, the epilogue cards, and the post-game
+ * star map read the flag). A save whose flag is set is left as it is. `'invalid'` for a value
+ * outside the flag's, or before the finale is won (not due); `'unbuilt'` (naming T810) until its
+ * body lands. The dev saves apply its documented effect meanwhile (devSaves.ts `INTENDED.c5`).
+ */
+export function resolveC5(save: SaveData, choice: C5Choice): StoryOutcome {
+  if (!C5_CHOICES.includes(choice)) {
+    return refuse('invalid', `story: '${String(choice)}' isn't an ending_choice value`);
+  }
+  if (save.story.flags.ending_choice !== undefined) return { ok: true, save, applied: null };
+  if (!isMapWon(save, C5.map)) return refuse('invalid', `story: C5 waits for ${C5.map}'s win`);
+  return refuse('unbuilt', `story: C5 waits for ${C5.task}`);
 }

@@ -60,16 +60,27 @@ interface Timed {
 }
 
 /**
+ * How far ahead an unducked storm's stepped render makes its sounds (s; T766). Scheduling them all
+ * on the clock's zero left thousands of waiting voices in the graph for the whole render (~7 s a
+ * storm, against ~1 s now); half a second ahead renders the same samples as up front (measured
+ * equal to 1e-8 dB on act1, act2 and act3b), where the live pump's one step ahead (STEP_SEC)
+ * does not: there a stolen voice is cut while it sounds, and the mix's RMS is 0–3 dB lower.
+ */
+const AHEAD_SEC = 0.5;
+
+/**
  * Renders `seconds` of a synth into a mono buffer. `build` runs on the clock's zero. With `timed`,
  * the clock is stepped (the offline context suspends every STEP_SEC): each step runs what falls
- * before the next one and pumps the music, as the live engine does, so a duck starts with its
- * sound instead of on the clock's zero; without, `build` schedules everything up front.
+ * before `ahead` from now (the next step, by default) and pumps the music, as the live engine
+ * does, so a duck starts with its sound instead of on the clock's zero; without, `build`
+ * schedules everything up front.
  */
 async function renderBuffer(
   seconds: number,
   build: (s: Synth) => void,
   opts: SynthOptions,
   timed: readonly Timed[] | null = null,
+  ahead = STEP_SEC,
 ): Promise<Float32Array> {
   const ctx = new OfflineAudioContext(1, Math.ceil(seconds * RATE), RATE);
   const synth = new Synth(ctx, opts);
@@ -80,7 +91,7 @@ async function renderBuffer(
     let next = 0;
     const step = (): void => {
       const now = ctx.currentTime;
-      for (; next < queue.length && queue[next]!.t < now + STEP_SEC; next++) {
+      for (; next < queue.length && queue[next]!.t < now + ahead; next++) {
         const e = queue[next]!; // next < length
         e.run(synth, Math.max(0, e.t - now));
       }
@@ -609,17 +620,15 @@ export async function renderStorm(
   const storm: Storm = STORMS[id];
   const music = (s: Synth): void => stormMusic(storm, s);
   if (!ducked) {
-    // Stepped like the ducked render (T766), with ducking off: each sound is made when its step
-    // comes, as the live pump makes it, rather than all of them on the clock's zero. Scheduled up
-    // front, the storm's thousands of waiting voices sat in the graph for the whole render (~3×
-    // the render's time); the plays, their order and their start times are the same.
+    // Stepped, with ducking off, each sound made AHEAD_SEC before it plays (T766): the same
+    // samples as scheduling the whole storm on the clock's zero, in a sixth of the time.
     const plays: Timed[] = stormPlays(storm, true).map(([t, sfxId, pitch]) => ({
       t,
       run: (s, delay) => s.play(sfxId, { delay, pitch }),
     }));
     const [out, raw] = await Promise.all([
-      renderBuffer(STORM_SEC, music, { noDuck: true }, plays),
-      renderBuffer(STORM_SEC, music, { noDuck: true, rawMaster: true }, plays),
+      renderBuffer(STORM_SEC, music, { noDuck: true }, plays, AHEAD_SEC),
+      renderBuffer(STORM_SEC, music, { noDuck: true, rawMaster: true }, plays, AHEAD_SEC),
     ]);
     return { out: analyze([out], RATE), raw: analyze([raw], RATE) };
   }

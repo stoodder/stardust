@@ -875,7 +875,9 @@ export interface CompiledMapDef<K extends IdSpace = LiveIds> {
   /** As authored; read the run's limit with sim/escort.ts `escortMaxLost` (it resolves `maxLostPct`). */
   readonly maxLost: number | null;
   readonly maxLostPct: number | null;
+  /** As authored (T804 resolves the run's floor from `minVoicesPct` and the run's choir). */
   readonly minVoices: number | null;
+  readonly minVoicesPct: number | null;
   readonly evacuatedFloor: number | null;
   readonly cols: number;
   readonly rows: number;

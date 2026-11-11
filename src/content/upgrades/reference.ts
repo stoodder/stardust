@@ -1,7 +1,7 @@
 // The reference profile (design/progression.md § 10): what a Standard player owns before each
 // campaign map (REFERENCE_PROFILES, the rows of story/campaign.md § 4.9) and what they have to
 // spend on each map's timeline (REFERENCE_ECONOMY). Each map's builds.ts takes its row as its
-// `referenceProfile`; the par-purchasable check (validatePurchasable.ts) prices it.
+// `referenceProfile` (A1M1–FIN); the par-purchasable check (validatePurchasable.ts) prices it.
 import type { CampaignMapId } from '../campaign.ts';
 import type { FlagProfileDef, ProfileDef, UpgradeId } from '../types.ts';
 
@@ -157,6 +157,14 @@ const A3M6: ProfileDef = {
 };
 
 /**
+ * FIN (campaign.md § 4.9): A3M6's towers (the reference never buys the Crane or the Lantern) and
+ * the Mindspike's specs (3 Intel: 16), for par's Echo Spike on the road and Dread at the Halls
+ * mouth. No core, so Head Start stays on; slot 1 is Suppressing Fire whatever C4 was (under Keep,
+ * Time Dilation is owned too and equippable for Phase 1, but par doesn't take it).
+ */
+const FIN: ProfileDef = { ...A3M6, specs: [...A3M6.specs, 'mindspike'] };
+
+/**
  * The reference profile before each campaign map (story/campaign.md § 4.9: Standard, first-clear
  * Stardust spent sensibly, one Intel per map won, the weaker branch of every flag), through the
  * last map built or being built. A map's builds.ts uses its row as `referenceProfile`.
@@ -180,6 +188,7 @@ export const REFERENCE_PROFILES = {
   a3_m04: A3M4,
   a3_m05: A3M5,
   a3_m06: A3M6,
+  fin_m01: FIN,
 } as const satisfies Partial<Record<CampaignMapId, ProfileDef>>;
 
 /**
@@ -202,7 +211,33 @@ export const REFERENCE_VARIANTS = {
     { when: { door_choice: 'warren' }, profile: A3M5_WARREN },
   ],
   a3_m06: [],
+  // FIN owns the same in every cell, as A3M6 does: the flags change the choir, the allies, and
+  // Phase 2's script, never what the reference owns (`FIN_CHOIR_CELLS` names the cells the
+  // harness runs; T804/T821).
+  fin_m01: [],
 } as const satisfies Partial<Record<CampaignMapId, readonly FlagProfileDef[]>>;
+
+/**
+ * The finale's story-variant cells the harness runs par in (finale.md § FIN, *Story variants*;
+ * campaign.md § 4.9): the **weakest** choir (C1 cleared: no Thrum; C2 Sell: no Returned; the
+ * convoy: the smaller choir, militia instead; Purge: the Bore slowed, Phase 2 longest) and the
+ * **strongest** (spared, returned, warren, Rewrite). Every flag a cell names is a script flag, so
+ * each is a `referenceProfileByFlag` `when` as is; both resolve to the FIN row (no cell differs).
+ */
+export const FIN_CHOIR_CELLS = {
+  weakest: {
+    spared_quiet_wave: false,
+    stardust_choice: 'sold',
+    door_choice: 'convoy',
+    quill_choice: 'purge',
+  },
+  strongest: {
+    spared_quiet_wave: true,
+    stardust_choice: 'returned',
+    door_choice: 'warren',
+    quill_choice: 'rewrite',
+  },
+} as const satisfies Readonly<Record<'weakest' | 'strongest', FlagProfileDef['when']>>;
 
 /**
  * What a reference row's bank paid, or didn't, outside the catalog the [purchasable] check prices
@@ -217,11 +252,16 @@ export interface StoryPricing {
   readonly giftedShop?: Readonly<Partial<Record<UpgradeId, number>>>;
 }
 
-/** `StoryPricing` for A3M4–A3M6 by C3's door (C4 moves no Stardust). */
+/** `StoryPricing` for A3M4–FIN by C3's door (C4 and C5 move no Stardust). */
 export const REFERENCE_STORY_PRICING = {
   a3_m04: { convoy: { stardust: 0 }, warren: { stardust: 300 } },
   a3_m05: { convoy: { stardust: 0 }, warren: { stardust: 300 } },
   a3_m06: {
+    convoy: { stardust: 0, giftedShop: A3M6_CRATE_RANKS },
+    warren: { stardust: 300, giftedShop: A3M6_CRATE_RANKS },
+  },
+  // The jailbreak and the crate, still owned into the finale.
+  fin_m01: {
     convoy: { stardust: 0, giftedShop: A3M6_CRATE_RANKS },
     warren: { stardust: 300, giftedShop: A3M6_CRATE_RANKS },
   },

@@ -8,16 +8,21 @@ import type { Point } from './path.ts';
 import type { SimState } from './state.ts';
 import { traps } from './abilities/underfoot.ts';
 import { bearers } from './bearers.ts';
+import { choir } from './choir.ts';
 import { blockers } from './blocker.ts';
 import { darkness } from './darkness.ts';
+import { echo } from './echo.ts';
 import { createGatherScratch, type GatherScratch } from './enemyAbilities/gather.ts';
 import { enemyAbilities } from './enemyAbilities/index.ts';
 import { forcedInput } from './forcedInput.ts';
 import { jams } from './jam.ts';
 import { leapers } from './leapers.ts';
+import { phases } from './phases.ts';
 import { puddles } from './puddles.ts';
 import { rifts } from './rifts.ts';
+import { song } from './song.ts';
 import { swarmlings } from './swarmlings.ts';
+import { timers } from './timers.ts';
 import { abilities } from './systems/abilities.ts';
 import { allies } from './systems/allies.ts';
 import { applyCommands } from './systems/applyCommands.ts';
@@ -82,8 +87,10 @@ export type SystemName =
   | 'wreckage'
   | 'waves'
   | 'rifts'
+  | 'timers'
   | 'triggers'
   | 'forcedInput'
+  | 'phases'
   | 'status'
   | 'fields'
   | 'links'
@@ -101,7 +108,10 @@ export type SystemName =
   | 'leapers'
   | 'allies'
   | 'bearers'
+  | 'choir'
+  | 'echo'
   | 'projectiles'
+  | 'song'
   | 'cleanup';
 
 /**
@@ -112,7 +122,9 @@ export type SystemName =
  * Lulled inside links and status (systems/auras.ts, systems/status.ts `lullPass`). M7's slots
  * (T700a): jams (sim/jam.ts, T702), puddles (sim/puddles.ts, T705), leapers (sim/leapers.ts,
  * T704), and bearers (sim/bearers.ts, T706); the healer aura and the M7 boss phases run inside
- * enemyAbilities.
+ * enemyAbilities. The finale's slots (T800a): timers (sim/timers.ts, T806), phases
+ * (sim/phases.ts, T806), the choir (sim/choir.ts, T804), Thrum's echo (sim/echo.ts, T807), and
+ * the song (sim/song.ts, T805); the Unsung's phase kinds run inside enemyAbilities (T808).
  */
 export const SYSTEMS: readonly { readonly name: SystemName; readonly run: System }[] =
   Object.freeze([
@@ -120,8 +132,10 @@ export const SYSTEMS: readonly { readonly name: SystemName; readonly run: System
     { name: 'wreckage', run: wreckage },
     { name: 'waves', run: waves },
     { name: 'rifts', run: rifts }, // T602: a wave's countdown and start are this tick's
+    { name: 'timers', run: timers }, // T806: a timer full this tick fires this tick's triggers
     { name: 'triggers', run: triggers },
     { name: 'forcedInput', run: forcedInput }, // T605: a forceInput action freezes this tick
+    { name: 'phases', run: phases }, // T806: a phase's own clock (Dawn's hold), after its script
     { name: 'status', run: status },
     { name: 'fields', run: fields }, // T608: the Bloom's chill and pulse, before the tells
     { name: 'links', run: links },
@@ -139,7 +153,10 @@ export const SYSTEMS: readonly { readonly name: SystemName; readonly run: System
     { name: 'leapers', run: leapers }, // T704: the Sproing Pad's leapers, after the towers
     { name: 'allies', run: allies },
     { name: 'bearers', run: bearers }, // T706: after the allies walk them
+    { name: 'choir', run: choir }, // T804: the choir walks or halts, where the Hollow stands now
+    { name: 'echo', run: echo }, // T807: Thrum's echo walks into the song
     { name: 'projectiles', run: projectiles },
+    { name: 'song', run: song }, // T805: rest, scatter, and re-form, after this tick's kills
     { name: 'cleanup', run: cleanup },
   ]);
 

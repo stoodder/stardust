@@ -33,7 +33,9 @@
 //   tells for at least BOSS_MIN_TELL_SEC, jams for at most JAM_MAX_SEC, and repeats no sooner
 //   than its tell plus its jam (T707), its jettison's haste is within HASTE_CAP and names plates (each map that sends
 //   it has them: [marker]), and its split names a part (never itself), a whole count ≥ 2, a share
-//   of HP in (0, 1], and a merge time and haste.
+//   of HP in (0, 1], and a merge time and haste. The finale (T800a; validateFinale.ts): a phase's
+//   HP floor, `burrowTo` with a burrow, adds, and the `layToRest` ending (a Hollow boss whose last
+//   phase has a floor).
 // - [jammer-source]: only the listed jammers jam (enemies.md § 4): the `jammer` trait, a `jam`,
 //   or a Hostile Takeover; and the `jammer` trait goes with a `jam` or a Takeover phase.
 // - [companion]: at most one ability per companion (its slot-2 signature); a `lockedOutBy` only
@@ -54,6 +56,7 @@
 // registered ahead of the task that runs it.
 import { mergePatch } from './compileHelpers.ts';
 import { validatePalettes } from './palettes/validate.ts';
+import { validateFinalePhases } from './validateFinale.ts'; // T800a
 import { ENV_PALETTE_IDS } from './palettes/env.ts';
 import { PALETTES, PALETTE_IDS } from './palettes/index.ts';
 import {
@@ -582,6 +585,7 @@ function validateEnemyAbilities(
     }
     validateM7Phase(bad, child, gather, def.id, p, w);
   }
+  validateFinalePhases(bad, child, def); // T800a: the Unsung's floor, burrowTo, adds, layToRest
   if (!(boss.endAtPct >= 0 && boss.endAtPct < last)) {
     bad('boss.endAtPct', 'must be ≥ 0 and below the last phase');
   }

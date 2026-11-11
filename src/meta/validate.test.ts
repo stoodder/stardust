@@ -111,7 +111,7 @@ describe('validateSave', () => {
     ['data.campaign.maps.a1_m01.medals: expected a list', MAP, won('victory')],
     ['data.campaign.maps.a1_m01.medals[0]', MAP, won([1])],
     ['duplicate id "victory"', MAP, won(['victory', 'victory'])],
-    ['expected at most 3 entries', MAP, won(['a', 'b', 'c', 'd'])],
+    ['expected at most 4 entries', MAP, won(['a', 'b', 'c', 'd', 'e'])],
     ['medals need a win', MAP, won(['victory'], { completed: false })],
     ['data.campaign.maps.a1_m01.bestMeter', MAP, won([], { bestMeter: -1 })],
     ['data.campaign.maps.a1_m01: missing field "bestMeter"', MAP, { completed: true, medals: [] }],

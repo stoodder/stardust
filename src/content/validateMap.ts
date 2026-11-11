@@ -1,6 +1,5 @@
 // Map validation (design/maps.md § 9's validation rules; architecture.md § Validation). The route
 // format itself is a compile error (compileMap.ts); this adds the rest:
-// - [feature]: Defend, Protect, Escort, and Holdout maps (the Choir arrives with the finale).
 // - [asset]: a Protect map has an `asset` (and only it does): a short name, a meter ≥ 1, one or more
 //   routes, none twice; its marker sits on decor ([marker]). Its routes end beside it (compile).
 // - [companion]: a present companion and every pick-list entry has a slot-2 ability in the
@@ -16,7 +15,7 @@
 //   `forceInput` ends with a `scriptInput` step (validateBuilds.ts [build-step]).
 // - [map-range]: start credits, core integrity, and first-clear Stardust.
 // - [grid-span]: campaign maps fit on one screen, `cols + rows ≤ 36` (maps.md § 1).
-// - [core]: a Defend, Protect, or Escort map has exactly one core `C` (an Escort's is its safe exit)
+// - [core]: a Defend, Protect, Escort, or Choir map has exactly one core `C` (an Escort's is its safe exit)
 //   besides its bearers' doors home (T700a: a bearer group's exit, on a core tile of its own); a
 //   Holdout has at least one (each a door its refugees leave by: A3M3's two blast doors).
 // - [escort], [darkness]: validateEscort.ts (T500a): refugees and the safe exit; Sundown's `dark`
@@ -68,6 +67,9 @@
 //   another objective of the map).
 // - [flag-gate], [bearers], [script-group], [jettison]: validateM7.ts (T700a): flag gates on
 //   posts, dressing, and decor; bearer groups; script groups and `spawnWave`; jettison plates.
+// - [choir], [song], [timers], and the finale's [script] parts: validateFinale.ts (T800a): the
+//   choir and its Voices floor, the Leaving Song, secondary timers, phases, and the finale's
+//   triggers and actions.
 // Parts: this file (the map loop, feature guards, ranges, geometry), validateWaves.ts ([wave],
 // [route-walk], [wave-tag], [fleeing-lead], [quiet-wave-reach]), validateThreats.ts (intel,
 // counters, teach, novelty), validateScripts.ts ([script], [flag-variants]), and validateBuilds.ts
@@ -98,6 +100,7 @@ import {
 import { validateDarkness, validateEscort } from './validateEscort.ts';
 import { validateScripts } from './validateScripts.ts';
 import { validateM7Map } from './validateM7.ts';
+import { validateFinaleMap } from './validateFinale.ts'; // T800a
 import { TOWERS_AHEAD_OF_TASK } from './towers/index.ts';
 import type { RangedTower } from './counterAnswers.ts';
 import { emptyHistory, validateNovelty, validateThreats, type History } from './validateThreats.ts';
@@ -218,15 +221,8 @@ function validateMap(
   const where = `maps.${def.id}`;
   const grid = gridOf(def);
 
-  // Feature guards. Holdout is content (T600a's shapes) and simulated (T605); the Choir arrives
-  // with the finale (M8).
-  if (def.objective === 'choir') {
-    issues.add(
-      'feature',
-      `${where}.objective`,
-      "'choir' maps arrive with the finale (M8); 'defend', 'protect', 'escort', and 'holdout' only",
-    );
-  }
+  // Holdout is content (T600a's shapes) and simulated (T605); the Choir is content since T800a
+  // ([choir]: validateFinale.ts) and refused by createSim until T804 (`map.choir`).
   validateAsset(issues, def, where);
   validateEscort(issues, def, where);
   validateDarkness(issues, def, where);
@@ -264,6 +260,7 @@ function validateMap(
   if (campaign !== null) validateNovelty(issues, ctx, def, grid, campaign.history, where);
   validateScripts(issues, def, where);
   validateM7Map(issues, ctx.enemies, def, grid, where); // T700a: [flag-gate], [bearers], …
+  validateFinaleMap(issues, def, where); // T800a: [choir], [song], [timers], the finale's [script]
   validateBuilds(issues, def, grid, ctx, campaign?.index ?? null, introducesCounter);
 }
 
@@ -359,11 +356,11 @@ function validateGeometry(
   // A bearer group's exit is a door home of its own, on a core tile beside the map's core (A3M5's
   // west edge; T700a), so it isn't counted.
   const homes = bearerHomes(def);
-  if ((cored || def.objective === 'escort') && grid.count('C') - homes !== 1) {
+  if ((cored || def.objective === 'escort' || def.objective === 'choir') && grid.count('C') - homes !== 1) {
     issues.add(
       'core',
       `${where}.tiles`,
-      `a Defend, Protect, or Escort map has exactly one core 'C' besides its bearers' doors (found ${grid.count('C') - homes})`,
+      `a Defend, Protect, Escort, or Choir map has exactly one core 'C' besides its bearers' doors (found ${grid.count('C') - homes})`,
     );
   }
   if (def.objective === 'holdout' && grid.count('C') < 1) {

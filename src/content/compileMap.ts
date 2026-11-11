@@ -145,6 +145,7 @@ export function compileMap<K extends IdSpace>(
     maxLost: def.maxLost ?? null,
     maxLostPct: def.maxLostPct ?? null,
     minVoices: def.minVoices ?? null,
+    minVoicesPct: def.minVoicesPct ?? null,
     evacuatedFloor: def.evacuatedFloor ?? null,
     cols: def.size.cols,
     rows: def.size.rows,

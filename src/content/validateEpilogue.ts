@@ -4,9 +4,7 @@
 // combination of the slot's flags resolves to a card (unless the slot is `optional`), with no card
 // shadowed by the ones before it. An empty card list is the epilogue not authored yet (T811) and
 // passes; the moment one card lands, the whole epilogue must be complete.
-import {
-  EPILOGUE_CARDS,
-} from './dialogue/fin/epilogue.ts';
+import { EPILOGUE_CARDS } from './dialogue/fin/epilogue.ts';
 import {
   EPILOGUE_FLAGS,
   EPILOGUE_SLOTS,
@@ -46,7 +44,11 @@ export function validateEpilogue(
   const issues = new Issues();
   const ids = slots.map((s) => s.id);
   if (ids.join() !== EPILOGUE_SLOT_IDS.join()) {
-    issues.add('epilogue', 'slots', `expected ${EPILOGUE_SLOT_IDS.join(', ')}, got ${ids.join(', ')}`);
+    issues.add(
+      'epilogue',
+      'slots',
+      `expected ${EPILOGUE_SLOT_IDS.join(', ')}, got ${ids.join(', ')}`,
+    );
   }
   for (const s of slots) {
     for (const f of s.flags) {
@@ -90,7 +92,11 @@ export function validateEpilogue(
     }
     for (const c of own) {
       if (!shown.has(c)) {
-        issues.add('epilogue', `slots.${slot.id}`, `a card never shows (an earlier one always matches first): "${c.text.slice(0, 40)}"`);
+        issues.add(
+          'epilogue',
+          `slots.${slot.id}`,
+          `a card never shows (an earlier one always matches first): "${c.text.slice(0, 40)}"`,
+        );
       }
     }
   }

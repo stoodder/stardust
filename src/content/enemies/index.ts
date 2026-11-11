@@ -33,6 +33,7 @@ import { puffwing } from './puffwing.ts';
 import { riftmoth } from './riftmoth.ts';
 import { sunderglass_penitent } from './sunderglass_penitent.ts';
 import { undertow } from './undertow.ts';
+import { unsung } from './unsung.ts'; // T800a
 import { veilwalker } from './veilwalker.ts';
 import { weft_warden } from './weft_warden.ts';
 import { zoomer } from './zoomer.ts';
@@ -81,4 +82,6 @@ export const ENEMIES = defineRegistry({
   shareholder_value,
   gathering_maw,
   gathering_maw_part,
+  // The finale (T800a stub under its final id): the Unsung (T808).
+  unsung,
 });

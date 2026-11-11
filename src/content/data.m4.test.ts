@@ -181,7 +181,8 @@ describe('M4 map and condition rules', () => {
         'asset',
       ),
     ).toHaveLength(1);
-    expect(errors(withMap({ objective: 'choir' }), 'feature')).toHaveLength(1);
+    // A Choir map is content since T800a; one without a choir is [choir]'s (sim/m8seams.test.ts).
+    expect(errors(withMap({ objective: 'choir' }), 'feature')).toEqual([]);
   });
 
   it('[clickable] setClickable and interacted name a declared clickable marker', () => {

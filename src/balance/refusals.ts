@@ -48,7 +48,9 @@ export type HarnessFeature =
   /** #16 Hold Fire and spareFleeing runs on maps with fleeing or quiet-wave groups. */
   | 'holdFireRuns'
   /** #10 the jam limit. */
-  | 'jamLimit';
+  | 'jamLimit'
+  /** #18 the song's timing: Phase 2's length per `quill_choice` (the finale; D154). */
+  | 'songTiming';
 
 /**
  * The harness's own refusals: map features whose assertions (#2, #10, #14–#16) or runs it can't
@@ -57,15 +59,17 @@ export type HarnessFeature =
  */
 export const HARNESS_GATES: Readonly<Record<HarnessFeature, string | null>> = Object.freeze({
   objectives: null,
-  // M6 (D141): the Holdout's floor (T605, live); the finale's Voices (M8).
+  // M6 (D141): the Holdout's floor (T605, live). The finale (D154): its Voices margins (T804).
   holdout: null,
-  choir: 'M8',
+  choir: 'T804',
   protect: null,
   flagVariants: null,
   companionPick: null,
   holdFireRuns: null,
   // The jam-limit check (#10; balance/jamLimit.ts) landed with the jamming core (D146: T702).
   jamLimit: null,
+  // The finale's Phase 2 length per C4 (#18; D154: T821).
+  songTiming: 'T821',
 });
 
 /**
@@ -120,6 +124,9 @@ export function refusedFeatures<K extends IdSpace>(
   }
   if (groups.some((g) => JAMMER_ENEMIES.includes(g.enemy.id))) {
     refuse('jamLimit', '10', 'jam limit', 'the jam-limit check needs jammers in the sim');
+  }
+  if (map.song !== null) {
+    refuse('songTiming', '18', 'song timing', "Phase 2's length is checked per quill_choice");
   }
   return out;
 }

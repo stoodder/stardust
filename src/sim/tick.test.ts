@@ -24,8 +24,10 @@ describe('the system pipeline', () => {
       'wreckage',
       'waves',
       'rifts',
+      'timers',
       'triggers',
       'forcedInput',
+      'phases',
       'status',
       'fields',
       'links',
@@ -43,7 +45,10 @@ describe('the system pipeline', () => {
       'leapers',
       'allies',
       'bearers',
+      'choir',
+      'echo',
       'projectiles',
+      'song',
       'cleanup',
     ]);
     expect(Object.isFrozen(SYSTEMS)).toBe(true);

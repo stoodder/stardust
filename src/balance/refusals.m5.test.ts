@@ -9,7 +9,7 @@ describe('HARNESS_GATES (M5)', () => {
     expect(HARNESS_GATES.objectives).toBeNull();
     // Retargeted by D141; the Holdout's floor is checked since T605 (balance/holdout.test.ts).
     expect(HARNESS_GATES.holdout).toBeNull();
-    expect(HARNESS_GATES.choir).toBe('M8');
+    expect(HARNESS_GATES.choir).toBe('T804'); // D154 (sim/m8seams.test.ts)
     expect(HARNESS_GATES.jamLimit).toBeNull(); // #10 since T702 (balance/jamLimit.ts)
   });
 });
