@@ -10,10 +10,68 @@ import {
   nextScene,
   STORY_CHOICE_LOCK_MS,
 } from '../../app/dialogue.ts';
-import { choicePressAccepted, isPressKey, restartChoiceLock } from './choiceLock.ts';
+import {
+  choicePressAccepted,
+  isPressKey,
+  nextRevealTap,
+  pointerMoved,
+  restartChoiceLock,
+  tapOnReveal,
+  type PointerAt,
+} from './choiceLock.ts';
 import { useTypewriter, type Typewriter } from './LineText.tsx';
 import { plainText } from './text.ts';
-import type { ChoiceView, LineView, SceneView } from './state.ts';
+import { dialogue, type ChoiceView, type LineView, type SceneView } from './state.ts';
+
+/** The mouse's last position seen on the page (`pointerMoved`). */
+let lastMouse: PointerAt | null = null;
+/** The last pointer-down on the page: where, and whether it was a touch. */
+let lastDown: { readonly at: PointerAt; readonly touch: boolean } | null = null;
+/**
+ * The tap that advanced the dialogue onto the locked choice on screen (`tapOnReveal`), with that
+ * choice's `lockedUntil`; cleared once a touch lands elsewhere (`nextRevealTap`).
+ */
+let revealTap: { readonly at: PointerAt; readonly until: number } | null = null;
+
+if (typeof document !== 'undefined') {
+  // The bubble phase: an option's own pointermove reads the position from before it.
+  document.addEventListener(
+    'pointermove',
+    (e) => {
+      if (e.pointerType === 'mouse') lastMouse = { x: e.clientX, y: e.clientY };
+    },
+    { passive: true },
+  );
+  // The capture phase: in place before an option's own pointer-down reads it.
+  document.addEventListener(
+    'pointerdown',
+    (e) => {
+      const at = { x: e.clientX, y: e.clientY };
+      const touch = e.pointerType === 'touch';
+      lastDown = { at, touch };
+      if (!touch) lastMouse = at;
+      else if (revealTap !== null && nextRevealTap(at, revealTap.at) === null) revealTap = null;
+    },
+    { capture: true, passive: true },
+  );
+}
+
+/**
+ * Next pressed (the button, or a click on the line): moves on, noting the tap that brings a locked
+ * choice on screen (`revealTap`). A key's click has no pointer behind it (`detail` 0).
+ */
+function pressNext(e?: MouseEvent): void {
+  const down = lastDown;
+  const before = performance.now();
+  nextScene();
+  revealTap = null;
+  const until = dialogue.scene.value?.choices?.[0]?.lockedUntil;
+  const tapped = e !== undefined && e.detail > 0 && down !== null && down.touch;
+  // Brought on by this press: its clock started now.
+  if (tapped && until !== undefined && until - STORY_CHOICE_LOCK_MS >= before) {
+    revealTap = { at: down.at, until };
+  }
+}
 
 /** The focusable controls inside `root`, in tab order. */
 function focusables(root: HTMLElement): HTMLElement[] {
@@ -37,7 +95,7 @@ export function trapTab(e: KeyboardEvent & { currentTarget: HTMLElement }): void
 export interface SceneStep {
   readonly typed: Typewriter;
   /** Next: finishes the typing, else moves past the line (or closes a played-out scene). */
-  readonly next: () => void;
+  readonly next: (e?: MouseEvent) => void;
   /**
    * Whether Next shows: a line on screen (but not a full-screen silence, which moves on by itself,
    * D098), or a played-out scene still showing.
@@ -51,7 +109,7 @@ export function useSceneStep(view: SceneView): SceneStep {
   const canNext =
     (view.line !== null && !advancesItself(view.mode, view.line, view.instant)) ||
     (view.ended && view.mode !== 'briefing');
-  return { typed, canNext, next: nextScene };
+  return { typed, canNext, next: pressNext };
 }
 
 /**
@@ -138,8 +196,9 @@ function useChoiceLock(until: number): { locked: boolean; end: { current: number
  * Space, or a click picks one. An open choice's first option takes the focus. A locked one's
  * group takes it instead (as C2's heading does, ui/screens/StoryChoice.tsx), so Enter mashed
  * through the lines before it lands nowhere; its options wait out the lock (restarted by every
- * down while it holds), then take only a fresh key-down, or a fresh pointer-down on an option the
- * pointer has moved over since it appeared (`choicePressAccepted`; D144 S4).
+ * down while it holds), then take only a fresh key-down, a fresh mouse-down on an option the mouse
+ * has moved over since it appeared, or a fresh tap off the spot of the tap that brought the choice
+ * on (`choicePressAccepted`; D144 S4).
  */
 export function ChoiceList({ choices }: { choices: readonly ChoiceView[] }) {
   const until = choices[0]?.lockedUntil ?? 0;
@@ -151,7 +210,7 @@ export function ChoiceList({ choices }: { choices: readonly ChoiceView[] }) {
   }, [choices, lockedChoice]);
   const { locked, end } = useChoiceLock(until);
   // The down behind the next click (pointer or key), and whether Space's down was refused.
-  const down = useRef<{ at: number; pointer: boolean } | null>(null);
+  const down = useRef<{ at: number; pointer: boolean; onReveal: boolean } | null>(null);
   const spaceRefused = useRef(false);
   // The options a pointer has moved over since they appeared (by index; reset with each choice).
   const moved = useRef(new Set<number>());
@@ -171,7 +230,7 @@ export function ChoiceList({ choices }: { choices: readonly ChoiceView[] }) {
       if (e.code === 'Space') spaceRefused.current = true;
       return;
     }
-    down.current = { at: now, pointer: false };
+    down.current = { at: now, pointer: false, onReveal: false };
     if (e.code === 'Space') spaceRefused.current = false;
   };
   const onKeyUp = (e: KeyboardEvent): void => {
@@ -190,6 +249,7 @@ export function ChoiceList({ choices }: { choices: readonly ChoiceView[] }) {
       now: performance.now(),
       pointer: d?.pointer ?? false,
       moved: moved.current.has(i),
+      onReveal: d?.onReveal ?? false,
     });
     if (ok) chooseOption(i);
   };
@@ -213,12 +273,17 @@ export function ChoiceList({ choices }: { choices: readonly ChoiceView[] }) {
           data-tone={c.tone}
           aria-disabled={locked ? 'true' : undefined}
           onPointerMove={(e) => {
-            // A real move (a layout shift under a still cursor has none).
-            if (e.movementX !== 0 || e.movementY !== 0) moved.current.add(i);
+            // A real move (a layout shift under a still cursor has neither movement nor a new spot).
+            if (pointerMoved(e, e.pointerType === 'mouse' ? lastMouse : null)) moved.current.add(i);
           }}
           onPointerDown={(e) => {
-            // Only a mouse has a cursor an option can slide in under; a tap is a pick by itself.
-            down.current = { at: performance.now(), pointer: e.pointerType === 'mouse' };
+            // A mouse's cursor needs to have moved over the option; a tap mustn't land on the spot
+            // of the tap that brought the choice on (the option slid in under the finger).
+            const at = { x: e.clientX, y: e.clientY };
+            const r = revealTap;
+            const onReveal =
+              e.pointerType === 'touch' && r !== null && r.until === until && tapOnReveal(at, r.at);
+            down.current = { at: performance.now(), pointer: e.pointerType === 'mouse', onReveal };
           }}
           onClick={() => pick(i)}
         >

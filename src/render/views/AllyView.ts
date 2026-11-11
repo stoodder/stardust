@@ -105,7 +105,7 @@ function frameRgba(
 }
 
 /** Baked x-ray textures one view keeps (a tower dropping in or folding away bakes a few); past it,
- * they're all freed and rebaked as needed. */
+ * the least recently shown one is freed (rebaked if it's needed again). */
 const XRAY_CACHE_MAX = 48;
 
 export class AllyView implements PooledView {
@@ -353,8 +353,10 @@ export class AllyView implements PooledView {
     if (this.#lookChanged || this.#xray.texture.key === '__DEFAULT') {
       const look = this.#look.slice(0, this.#lookLen).join('|');
       let key = this.#xrayFor.get(look);
-      if (key === undefined) {
-        if (this.#xrayFor.size >= XRAY_CACHE_MAX) this.#dropXray();
+      // Least recently shown first (Map order): a hit moves to the back.
+      if (key !== undefined) this.#xrayFor.delete(look);
+      else {
+        if (this.#xrayFor.size >= XRAY_CACHE_MAX) this.#dropOldestXray();
         key = `overlay.xray.${look}`;
         const { scene } = this.#ctx;
         if (!scene.textures.exists(key)) {
@@ -367,8 +369,8 @@ export class AllyView implements PooledView {
           const img = xrayImage(m.data, m.w, m.h, covers, (left + top) & 1);
           scene.textures.addCanvas(key, imageToCanvas(img));
         }
-        this.#xrayFor.set(look, key);
       }
+      this.#xrayFor.set(look, key);
       if (this.#xray.texture.key !== key) this.#xray.setTexture(key);
     }
     this.#xray.setPosition(b.x - b.displayOriginX, b.y - b.displayOriginY).setVisible(true);
@@ -394,7 +396,18 @@ export class AllyView implements PooledView {
     return m;
   }
 
-  /** Frees the baked x-ray textures (past the cap, or the view released). */
+  /** Frees the least recently shown baked x-ray texture (past the cap; never the one shown). */
+  #dropOldestXray(): void {
+    for (const [look, key] of this.#xrayFor) {
+      if (key === this.#xray.texture.key) continue;
+      this.#xrayFor.delete(look);
+      const { textures } = this.#ctx.scene;
+      if (textures.exists(key)) textures.remove(key);
+      return;
+    }
+  }
+
+  /** Frees the baked x-ray textures (the view released). */
   #dropXray(): void {
     const { scene } = this.#ctx;
     this.#xray.setTexture('__DEFAULT');

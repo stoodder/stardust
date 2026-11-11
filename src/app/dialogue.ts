@@ -1347,7 +1347,7 @@ function queueBark(trigger: BarkTrigger): void {
   const pick = pickBark(s.pool, event, free, storyContext(s.map));
   s.barks = pick.bark === null ? { ...pick.state, lastAtSec: s.barks.lastAtSec } : pick.state;
   // The named turret's revocation (D144 S2) waits out the Clean Exit's cue, however long it's read.
-  const keep = trigger.on === 'tower_revoked';
+  const keep = trigger.on === 'tower_revoked' && trigger.tagged === true;
   if (pick.bark !== null && !s.replaying()) queueComms(barkScene(pick.bark), 0, keep);
 }
 

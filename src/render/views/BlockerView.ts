@@ -14,8 +14,8 @@
 // close on its feet over an `ink.0` shadow, so the hold reads on Act III's dark road. His health
 // never moves with what he holds (D141), and the bar has no number on it. His stance
 // (`blockerPose`) is AllyView's: braced, straining, down on one knee. Allocation-free per frame:
-// one Graphics, redrawn each frame while something shows. His x-ray outline when a tower stands in
-// front of him is AllyView's (xrayOutline.ts).
+// one Graphics, redrawn each frame while something shows. His x-ray when a tower stands in front of
+// him is AllyView's (vfx/xrayPixels.ts).
 import type * as Phaser from 'phaser';
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
 import type { Ally, Enemy } from '../../sim/index.ts';

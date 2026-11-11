@@ -95,7 +95,7 @@ export interface RenderState {
   };
   /**
    * BlockerView (T605): blocker bars drawn now (Bricks at the Gap), the units drawn as held now,
-   * the health the bar shows (NaN with none), and whether his x-ray outline shows over a tower in
+   * the health the bar shows (NaN with none), and whether his x-ray shows over a tower in
    * front of him (review R3).
    */
   readonly blocker: {

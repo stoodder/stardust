@@ -1181,7 +1181,7 @@ export class BattleScene extends Phaser.Scene {
       v.stamp = stamp;
       v.sync(a);
       v.setLowered(lowered);
-      // Review R3: a blocker shows through a tower standing in front of him (x-ray outline).
+      // Review R3: a blocker shows through a tower standing in front of him (his x-ray).
       v.setXray(
         a.blockCapacity > 0 && this.#xrayWatch.hidden(v, this.#towers.live),
         this.game.loop.delta,

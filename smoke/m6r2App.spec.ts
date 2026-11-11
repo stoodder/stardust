@@ -3,7 +3,9 @@
 // shift") and every protocol row shows whole (its effect and its note, nothing clipped at
 // 1280×720), equipped again or not. (2) S4: Next clicked fast through Bricks's briefing (every
 // 45 ms, then every 140 ms) answers neither the arrival question nor C3, whatever slides in under
-// the cursor; a mouse that moves onto an option answers it once the lock has passed. (3) S8: at the
+// the cursor; a mouse that moves onto an option answers it once the lock has passed; on a touch
+// screen, Next tapped about once a second on its spot answers neither (review R3 F2), and a tap on
+// the option elsewhere does. (3) S8: at the
 // SEAL, on the convoy's path and the warren's, the button covers neither blast door, the shut one
 // included. Screenshots via shot() (look at them).
 import type { Locator, Page } from '@playwright/test';
@@ -77,9 +79,9 @@ async function centre(l: Locator): Promise<{ x: number; y: number }> {
 }
 
 /**
- * Clicks Next every `everyMs`, following it as the lines push it down (a player hammering it), and
- * where it last was once it's gone (whatever slides in under the cursor), until `until` holds,
- * then `afterMs` more.
+ * Clicks Next every `everyMs` (or taps it, `tap`), following it as the lines push it down (a player
+ * hammering it), and where it last was once it's gone (whatever slides in under the cursor), until
+ * `until` holds, then `afterMs` more. Returns the last spot pressed.
  */
 async function hammer(
   page: Page,
@@ -87,7 +89,8 @@ async function hammer(
   everyMs: number,
   until: () => Promise<boolean>,
   afterMs: number,
-): Promise<void> {
+  tap = false,
+): Promise<{ x: number; y: number }> {
   let at = await centre(next);
   let stopAt = Number.POSITIVE_INFINITY;
   for (let i = 0; i < 400 && Date.now() < stopAt; i++) {
@@ -97,12 +100,13 @@ async function hammer(
     // oxlint-disable-next-line no-await-in-loop -- the same look
     at = (await box?.then(mid, () => null)) ?? at;
     // oxlint-disable-next-line no-await-in-loop -- one click at a time, in order
-    await page.mouse.click(at.x, at.y);
+    await (tap ? page.touchscreen.tap(at.x, at.y) : page.mouse.click(at.x, at.y));
     // oxlint-disable-next-line no-await-in-loop -- paced like a player
     await page.waitForTimeout(everyMs);
     // oxlint-disable-next-line no-await-in-loop -- checked as it goes
     if (stopAt === Number.POSITIVE_INFINITY && (await until())) stopAt = Date.now() + afterMs;
   }
+  return at;
 }
 
 /** A box's centre, or null. */
@@ -161,6 +165,87 @@ test('C3: Next clicked fast through the briefing answers nothing; a moved mouse 
   await expect(convoy).not.toHaveAttribute('aria-disabled', 'true');
   await page.mouse.click(c.x, c.y);
   await expect(brief).toContainText('Goldie will remember that.');
+});
+
+/**
+ * The option under `at` (the spot Next was tapped on; `under`: one must be, else the first), and a
+ * point on it more than the tap slop (16 px) away from `at`: where a deliberate tap lands.
+ */
+async function optionUnder(
+  page: Page,
+  answer: Locator,
+  at: { x: number; y: number },
+  under = true,
+) {
+  const texts = await answer.getByRole('button').allInnerTexts();
+  const i = await page.evaluate(({ x, y }) => {
+    const hit = document.elementFromPoint(x, y)?.closest('.dlg-choice');
+    return hit ? [...document.querySelectorAll('.dlg-choice')].indexOf(hit) : -1;
+  }, at);
+  if (under) {
+    expect(i, `an option slid in under the tapped spot (${texts.join(' / ')})`).toBeGreaterThan(-1);
+  }
+  const option = answer.getByRole('button').nth(Math.max(i, 0));
+  const b = (await option.boundingBox())!; // found under the spot above
+  const left = b.x + 24;
+  const right = b.x + b.width - 24;
+  const x = Math.abs(left - at.x) > Math.abs(right - at.x) ? left : right;
+  expect(Math.abs(x - at.x)).toBeGreaterThan(16);
+  return { option, elsewhere: { x, y: b.y + b.height / 2 } };
+}
+
+test.describe('on a touch screen', () => {
+  test.use({ hasTouch: true });
+
+  test('C3: Next tapped once a second on its spot answers nothing; a tap elsewhere does', async ({
+    page,
+  }) => {
+    test.setTimeout(120_000);
+    await page.goto('/?test=1&dialogue=1&fasttext=1&seed=1&save=after_a3m2_rivet');
+    await waitForReady(page);
+    await page.getByRole('button', { name: 'Start The Gap' }).tap();
+    await page.getByRole('button', { name: 'Lock in' }).tap();
+    const brief = page.getByRole('dialog');
+    const next = brief.getByRole('button', { name: 'Next' });
+    await expect(next).toBeVisible();
+    const answer = brief.getByRole('group', { name: 'Your answer' });
+
+    // About once a second, through the lines and 3.5 s over the arrival question (past its lock).
+    const spot = await hammer(page, next, 1000, () => answer.isVisible(), 3500, true);
+    await expect(brief).toContainText("Why'd you really come out here, Thorn?");
+    await expect(answer).toBeVisible();
+    await expect(brief.getByTestId('briefing-lines')).not.toContainText(
+      /You\s*Money for my family/,
+    );
+    await expect(brief).not.toContainText('Ha. Me too, nineteen years back.');
+    await nextFrames(page);
+    await shot(page, 'm6r2-app', 8, 'arrival-tapped');
+    // The option under the spot, tapped on another part of it: that's a pick.
+    const arrival = await optionUnder(page, answer, spot);
+    const said = (await arrival.option.innerText()).replace(/^\d+\s*/, '');
+    await page.touchscreen.tap(arrival.elsewhere.x, arrival.elsewhere.y);
+    await expect(brief.getByTestId('briefing-lines')).toContainText(said, { ignoreCase: true });
+
+    // On to C3, the same way.
+    await expect(next).toBeVisible();
+    const spot3 = await hammer(
+      page,
+      next,
+      1000,
+      async () => (await brief.textContent())?.includes('Which door do I hold?') ?? false,
+      3500,
+      true,
+    );
+    await expect(answer).toBeVisible();
+    await expect(brief).not.toContainText('will remember that.');
+    expect((await save(page))?.story.flags.door_choice).toBeUndefined();
+    await nextFrames(page);
+    await shot(page, 'm6r2-app', 9, 'c3-tapped');
+    // (Its options sit above Next's last spot at 1280×720; the arrival question's slid under it.)
+    const door = await optionUnder(page, answer, spot3, false);
+    await page.touchscreen.tap(door.elsewhere.x, door.elsewhere.y);
+    await expect(brief).toContainText('will remember that.');
+  });
 });
 
 /** Plays `url`'s A3M3 by par to W13, then by hand to the SEAL (paused). */
