@@ -203,12 +203,26 @@ export function cycleTargeting(): void {
   const sel = hud.selected.value;
   if (target === null || sel === null || sel.uid !== target.interaction.selectedTower) return;
   if (sel.priority === null) {
-    showNotice(rejectText('noTargeting') ?? '');
+    // A leaper's picks are fixed (T731): say what they are rather than "no targeting".
+    showNotice(
+      sel.fixedTarget != null
+        ? `${sel.fixedTarget}: leapers pick their own`
+        : (rejectText('noTargeting') ?? ''),
+    );
     return;
   }
   const mode = nextPriority(sel.priority);
   issue({ type: 'targeting', towerUid: sel.uid, mode });
   announce(`Targeting: ${PRIORITY_LABEL[mode]}.`);
+}
+
+/**
+ * A locked ability's dark slot pressed (T731; A3M5's System Reboot under Rewrite): nothing casts,
+ * and the notice says why ("System Reboot: QUILL is offline. She runs it.").
+ */
+export function explainLockedAbility(ability: string): void {
+  const v = hud.lockedAbilities.value.find((l) => l.ability === ability);
+  if (v !== undefined) showNotice(`${v.label}: ${v.reason}`);
 }
 
 /** W: starts wave 1, or calls the next wave early during a countdown (core-loop §2.4). */

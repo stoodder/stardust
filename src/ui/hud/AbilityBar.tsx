@@ -3,7 +3,7 @@
 // cooldown wipe (seconds, or wave starts for Clearance Sale), Ready Room's FREE tag, the charges a
 // sale has left, and the aiming hint while one is aimed. An untargeted ability (Time Dilation,
 // Clearance Sale) casts on the press (D082).
-import { cancel, pressAbility } from '../../app/commands.ts';
+import { cancel, explainLockedAbility, pressAbility } from '../../app/commands.ts';
 import { cooldownChip, cooldownWords } from '../../app/hudViews.ts';
 import { DEFAULT_VARIANT } from '../../render/sprites/bake.ts';
 import { plateColor } from '../dialogue/plate.ts';
@@ -12,6 +12,7 @@ import {
   type AbilityCooldownView,
   type AbilitySlotView,
   type CompanionView,
+  type LockedAbilityView,
 } from '../state.ts';
 import { baked, Icon } from './Icon.tsx';
 import { Key, noFocusOnPress } from './parts.tsx';
@@ -196,18 +197,55 @@ function AbilitySlot({ a, cd }: { a: AbilitySlotView; cd: AbilityCooldownView | 
 }
 
 /**
+ * A Technician ability the map locks under the save's story (T731; A3M5's System Reboot under C4
+ * Rewrite), dark beside the bar: its icon at 15% under the padlock (QUILL's lockout's), "Offline"
+ * where a countdown would be, never castable. Focusable, so the keyboard reaches why: its label
+ * and tooltip carry the reason, and a press says it as a notice.
+ */
+function LockedSlot({ l }: { l: LockedAbilityView }) {
+  return (
+    <div class="hud-slot-holder">
+      <button
+        type="button"
+        class="hud-btn hud-slot hud-ability chamfer absent story-locked"
+        data-testid={`ability-locked-${l.ability}`}
+        aria-disabled="true"
+        aria-label={`${l.label}, locked. ${l.reason}`}
+        title={`${l.label}: ${l.reason}`}
+        onMouseDown={noFocusOnPress}
+        onClick={() => explainLockedAbility(l.ability)}
+      >
+        <span class="ability-row">
+          <span class="ability-icon">
+            <Icon id={l.icon} class="slot-icon" />
+          </span>
+        </span>
+        <span class="hud-cd">Offline</span>
+      </button>
+      <span class="hud-lockout-lock" aria-hidden="true">
+        <Icon id="icon.lock" />
+      </span>
+    </div>
+  );
+}
+
+/**
  * Bottom-left: the commander ability slots, and the aiming hint while one is aimed (drawn past the
  * fire-control buttons that follow the slots).
  */
 export function AbilityBar() {
   const slots = hud.abilities.value;
   const cds = hud.abilityCooldowns.value;
+  const locked = hud.lockedAbilities.value;
   const aimed = slots.find((a) => a.slot === hud.aimingAbility.value && a.aim !== 'none');
-  if (slots.length === 0) return null;
+  if (slots.length === 0 && locked.length === 0) return null;
   return (
     <nav class="hud-abilities" aria-label="Abilities">
       {slots.map((a, i) => (
         <AbilitySlot key={a.slot} a={a} cd={cds[i]} />
+      ))}
+      {locked.map((l) => (
+        <LockedSlot key={l.ability} l={l} />
       ))}
       {/* Placed beside the whole bottom-left cluster (hud.css), after the fire control. */}
       {aimed !== undefined && (

@@ -820,6 +820,22 @@ const OWN_PALETTE: ReadonlySet<SpriteId> = new Set<SpriteId>([
   'prop.crate',
 ]);
 
+/**
+ * Props drawn a few pixels off their tile's centre (screen px; T730b): A3M4's hall door sits on the
+ * tile in front of the generator, and on its centre its wall would cut across the generator's
+ * plinth, so it stands back down-left along the grid's y axis, clear of it (it still sorts by its
+ * tile).
+ */
+const PROP_NUDGE: Readonly<Partial<Record<SpriteId, readonly [number, number]>>> = {
+  'prop.hall_door': [-8, 4],
+};
+
+/** A prop's nudge off its tile's centre (screen px), [0, 0] for most. */
+export function propNudge(sprite: SpriteId): readonly [number, number] {
+  return PROP_NUDGE[sprite] ?? NO_NUDGE;
+}
+const NO_NUDGE = [0, 0] as const;
+
 /** The palette variant a prop draws in on a map of env `env`. */
 export function propVariant(sprite: SpriteId, env: string): string {
   return OWN_PALETTE.has(sprite) ? DEFAULT_VARIANT : envVariant(env);

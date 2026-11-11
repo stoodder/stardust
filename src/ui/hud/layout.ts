@@ -54,6 +54,10 @@ export const HUD_CORNERS: readonly Rect[] = [
 
 /** What a Protect map's asset meter row adds to it (a 16 px meter row and the grid gap; T305a). */
 const ASSET_ROW_H = 20;
+/** What the bearers' "Home n / total" row adds under that (an 8 px row and a 2 px gap; T731). */
+export const BEARER_ROW_H = 10;
+/** What one locked ability slot adds to the bottom-left cluster (a 36 px slot and the gap; T731). */
+export const LOCKED_SLOT_W = 39;
 
 /** What an Escort's meter adds over the core's: its "of N" and lost rows (8 px and a 2 px gap each; T531). */
 export const ESCORT_EXTRA_H = 20;
@@ -70,19 +74,27 @@ export const HOLDOUT_EXTRA_H = 10;
  */
 export function hudCorners(
   objectives: number,
-  asset = false,
+  asset: boolean | 'bearers' = false,
   escort: boolean | 'holdout' = false,
   leak = false,
+  lockedSlots = 0,
 ): readonly Rect[] {
-  if (objectives <= 0 && !asset && escort === false && !leak) return HUD_CORNERS;
-  const [status, waves, ...rest] = HUD_CORNERS;
-  if (status === undefined || waves === undefined) return HUD_CORNERS;
+  if (objectives <= 0 && asset === false && escort === false && !leak && lockedSlots <= 0) {
+    return HUD_CORNERS;
+  }
+  const [status, waves, abilities, ...rest] = HUD_CORNERS;
+  if (status === undefined || waves === undefined || abilities === undefined) return HUD_CORNERS;
   // QUILL's leak line (A3M2's lockout, T631) hangs up to five lines under ACCESS RESTRICTED.
   const wavesNow = leak ? { ...waves, h: waves.h + LEAK_EXTRA_H } : waves;
   const rows = objectives > 0 ? objectives * OBJECTIVE_ROW_H + 2 : 0;
   const meter = escort === 'holdout' ? HOLDOUT_EXTRA_H : escort ? ESCORT_EXTRA_H : 0;
-  const extra = (asset ? ASSET_ROW_H : 0) + meter;
-  return [{ ...status, h: status.h + rows + extra }, wavesNow, ...rest];
+  // The bearers' meter (A3M5, T731) has its "Home n / total" row under the asset's.
+  const assetH = asset === false ? 0 : ASSET_ROW_H + (asset === 'bearers' ? BEARER_ROW_H : 0);
+  const extra = assetH + meter;
+  // A locked ability (A3M5's System Reboot under Rewrite, T731) stands dark beside the slots.
+  const abilitiesNow =
+    lockedSlots > 0 ? { ...abilities, w: abilities.w + lockedSlots * LOCKED_SLOT_W } : abilities;
+  return [{ ...status, h: status.h + rows + extra }, wavesNow, abilitiesNow, ...rest];
 }
 /** What covering a HUD corner costs a candidate, against 1 per covered tower. */
 const CORNER_COST = 2;
@@ -259,13 +271,20 @@ export function specCardHeight(descLines: number): number {
  */
 export function towerPanelHeight(
   t: Pick<SelectedTowerView, 'statsLines' | 'bonuses' | 'deltaLines' | 'specs'> &
-    Partial<Pick<SelectedTowerView, 'spareRunners' | 'dark' | 'rampCap'>>,
+    Partial<Pick<SelectedTowerView, 'spareRunners' | 'dark' | 'rampCap' | 'jamSec' | 'jamImmuneSec'>>,
 ): number {
   const rows: number[] = [PANEL_HEAD_H];
   // A ramping beam's live ramp row (T531) sits under the stats; Sundown's line under the bonuses.
   const ramp = t.rampCap !== undefined && t.rampCap !== null ? 1 : 0;
+  // The Jammed (or Immune) row (T731) sits under the head.
+  const jam = (t.jamSec ?? 0) > 0 || (t.jamImmuneSec ?? 0) > 0 ? 1 : 0;
   const lines =
-    t.statsLines.length + ramp + t.bonuses.length + (t.dark?.length ?? 0) + t.deltaLines.length;
+    jam +
+    t.statsLines.length +
+    ramp +
+    t.bonuses.length +
+    (t.dark?.length ?? 0) +
+    t.deltaLines.length;
   for (let i = 0; i < lines; i++) rows.push(LINE_H);
   if (t.specs === null) rows.push(BUTTON_H);
   else {

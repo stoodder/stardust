@@ -41,7 +41,8 @@ interface TurnIn {
 /** The map as the view reads it. */
 export interface DomeRowMap {
   readonly markers: Readonly<Record<string, GridPos>>;
-  readonly safeExit?: string | null;
+  /** The Escort's safe exit (the gate) and its tile, or null. */
+  readonly escort: { readonly exitTile: GridPos } | null;
   readonly waves: readonly unknown[];
 }
 
@@ -73,8 +74,7 @@ export class DomeRowView {
     this.#reducedMotion = reducedMotion;
     this.#waveCount = map.waves.length;
     const domeAt = map.markers[DOME_ONE];
-    const gateAt =
-      map.safeExit === null || map.safeExit === undefined ? undefined : map.markers[map.safeExit];
+    const gateAt = map.escort?.exitTile;
     const { scene, layers, origin } = ctx;
     if (domeAt === undefined) {
       this.#dome = null;

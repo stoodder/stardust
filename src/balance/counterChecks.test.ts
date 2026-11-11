@@ -81,11 +81,10 @@ const withNoJam = (teachMap: boolean) => ({
 });
 const checkIds = (m: typeof map) => noCounterChecks(m, [1], []).map((c) => `#${c.id} ${c.subject}`);
 
-describe('#6 on the jam teach map (D146 addendum, T720)', () => {
-  it("skips jam's full-catalog check on the map that teaches jam, and only there", () => {
-    expect(checkIds(withNoJam(true))).toEqual(['#5 noCounter:jam']);
+describe('#6 on a teach map (T760: no jam exception)', () => {
+  it("keeps jam's full-catalog check on the map that teaches jam, as for any category", () => {
+    expect(checkIds(withNoJam(true))).toEqual(['#5 noCounter:jam', '#6 noCounter:jam']);
     expect(checkIds(withNoJam(false))).toEqual(['#5 noCounter:jam', '#6 noCounter:jam']);
-    // Any other category keeps #6 on a teach map.
     const noSplash = {
       ...withNoSplash(steps()),
       builds: { ...withNoSplash(steps()).builds, teachMap: true },

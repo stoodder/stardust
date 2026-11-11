@@ -136,7 +136,7 @@ export function noCounterChecks<K extends IdSpace>(
       : "by the map's override";
   for (const counter of Object.keys(b.noCounterBuilds)) {
     const label = `noCounter:${counter}`;
-    // A counter the map exempts (BuildsDef.counterExemptions; A3M5's jam, D146 addendum) isn't
+    // A counter the map exempts (BuildsDef.counterExemptions; A3M6's detection, D146 addendum) isn't
     // held to #5's loss or #6: the map's own tests pin its cost. #5's premise (no answer carried)
     // still holds (noCounterAnswerChecks).
     if (b.counterExemptions.some((x) => x.counter === counter)) continue;
@@ -153,10 +153,9 @@ export function noCounterChecks<K extends IdSpace>(
         (recs) => recs.map(describeRun).join(', '),
       ),
     );
-    // #6: meta can't replace a counter (design/progression.md § 10). Not for jam on its teach
-    // map (A3M4; D146 addendum, T720): a jam is at most 4 s on one tower, so its cost can't
-    // outweigh the whole meta catalog there; #5 still holds no-jam to losing on the reference.
-    if (counter === 'jam' && b.teachMap) continue;
+    // #6: meta can't replace a counter (design/progression.md § 10), on every map (T760 retired
+    // the jam teach map's exception: jams now land as a jammer first reaches a tower and last
+    // up to 6 s).
     const note =
       leftOut.length === 0 ? '' : ` (left out, not simulated yet: ${leftOut.join(', ')})`;
     checks.push(

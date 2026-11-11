@@ -1,6 +1,8 @@
 // The jams' look (T702; T730a's polish; jamLook.ts): the tendril's creep and bead, the countdown
 // ring's share and its path round the base, and System Reboot's column (held whole when still).
 import { describe, expect, it } from 'vitest';
+import { JAM_MAX_SEC } from '../../content/rules.ts';
+import { secToTicks } from '../../shared/time.ts';
 import { STEPPED_ALPHA } from '../vfx/fxTiming.ts';
 import {
   jamArc,
@@ -25,9 +27,10 @@ describe('jamLook (T702, T730a)', () => {
     expect(tendrilBeadPx(0.9)).toBe(5);
   });
 
-  it('the ring is the jam left out of 4 s: full at 4 s, half for a Choir’s halved jam', () => {
-    expect(jamArc(240)).toBe(1);
-    expect(jamArc(120)).toBe(0.5);
+  it('the ring is the jam left out of JAM_MAX_SEC: full at the cap, half for a Choir’s halved jam', () => {
+    const full = secToTicks(JAM_MAX_SEC);
+    expect(jamArc(full)).toBe(1);
+    expect(jamArc(full / 2)).toBe(0.5);
     expect(jamArc(0)).toBe(0);
   });
 

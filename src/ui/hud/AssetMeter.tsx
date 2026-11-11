@@ -2,13 +2,19 @@
 // core's, built like it: the asset's glyph (`icon.asset.rig`; `_critical`, its beacon red, in the
 // low band), its name ("Rigs"), and its value; the row flashes red on every hit that cost
 // something and shows the low-asset alarm from `critical` (half the meter; one rig of two down).
-// Other maps show nothing.
+// Where the asset is the bearers (A3M5; T731), the glyph is the refugee's and a second row under
+// it reads "Carried n of total" (those home so far, of the run's). Other maps show nothing.
 import { hud } from '../state.ts';
 import { Icon } from './Icon.tsx';
 
-/** The asset's glyph (A2M2's rigs, the only asset so far; D111), and its low-band look. */
+/** The asset's glyph (A2M2's rigs; D111), and its low-band look. */
 export const ASSET_ICON = 'icon.asset.rig';
 export const ASSET_ICON_LOW = 'icon.asset.rig_critical';
+/**
+ * The bearers' glyph (A3M5; T731): the Escort meter's refugee, its bundle riding high, since the
+ * bearers are Haulers carrying the vats' dead home; the alarm, not the glyph, says it's low.
+ */
+export const BEARER_ICON = 'icon.refugee';
 
 export function AssetMeter() {
   const a = hud.asset.value;
@@ -21,11 +27,11 @@ export function AssetMeter() {
       role="status"
       data-testid="asset-meter"
       data-damage={a.damage}
-      aria-label={`${a.name} ${a.value} of ${a.max}${low ? ', low' : ''}`}
+      aria-label={`${a.name} ${a.value} of ${a.max}${low ? ', low' : ''}${a.bearers === undefined ? '' : `. Carried home ${a.bearers.home} of ${a.bearers.total}`}`}
     >
       {/* The key restarts the flash on every hit (like the core's leak flash, D026). */}
       {hit !== null && <span key={hit.id} class="hud-asset-flash" aria-hidden="true" />}
-      <Icon id={low ? ASSET_ICON_LOW : ASSET_ICON} />
+      <Icon id={a.bearers !== undefined ? BEARER_ICON : low ? ASSET_ICON_LOW : ASSET_ICON} />
       <span class="hud-label">
         {a.name}
         {low && (
@@ -35,6 +41,13 @@ export function AssetMeter() {
         )}
       </span>
       <span class={low ? 'big num danger' : 'big num'}>{a.value}</span>
+      {/* The bearers home so far (A3M5; T731): Results' "Carried" line, live. */}
+      {a.bearers !== undefined && (
+        <span class="hud-asset-carried" data-testid="bearers-carried" aria-hidden="true">
+          Carried <span class="num">{a.bearers.home}</span> of{' '}
+          <span class="num">{a.bearers.total}</span>
+        </span>
+      )}
     </div>
   );
 }

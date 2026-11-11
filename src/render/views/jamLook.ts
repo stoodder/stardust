@@ -11,7 +11,7 @@
 //   (dashes in `white.0`/`teal.4` and a crackling spark; anim `crackle`, held on `s0` under
 //   reduced motion); and round its base a countdown ring on the ground, a `white.1` 2 px ellipse
 //   arc (RING_RX × RING_RY) over an `ink.0` under-stroke and a faint full track, the share of
-//   JAM_MAX_SEC left (`jamArc`: full at a full 4 s jam, a Choir's halved jam starts at half),
+//   JAM_MAX_SEC left (`jamArc`: full at a jam of the whole cap, a Choir's halved jam starts at half),
 //   draining clockwise from the top (`ringPoint`).
 // - **System Reboot:** each tower it freed flashes white (TowerView's upgrade flash) and a
 //   `teal.4` power-on column rises through it (`rebootColumn`: up over the first third of

@@ -79,7 +79,9 @@ const REBOOT_SEC = 27.5;
 const W14_RIFT_REBOOT_SEC = 8.3;
 const W16_RIFT_REBOOT_SEC = 17.8;
 /** W16's Reboot held for the tunnel pack instead (the Den alt's: it has no Choir for that one). */
-const W16_TUNNEL_REBOOT_SEC = 21;
+const W16_TUNNEL_REBOOT_SEC = 11.2;
+/** W16's Reboot for the Prism alt: its Prisms by the service tunnel meet the rift packs sooner. */
+const W16_BEAM_REBOOT_SEC = 13.1;
 
 function parSteps(): BuildStep[] {
   return [
@@ -245,7 +247,7 @@ export const builds = defineBuilds({
         { wave: 14, build: 'skyhook', tile: J_NE },
         { wave: 14, upgrade: J_NE },
         { wave: 15, upgrade: SV_S },
-        reboot(16, W16_RIFT_REBOOT_SEC),
+        reboot(16, W16_BEAM_REBOOT_SEC),
         { wave: 16, upgrade: J_S },
       ],
     },

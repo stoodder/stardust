@@ -18,6 +18,7 @@ import {
   apronCells,
   dressTile,
   envVariant,
+  propNudge,
   propVariant,
   type GroundGrid,
   type TileDressing,
@@ -119,7 +120,8 @@ export function drawCell(
   const pf = sprites.frame(prop.sprite, prop.frame, pv);
   const pa = sprites.frameAnchor(prop.sprite, prop.frame);
   gridToScreen(i + 0.5, j + 0.5, origin, pos);
-  const img = new Phaser.GameObjects.Sprite(scene, pos.x, pos.y, pf.texture, pf.frame)
+  const [nx, ny] = propNudge(prop.sprite); // T730b: A3M4's hall door stands clear of the generator
+  const img = new Phaser.GameObjects.Sprite(scene, pos.x + nx, pos.y + ny, pf.texture, pf.frame)
     .setDisplayOrigin(pa.x, pa.y)
     .setDepth(worldDepth(pos.y, 'prop', propTieBreak(id)));
   if (prop.anim !== null) img.play(sprites.anim(prop.sprite, prop.anim, pv));

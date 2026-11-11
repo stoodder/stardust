@@ -44,6 +44,7 @@ import {
   loadout,
   type LoadoutAbilityView,
   type LoadoutLinkView,
+  type LoadoutLockedAbilityView,
   type LoadoutPickView,
   type LoadoutProtocolView,
   type LoadoutRevokedView,
@@ -52,7 +53,8 @@ import {
 } from '../ui/screens/loadoutView.ts';
 import { grantText } from '../ui/screens/storeText.ts';
 import { battleConfig, defaultPick } from './battleSetup.ts';
-import { displayName, towerName, towerRoleText } from './hudText.ts';
+import { displayName, lockedAbilityReason, towerName, towerRoleText } from './hudText.ts';
+import { SPEAKERS } from '../content/dialogue/speakers.ts';
 import { mapThreats } from './hudViews.ts';
 import { logError } from './log.ts';
 import { activeSave, rememberLoadout, type SaveResult } from './save.ts';
@@ -156,6 +158,23 @@ function loadoutMap(map: CompiledMapDef<IdSpace>, slot2: string | null): Loadout
   };
 }
 
+/**
+ * Whose ability `id` was, as the loadout's Technician card says it, when the story made it the
+ * Technician's (T731; `unlocks.inheritedAbilities`: "QUILL's" Time Dilation under C4 Keep,
+ * "Bricks's" Suppressing Fire from Gerald's mail); null otherwise.
+ */
+export function inheritedFrom(
+  save: Pick<SaveData, 'unlocks'>,
+  id: string,
+  companion: string | null,
+): string | null {
+  const inherited: readonly string[] = save.unlocks.inheritedAbilities ?? [];
+  if (!inherited.includes(id) || companion === null) return null;
+  const speakers: Readonly<Record<string, { readonly name: string } | undefined>> = SPEAKERS;
+  const name = Object.hasOwn(speakers, companion) ? speakers[companion]?.name : undefined;
+  return name === undefined ? null : `${name}'s`;
+}
+
 function towerView(
   content: CompiledContent<IdSpace>,
   c: Context,
@@ -179,6 +198,8 @@ function towerView(
       via: a.spec ?? (a.minTier > 1 ? `T${a.minTier}` : null),
       required: required.includes(a.counter),
     })),
+    // A jailbroken class shows its jailbroken art (T731; towers.md § 9).
+    ...(c.save.unlocks.jailbroken.includes(id) ? { jailbroken: true } : {}),
   };
 }
 
@@ -332,12 +353,33 @@ export function openLoadout(mapId: string): boolean {
       const def = content.towers[id];
       return def === undefined ? [] : [{ id, name: silkText(def.name), icon: def.sprites.icon }];
     }),
-    abilities: pools.abilities.map((id): LoadoutAbilityView => ({
-      id,
-      name: silkText(content.abilities[id]!.name), // pool abilities are registered (validateSave)
-      icon: content.abilities[id]!.sprites.icon,
-      answers: abilityAnswers(id, c.map).map((k) => COUNTER_LABELS[k]),
-    })),
+    abilities: pools.abilities.map((id): LoadoutAbilityView => {
+      const def = content.abilities[id]!; // pool abilities are registered (validateSave)
+      const from = inheritedFrom(save, id, def.companion);
+      return {
+        id,
+        name: silkText(def.name),
+        icon: def.sprites.icon,
+        answers: abilityAnswers(id, c.map).map((k) => COUNTER_LABELS[k]),
+        ...(from === null ? {} : { inheritedFrom: silkText(from) }),
+      };
+    }),
+    // What the map locks under the save's story (T731: A3M5's System Reboot under Rewrite), as
+    // cards to read, with why.
+    lockedAbilities: off.flatMap((id): LoadoutLockedAbilityView[] => {
+      const owned: readonly string[] = save.unlocks.abilities;
+      const def = Object.hasOwn(content.abilities, id) ? content.abilities[id] : undefined;
+      return def === undefined || !owned.includes(id)
+        ? []
+        : [
+            {
+              id,
+              name: silkText(def.name),
+              icon: def.sprites.icon,
+              reason: silkText(lockedAbilityReason(id)),
+            },
+          ];
+    }),
     revokedAbilities: save.unlocks.revokedAbilities.flatMap((id): LoadoutRevokedView[] => {
       const def = content.abilities[id];
       return def === undefined ? [] : [{ id, name: silkText(def.name), icon: def.sprites.icon }];

@@ -35,6 +35,7 @@ import type {
   AbilitySlotView,
   BuildSlotView,
   CompanionView,
+  LockedAbilityView,
   MedalView,
   ObjectiveStatusView,
   ObjectiveView,
@@ -47,7 +48,14 @@ import type {
   WavePreviewGroup,
 } from '../ui/state.ts';
 import { silkText } from '../ui/silk.ts';
-import { abilityDescription, answerLabel, displayName, threatLabel } from './hudText.ts';
+import { JAILBROKEN_PALETTE } from '../render/views/towerLook.ts';
+import {
+  abilityDescription,
+  answerLabel,
+  displayName,
+  lockedAbilityReason,
+  threatLabel,
+} from './hudText.ts';
 
 /** Every registered sprite id (the tell glyphs the briefing may show). */
 const SPRITE_IDS: ReadonlySet<string> = new Set(SPRITES.map((d) => d.id));
@@ -138,8 +146,9 @@ export function buildSlots(
   modifiers: SimConfig<IdSpace>['modifiers'] = [],
   newTowers: readonly string[] = [],
   state: PurchaseState = LIST_PRICE_STATE,
+  jailbroken: readonly string[] = [],
 ): BuildSlotView[] {
-  return loadout.map((id) => {
+  return loadout.map((id): BuildSlotView => {
     const def = towers[id];
     if (def === undefined) throw new RangeError(`hud: loadout tower '${id}' is not in the content`);
     const base = def.tiers[0].cost;
@@ -153,7 +162,33 @@ export function buildSlots(
       price,
       unlockWave: Object.hasOwn(unlockWaves, id) ? (unlockWaves[id] ?? null) : null,
       isNew: newTowers.includes(id),
+      // A class the save holds jailbroken shows its icon in the jailbroken palette (T731).
+      ...(jailbroken.includes(id) ? { iconVariant: JAILBROKEN_PALETTE } : {}),
     };
+  });
+}
+
+/**
+ * The Technician abilities the map locks under the save's story, as the bar shows them dark beside
+ * its slots (T731; A3M5's System Reboot under C4 Rewrite), with why (`lockedAbilityReason`).
+ * Unregistered ids are skipped.
+ */
+export function lockedAbilityViews(
+  abilities: Readonly<Record<string, { readonly id: string; readonly name: string; readonly sprites: { readonly icon: string } }>>,
+  ids: readonly string[],
+): LockedAbilityView[] {
+  return ids.flatMap((id): LockedAbilityView[] => {
+    const def = Object.hasOwn(abilities, id) ? abilities[id] : undefined;
+    return def === undefined
+      ? []
+      : [
+          {
+            ability: def.id,
+            label: silkText(def.name),
+            icon: def.sprites.icon,
+            reason: silkText(lockedAbilityReason(def.id)),
+          },
+        ];
   });
 }
 

@@ -344,6 +344,20 @@ section.chamfer,
   white-space: nowrap;
 }
 
+/* The bearers' row (A3M5; T731): "Carried 4 of 26" under the label, as the Escort meter's "of 36",
+   its numbers in `white.1`. Adds BEARER_ROW_H to the status panel (layout.ts). */
+.hud-asset-carried {
+  grid-column: 2 / 4;
+  margin-top: 2px;
+  line-height: 8px;
+  white-space: nowrap;
+  color: var(--sd-steel-4);
+}
+
+.hud-asset-carried .num {
+  color: var(--sd-white-1);
+}
+
 .hud-asset-flash {
   position: absolute;
   inset: -1px -2px;
@@ -1134,6 +1148,35 @@ section.chamfer,
 
 .hud-dark-line.lit {
   color: var(--sd-gold-3);
+}
+
+/* The Jammed row (T731; TowerPanel.tsx JamRow): under the head, the Jammed glyph, "Jammed" and its
+   seconds in the act accent (Act III's alarm red) while the tower holds; then "Immune" and its
+   seconds in steady `teal.4` beside a 4 px teal dot, while no jam can land. Nothing blinks. */
+.hud-jam {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 8px;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.hud-jam.jammed {
+  color: var(--accent);
+}
+
+.hud-jam.immune {
+  color: var(--sd-teal-4);
+}
+
+.hud-jam-dot {
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  margin: 0 2px;
+  background: var(--sd-teal-4);
+  box-shadow: 0 0 0 1px var(--sd-ink-0);
 }
 
 /* A ramping beam's live ramp (T531): "Ramp", a 1 px-edged bar filling from x1 to the cap in the

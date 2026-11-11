@@ -26,6 +26,11 @@ export interface LoadoutTowerView {
   readonly icon: string;
   /** The map's counters it answers, in enemies.md § 3.1 order. */
   readonly answers: readonly LoadoutAnswerView[];
+  /**
+   * The save holds the class jailbroken (T731; towers.md § 9): the card shows its icon in
+   * `everglow.jailbroken` and reads "Jailbroken". Absent: false.
+   */
+  readonly jailbroken?: boolean;
 }
 
 /** A Technician ability on offer (slot 1). */
@@ -35,6 +40,23 @@ export interface LoadoutAbilityView {
   readonly icon: string;
   /** Labels of the map's counters it answers when cast (detection, jam). */
   readonly answers: readonly string[];
+  /**
+   * Whose ability it was, if the story made it the Technician's (T731; meta `INHERITED_ABILITIES`:
+   * "QUILL's" for Time Dilation under C4 Keep, "Bricks's" for Suppressing Fire); absent: none.
+   */
+  readonly inheritedFrom?: string;
+}
+
+/**
+ * A Technician ability the save owns that this map locks under its story (T731; A3M5's System
+ * Reboot under C4 Rewrite): a card to read, never a pick, with why.
+ */
+export interface LoadoutLockedAbilityView {
+  readonly id: string;
+  readonly name: string;
+  readonly icon: string;
+  /** "QUILL is offline. She runs it." */
+  readonly reason: string;
 }
 
 /**
@@ -116,6 +138,8 @@ export interface LoadoutView {
   readonly abilities: readonly LoadoutAbilityView[];
   /** Revoked Technician abilities (Orbital Strike: "Uplink revoked" under its stamp). */
   readonly revokedAbilities: readonly LoadoutRevokedView[];
+  /** Owned abilities this map locks under the save's story (T731; absent: none). */
+  readonly lockedAbilities?: readonly LoadoutLockedAbilityView[];
   /** Links among the pool's towers, in registry order. */
   readonly links: readonly LoadoutLinkView[];
   /** Slot 2 is the map's companion's ("Bricks · Suppressing Fire"), or null for none. */

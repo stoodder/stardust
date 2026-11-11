@@ -94,6 +94,31 @@ function RampRow({ cap }: { cap: number }) {
   );
 }
 
+/** The Jammed glyph (T740b): the panel's Jammed row wears it. */
+export const JAMMED_ICON = 'icon.jammed';
+
+/**
+ * The Jammed row (T731; design/enemies.md § 4): while the tower is Jammed, the glyph, "Jammed" and
+ * its whole seconds left in the act's alarm colour; after it (or after System Reboot), "Immune"
+ * and the seconds no jam can land, in steady teal. A role="timer" whose text names both, read out
+ * only when focused (a countdown never chatters at a screen reader).
+ */
+function JamRow({ jam, immune }: { jam: number; immune: number }) {
+  const jammed = jam > 0;
+  return (
+    <p
+      class={jammed ? 'hud-jam jammed' : 'hud-jam immune'}
+      role="timer"
+      data-testid="jam-row"
+      aria-label={jammed ? `Jammed, ${jam} s left` : `Immune to jamming, ${immune} s left`}
+    >
+      {jammed ? <Icon id={JAMMED_ICON} /> : <span class="hud-jam-dot" aria-hidden="true" />}
+      <span class="grow">{jammed ? 'Jammed' : 'Immune'}</span>
+      <span class="num">{jammed ? jam : immune} s</span>
+    </p>
+  );
+}
+
 /**
  * The selected tower's panel, beside the tower: its stats after every bonus and where the bonuses
  * come from, then upgrade (or, at tier 3, the tier-4 choice), sell, and targeting. Its height
@@ -104,9 +129,10 @@ export function TowerPanel({ t }: { t: SelectedTowerView }) {
   const h = towerPanelHeight(t);
   const corners = hudCorners(
     objectiveRows(hud.objectives.value),
-    hud.asset.value !== null,
+    hud.asset.value === null ? false : hud.asset.value.bearers === undefined ? true : 'bearers',
     hud.escort.value === null ? false : hud.escort.value.holdout === true ? 'holdout' : true,
     revokedHud.value.previewHidden && revokedHud.value.leakLine !== null,
+    hud.lockedAbilities.value.length,
   );
   const { left, top } = placePanel(t.x, t.y, PANEL_W, h, others, corners);
   const credits = hud.credits.value;
@@ -131,6 +157,9 @@ export function TowerPanel({ t }: { t: SelectedTowerView }) {
         <span class="hud-name">{t.specName ?? t.label}</span>
         <Tier tier={t.tier} max={t.maxTier} />
       </header>
+      {((t.jamSec ?? 0) > 0 || (t.jamImmuneSec ?? 0) > 0) && (
+        <JamRow jam={t.jamSec ?? 0} immune={t.jamImmuneSec ?? 0} />
+      )}
       {t.statsLines.map((l, i) => (
         <p key={`s${i}`} class="hud-stats">
           {l}
@@ -202,15 +231,21 @@ export function TowerPanel({ t }: { t: SelectedTowerView }) {
         class="hud-btn chamfer wide"
         aria-disabled={t.priority === null}
         aria-label={
-          t.priority === null
-            ? 'Targeting: hits everything in range'
-            : `Targeting: ${PRIORITY_LABEL[t.priority]}. Change`
+          t.priority !== null
+            ? `Targeting: ${PRIORITY_LABEL[t.priority]}. Change`
+            : t.fixedTarget != null
+              ? `Targeting: ${t.fixedTarget}, fixed. Its leapers pick a flyer, then a Marked foe, then the first`
+              : 'Targeting: hits everything in range'
         }
+        title={t.fixedTarget != null ? 'Leapers pick: flyer, Marked, then first' : undefined}
+        data-testid="targeting"
         onClick={cycleTargeting}
       >
         <span class="grow">
           Target{' '}
-          <span class="accent">{t.priority === null ? 'All' : PRIORITY_LABEL[t.priority]}</span>
+          <span class="accent">
+            {t.priority !== null ? PRIORITY_LABEL[t.priority] : (t.fixedTarget ?? 'All')}
+          </span>
         </span>
         <Key k="T" />
       </button>

@@ -22,8 +22,9 @@ async function until(page: Page, cond: Cond, max = 60 * 1500): Promise<boolean> 
   const held = await page.evaluate(
     ([c, limit]) => {
       const sd = globalThis.__sd!; // installed: waitForReady passed
-      const st = sd.state()!;
+      // Read afresh each tick: closing a briefing rebuilds the battle (a new state).
       const check = (): boolean => {
+        const st = sd.state()!;
         switch (c) {
           case 'boss':
             return st.enemies.items.some(
@@ -43,7 +44,7 @@ async function until(page: Page, cond: Cond, max = 60 * 1500): Promise<boolean> 
       };
       for (let k = 0; k < limit; k++) {
         if (check()) return true;
-        if (st.outcome !== 'playing') return false;
+        if (sd.state()!.outcome !== 'playing') return false;
         sd.fastForward(1);
       }
       return check();
@@ -58,6 +59,14 @@ async function until(page: Page, cond: Cond, max = 60 * 1500): Promise<boolean> 
 async function open(page: Page, url: string): Promise<void> {
   await page.goto(url);
   await waitForReady(page);
+  await page.evaluate(() => {
+    const sd = globalThis.__sd!;
+    sd.setSpeed(0);
+    sd.autoplay('par');
+    sd.fastForward(0);
+  });
+  await nextFrames(page);
+  // Closing the briefing rebuilds the battle: par plays the new one.
   await page.evaluate(() => {
     const sd = globalThis.__sd!;
     sd.setSpeed(0);

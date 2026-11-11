@@ -4,7 +4,7 @@
 // change, so a steady frame re-renders nothing. The view models are built by hudViews.ts and
 // hudPanel.ts, and their words by hudText.ts (T225).
 import type { IdSpace } from '../content/types.ts';
-import { isMapWon, specsOwned, UPGRADE_HINT } from '../meta/index.ts';
+import { abilitiesOffOn, isMapWon, specsOwned, UPGRADE_HINT } from '../meta/index.ts';
 import { mapOrigin } from '../render/iso.ts';
 import type { BattleInteraction } from '../render/input/BattleInteraction.ts';
 import { VIEW_H, VIEW_W } from '../render/scale.ts';
@@ -39,6 +39,7 @@ import {
   cooldownView,
   countdownSeconds,
   holdingCount,
+  lockedAbilityViews,
   medalViews,
   groupWalking,
   objectiveGroups,
@@ -91,6 +92,16 @@ export interface HudSaveInfo {
   readonly heldObjectives: readonly string[];
   /** The loadout's newly issued towers, in their first battle for this save (meta/hints.ts). */
   readonly newTowers: readonly string[];
+  /**
+   * The classes the save holds jailbroken (T731; `unlocks.jailbroken`): their build slots show the
+   * jailbroken icon. Absent: none.
+   */
+  readonly jailbroken?: readonly string[];
+  /**
+   * Technician abilities the save owns that this map locks under its story (T731; A3M5's System
+   * Reboot under C4 Rewrite), shown dark beside the bar. Absent: read from the save in play.
+   */
+  readonly lockedAbilities?: readonly string[];
   /** The save has shown the upgrade teach before, so it stays off (once per save, D061). */
   readonly upgradeHintSeen: boolean;
   /** Enemy types the save has met (`campaign.seenEnemies`): the wave preview's NEW badges. */
@@ -148,8 +159,21 @@ export function hudSaveInfo(mapId: string, loadout: readonly string[]): HudSaveI
     newTowers: newTowersIn(loadout),
     upgradeHintSeen: hintShown(UPGRADE_HINT),
     seenEnemies: save.campaign.seenEnemies,
+    jailbroken: save.unlocks.jailbroken,
     callsign: savedCallsign,
   };
+}
+
+/**
+ * The Technician abilities the save in play owns that `map` locks under its flags (T731; meta
+ * `abilitiesOffOn`: A3M5's System Reboot under C4 Rewrite), for the bar's dark slot; none without
+ * a save.
+ */
+export function lockedOnMap(map: Parameters<typeof abilitiesOffOn>[0]): string[] {
+  const save = activeSave();
+  if (save === null) return [];
+  const owned: readonly string[] = save.unlocks.abilities;
+  return abilitiesOffOn(map, save).filter((a) => owned.includes(a));
 }
 
 /**
@@ -358,6 +382,7 @@ export function bindHud(
     sim.config.modifiers,
     saveInfo.newTowers,
     sim.state,
+    saveInfo.jailbroken,
   );
   hud.sale.value = saleView(sim.state, null);
   // The NEW pips are this run's: the save remembers the towers have been fielded (D061).
@@ -373,6 +398,14 @@ export function bindHud(
     (v) => sim.config.content.abilities[v.ability]?.effect.kind === 'discount',
   );
   hud.abilities.value = abilityViews;
+  // What the map locks under the save's story (T731: A3M5's System Reboot under Rewrite), dark
+  // beside the bar, unless a slot holds it anyway (a dev battle's config).
+  hud.lockedAbilities.value = lockedAbilityViews(
+    sim.config.content.abilities,
+    (saveInfo.lockedAbilities ?? lockedOnMap(sim.map)).filter(
+      (a) => !abilityViews.some((v) => v.ability === a),
+    ),
+  );
   hud.notice.value = null;
   const specLock = specLockText(saveInfo.engineeringOpen);
   hud.intel.value = threatIntel(sim.map, saveInfo.ownedTowers, saveInfo.specsUnlocked);
@@ -530,6 +563,7 @@ export function bindHud(
         sim.config.modifiers,
         saveInfo.newTowers,
         s,
+        saveInfo.jailbroken,
       );
     }
     hud.sale.value = saleView(s, hud.sale.value);
@@ -772,6 +806,7 @@ export function bindHud(
     hud.armedTower.value = null;
     hud.aimingAbility.value = null;
     hud.abilities.value = [];
+    hud.lockedAbilities.value = [];
     hud.abilityCooldowns.value = [];
     hud.nextWave.value = null;
     hud.notice.value = null;
