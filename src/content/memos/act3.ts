@@ -1,14 +1,16 @@
 // Act III's Everglow Inbox (story/campaign/act3.md, each map's *Memo after*; style-guide.md
-// § 6.1), one memo after each map, in delivery order. They are the memo texts' home.
+// § 6.1), one memo after each map, in delivery order. They are the memo texts' home; the act file
+// quotes their subjects, `memo_a3_01`'s body, and every small print (tools/inboxCopy.test.ts).
 //
 // The descent in three memos: `memo_a3_01` is Sterling's last sincere-sounding one ("I fought for
-// that Preserve") with the Clean Exit in its small print; from A3M2 the Inbox is automated
-// ("Everglow Automated Systems", core-loop.md § 6.4), terse, and the first memo without an
-// exclamation point (`memo_a3_02`); `memo_a3_03` files Bricks's death as a personnel record.
+// that Preserve"), the Clean Exit and the buffer's state in its small print (the fair-play clue
+// A3M2 pays); from A3M2 the Inbox is automated ("Everglow Automated Systems", core-loop.md § 6.4):
+// terse, no exclamation point, no sun, no sign-off. `memo_a3_02` is the first such memo, filing
+// the Clean Exit cue as an access update; `memo_a3_03` files Bricks's death as a personnel record,
+// the act file's one line and nothing else.
 //
-// M6's seam (T600b) registers all three with the act file's subjects, quotes, and small print, and
-// first drafts where the act file gives none (`memo_a3_02`'s body and small print); T611 writes
-// their final text.
+// Each is delivered at the run end that first wins its map (`afterMap`), so `memo_a3_03` waits in
+// the Inbox when the base opens after A3M3's Held card.
 import type { MemoDef } from './types.ts';
 
 const STERLING = 'Director Joy Sterling, Frontier Operations';
@@ -27,7 +29,8 @@ export const ACT3_MEMOS: readonly MemoDef[] = [
       'I fought for that Preserve, Four-Forty-Seven. I really did. Engineers inbound to secure ' +
       'the colony. Hang in there!',
     signOff: SIGN_OFF,
-    smallPrint: 'Engineers: Clean Exit Asset Recovery, Phase 1 (Colony Core).',
+    smallPrint:
+      'Engineers: Clean Exit Asset Recovery, Phase 1 (Colony Core). Preserve buffer: depleted.',
     afterMap: 'a3_m01',
   },
   {
@@ -36,9 +39,11 @@ export const ACT3_MEMOS: readonly MemoDef[] = [
     to: TO_447,
     subject: 'Your Access Has Been Updated',
     body:
+      'This is an automated message.\n\n' +
       'Your Corporate Tower License has been revoked. Your Orbital Strike uplink has been ' +
-      'revoked. Remaining access: none listed.\n\n' +
-      'No action is required. No reply is monitored.',
+      'revoked. Refunds have been applied to your account.\n\n' +
+      'Your remaining access is under review. No action is required. Replies to this address ' +
+      'are not monitored.',
     smallPrint:
       'Revocation is final. Refunds issued per Policy CE-1. This message was not reviewed.',
     afterMap: 'a3_m02',

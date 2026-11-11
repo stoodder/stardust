@@ -5,7 +5,8 @@
 // meta/progress.ts SYSTEM_UNLOCKS), except Xenotech's, which is hidden until it opens after A2M5,
 // so the base never names Ves'thara's shelf before she joins; it then carries a NEW tag until its
 // first visit (the `xenotech` hint, meta/hints.ts; T566). An open tab shows its pane
-// (BasePanes.tsx). Entering the base delivers any memo or codex unlock a save missed
+// (BasePanes.tsx); from A3M1 the Codex tab reads "Journal", as its pane is the *Field Journal*
+// (app/inbox.ts `codexTabLabel`). Entering the base delivers any memo or codex unlock a save missed
 // (app/inbox.ts). The first visit with Zibzab's shop open lands on the Shop tab and plays his
 // arrival (app/baseScenes.ts, T308; with any other visit scene due, such as Pebble's handover after
 // A2M4); otherwise an unread memo opens the Inbox (T320), and nothing new opens Research. Before
@@ -16,7 +17,7 @@ import { dropBaseChoice, offerChoiceAtBase } from '../../app/baseChoice.ts';
 import { arrivalDue, playBaseScenesIfDue } from '../../app/baseScenes.ts';
 import { BaseChoice } from './BaseChoice.tsx';
 import { HeldRewards } from './HeldRewards.tsx';
-import { catchUpStory, storyBadges } from '../../app/inbox.ts';
+import { catchUpStory, codexTabLabel, storyBadges } from '../../app/inbox.ts';
 import { hintShown, markHintsShown } from '../../app/save.ts';
 import { XENOTECH_HINT } from '../../meta/index.ts';
 import { openSettings, toCampaign } from '../../app/navigation.ts';
@@ -101,11 +102,13 @@ export function Base() {
         : id === 'xenotech' && xenotechNew
           ? 1
           : 0;
+  // From A3M1 the codex is the *Field Journal*, and its tab says so (T611).
+  const codexLabel = codexTabLabel();
   const tabs = TABS.filter(
     (t) =>
       (t.id !== 'bounty' || view.bountyBoard.shown) &&
       (t.id !== 'xenotech' || view.systems.xenotech.unlocked),
-  );
+  ).map((t) => (t.id === 'codex' ? { ...t, label: codexLabel } : t));
   const move = (by: number): void => {
     picked.current = true;
     const i = tabs.findIndex((t) => t.id === tab);

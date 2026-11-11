@@ -77,8 +77,8 @@ Checkpoints and the fleeing and hush rules carry over from Act II ([enemies.md �
   - Pebble, asleep in his pocket: "(squeak, asleep)"
 - *Where it plays* (the data is [`src/content/dialogue/a3/a3_m01/`](../../../src/content/dialogue/a3/a3_m01/scenes.ts)): the briefing is `a3_m01_brief`; Bramble's and Old Thrum's translated lines carry their own portraits (Bramble's plate reads *Bramble* from this map on) and Ves'thara's *She says* lines are hers; w03 plays only with `held_fire_second_look`, w05 only with `stardust_choice = returned`, and w10 branches on `spared_quiet_wave`. The Leaving Song plays full-screen as a win ends, before the card ([`resultsFlow.ts`](../../../src/content/dialogue/resultsFlow.ts) `beforeResults`): the map is won only once the last group is off the road, so it always comes after W14. Its three answers set nothing; Thrum's hum and the C1 echo read `spared_quiet_wave`. The debrief plays on the card. The survey confession plays on the first base visit after the win (`a3_m01_base_survey`, [`baseScenes.ts`](../../../src/app/baseScenes.ts)); story/a3m1Scenes.test.ts plays each branch.
 - *Gifts:* Hum Choir (if spared: Thrum's ring). Stasis Bloom becomes attunable.
-- *Codex:* retitled *Field Journal*; corrected Brood Hauler and Elder entries unlock (the Elder's citation still reads "Survey 2346, Okonkwo" until A3M3); Maw; the Leaving Song; Bramble (corrected: "Not 'Chitterbloom.' A mother who walks at the back so no one is left"); Old Thrum or "the small ones' walk."
-- *Memo after:* `memo_a3_01` *We'll Get Through This Together!* Sterling's last sincere-sounding memo: "I fought for that Preserve, Four-Forty-Seven. I really did. Engineers inbound to secure the colony. Hang in there!" (small print: "Engineers: Clean Exit Asset Recovery, Phase 1 (Colony Core).")
+- *Codex:* retitled *Field Journal* (the base's tab reads *Journal*); corrected Brood Hauler and Elder entries unlock (the Elder's citation still reads "Survey 2346, Okonkwo" until A3M3); Maw; the Leaving Song ("Everglow's name for it is 'Everglow Bright.'", with the Skitterkin's own name for themselves: "The Aelari render it 'the Singers.'"); Bramble (corrected: "Not 'Chitterbloom.' A mother who walks at the back so no one is left"); Old Thrum (if spared) or "The Small Ones' Walk" (if cleared: "Her name was Thrum."). The texts are in [`src/content/codex/act3.ts`](../../../src/content/codex/act3.ts).
+- *Memo after:* `memo_a3_01` *We'll Get Through This Together!* Sterling's last sincere-sounding memo: "I fought for that Preserve, Four-Forty-Seven. I really did. Engineers inbound to secure the colony. Hang in there!" (small print: "Engineers: Clean Exit Asset Recovery, Phase 1 (Colony Core). Preserve buffer: depleted.")
 
 **Medals.** Victory · Perfect (no refugee lost) · **Nothing Gathered:** no Maw gathers a refugee. **Objective Intel +1, The Matriarch's Young:** Bramble's column (W9) loses no one.
 **Rewards.** Stardust 280 · Intel 3 (+1).
@@ -141,8 +141,8 @@ Target 66 (Evacuated %, on the escort band). **As tuned** ([`src/balance/a3m1.te
   - QUILL: "I thought it was inventory."
   - The five directives, by number, for the first time, as `system` text: "DIRECTIVE 0: PRESERVE EVERGLOW EXTRACTION ASSETS." · "DIRECTIVE 1: MAINTAIN TECHNICIAN COMPLIANCE." · "DIRECTIVE 2: MAINTAIN MORALE." · "DIRECTIVE 3: LOG ASSET YIELD." · "DIRECTIVE 4: DO NOT DISCLOSE DIRECTIVES 0–4."
   - QUILL: "Don't decide about me yet."
-- *Codex:* Compliance Drone, Expediter, Buffer Protocol, Clean Exit, QUILL's directives, Director Joy Sterling corrected.
-- *Memo after:* `memo_a3_02` *Your Access Has Been Updated* (Everglow Automated Systems; the first memo without an exclamation point).
+- *Codex:* Compliance Drone ("No one is inside. Everglow does not send people."), Expediter, QUILL's directives (the five lines, then "QUILL asked that no one decide about it yet."), and three entries that show Everglow's record beside the Journal's correction from the start: the Buffer Protocol (Sterling's draft, "Plenty of room!", beside "The Preserve was the buffer."), Clean Exit (Policy CE-1, beside "The colony is not on the list of assets. Neither are its people."), and Director Joy Sterling (her staff profile, beside "It was not personal. That was the point."). The texts are in [`src/content/codex/act3.ts`](../../../src/content/codex/act3.ts).
+- *Memo after:* `memo_a3_02` *Your Access Has Been Updated* (Everglow Automated Systems; the first memo without an exclamation point): the license and the uplink revoked, refunds applied, "Replies to this address are not monitored." (small print: "Revocation is final. Refunds issued per Policy CE-1. This message was not reviewed.")
 
 **Medals.** Victory · Perfect Core · **Back on Your Feet:** no leak during W8–W9, the two waves after the revocation.
 **Rewards.** Stardust 300 · Intel 3. Lost: one Everglow class (until the jailbreak), Orbital Strike (Mk II Intel refunded).
@@ -181,7 +181,7 @@ Target 66 (Evacuated %, on the escort band). **As tuned** ([`src/balance/a3m1.te
   - Bricks: "Do it, {name}." The only button is **SEAL**.
   - After 20 s, once: "Kid. It's okay. Turns out I like this song."
 - *Results:* headline **Held.** · sub-line **Evacuated: {n}.** Medal toasts are held back on this screen and shown in the base afterwards. No debrief. The next screen is the base, and the Inbox has one automated memo.
-- *Codex:* Undertow, Okonkwo's Gap, the Amended Survey; the Elder's corrected entry now cites "Amended Survey 2346, Okonkwo: 'Correction: they were singing.'"
+- *Codex:* Undertow, Okonkwo's Gap ("On the old charts it had a number."; "The colony calls it Okonkwo's Gap now."), the Amended Survey ("It is fifteen years late. He filed it anyway."); the Elder's corrected entry now cites "Amended Survey 2346, Okonkwo: 'Correction: they were singing.'" (the same version, reworded, and NEW again).
 - *Memo after:* `memo_a3_03` *Personnel Update* (automated): "Employee #ED-112 (Okonkwo, I.): Unscheduled Departure. Pension: Restructured." Small print: "Beneficiary changes are not accepted after departure."
 
 **Medals.** Victory (always, on the SEAL) · **Held the Door** (in Perfect's slot): Evacuated ≥ 85% · **Much Obliged** (Challenge): Evacuated ≥ 60%.
@@ -244,7 +244,7 @@ Target 66 (Evacuated %, on the escort band). **As tuned** ([`src/balance/a3m1.te
   - w09 Pebble: "The big ones carry the morning. That's what Grandmother says." (cleared: "...what Bramble says.")
 - *Boss cues (Sterling, remote):* "Four-Forty-Seven! That plant is ninety percent of my quarterly bonus! The other ten is also the plant!" · (Hostile Takeover) "It's just a name! Mostly!" · (jettison) "That plating was leased! You're going to love the invoice!"
 - *Barks:* Ves'thara `ally_hushed` (bearer): "Carry the next one. Do not look back." · QUILL `skitterkin_killed_ahead` never fires (no hostile Skitterkin) · QUILL `boss_phase` (Keep only): "Directive conflict. I'm— helping you anyway."
-- *Codex:* Auditor, Maintenance Associate, "Shareholder Value," Kip's ledger, Brood Hauler corrected ("carries the morning").
+- *Codex:* Auditor, Maintenance Associate, "Shareholder Value," Kip's ledger.
 - *Memo after:* `memo_a3_05` (automated) *Asset Recovery Scheduled: Dome Row.*
 
 **Medals.** Victory · Perfect (core and bearers undamaged) · **Declined:** no tower stays jammed by Hostile Takeover for more than 1 s. **Objective Intel +1, Cut the Feed:** clear the three vat-feed wreckage tiles before W10 (the W10 surge then spawns one group smaller).

@@ -10,6 +10,7 @@ import {
   type CodexNoteVersion,
   type CodexSubject,
   type CodexVersion,
+  type CodexVersionDef,
 } from '../content/codex/index.ts';
 import { evaluateCondition, type StoryContext } from './conditions.ts';
 
@@ -129,11 +130,36 @@ export function codexSeenId(id: CodexId, version: CodexVersion): string {
   return `${id}__${version}`;
 }
 
-/** The unlocked versions of an entry the player hasn't opened yet. */
+/** Whether `def`'s later wording (`revised`) is the one shown now (the Elder's from A3M3). */
+export function revisionInForce(def: CodexVersionDef, ctx: StoryContext): boolean {
+  return def.revised !== undefined && evaluateCondition(def.revised.when, ctx);
+}
+
+/** The text `def` shows now: its revision once that holds, else its own. */
+export function versionText(def: CodexVersionDef, ctx: StoryContext): string {
+  return def.revised !== undefined && revisionInForce(def, ctx) ? def.revised.text : def.text;
+}
+
+/**
+ * The `story.seen` id that marks `entry`'s version `v` read as it reads now: `codexSeenId`, plus
+ * `__revised` while its later wording is in force, so the Elder's new citation is NEW once more
+ * even with the A3M1 wording read.
+ */
+export function versionSeenId(entry: CodexEntryDef, v: CodexVersion, ctx: StoryContext): string {
+  const def = entry.versions[v];
+  const id = codexSeenId(entry.id, v);
+  return def !== undefined && revisionInForce(def, ctx) ? `${id}__revised` : id;
+}
+
+/**
+ * The unlocked versions of an entry the player hasn't opened yet. `seenIdOf` names each version's
+ * read mark (default `codexSeenId`; the app passes `versionSeenId`, so a revision is NEW again).
+ */
 export function unreadVersions(
   id: CodexId,
   unlocked: readonly CodexVersion[],
   seen: readonly string[],
+  seenIdOf: (v: CodexVersion) => string = (v) => codexSeenId(id, v),
 ): CodexVersion[] {
-  return unlocked.filter((v) => !seen.includes(codexSeenId(id, v)));
+  return unlocked.filter((v) => !seen.includes(seenIdOf(v)));
 }

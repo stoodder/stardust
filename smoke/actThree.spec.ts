@@ -54,7 +54,7 @@ test("act three: the Title's tip is Act III's, and the codex is the Field Journa
   await expect(page.getByRole('heading', { name: 'Base' })).toBeVisible();
   // The Bounty Board is gone without comment (Act II's close).
   await expect(page.getByRole('tab', { name: /^Bounty/ })).toHaveCount(0);
-  await page.getByRole('tab', { name: /^Codex/ }).click();
+  await page.getByRole('tab', { name: /^Journal/ }).click();
   const journal = page.getByRole('navigation', { name: 'Field Journal entries' });
   await expect(journal).toBeVisible();
   await expect(journal).toContainText('Field Journal');

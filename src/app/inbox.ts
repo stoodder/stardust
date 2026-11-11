@@ -19,12 +19,15 @@ import {
   type SaveData,
 } from '../meta/index.ts';
 import {
-  codexSeenId,
   codexTitle,
+  isFieldJournal,
   notesShown,
   shownVersions,
   unreadVersions,
+  versionSeenId,
+  versionText,
 } from '../story/codex.ts';
+import type { StoryContext } from '../story/conditions.ts';
 import { memoBody, unreadMemos } from '../story/inbox.ts';
 import { resolveText, type TextContext } from '../story/text.ts';
 import { activeSave, updateActiveSave, type SaveResult } from './save.ts';
@@ -58,12 +61,22 @@ export interface StoryBadges {
 
 export function storyBadges(save: SaveData | null = activeSave()): StoryBadges {
   if (save === null) return { inbox: 0, codex: 0 };
+  const ctx = baseStoryContext(save);
   return {
     inbox: unreadMemos(save.story.memosDelivered, save.story.memosRead).length,
-    codex: CODEX_ENTRIES.filter(
-      (e) => unreadVersions(e.id, unlockedOf(save, e), save.story.seen).length > 0,
-    ).length,
+    codex: CODEX_ENTRIES.filter((e) => unreadOf(save, e, unlockedOf(save, e), ctx).length > 0)
+      .length,
   };
+}
+
+/** `versions` of `e` not read as they read now (a revised wording is NEW again). */
+function unreadOf(
+  save: SaveData,
+  e: CodexEntryDef,
+  versions: readonly CodexVersion[],
+  ctx: StoryContext,
+): CodexVersion[] {
+  return unreadVersions(e.id, versions, save.story.seen, (v) => versionSeenId(e, v, ctx));
 }
 
 function unlockedOf(save: SaveData, e: CodexEntryDef): readonly CodexVersion[] {
@@ -212,7 +225,7 @@ export function codexView(save: SaveData | null = activeSave()): CodexView | nul
   const text = textContext(save);
   const entries: CodexEntryView[] = [];
   const resolved = (def: CodexVersionDef): CodexText => ({
-    text: resolveText(def.text, text),
+    text: resolveText(versionText(def, ctx), text),
     smallPrint: def.smallPrint === undefined ? null : resolveText(def.smallPrint, text),
   });
   for (const e of CODEX_ENTRIES) {
@@ -238,10 +251,18 @@ export function codexView(save: SaveData | null = activeSave()): CodexView | nul
           }),
         };
       }),
-      isNew: unreadVersions(e.id, shown, save.story.seen).length > 0,
+      isNew: unreadOf(save, e, shown, ctx).length > 0,
     });
   }
   return { title: codexTitle(ctx), entries, total: CODEX_ENTRIES.length };
+}
+
+/**
+ * The base's codex tab label: "Codex", or "Journal" from A3M1, when the pane is the *Field
+ * Journal* (style-guide.md § 2, Act III system copy).
+ */
+export function codexTabLabel(save: SaveData | null = activeSave()): 'Codex' | 'Journal' {
+  return save !== null && isFieldJournal(baseStoryContext(save)) ? 'Journal' : 'Codex';
 }
 
 /** Marks the versions an entry shows as read (its NEW badge clears). */
@@ -250,8 +271,9 @@ export function markCodexRead(id: string): SaveResult | null {
   if (save === null) return null;
   const entry = CODEX_ENTRIES.find((e) => e.id === id);
   if (entry === undefined) return null;
-  const shown = shownVersions(unlockedOf(save, entry), baseStoryContext(save));
-  const fresh = unreadVersions(id, shown, save.story.seen).map((v) => codexSeenId(id, v));
+  const ctx = baseStoryContext(save);
+  const shown = shownVersions(unlockedOf(save, entry), ctx);
+  const fresh = unreadOf(save, entry, shown, ctx).map((v) => versionSeenId(entry, v, ctx));
   if (fresh.length === 0) return null;
   return updateActiveSave((s) => ({
     ...s,

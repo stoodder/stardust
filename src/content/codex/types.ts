@@ -52,6 +52,19 @@ export interface CodexVersionDef {
   readonly smallPrint?: string;
   /** When this version unlocks (besides the subject's first encounter, for `original`). */
   readonly when?: Condition;
+  /**
+   * A later wording of the same version, shown instead of `text` once its `when` holds: the
+   * Elder's correction cites "Survey 2346, Okonkwo" from A3M1 and the Amended Survey from A3M3
+   * (act3.md). The version stays the one the save unlocked; the new wording is NEW again
+   * (story/codex.ts `versionSeenId`). Same limits as `text`.
+   */
+  readonly revised?: CodexRevision;
+}
+
+/** A version's later wording (`CodexVersionDef.revised`). */
+export interface CodexRevision {
+  readonly text: string;
+  readonly when: Condition;
 }
 
 /** The picture an entry shows when it has no subject (a subject shows its own icon). */
