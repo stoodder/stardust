@@ -23,8 +23,21 @@
 //   revoked slot is rejected `revoked` (systems/applyCommands.ts). The app cancels a placement or
 //   aim of it as the event arrives (app/revoked.ts). A checkpoint replay re-runs the cue from the
 //   command log, so its refund is paid once, in the replayed state.
+// - **`restoreTowerClass: 'lastRevoked'`** (the finale, T807; from an event only): after "Who's
+//   there?", the class this map revoked last leaves `state.revoked.towers` and is buildable again
+//   (`ClassRestored`). Nothing is paid or charged (its towers were refunded in full as they folded
+//   and stay gone; the player rebuilds), `stats.revocations` keeps its count, and the folded
+//   towers' uids stay refused. Run end saves only what is still revoked, and a restored cue takes
+//   no map-end class (meta/storyTransactions.ts `revokedClassFactions`).
+// - **`lockAbility { ability, on }`** (the finale's Directive 0, T501, D154): a lock for the script
+//   phase, never a revocation. `on` adds the ability to `state.abilitiesLocked` (`off` removes it;
+//   `AbilityLocked` on a change); whichever slot holds it is dark (`slotRevoked`, so a cast is
+//   refused `revoked` and the HUD greys it) while a cast already made still lands. The lock ends
+//   when the script phase moves on (`endPhaseLocks`, run by the `setPhase` action as the phase
+//   rises: an `AbilityLocked` off for each), and it is never saved: it isn't counted in
+//   `stats.revocations` or read by run end, and a checkpoint replay re-runs it from the script.
 // Revocations persist only through meta, on the run that first wins the map (meta-runtime.md
-// § Run end, step 3). The finale's `restoreTowerClass` and `lockAbility` (T800a slots) are T807's.
+// § Run end, step 3).
 import type { CompiledScriptAction } from '../content/compiled.ts';
 import type { IdSpace, TowerFaction } from '../content/types.ts';
 import { assertNever } from '../shared/types.ts';
@@ -134,21 +147,37 @@ export function revokeAbility(state: SimState, config: SimConfig<IdSpace>, abili
 }
 
 /**
- * The finale's `restoreTowerClass: 'lastRevoked'` (T800a seam, T807 fills it): after "Who's
- * there?", the class Directive 0 revoked comes back (`ClassRestored`). Refused by createSim until
- * T807 (SCRIPT_GATES).
+ * The finale's `restoreTowerClass: 'lastRevoked'` (see the header): the class this map revoked
+ * last comes back, buildable again (`ClassRestored`). Nothing is paid or charged: its towers were
+ * refunded as they folded, and stay gone. With nothing revoked it does nothing.
  */
-export function restoreTowerClass(_state: SimState, _ctx: TickContext): void {
-  // T807.
+export function restoreTowerClass(state: SimState, _ctx: TickContext): void {
+  const towers = state.revoked.towers;
+  const tower = towers.pop();
+  if (tower === undefined) return;
+  emit(state, { type: 'ClassRestored', tower });
 }
 
 /**
- * The finale's `lockAbility` (T800a seam, T807 fills it; D154, T501): an ability locked (or
- * unlocked) for the phase, never revoked and never saved (`state.abilitiesLocked`,
- * `AbilityLocked`). Refused by createSim until T807 (SCRIPT_GATES).
+ * The `lockAbility` action (see the header): `on` locks `ability` for the rest of the script
+ * phase, `off` unlocks it; `AbilityLocked` only on a change.
  */
-export function lockAbility(_state: SimState, _ability: string, _on: boolean): void {
-  // T807.
+export function lockAbility(state: SimState, ability: string, on: boolean): void {
+  const locked = state.abilitiesLocked;
+  const i = locked.indexOf(ability);
+  if (on === i >= 0) return;
+  if (on) locked.push(ability);
+  else locked.splice(i, 1);
+  emit(state, { type: 'AbilityLocked', ability, on });
+}
+
+/** The script phase moved on (`setPhase`): every phase lock ends (`AbilityLocked` off, in order). */
+export function endPhaseLocks(state: SimState): void {
+  const locked = state.abilitiesLocked;
+  for (let i = 0; i < locked.length; i++) {
+    emit(state, { type: 'AbilityLocked', ability: locked[i]!, on: false }); // i < length
+  }
+  locked.length = 0;
 }
 
 /** The `setModifier` script action: `ModifierChanged` when it changes anything. */
@@ -166,7 +195,8 @@ export function previewHidden(state: {
 }
 
 /**
- * Whether ability slot `slot` is dark: its ability was revoked, or it is the companion slot and its
+ * Whether ability slot `slot` is dark: its ability was revoked or is locked for the phase
+ * (`lockAbility`, whichever slot holds it), or it is the companion slot and its
  * ability (the map's companion's) is locked out by a script modifier that is on (`lockedOutBy`:
  * QUILL's lockout). An empty slot isn't revoked.
  */
@@ -174,6 +204,7 @@ export function slotRevoked(
   state: {
     readonly revoked: { readonly abilities: readonly string[] };
     readonly scriptModifiers: Readonly<SimState['scriptModifiers']>;
+    readonly abilitiesLocked: readonly string[];
   },
   config: Pick<SimConfig<IdSpace>, 'abilities' | 'companion' | 'content'>,
   slot: 1 | 2,
@@ -181,7 +212,7 @@ export function slotRevoked(
   const a = config.abilities;
   const id = slot === 1 ? a.slot1 : a.slot2;
   if (id === null) return false;
-  if (state.revoked.abilities.includes(id)) return true;
+  if (state.revoked.abilities.includes(id) || state.abilitiesLocked.includes(id)) return true;
   if (slot !== 2) return false;
   const def = Object.hasOwn(config.content.abilities, id)
     ? config.content.abilities[id]

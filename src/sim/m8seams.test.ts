@@ -125,11 +125,8 @@ describe('FEATURE_GATES and SCRIPT_GATES (T800a rows; D154)', () => {
       'enemy.boss.burrowTo': 'T808',
       'enemy.boss.adds': 'T808',
     });
-    expect(SCRIPT_GATES).toEqual({
-      restoreTowerClass: 'T807',
-      lockAbility: 'T807',
-      spawnEcho: 'T807',
-    });
+    // T807 lifted restoreTowerClass, lockAbility, and spawnEcho (sim/storyActions.test.ts).
+    expect(SCRIPT_GATES).toEqual({});
     // HARNESS_GATES' finale rows (#2 Voices: T804; #18 song timing: T821): balance/refusals.m8.test.ts.
   });
 

@@ -100,9 +100,6 @@ describe('the finale dev maps', () => {
       "a phase's HP floor (unsung) is not simulated until T808",
       'a burrow toward the choir (unsung) is not simulated until T808',
       "a phase's adds (unsung) is not simulated until T808",
-      "event 'directive0': action lockAbility is not simulated until T807",
-      "event 'not_everglow': action restoreTowerClass is not simulated until T807",
-      "event 'echo': action spawnEcho is not simulated until T807",
     ]);
   });
 

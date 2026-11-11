@@ -773,6 +773,12 @@ export interface Ally extends PoolEntity {
    */
   blockCapacity: number;
   blocking: number;
+  // M8.
+  /**
+   * Thrum's echo (T807; sim/echo.ts): the ticks since it was laid to rest in the song (0 while it
+   * walks in, grey; from 1 it is gold and rising, gone after ECHO_RISE_SEC). Its id is `enemyId`.
+   */
+  restTicks: number;
 }
 
 export const ALLY_BLANK: Readonly<Ally> = Object.freeze({
@@ -808,4 +814,5 @@ export const ALLY_BLANK: Readonly<Ally> = Object.freeze({
   swarmTicks: 0,
   blockCapacity: 0,
   blocking: 0,
+  restTicks: 0,
 });

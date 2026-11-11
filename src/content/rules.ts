@@ -624,6 +624,13 @@ export const REFUGEE_SPEED_TILES_PER_SEC = 0.7;
 export const CHOIR_SPACING_TILES = 0.4;
 export const CHOIR_CATCHUP_MUL = 2;
 /**
+ * Thrum's echo (maps.md § 5.5; T807, sim/echo.ts): it drifts toward Pebble at
+ * ECHO_PACE_TILES_PER_SEC until it stands in the song, then rises in gold for ECHO_RISE_SEC and is
+ * gone.
+ */
+export const ECHO_PACE_TILES_PER_SEC = 1;
+export const ECHO_RISE_SEC = 3;
+/**
  * Sundown (maps.md § 5.1; T505): at darkness d (0–1), a tower outside every light source has its
  * range × (1 − DARK_RANGE_PENALTY × d); −15% at full dark.
  */

@@ -441,7 +441,9 @@ export interface RunRevocations {
 
 /**
  * The factions of `events`' `revokeTowerClass` actions, in event order (null: any class): the app
- * passes the events that fired, as `RunRevocations.atMapEnd` (towers.md § 9's map-end rule).
+ * passes the events that fired, as `RunRevocations.atMapEnd` (towers.md § 9's map-end rule). A
+ * `restoreTowerClass` (the finale's "Not Everglow."; sim/revoke.ts) cancels the last one before it:
+ * its class came back, so it takes none at map end either.
  */
 export function revokedClassFactions(
   events:
@@ -456,6 +458,7 @@ export function revokedClassFactions(
   for (const e of events ?? []) {
     for (const a of e.actions) {
       if ('revokeTowerClass' in a) out.push(a.revokeTowerClass.faction ?? null);
+      else if ('restoreTowerClass' in a) out.pop(); // T807
     }
   }
   return out;
