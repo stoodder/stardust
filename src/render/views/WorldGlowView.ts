@@ -12,6 +12,10 @@
 //   disc's edge, so the edge stays the sim's lit range exactly (D137).
 // - **The Prism's crystal** glows its gem's `pink.4` while its beam lights the dark, in `vfx`.
 // - **The moons** come back over the night sky (a map with a lighting schedule draws them).
+// - **The Long Night** (Act III, `env` `act3`; vfx/nightGlow.ts, T630b): with no darkness, the
+//   world glows as in a full night all the same (baked `@glow`s at NIGHT_GLOW, the moons steady
+//   and full); the props that swap frames on a cue (`OWN_GLOW`) carry their own (frameGlow.ts).
+//   Every other env reads exactly as before.
 // Render-only and cosmetic. Allocation-free per frame: textures are baked once, images pooled,
 // and nothing is set that hasn't changed.
 import * as Phaser from 'phaser';
@@ -31,6 +35,14 @@ import {
   type PropGlow,
 } from '../vfx/glowPixels.ts';
 import { moonsImage } from '../vfx/lighting.ts';
+import {
+  bakesSceneryGlow,
+  glowNight,
+  hangsMoons,
+  isLongNight,
+  moonLevel,
+  OWN_GLOW,
+} from '../vfx/nightGlow.ts';
 import type { DarknessView } from './DarknessView.ts';
 import { isScenery } from './scenery.ts';
 import type { ViewContext } from './ViewContext.ts';
@@ -94,6 +106,8 @@ export class WorldGlowView {
   readonly #poolLamp: boolean[] = [];
   readonly #crystals: Phaser.GameObjects.Image[] = [];
   readonly #moons: Phaser.GameObjects.Image | null = null;
+  /** The map's env (the Long Night glows without darkness; nightGlow.ts). */
+  readonly #env: string | undefined;
   #dark = -1;
   #pooled = 0;
   #lit = 0;
@@ -105,10 +119,13 @@ export class WorldGlowView {
       readonly lights: readonly unknown[];
       readonly lighting: readonly unknown[];
       readonly dark: boolean;
+      readonly env?: string;
     },
     liftPx: (col: number, row: number) => number,
   ) {
     this.#ctx = ctx;
+    this.#env = map.env;
+    const longNight = isLongNight(map.env);
     this.#darkness = darkness;
     this.#lamps = map.lights.length;
     this.#liftPx = liftPx;
@@ -119,15 +136,19 @@ export class WorldGlowView {
         continue;
       }
       const key = parseFrameKey(obj.frame.name);
-      if (key === null) continue;
+      if (key === null || (longNight && OWN_GLOW.has(key.id))) continue;
       const glow = PROP_GLOWS[key.id];
       if (glow !== undefined && (glow.frames === undefined || glow.frames.includes(key.frame))) {
         this.#addProp(obj, this.#propTexture(key.id, key.variant, key.frame, glow), glow);
-      } else if (map.dark) {
+      } else if (bakesSceneryGlow(map.env, map.dark)) {
         this.#addBaked(obj, key.id, key.variant, key.frame);
       }
     }
-    if (!map.dark) return;
+    if (!map.dark) {
+      // The Long Night's moons (no lamps, pads, or pools without darkness).
+      if (longNight) this.#moons = addMoons(scene, layers.lighting);
+      return;
+    }
     // The pads' brackets, in `decal` (over the night's ground, under the towers on them).
     for (const obj of layers.ground.list) {
       if (!(obj instanceof Phaser.GameObjects.Image)) continue;
@@ -162,17 +183,7 @@ export class WorldGlowView {
       layers.vfx.add(img);
       this.#crystals.push(img);
     }
-    if (map.lighting.length > 0) {
-      const moons = 'glow.moons';
-      if (!scene.textures.exists(moons)) {
-        const w = VIEW_W + 2 * OVERHANG_PX;
-        const h = VIEW_H + 2 * OVERHANG_PX;
-        scene.textures.addCanvas(moons, imageToCanvas(moonsImage(w, h)));
-      }
-      this.#moons = new Phaser.GameObjects.Image(scene, -OVERHANG_PX, -OVERHANG_PX, moons);
-      this.#moons.setOrigin(0, 0).setBlendMode(Phaser.BlendModes.ADD).setVisible(false);
-      layers.lighting.add(this.#moons);
-    }
+    if (hangsMoons(map.env, map.lighting.length)) this.#moons = addMoons(scene, layers.lighting);
   }
 
   /** Props wearing a glow now. */
@@ -199,13 +210,16 @@ export class WorldGlowView {
 
   /** Follows the dark (the sim's `state.dark`) and the light sources standing now. */
   update(dark: number, towers: LightTowers): void {
-    if (dark !== this.#dark) {
-      this.#dark = dark;
+    // The Long Night glows as a full night without darkness (nightGlow.ts); else `dark` itself.
+    const night = glowNight(this.#env, dark);
+    if (night !== this.#dark) {
+      this.#dark = night;
       for (let i = 0; i < this.#props.length; i++) {
         const p = this.#props[i]!; // i < length
-        p.alpha = p.peak * glowAlpha(p, dark);
+        p.alpha = p.peak * glowAlpha(p, night);
       }
-      this.#moons?.setVisible(dark > 0).setAlpha(MOON_ALPHA * dark);
+      const moon = moonLevel(this.#env, dark);
+      this.#moons?.setVisible(moon > 0).setAlpha(MOON_ALPHA * moon);
     }
     for (let i = 0; i < this.#props.length; i++) {
       const p = this.#props[i]!; // i < length
@@ -353,6 +367,20 @@ export class WorldGlowView {
     this.#pooled = 0;
     this.#lit = 0;
   }
+}
+
+/** The moons over the night sky, in `lighting` (hidden until the night shows them). */
+function addMoons(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer): Phaser.GameObjects.Image {
+  const moons = 'glow.moons';
+  if (!scene.textures.exists(moons)) {
+    const w = VIEW_W + 2 * OVERHANG_PX;
+    const h = VIEW_H + 2 * OVERHANG_PX;
+    scene.textures.addCanvas(moons, imageToCanvas(moonsImage(w, h)));
+  }
+  const img = new Phaser.GameObjects.Image(scene, -OVERHANG_PX, -OVERHANG_PX, moons);
+  img.setOrigin(0, 0).setBlendMode(Phaser.BlendModes.ADD).setVisible(false);
+  layer.add(img);
+  return img;
 }
 
 /** A frame's pixels, read back from its atlas page (a canvas; CodeSpriteSource keeps them). */

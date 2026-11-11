@@ -10,7 +10,8 @@
 //   `sealed` under its turning alarm; a shut door stays shut. Under reduced motion the door is
 //   `sealed_0` at once, still.
 import type { CompiledMapDef } from '../../content/compiled.ts';
-import type { IdSpace, ScriptFlags } from '../../content/types.ts';
+import type { IdSpace } from '../../content/types.ts';
+import type { ScriptFlags } from '../../sim/index.ts';
 import type { DeepReadonly } from '../../shared/types.ts';
 
 /** The door's sprite. */

@@ -88,7 +88,7 @@ export const waves = defineWaves([
       g('riftmoth', 1, 'sky_east', OPEN + 6),
     ],
   },
-  // W7 · Undertows ×3 [X]
+  // W7 · Undertows ×3 (the Den’s wave; burrowing is intel here, map.ts `softExempt`)
   {
     countdownSec: COUNTDOWN,
     noCall: true,

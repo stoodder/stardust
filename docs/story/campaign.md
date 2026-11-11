@@ -141,7 +141,7 @@ Between A3M2's revocation and A3M4, slot 1 holds only Scanner Sweep if the playe
 | Maw | A3M1 W4 | A3M1 W7, W12 | A3M3, A3M6 | Gathers refugees on escorts |
 | Compliance Drone | A3M2 W3 | A3M2 W4, W6 | A3M4, A3M5 (boss hangar), A3M6, FIN | Everglow Security debut |
 | Expediter | A3M2 W5 | A3M2 W6, W9 | A3M4, A3M5, A3M6 | |
-| Undertow | A3M3 W3 | A3M3 W7 | FIN (W6, W16, Unsung phase 3) | |
+| Undertow | A3M3 W3 | A3M3 W7 | FIN (W6, W16, Unsung phase 3) | Intel at A3M3 (`softExempt`, §4.8); the burrowed exam is the finale's |
 | Liability-Class Enforcer | A3M4 W2 | A3M4 W8 | A3M5, FIN | |
 | Silencer | A3M4 W4 | A3M4 W6, W9 | A3M5, FIN (Unsung phase 4) | First hushing; System Reboot given first |
 | Maintenance Associate | A3M5 W2 | A3M5 W6 | FIN | |
@@ -264,7 +264,9 @@ New threats per map under §3 (≤ 2), and the other new things that satisfy "so
 
 ### 4.8 Counter coverage
 
-Per map: the **threat intel** (`threatIntel`: every trait present in the waves, shown as icons), the **required counters** (`requiredCounters`: ≤ 3 categories from [enemies.md §3.1](../design/enemies.md#31-counter-categories), each backed by one `noCounterBuild` that must lose; the builds are in each map's act-file entry, and what counts as an answer, by tier, spec, and cast, is in [enemies.md §3.1](../design/enemies.md#31-counter-categories)), and how the guarantee in [progression.md §8](../design/progression.md#8-tower-acquisition) holds on the default path ([enemies.md §7](../design/enemies.md#7-wave-design-rules)). An enemy whose category-mapped traits are all outside the required set is **soft**: soft enemies make up ≤ 15% of any wave's threat (a map's `teach: true` wave for a new soft trait is exempt), intel-only traits never make an enemy soft, and fleeing groups count for none (§3). Licensing must cost ≤ the previous map's first-clear Stardust (§4.9). A map adds at most one new category; the **new** column shows it.
+Per map: the **threat intel** (`threatIntel`: every trait present in the waves, shown as icons), the **required counters** (`requiredCounters`: ≤ 3 categories from [enemies.md §3.1](../design/enemies.md#31-counter-categories), each backed by one `noCounterBuild` that must lose; the builds are in each map's act-file entry, and what counts as an answer, by tier, spec, and cast, is in [enemies.md §3.1](../design/enemies.md#31-counter-categories)), and how the guarantee in [progression.md §8](../design/progression.md#8-tower-acquisition) holds on the default path ([enemies.md §7](../design/enemies.md#7-wave-design-rules)). An enemy whose category-mapped traits are all outside the required set is **soft**: soft enemies make up ≤ 15% of any wave's threat (a map's `teach: true` wave for a new soft trait is exempt, and so are the traits a map lists in `softExempt`, [maps.md §6.2](../design/maps.md#62-threat-budget-planning-tool)), intel-only traits never make an enemy soft, and fleeing groups count for none (§3). Licensing must cost ≤ the previous map's first-clear Stardust (§4.9). A map adds at most one new category; the **new** column shows it.
+
+**Burrowed is required nowhere yet.** A3M3 introduces the Undertow and doom-scripts it behind Bricks, so its burrowing is intel there (`softExempt`), and the Scuttle Den stays in its par as the elegant answer. The burrowed exam is the finale's, where the Undertows return (§4.3), but FIN already requires its three (Air, Jam, Splash; the cap is 3) and its act file keeps burrowing soft, so the finale's design must still make room for it (D141).
 
 | Map | Threat intel | Required counters | New | Soft here | Guaranteed answer (owned, free, or affordable) |
 |---|---|---|---|---|---|
@@ -281,7 +283,7 @@ Per map: the **threat intel** (`threatIntel`: every trait present in the waves, 
 | A2M6 | Splitting, Hollow clusters, Flying + Phasing | Air, Splash | — | — | Skyhook, Rivet, Prism (gift); Thumper |
 | A3M1 | Gathering, Armored, Flying + Phasing, Splitting, Hollow clusters, Rift | Splash, Air | — | — | Thumper, Zapcoil; Skyhook; Scuttle Den (gift) |
 | A3M2 | Armored, Haste aura, Splitting, Hollow clusters, Rift | Armor, Splash | — | — | Harpoon (licensed before this map; 250 ≤ 280), Prism; Thumper or Zapcoil; survives either Everglow class revoked |
-| A3M3 | Burrowing, Armored, Gathering, Splitting, Hollow clusters, Flying + Phasing, Rift | Burrowed, Air, Splash | burrowed | — | Scuttle Den; non-Everglow air (Zapcoil, Prism, Harpoon); Thumper (the class not revoked) or Zapcoil |
+| A3M3 | Burrowing, Armored, Gathering, Splitting, Hollow clusters, Flying + Phasing, Rift | Air, Splash | — | — (the Undertows' burrowing and armor are `softExempt`) | Non-Everglow air (Zapcoil, Prism, Harpoon); Thumper (the class not revoked) or Zapcoil |
 | A3M4 | Jammer, Heavy armor, Armored, Haste aura, Flying + Phasing, Splitting (light), Hollow clusters (light), Rift | Jam, Armor, Air | jam | Mote and Fracture screens | System Reboot (free), Hum Choir (gift by now on both C1 paths); Harpoon, Prism, Gloop (warren), the jailbroken class; Rivet, Harpoon, Mindspike |
 | A3M5 | Jammer, Healer aura, Heavy armor, Armored, Haste aura, Splitting, Hollow clusters, Boss | Jam, Armor, Splash | — | — | System Reboot (not under Rewrite), Hum Choir; Harpoon, Prism, Gloop (warren); Thumper |
 | A3M6 | Flying + armored, Cloaked + armored, Armored, Flying + Phasing, Gathering, Haste aura, Hollow clusters (light), Rift, Boss | Air, Detection, Armor | — | Mote screens | Sproing (gift A3M5), Harpoon; Lookout or Lantern; Harpoon, Prism |

@@ -19,6 +19,8 @@ export class FrameGlow {
   readonly img: Phaser.GameObjects.Image;
   /** The body's frame the glow shows (its texture frame's name), or '' for none yet. */
   #shown = '';
+  /** The shown frame has no glow. */
+  #none = true;
   /** The glow's strength (0–1), times the body's own alpha. */
   #strength = 1;
 
@@ -54,15 +56,14 @@ export class FrameGlow {
       this.#shown = name;
       const frame = name.slice(name.lastIndexOf(':') + 1);
       const ref = this.#sprites.glowFrame(this.#id, frame, this.#variant);
-      if (ref === null) {
-        img.setData('none', true);
-      } else {
+      this.#none = ref === null;
+      if (ref !== null) {
         const a = this.#sprites.frameAnchor(this.#id, `${frame}@glow`);
-        img.setTexture(ref.texture, ref.frame).setDisplayOrigin(a.x, a.y).setData('none', false);
+        img.setTexture(ref.texture, ref.frame).setDisplayOrigin(a.x, a.y);
       }
     }
     const alpha = this.#strength * body.alpha;
-    const on = body.visible && alpha > 0 && img.getData('none') !== true;
+    const on = body.visible && alpha > 0 && !this.#none;
     if (img.visible !== on) img.setVisible(on);
     if (!on) return;
     if (img.x !== body.x || img.y !== body.y) img.setPosition(body.x, body.y);

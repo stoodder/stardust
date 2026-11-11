@@ -2,7 +2,9 @@
 // core white for 2 frames; at low integrity the heart's glow halo turns `red.3` and the orb pulses
 // `red.3` ↔ `red.4` at 1 Hz (a steady `red.4` under reduced motion); and while a tower stands on a
 // tile the core's sprite hides, the core draws at 60% so the tower shows through. The leak's ring,
-// shake, and "−N" are FxView's; the HUD meter has its own flash.
+// shake, and "−N" are FxView's; the HUD meter has its own flash. A3M3's door cores are drawn as
+// blast doors (BlastDoorView, T630b): on those tiles the core keeps its place for a leak's effects
+// and fades a door that hides a tower, but wears no flash or red heart.
 import * as Phaser from 'phaser';
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
@@ -85,7 +87,8 @@ interface CoreParts {
   readonly y: number;
   /** GroundView's prop sprite, or null if the map drew none here. */
   readonly prop: Phaser.GameObjects.Sprite | null;
-  readonly flash: Phaser.GameObjects.Image;
+  /** The leak flash (null on a door core: BlastDoorView draws the door). */
+  readonly flash: Phaser.GameObjects.Image | null;
   /** Low integrity: the red halo and the pulsing orb (orb null on the fallback). */
   readonly halo: Phaser.GameObjects.Image | null;
   readonly orb: Phaser.GameObjects.Image | null;
@@ -98,12 +101,16 @@ export class CoreView {
   readonly #cores: CoreParts[] = [];
   #flashFrames = 0;
 
-  /** `props`: GroundView's core props by tile index (drawGround's result). */
+  /**
+   * `props`: GroundView's core props by tile index (drawGround's result); `doors`: the core tiles
+   * drawn as blast doors (BlastDoorView's `tiles`).
+   */
   constructor(
     ctx: ViewContext,
     grid: CoreGrid,
     reducedMotion: () => boolean,
     props: ReadonlyMap<number, Phaser.GameObjects.Sprite> = new Map(),
+    doors: ReadonlySet<number> = new Set(),
   ) {
     this.#reducedMotion = reducedMotion;
     const { scene, sprites, layers, origin } = ctx;
@@ -129,6 +136,20 @@ export class CoreView {
       const col = i % grid.cols;
       const row = (i - col) / grid.cols;
       gridToScreen(col + 0.5, row + 0.5, origin, pos);
+      if (doors.has(i)) {
+        // A blast door (T630b): no flash or heart; it fades a tower behind it like a core.
+        const doorHeight = sprites.meta('prop.blast_door').anchor.y;
+        this.#cores.push({
+          x: col + 0.5,
+          y: row + 0.5,
+          prop: props.get(i) ?? null,
+          flash: null,
+          halo: null,
+          orb: null,
+          behind: tilesBehind(grid, col, row, doorHeight),
+        });
+        return;
+      }
       const flash = scene.make
         .image({}, false)
         .setTexture(f.texture, f.frame)
@@ -175,7 +196,7 @@ export class CoreView {
   /** A leak: the core flashes white. */
   leak(): void {
     this.#flashFrames = LEAK_FLASH_FRAMES;
-    for (const c of this.#cores) c.flash.setVisible(true);
+    for (const c of this.#cores) c.flash?.setVisible(true);
   }
 
   /**
@@ -196,8 +217,8 @@ export class CoreView {
       }
       const alpha = hides ? OCCLUDING_ALPHA : 1;
       if (c.prop !== null && c.prop.alpha !== alpha) c.prop.setAlpha(alpha);
-      if (flashEnds) c.flash.setVisible(false);
-      c.flash.setAlpha(alpha);
+      if (flashEnds) c.flash?.setVisible(false);
+      c.flash?.setAlpha(alpha);
       c.halo?.setVisible(low).setAlpha(alpha);
       if (c.orb !== null) {
         c.orb.setVisible(low).setAlpha(alpha);
