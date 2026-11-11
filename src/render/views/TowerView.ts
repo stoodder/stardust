@@ -9,6 +9,12 @@
 // plays its fire anim on every shot (T221: `fire_<facing>` with its tier-2 `_t2` or spec suffix;
 // a Rivet Storm's spins through its `_spin` frame), seen as its reload restarting, then settles
 // back on its facing's still frame.
+// T630a (towerLook.ts): a head sings in its view's voice where its sprite authors one (every Choir
+// sings Thrum's ring, `hum_thrum`, once the save holds `spared_quiet_wave`); an idle head with a
+// `fire` anim (the Stasis Bloom) plays it once on each pulse (its reload jumping), then idles
+// again; and a revoked tower powers down under its stamp (`powerDown`, RevokedView): dark, glows
+// out, its anim held, then folding into its base and the ground (a stepped fade under reduced
+// motion).
 import * as Phaser from 'phaser';
 import type { SpriteId } from '../../content/sprites/index.ts';
 import type { SpriteSource } from '../sprites/SpriteSource.ts';
@@ -21,7 +27,6 @@ import {
   baseFrame,
   headStyle,
   headSuffix,
-  idleAnim,
   spriteId,
   type Facing,
   type HeadStyle,
@@ -30,6 +35,7 @@ import {
 import { HOLD_TINT_COLOR, holdMarkerImage, tintOf } from './holdMarker.ts';
 import { variantName, type ViewContext } from './ViewContext.ts';
 import { hasAnim } from './spriteInfo.ts';
+import { foldSinkPx, idleFire, POWER_DOWN_COLOR, powerDownLook, voicedIdle } from './towerLook.ts';
 import type { PooledView } from './ViewPool.ts';
 
 /** The tower fields a view reads (a live sim Tower satisfies it). */
@@ -59,8 +65,9 @@ const GLOW_SUFFIX = '@glow';
 const HEAD_DEPTH_EPS = 0.00005;
 /** `white.1`: the upgrade flash's fill tint. */
 const FLASH_COLOR = 0xffffff;
-/** A holding tower's multiply tint. */
+/** A holding tower's multiply tint, and a powered-down one's. */
 const HOLD_TINT = tintOf(HOLD_TINT_COLOR);
+const POWER_TINT = tintOf(POWER_DOWN_COLOR);
 /** The pause plate's texture key (registered once per game). */
 const HOLD_MARKER_KEY = 'overlay.hold_fire';
 /** Clear pixels between the tower's top and the pause plate. */
@@ -145,9 +152,20 @@ export class TowerView implements PooledView {
   #fireAnimsKey = '';
   /** The aiming head's still frame for its facing (a shot settles back on it). */
   #still: { readonly texture: string; readonly frame: string } | null = null;
+  /** The voice its idle head sings in (towerLook.ts `voicedIdle`), or null. */
+  readonly #voice: string | null;
+  /** An idle head's shot anim key ('' none), and whether it is playing (it idles again after). */
+  #idleFireAnim = '';
+  #idleFiring = false;
+  /** Powered down (revoked): dark, glows out, anim held; the fold's sink now (px). */
+  #powered = true;
+  #sinkHead = 0;
+  #sinkBase = 0;
 
-  constructor(ctx: ViewContext) {
+  /** `voice`: the voice an idle head sings in where its sprite has one (null: its own idle). */
+  constructor(ctx: ViewContext, voice: string | null = null) {
     this.#ctx = ctx;
+    this.#voice = voice;
     const { scene, layers } = ctx;
     this.#base = scene.make.image({}, false);
     this.#head = scene.make.sprite({}, false);
@@ -157,11 +175,14 @@ export class TowerView implements PooledView {
     layers.world.add([this.#base, this.#head]);
     layers.vfx.add([this.#baseGlow, this.#headGlow]);
     layers.overlay.add(this.#hold);
-    // A finished shot settles back on the facing's still frame.
+    // A finished shot settles back on the facing's still frame; an idle head's goes back to idling.
     this.#head.on(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
       const still = this.#still;
       if (this.#headStyle.kind === 'aim' && still !== null) {
         this.#head.setTexture(still.texture, still.frame);
+      } else if (this.#idleFiring) {
+        this.#idleFiring = false;
+        if (this.#powered) this.#refreshFrames(true);
       }
     });
     this.release();
@@ -253,6 +274,7 @@ export class TowerView implements PooledView {
 
   /** Positions the tower at its sim position (a tile center). Called every frame; cheap if still. */
   sync(t: TowerLike): void {
+    if (!this.#powered) return;
     this.setHolding(t.holdFire === true);
     const cd = t.cooldownTicks ?? 0;
     if (cd > this.#lastCooldown) this.#fire();
@@ -273,9 +295,18 @@ export class TowerView implements PooledView {
     this.#placeHold();
   }
 
-  /** A shot: an aiming head plays its fire anim for its facing once (none authored: no anim). */
+  /**
+   * A shot: an aiming head plays its fire anim for its facing once (none authored: no anim); an
+   * idle head with a shot plays it once, then idles again.
+   */
   #fire(): void {
-    if (this.#headStyle.kind !== 'aim' || this.#headId === null) return;
+    if (this.#headId === null || !this.#powered) return;
+    if (this.#headStyle.kind === 'idle') {
+      if (this.#idleFireAnim === '') return;
+      this.#idleFiring = true;
+      this.#head.play(this.#idleFireAnim);
+      return;
+    }
     const anim = this.#fireAnims[FACING_INDEX[this.#facing]] ?? '';
     if (anim !== '') this.#head.play(anim);
   }
@@ -285,15 +316,58 @@ export class TowerView implements PooledView {
     this.#applyTint();
   }
 
-  /** The resting tint: none, or the hold dim. */
+  /** The resting tint: none, the hold dim, or powered down. */
   #applyTint(): void {
     for (const img of [this.#base, this.#head]) {
       img.clearTint().setTintMode(Phaser.TintModes.MULTIPLY);
-      if (this.#holding) img.setTint(HOLD_TINT);
+      if (!this.#powered) img.setTint(POWER_TINT);
+      else if (this.#holding) img.setTint(HOLD_TINT);
     }
   }
 
+  /**
+   * Powered down `ms` into its revocation stamp (RevokedView holds it through it; towerLook.ts
+   * `powerDownLook`): dark at once, its glows out and its head's anim held, then folding away over
+   * the stamp's end (a stepped fade under reduced motion).
+   */
+  powerDown(ms: number, reducedMotion: boolean): void {
+    if (this.#powered) {
+      this.#powered = false;
+      this.#idleFiring = false;
+      this.#hold.setVisible(false);
+      this.#baseGlow.setVisible(false);
+      this.#headGlow.setVisible(false);
+      if (this.#head.anims.isPlaying) this.#head.anims.pause();
+      this.#endFlash();
+    }
+    const look = powerDownLook(ms, reducedMotion);
+    const sink = foldSinkPx(look.fold, this.#head.frame.height, this.#base.frame.height);
+    if (this.#base.alpha !== look.alpha) {
+      this.#base.setAlpha(look.alpha);
+      this.#head.setAlpha(look.alpha);
+    }
+    if (sink.head === this.#sinkHead && sink.base === this.#sinkBase) return;
+    // Each part sinks by its own px and loses that many rows off its foot: it retracts into it.
+    this.#base.y += sink.base - this.#sinkBase;
+    this.#head.y += sink.base - this.#sinkBase + sink.head - this.#sinkHead;
+    this.#sinkHead = sink.head;
+    this.#sinkBase = sink.base;
+    cropFoot(this.#base, sink.base);
+    cropFoot(this.#head, sink.head + sink.base);
+  }
+
+  /** Whether it is powered down (revoked, under its stamp). */
+  get poweredDown(): boolean {
+    return !this.#powered;
+  }
+
   release(): void {
+    this.#powered = true;
+    this.#idleFiring = false;
+    this.#sinkHead = 0;
+    this.#sinkBase = 0;
+    this.#base.setCrop().setAlpha(1);
+    this.#head.setCrop().setAlpha(1);
     this.#holding = false;
     this.#hold.setVisible(false);
     this.#endFlash();
@@ -345,8 +419,11 @@ export class TowerView implements PooledView {
         this.#head.setTexture(h.texture, h.frame).setDisplayOrigin(ha.x, ha.y);
         setGlow(this.#headGlow, sprites, this.#headId, look);
       } else {
-        // An idle head plays its spec's own anim once specialized (T430b): a change restarts it.
-        const name = idleAnim(this.#headId, this.#headStyle.anim, this.#spec);
+        // An idle head plays its spec's own anim once specialized (T430b), in its view's voice
+        // (T630a): a change restarts it. Its shot, if it has one, follows the spec.
+        const name = voicedIdle(this.#headId, this.#headStyle.anim, this.#spec, this.#voice);
+        const fire = idleFire(this.#headId, this.#spec);
+        this.#idleFireAnim = fire === '' ? '' : sprites.anim(this.#headId, fire, variant);
         if (restartIdle || name !== this.#idleName) {
           this.#idleName = name;
           this.#head.play(sprites.anim(this.#headId, name, variant));
@@ -412,4 +489,14 @@ function setGlow(
   }
   const a = sprites.frameAnchor(id, `${frame}${GLOW_SUFFIX}`);
   glow.setTexture(ref.texture, ref.frame).setDisplayOrigin(a.x, a.y).setVisible(true);
+}
+
+/** Crops `img`'s bottom `px` rows off (0: whole again), so it retracts into its foot as it sinks. */
+function cropFoot(img: Phaser.GameObjects.Image | Phaser.GameObjects.Sprite, px: number): void {
+  if (px <= 0) {
+    img.setCrop();
+    return;
+  }
+  const f = img.frame;
+  img.setCrop(0, 0, f.width, Math.max(0, f.height - px));
 }

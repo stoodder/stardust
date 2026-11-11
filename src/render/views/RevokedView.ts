@@ -1,17 +1,20 @@
-// The LICENSE REVOKED stamp (design/towers.md § 9; T606, minimal; T630a polishes the fold). A tower
-// of a revoked class stays on screen, powered down (it no longer aims or fires: the sim has folded
-// it away), for STAMP_MS under the stamp (`icon.stamp.license_revoked`, T640b: "LICENSE" over
-// "REVOKED" in `red.3` on `white.0` paper, art-direction §7), then folds away: its view is
+// The LICENSE REVOKED stamp (design/towers.md § 9; T606, polished by T630a). A tower of a revoked
+// class stays on screen for STAMP_MS under the stamp (`icon.stamp.license_revoked`, T640b:
+// "LICENSE" over "REVOKED" in `red.3` on `white.0` paper, art-direction §7), powered down (the sim
+// has folded it away, so it no longer aims or fires): its view goes dark, its glows out and its
+// head held on its last frame, and over the stamp's end it folds down into its base and the ground
+// (TowerView `powerDown`, towerLook.ts; a stepped fade under reduced motion). Then its view is
 // released. The stamp lands with a slam (twice its size, then its own, over SLAM_MS: whole-pixel
 // scales only; reduced motion places it at once) and fades over its last FADE_MS. The Orbital
 // Strike's UPLINK REVOKED is the HUD's (app/revoked.ts; `icon.stamp.uplink_revoked`).
 // Allocation-free per frame: a small fixed pool of stamp images.
 import type * as Phaser from 'phaser';
 import { gridToScreen, type Vec2 } from '../iso.ts';
+import { POWER_DOWN_MS } from './towerLook.ts';
 import type { ViewContext } from './ViewContext.ts';
 
 /** How long a revoked tower stays under its stamp before it folds away (towers.md § 9: 1 s). */
-export const STAMP_MS = 1000;
+export const STAMP_MS = POWER_DOWN_MS;
 /** The stamp's landing, from SLAM_SCALE down to 1. */
 export const SLAM_MS = 120;
 const SLAM_SCALE = 1.6;
@@ -26,7 +29,9 @@ const STAMP_SPRITE = 'icon.stamp.license_revoked';
 
 /** The towers' views as the stamp holds them (BattleScene's ViewPool<TowerView>). */
 export interface HeldTowers {
-  get(uid: number): { stamp: number } | undefined;
+  get(
+    uid: number,
+  ): { stamp: number; powerDown(ms: number, reducedMotion: boolean): void } | undefined;
 }
 
 interface Stamp {
@@ -92,14 +97,18 @@ export class RevokedView {
   }
 
   /**
-   * Keeps each stamped tower's view on screen through its stamp (BattleScene calls it with the
-   * sync pass's stamp, before the sweep): its view is released the frame after the stamp ends.
+   * Keeps each stamped tower's view on screen through its stamp, powered down and folding
+   * (BattleScene calls it with the sync pass's stamp, before the sweep): its view is released the
+   * frame after the stamp ends.
    */
   hold(towers: HeldTowers, syncStamp: number): void {
+    const reduced = this.#reducedMotion();
     for (const s of this.#stamps) {
       if (!s.active) continue;
       const v = towers.get(s.uid);
-      if (v !== undefined) v.stamp = syncStamp;
+      if (v === undefined) continue;
+      v.stamp = syncStamp;
+      v.powerDown(s.ms, reduced);
     }
   }
 

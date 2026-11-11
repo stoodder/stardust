@@ -108,6 +108,7 @@ import { BloomView } from '../views/BloomView.ts'; // T608
 import { SwarmView } from '../views/SwarmView.ts'; // T604
 import { TrapView } from '../views/TrapView.ts'; // T604
 import { RevokedView } from '../views/RevokedView.ts'; // T606
+import { towerVoice } from '../views/towerLook.ts'; // T630a
 import { MindView } from '../views/MindView.ts';
 import { MarkView } from '../views/MarkView.ts';
 import { BossBarView } from '../views/BossBarView.ts';
@@ -387,7 +388,9 @@ export class BattleScene extends Phaser.Scene {
     const wreckProps = new Map<number, Phaser.GameObjects.Sprite>();
     const coreProps = drawGround(ctx, map, map.env, wreckProps);
     this.#airLanes = new AirLaneView(ctx, map, prefersReducedMotion);
-    this.#towers = new ViewPool(() => new TowerView(ctx));
+    // T630a: every Choir sings Thrum's ring once she was spared (towerLook.ts `towerVoice`).
+    const voice = towerVoice(sim.config.scriptFlags);
+    this.#towers = new ViewPool(() => new TowerView(ctx, voice));
     this.#leaves = new LeaveFx(ctx);
     this.#enemies = new ViewPool(() => new EnemyView(ctx, this.#leaves, this.#keepClear));
     this.#projectiles = new ViewPool(() => new ProjectileView(ctx));
