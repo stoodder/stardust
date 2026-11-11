@@ -450,7 +450,7 @@ export class BattleScene extends Phaser.Scene {
     this.#hollow = new HollowView(ctx, map, prefersReducedMotion, pulseOn); // T602
     this.#blocker = new BlockerView(ctx, prefersReducedMotion); // T605
     this.#choir = new ChoirView(ctx, prefersReducedMotion, anchors); // T607
-    this.#bloom = new BloomView(ctx); // T608
+    this.#bloom = new BloomView(ctx, prefersReducedMotion); // T608, T630a
     this.#swarm = new SwarmView(ctx, anchors, prefersReducedMotion); // T604
     this.#traps = new TrapView(ctx, this.#fx, prefersReducedMotion); // T604
     this.#revoked = new RevokedView(ctx, prefersReducedMotion); // T606
@@ -584,6 +584,7 @@ export class BattleScene extends Phaser.Scene {
       this.#shields.bind(bus, () => sim.state.enemies),
       this.#blinks.bind(bus, () => sim.state.enemies),
       this.#phases.bind(bus),
+      this.#bloom.bind(bus), // T630a: Gravity Well's pull streak
       this.#mind.bind(bus),
       this.#everglow.bind(bus, sim.config.content.enemies, presentationOfMap(map).skitterkinDeath),
       this.#harpoon.bind(bus, (uid) => {
@@ -681,7 +682,7 @@ export class BattleScene extends Phaser.Scene {
     this.#hollow.update(dt, state.wave, state.enemies, state.allies); // T602
     this.#blocker.update(dt, state); // T605
     this.#choir.update(state, state.tick); // T607
-    this.#bloom.update(state); // T608
+    this.#bloom.update(state, dt); // T608; T630a: its burst ring and pull streaks
     this.#swarm.update(state.allies, state.enemies); // T604
     this.#traps.update(state.zones, state.trapSprung); // T604
     this.#revoked.update(dt); // T606

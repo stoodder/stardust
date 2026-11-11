@@ -299,10 +299,10 @@ Every map task: par in Act III's band on its reference profile, robustness shift
 - [x] **T640b** Sprites: the Scuttle Den (a home), the Hum Choir (a ring; Thrum's variant), the Stasis Bloom + spec frames; icons (Underfoot, REVOKED stamps); glyphs (`consumer`, haste, Act III's `burrow`).
 - [x] **T612** Star map and kickers: T601b's Act III nodes and accent (the finale's nodes and `dawn` → M8), T601c's Act III kickers and `RunResult.meter`, A3M4 teased.
 - [~] **T630a** Unit render: tendrils and growth, swarmling dash/latch, the Underfoot trap, the haste ring, the Undertow ripple, the blocker's bar, fold-away; T567's view headers and MarkView's anchor.
-- [~] **T640c** Props and tiles: the Preserve, A1M4 at night, the Gap; the `act3` ground; rift cracks (closed/opening/open).
+- [x] **T640c** Props and tiles: the Preserve, A1M4 at night, the Gap; the `act3` ground; rift cracks (closed/opening/open).
 - [x] **T609** Shelves: Skitterkin specs in Engineering (3 Intel), the Bloom's Xenotech row ("still growing it" if the lever is pulled), T568's card copy, T567's `copy.ts` header.
 - [ ] **T609b** Bramble's Rapport (`rapport_bramble`, stocked after A3M1: Underfoot first plays there): progression.md (top, §7.3) says "the other two Rapports join with their abilities" and §7's Intel total counts all five; add the row with QUILL's copy and `hideUntilStocked`, or log a deliberate gap. Zibzab's Rapport waits for his ability (M7).
-- [ ] **T630b** World render: rift telegraphs a wave ahead, the shuttle lift-off, blast doors, billboards, Act III's tint; T567's Tidybot items (`tidyDock`, duplicate stops).
+- [~] **T630b** World render: rift telegraphs a wave ahead, the shuttle lift-off, blast doors, billboards, Act III's tint; T567's Tidybot items (`tidyDock`, duplicate stops).
 - [~] **T631** HUD: the Holdout meter (no Lost pips), the hidden preview + QUILL's leak line, REVOKED slots, Underfoot aim, the Choir aura preview, the Den's swarmling count, Bramble's objective tracker.
 - [x] **T650** Audio: Act III's silence-forward bed (no jingle; the Hollow's unravel silent), the Maw, swarmlings, Underfoot, drones/Expediter, the revocation stamp, Sterling's cue, the SEAL's loop, the Leaving Song (six notes of "Everglow Bright", sung), the Choir's harmony line, C2's base sting (T569).
 - [ ] **T660** The Act III curve: A3M1 ~66 (Escort chain), A3M2 ~63 (Defend chain), A3M3's floor; Story wins; 12–15 min; spared/cleared, each revoked class, both doors; the Lantern probe (T568).
