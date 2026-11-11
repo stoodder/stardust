@@ -11,9 +11,6 @@ import {
   LASER_MAX_PX,
   LASER_MIN_PX,
   laserWidth,
-  PLATE_EDGE,
-  PLATE_FILL,
-  plateSkew,
   RETICLE_FROM_PX,
   RETICLE_TO_PX,
   reticlePx,
@@ -28,7 +25,7 @@ import {
 
 describe('takeoverLook (T707)', () => {
   it('uses master palette colors', () => {
-    for (const c of [RING_COLOR, RING_OUTLINE, UNDER, LASER_COLOR, PLATE_FILL, PLATE_EDGE]) {
+    for (const c of [RING_COLOR, RING_OUTLINE, UNDER, LASER_COLOR]) {
       expect(() => rgbOf(c)).not.toThrow();
     }
   });
@@ -54,12 +51,6 @@ describe('takeoverLook (T707)', () => {
     expect([laserWidth(0), laserWidth(1)]).toEqual([LASER_MIN_PX, LASER_MAX_PX]);
     expect([reticlePx(0), reticlePx(1)]).toEqual([RETICLE_FROM_PX, RETICLE_TO_PX]);
     expect(reticlePx(0.5)).toBeLessThan(RETICLE_FROM_PX);
-  });
-
-  it('each plate lies a little differently, within 2 px', () => {
-    const skews = [0, 1, 2, 3].map(plateSkew);
-    expect(new Set(skews).size).toBeGreaterThan(1);
-    for (const s of skews) expect(Math.abs(s)).toBeLessThanOrEqual(2);
   });
 
   it('T730a: the lens and the door sit where the sprite draws them, mirrored for sw and nw', () => {

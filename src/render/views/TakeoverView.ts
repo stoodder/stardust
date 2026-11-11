@@ -1,14 +1,14 @@
-// "Shareholder Value" (T707's minimal view, polished by T730a; takeoverLook.ts has the rules; T730b
-// the crash site's landing): the hazard frame and launch gauge on the hangar door (where the
-// sprite's `tell` opens it, by the boss's drawn facing: UnitAnchors) before each launch, Hostile
-// Takeover's laser from the dish's lens to each tower it picked with brackets closing on it, the
-// jettison's burst, and its plates lying on their opened `crash_*` tiles. The door and the laser
-// redraw each frame into one Graphics on the vfx layer; the plates into one on the decal layer,
-// only when a tile opens. Allocation-free per frame: the scratch points are module-level.
+// "Shareholder Value" (T707's minimal view, polished by T730a; takeoverLook.ts has the rules): the
+// hazard frame and launch gauge on the hangar door (where the sprite's `tell` opens it, by the
+// boss's drawn facing: UnitAnchors) before each launch, Hostile Takeover's laser from the dish's
+// lens to each tower it picked with brackets closing on it, and the jettison's burst. Its plates
+// flying off and landing on their opened `crash_*` tiles are PlatformSiteView's (T730b). The door
+// and the laser redraw each frame into one Graphics on the vfx layer. Allocation-free per frame:
+// the scratch points are module-level.
 import type * as Phaser from 'phaser';
 import type { CompiledBossPhase } from '../../content/compiled.ts';
 import { BOSS_ABILITY_TELL_SEC } from '../../content/rules.ts';
-import type { GridPos, IdSpace } from '../../content/types.ts';
+import type { IdSpace } from '../../content/types.ts';
 import type { Bus } from '../../shared/bus.ts';
 import { secToTicks } from '../../shared/time.ts';
 import type { DeepReadonly } from '../../shared/types.ts';
@@ -36,9 +36,6 @@ import {
   laserWidth,
   lensOffset,
   RING_COLOR,
-  PLATE_EDGE,
-  PLATE_FILL,
-  plateSkew,
   reticlePx,
   tellProgress,
   UNDER,
@@ -56,7 +53,6 @@ interface Pool<T> {
 export interface TakeoverState {
   readonly enemies: Pool<Enemy>;
   readonly towers: Pool<Tower>;
-  readonly tilesOpened: readonly string[];
   readonly tick?: number;
 }
 
@@ -66,8 +62,6 @@ const INK = hexOf(UNDER);
 const DOOR = hexOf(DOOR_COLOR);
 const GLOW = hexOf(LASER_GLOW);
 const WHITE = hexOf('white.1');
-const FILL = hexOf(PLATE_FILL);
-const EDGE = hexOf(PLATE_EDGE);
 const DOOR_TELL_TICKS = secToTicks(BOSS_ABILITY_TELL_SEC);
 /** The laser hits a tower this far above its tile's centre (px). */
 const TOWER_PX = 8;
@@ -104,55 +98,31 @@ function phaseOf(e: DeepReadonly<Enemy>): DeepReadonly<CompiledBossPhase> | null
   return boss === null || e.bossPhase === 0 ? null : (boss.phases[e.bossPhase - 1] ?? null);
 }
 
-/** Traces a diamond centred at (x, y), `hw` × `hh` half-sizes, its corners pushed `skew` px. */
-function quad(
-  g: Phaser.GameObjects.Graphics,
-  x: number,
-  y: number,
-  hw: number,
-  hh: number,
-  skew: number,
-): void {
-  g.beginPath();
-  g.moveTo(x - hw, y + skew);
-  g.lineTo(x + skew, y - hh);
-  g.lineTo(x + hw, y - skew);
-  g.lineTo(x - skew, y + hh);
-  g.closePath();
-}
-
 export class TakeoverView {
   readonly #ctx: ViewContext;
-  readonly #markers: Readonly<Record<string, GridPos>>;
   readonly #liftPx: (col: number, row: number) => number;
   readonly #anchors: UnitAnchors;
   readonly #fx: TransientFx | null;
   readonly #reducedMotion: () => boolean;
   readonly #g: Phaser.GameObjects.Graphics;
-  readonly #plates: Phaser.GameObjects.Graphics;
-  #platesDrawn = 0;
   #lasers = 0;
   #doors = 0;
-  /** Lasers, jettisons, and plates seen since the view was made (smoke's checks). */
+  /** Lasers and jettisons seen since the view was made (smoke's checks). */
   lasersSeen = 0;
   jettisons = 0;
 
   constructor(
     ctx: ViewContext,
-    markers: Readonly<Record<string, GridPos>>,
     liftPx: (col: number, row: number) => number,
     anchors: UnitAnchors = NO_ANCHORS,
     fx: TransientFx | null = null,
     reducedMotion: () => boolean = () => false,
   ) {
     this.#ctx = ctx;
-    this.#markers = markers;
     this.#liftPx = liftPx;
     this.#anchors = anchors;
     this.#fx = fx;
     this.#reducedMotion = reducedMotion;
-    this.#plates = ctx.scene.make.graphics({}, false);
-    ctx.layers.decal.add(this.#plates);
     this.#g = ctx.scene.make.graphics({}, false);
     ctx.layers.vfx.add(this.#g);
   }
@@ -178,7 +148,7 @@ export class TakeoverView {
     };
   }
 
-  /** Each frame: the doors and lasers under way, and any plate newly landed. */
+  /** Each frame: the doors and lasers under way. */
   update(state: TakeoverState): void {
     const g = this.#g;
     g.clear();
@@ -216,7 +186,6 @@ export class TakeoverView {
     }
     this.#lasers = lasers;
     this.#doors = doors;
-    if (state.tilesOpened.length !== this.#platesDrawn) this.#drawPlates(state.tilesOpened);
   }
 
   /** The hangar door's hazard frame (blinking on the tell step) and its launch gauge under it. */
@@ -275,40 +244,13 @@ export class TakeoverView {
     g.fillStyle(CORE, 1).fillRect(x - 1, y - 1, 2, 2);
   }
 
-  /** Redraws every opened plate (a tile opens a few times a fight at most). */
-  #drawPlates(opened: readonly string[]): void {
-    const g = this.#plates;
-    g.clear();
-    for (let i = 0; i < opened.length; i++) {
-      const at = this.#markers[opened[i]!]; // i < length
-      if (at === undefined) continue;
-      gridToScreen(at[0] + 0.5, at[1] + 0.5, this.#ctx.origin, a);
-      const skew = plateSkew(i);
-      const hw = HALF_W - 6;
-      const hh = HALF_H - 3;
-      // A slab askew on its tile: its shadow 2 px under it, then the plate and its edge.
-      for (const [drop, color, alpha] of [
-        [2, INK, 0.9],
-        [0, FILL, 1],
-      ] as const) {
-        quad(g, a.x, a.y + drop, hw, hh, skew);
-        g.fillStyle(color, alpha).fillPath();
-      }
-      quad(g, a.x, a.y, hw, hh, skew);
-      g.lineStyle(1, EDGE, 1).strokePath();
-    }
-    this.#platesDrawn = opened.length;
-  }
-
   /** What shows now (the smoke flow's check). */
-  get shown(): { readonly lasers: number; readonly doors: number; readonly plates: number } {
-    return { lasers: this.#lasers, doors: this.#doors, plates: this.#platesDrawn };
+  get shown(): { readonly lasers: number; readonly doors: number } {
+    return { lasers: this.#lasers, doors: this.#doors };
   }
 
   reset(): void {
     this.#g.clear();
-    this.#plates.clear();
-    this.#platesDrawn = 0;
     this.#lasers = 0;
     this.#doors = 0;
   }

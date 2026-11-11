@@ -165,10 +165,10 @@ export function statusMask(statuses: readonly StatusId[]): number {
 
 /** The only jammers (an exhaustive list: adding one needs a decisions.md entry). */
 export const JAMMER_ENEMIES: readonly string[] = ['auditor', 'silencer', 'shareholder_value'];
-export const JAM_MAX_SEC = Number((globalThis as any).process?.env?.JMAX ?? 4); // EXPTMP
+export const JAM_MAX_SEC = 6;
 export const JAM_MIN_TELL_SEC = 1.5;
 /** A tower's jam immunity after a jam ends (3 s: a jammer pack can chain on it; D146 addendum, T720). */
-export const JAM_IMMUNITY_SEC = Number((globalThis as any).process?.env?.JIMM ?? 3); // EXPTMP
+export const JAM_IMMUNITY_SEC = 3;
 /** System Reboot's immunity: longer than a jam's own, so the ability stays the stronger answer. */
 export const REBOOT_IMMUNITY_SEC = 6;
 /**
@@ -181,7 +181,7 @@ export const JAM_MAX_TOWER_SHARE = 0.25;
  * A jammer's first tell may start this long after it spawns, and then as soon as a tower it may
  * jam is in reach (T760): it hushes the first tower it meets, not one 8–10 s down the road.
  */
-export const JAM_FIRST_READY_SEC = Number((globalThis as any).process?.env?.JFR ?? 0); // EXPTMP
+export const JAM_FIRST_READY_SEC = 0;
 /**
  * Hostile Takeover jams `min(TAKEOVER_MAX_TOWERS, floor(JAM_MAX_TOWER_SHARE × towers placed))`
  * towers (D146; T707: enemyAbilities/takeover.ts).

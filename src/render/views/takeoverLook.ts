@@ -1,5 +1,5 @@
 // Everglow's jammers' look (T707's minimal one, polished by T730a; design/enemies.md § 4 and § 6;
-// art-direction.md § 8's `disabler` tell; T730b the crash site): pure rules, unit-tested, applied
+// art-direction.md § 8's `disabler` tell): pure rules, unit-tested, applied
 // by JamRingView (the Auditor's ring) and TakeoverView ("Shareholder Value").
 // - **The Auditor's ring** (its tell): an `orange.3` ring over an `ink.0` under-stroke grows from
 //   the Auditor (`ringTiles`: from RING_START of its reach to all of it as the jams land), with
@@ -17,9 +17,7 @@
 //   the tell step; steady under reduced motion) and under it a launch gauge filling through its
 //   1.5 s (`doorShare`), DOOR_PX wide, so the launch reads big on the hull, below the floaters.
 // - **The jettison:** a burst (fx.explosion) and an `orange.3` ring the platform's size as its
-//   plates blow off (TransientFx).
-// - **The plates** (the jettison): each opened `crash_*` tile shows a `steel.1` slab with a
-//   `steel.3` edge and an `ink.0` outline, set askew per marker (`plateSkew`).
+//   plates blow off (TransientFx). The plates' flight and landing are crashLanding.ts's (T730b).
 import type { ColorName } from '../../content/palettes/master.ts';
 
 export const RING_COLOR: ColorName = 'orange.3';
@@ -28,8 +26,6 @@ export const UNDER: ColorName = 'ink.0';
 export const LASER_COLOR: ColorName = 'red.3';
 export const LASER_CORE: ColorName = 'red.4';
 export const DOOR_COLOR: ColorName = 'orange.3';
-export const PLATE_FILL: ColorName = 'steel.1';
-export const PLATE_EDGE: ColorName = 'steel.3';
 /** The ring's radius as its tell starts, as a share of its reach. */
 export const RING_START = 0.15;
 export const RETICLE_FROM_PX = 14;
@@ -82,11 +78,6 @@ export function reticlePx(progress: number): number {
 /** How far the hangar door has opened (0–1) with `left` ticks of a `tell`-tick tell to go. */
 export function doorShare(left: number, tell: number): number {
   return tellProgress(left, tell);
-}
-
-/** A plate's skew (px, −2..2) on marker `i`: each lies a little differently. */
-export function plateSkew(i: number): number {
-  return ((i * 7 + 3) % 5) - 2;
 }
 
 /** Whether the laser's core runs white (its last third, as the jam comes). */

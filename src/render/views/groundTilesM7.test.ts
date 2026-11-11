@@ -1,10 +1,18 @@
 // M7's decor wiring (T740c): the props A3M4–A3M6 name by marker stand on their tiles with their
 // looks, the gated memorials only under their flag, A3M5's feed lines are its burst-pipe wrecks and
-// its vats burn at full blaze, and A3M6's Dome 1 stands open.
+// its vats burn at full blaze, and A3M6's Dome 1 stands open. T730b: A3M4's generator, Pebble on
+// her rock, the crash site kept bare, and a revisit's spawns.
 import { describe, expect, it } from 'vitest';
 import { compileContent } from '../../content/compile.ts';
 import { RAW_CONTENT } from '../../content/registry.ts';
-import { dressTile, wreckageFrame } from './groundTiles.ts';
+import {
+  coreSprite,
+  dressTile,
+  isPlateMarker,
+  pebblePerches,
+  spawnFrame,
+  wreckageFrame,
+} from './groundTiles.ts';
 import { flagGatedGround } from './flagDressing.ts';
 
 const all = compileContent(RAW_CONTENT).maps;
@@ -92,5 +100,59 @@ describe("A3M6's Dome Row at night", () => {
         anim: null,
       });
     }
+  });
+});
+
+describe('M7’s world render (T730b)', () => {
+  it('draws A3M4’s core as the shelter generator, every other map’s as the core', () => {
+    const a3m4 = map('a3_m04');
+    const i = a3m4.tiles.indexOf('C');
+    const [c, r] = [i % a3m4.cols, Math.floor(i / a3m4.cols)];
+    expect(dressTile(a3m4, c, r).prop).toEqual({
+      sprite: 'prop.generator',
+      frame: 'idle_0',
+      anim: 'idle',
+    });
+    expect(coreSprite('a3_m04')).toBe('prop.generator');
+    for (const id of ['a1_m01', 'a3_m05', 'a3_m06']) expect(coreSprite(id)).toBe('prop.core');
+    expect(coreSprite(undefined)).toBe('prop.core');
+  });
+
+  it('sits Pebble on the Peeker’s rock on A3M6, and leaves A3M2’s Peeker tile bare', () => {
+    expect(propAt(map('a3_m06'), 'peeker')).toEqual({
+      sprite: 'prop.pebble_rock',
+      frame: 'perch_0',
+      anim: 'perch',
+    });
+    expect(pebblePerches('a3_m06')).toBe(true);
+    expect(propAt(map('a3_m02'), 'peeker')).toBeNull();
+    expect(propAt(map('a1_m01'), 'peeker')).toBeNull();
+  });
+
+  it('keeps the crash site’s tiles bare for the plates', () => {
+    const a3m5 = map('a3_m05');
+    for (const id of ['crash_1', 'crash_2', 'crash_3', 'crash_4']) {
+      expect(isPlateMarker(id)).toBe(true);
+      expect(propAt(a3m5, id), id).toBeNull();
+    }
+    expect(isPlateMarker('crash')).toBe(false);
+    expect(isPlateMarker('crash_site_sign')).toBe(false);
+  });
+
+  it('draws a revisit’s own edge spawns as burrows, and only the inner ones as hatches', () => {
+    const spawns = (id: string): string[] => {
+      const g = map(id);
+      const out: string[] = [];
+      g.tiles.forEach((t, k) => {
+        if (t === 'S') out.push(spawnFrame(g, k % g.cols, Math.floor(k / g.cols)));
+      });
+      return out;
+    };
+    // A3M6: A1M1's spawn at the head of its road (inside the band, on A1M1's own edge).
+    expect(spawns('a3_m06')).toEqual(['v0']);
+    // A3M5: the band's sluice and A2M4's road come up out of burrows; the vats' drain is a hatch.
+    expect(spawns('a3_m05').toSorted()).toEqual(['hatch', 'v0', 'v0']);
+    // A2M4 itself as before.
+    expect(spawns('a2_m04').toSorted()).toEqual(['hatch', 'v0']);
   });
 });

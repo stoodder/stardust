@@ -24,6 +24,6 @@ export const auditor = defineEnemy({
   spawnIntervalSec: 1.5,
   traits: ['armored', 'jammer'],
   tells: ['armored', 'disabler'],
-  jam: { kind: 'ring', periodSec: 10, tellSec: 2, radiusTiles: 2, durationSec: 3 },
+  jam: { kind: 'ring', periodSec: 10, tellSec: 2, radiusTiles: 2, durationSec: 4 },
   sprites: { body: 'enemy.auditor', icon: 'icon.enemy.auditor' },
 });

@@ -30,7 +30,7 @@ export const silencer = defineEnemy({
     periodSec: 12,
     tellSec: 2,
     radiusTiles: 2.5,
-    durationSec: 4,
+    durationSec: 6,
     prefer: 'choir',
   },
   sprites: { body: 'enemy.silencer', icon: 'icon.enemy.silencer' },

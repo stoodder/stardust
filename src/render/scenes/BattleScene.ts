@@ -507,7 +507,6 @@ export class BattleScene extends Phaser.Scene {
     this.#rings = new JamRingView(ctx, prefersReducedMotion); // T707
     this.#takeover = new TakeoverView(
       ctx,
-      map.markers,
       (c, r) => this.#liftPx(c, r),
       anchors,
       this.#fx,

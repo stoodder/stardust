@@ -321,7 +321,10 @@ export class WorldGlowView {
   #addProp(prop: Phaser.GameObjects.Sprite | Phaser.GameObjects.Image): void {
     const { scene, layers } = this.#ctx;
     const img = new Phaser.GameObjects.Image(scene, prop.x, prop.y, '__DEFAULT');
-    img.setBlendMode(Phaser.BlendModes.ADD).setDepth(prop.depth + GLOW_DEPTH).setVisible(false);
+    img
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setDepth(prop.depth + GLOW_DEPTH)
+      .setVisible(false);
     layers.world.add(img);
     const p: PropLight = { prop, img, dusk: 0, peak: 1, alpha: 0, shown: '', none: true };
     this.#props.push(p);
