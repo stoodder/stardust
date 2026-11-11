@@ -12,6 +12,12 @@ export interface Baked {
   readonly h: number;
 }
 
+/**
+ * The jailbroken palette (content/palettes/factions.ts; render/views/towerLook.ts's
+ * JAILBROKEN_PALETTE): a jailbroken class's icon variant (T731).
+ */
+export const JAILBROKEN_ICON = 'everglow.jailbroken';
+
 const cache = new Map<string, Baked | null>();
 
 /**

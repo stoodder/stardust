@@ -26,7 +26,8 @@ export const ATTACK_SOUNDS: Readonly<
   // The Scuttle Den (T604) fires no shot: its swarmlings latch (SwarmLatch: their chitter and
   // bite, SWARM_SOUNDS in eventTablesAct3.ts). The row keeps the table whole.
   spawner: { fire: null, land: null },
-  // The Sproing Pad (T704) fires no shot either: its leapers bonk (LeaperBonk; the boing is T750's).
+  // The Sproing Pad (T704) fires no shot either: its leapers bonk (LeaperBonk: LEAPER_SOUNDS'
+  // boing, eventTablesAct3b.ts).
   leaper: { fire: null, land: null },
 };
 
@@ -98,13 +99,17 @@ export const ENEMY_POP_PITCH: Readonly<Partial<Record<string, number>>> = {
   undertow: -5,
   compliance: 1,
   expediter: -1,
-  // M7's units (T700a placeholders, pitched by size; T750 sorts them).
+  // M7's units (T750): Everglow Security's shut down at a size's pitch (the Liability lowest);
+  // the Silencer and the Gathering Maw are Hollow (silent in Act III, unravelling at this pitch
+  // under any other act's dials).
   silencer: -4,
   associate: 0,
   liability: -8,
   gunship: -3,
   blackbudget: 2,
   auditor: -2,
+  gathering_maw: -10,
+  gathering_maw_part: -6,
 };
 
 /** A splitter's death (a Bunchling, `split` in its content): this follows its pop, after `delay` s. */
@@ -134,6 +139,16 @@ export interface BossSounds {
   readonly end: SfxId;
   /** The sting after `end`, or null for an ending that stays hushed (the Penitent's pivot). */
   readonly endCue: CueId | null;
+  /**
+   * A later phase's own sound in place of `phase`, by phase number (null: silent, when the
+   * phase's own event sounds it: the Maw's merge, the platform's jettison).
+   */
+  readonly phases?: Readonly<Partial<Record<number, SfxId | null>>>;
+  /**
+   * A boss beaten with no BossEnded (the Gathering Maw: its merged body dies, enemies.md § 6.1):
+   * the sting its death plays (EnemyDied of this enemy id), unless the map has already ended.
+   */
+  readonly beaten?: CueId;
 }
 /**
  * The default ending's sting: "Everglow Bright" triumphant, stopping a step short of home (Act
@@ -169,10 +184,43 @@ export const BOSS_SOUNDS: Readonly<Partial<Record<string, BossSounds>>> = {
     end: 'penitent_kneel',
     endCue: null,
   },
-  // M7's bosses (T700a placeholders on the default; T750 gives them their own).
-  shareholder_value: DEFAULT_BOSS_SOUNDS,
-  gathering_maw: DEFAULT_BOSS_SOUNDS,
-  gathering_maw_part: DEFAULT_BOSS_SOUNDS,
+  // "Shareholder Value" (T750; sfx/act3b.ts): hydraulics and Sterling's sparkle on its PA as it
+  // arrives; the hangar door grinding open through its launch's tell, and the drones whooshing
+  // out; Hostile Takeover arming (phase 2, the lens and the PA's bing-bong); phase 3 is the
+  // jettison's own (Jettisoned, TAKEOVER_SOUNDS); driven off, its engines limp away and the PA
+  // stutters its chime in a panic (`pa_frantic`).
+  shareholder_value: {
+    arrive: 'sv_arrive',
+    phase: 'sv_takeover',
+    spawnTell: 'sv_hangar',
+    spawn: 'sv_launch',
+    end: 'sv_retreat',
+    endCue: 'pa_frantic',
+    phases: { 3: null },
+  },
+  // The Gathering Maw (T750): three wrong voices swelling; phase 2 (the split's telegraph) strains
+  // them apart, BossSplit tears them (BOSS_SPLIT_SOUNDS) and phase 3's merge slides them back
+  // (BossMerged sounds it). It ends with no BossEnded: its merged body's death plays `beaten`,
+  // the Hollow's voices finishing the phrase in tune. (`end` is never sent.)
+  gathering_maw: {
+    arrive: 'gmaw_arrive',
+    phase: 'gmaw_strain',
+    spawnTell: null,
+    spawn: null,
+    end: 'gmaw_strain',
+    endCue: null,
+    phases: { 3: null },
+    beaten: 'gmaw_beaten',
+  },
+  // Its parts are born mid-fight (no BossPhase of their own); they die silent, the Hollow's way.
+  gathering_maw_part: {
+    arrive: 'gmaw_arrive',
+    phase: 'gmaw_strain',
+    spawnTell: null,
+    spawn: null,
+    end: 'gmaw_strain',
+    endCue: null,
+  },
 };
 
 /** A boss's sounds by enemy id. */
@@ -210,6 +258,16 @@ export const ENEMY_LOOPS: Readonly<
   undertow: { id: 'hollow_hum', everySec: 9 },
   compliance: { id: 'compliance_step', everySec: 0.8 },
   expediter: { id: 'haste_tick', everySec: 0.5 },
+  // M7's (T750): the Silencer and the Gathering Maw hum the jingle wrong like every Hollow unit;
+  // Everglow Security's Liability stomps on hydraulics, the Gunship's rotor chops (one voice for
+  // the flight), and the Maintenance Associate's repair aura hums with a small rising chime, so
+  // the healer can be found by ear. (A hidden Black Budget shimmers: ENEMY_CLOAK_SOUNDS.)
+  silencer: { id: 'hollow_hum', everySec: 9 },
+  gathering_maw: { id: 'hollow_hum', everySec: 9 },
+  gathering_maw_part: { id: 'hollow_hum', everySec: 9 },
+  liability: { id: 'liability_stomp', everySec: 1.1 },
+  gunship: { id: 'gunship_rotor', everySec: 0.4 },
+  associate: { id: 'associate_hum', everySec: 1.6 },
 };
 
 /** Burrowing (D073): digging in and surfacing, for a Digger or a burrowing boss. */
@@ -264,8 +322,8 @@ export const ABILITY_SOUNDS: Readonly<
   // Bramble's Underfoot (T650): the warren digging the trap in, three quick chitters; each unit
   // it catches snaps it (TrapSprung, TRAP_SOUND in eventTablesAct3.ts).
   underfoot: { cast: 'underfoot_cast', land: [] },
-  // System Reboot (T700a placeholder: the sweep's ping; T750 gives it `reboot`).
-  system_reboot: { cast: 'scan_ping', land: [] },
+  // System Reboot (T750): a CRT going dark and booting with a chime, every jam cleared at once.
+  system_reboot: { cast: 'reboot', land: [] },
 };
 
 /** Each ally kind's sounds: as it takes its post (AllySpawned), and per shot (AllyAttacked). */

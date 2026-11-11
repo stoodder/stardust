@@ -7,6 +7,7 @@ import { parseSceneId } from '../content/dialogue/rules.ts';
 import type { SpeakerId } from '../content/dialogue/types.ts';
 import type { JingleVariant } from '../content/presentation.ts';
 import type { CueId } from './music/index.ts';
+import type { SfxId } from './sfx/index.ts';
 
 /**
  * The colony jingle played by the PA outside a battle, by arrangement (app/audio.ts
@@ -150,3 +151,63 @@ export function cueHush(
   const slot = parseSceneId(sceneId)?.slot;
   return slot?.kind === 'cue' ? (CUE_HUSHES[slot.name] ?? null) : null;
 }
+
+/**
+ * A silence (a line with no words in an absent speaker's dark frame) that holds the music down
+ * while it shows, by speaker (T750): Bricks's silences in Act III are truly silent, the music
+ * falling away to nothing (`musicDuck` 0) in `fadeSec` and the battle's small sounds held back
+ * (`sfxDuck`, the `underSpeech` bus), so his absence is heard. Released as the line ends, the
+ * music easing back over `backSec`. Other silences keep the radio's duck.
+ */
+export const SILENCE_HUSHES: Readonly<
+  Partial<
+    Record<
+      SpeakerId,
+      {
+        readonly musicDuck: number;
+        readonly sfxDuck: number;
+        readonly fadeSec: number;
+        readonly backSec: number;
+      }
+    >
+  >
+> = {
+  bricks: { musicDuck: 0, sfxDuck: 0.3, fadeSec: 0.3, backSec: 1.2 },
+};
+
+/** The hush a silence line by `speaker` holds (SILENCE_HUSHES), or null. */
+export function silenceHush(speaker: SpeakerId) {
+  return Object.hasOwn(SILENCE_HUSHES, speaker) ? (SILENCE_HUSHES[speaker] ?? null) : null;
+}
+
+/**
+ * A spoken line that plays a sound effect of its own as it starts, its blip `blipDelaySec` later
+ * (T750): Pebble's "Knock knock!" on A3M6's radio knocks twice on a dome's door, then squeaks (her
+ * blip). A radio line carries no scene id, so these match by speaker and text.
+ */
+export interface LineSfx {
+  readonly speaker: SpeakerId;
+  /** The line's text as written. */
+  readonly text: string;
+  readonly sfx: SfxId;
+  readonly blipDelaySec: number;
+}
+
+export const LINE_SFX: readonly LineSfx[] = [
+  { speaker: 'pebble', text: 'Knock knock! (squeak)', sfx: 'knock_knock', blipDelaySec: 0.45 },
+];
+
+/** The sound effect line `speaker`/`text` plays as it starts (LINE_SFX), or null. */
+export function lineSfx(speaker: SpeakerId, text: string): LineSfx | null {
+  return LINE_SFX.find((l) => l.speaker === speaker && l.text === text) ?? null;
+}
+
+/**
+ * The Waykeeper sting (act3.md § A3M6, *Debrief*; T750): in A3M6's debrief, `cue` plays as the
+ * callsign plate turns (T714's ui/screens/waykeeper.ts `plateTurned`: Pebble's naming line whole,
+ * then its hold), so the name and the music land together.
+ */
+export const WAYKEEPER_STING = { scene: 'a3_m06_debrief', cue: 'waykeeper' } as const satisfies {
+  readonly scene: string;
+  readonly cue: CueId;
+};

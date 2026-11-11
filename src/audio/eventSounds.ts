@@ -13,6 +13,7 @@ import {
   ALLY_SOUNDS,
   ATTACK_SOUNDS,
   BOMBLET_SOUNDS,
+  BOSS_SOUNDS,
   bossSounds,
   CHAIN_SOUNDS,
   DRONE_SOUNDS,
@@ -60,6 +61,17 @@ import {
   SWARM_SOUNDS,
   TRAP_SOUND,
 } from './eventTablesAct3.ts';
+import {
+  BEARER_SOUNDS,
+  BOSS_SPLIT_SOUNDS,
+  FIRST_SHELTERED_CUE,
+  JAM_SOUNDS,
+  LEAPER_SOUNDS,
+  MAP_NEUTRAL_SOUNDS,
+  OPEN_TILE_SOUNDS,
+  PUDDLE_SOUND,
+  TAKEOVER_SOUNDS,
+} from './eventTablesAct3b.ts';
 import { LOSE_CUE, WAVE_CLEAR_CUE, type CueId } from './music/index.ts';
 import { SFX, type SfxId } from './sfx/index.ts';
 
@@ -78,7 +90,8 @@ export {
 
 /**
  * A sound to play: an effect (pitch in semitones, delay in seconds, and a gain multiplier when it
- * isn't 1: the night's air follows the dark) or a music cue.
+ * isn't 1: the night's air follows the dark), a music cue, or a stop: every instance of an effect
+ * cut dead (an interrupted Hostile Takeover's laser; Synth.stop).
  */
 export type SoundCall =
   | {
@@ -88,13 +101,11 @@ export type SoundCall =
       readonly delay: number;
       readonly gain?: number;
     }
-  | { readonly kind: 'cue'; readonly id: CueId };
+  | { readonly kind: 'cue'; readonly id: CueId }
+  | { readonly kind: 'stop'; readonly id: SfxId };
 
 export const sfx = (id: SfxId, pitch = 0, delay = 0, gain?: number): SoundCall =>
   gain === undefined ? { kind: 'sfx', id, pitch, delay } : { kind: 'sfx', id, pitch, delay, gain };
-
-/** The `flying` kind of a Cluster Thumper's bomblet (BOMBLET_SOUNDS). */
-const BOMBLET_KIND = 'bomblet';
 
 /**
  * Whether each sim event type can make a sound. Exhaustive, so a new event type must be sorted
@@ -194,21 +205,24 @@ const MAKES_SOUND: Readonly<Record<SimEventType, boolean>> = {
   ClassRevoked: false,
   AbilityRevoked: true,
   ModifierChanged: false,
-  // M7's events (declared by T700a): silent until T750 sorts them.
-  JamTell: false,
-  TowerJammed: false,
-  TowerUnjammed: false,
-  JamInterrupted: false,
+  // M7 (T750): jamming, Hostile Takeover and the jettison's crash site, the Gathering Maw's split
+  // and merge, the leapers, Big Glorp's puddle, and the bearers home.
+  JamTell: true,
+  TowerJammed: true,
+  TowerUnjammed: true,
+  JamInterrupted: true,
+  // System Reboot's cast says it (ABILITY_SOUNDS `reboot`).
   Rebooted: false,
-  TakeoverTell: false,
-  Jettisoned: false,
-  TileOpened: false,
-  BossSplit: false,
-  BossMerged: false,
-  LeaperBonk: false,
-  FlyerGrounded: false,
-  PuddleSpawned: false,
-  BearerHome: false,
+  TakeoverTell: true,
+  Jettisoned: true,
+  TileOpened: true,
+  BossSplit: true,
+  BossMerged: true,
+  LeaperBonk: true,
+  FlyerGrounded: true,
+  PuddleSpawned: true,
+  BearerHome: true,
+  // The wave's horn covers a script group walking in (A3M5's W10 surge).
   ScriptGroupSpawned: false,
 };
 
@@ -264,6 +278,11 @@ export interface SoundDials {
    * still read).
    */
   readonly hollowDeath?: HollowDeath;
+  /**
+   * The battle's map id, for the moments keyed to a map (eventTablesAct3b.ts: Gerald's delivery
+   * on A3M4, the domes opening on A3M6). Absent: none.
+   */
+  readonly map?: string;
 }
 
 /** Whether `id` is one of the small sounds the Hollow's quiet drops (HOLLOW_QUIET). */
@@ -296,8 +315,11 @@ export function createEventSounds(
     if (quietable(id) && enemies.quietAt(x, y)) return;
     out.push(sfx(id, pitch, delay));
   };
-  /** Fired projectiles' kinds (or their PROJECTILE_SOUNDS sprite) by uid, for their landing. */
-  const flying = new Map<number, string>();
+  /**
+   * Fired projectiles' landing sounds by uid (their sprite's, their tower's, their kind's, or a
+   * bomblet's), played as they land.
+   */
+  const flying = new Map<number, SfxId>();
   /** Allies' kinds by uid, so their shots find their sound. */
   const allies = new Map<number, string>();
   /** Towers' ids by uid (uids are never reused in a battle), from TowerBuilt or the lookup. */
@@ -330,21 +352,37 @@ export function createEventSounds(
   let ended = false;
   /** Revocation stamps this frame (each the next REVOKE_SOUNDS stagger step). */
   let stamps = 0;
+  /** Tiles opened this frame (each the next OPEN_TILE_SOUNDS stagger step). */
+  let opened = 0;
+  /** Bearers home this frame (each the next BEARER_SOUNDS stagger step), and in the battle. */
+  let bearersNow = 0;
+  let bearersHome = 0;
+  /** Bosses whose Hostile Takeover laser is charging (an interrupt cuts it: JAM_SOUNDS `stops`). */
+  const lasers = new Set<number>();
+  const stopLaser = (out: SoundCall[], uid: number): void => {
+    if (!lasers.delete(uid)) return;
+    for (const id of JAM_SOUNDS.stops) out.push({ kind: 'stop', id });
+  };
+  /** Whether a refugee has reached safety yet this battle (FIRST_SHELTERED_CUE). */
+  let sheltered = false;
+  const mapId = dials.map;
+  const firstShelteredCue =
+    mapId !== undefined && Object.hasOwn(FIRST_SHELTERED_CUE, mapId)
+      ? FIRST_SHELTERED_CUE[mapId]
+      : undefined;
+  const mapNeutrals =
+    mapId !== undefined && Object.hasOwn(MAP_NEUTRAL_SOUNDS, mapId)
+      ? MAP_NEUTRAL_SOUNDS[mapId]
+      : undefined;
   const stamp = (out: SoundCall[]): void => {
     const k = Math.min(stamps++, REVOKE_SOUNDS.maxStagger);
     out.push(sfx(REVOKE_SOUNDS.stamp, 0, k * REVOKE_SOUNDS.staggerSec));
   };
   const landing = (e: Extract<SimEvent<IdSpace>, { type: 'ProjectileHit' }>, out: SoundCall[]) => {
     if (e.uid !== 0) {
-      const kind = flying.get(e.uid);
+      const land = flying.get(e.uid);
       flying.delete(e.uid);
-      const land =
-        kind === BOMBLET_KIND
-          ? BOMBLET_SOUNDS.land
-          : kind === undefined
-            ? null
-            : (PROJECTILE_SOUNDS[kind] ?? ATTACK_SOUNDS[kind])?.land;
-      if (land) at(out, land, e.x, e.y);
+      if (land !== undefined) at(out, land, e.x, e.y);
     } else if (e.towerUid === chainTower) {
       // The arc runs down the line: each jump a beat later and a step higher.
       const k = chainHits++;
@@ -379,9 +417,7 @@ export function createEventSounds(
           const s = bomblet ? BOMBLET_SOUNDS : (own ?? ATTACK_SOUNDS[e.kind]);
           // A shot sounds where it's fired from (the tower).
           if (s?.fire) at(out, s.fire, e.x, e.y);
-          if (e.uid !== 0 && s?.land) {
-            flying.set(e.uid, bomblet ? BOMBLET_KIND : sprite !== undefined ? e.sprite! : e.kind);
-          }
+          if (e.uid !== 0 && s?.land) flying.set(e.uid, s.land);
           if (e.kind === 'beam') beams.set(e.towerUid, false);
           chainTower = e.kind === 'chain' ? e.towerUid : -1;
           chainHits = 0;
@@ -403,6 +439,9 @@ export function createEventSounds(
         case 'EnemyDied': {
           const id = deathSound(e.enemy);
           if (id !== null) at(out, id, e.x, e.y, ENEMY_POP_PITCH[e.enemy] ?? 0);
+          // A boss beaten with no BossEnded (the Gathering Maw's merged body): its sting.
+          const beaten = Object.hasOwn(BOSS_SOUNDS, e.enemy) ? BOSS_SOUNDS[e.enemy]?.beaten : undefined;
+          if (beaten !== undefined && !ended) out.push({ kind: 'cue', id: beaten });
           if (enemies.splits(e.enemy)) {
             const faction = enemies.faction(e.enemy);
             const split =
@@ -478,17 +517,24 @@ export function createEventSounds(
         // Gerald (D072): his chime as a shot plinks off him, his whistle as he leaves.
         case 'NeutralHit':
         case 'NeutralExited': {
-          const s = Object.hasOwn(NEUTRAL_SOUNDS, e.enemy) ? NEUTRAL_SOUNDS[e.enemy] : undefined;
+          const s =
+            (mapNeutrals !== undefined && Object.hasOwn(mapNeutrals, e.enemy)
+              ? mapNeutrals[e.enemy]
+              : undefined) ??
+            (Object.hasOwn(NEUTRAL_SOUNDS, e.enemy) ? NEUTRAL_SOUNDS[e.enemy] : undefined);
           if (s !== undefined) out.push(sfx(e.type === 'NeutralHit' ? s.hit : s.exit));
           return;
         }
         // The boss (D073): its arrival, each later phase, and its ending with the sting.
         case 'BossPhase': {
           const s = bossSounds(e.enemy);
-          out.push(sfx(e.phase <= 1 ? s.arrive : s.phase));
+          const own = s.phases?.[e.phase];
+          const id = e.phase <= 1 ? s.arrive : own === undefined ? s.phase : own;
+          if (id !== null) out.push(sfx(id));
           return;
         }
         case 'BossEnded': {
+          stopLaser(out, e.uid);
           const s = bossSounds(e.enemy);
           out.push(sfx(s.end));
           if (!ended && s.endCue !== null) out.push({ kind: 'cue', id: s.endCue });
@@ -567,6 +613,11 @@ export function createEventSounds(
         // hush's sound).
         case 'RefugeeEvacuated':
           out.push(sfx(e.pebble ? ESCORT_SOUNDS.pebble : ESCORT_SOUNDS.evacuated));
+          // The map's first one safe (A3M6: the domes open; Act III's first warm cadence).
+          if (!sheltered && firstShelteredCue !== undefined && !ended) {
+            out.push({ kind: 'cue', id: firstShelteredCue });
+          }
+          sheltered = true;
           return;
         case 'RefugeeLost':
           if (e.cause === 'exit') out.push(sfx(ESCORT_SOUNDS.taken));
@@ -626,6 +677,63 @@ export function createEventSounds(
         case 'AbilityRevoked':
           if (e.slot !== null) stamp(out);
           return;
+        // M7 (T750). Jamming: each jammer's tell by its kind, a tower going dark and coming back,
+        // and an interrupted tell's fizzle (a Takeover's laser cut dead with it).
+        case 'JamTell':
+          out.push(sfx(JAM_SOUNDS.tell[e.kind]));
+          return;
+        case 'TowerJammed':
+          lasers.delete(e.source);
+          out.push(sfx(JAM_SOUNDS.jammed));
+          return;
+        case 'TowerUnjammed':
+          out.push(sfx(JAM_SOUNDS.unjammed));
+          return;
+        case 'JamInterrupted':
+          stopLaser(out, e.uid);
+          out.push(sfx(JAM_SOUNDS.interrupted));
+          return;
+        // "Shareholder Value": Hostile Takeover's laser charging, the plating let go, and each
+        // plate crashing onto its tile, one after another.
+        case 'TakeoverTell':
+          lasers.add(e.uid);
+          out.push(sfx(TAKEOVER_SOUNDS.laser));
+          return;
+        case 'Jettisoned':
+          stopLaser(out, e.uid);
+          out.push(sfx(TAKEOVER_SOUNDS.jettison));
+          return;
+        case 'TileOpened': {
+          const id = OPEN_TILE_SOUNDS.by[e.to];
+          if (id === undefined) return;
+          const k = Math.min(opened++, OPEN_TILE_SOUNDS.maxStagger);
+          out.push(sfx(id, 0, k * OPEN_TILE_SOUNDS.staggerSec));
+          return;
+        }
+        // The Gathering Maw tears into parts and slides back together.
+        case 'BossSplit':
+          out.push(sfx(BOSS_SPLIT_SOUNDS.split));
+          return;
+        case 'BossMerged':
+          out.push(sfx(BOSS_SPLIT_SOUNDS.merge));
+          return;
+        // The warren's towers: a leaper's boing (and a flyer Pinned to the ground), the puddle.
+        case 'LeaperBonk':
+          out.push(sfx(LEAPER_SOUNDS.bonk));
+          return;
+        case 'FlyerGrounded':
+          out.push(sfx(LEAPER_SOUNDS.grounded));
+          return;
+        case 'PuddleSpawned':
+          at(out, PUDDLE_SOUND, e.at[0], e.at[1]);
+          return;
+        // A bearer home hums the next of the six notes; several at once, one after another.
+        case 'BearerHome': {
+          const steps = BEARER_SOUNDS.steps;
+          const pitch = steps[bearersHome++ % steps.length]!; // modulo length
+          out.push(sfx(BEARER_SOUNDS.note, pitch, bearersNow++ * BEARER_SOUNDS.staggerSec));
+          return;
+        }
         // The HUD's notice plays the rejection buzz (it also covers rejections the HUD makes).
         case 'CommandRejected':
         case 'EnemySpawned':
@@ -647,21 +755,8 @@ export function createEventSounds(
         case 'AllyHealthChanged':
         case 'ClassRevoked':
         case 'ModifierChanged':
-        // M7's events (declared by T700a): silent until T750.
-        case 'JamTell':
-        case 'TowerJammed':
-        case 'TowerUnjammed':
-        case 'JamInterrupted':
+        // M7's silent ones (T750): the Reboot (its cast says it) and a script group (the horn).
         case 'Rebooted':
-        case 'TakeoverTell':
-        case 'Jettisoned':
-        case 'TileOpened':
-        case 'BossSplit':
-        case 'BossMerged':
-        case 'LeaperBonk':
-        case 'FlyerGrounded':
-        case 'PuddleSpawned':
-        case 'BearerHome':
         case 'ScriptGroupSpawned':
           return;
         default:
@@ -678,6 +773,8 @@ export function createEventSounds(
       chainTower = -1;
       chainHits = 0;
       stamps = 0;
+      opened = 0;
+      bearersNow = 0;
     },
   };
 }

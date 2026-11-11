@@ -25,8 +25,7 @@ import { lockInLoadout, toCampaign } from '../../app/navigation.ts';
 import { campaignScreenName } from '../../app/starMap.ts';
 import { UPLINK_STAMP } from '../hud/AbilityBar.tsx';
 import { LICENSE_STAMP } from '../hud/BuildBar.tsx';
-import { Icon } from '../hud/Icon.tsx';
-import { JAILBROKEN_PALETTE } from '../../render/views/towerLook.ts';
+import { Icon, JAILBROKEN_ICON } from '../hud/Icon.tsx';
 import { useEscape } from './escape.ts';
 import { focusOnce } from './focus.ts';
 import {
@@ -94,7 +93,7 @@ function TowerCard(props: {
         <Icon
           id={t.icon}
           class="sd-lo-icon"
-          variant={t.jailbroken === true ? JAILBROKEN_PALETTE : undefined}
+          variant={t.jailbroken === true ? JAILBROKEN_ICON : undefined}
         />
         <span class="sd-lo-text" aria-hidden="true">
           <span class="sd-lo-row">

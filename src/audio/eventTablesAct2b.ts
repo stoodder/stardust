@@ -22,6 +22,8 @@ export const TOWER_SOUNDS: Readonly<
   mindspike: { hitscan: { fire: 'mindspike_shot', land: null } },
   lantern: { beam: { fire: 'lantern_lock', land: null } },
   crane: { hitscan: { fire: 'magnet_grab', land: null } },
+  // The Gloop Spitter (T750): its glob's wet "ptoo" and its splat where it lands.
+  gloop: { lobbed: { fire: 'gloop_spit', land: 'gloop_splat' } },
 };
 
 /**

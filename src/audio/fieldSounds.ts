@@ -4,7 +4,8 @@
 // Puffwing flock's wingbeats, the Aelari's hum, the Hollow humming the jingle wrong), a hidden
 // cloaked unit's footsteps, a Capacitor Bank's hum climbing as it charges (and collapsing when the
 // charge fizzles), a beam's hum climbing with its ramp (and held once it caps), the night's air at
-// Sundown, and the salvage drone flying and working. It also keeps where the Hollow units stand,
+// Sundown, the salvage drone flying and working, the Jammed static while any tower is jammed, and
+// a hidden Black Budget's shimmer (in place of the footsteps). It also keeps where the Hollow units stand,
 // for their quiet (`quietAt`, HOLLOW_QUIET), and whether a Hum Choir stands (`choirLive`, the
 // music's harmony line). Timing is in sim ticks, so a paused battle is quiet.
 // It reads only public sim state (the same fields render reads), and never touches it.
@@ -23,7 +24,9 @@ import {
 import { CHARGE_SOUNDS, CLOAK_SOUNDS, HOLLOW_QUIET } from './eventTablesAct2.ts';
 import { BEAM_SOUNDS, DARK_SOUNDS } from './eventTablesAct2b.ts';
 import { ENEMY_BURROW_SOUNDS } from './eventTablesAct3.ts';
+import { ENEMY_CLOAK_SOUNDS, JAM_SOUNDS } from './eventTablesAct3b.ts';
 import { sfx, type SoundCall } from './eventSounds.ts';
+import type { SfxId } from './sfx/index.ts';
 
 /** A boss's tell is the last BOSS_ABILITY_TELL_SEC of its ability timer (sim/enemyAbilities/boss.ts). */
 const TELL_TICKS = secToTicks(BOSS_ABILITY_TELL_SEC);
@@ -41,6 +44,8 @@ export interface FieldEnemy {
       readonly phases: readonly {
         readonly spawn: object | null;
         readonly burrow: object | null;
+        /** A hangar's launches (Shareholder Value, phase 1): its door's tell is the spawn tell. */
+        readonly hangar?: object | null;
       }[];
     } | null;
   } | null;
@@ -79,6 +84,8 @@ export interface FieldTower {
   readonly beam2Ramp?: number;
   readonly beam3Uid?: number;
   readonly beam3Ramp?: number;
+  /** Ticks it stays Jammed (0: not; T702): the static crackles while any tower is. */
+  readonly jamTicks?: number;
 }
 
 /** The state the field sounds read (the live SimState passes as is). */
@@ -107,9 +114,10 @@ export function beamPitch(t: FieldTower): number | null {
 }
 
 /**
- * Whether boss `e` is telegraphing its spawn ability (the sneeze) this tick: its timer's last
- * TELL_TICKS lead to a spawn, not a dig (pending burrows go first) or a surfacing, and it isn't
- * between phases. Mirrors sim/enemyAbilities/boss.ts `bossTelling`.
+ * Whether boss `e` is telegraphing its spawn ability (the sneeze, or a hangar's launch) this tick:
+ * its timer's last TELL_TICKS lead to a spawn, not a dig (pending burrows go first) or a
+ * surfacing, and it isn't between phases. Mirrors sim/enemyAbilities/boss.ts `bossTelling` and
+ * hangar.ts `hangarTelling`.
  */
 export function spawnTelling(e: FieldEnemy): boolean {
   if (!e.alive || e.leaving || e.burrowed || e.invulnerableTicks > 0) return false;
@@ -117,7 +125,7 @@ export function spawnTelling(e: FieldEnemy): boolean {
   const p = e.def?.boss?.phases[e.bossPhase - 1];
   if (p === undefined) return false;
   if (e.abilityCount > 0 && p.burrow !== null) return false;
-  return p.spawn !== null;
+  return p.spawn !== null || (p.hangar ?? null) !== null;
 }
 
 export interface FieldSounds {
@@ -170,6 +178,11 @@ export function createFieldSounds(clearTicks: number): FieldSounds {
   const present = new Set<string>();
   /** When the next hidden footsteps play (sim tick); -1: none on the field last frame. */
   let stepsAt = -1;
+  /** The hidden units' sounds this frame (the footsteps, or an enemy's own: ENEMY_CLOAK_SOUNDS). */
+  const hiddenSounds = new Set<SfxId>();
+  /** When the Jammed static plays next (sim tick); -1: no tower jammed last frame. */
+  let staticAt = -1;
+  const staticEvery = Math.max(1, Math.round(JAM_SOUNDS.staticEverySec * TICK_HZ));
   const stepsEvery = Math.max(1, Math.round(CLOAK_SOUNDS.everySec * TICK_HZ));
   /** The live Hollow units' positions as of the last frame (`hollowN` of them). */
   const hollowX: number[] = [];
@@ -214,7 +227,7 @@ export function createFieldSounds(clearTicks: number): FieldSounds {
       const { items, used } = state.enemies;
       present.clear();
       hollowN = 0;
-      let anyHidden = false;
+      hiddenSounds.clear();
       for (let i = 0; i < used; i++) {
         const e = items[i]!; // i < used ≤ items.length
         if (!e.alive || e.def === null) continue;
@@ -223,7 +236,7 @@ export function createFieldSounds(clearTicks: number): FieldSounds {
           hollowY[hollowN] = e.y;
           hollowN++;
         }
-        if (hidden(e)) anyHidden = true;
+        if (hidden(e)) hiddenSounds.add(ENEMY_CLOAK_SOUNDS[e.def.id] ?? CLOAK_SOUNDS.steps);
         // Digging in and surfacing (a Digger, or a boss's burrow; a Hollow burrower its own).
         const was = burrowed.get(e.uid);
         if (was !== undefined && was !== e.burrowed) {
@@ -266,10 +279,11 @@ export function createFieldSounds(clearTicks: number): FieldSounds {
         out.push(sfx(loop.id));
         loopAt.set(id, state.tick + Math.max(1, Math.round(loop.everySec * TICK_HZ)));
       }
-      // A hidden cloaked unit's footsteps: one voice for all of them, on sim time.
-      if (!anyHidden) stepsAt = -1;
+      // A hidden cloaked unit's footsteps (a Black Budget's shimmer): one voice for each sound,
+      // on sim time.
+      if (hiddenSounds.size === 0) stepsAt = -1;
       else if (state.tick >= stepsAt) {
-        out.push(sfx(CLOAK_SOUNDS.steps));
+        for (const id of hiddenSounds) out.push(sfx(id));
         stepsAt = state.tick + stepsEvery;
       }
       // A charge attack's hum, a step higher at each quarter of its charge; and its collapse when
@@ -278,9 +292,11 @@ export function createFieldSounds(clearTicks: number): FieldSounds {
       const elapsed = lastTick < 0 ? 1 : Math.max(1, state.tick - lastTick);
       let beamPitchNow: number | null = null;
       choir = false;
+      let jammed = false;
       for (let i = 0; i < towers.used; i++) {
         const bank = towers.items[i]!; // i < used ≤ items.length
         if (!choir && isChoir(bank)) choir = true;
+        if (bank.alive && (bank.jamTicks ?? 0) > 0) jammed = true;
         const bp = beamPitch(bank);
         if (bp !== null) beamPitchNow = Math.max(beamPitchNow ?? 0, bp);
         const attack = bank.tierDef?.attack ?? null;
@@ -321,6 +337,12 @@ export function createFieldSounds(clearTicks: number): FieldSounds {
       else if (state.tick >= bedAt) {
         out.push(sfx(BEAM_SOUNDS.bed, BEAM_SOUNDS.maxPitch));
         bedAt = state.tick + bedEvery;
+      }
+      // The Jammed static: a faint crackle while any tower sits jammed, one voice for all.
+      if (!jammed) staticAt = -1;
+      else if (state.tick >= staticAt) {
+        out.push(sfx(JAM_SOUNDS.static));
+        staticAt = state.tick + staticEvery;
       }
       // Sundown: the night's air while it's dark enough, as loud as it is dark.
       const dark = state.dark ?? 0;

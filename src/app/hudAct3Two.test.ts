@@ -11,7 +11,7 @@ import { VIEW_H, VIEW_W } from '../render/scale.ts';
 import { segmentEdgesPx, BOSS_BAR_W } from '../render/vfx/bossBar.ts';
 import { JAILBROKEN_PALETTE } from '../render/views/towerLook.ts';
 import { createSim, type Sim, type SimState } from '../sim/index.ts';
-import type { IdSpace } from '../content/types.ts';
+import type { AbilityId, IdSpace } from '../content/types.ts';
 import { ABILITIES } from '../content/abilities/index.ts';
 import {
   BEARER_ROW_H,
@@ -22,6 +22,7 @@ import {
   PANEL_GAP,
   towerPanelHeight,
 } from '../ui/hud/layout.ts';
+import { JAILBROKEN_ICON } from '../ui/hud/Icon.tsx';
 import { battleConfig } from './battleSetup.ts';
 import { assetMeterView } from './hudAsset.ts';
 import { fixedTargetText, selectedView, wholeSec } from './hudPanel.ts';
@@ -159,17 +160,18 @@ describe('jailbroken icons (T731; towers.md § 9)', () => {
     ]);
     expect(slots[0]?.iconVariant).toBe(JAILBROKEN_PALETTE);
     expect(slots[1]).not.toHaveProperty('iconVariant');
+    // The ui's name for it (ui may not import render/views) is the same palette.
+    expect(JAILBROKEN_ICON).toBe(JAILBROKEN_PALETTE);
   });
+});
+
+/** The all_unlocked save's unlocks with `inherited` handed over by the story. */
+const unlocks = (inherited: AbilityId[]) => ({
+  unlocks: { ...DEV_SAVES.all_unlocked.build().unlocks, inheritedAbilities: inherited },
 });
 
 describe("an inherited ability's owner (T731)", () => {
   it('names whose it was, only when the story handed it over', () => {
-    const unlocks = (inherited: string[]) => ({
-      unlocks: {
-        ...DEV_SAVES.all_unlocked.build().unlocks,
-        inheritedAbilities: inherited as never,
-      },
-    });
     expect(inheritedFrom(unlocks(['time_dilation']), 'time_dilation', 'quill')).toBe("QUILL's");
     expect(inheritedFrom(unlocks(['suppressing_fire']), 'suppressing_fire', 'bricks')).toBe(
       "Bricks's",
