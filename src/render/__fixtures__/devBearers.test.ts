@@ -41,10 +41,11 @@ function config(over: Partial<SimConfig<IdSpace>> = {}): SimConfig<IdSpace> {
 
 /** dev_bearers with `patch` laid over it, compiled into a config (the rest of DEV_CONTENT kept). */
 function patched(patch: Partial<MapDef<DevIds>>, over: Partial<SimConfig<IdSpace>> = {}) {
-  const raw: RawContent<DevIds> = {
-    ...DEV_CONTENT,
-    maps: { ...DEV_CONTENT.maps, dev_bearers: { ...bearersMap, ...patch } },
+  const maps: { readonly [id: string]: MapDef<DevIds> } = {
+    ...DEV_CONTENT.maps,
+    dev_bearers: { ...bearersMap, ...patch },
   };
+  const raw: RawContent<IdSpace> = { ...DEV_CONTENT, maps };
   return config({ content: compileContent(raw), ...over });
 }
 
