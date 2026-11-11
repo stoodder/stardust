@@ -160,7 +160,7 @@ function gatheringMaw(
   part: boolean,
   stage: number,
   facing: Facing,
-  step: 0 | 1 | 2,
+  step: number,
   look: Look,
 ): string[] {
   const f = frameOf(lobes, stage);
@@ -339,7 +339,7 @@ function frames(
   const out: Record<string, string[]> = {};
   for (const fc of ['se', 'ne'] as const) {
     for (let i = 0; i < n; i++)
-      out[`${look}_${fc}_${i}`] = gatheringMaw(lobes, part, stage, fc, i as 0 | 1 | 2, look);
+      out[`${look}_${fc}_${i}`] = gatheringMaw(lobes, part, stage, fc, i, look);
   }
   return out;
 }

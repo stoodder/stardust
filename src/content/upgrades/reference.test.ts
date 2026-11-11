@@ -147,13 +147,11 @@ describe('REFERENCE_PROFILES, Act III part one (M6, T600b)', () => {
       emergency_bulkhead: { ...LIVE_PURCHASE_RULES.protocols.emergency_bulkhead!, price: 5000 },
     };
     const errors = purchasable({ ...LIVE_PURCHASE_RULES, aheadOfTask: [], protocols });
-    expect(errors.map((e) => /maps\.(a3_m0\d)\.referenceProfile(?:ByFlag\[0\]\.profile)?: spends/.exec(e)?.[1])).toEqual([
-      'a3_m01',
-      'a3_m02',
-      'a3_m03',
-      'a3_m04',
-      'a3_m04',
-    ]);
+    expect(
+      errors.map(
+        (e) => /maps\.(a3_m0\d)\.referenceProfile(?:ByFlag\[0\]\.profile)?: spends/.exec(e)?.[1],
+      ),
+    ).toEqual(['a3_m01', 'a3_m02', 'a3_m03', 'a3_m04', 'a3_m04']);
     // A protocol is listed once, equipped or not.
     const raw = withRows();
     const a3m1 = raw.maps.a3_m01!;

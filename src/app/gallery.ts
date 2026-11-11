@@ -146,13 +146,18 @@ function isHollowLook(b: BakedSprite, n: string): boolean {
   return DEFS.get(b.id)?.palette === 'hollow' && /^(heavy|tell)_/.test(n);
 }
 
+/** M7's boss bodies (T740a), whose many states get their own dark row, like the Witch's. */
+const M7_BOSS_BODIES = /^enemy\.(shareholder_value|gathering_maw(_g\d)?)$/;
+
 /**
- * A tower's tier-4 spec frames (`spec_a`, `se_spec_b_fire`, `spin_spec_a_0`, …; T440b) and an
- * Aelari unit's non-walk poses (the Glass Witch's tell, blink, puff, and flee) get a row of their
- * own, dark only, so the cards stay compact.
+ * A tower's tier-4 spec frames (`spec_a`, `se_spec_b_fire`, `spin_spec_a_0`, …; T440b), an
+ * Aelari unit's non-walk poses (the Glass Witch's tell, blink, puff, and flee), and M7's bosses'
+ * (T740a) get a row of their own, dark only, so the cards stay compact.
  */
 function isDarkOnlyLook(b: BakedSprite, n: string): boolean {
   if (b.id.startsWith('tower.')) return /(^|_)spec_[ab]/.test(n);
+  // M7's bosses (T740a): "Shareholder Value"'s and the Gathering Maw's states past the walk.
+  if (M7_BOSS_BODIES.test(b.id)) return !n.startsWith('walk_');
   return (
     DEFS.get(b.id)?.palette === 'aelari' && b.id.startsWith('enemy.') && !n.startsWith('walk_')
   );

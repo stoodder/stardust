@@ -120,7 +120,7 @@ function screen(
   else stamp(g, x0 + 11, y0, ['.Z', 'ZZ']);
 }
 
-function platform(facing: Facing, step: 0 | 1 | 2 | 3, look: PlatformLook): string[] {
+function platform(facing: Facing, step: number, look: PlatformLook): string[] {
   const g: CharGrid = grid(W, H);
   const se = facing === 'se';
   const bare = look === 'panic';
@@ -278,10 +278,7 @@ function list(g: CharGrid): string[] {
 const se = (look: PlatformLook, n: number): Record<string, string[]> =>
   Object.fromEntries(
     (['se', 'ne'] as const).flatMap((f) =>
-      Array.from({ length: n }, (_, i) => [
-        `${look}_${f}_${i}`,
-        platform(f, i as 0 | 1 | 2 | 3, look),
-      ]),
+      Array.from({ length: n }, (_, i) => [`${look}_${f}_${i}`, platform(f, i, look)]),
     ),
   );
 

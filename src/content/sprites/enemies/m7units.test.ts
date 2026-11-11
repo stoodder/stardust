@@ -24,11 +24,17 @@ function grid(id: string, frame: string): readonly string[] {
 const solid = (c: string | undefined): boolean => c !== undefined && c !== '.' && c !== '_';
 
 function count(rows: readonly string[], chars: string): number {
-  return [...rows.join('')].filter((c) => chars.includes(c)).length;
+  return rows
+    .join('')
+    .split('')
+    .filter((c) => chars.includes(c)).length;
 }
 
 function opaque(rows: readonly string[]): number {
-  return [...rows.join('')].filter((c) => solid(c)).length;
+  return rows
+    .join('')
+    .split('')
+    .filter((c) => solid(c)).length;
 }
 
 function bounds(rows: readonly string[]): { w: number; h: number; x0: number; y0: number } {
