@@ -442,3 +442,26 @@
 .sd-results-revoked {
   color: var(--sd-steel-3);
 }
+
+/* The Holdout's card (T614, heldCard.ts; act3.md § A3M3): "Held." large and still, plain white on
+   the dark (no teal cheer), "Evacuated: {n}." under it, and the way on. Nothing animates. */
+.sd-results-held {
+  gap: 10px;
+  width: 288px;
+  padding: 20px 16px 14px;
+}
+
+.sd-results-held .sd-results-held-heading {
+  font-size: 32px;
+  line-height: 32px;
+  color: var(--sd-white-1);
+  text-shadow: 2px 2px 0 var(--sd-ink-0);
+}
+
+.sd-results-held-line {
+  margin: 0 0 6px;
+  font-family: var(--font-heading);
+  font-size: 8px;
+  line-height: 8px;
+  color: var(--sd-steel-4);
+}

@@ -23,6 +23,7 @@ import {
   type StoryContext,
 } from '../story/conditions.ts';
 import type { FlagRuleStats } from '../story/flags.ts';
+import { plateName } from '../story/plates.ts';
 import { presentationOfMap } from '../story/presentation.ts';
 import { linesUntilChoice, readThrough } from '../story/runner.ts';
 import { resolveText, type TextContext } from '../story/text.ts';
@@ -38,6 +39,7 @@ import type {
 } from '../ui/screens/state.ts';
 import { dialogueEnabled, setStoryRun, withSceneEffects } from './dialogue.ts';
 import { towerName } from './hudText.ts';
+import { perfectMedalName } from './hudViews.ts';
 import { storyRewardsOf } from './resultsStory.ts';
 import { activeSave, updateActiveSave } from './save.ts';
 import { revocationView } from './storyMeta.ts';
@@ -184,15 +186,17 @@ export interface MapMedal {
 export const MEDAL_NAMES = { victory: 'Victory', perfectCore: 'Perfect Core' } as const;
 
 /**
- * A map's medals in display order (`mapMedalIds`' order): Victory, Perfect Core, and its Challenge
- * under the Challenge's own name.
+ * A map's medals in display order (`mapMedalIds`' order): Victory, Perfect Core ("Perfect" on an
+ * Escort, `perfectMedalName`; T613), and its Challenge under the Challenge's own name.
  */
-export function offeredMedals(map: {
-  readonly medals: { readonly challenge: { readonly id: string; readonly name: string } } | null;
-}): MapMedal[] {
+export function offeredMedals(
+  map: {
+    readonly medals: { readonly challenge: { readonly id: string; readonly name: string } } | null;
+  } & Parameters<typeof perfectMedalName>[0],
+): MapMedal[] {
   const out: MapMedal[] = [
     { id: VICTORY_MEDAL_ID, name: MEDAL_NAMES.victory },
-    { id: PERFECT_CORE_MEDAL_ID, name: MEDAL_NAMES.perfectCore },
+    { id: PERFECT_CORE_MEDAL_ID, name: perfectMedalName(map) },
   ];
   if (map.medals !== null) {
     out.push({ id: map.medals.challenge.id, name: map.medals.challenge.name });
@@ -303,10 +307,19 @@ export function runRewardsOf(
   };
 }
 
-/** A line as the card shows it: its speaker's name plate and color, its tokens resolved. */
-export function spoken(speaker: SpeakerId, text: string, story: DebriefStory): SpokenLine {
+/**
+ * A line as the card shows it: its speaker's name plate (on `map`, `plateName`: Bramble's from
+ * A3M1; T613) and color, its tokens resolved.
+ */
+export function spoken(
+  speaker: SpeakerId,
+  text: string,
+  story: DebriefStory,
+  map: CampaignMapId | null = null,
+): SpokenLine {
   const def = SPEAKER_DEFS[speaker];
-  return { name: def.name, color: def.color, text: resolveText(text, story.text) };
+  const name = plateName(speaker, { ...story.story, map, run: null });
+  return { name, color: def.color, text: resolveText(text, story.text) };
 }
 
 /**
@@ -379,9 +392,9 @@ export function debriefLines(
     outcome === 'won' && resultsFlow(map).debriefAsScene === true && dialogueEnabled();
   const debrief = asScene ? undefined : SCENES[`${map}_debrief`];
   return [
-    ...(leak === undefined ? [] : [spoken(leak.speaker, leak.text, story)]),
+    ...(leak === undefined ? [] : [spoken(leak.speaker, leak.text, story, map)]),
     ...(debrief === undefined ? [] : linesUntilChoice(debrief, ctx)).map((l) =>
-      spoken(l.speaker, l.text, story),
+      spoken(l.speaker, l.text, story, map),
     ),
   ];
 }

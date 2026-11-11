@@ -5,7 +5,7 @@
 // no event announces (a sneeze's tell, a dig, the drone's flight) is fieldSounds.ts's, from the
 // state after each frame; so is where the Hollow units stand, which drops the small sounds an
 // event places near one (HOLLOW_QUIET).
-import type { JingleVariant, SkitterkinDeath } from '../content/presentation.ts';
+import type { HollowDeath, JingleVariant, SkitterkinDeath } from '../content/presentation.ts';
 import type { EnemyFaction, IdSpace } from '../content/types.ts';
 import type { SimEvent, SimEventType } from '../sim/index.ts';
 import { assertNever } from '../shared/types.ts';
@@ -220,6 +220,16 @@ export interface SoundDials {
   readonly jingle: JingleVariant;
   /** How a Skitterkin dies (SKITTERKIN_DEATH_SOUNDS). */
   readonly skitterkinDeath: SkitterkinDeath;
+  /**
+   * Whether MapWon plays the win jingle (default true; Act III: no, T613). The dial is data now;
+   * Act III's silence-forward bed around it is T650's to build.
+   */
+  readonly winJingle?: boolean;
+  /**
+   * How the Hollow die (default `unravel`: FACTION_DEATH_SOUNDS' `hollow_unravel`; Act III's
+   * `silent`: no sound, enemies.md § 8, T601d). T650 may give the silence a bed of its own.
+   */
+  readonly hollowDeath?: HollowDeath;
 }
 
 /** Whether `id` is one of the small sounds the Hollow's quiet drops (HOLLOW_QUIET). */
@@ -244,6 +254,7 @@ export function createEventSounds(
   const deathSound = (enemy: string): SfxId | null => {
     const faction = enemies.faction(enemy);
     if (faction === 'skitterkin') return skitterkinDeath;
+    if (faction === 'hollow' && dials.hollowDeath === 'silent') return null;
     return (faction === null ? undefined : FACTION_DEATH_SOUNDS[faction]) ?? 'enemy_pop';
   };
   /** Pushes a sound placed at (x, y), unless the Hollow's quiet swallows it there. */
@@ -399,7 +410,10 @@ export function createEventSounds(
           pendingClear = false;
           pendingForfeit = false;
           plink = null;
-          out.push({ kind: 'cue', id: e.type === 'MapWon' ? 'win' : 'lose' });
+          // Act III's win has no jingle (its `winJingle` dial; the jingle stops playing).
+          if (e.type === 'MapLost' || dials.winJingle !== false) {
+            out.push({ kind: 'cue', id: e.type === 'MapWon' ? 'win' : 'lose' });
+          }
           return;
         case 'HoldFireChanged':
           out.push(sfx(e.on ? FIRE_CONTROL_SOUNDS.on : FIRE_CONTROL_SOUNDS.off));

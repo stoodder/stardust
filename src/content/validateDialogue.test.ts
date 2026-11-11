@@ -365,6 +365,18 @@ describe('one failing fixture per rule', () => {
       line,
     );
     expect(rules(content({ scenes: [debrief] }))).toEqual([]);
+    // A cue that pauses the battle may run to 6 lines; a plain cue still stops at 4.
+    const cue = (pause: boolean, n: number): Scene => ({
+      ...defineScene(
+        'a1_m01_cue_look',
+        Array.from({ length: n }, () => line),
+      ),
+      ...(pause ? { pause: true } : {}),
+    });
+    expect(rules(content({ scenes: [cue(true, 6)] }))).toEqual([]);
+    expect(rules(content({ scenes: [cue(true, 7)] }))).toEqual(['dialogue-size']);
+    expect(rules(content({ scenes: [cue(false, 5)] }))).toEqual(['dialogue-size']);
+    expect(rules(content({ scenes: [cue(false, 4)] }))).toEqual([]);
   });
 
   it('[dialogue-button]', () => {

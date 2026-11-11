@@ -262,15 +262,31 @@ export const ESCORT_PERFECT = {
   pivot: 'No leaks, then no refugee lost.',
 } as const;
 
+/**
+ * Perfect Core's name on a map that is (or turns) an Escort: plain "Perfect", since there is no core
+ * to keep (act2.md § A2M5, act3.md § A3M1: "Perfect (no refugee lost)"; T613).
+ */
+export const ESCORT_PERFECT_NAME = 'Perfect';
+
+/** Perfect Core's name on `map`: "Perfect" on an Escort or a map that pivots to one. */
+export function perfectMedalName(
+  map: Partial<Pick<CompiledMapDef<IdSpace>, 'objective' | 'escort'>>,
+): string {
+  const escort =
+    map.objective === 'escort' || (map.objective === 'defend' && (map.escort ?? null) !== null);
+  return escort ? ESCORT_PERFECT_NAME : MEDAL_TEXT.perfectCore.name;
+}
+
 /** Perfect Core's one-liner for a map: its Escort's, or the core's. */
 function perfectText(map: Partial<Pick<CompiledMapDef<IdSpace>, 'objective' | 'escort'>>): {
   readonly name: string;
   readonly description: string;
 } {
   const core = MEDAL_TEXT.perfectCore;
-  if (map.objective === 'escort') return { name: core.name, description: ESCORT_PERFECT.escort };
+  const name = perfectMedalName(map);
+  if (map.objective === 'escort') return { name, description: ESCORT_PERFECT.escort };
   if (map.objective === 'defend' && (map.escort ?? null) !== null) {
-    return { name: core.name, description: ESCORT_PERFECT.pivot };
+    return { name, description: ESCORT_PERFECT.pivot };
   }
   return core;
 }

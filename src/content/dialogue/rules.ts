@@ -45,6 +45,13 @@ export const SCENE_LINES: Readonly<Record<SceneSlot['kind'], { min: number; max:
   base: { min: 1, max: 8 },
 };
 
+/**
+ * A cue scene that pauses the battle (`pause: true`) may run to this many lines: a pausing panel
+ * is effectively a scene, while the 4-line cap is for the comms panel play runs under (D141;
+ * A3M2's Clean Exit).
+ */
+export const PAUSING_CUE_MAX_LINES = 6;
+
 /** QUILL's fair-play tell (style-guide § 5.6): a directive line starts or ends with this. */
 export const POLICY_TELL = '(Per policy.)';
 

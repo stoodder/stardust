@@ -11,7 +11,8 @@
 // (app/runFlow.ts). The story's transactions join the payroll (T510: A2M4's Q3 Bonus with its memo,
 // A2M5's gift, C2's trade; T610: A3M2's revocations with the uplink's refund row), Act III's
 // Stardust arrives as the warrens' gift stones under "Given", A3M3's card holds its payroll back for
-// the base (`heldRewards`), an Escort's meter takes Core integrity's place in the stats (Evacuated, with its lost count), and a debrief's story
+// the base (`heldRewards`) and a won Holdout's card is only "Held." and "Evacuated: {n}." (T614,
+// heldCard.ts), an Escort's meter takes Core integrity's place in the stats (Evacuated, with its lost count), and a debrief's story
 // choice (C2) takes the way on's place until it is answered (app/resultsFlow.ts; StoryChoice.tsx:
 // price first, its heading focused, its options locked for a beat). The card is a real modal: Tab
 // stays on it.
@@ -32,6 +33,7 @@ import { resultsStats } from '../../app/runResult.ts';
 import { countUpDuration, countUpValue } from './countUp.ts';
 import { formatCount } from './format.ts';
 import { focusOnce } from './focus.ts';
+import { heldCard, type HeldCard } from './heldCard.ts';
 import { StoryChoice } from './StoryChoice.tsx';
 import {
   campaign,
@@ -49,7 +51,7 @@ import { assertNever } from '../../shared/types.ts';
 import { prefersReducedMotion } from '../motion.ts';
 import type { SpokenLine } from '../state.ts';
 import { resultsCounter, type ResultsCounter } from '../../story/counter.ts';
-import { resultsHeader, spokenCounter } from './presentationText.ts';
+import { medalMarks, resultsHeader, spokenCounter, type MedalMarks } from './presentationText.ts';
 import './screens.css';
 import './results.css';
 import './resultsCounter.css';
@@ -243,9 +245,12 @@ export function resumedNote(wave: number): string {
   return `Resumed from wave ${wave}: Perfect Core and the Challenge need a shift from wave 1.`;
 }
 
-/** One of the map's medals: lit when earned this run, NEW! and its Intel the first time. */
-function MedalRow({ medal }: { medal: MedalResult }) {
-  const status = medal.isNew ? 'new!' : medal.earned ? 'on file' : 'next time';
+/**
+ * One of the map's medals: lit when earned this run, marked new (`marks.new`, by the act's dial:
+ * `medalMarks`) with its Intel the first time.
+ */
+function MedalRow({ medal, marks }: { medal: MedalResult; marks: MedalMarks }) {
+  const status = medal.isNew ? marks.new.toLowerCase() : medal.earned ? 'on file' : 'next time';
   return (
     <li
       class={medal.earned ? 'sd-results-medal sd-results-medal-earned' : 'sd-results-medal'}
@@ -256,7 +261,7 @@ function MedalRow({ medal }: { medal: MedalResult }) {
         {medal.name}
         {medal.isNew && (
           <span class="sd-results-new" aria-hidden="true">
-            NEW!
+            {marks.new}
           </span>
         )}
       </span>
@@ -264,16 +269,16 @@ function MedalRow({ medal }: { medal: MedalResult }) {
         <Amount n={medal.intel} currency="intel" />
       ) : (
         <span class="sd-results-pay-note" aria-hidden="true">
-          {medal.earned ? 'On file' : 'Next time!'}
+          {medal.earned ? 'On file' : marks.nextTime}
         </span>
       )}
     </li>
   );
 }
 
-/** One of the map's optional objectives: done (NEW! and its Intel the first time) or Next time! */
-function ObjectiveRow({ objective: o }: { objective: ObjectiveResult }) {
-  const status = o.isNew ? 'new!' : o.done ? 'on file' : 'next time';
+/** One of the map's optional objectives: done (new, with its Intel, the first time) or not yet. */
+function ObjectiveRow({ objective: o, marks }: { objective: ObjectiveResult; marks: MedalMarks }) {
+  const status = o.isNew ? marks.new.toLowerCase() : o.done ? 'on file' : 'next time';
   return (
     <li
       class={o.done ? 'sd-results-objective sd-results-objective-done' : 'sd-results-objective'}
@@ -284,7 +289,7 @@ function ObjectiveRow({ objective: o }: { objective: ObjectiveResult }) {
         {silkText(o.name)}
         {o.isNew && (
           <span class="sd-results-new" aria-hidden="true">
-            NEW!
+            {marks.new}
           </span>
         )}
       </span>
@@ -292,7 +297,7 @@ function ObjectiveRow({ objective: o }: { objective: ObjectiveResult }) {
         <Amount n={o.intel} currency="intel" />
       ) : (
         <span class="sd-results-pay-note" aria-hidden="true">
-          {o.done ? 'On file' : 'Next time!'}
+          {o.done ? 'On file' : marks.nextTime}
         </span>
       )}
     </li>
@@ -367,10 +372,12 @@ function Payroll({
   rewards,
   won,
   resumedFromWave,
+  marks,
 }: {
   rewards: RunRewards;
   won: boolean;
   resumedFromWave: number | null;
+  marks: MedalMarks;
 }) {
   const { label, note } = (rewards.stones ? stonesLine : stardustLine)(rewards.stardust);
   return (
@@ -412,7 +419,7 @@ function Payroll({
       {won && (
         <ul aria-label="Medals">
           {rewards.medals.map((m) => (
-            <MedalRow key={m.id} medal={m} />
+            <MedalRow key={m.id} medal={m} marks={marks} />
           ))}
         </ul>
       )}
@@ -426,7 +433,7 @@ function Payroll({
       {won && rewards.objectives.length > 0 && (
         <ul aria-label="Objectives">
           {rewards.objectives.map((o) => (
-            <ObjectiveRow key={o.id} objective={o} />
+            <ObjectiveRow key={o.id} objective={o} marks={marks} />
           ))}
         </ul>
       )}
@@ -542,7 +549,12 @@ function Body({ result }: { result: RunResult }) {
       </div>
       {/* A3M3 holds its rewards back (core-loop.md § 6.2): the base shows them, never the card. */}
       {rewards !== null && !result.heldRewards && (
-        <Payroll rewards={rewards} won={won} resumedFromWave={result.resumedFromWave} />
+        <Payroll
+          rewards={rewards}
+          won={won}
+          resumedFromWave={result.resumedFromWave}
+          marks={medalMarks(result.counter)}
+        />
       )}
       {rewards !== null && result.heldRewards && rewards.saveNotice !== null && (
         <p class="sd-results-save-notice" role="alert">
@@ -600,15 +612,50 @@ function WayOn({
   );
 }
 
+/**
+ * The Holdout's card (heldCard.ts; T614): "Held." and "Evacuated: {n}." over the way on, and a
+ * failed save's notice; nothing else.
+ */
+function HeldBody({ result, card }: { result: RunResult; card: HeldCard }) {
+  const notice = result.rewards?.saveNotice ?? null;
+  return (
+    <section
+      class="sd-panel sd-results-panel sd-results-held"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="sd-results-heading"
+      aria-describedby="sd-results-held-line"
+      onKeyDown={trapTab}
+      data-testid="results-held"
+    >
+      <h1 id="sd-results-heading" class="sd-results-heading sd-results-held-heading">
+        {card.headline}
+      </h1>
+      <p id="sd-results-held-line" class="sd-results-held-line" data-testid="results-held-line">
+        {card.line}
+      </p>
+      {notice !== null && (
+        <p class="sd-results-save-notice" role="alert">
+          {silkText(notice)}
+        </p>
+      )}
+      <div class="sd-results-buttons">
+        <OnwardButton won />
+      </div>
+    </section>
+  );
+}
+
 /** The results screen: a scrim over the frozen battle and the results panel. */
 export function Results() {
   const result = runResult.value;
   if (result === null) return null;
+  const held = heldCard(result);
   return (
     // Inert under a scene (the stinger plays over the card as it's dismissed).
     // The map's UI act theme (its presentation dial): Act II's card edges in orange.
     <main class="sd-screen sd-results" inert={sceneBlocks.value} data-act={result.theme}>
-      <Body result={result} />
+      {held === null ? <Body result={result} /> : <HeldBody result={result} card={held} />}
     </main>
   );
 }

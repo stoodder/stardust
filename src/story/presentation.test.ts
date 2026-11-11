@@ -23,6 +23,12 @@ describe('the presentation table', () => {
     expect(byAct[3]).toMatchObject({ counter: 'meter', evie: 'dark', tidybots: 'off' });
     expect(byAct[3].jingle).toBe('none');
     expect(byAct.finale).toMatchObject({ counter: 'remembered', jingle: 'song' });
+    // Act III's silences (T613): no win jingle, and the Hollow die with no sound (T601d).
+    expect(byAct[3]).toMatchObject({ winJingle: false, hollowDeath: 'silent' });
+    for (const act of [1, 2, 'finale'] as const) {
+      expect(byAct[act]).toMatchObject({ winJingle: true, hollowDeath: 'unravel' });
+    }
+    expect(byAct[3].loadingTips).toEqual(['Remember.']);
     for (const act of [1, 2, 3, 'finale'] as const) expect(byAct[act].theme).toBe(act);
   });
 

@@ -25,7 +25,8 @@
 // - [dialogue-flag]: dialogue never sets a flag a run-end rule owns (C1 is never a choice).
 // - [dialogue-jump]: labels are unique in a scene; `goto` and `else` name one.
 // - [dialogue-reach]: every node is reachable from the first; no loop runs without a line or choice.
-// - [dialogue-size]: lines on the longest play-through, by slot (`SCENE_LINES`).
+// - [dialogue-size]: lines on the longest play-through, by slot (`SCENE_LINES`; a pausing cue
+//   `PAUSING_CUE_MAX_LINES`).
 // - [dialogue-button]: reply buttons only on radio and cue lines; a reply names a registered scene.
 // - [dialogue-cond]: `thisRun` names a flag with a run-end rule; `outcome` and `thisRun` only in
 //   debriefs and full-screen scenes (a run must have just ended); `seen` names a scene or bark; a
@@ -42,6 +43,7 @@ import { MAP_DIALOGUE, SCENES, BARKS } from './dialogue/index.ts';
 import { SHARED_BARKS } from './dialogue/barks/index.ts';
 import {
   POLICY_TELL,
+  PAUSING_CUE_MAX_LINES,
   SCENE_LINES,
   TEXT_LIMITS,
   mapAct,
@@ -284,7 +286,11 @@ function validateFlow(
     }
   }
   const lines = longestLines(scene, labels);
-  const { min, max } = SCENE_LINES[slot.kind];
+  const { min } = SCENE_LINES[slot.kind];
+  const max =
+    slot.kind === 'cue' && scene.pause === true
+      ? PAUSING_CUE_MAX_LINES
+      : SCENE_LINES[slot.kind].max;
   if (lines < min || lines > max) {
     issues.add(
       'dialogue-size',

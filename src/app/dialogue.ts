@@ -65,6 +65,7 @@ import {
 } from '../story/conditions.ts';
 import {
   advance,
+  linesUntilChoice,
   NO_EFFECTS,
   pressButton,
   readThrough,
@@ -75,6 +76,7 @@ import {
   type DialogueEffects,
 } from '../story/runner.ts';
 import { escortLow, integrityLow } from '../story/meters.ts';
+import { plateName } from '../story/plates.ts';
 import { giveTag, newTagState, tagIndexAfter, tagStep, type TagState } from '../story/tags.ts';
 import { resolveText, type TextContext } from '../story/text.ts';
 import {
@@ -91,6 +93,7 @@ import { silkText } from '../ui/silk.ts';
 import { hud, screen, speed } from '../ui/state.ts';
 import { setSpeed } from './commands.ts';
 import { attemptKills } from './checkpoints.ts';
+import { setLeakLine } from './revoked.ts';
 import type { Host } from './host.ts';
 import { activeSave, updateActiveSave } from './save.ts';
 import type { Speed } from './testHookTypes.ts';
@@ -248,7 +251,7 @@ export function lineView(
   const absent = present === null ? speakerGone(s.speaker, ctx) : !present.includes(s.speaker);
   const expression = s.expression ?? 'neutral';
   const variant = def.variants.find((r) => evaluateCondition(r.when, ctx))?.variant ?? null;
-  const name = def.names?.find((r) => evaluateCondition(r.when, ctx))?.name ?? def.name;
+  const name = plateName(s.speaker, ctx);
   return {
     id: ++lineSerial,
     speaker: s.speaker,
@@ -373,8 +376,45 @@ export function sceneMode(scene: Scene): SceneMode | 'comms' {
   if (slot?.kind === 'scene') return 'fullscreen';
   if (slot?.kind === 'brief') return 'briefing';
   if (slot?.kind === 'base') return 'panel';
-  if (scene.pause === true || scene.nodes.some((n) => n.kind === 'choice')) return 'panel';
+  if (pausingCue(scene) || scene.nodes.some((n) => n.kind === 'choice')) return 'panel';
   return 'comms';
+}
+
+/**
+ * The cues that always pause, by name, whatever their data says (`<map>_cue_<name>`): A3M2's Clean
+ * Exit (`revoke`, T613: the sim keeps ticking through the revocation, so holding the battle for
+ * Sterling's lines is presentation's). A cue flagged `pause: true` pauses too (D134).
+ */
+export const PAUSING_CUES: ReadonlySet<string> = new Set(['revoke']);
+
+/**
+ * The pausing cues that end a beat (`endsBeat`, D138): the pivot (A2M5's), and the Clean Exit
+ * (A3M2's; T613): what the radio was saying belongs to the shift Sterling just ended.
+ */
+export const BEAT_ENDING_CUES: ReadonlySet<string> = new Set(['pivot', 'revoke']);
+
+/** Whether `scene` is a cue that holds the battle (`pause: true`, or one of PAUSING_CUES). */
+export function pausingCue(scene: Scene): boolean {
+  if (scene.pause === true) return true;
+  const slot = sceneSlot(scene.id);
+  return slot?.kind === 'cue' && PAUSING_CUES.has(slot.name);
+}
+
+/**
+ * Whether `scene` is a leak line (T613; core-loop.md § 2.2): a cue named `leak_<x>`
+ * (`<map>_cue_leak_<x>`, A3M2's `a3_m02_cue_leak_w08`–`w15`). As it's cued, its first spoken
+ * line becomes the wave preview's leak line (app/revoked.ts `setLeakLine`) until the next wave
+ * starts, whether or not the radio plays it.
+ */
+export function isLeakLine(scene: Scene): boolean {
+  const slot = sceneSlot(scene.id);
+  return slot?.kind === 'cue' && slot.name.startsWith('leak_');
+}
+
+/** The leak line `scene` gives in `ctx` (its first line with words), as the HUD draws it. */
+export function leakLineText(scene: Scene, ctx: StoryContext, text: TextContext): string | null {
+  const line = linesUntilChoice(scene, ctx).find((l) => l.text !== '');
+  return line === undefined ? null : silkText(resolveText(line.text, text));
 }
 
 // ─── Scenes that hold input ──────────────────────────────────────────────────────────────────
@@ -422,15 +462,16 @@ export interface PlayOptions {
 export const SILENCE_SEC = 2;
 
 /**
- * Whether the line on screen moves on by itself (D098): a silence in a full-screen scene holds
- * for its `durationSec` and goes on, with no Next to press (Skip and Esc still work).
+ * Whether the line on screen moves on by itself (D098): a silence in a full-screen scene or a
+ * pausing panel (T613: Sterling's held beat in A3M2's Clean Exit cue) holds for its `durationSec`
+ * and goes on, with no Next to press (Skip and Esc still work). Never in the briefing.
  */
 export function advancesItself(
   mode: SceneMode,
   line: Pick<LineView, 'silence'> | null,
   instant: boolean,
 ): boolean {
-  return mode === 'fullscreen' && line !== null && line.silence && !instant;
+  return (mode === 'fullscreen' || mode === 'panel') && line !== null && line.silence && !instant;
 }
 
 let silenceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -700,9 +741,7 @@ export function chooseOption(index: number): void {
   h.transcript.push(lineView({ speaker: 'player', text: option.text }, ctx, textContext(), null));
   h.cursor = advance(h.scene, h.cursor, ctx, index);
   h.remember =
-    option.remember === undefined
-      ? null
-      : `${SPEAKER_DEFS[option.remember].name} will remember that.`;
+    option.remember === undefined ? null : `${plateName(option.remember, ctx)} will remember that.`;
   settle(h);
   if (h.cursor.step.kind === 'end' && h.mode !== 'briefing') {
     // A choice that ends the scene still shows its "will remember" before it closes.
@@ -834,14 +873,15 @@ function holdComms(on: boolean): void {
 }
 
 /**
- * Whether `scene` is a pausing cue that ends a beat (D138): the pivot (`<map>_cue_pivot`, A2M5's).
- * What the comms panel had on screen or queued before it belongs to the beat it ends (her
- * challenge, her shield), so it's dropped, not resumed after. Every other pausing scene keeps
- * D135's rule: it never eats a line.
+ * Whether `scene` is a pausing cue that ends a beat (D138): the pivot (`<map>_cue_pivot`, A2M5's)
+ * and the Clean Exit (`<map>_cue_revoke`, A3M2's; BEAT_ENDING_CUES). What the comms panel had on
+ * screen or queued before it belongs to the beat it ends (her challenge, her shield; the drones'
+ * shift), so it's dropped, not resumed after. Every other pausing scene keeps D135's rule: it
+ * never eats a line.
  */
 export function endsBeat(scene: Scene): boolean {
   const slot = sceneSlot(scene.id);
-  return scene.pause === true && slot?.kind === 'cue' && slot.name === 'pivot';
+  return pausingCue(scene) && slot?.kind === 'cue' && BEAT_ENDING_CUES.has(slot.name);
 }
 
 /**
@@ -1138,8 +1178,9 @@ const isEnemy = (id: string): id is EnemyId => Object.hasOwn(ENEMIES, id);
 const isTower = (id: string): id is TowerId => Object.hasOwn(TOWERS, id);
 
 /**
- * Who is on the radio on `map`: QUILL and a present companion (style-guide § 5.5), and Prim when
- * `pa` (the map sends Everglow Security units, which speak in her voice; T603).
+ * Who is on the radio on `map`: QUILL and a present companion (style-guide § 5.5), Ves'thara beside
+ * Bramble (her translator: every Bramble line comes through her; T613), and Prim when `pa` (the map
+ * sends Everglow Security units, which speak in her voice; T603).
  */
 export function presentSpeakers(map: Pick<MapDef<IdSpace>, 'companion'>, pa = false): SpeakerId[] {
   const out: SpeakerId[] = ['quill'];
@@ -1147,6 +1188,7 @@ export function presentSpeakers(map: Pick<MapDef<IdSpace>, 'companion'>, pa = fa
   if (c !== null && 'id' in c && c.state === 'present') {
     const id = c.id === 'bramble' ? 'chitterbloom' : c.id;
     if (!out.includes(id)) out.push(id);
+    if (c.id === 'bramble' && !out.includes('vesthara')) out.push('vesthara');
   }
   if (pa) out.push('prim');
   return out;
@@ -1455,6 +1497,11 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
         return;
       }
       const scene = SCENES[e.cueId];
+      // A leak line (T613) goes on the wave preview as it's cued, radio or not (fair-play intel).
+      if (scene !== undefined && isLeakLine(scene)) {
+        const ctx = storyContext(map);
+        if (scenePlays(scene, ctx)) setLeakLine(leakLineText(scene, ctx, textContext()));
+      }
       if (scene !== undefined) {
         // A cue scene plays once a battle, however many events cue it (A2M1's crew-log line is
         // cued by either log or by W6's countdown, whichever comes first).

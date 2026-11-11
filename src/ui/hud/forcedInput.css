@@ -1,26 +1,80 @@
-/* The forced input's one button (ForcedInputButton.tsx; T605's minimal hook, T614 restyles it):
-   centered low on screen, large, the only live control while the sim waits for it. */
+/* The forced input's screen (ForcedInputButton.tsx; T614; art-direction.md § 9): the veil under
+   the HUD, and one large button centered low, the only live control but the Menu and the speaker.
+   Dim until it arms; armed, a red fill that breathes slowly (no flash: style-guide § 8). */
+.hud-forced-veil {
+  position: absolute;
+  inset: 0;
+  pointer-events: auto;
+  background: radial-gradient(ellipse at 50% 45%, transparent 45%, rgb(5 4 12 / 55%) 100%);
+  animation: hud-forced-veil-in 1200ms ease-out both;
+}
+
+@keyframes hud-forced-veil-in {
+  from {
+    opacity: 0;
+  }
+}
+
 .hud-forced-input {
   position: absolute;
   left: 50%;
-  bottom: 48px;
+  bottom: 40px;
   transform: translateX(-50%);
   pointer-events: auto;
 }
 
 .hud-forced-input-button {
-  --edge: var(--sd-red-3);
-  min-width: 96px;
-  min-height: 28px;
-  padding: 6px 16px;
+  --edge: var(--sd-steel-2);
+  min-width: 128px;
+  min-height: 32px;
+  padding: 8px 24px;
   font-size: 16px;
-  letter-spacing: 2px;
+  line-height: 16px;
+  letter-spacing: 4px;
+  color: var(--sd-steel-3);
+  background: var(--sd-ink-2);
+  cursor: default;
+  transition:
+    color 300ms,
+    background-color 300ms;
+}
+
+.hud-forced-input-button.armed {
+  --edge: var(--sd-red-4);
   color: var(--sd-white-1);
   background: var(--sd-red-2);
   cursor: pointer;
+  animation: hud-forced-breathe 2400ms ease-in-out infinite;
+}
+
+/* The fill warms and settles once every 2.4 s (0.4 Hz, a breath, never a flash). */
+@keyframes hud-forced-breathe {
+  50% {
+    background-color: var(--sd-red-3);
+  }
+}
+
+/* Focus: the edge turns white, as on every HUD button (an outline would be clipped). */
+.hud-forced-input-button:focus {
+  outline: none;
 }
 
 .hud-forced-input-button:focus-visible {
-  outline: 1px solid var(--sd-white-1);
-  outline-offset: 2px;
+  --edge: var(--sd-white-1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hud-forced-veil,
+  .hud-forced-input-button.armed {
+    animation: none;
+  }
+
+  .hud-forced-input-button {
+    transition: none;
+  }
+}
+
+/* The HUD's parts a forced input locks (index.tsx `Lock`): inert, and laid out as if unwrapped. */
+.hud-lock {
+  display: contents;
 }

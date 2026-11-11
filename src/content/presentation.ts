@@ -31,6 +31,12 @@ export type EvieState = 'beaming' | 'peeling' | 'dark';
  */
 export type JingleVariant = 'bright' | 'minor_bridges' | 'minor' | 'none' | 'song';
 
+/**
+ * How the Hollow sound as they die (enemies.md § 8): `unravel`, the faint backwards hiss (Act II
+ * on); `silent`, no sound at all (Act III: the silence is the effect; T601d).
+ */
+export type HollowDeath = 'unravel' | 'silent';
+
 /** One map's presentation. */
 export interface PresentationDials {
   readonly counter: CounterStyle;
@@ -40,6 +46,13 @@ export interface PresentationDials {
   readonly tidybots: TidybotMode;
   readonly evie: EvieState;
   readonly jingle: JingleVariant;
+  /**
+   * Whether a won map plays the win jingle (the "PERIMETER SECURED!" fanfare). Off in Act III, where
+   * the jingle stops playing and QUILL notices ("...No song."); the finale's win is M8's (the song).
+   */
+  readonly winJingle: boolean;
+  /** How the Hollow sound as they die (enemies.md § 8). */
+  readonly hollowDeath: HollowDeath;
   /** The UI act theme: the `data-act` value on the UI root (art-direction § 9 *Act themes*). */
   readonly theme: StoryAct;
   /**
@@ -80,6 +93,8 @@ export const PRESENTATION: PresentationTable = {
       tidybots: 'on',
       evie: 'beaming',
       jingle: 'bright',
+      winJingle: true,
+      hollowDeath: 'unravel',
       theme: 1,
       holdRewardToasts: false,
     },
@@ -90,6 +105,8 @@ export const PRESENTATION: PresentationTable = {
       tidybots: 'on',
       evie: 'peeling',
       jingle: 'minor_bridges',
+      winJingle: true,
+      hollowDeath: 'unravel',
       theme: 2,
       holdRewardToasts: false,
     },
@@ -100,6 +117,8 @@ export const PRESENTATION: PresentationTable = {
       tidybots: 'off',
       evie: 'dark',
       jingle: 'none',
+      winJingle: false,
+      hollowDeath: 'silent',
       theme: 3,
       holdRewardToasts: false,
     },
@@ -111,6 +130,8 @@ export const PRESENTATION: PresentationTable = {
       tidybots: 'off',
       evie: 'dark',
       jingle: 'song',
+      winJingle: true,
+      hollowDeath: 'unravel',
       theme: 'finale',
       holdRewardToasts: false,
     },

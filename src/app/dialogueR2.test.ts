@@ -255,11 +255,13 @@ describe('silences in full-screen scenes (S5)', () => {
     vi.useRealTimers();
   });
 
-  it('move on by themselves: only a full-screen silence, never one shown whole', () => {
+  it('move on by themselves: a full-screen or pausing-panel silence, never one shown whole', () => {
     expect(advancesItself('fullscreen', { silence: true }, false)).toBe(true);
     expect(advancesItself('fullscreen', { silence: false }, false)).toBe(false);
     expect(advancesItself('fullscreen', { silence: true }, true)).toBe(false);
-    expect(advancesItself('panel', { silence: true }, false)).toBe(false);
+    // A pausing panel's silence too (T613: Sterling's held beat in A3M2's Clean Exit cue).
+    expect(advancesItself('panel', { silence: true }, false)).toBe(true);
+    expect(advancesItself('briefing', { silence: true }, false)).toBe(false);
     expect(advancesItself('fullscreen', null, false)).toBe(false);
   });
 

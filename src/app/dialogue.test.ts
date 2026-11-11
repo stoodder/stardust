@@ -102,7 +102,7 @@ describe('dialogue helpers', () => {
     expect(isQueuedTrigger({ on: 'perfect_wave' })).toBe(false);
   });
 
-  it('puts QUILL and a present companion on the radio', () => {
+  it('puts QUILL and a present companion on the radio (Bramble with her translator)', () => {
     expect(presentSpeakers({ companion: { id: 'bricks', state: 'present' } })).toEqual([
       'quill',
       'bricks',
@@ -111,6 +111,7 @@ describe('dialogue helpers', () => {
     expect(presentSpeakers({ companion: { id: 'bramble', state: 'present' } })).toEqual([
       'quill',
       'chitterbloom',
+      'vesthara',
     ]);
     expect(presentSpeakers({ companion: null })).toEqual(['quill']);
   });

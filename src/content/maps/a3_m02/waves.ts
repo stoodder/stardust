@@ -36,18 +36,21 @@ export const COUNTDOWN = 30;
 /** W7's drone column: ten, this far apart, so the Clean Exit (map.ts, 12 s in) lands mid-column. */
 export const W7_GAP = 2;
 /** The late drone columns, each sent twice (W12's, W14's, W15's), one drone a second. */
-const E = (k: string, d: number): number => Number(process.env[k] ?? d);
-export const W12_DRONES = E('W12', 24);
-export const W14_DRONES = E('W14', 26);
-export const W15_DRONES = E('W15', 16);
+export const W12_DRONES = 30;
+export const W14_DRONES = 32;
+export const W15_DRONES = 20;
 const GAP = 1;
-const MOTES4 = E('M4', 22);
-const MOTES6 = E('M6', 16);
-const MOTES8 = E('M8', 18);
-const MOTES10 = E('M10', 16);
-const M_GAP = E('MG', 0.25);
-const MOTES1 = E('M1', 12);
-const MOTES2 = E('M2', 20);
+/**
+ * The Mote clusters before the cue (W1's second pack, W2's rift, W4's road, W6's rift) and after
+ * it (W8's two packs, W10's rifts), this far apart: packed tight enough that only splash keeps up.
+ */
+const M_GAP = 0.18;
+const MOTES1 = 16;
+const MOTES2 = 30;
+const MOTES4 = 38;
+const MOTES6 = 32;
+const MOTES8 = 26;
+const MOTES10 = 20;
 
 export const waves = defineWaves([
   // W1 · Motes down the old road

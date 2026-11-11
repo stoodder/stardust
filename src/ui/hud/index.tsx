@@ -4,13 +4,14 @@
 // announcement (a visually hidden aria-live region). Components read the `hud` signals (kept in
 // sync by app/hud.ts) and act only through app/commands.ts; each lives in its own file here
 // (T225). Every control is a real <button> of at least 16×16 game px.
+import type { ComponentChildren } from 'preact';
 import { CommsPanel } from '../dialogue/CommsPanel.tsx';
 import { dialogue, sceneBlocks } from '../dialogue/state.ts';
 import { MenuButton, PauseMenu } from '../pause/PauseMenu.tsx';
 import { pauseMenu } from '../pause/state.ts';
 import { hud } from '../state.ts';
 import { MuteButton } from './MuteButton.tsx';
-import { ForcedInputButton } from './ForcedInputButton.tsx'; // T605
+import { ForcedInputButton, ForcedInputVeil } from './ForcedInputButton.tsx'; // T605, T614
 import { forcedInput } from './forcedInputState.ts';
 import { AbilityBar } from './AbilityBar.tsx';
 import { Briefing } from './Briefing.tsx';
@@ -31,51 +32,71 @@ import { SpeedControls, WavePanel } from './WavePanel.tsx';
 import './hud.css';
 import './revoked.css'; // T606
 
+/**
+ * A part of the HUD a forced input locks (T614): inert while it waits, laid out as if the wrapper
+ * weren't there (`display: contents`).
+ */
+function Lock({ locked, children }: { locked: boolean; children: ComponentChildren }) {
+  return (
+    <div class="hud-lock" inert={locked}>
+      {children}
+    </div>
+  );
+}
+
 /** The battle HUD. */
 export function Hud() {
   const selected = hud.selected.value;
   const briefing = dialogue.scene.value?.mode === 'briefing' ? dialogue.scene.value : null;
-  // A forced input (T605) locks every control but its own button.
-  const open =
-    hud.briefing.value !== null ||
-    sceneBlocks.value ||
-    pauseMenu.value ||
-    forcedInput.value !== null;
+  const open = hud.briefing.value !== null || sceneBlocks.value || pauseMenu.value;
+  // A forced input (T605, T614: A3M3's SEAL) locks every control but its own button, the Menu,
+  // and the speaker (design/core-loop.md § 2.11: settings stay reachable); its veil takes the
+  // playfield's clicks.
+  const locked = forcedInput.value !== null;
   return (
-    <div class="hud" data-act={hud.act.value} data-testid="hud">
+    <div class="hud" data-act={hud.act.value} data-testid="hud" data-locked={locked || undefined}>
+      <ForcedInputVeil />
       {/* Everything but the briefing: inert (unfocusable, unclickable) while it, a scene, or the
-          pause menu is open. */}
+          pause menu is open; under a forced input, everything but the Menu and the speaker. */}
       <div class="hud-play" inert={open}>
-        <PausedOverlay />
-        <WaveBannerView />
-        {/* Top-left: status, then the comms panel under it (it follows the status panel's height). */}
-        <div class="hud-top-left">
-          <StatusPanel />
-          <CommsPanel />
-        </div>
+        <Lock locked={locked}>
+          <PausedOverlay />
+          <WaveBannerView />
+          {/* Top-left: status, then the comms panel under it (it follows the status panel's height). */}
+          <div class="hud-top-left">
+            <StatusPanel />
+            <CommsPanel />
+          </div>
+        </Lock>
         <div class="hud-top-right">
           <div class="hud-top-row">
             <MenuButton />
             <MuteButton />
-            <SpeedControls />
+            <Lock locked={locked}>
+              <SpeedControls />
+            </Lock>
           </div>
-          <WavePanel />
-          <CheckpointCueView />
+          <Lock locked={locked}>
+            <WavePanel />
+            <CheckpointCueView />
+          </Lock>
         </div>
-        {/* Bottom-left: the abilities, then fire control (always there: core-loop §2.7). */}
-        <div class="hud-bottom-left">
-          <AbilityBar />
-          <div class="hud-fire-control" role="group" aria-label="Fire control">
-            <HoldFireAllButton />
-            <SpareRunnersAllButton />
+        <Lock locked={locked}>
+          {/* Bottom-left: the abilities, then fire control (always there: core-loop §2.7). */}
+          <div class="hud-bottom-left">
+            <AbilityBar />
+            <div class="hud-fire-control" role="group" aria-label="Fire control">
+              <HoldFireAllButton />
+              <SpareRunnersAllButton />
+            </div>
           </div>
-        </div>
-        <BuildBar />
-        {selected !== null && <TowerPanel t={selected} />}
-        <BottomHint />
-        <Notice />
-        <CursorAnnouncer />
-        <ActionAnnouncer />
+          <BuildBar />
+          {selected !== null && <TowerPanel t={selected} />}
+          <BottomHint />
+          <Notice />
+          <CursorAnnouncer />
+          <ActionAnnouncer />
+        </Lock>
       </div>
       <ForcedInputButton />
       {hud.briefing.value !== null && briefing !== null && <Briefing view={briefing} />}

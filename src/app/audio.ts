@@ -304,6 +304,8 @@ export function bindBattleAudio(host: Host<IdSpace>): () => void {
       return jingle;
     },
     skitterkinDeath: dials.skitterkinDeath,
+    winJingle: dials.winJingle,
+    hollowDeath: dials.hollowDeath,
   };
   // What no event announces (digs, a sneeze's tell, a flock, the drone, a cloak's footsteps, a
   // charge's hum), from the state; and where the Hollow units stand, for their quiet.
