@@ -19,7 +19,7 @@ import {
   openCrateAtBriefing,
   quillOfflineHere,
 } from './storyMeta.ts';
-import { storyScene } from './storyStubs.ts';
+import { SCENES } from '../content/dialogue/index.ts';
 
 const NO_EFFECTS = { flags: {}, callsign: null } as const;
 
@@ -157,9 +157,9 @@ describe('C4 on the card (D146: asked once, committed on the answer)', () => {
     expect(again.story.flags.quill_choice).toBe('keep');
   });
 
-  it('plays a placeholder debrief and Night Shift until A3M4 registers its own', () => {
-    expect(storyScene('a3_m04_debrief')).toBeDefined();
-    expect(storyScene('a3_m04_base_night_shift')).toBeDefined();
+  it('plays A3M4\'s registered debrief and Night Shift', () => {
+    expect(SCENES['a3_m04_debrief']).toBeDefined();
+    expect(SCENES['a3_m04_base_night_shift']).toBeDefined();
   });
 });
 

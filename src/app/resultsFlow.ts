@@ -9,6 +9,7 @@
 // `none`) makes it as the card opens. Guarded by the flag, never by the debrief's seen id: a win
 // whose card was never answered (the tab closed) is offered it at the base (app/baseChoice.ts,
 // which plays the same offer through `openChoice` and `takeChoice`).
+import { SCENES } from '../content/dialogue/index.ts';
 import { isCampaignMapId } from '../content/dialogue/rules.ts';
 import type { FlagSet } from '../content/dialogue/flags.ts';
 import type { FlagId } from '../content/types.ts';
@@ -48,7 +49,6 @@ import {
   type RunEndInput,
 } from './runResult.ts';
 import { activeSave, updateActiveSave } from './save.ts';
-import { storyScene } from './storyStubs.ts';
 import type { RunOutcome } from './testHookTypes.ts';
 
 /** A flag a debrief's choice decides on Results, and the story transaction that decides it. */
@@ -290,7 +290,7 @@ export function withResultsChoice(
   outcome: RunOutcome,
   save: SaveData | null,
   record = true,
-  lookup: (id: string) => Scene | undefined = storyScene,
+  lookup: (id: string) => Scene | undefined = (id) => SCENES[id],
 ): RunResult {
   pending = null;
   const map = input.mapId;

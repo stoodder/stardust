@@ -75,11 +75,13 @@ describe('REFERENCE_PROFILES, Act II part two (M5)', () => {
     // A stub tower (the Scuttle Den until T604) waits for its task: priced as it will be.
     const live = { ...LIVE_PURCHASE_RULES, aheadOfTask: [] };
     expect(purchasable(live)).toEqual([]);
-    // While a tower is ahead of its task, every row owning it is refused for it alone.
+    // While a tower is ahead of its task, every row owning it is refused for it alone: A3M1–A3M4,
+    // and A3M4's warren cell (its `referenceProfileByFlag`).
     const ahead = purchasable({ ...LIVE_PURCHASE_RULES, aheadOfTask: ['burrow'] });
-    expect(ahead.length).toBe(3);
+    expect(ahead.length).toBe(5);
     for (const e of ahead)
-      expect(e).toMatch(/a3_m0[1-3]\.referenceProfile.*'burrow' waits for its task/);
+      expect(e).toMatch(/a3_m0[1-4]\.referenceProfile.*'burrow' waits for its task/);
+    expect(ahead.filter((e) => e.includes('referenceProfileByFlag[0]'))).toHaveLength(1);
   });
 
   it("checks A2M5's row against the bank C2 Return emptied", () => {
@@ -145,10 +147,12 @@ describe('REFERENCE_PROFILES, Act III part one (M6, T600b)', () => {
       emergency_bulkhead: { ...LIVE_PURCHASE_RULES.protocols.emergency_bulkhead!, price: 5000 },
     };
     const errors = purchasable({ ...LIVE_PURCHASE_RULES, aheadOfTask: [], protocols });
-    expect(errors.map((e) => /maps\.(a3_m0\d)\.referenceProfile: spends/.exec(e)?.[1])).toEqual([
+    expect(errors.map((e) => /maps\.(a3_m0\d)\.referenceProfile(?:ByFlag\[0\]\.profile)?: spends/.exec(e)?.[1])).toEqual([
       'a3_m01',
       'a3_m02',
       'a3_m03',
+      'a3_m04',
+      'a3_m04',
     ]);
     // A protocol is listed once, equipped or not.
     const raw = withRows();
