@@ -40,9 +40,9 @@ test('jam: the tendril tell, the Jammed Choir, and System Reboot clearing it', a
   await page.evaluate(() => {
     const sd = globalThis.__sd!;
     sd.setSpeed(0);
+    // A Silencer tells as soon as a tower is in reach (T760), so the Choir is the first tower on
+    // its road here and a Rivet stands past it.
     sd.enqueue({ type: 'build', tower: 'choir', tile: [7, 2] });
-    sd.enqueue({ type: 'build', tower: 'rivet', tile: [5, 2] });
-    sd.enqueue({ type: 'build', tower: 'rivet', tile: [3, 2] });
     sd.enqueue({ type: 'build', tower: 'rivet', tile: [12, 2] });
     sd.fastForward(1);
     sd.enqueue({ type: 'callWave' });

@@ -43,7 +43,7 @@ test('bearers: they carry their burden home, a hush costs the meter 1, and the s
   await page.goto('/?test=1&map=dev_bearers&seed=1');
   await waitForReady(page);
   const meter = page.getByTestId('asset-meter');
-  await expect(meter).toHaveAccessibleName('Bearers 6 of 6');
+  await expect(meter).toHaveAccessibleName(/^Bearers 6 of 6\. Carried home \d+ of 6$/);
   await page.evaluate(() => {
     const sd = globalThis.__sd!;
     sd.setSpeed(0);
@@ -68,7 +68,7 @@ test('bearers: they carry their burden home, a hush costs the meter 1, and the s
   const hushed = await until(page, 'hushed');
   expect(hushed).toMatchObject({ outcome: 'playing', asset: 5, lost: 1 });
   await nextFrames(page);
-  await expect(meter).toHaveAccessibleName('Bearers 5 of 6');
+  await expect(meter).toHaveAccessibleName(/^Bearers 5 of 6\. Carried home \d+ of 6$/);
   await shot(page, 'bearers', 2, 'hushed');
 
   // One reaches the door: home, and the meter doesn't move.
