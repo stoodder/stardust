@@ -172,7 +172,7 @@ function towerView(
 }
 
 /** The objectives with no core to protect: an Escort's road, a Holdout's doors (D143 R9). */
-const CORELESS: readonly ObjectiveKind[] = ['escort', 'holdout'];
+const CORELESS: ReadonlySet<ObjectiveKind> = new Set(['escort', 'holdout']);
 
 /** What a core-only protocol reads on a map with no core. */
 export const NO_CORE_TEXT = 'No core on this shift';
@@ -194,7 +194,7 @@ function protocolView(id: ProtocolId, objective: ObjectiveKind): LoadoutProtocol
     name: silkText(def.name),
     effect: silkText(def.grants.map(grantText).join(' · ')),
     takesTower: takesTowerPick(id),
-    inert: CORELESS.includes(objective) && coreOnly(id) ? NO_CORE_TEXT : null,
+    inert: CORELESS.has(objective) && coreOnly(id) ? NO_CORE_TEXT : null,
   };
 }
 

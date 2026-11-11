@@ -111,10 +111,12 @@ async function both(
   build: (s: Synth) => void,
   noDuck = false,
 ): Promise<RenderLevels> {
-  return {
-    out: await render(seconds, build, { noDuck }),
-    raw: await render(seconds, build, { noDuck, rawMaster: true }),
-  };
+  // Two independent contexts, rendered at once (each on its own audio thread; T564b).
+  const [out, raw] = await Promise.all([
+    render(seconds, build, { noDuck }),
+    render(seconds, build, { noDuck, rawMaster: true }),
+  ]);
+  return { out, raw };
 }
 
 /** Renders one sound effect at default volumes. */
@@ -551,15 +553,14 @@ export async function renderStorm(
   }
   const music = (s: Synth): void => stormMusic(storm, s);
   const full = duckedTimeline(storm, true);
-  const out = await renderBuffer(STORM_SEC, music, {}, full);
-  const raw = await renderBuffer(STORM_SEC, music, { rawMaster: true }, full);
-  // The rest of the mix without the line's blip (the raw graph is linear), against every blip.
-  const rest = await renderBuffer(
-    STORM_SEC,
-    music,
-    { rawMaster: true },
-    duckedTimeline(storm, false),
-  );
+  // Three independent contexts, rendered at once (each on its own audio thread, so a stepped
+  // render's suspends overlap the others' work; T564b): the mix, its raw master, and the rest of
+  // the mix without the line's blip (the raw graph is linear), measured against every blip.
+  const [out, raw, rest] = await Promise.all([
+    renderBuffer(STORM_SEC, music, {}, full),
+    renderBuffer(STORM_SEC, music, { rawMaster: true }, full),
+    renderBuffer(STORM_SEC, music, { rawMaster: true }, duckedTimeline(storm, false)),
+  ]);
   const blips = [storm.line.blip, ...BLIP_IDS.filter((b) => b !== storm.line.blip)];
   const speech = await Promise.all(blips.map((b) => speechMargin(b, rest, storm.line.at)));
   return { out: analyze([out], RATE), raw: analyze([raw], RATE), speech };
