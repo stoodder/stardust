@@ -31,7 +31,9 @@
 // - [dialogue-cond]: `thisRun` names a flag with a run-end rule; `outcome` and `thisRun` only in
 //   debriefs and full-screen scenes (a run must have just ended); `seen` names a scene or bark; a
 //   `bank` or `runStat` test has a bound, each a non-negative integer, `gte` ≤ `lte`; a `runStat`
-//   names a run story stat and never sits in a base topic (no run there).
+//   names a run story stat and never sits in a base topic (no run there); a `revokedTower` names a
+//   registered tower.
+// - [dialogue-plate]: a line's `plateAs` is 1–16 characters (the plate's width, as a name tag).
 // - [dialogue-pause]: `pause: true` only on a cue scene (`cue_<name>`, D134; T501l): the briefing,
 //   full-screen scenes, and base topics already hold input, and radio and debriefs never pause.
 // - [dialogue-bark]: trigger waves and phases are positive integers; a `flag` trigger has a
@@ -69,6 +71,7 @@ import {
   type SceneSlot,
   type StoryAct,
 } from './dialogue/types.ts';
+import { TOWERS } from './towers/index.ts';
 import { Issues } from './validateHelpers.ts';
 
 /** What dialogue validation reads. */
@@ -187,6 +190,9 @@ function validateNode(
     case 'line': {
       const p = { ...place, speaker: n.speaker };
       validateSpoken(issues, p, n.speaker, n.expression, n.text, n.durationSec, TEXT_LIMITS.line);
+      if (n.plateAs !== undefined && (n.plateAs.length === 0 || n.plateAs.length > TEXT_LIMITS.tag)) {
+        issues.add('dialogue-plate', p.where, `plateAs must be 1–${TEXT_LIMITS.tag} characters`);
+      }
       if (n.button !== undefined) {
         if (slot.kind !== 'radio' && slot.kind !== 'cue') {
           issues.add('dialogue-button', p.where, 'reply buttons ride only on radio and cue lines');
@@ -537,6 +543,9 @@ function validateCondition(
     if (slot?.kind === 'base') {
       issues.add('dialogue-cond', where, 'runStat reads a run; a base topic has none');
     }
+  }
+  if ('revokedTower' in cond && !Object.hasOwn(TOWERS, cond.revokedTower)) {
+    issues.add('dialogue-cond', where, `revokedTower '${cond.revokedTower}' is not a tower`);
   }
   if ('seen' in cond && !known.has(cond.seen)) {
     issues.add('dialogue-cond', where, `seen '${cond.seen}' is not a registered scene or bark`);

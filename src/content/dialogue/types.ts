@@ -148,6 +148,12 @@ export type Condition =
    * save's `MapRecord.objectives`): A2M1's Crew Logs unlock the crew-log codex entry.
    */
   | { readonly objectiveDone: { readonly map: CampaignMapId; readonly objective: string } }
+  /**
+   * That tower class is revoked in the save (`unlocks.revokedTowers`; A3M2's Clean Exit, T604):
+   * Bricks's A3M3 briefing line when the Thumper was taken (D143 R4). The context's
+   * `revokedTowers`; false without them.
+   */
+  | { readonly revokedTower: TowerId }
   | { readonly all: readonly Condition[] }
   | { readonly any: readonly Condition[] }
   | { readonly not: Condition };
@@ -212,6 +218,11 @@ export type LineNode = {
     readonly button?: ReplyButton;
     /** What the playfield points at while the line shows (D059's first-turret ping). */
     readonly point?: 'firstTower';
+    /**
+     * The name on this line's plate instead of the speaker's (D143 R12): Bramble is "The
+     * Matriarch" until Pebble names her. Only the plate; the portrait and voice stay the speaker's.
+     */
+    readonly plateAs?: string;
   };
 }[SpeakerId];
 
@@ -331,6 +342,11 @@ export type BarkTrigger =
   | { readonly on: 'not_firing'; readonly wave?: number }
   | { readonly on: 'tower_built'; readonly tower?: TowerId }
   | { readonly on: 'tower_sold'; readonly tower?: TowerId; readonly tagged?: boolean }
+  /**
+   * A tower was revoked (A3M2's Clean Exit; the sim's `TowerRevoked`). `tagged: true`: it was the
+   * turret Bricks named (story/tags.ts reason `'revoked'`; D143 R5). Queued (`isQueuedTrigger`).
+   */
+  | { readonly on: 'tower_revoked'; readonly tower?: TowerId; readonly tagged?: boolean }
   | { readonly on: 'enemy_killed' | 'enemy_leaked' | 'new_enemy'; readonly enemy: EnemyId }
   | { readonly on: 'boss_phase'; readonly phase?: number }
   /**

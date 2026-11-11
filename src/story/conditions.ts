@@ -16,6 +16,7 @@ import {
   type RunStoryStat,
   type StoryAct,
 } from '../content/dialogue/types.ts';
+import type { TowerId } from '../content/types.ts';
 import { evaluateFlagRule, flagValue, type FlagRuleStats } from './flags.ts';
 
 /** A run's stats as story conditions read them (`runStat`; T569). */
@@ -57,6 +58,8 @@ export interface StoryContext {
    * a battle is bound); none between maps.
    */
   readonly live?: RunStoryStats;
+  /** The save's revoked tower classes (`unlocks.revokedTowers`), for `revokedTower`. */
+  readonly revokedTowers?: readonly TowerId[];
 }
 
 /**
@@ -108,6 +111,7 @@ export function runContextOf(
  *   a bank.
  * - `runStat`: this run's stat (the battle's live one, else the ended run's) is within
  *   `gte`/`lte`; false outside a run.
+ * - `revokedTower`: the save has that class revoked; false without the context's list.
  */
 export function evaluateCondition(cond: Condition, ctx: StoryContext): boolean {
   if ('all' in cond) return cond.all.every((c) => evaluateCondition(c, ctx));
@@ -136,6 +140,7 @@ export function evaluateCondition(cond: Condition, ctx: StoryContext): boolean {
     const done = ctx.objectives?.[cond.objectiveDone.map] ?? [];
     return done.includes(cond.objectiveDone.objective);
   }
+  if ('revokedTower' in cond) return ctx.revokedTowers?.includes(cond.revokedTower) ?? false;
   const v = ctx.run?.ruleFlags[cond.thisRun];
   return v !== undefined && v === cond.eq;
 }

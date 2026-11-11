@@ -1,6 +1,7 @@
 // Bricks's name tags (docs/design/towers.md § 8; docs/story/campaign.md § 6.3): which tower carries
 // the map's tag, from sim events, starting at A1M2. Cosmetic, so it lives outside the sim: render
-// draws the plate, story plays the tagging line and the `tower_sold` bark with `tagged: true`.
+// draws the plate, story plays the tagging line and the `tower_sold` bark with `tagged: true` (or
+// `tower_revoked` with `tagged: true`, when A3M2's Clean Exit takes the named turret; D143 R5).
 // Pure: the state is plain data the caller keeps, one per battle.
 import type { CampaignMapId } from '../content/campaign.ts';
 import { NAME_TAGS, type NameTagDef } from '../content/dialogue/tags.ts';
@@ -29,11 +30,12 @@ export interface TagState {
 /**
  * What a step changed. `tagged`: the plate goes on `uid` (`name` is the raw tag text: resolve it
  * with `resolveText`, for A3M3's `{name}`). `untagged`: it comes off, because the tower was sold
- * (play the `tower_sold` bark with `tagged: true`) or the tag moved to a newer tower.
+ * (play the `tower_sold` bark with `tagged: true`), revoked (`tower_revoked` with `tagged: true`;
+ * never the sold bark), or the tag moved to a newer tower.
  */
 export type TagEffect =
   | { readonly kind: 'tagged'; readonly uid: number; readonly tower: string; readonly name: string }
-  | { readonly kind: 'untagged'; readonly uid: number; readonly reason: 'sold' | 'moved' };
+  | { readonly kind: 'untagged'; readonly uid: number; readonly reason: 'sold' | 'revoked' | 'moved' };
 
 export interface TagStep {
   readonly state: TagState;
@@ -106,8 +108,8 @@ export function giveTag(state: TagState): TagStep {
 
 /**
  * Steps tagging past one sim event. `TowerBuilt` adds an attacking tower (a `latest` tag moves to
- * it); `TowerSold` takes the tag off with it (a `latest` tag moves to the newest standing tower);
- * the first `WaveCleared` with an attacking tower standing is an `earliest` tag's moment. Other
+ * it); `TowerSold` and `TowerRevoked` take the tag off with it (reason `'sold'` or `'revoked'`; a
+ * `latest` tag moves to the newest standing tower); the first `WaveCleared` with an attacking tower standing is an `earliest` tag's moment. Other
  * events change nothing.
  */
 export function tagStep(
@@ -121,11 +123,12 @@ export function tagStep(
     const next = { ...state, towers: [...state.towers, { uid: e.uid, tower: e.tower }] };
     return next.given && next.def?.pick === 'latest' ? retag(next) : { state: next, effects: [] };
   }
-  if (e.type === 'TowerSold') {
+  if (e.type === 'TowerSold' || e.type === 'TowerRevoked') {
     const towers = state.towers.filter((t) => t.uid !== e.uid);
     if (towers.length === state.towers.length) return { state, effects: [] };
     if (state.tagged?.uid !== e.uid) return { state: { ...state, towers }, effects: [] };
-    const sold: TagEffect = { kind: 'untagged', uid: e.uid, reason: 'sold' };
+    const reason = e.type === 'TowerSold' ? 'sold' : 'revoked';
+    const sold: TagEffect = { kind: 'untagged', uid: e.uid, reason };
     const next: TagState = { ...state, towers, tagged: null };
     if (next.def?.pick !== 'latest') return { state: next, effects: [sold] };
     const moved = retag(next);

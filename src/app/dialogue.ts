@@ -228,6 +228,8 @@ interface Spoken {
   readonly durationSec?: number;
   readonly point?: 'firstTower';
   readonly button?: ReplyButton;
+  /** The plate's name instead of the speaker's (`LineNode.plateAs`; D143 R12). */
+  readonly plateAs?: string;
 }
 
 let lineSerial = 0;
@@ -240,7 +242,8 @@ function speakerGone(speaker: SpeakerId, ctx: StoryContext): boolean {
 /**
  * The view of line `s`: its speaker's name plate and portrait (the plate and the variant the
  * speaker's rules pick; the `dark` bake for a silence from an absent speaker), and its text with
- * tokens resolved.
+ * tokens resolved. A line's `plateAs` names the plate instead (Bramble as "The Matriarch" until
+ * Pebble names her).
  * `present`: who is on the radio (a battle), or null (anyone not gone for good).
  */
 export function lineView(
@@ -254,7 +257,7 @@ export function lineView(
   const absent = present === null ? speakerGone(s.speaker, ctx) : !present.includes(s.speaker);
   const expression = s.expression ?? 'neutral';
   const variant = def.variants.find((r) => evaluateCondition(r.when, ctx))?.variant ?? null;
-  const name = plateName(s.speaker, ctx);
+  const name = s.plateAs ?? plateName(s.speaker, ctx);
   return {
     id: ++lineSerial,
     speaker: s.speaker,
@@ -1309,12 +1312,15 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
   const stepTags = (e: Parameters<typeof tagStep>[1]): boolean =>
     tags === null ? false : applyTags(tagStep(tags, e));
 
-  /** Applies a tagging step: the plate, and the tag moment's scene the first time it lands. */
+  /**
+   * Applies a tagging step: the plate, and the tag moment's scene the first time it lands. Returns
+   * whether the named turret went with the event (sold or revoked: its `tagged: true` bark).
+   */
   const applyTags = (step: ReturnType<typeof tagStep>): boolean => {
     tags = step.state;
     let sold = false;
     for (const fx of step.effects) {
-      if (fx.kind === 'untagged' && fx.reason === 'sold') sold = true;
+      if (fx.kind === 'untagged' && fx.reason !== 'moved') sold = true;
       // The plate over the tagged turret (T431): render draws `hud.nameTag` (BattleScene).
       if (fx.kind === 'untagged' && hud.nameTag.value?.uid === fx.uid) hud.nameTag.value = null;
       if (fx.kind === 'tagged') {
@@ -1494,6 +1500,13 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
       const tagged = stepTags(e) ? { tagged: true } : {};
       const tower = t !== undefined && isTower(t) ? { tower: t } : {};
       offerBarks([{ on: 'tower_sold', ...tower, ...tagged }]);
+    }),
+    // A3M2's Clean Exit (T604): a revoked turret leaves like a sold one, but never with the sold
+    // bark; the named one's own line queues (`tower_revoked`, `tagged: true`; D143 R5).
+    bus.on('TowerRevoked', (e) => {
+      towerOf.delete(e.uid);
+      const tagged = stepTags(e) ? { tagged: true } : {};
+      offerBarks([{ on: 'tower_revoked', ...(isTower(e.tower) ? { tower: e.tower } : {}), ...tagged }]);
     }),
     bus.on('HoldFireChanged', (e) => {
       if (e.on) offerBarks([{ on: 'hold_fire_used' }]);

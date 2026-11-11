@@ -31,7 +31,7 @@ function isWon(save: SaveData, id: CampaignMapId): boolean {
 
 /**
  * The story context between maps (the base, run end): the save's flags, seen list, lifetime
- * count, objectives on file, and banks, about the furthest map won (null before A1M1: the intake).
+ * count, objectives on file, banks, and revoked classes, about the furthest map won (null before A1M1: the intake).
  */
 export function baseStoryContext(save: SaveData): StoryContext {
   return {
@@ -42,6 +42,7 @@ export function baseStoryContext(save: SaveData): StoryContext {
     run: null,
     objectives: objectivesOnFile(save),
     bank: save.currencies,
+    revokedTowers: save.unlocks.revokedTowers,
   };
 }
 

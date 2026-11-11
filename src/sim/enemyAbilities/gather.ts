@@ -120,24 +120,15 @@ function distSq(m: Enemy, route: Enemy['route'], dist: number, x: number, y: num
   return dx * dx + dy * dy;
 }
 
-/** Whether a gatherer other than `self` holds the enemy `uid` in its tell. */
-function heldByOther(pool: Pool<Enemy>, uid: number, self: Enemy | null): boolean {
-  for (let i = 0; i < pool.used; i++) {
-    const m = pool.items[i]!; // i < used ≤ items.length
-    if (m !== self && m.alive && m.gatherUid === uid) return true;
-  }
-  return false;
-}
-
-/** Whether gatherer `m` may take enemy `v` (§ 5.4's who; not the distance). */
-function mayTake(state: SimState, m: Enemy, v: Enemy): boolean {
+/** Whether gatherer `m` may take enemy `v` (§ 5.4's who; not the distance). `held`: another holds it. */
+function mayTake(m: Enemy, v: Enemy, held: boolean): boolean {
   const def = v.def;
   const mdef = m.def!; // callers checked
   if (v === m || !v.alive || def === null || def.boss !== null || def.neutral) return false;
   if (def.gather !== null || def.layer !== mdef.layer || outOfReach(v) || v.standDownTicks > 0) {
     return false;
   }
-  if (def.faction === 'hollow') return !heldByOther(state.enemies, v.uid, m);
+  if (def.faction === 'hollow') return !held;
   return def.faction === 'skitterkin' && !m.gatheredSkitterkin && isHushable(v);
 }
 
@@ -151,76 +142,93 @@ function better(d2: number, uid: number, bestD2: number, bestUid: number): boole
   return bestD2 < 0 || d2 < bestD2 || (d2 === bestD2 && uid < bestUid);
 }
 
-/** The ready gatherer nearest enemy `v` that may take it (ties: the lower uid), or null. */
-function nearestGatherer(state: SimState, v: Enemy): Enemy | null {
-  const pool = state.enemies;
-  let best: Enemy | null = null;
-  let bestD2 = -1;
-  for (let i = 0; i < pool.used; i++) {
-    const m = pool.items[i]!; // i < used ≤ items.length
-    if (!isReady(m)) continue;
-    const d2 = distSq(m, v.route, v.dist, v.x, v.y);
-    if (d2 > m.def!.gather!.radiusSq || !better(d2, m.uid, bestD2, best?.uid ?? 0)) continue;
-    if (mayTake(state, m, v)) {
-      best = m;
-      bestD2 = d2;
-    }
-  }
-  return best;
-}
-
-/** The ready gatherer nearest refugee `a` that may take it (ties: the lower uid), or null. */
-function nearestGathererToAlly(state: SimState, a: Ally): Enemy | null {
-  const pool = state.enemies;
-  let best: Enemy | null = null;
-  let bestD2 = -1;
-  for (let i = 0; i < pool.used; i++) {
-    const m = pool.items[i]!; // i < used ≤ items.length
-    if (!isReady(m)) continue;
-    const d2 = distSq(m, a.route, a.dist, a.x, a.y);
-    if (d2 > m.def!.gather!.radiusSq || !better(d2, m.uid, bestD2, best?.uid ?? 0)) continue;
-    if (mayTakeAlly(m, a)) {
-      best = m;
-      bestD2 = d2;
-    }
-  }
-  return best;
-}
-
 const NO_UNIT = Number.MIN_SAFE_INTEGER;
 
+/** Scratch for the matching (tick.ts `Scratch.gather`): cleared and refilled each pass. */
+export interface GatherScratch {
+  /** The ready gatherers' slots; the other lists are indexed alike. */
+  readonly ready: number[];
+  /** The uids held in a tell now (one per telling gatherer). */
+  readonly held: number[];
+  /** Per ready gatherer: the unit it takes (the code startTell reads), its squared distance and uid. */
+  readonly code: number[];
+  readonly d2: number[];
+  readonly uid: number[];
+}
+
+/** Fresh matching scratch (tick.ts `createScratch`). */
+export function createGatherScratch(): GatherScratch {
+  return { ready: [], held: [], code: [], d2: [], uid: [] };
+}
+
+/** Offers the unit `code` (at `d2`, `uid`) to ready gatherer `r`: kept when it beats its best. */
+function offer(s: GatherScratch, r: number, code: number, d2: number, uid: number): void {
+  if (!better(d2, uid, s.d2[r]!, s.uid[r]!)) return; // r < ready.length = d2.length
+  s.code[r] = code;
+  s.d2[r] = d2;
+  s.uid[r] = uid;
+}
+
 /**
- * The unit ready gatherer `m` takes this tick (one whose nearest ready gatherer it is), encoded as
- * hush.ts's victims are: an enemy's slot (≥ 0), an ally's as −(slot + 1), or NO_UNIT.
+ * The matching (the header's order independence), in O(G·N): every unit finds its nearest ready
+ * gatherer that may take it, once, and offers itself there; each gatherer keeps the nearest unit
+ * offered (ties to the lower uid). That is the pairwise rule exactly (a gatherer takes its nearest
+ * unit among those whose nearest ready gatherer it is), with the held marks read once rather than
+ * per pair: pairwise, 30 Maws among 300 units took ~130 ms a tick (O(G²·N²)); a test holds the
+ * two equal on random fields. Fills `s.code` for each `s.ready` gatherer (NO_UNIT when none).
  */
-function unitFor(state: SimState, m: Enemy): number {
-  const radiusSq = m.def!.gather!.radiusSq; // isReady checked
-  let best = NO_UNIT;
-  let bestUid = 0;
-  let bestD2 = -1;
+function matchUnits(state: SimState, s: GatherScratch): void {
   const pool = state.enemies;
+  const ready = s.ready;
+  s.held.length = 0;
+  for (let i = 0; i < pool.used; i++) {
+    const m = pool.items[i]!; // i < used ≤ items.length
+    if (m.alive && m.gatherUid !== 0) s.held.push(m.gatherUid);
+  }
+  s.code.length = 0;
+  s.d2.length = 0;
+  s.uid.length = 0;
+  for (let r = 0; r < ready.length; r++) {
+    s.code.push(NO_UNIT);
+    s.d2.push(-1);
+    s.uid.push(0);
+  }
   for (let i = 0; i < pool.used; i++) {
     const v = pool.items[i]!; // i < used ≤ items.length
     if (!v.alive) continue;
-    const d2 = distSq(m, v.route, v.dist, v.x, v.y);
-    if (d2 > radiusSq || !better(d2, v.uid, bestD2, bestUid)) continue;
-    if (!mayTake(state, m, v) || nearestGatherer(state, v) !== m) continue;
-    best = v.slot;
-    bestUid = v.uid;
-    bestD2 = d2;
+    const held = s.held.includes(v.uid);
+    let best = -1;
+    let bestUid = 0;
+    let bestD2 = -1;
+    for (let r = 0; r < ready.length; r++) {
+      const m = pool.items[ready[r]!]!; // r < length; a ready gatherer's slot
+      const d2 = distSq(m, v.route, v.dist, v.x, v.y);
+      if (d2 > m.def!.gather!.radiusSq || !better(d2, m.uid, bestD2, bestUid)) continue;
+      if (!mayTake(m, v, held)) continue;
+      best = r;
+      bestUid = m.uid;
+      bestD2 = d2;
+    }
+    if (best >= 0) offer(s, best, v.slot, bestD2, v.uid);
   }
   const allies = state.allies;
   for (let i = 0; i < allies.used; i++) {
     const a = allies.items[i]!; // i < used ≤ items.length
     if (!a.alive) continue;
-    const d2 = distSq(m, a.route, a.dist, a.x, a.y);
-    if (d2 > radiusSq || !better(d2, a.uid, bestD2, bestUid)) continue;
-    if (!mayTakeAlly(m, a) || nearestGathererToAlly(state, a) !== m) continue;
-    best = -(a.slot + 1);
-    bestUid = a.uid;
-    bestD2 = d2;
+    let best = -1;
+    let bestUid = 0;
+    let bestD2 = -1;
+    for (let r = 0; r < ready.length; r++) {
+      const m = pool.items[ready[r]!]!; // r < length; a ready gatherer's slot
+      const d2 = distSq(m, a.route, a.dist, a.x, a.y);
+      if (d2 > m.def!.gather!.radiusSq || !better(d2, m.uid, bestD2, bestUid)) continue;
+      if (!mayTakeAlly(m, a)) continue;
+      best = r;
+      bestUid = m.uid;
+      bestD2 = d2;
+    }
+    if (best >= 0) offer(s, best, -(a.slot + 1), bestD2, a.uid);
   }
-  return best;
 }
 
 function liveEnemy(pool: Pool<Enemy>, uid: number): Enemy | null {
@@ -331,13 +339,13 @@ function absorb(m: Enemy, hp: number, hollow: boolean): void {
   else m.gatheredSkitterkin = true;
 }
 
-/** Starts `m`'s tell on the unit `code` encodes (unitFor's), holding both still. */
+/** Starts `m`'s tell on the unit `code` encodes (matchUnits's: an enemy's slot, or −(an ally's slot + 1)), holding both still. */
 function startTell(state: SimState, m: Enemy, code: number): void {
   const g = m.def!.gather!; // isReady checked
   m.gatherTicks = tellTicksOf(g);
   m.paceMul = 0;
   if (code >= 0) {
-    const v = state.enemies.items[code]!; // unitFor's slot
+    const v = state.enemies.items[code]!; // matchUnits's slot
     m.gatherUid = v.uid;
     v.paceMul = 0;
     if (v.def!.faction === 'skitterkin') {
@@ -346,7 +354,7 @@ function startTell(state: SimState, m: Enemy, code: number): void {
     }
     emit(state, { type: 'GatherTell', uid: m.uid, targetUid: v.uid, ally: false });
   } else {
-    const a = state.allies.items[-code - 1]!; // unitFor's ally slot
+    const a = state.allies.items[-code - 1]!; // matchUnits's ally slot
     m.gatherUid = a.uid;
     m.hushUid = a.uid;
     a.hushUid = m.uid;
@@ -386,17 +394,14 @@ export function gatherPass(state: SimState, ctx: TickContext): void {
   }
   if (!anyReady) return;
   // New tells, matched on this state before any starts (order independence).
-  const pairs = ctx.scratch.slots;
-  pairs.length = 0;
+  const s = ctx.scratch.gather;
+  s.ready.length = 0;
   for (let i = 0; i < pool.used; i++) {
-    const m = pool.items[i]!; // i < used ≤ items.length
-    if (!isReady(m)) continue;
-    const code = unitFor(state, m);
-    if (code !== NO_UNIT) pairs.push(m.slot, code);
+    if (isReady(pool.items[i]!)) s.ready.push(i); // i < used ≤ items.length
   }
-  for (let p = 0; p < pairs.length; p += 2) {
-    const m = pool.items[pairs[p]!]!; // pushed above, in pairs
-    startTell(state, m, pairs[p + 1]!);
+  matchUnits(state, s);
+  for (let r = 0; r < s.ready.length; r++) {
+    const code = s.code[r]!; // r < ready.length = code.length
+    if (code !== NO_UNIT) startTell(state, pool.items[s.ready[r]!]!, code); // a ready slot
   }
-  pairs.length = 0;
 }
