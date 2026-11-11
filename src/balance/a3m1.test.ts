@@ -17,12 +17,16 @@
 // story/a3m1Scenes.test.ts) plays after the last group is out. Every reference run lands them, and
 // so does par with every Mote, Moth, Maw or Fracture group shifted ±0.2 s, where it stays at 16 of
 // 24 (20 or 21 of 30 spared).
+//
+// The loss cap is a share of who walks (`maxLostPct: 0.53`, D143): 13 of 24, 16 of 30, so the spared
+// branch's slack is never thinner than the cleared one's (par: 5 short of the cap cleared, 6 spared).
 import { describe, expect, it } from 'vitest';
 import { compileContent } from '../content/compile.ts';
 import type { CompiledContent } from '../content/compiled.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
 import type { WaveGroup } from '../content/types.ts';
 import { createBuildExecutor, createSim, type SimEvent } from '../sim/index.ts';
+import { escortMaxLost } from '../sim/escort.ts';
 import { bothWays, delay, shiftedContent } from './__fixtures__/shifts.ts';
 import { flagsFor } from './checks.ts';
 import { buildFor, runMap } from './harness.ts';
@@ -202,6 +206,20 @@ describe('A3M1 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
     const spared = run('flag:spared_quiet_wave=true').result!;
     expect([spared.outcome, spared.stats.evacuated, spared.escortTotal]).toEqual(['won', 20, 30]);
     expect(run('flag:spared_quiet_wave=false').result!.stats.evacuated).toBe(16);
+  });
+
+  it('scales its loss cap with who walks: 13 of 24, 16 of 30, the spared slack no thinner', () => {
+    const map = content.maps.a3_m01;
+    const capOf = (total: number): number => escortMaxLost({ refugeeTotal: total }, map)!;
+    expect([capOf(24), capOf(30)]).toEqual([13, 16]);
+    const slack = (build: string): number => {
+      const r = run(build).result!;
+      return capOf(r.escortTotal) - r.stats.refugeesLost;
+    };
+    expect(slack('flag:spared_quiet_wave=false')).toBe(5);
+    expect(slack('flag:spared_quiet_wave=true')).toBeGreaterThanOrEqual(
+      slack('flag:spared_quiet_wave=false'),
+    );
   });
 
   it('loses without splash and without air by W9, and doing nothing loses', () => {

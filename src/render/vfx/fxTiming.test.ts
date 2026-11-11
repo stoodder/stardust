@@ -133,8 +133,9 @@ describe('shell bursts (review R14)', () => {
       ['fx.bomblet_burst', BOMBLET_BURST_MS],
     ] as const) {
       const burst = SPRITES.find((d) => d.id === id)?.anims?.['burst'];
-      expect(burst, id).toBeDefined();
-      expect(ms, id).toBeCloseTo((burst!.frames.length * 1000) / burst!.fps, 6);
+      expect(burst !== undefined && 'frames' in burst, id).toBe(true);
+      if (burst === undefined || !('frames' in burst)) continue;
+      expect(ms, id).toBeCloseTo((burst.frames.length * 1000) / burst.fps, 6);
     }
   });
 

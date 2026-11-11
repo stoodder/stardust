@@ -2,6 +2,14 @@
 // it. app/forcedInput.ts keeps it in sync.
 import { signal } from '@preact/signals';
 
+/** A box in game px (the HUD's space; render/vfx/xrayPixels.ts `Rect`). */
+export interface AvoidRect {
+  readonly x: number;
+  readonly y: number;
+  readonly w: number;
+  readonly h: number;
+}
+
 /** The forced input's id while the sim waits for its press ("seal"), else null. */
 export const forcedInput = signal<string | null>(null);
 
@@ -11,3 +19,11 @@ export const forcedInput = signal<string | null>(null);
  * started after that.
  */
 export const forcedInputArmed = signal(false);
+
+/**
+ * What the forced input's screen must keep clear, in game px (D143 R3: A3M3's open blast door, so
+ * the player sees the door they seal): the SEAL button lifts above it, and the comms panel moves to
+ * the top centre. Set as the input shows and kept through the close (the doors run shut after the
+ * press); cleared as the battle unbinds. Empty: nothing to avoid.
+ */
+export const forcedInputAvoid = signal<readonly AvoidRect[]>([]);

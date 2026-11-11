@@ -168,6 +168,39 @@ describe('Thumper NE muzzle', () => {
   });
 });
 
+/** Whether any 2×2 block of `rows` is a 1 px checker of `ch` and clear (`.`). */
+function hasChecker(rows: readonly string[], ch: string): boolean {
+  for (let y = 0; y + 1 < rows.length; y++) {
+    for (let x = 0; x + 1 < (rows[y]?.length ?? 0); x++) {
+      const a = rows[y]?.[x];
+      const b = rows[y]?.[x + 1];
+      const c = rows[y + 1]?.[x];
+      const d = rows[y + 1]?.[x + 1];
+      if (
+        (a === ch && d === ch && b === '.' && c === '.') ||
+        (b === ch && c === ch && a === '.' && d === '.')
+      )
+        return true;
+    }
+  }
+  return false;
+}
+
+describe('burst smoke (review R14)', () => {
+  it('is solid puffs, never a 1 px checker that reads as a transparency grid at 1×', () => {
+    for (const [id, frames] of [
+      ['fx.explosion', ['f2', 'f3']],
+      ['fx.bomblet_burst', ['f2']],
+    ] as const) {
+      for (const f of frames) {
+        const rows = grid(id, f);
+        for (const ch of ['3', '4']) expect(hasChecker(rows, ch), `${id}:${f} '${ch}'`).toBe(false);
+        expect(count(rows, '34'), `${id}:${f} smoke`).toBeGreaterThan(4);
+      }
+    }
+  });
+});
+
 describe('explosion punch (D024)', () => {
   it('opens on its biggest, brightest frame', () => {
     const area = (f: string): number => opaque(grid('fx.explosion', f)).size;

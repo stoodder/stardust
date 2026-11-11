@@ -278,3 +278,38 @@ export function towerPanelHeight(
   const sum = rows.reduce((a, b) => a + b, 0);
   return 2 * PANEL_PAD + sum + PANEL_GAP * (rows.length - 1);
 }
+
+// ─── The forced input's screen (A3M3's SEAL; D143 R3) ─────────────────────────────────────────
+
+/** The SEAL button's box: centred, SEAL_BOTTOM above the bottom edge (forcedInput.css). */
+export const SEAL_W = 128;
+export const SEAL_H = 32;
+export const SEAL_BOTTOM = 40;
+/** The clear space kept around a door the screen must not cover. */
+export const AVOID_MARGIN = 4;
+
+/** Whether two boxes overlap (touching edges don't). */
+export function overlaps(a: Rect, b: Rect): boolean {
+  return a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+}
+
+/** `r` grown by `m` on every side. */
+export function grow(r: Rect, m: number): Rect {
+  return { x: r.x - m, y: r.y - m, w: r.w + 2 * m, h: r.h + 2 * m };
+}
+
+/**
+ * The SEAL button's distance from the bottom edge (game px): SEAL_BOTTOM, or lifted just above
+ * every box in `avoid` (plus AVOID_MARGIN) it would cover, so the door the player seals stays in
+ * sight (D143 R3: the east door sits right under the button's usual place).
+ */
+export function sealButtonBottom(avoid: readonly Rect[]): number {
+  let bottom = SEAL_BOTTOM;
+  for (let pass = 0; pass < avoid.length + 1; pass++) {
+    const box: Rect = { x: (UI_W - SEAL_W) / 2, y: UI_H - bottom - SEAL_H, w: SEAL_W, h: SEAL_H };
+    const hit = avoid.map((a) => grow(a, AVOID_MARGIN)).find((a) => overlaps(box, a));
+    if (hit === undefined) return bottom;
+    bottom = UI_H - hit.y;
+  }
+  return bottom;
+}

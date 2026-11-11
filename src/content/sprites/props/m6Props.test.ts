@@ -123,6 +123,15 @@ describe("Sterling's shuttle", () => {
   });
 });
 
+/** The opaque box of a frame, its contact shadow left out. */
+function box(rows: readonly string[]): { w: number; h: number } {
+  const ys = rows.flatMap((r, y) => (/[^._]/.test(r) ? [y] : []));
+  const xs = rows.flatMap((r) =>
+    r.split('').flatMap((c, x) => (c !== '.' && c !== '_' ? [x] : [])),
+  );
+  return { w: Math.max(...xs) - Math.min(...xs) + 1, h: Math.max(...ys) - Math.min(...ys) + 1 };
+}
+
 describe('the dead turrets and the Preserve', () => {
   it('leaves no live light on a dead turret, only the crystal growing on it', () => {
     for (const f of ['v0', 'v1']) {
@@ -136,6 +145,23 @@ describe('the dead turrets and the Preserve', () => {
     expect(count(grid('prop.warren_home', 'v0'), '+*')).toBe(0);
     expect(count(grid('prop.warren_home', 'v1'), '+*')).toBeGreaterThan(0);
     expect(count(grid('prop.warren_home', 'v0'), 'W')).toBeGreaterThan(8); // the white tag
+  });
+
+  it('reads a warren home as a home, never as a built Scuttle Den (review R18)', () => {
+    const den = grid('tower.burrow_head', 'peek_0');
+    for (const f of ['v0', 'v1']) {
+      const home = grid('prop.warren_home', f);
+      // A thatched roof (the Den is moss-capped earth), a closed coral door (the Den's doorway is
+      // open and dark), and a chimney's stones standing over the roof.
+      expect(count(home, 'ADMN'), `${f} thatch`).toBeGreaterThan(150);
+      expect(count(den, 'ADMNOU')).toBe(0);
+      expect(count(home, 'OU'), `${f} door`).toBeGreaterThan(20);
+      expect(count(home, 'G'), `${f} moss`).toBeLessThan(count(den, 'G'));
+      // Long and low under its roof and chimney, where the Den's dome is round.
+      const b = box(home);
+      expect(b.w, `${f} width`).toBeGreaterThan(box(den).w + 4);
+      expect(b.w / b.h, `${f} aspect`).toBeGreaterThan(1.1);
+    }
   });
 
   it("spells PRESERVE on the sign's plate", () => {

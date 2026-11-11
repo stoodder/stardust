@@ -12,7 +12,7 @@ import { pauseMenu } from '../pause/state.ts';
 import { hud } from '../state.ts';
 import { MuteButton } from './MuteButton.tsx';
 import { ForcedInputButton, ForcedInputVeil } from './ForcedInputButton.tsx'; // T605, T614
-import { forcedInput } from './forcedInputState.ts';
+import { forcedInput, forcedInputAvoid } from './forcedInputState.ts';
 import { AbilityBar } from './AbilityBar.tsx';
 import { Briefing } from './Briefing.tsx';
 import { BuildBar } from './BuildBar.tsx';
@@ -53,6 +53,8 @@ export function Hud() {
   // and the speaker (design/core-loop.md § 2.11: settings stay reachable); its veil takes the
   // playfield's clicks.
   const locked = forcedInput.value !== null;
+  // The comms panel moves off the doors while a forced input waits and through the close (D143 R3).
+  const topComms = locked || forcedInputAvoid.value.length > 0;
   return (
     <div class="hud" data-act={hud.act.value} data-testid="hud" data-locked={locked || undefined}>
       <ForcedInputVeil />
@@ -67,9 +69,9 @@ export function Hud() {
               (D143 R3: at A3M3's SEAL it covered the convoy's blast door). */}
           <div class="hud-top-left">
             <StatusPanel />
-            {!locked && <CommsPanel />}
+            {!topComms && <CommsPanel />}
           </div>
-          {locked && (
+          {topComms && (
             <div class="hud-comms-top" data-testid="comms-top">
               <CommsPanel />
             </div>

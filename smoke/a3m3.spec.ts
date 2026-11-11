@@ -13,7 +13,8 @@
 // page's clock, so the flow pauses it (Playwright's `page.clock`) from the line before C3 until the
 // locked buttons are checked and shot: a loaded machine can't let the 700 ms pass before the look.
 // Screenshots in <out>/screens/a3m3/ (look at them: the briefing's C3, the choke, the tag, the
-// vitals, the SEAL).
+// vitals, the SEAL). At the SEAL the clock holds again: the button shows unarmed and refuses a press
+// until Bricks's "Do it, {name}." (D143 R2), and neither it nor the radio covers the chosen door (R3).
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 import { nextFrames, shot, waitForReady } from './hooks.ts';
@@ -195,11 +196,31 @@ async function briefAndChoose(page: Page, door: 'convoy' | 'warren', look: boole
   });
 }
 
-/** The SEAL: one button, pressed; then Results' "Held." card. */
-async function seal(page: Page, look: boolean): Promise<void> {
+/** Whether a client box and a point's square (±`r` px) overlap. */
+function covers(
+  box: { x: number; y: number; width: number; height: number } | null,
+  p: { x: number; y: number },
+  r: number,
+): boolean {
+  if (box === null) return false;
+  return (
+    box.x < p.x + r &&
+    p.x - r < box.x + box.width &&
+    box.y < p.y + r &&
+    p.y - r < box.y + box.height
+  );
+}
+
+/**
+ * The SEAL: one button, armed only once Bricks has said "Do it, {name}." (D143 R2), the door it
+ * seals in sight under neither the button nor the comms panel (R3); pressed; then Results' "Held."
+ */
+async function seal(page: Page, look: boolean, door: 'convoy' | 'warren'): Promise<void> {
   // Par's last step would press it at once: the player's hand presses it here ('none' has no steps).
   await page.evaluate(() => globalThis.__sd!.autoplay('none'));
   expect(await until(page, 'seal')).toBe(true);
+  // The clock holds: the cue's lines can't run on before the button is looked at.
+  await pauseClock(page);
   const state = await page.evaluate(() => {
     const st = globalThis.__sd!.state()!;
     let bricks = 1;
@@ -217,9 +238,23 @@ async function seal(page: Page, look: boolean): Promise<void> {
   const button = page.getByTestId('forced-input');
   await expect(button).toBeVisible();
   await expect(button).toHaveText('SEAL');
+  // Shown, not armed: Bricks hasn't given his word yet, and a press does nothing.
+  await expect(page.getByTestId('comms')).not.toContainText('Do it,');
+  await expect(button).toHaveAttribute('data-armed', 'false');
+  await button.focus();
+  await page.keyboard.press('Enter');
+  expect(await page.evaluate(() => globalThis.__sd!.state()?.pendingInput)).toBe('seal');
+  await page.clock.resume();
   await expect(page.getByTestId('comms')).toContainText('Do it,', { timeout: 15_000 });
   await expect(button).toHaveAttribute('data-armed', 'true');
+  // The door they chose is in sight: neither the button nor the radio covers it (D143 R3).
+  const at = door === 'convoy' ? ([3, 13] as const) : ([17, 13] as const);
+  const centre = await page.evaluate(([x, y]) => globalThis.__sd!.tileToClient(x, y), at);
+  expect(centre).not.toBeNull();
+  expect(covers(await button.boundingBox(), centre!, 24)).toBe(false);
+  expect(covers(await page.getByTestId('comms').boundingBox(), centre!, 24)).toBe(false);
   if (look) await shot(page, 'a3m3', 6, 'seal');
+  else await shot(page, 'a3m3', 9, 'seal-warren');
   await button.focus();
   await page.keyboard.press('Enter');
   await expect.poll(() => page.evaluate(() => globalThis.__sd!.state()?.outcome)).toBe('won');
@@ -274,7 +309,7 @@ test('A3M3: from the Sector map, C3 the convoy, the choke, the tag, the vitals, 
 
   // The last group on the convoy road, then the SEAL as W14 starts.
   expect(await until(page, 'last')).toBe(true);
-  await seal(page, true);
+  await seal(page, true, 'convoy');
 });
 
 test('A3M3: C3 the warren, its groups in at the east door, and the SEAL', async ({ page }) => {
@@ -294,5 +329,5 @@ test('A3M3: C3 the warren, its groups in at the east door, and the SEAL', async 
   await play(page, 500);
   await shot(page, 'a3m3', 8, 'warren');
   expect(await until(page, 'last')).toBe(true);
-  await seal(page, false);
+  await seal(page, false, 'warren');
 });

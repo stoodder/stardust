@@ -27,7 +27,15 @@ import { SCENES } from '../content/dialogue/index.ts';
 import type { IdSpace } from '../content/types.ts';
 import { isSfxId } from '../audio/index.ts';
 import { sceneBlocks } from '../ui/dialogue/state.ts';
-import { forcedInput, forcedInputArmed } from '../ui/hud/forcedInputState.ts';
+import { doorCores, doorScreenBox } from '../render/views/blastDoor.ts';
+import { mapOrigin } from '../render/iso.ts';
+import { VIEW_H, VIEW_W } from '../render/scale.ts';
+import {
+  forcedInput,
+  forcedInputArmed,
+  forcedInputAvoid,
+  type AvoidRect,
+} from '../ui/hud/forcedInputState.ts';
 import { pauseMenu } from '../ui/pause/state.ts';
 import { playSfx } from './audio.ts';
 import { cancel, issue } from './commands.ts';
@@ -305,6 +313,22 @@ function onVisibility(): void {
   current?.clockChanged();
 }
 
+/**
+ * The open blast doors' screen boxes on `host`'s map (game px; render/views/blastDoor.ts), which
+ * the forced input's screen keeps clear (`forcedInputAvoid`; D143 R3). None on a map without doors.
+ */
+export function openDoorBoxes(host: Host<IdSpace>): AvoidRect[] {
+  const map = host.sim.map;
+  const origin = mapOrigin(map.cols, map.rows, VIEW_W, VIEW_H);
+  return doorCores(map, host.sim.config.scriptFlags)
+    .filter((d) => d.open)
+    .map((d) => {
+      const r = { x: 0, y: 0, w: 0, h: 0 };
+      doorScreenBox(d.col, d.row, origin, r);
+      return { x: r.x, y: r.y, w: r.w, h: r.h };
+    });
+}
+
 /** Keeps the HUD's `forcedInput` in sync with `host`'s sim; returns the unbind. */
 export function bindForcedInput(host: Host<IdSpace>, deps: SealDeps = defaultDeps): () => void {
   const map = host.sim.map.id;
@@ -314,6 +338,7 @@ export function bindForcedInput(host: Host<IdSpace>, deps: SealDeps = defaultDep
     // Nothing armed, aimed, or selected under the lock: Esc goes straight to the pause menu.
     cancel();
     current = startSeal(map, id, deps);
+    forcedInputAvoid.value = openDoorBoxes(host);
     forcedInput.value = id;
   };
   if (host.sim.state.pendingInput !== null) show(host.sim.state.pendingInput);
@@ -334,6 +359,7 @@ export function bindForcedInput(host: Host<IdSpace>, deps: SealDeps = defaultDep
     win?.removeEventListener('keydown', onKeyDown, true);
     win?.document.removeEventListener('visibilitychange', onVisibility);
     hide();
+    forcedInputAvoid.value = [];
   };
 }
 

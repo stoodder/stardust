@@ -10,7 +10,8 @@ import { useEffect, useRef } from 'preact/hooks';
 import { currentSeal } from '../../app/forcedInput.ts';
 import { sceneBlocks } from '../dialogue/state.ts';
 import { pauseMenu } from '../pause/state.ts';
-import { forcedInput, forcedInputArmed } from './forcedInputState.ts';
+import { forcedInput, forcedInputArmed, forcedInputAvoid } from './forcedInputState.ts';
+import { SEAL_BOTTOM, sealButtonBottom } from './layout.ts';
 import './forcedInput.css';
 
 /** The veil under the HUD while a forced input waits (index.tsx draws it before the HUD). */
@@ -30,9 +31,15 @@ export function ForcedInputButton() {
   }, [id, covered]);
   if (id === null) return null;
   const label = id.toUpperCase();
+  // Lifted above the door it seals when it would cover it (D143 R3).
+  const bottom = sealButtonBottom(forcedInputAvoid.value);
   return (
     // Under the pause menu or a scene, theirs are the only live controls.
-    <div class="hud-forced-input" inert={covered}>
+    <div
+      class="hud-forced-input"
+      inert={covered}
+      style={bottom === SEAL_BOTTOM ? undefined : { bottom: `${bottom}px` }}
+    >
       <button
         ref={ref}
         type="button"
