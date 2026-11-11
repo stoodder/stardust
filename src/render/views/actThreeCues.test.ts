@@ -16,9 +16,9 @@ import {
 } from './shuttleLift.ts';
 
 const maps = compileContent(RAW_CONTENT).maps;
-const m1 = maps['a3_m01']!;
-const m2 = maps['a3_m02']!;
-const m3 = maps['a3_m03']!;
+const m1 = maps['a3_m01'];
+const m2 = maps['a3_m02'];
+const m3 = maps['a3_m03'];
 
 const frames = (id: string): readonly string[] =>
   Object.keys(SPRITES.find((s) => s.id === id)?.frames ?? {});
