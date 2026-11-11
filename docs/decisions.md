@@ -1831,3 +1831,39 @@ Rulings:
 - Pebble's Choir hint is a map-script cue on W9's countdown, gated on a Choir being built.
 - A jam ring fizzles only on its landing tick, and only if it jammed nothing. A Takeover laser fizzles once every tower it picked will stay immune past its landing. FIZZLED holds for 1.6 s.
 - The Auditor's mast has a white tip. The Gathering Maw's parts take lanes by their order along the road, at least 24 px apart on screen.
+
+### D152 — 2026-11-11 — M7 shipped: Act III, part two
+
+Act III plays to its turn. **A3M4 *Empty Slot*:**
+- Bricks's place is a silence. Gerald walks his last delivery through the shelters.
+- The mail brings his pension form (nineteen years, Pebble the beneficiary) and the key "For Thorn".
+- QUILL asks C4, and Night Shift answers it. Under Keep or Rewrite, Ves'thara laughs for the first time; under Purge, QUILL's status bar blinks through a silence.
+
+**A3M5 *Unsung*:**
+- A2M4 at night: the bearers carry the vats' dead home along the Long Walk.
+- Kip leaves his #1 EXTERMINATOR pin on the console.
+- Sterling's platform, Shareholder Value, launches drones, takes towers over and jettisons its plates.
+
+**A3M6 *Let Them In*:**
+- A1M1 at night, with Zibzab's crate and Pebble's knock-knock.
+- The Gathering Maw splits and merges.
+- The domes open, and the callsign becomes Waykeeper.
+
+New in play:
+- **Enemies:** the Silencer and the Auditor, which jam towers, Act III's new verb, answered by System Reboot and the Hum Choir. Also the Associate (healer), the Liability, the Gunship and the Black Budget.
+- **Bosses:** Shareholder Value and the Gathering Maw.
+- **Towers:** the Gloop Spitter and the Sproing Pad, with four links.
+- **Systems:** bearers and script groups; C4's three outcomes in play; the jailbreak; Zibzab's Rapport.
+
+The finale is teased on the Sector map.
+
+Act III's curve, part two, is in D149 and its addenda: par 68.2 / 68.2 / 59.3. A3M5 stays the hardest map for a human player, measured by the no-cast and ±2 s numbers. Story wins everywhere.
+- **Gate at ship:** typecheck, lint, 4,926 unit tests, the balance harness on 17 maps, 317 smoke flows and check:docs, in 749 s against the 8-minute budget (a warning, D147). Initial JS is 883 kB gz. Per-task gates ran as `check:fast` (D148).
+- **Reviews:** three rounds (D150, D151). Round 3 found no highs; its leftovers are T777.
+- **Art trail:** [docs/art/gallery/m7/](art/gallery/m7/), ten sheets of ≤ 8,000 px, with three M7 corners on sheet 1: the Shelters, Second Harvest, Dome Row.
+- **Next:** M8, the finale, post-game and polish. Open M7 follow-ups (in tasks.md § M8): T766, T769–T773, T775–T777; T801-burrow, T802-bundle and T501 carry on.
+- **Owner asks:**
+  - The gate's per-task split is in place (D148). Whether to trim the whole gate further (T766) is yours.
+  - A listen (T750's list): A3M4's bed (Bricks hums half the phrase, a Choir finishes it), `domes_open` as the first warm cadence, the Waykeeper sting, `pa_frantic` against the no-jingle rule, `gmaw_beaten`, and the bearers' six notes over the vats.
+  - A play of A3M5 under all three C4 answers, to judge whether jamming feels like a verb. Reboot on the tell now pays, and Kip's W13 line points the way.
+  - The rulings taken in your absence: A3M5 easing W2 rather than lowering par, A3M4's W16 cliff left for the finale's economy pass (T773), Shareholder Value at 3800 HP and the Gathering Maw at 4000.
