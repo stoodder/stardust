@@ -7,15 +7,17 @@
 //   to the period, so the first tell starts `periodTicks − tellTicks` after the spawn. With
 //   `tellTicks` left it is **ready**: it picks a target and starts its tell, or, with none in
 //   reach, waits ready (scanning the towers each ready tick, and only then) until one is. The tell
-//   runs `tellTicks`; at its end the jam lands, and the period starts over.
+//   runs `tellTicks`, the Silencer **holding still** (`paceMul` 0, as a gather's or a blink's
+//   tell: the tendril reaches out from where it stands, and it is a still target to kill); at its
+//   end the jam lands, and the period starts over.
 // - **The pick** (at the tell's start; `pickTendrilTarget`): among the live towers within
 //   `radiusTiles` (centre to centre) that a jam may land on (sim/jam.ts `canJam`: not Jammed, not
 //   jam-immune: post-jam or System Reboot immunity, or a Rally Chorus), a **Hum Choir** first (a
 //   tower projecting a `choir` aura) when the jam `preferChoir`s; else any. Then the highest tier
 //   (a spec is 4), ties to the lowest uid. JamTell `tendril` names it.
-// - **The landing** (at the tell's end): on that tower if it still stands within the radius and a
-//   jam may land on it (a System Reboot or a Rally Chorus during the tell spends the tell on
-//   nothing; so does selling it). `jamTower` scales it by the tower's `jamMul` then.
+// - **The landing** (at the tell's end): on that tower if it still stands within the radius (a
+//   Gravity Well's pull can carry the Silencer out) and a jam may land on it (a System Reboot or a
+//   Rally Chorus during the tell spends the tell on nothing; so does selling the tower). `jamTower` scales it by the tower's `jamMul` then.
 // - **Interrupts** (§ 2.4; the gather rule): while `isInterrupted` holds (Stasis on a non-boss,
 //   Unnerved), a tell can't start or go on: one under way is cancelled (JamInterrupted) and the
 //   full period restarts from zero; a ready Silencer interrupted restarts it too. A unit out of
@@ -62,7 +64,11 @@ function beats(t: Tower, best: Tower | null, preferChoir: boolean): boolean {
 }
 
 /** The tower `e`'s tendril picks now, or null when none in reach may be jammed (the header). */
-export function pickTendrilTarget(state: SimState, e: Readonly<Enemy>, j: CompiledJam): Tower | null {
+export function pickTendrilTarget(
+  state: SimState,
+  e: Readonly<Enemy>,
+  j: CompiledJam,
+): Tower | null {
   const pool = state.towers;
   let best: Tower | null = null;
   for (let i = 0; i < pool.used; i++) {
@@ -101,7 +107,10 @@ export function tendrilStep(state: SimState, e: Enemy, j: CompiledJam): void {
     }
     e.jamTicks--;
     e.jamTellTicks = e.jamTicks;
-    if (e.jamTicks > 0) return;
+    if (e.jamTicks > 0) {
+      e.paceMul = 0; // it holds still through its tell (movement reads this tick's)
+      return;
+    }
     const t = towerByUid(state, e.jamTarget);
     if (t !== null && inJamReach(e, t, j)) jamTower(state, t, j.durationTicks, e.uid);
     restart(e, j);
@@ -121,6 +130,7 @@ export function tendrilStep(state: SimState, e: Enemy, j: CompiledJam): void {
   if (target === null) return; // ready: it waits for a tower in reach
   e.jamTarget = target.uid;
   e.jamTellTicks = e.jamTicks;
+  e.paceMul = 0;
   emit(state, { type: 'JamTell', uid: e.uid, kind: 'tendril', towers: [target.uid] });
 }
 

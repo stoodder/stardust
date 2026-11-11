@@ -29,6 +29,8 @@
 //     target tile; systems/detection.ts Reveals the cloaked units inside it on each of those ticks.
 //   - **Stillness** (`stasisArea`, T507) opens no zone: it lands on the cast's tick, after
 //     AbilityUsed (sim/abilities/stillness.ts: Stasis in a circle, then StasisArea).
+//   - **System Reboot** (`reboot`, T702) opens no zone and takes no target: it lands on the cast's
+//     tick, after AbilityUsed (sim/abilities/reboot.ts: every jam cleared, then its immunity).
 //   - **Underfoot** (`pathTrap`, T604) opens a `trap` zone on its ground path tile
 //     (abilities/underfoot.ts `openTrap`); the traps system springs it after movement, so this
 //     pass leaves it alone.
@@ -51,6 +53,7 @@ import { secToTicks, TICK_HZ } from '../../shared/time.ts';
 import { applyChill, applyDamage, PLAIN_HIT, type HitMods } from '../combat/damage.ts';
 import type { Command, RejectReason } from '../commands.ts';
 import type { Modifier, SimConfig } from '../config.ts';
+import { castReboot } from '../abilities/reboot.ts';
 import { castStillness } from '../abilities/stillness.ts';
 import { openTrap } from '../abilities/underfoot.ts';
 import { untargetable } from '../enemyAbilities/layers.ts';
@@ -256,6 +259,8 @@ export function applyAbilityCommand(
     // A new sale replaces any charges left (a Ready Room recast), never adds to them.
     state.discountCharges = e.charges;
     state.discountPct = e.pct;
+  } else if (e.kind === 'reboot') {
+    // System Reboot (T702): no target, no zone; it lands after AbilityUsed, below.
   } else if (e.kind === 'stasisArea') {
     // Stillness (T507): instant, so it opens no zone; it lands after AbilityUsed, below.
     const t = cmd.target;
@@ -275,6 +280,7 @@ export function applyAbilityCommand(
     const radius = abilityStats(def, ctx.config.modifiers).radiusTiles;
     castStillness(state, e, target[0], target[1], radius, cmd.slot);
   }
+  if (e.kind === 'reboot') castReboot(state, e);
   return null;
 }
 

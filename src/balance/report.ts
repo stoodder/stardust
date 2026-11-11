@@ -5,6 +5,7 @@ import { describeRun, fmtPct, type RunRecord } from './checks.ts';
 import type { HeadlessResult, TowerSummary } from '../sim/index.ts';
 import type { CampaignReport, MapReport } from './harness.ts';
 import { medalMarks } from './medals.ts';
+import { jamLine } from './jamLimit.ts';
 
 const fmtSec = (ms: number): string => `${(ms / 1000).toFixed(2)} s`;
 const TICKS_PER_SEC = 60;
@@ -185,7 +186,7 @@ export function formatMarkdown(report: CampaignReport): string {
         }
         out.push(
           '',
-          `Ability kills: ${res.abilityKills}. Ally kills: ${res.allyKills}. Link uptime: ${linkUptime(res)}. Jam uptime: none yet (no jammers).`,
+          `Ability kills: ${res.abilityKills}. Ally kills: ${res.allyKills}. Link uptime: ${linkUptime(res)}. Jam: ${res.stats.jammedPeak === 0 ? 'none' : jamLine(res.stats)}.`,
         );
       }
     }

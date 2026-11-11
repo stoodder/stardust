@@ -33,7 +33,8 @@ export type RefugeeLike = Readonly<Pick<Ally, 'x' | 'y' | 'dist' | 'hushUid' | '
 /** The allies pool as the views read it (the sim's, read-only). */
 export interface AlliesLike {
   readonly used: number;
-  readonly items: readonly (RefugeeLike & Readonly<Pick<Ally, 'alive' | 'uid' | 'group'>>)[];
+  readonly items: readonly (RefugeeLike &
+    Readonly<Pick<Ally, 'alive' | 'uid' | 'group' | 'kind'>>)[];
 }
 
 export class RefugeeView implements PooledView {
@@ -146,11 +147,11 @@ export class RefugeeViews {
     this.#pool = new ViewPool(() => new RefugeeView(ctx));
   }
 
-  /** Syncs a view to each live refugee (`group` ≥ 0), then sweeps the rest. */
+  /** Syncs a view to each live refugee (`group` ≥ 0; a bearer is BearerView's, T706), then sweeps the rest. */
   sync(allies: AlliesLike, stamp: number): void {
     for (let i = 0; i < allies.used; i++) {
       const a = allies.items[i]!; // i < used ≤ items.length
-      if (!a.alive || a.group < 0) continue;
+      if (!a.alive || a.group < 0 || a.kind === 'bearer') continue;
       let v = this.#pool.get(a.uid);
       if (v === undefined) {
         v = this.#pool.acquire(a.uid);

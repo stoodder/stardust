@@ -1,5 +1,9 @@
 // Threat intel and counters (maps.md § 6.2–6.3; the rule list is validateMap.ts's header):
 // [threat-intel], [required-counters], [soft-traits], [teach], [new-threats], [new-counter].
+// A script group (`scriptGroups`, sent by `spawnWave`; T706) is part of the map's threat: its
+// traits count toward the threat intel, and it counts toward the soft-trait share of the wave its
+// `spawnWave` event names (a `{ wave: N }` trigger; `cleared` the wave after), as one more group of
+// that wave. Sent by any other trigger or by an objective's `onComplete`, it is judged by itself.
 import {
   MAX_NEW_COUNTER_CATEGORIES,
   MAX_NEW_THREATS,
@@ -106,7 +110,8 @@ export function validateThreats(
   history: History,
   where: string,
 ): void {
-  const allGroups = def.waves.flatMap((w) => w.groups);
+  const scripted = Object.values(def.scriptGroups ?? {});
+  const allGroups = [...def.waves.flatMap((w) => w.groups), ...scripted];
   const present = intelOf(ctx, allGroups);
   for (const t of duplicates(def.threatIntel)) {
     issues.add('threat-intel', `${where}.threatIntel`, `'${t}' is listed twice`);
@@ -164,12 +169,24 @@ export function validateThreats(
     exempt.add(x.trait);
   }
 
-  // Soft-trait share, per wave (fleeing units count 0; teach waves and groups are exempt).
-  for (const [w, wave] of def.waves.entries()) {
-    if (wave.teach === true) continue;
+  // Soft-trait share, per wave (fleeing units count 0; teach waves and groups are exempt), with the
+  // script groups its events send; a script group sent by no wave's event, by itself.
+  const { byWave, alone } = scriptGroupWaves(def);
+  const judged: { readonly at: string; readonly groups: readonly WaveGroup<IdSpace>[] }[] = [
+    ...def.waves.flatMap((wave, w) =>
+      wave.teach === true
+        ? []
+        : [{ at: `${where}.waves[${w}]`, groups: [...wave.groups, ...(byWave.get(w) ?? [])] }],
+    ),
+    ...alone.map((id) => ({
+      at: `${where}.scriptGroups.${id}`,
+      groups: [def.scriptGroups![id]!], // alone lists ids of scriptGroups
+    })),
+  ];
+  for (const { at, groups } of judged) {
     let total = 0;
     let soft = 0;
-    for (const g of wave.groups) {
+    for (const g of groups) {
       const e = ctx.enemies.get(g.enemy);
       if (e === undefined || e.neutral === true || (g.tags ?? []).includes('fleeing')) continue;
       const threat = threatOf(e) * g.count;
@@ -179,7 +196,7 @@ export function validateThreats(
     if (total > 0 && soft / total > SOFT_THREAT_MAX_SHARE) {
       issues.add(
         'soft-traits',
-        `${where}.waves[${w}]`,
+        at,
         `soft enemies are ${Math.round((soft / total) * 100)}% of the wave's threat (max ${SOFT_THREAT_MAX_SHARE * 100}%)`,
       );
     }
@@ -205,6 +222,34 @@ export function validateThreats(
       if (group.teach === true) teach([group], `${where}.waves[${w}].groups[${g}]`);
     }
   }
+}
+
+/**
+ * Where each script group's soft-trait share is judged (see the header): by the 0-based wave index
+ * its `spawnWave` events name, else alone.
+ */
+function scriptGroupWaves(def: MapDef<IdSpace>): {
+  readonly byWave: Map<number, WaveGroup<IdSpace>[]>;
+  readonly alone: string[];
+} {
+  const groups = def.scriptGroups ?? {};
+  const byWave = new Map<number, WaveGroup<IdSpace>[]>();
+  const placed = new Set<string>();
+  for (const ev of def.events ?? []) {
+    if (!('wave' in ev.on)) continue;
+    const w = ev.on.phase === 'cleared' ? ev.on.wave : ev.on.wave - 1;
+    if (w < 0 || w >= def.waves.length) continue;
+    for (const a of ev.actions) {
+      if (!('spawnWave' in a)) continue;
+      const g = groups[a.spawnWave];
+      if (g === undefined) continue; // [script-group] reports it
+      const list = byWave.get(w) ?? [];
+      list.push(g);
+      byWave.set(w, list);
+      placed.add(a.spawnWave);
+    }
+  }
+  return { byWave, alone: Object.keys(groups).filter((id) => !placed.has(id)) };
 }
 
 /** The one-new-thing limits (maps.md § 6.3), in campaign order; then records this map. */

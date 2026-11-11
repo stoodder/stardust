@@ -1,8 +1,8 @@
 // The M7 seams (T700a): the new state, stats, and entity fields start blank; FEATURE_GATES,
 // SCRIPT_GATES, and HARNESS_GATES name the task that lifts each M7 row (D146); the Gloop Spitter
-// and the Sproing Pad are refused whole until their tasks (STUB_TOWER_TASKS), System Reboot until
-// T702, C4 Purge's faction armor until T703; the `cleared` atom reads false and never settles until
-// T706 judges it; the new content compiles to its rows; and the validators reject each malformed
+// and the Sproing Pad are refused whole until their tasks (STUB_TOWER_TASKS; System Reboot runs
+// since T702: sim/jam.test.ts; C4 Purge's faction armor runs since T703: sim/factionArmor.test.ts); the `cleared` atom
+// reads false and never settles until T706 judges it; the new content compiles to its rows; and the validators reject each malformed
 // unit and tower seam shape. The dev maps and the map-level shapes: render/__fixtures__/
 // devM7.test.ts; the flag-variant profiles: balance/flagProfile.test.ts.
 import { describe, expect, it } from 'vitest';
@@ -50,14 +50,14 @@ describe('M7 state and entity fields', () => {
 describe('FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES (T700a rows; D146)', () => {
   it('name the task that lifts each M7 mechanic', () => {
     expect(FEATURE_GATES).toMatchObject({
-      'enemy.jam': 'T702',
-      'ability.reboot': 'T702',
-      'enemy.healAura': 'T703',
-      'modifier.enemyStat.faction': 'T703',
+      'enemy.jam': null, // T702 lifted it (sim/jam.test.ts)
+      'ability.reboot': null, // T702
+      'enemy.healAura': null, // T703
+      'modifier.enemyStat.faction': null, // T703
       'attack.leaper': 'T704',
-      'tower.puddle': 'T705',
-      'map.bearers': 'T706',
-      'ally.flagGated': 'T706',
+      'tower.puddle': null, // T705 lifted it (sim/gloop.test.ts)
+      'map.bearers': null, // T706
+      'ally.flagGated': null, // T706
       'enemy.jam.ring': 'T707',
       'enemy.boss.hangar': 'T707',
       'enemy.boss.takeover': 'T707',
@@ -65,43 +65,38 @@ describe('FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES (T700a rows; D146)', ()
       'enemy.boss.gather': 'T708',
       'enemy.boss.split': 'T708',
     });
-    expect(SCRIPT_GATES).toMatchObject({
-      objectiveCompleted: 'T706',
-      spawnWave: 'T706',
-      cleared: 'T706',
-      openTile: 'T707',
-    });
-    // HARNESS_GATES.jamLimit (T702): balance/refusals.m5.test.ts.
+    expect(SCRIPT_GATES).toMatchObject({ openTile: 'T707' });
+    // T706's run: objectiveCompleted, spawnWave, and the `cleared` atom.
+    for (const key of ['objectiveCompleted', 'spawnWave', 'cleared']) {
+      expect(Object.hasOwn(SCRIPT_GATES, key), key).toBe(false);
+    }
+    // HARNESS_GATES.jamLimit (lifted by T702): balance/refusals.m5.test.ts.
   });
 
   it('refuse the M7 stubs whole, naming their task', () => {
-    expect(STUB_TOWER_TASKS).toEqual({ gloop: 'T705', sproing: 'T704' });
-    expect(towerRefusal(TOWERS.gloop)).toBe("the 'gloop' tower is not simulated until T705");
+    expect(STUB_TOWER_TASKS).toEqual({ sproing: 'T704' }); // T705 lifted the Gloop
+    expect(towerRefusal(TOWERS.gloop)).toBeNull();
     expect(towerRefusal(TOWERS.sproing)).toBe("the 'sproing' tower is not simulated until T704");
     // Lifted from the stub list, each still waits on its own row.
     expect(towerRefusal(TOWERS.sproing, FEATURE_GATES, {})).toBe(
       "a 'leaper' attack (sproing) is not simulated until T704",
     );
     expect(towerRefusal(TOWERS.gloop, FEATURE_GATES, {})).toBeNull(); // the puddle is a spec's
-    expect(abilityRefusal(LIVE.abilities.system_reboot)).toBe(
-      "the 'reboot' ability (system_reboot) is not simulated until T702",
-    );
+    expect(abilityRefusal(LIVE.abilities.system_reboot)).toBeNull(); // T702 runs it
   });
 
-  it("refuse C4 Purge's faction armor until T703", () => {
+  it("play C4 Purge's faction armor since T703", () => {
     const cfg = fixtureConfig({
       modifiers: [
         { kind: 'enemyStat', stat: 'armor', faction: 'everglow', flat: -2, source: 'c4:purge' },
       ],
     });
-    expect(gateRefusals(cfg)).toEqual([
-      "a 'enemyStat.faction' modifier (c4:purge) is not simulated until T703",
-    ]);
+    expect(gateRefusals(cfg)).toEqual([]);
   });
 });
 
-describe('the `cleared` condition atom (T706 judges it)', () => {
-  it('reads false and never settles until then', () => {
+describe('the `cleared` condition atom (T706; render/__fixtures__/devBearers.test.ts has its rules)', () => {
+  it('reads false and stays open while the wreck stands before its wave', () => {
     const state = createState(FX.maps.fx_map, 1);
     const ctx = {
       content: FX,

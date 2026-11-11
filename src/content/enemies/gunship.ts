@@ -1,10 +1,11 @@
 // Asset Recovery Gunship (design/enemies.md § 5.3): Everglow Security's flyer, A3M6's teach. The
-// roster row: 300 HP, armor 8, 0.8 tiles/s, leak 3, bounty 22, air, mechanical, Flying and
-// Armored.
+// roster row is the spec: 300 HP, armor 8, 0.8 tiles/s, leak 3, bounty 22, air, mechanical, Flying
+// and Armored (a Sproing pin grounds it; Harpoon and Seeker Swarm answer its plates).
 //
-// A stub registered ahead of its task (T700a): T703 confirms the numbers and the spawn interval
-// (not in the docs: 2.0 s is a stub). It needs no new system. Sprites: placeholders under their
-// final ids (T740a).
+// T703: the row as built; it needs no new system. Spawn interval 2.0 s (no doc number: 1.6 tiles
+// apart on the lane, so one flak burst catches one gunship, never a pair, and each must be
+// answered on its own). Prim's PA greets its first appearance (dialogue/barks/act3.ts). Sprites:
+// placeholders under their final ids (T740a).
 import { defineEnemy } from '../define.ts';
 
 export const gunship = defineEnemy({

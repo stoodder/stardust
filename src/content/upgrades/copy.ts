@@ -77,6 +77,9 @@ export const ITEM_COPY: Readonly<Record<string, string>> = {
   // The Stasis Bloom's (T608): listed once its attunement is stocked, after A3M1.
   tune_bloom:
     'Price first: 40 stardust, rising. Colder garden, cheaper seeds, a wider bed. I stood in it. Once.',
+  // The Gloop Spitter's (T705): listed once the Gloop is given (A3M4 warren, A3M6 convoy).
+  tune_gloop:
+    'Price first: 40 stardust, rising. Stickier spit, cheaper slop, a longer lob. It drools. Not on me.',
   // Granted, never sold: C2 Sell's (progression.md § 2.1; T510).
   tune_zibzab: 'Ten percent. Honestly, eight.',
 

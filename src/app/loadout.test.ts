@@ -57,6 +57,7 @@ describe('the loadout screen (app side)', () => {
       ['burrow', []], // plays since T604: burrowed (and Brave Hearts air); A1M2 asks armor
       ['choir', []], // plays since T607: a support aura, no answer; A1M2 asks armor
       ['bloom', []], // plays since T608: burrowed and jam (its Stasis); A1M2 asks armor
+      ['gloop', ['T1']], // plays since T705: Corroded answers armor from tier 1
     ]);
     // Costs after the save's tune-ups (the sim charges the same: costFor).
     const cfg = battleConfig('a1_m02', 0, activeSave());
@@ -139,7 +140,7 @@ describe('the loadout screen (app side)', () => {
     expect(formedLinks(pick)).toEqual([]);
     expect(pickWarnings(pick)).toEqual([
       'Heads up: this shift needs an answer to Armor, and nothing here has one. Rivet (T3) or ' +
-        'Thumper or Grapple Harpoon or Prism Spire would.',
+        'Thumper or Grapple Harpoon or Prism Spire or Gloop Spitter would.',
     ]);
     expect(savePick({ ...pick, ability: 'suppressing_fire' })).toEqual({ ok: true });
     const preset = { towers: ['sprinkler'], ability: 'suppressing_fire' };

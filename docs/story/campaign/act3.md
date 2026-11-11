@@ -8,6 +8,12 @@ The six Act III maps, A3M1–A3M6, during the Long Night. The campaign overview,
 
 Checkpoints and the fleeing and hush rules carry over from Act II ([enemies.md § The hush rule](../../design/enemies.md#the-hush-rule)). Act III has no hostile Skitterkin, so every Skitterkin on the path is a refugee or an ally.
 
+**Act III barks (shared).** Act-wide pools that fire on more than one Act III map (the data is [`src/content/dialogue/barks/act3.ts`](../../../src/content/dialogue/barks/act3.ts), one file for the act). Prim's PA greets each of Everglow Security's part-two units the first time the save meets it (`new_enemy`), wherever that is; she is on the radio on any map whose waves send Everglow Security, so QUILL's silence under Rewrite doesn't silence her. Polite, literal, and measuring:
+- `associate`: "Maintenance Associate on site. Repairs: 12 per second. Please hold."
+- `liability`: "Liability-Class Enforcer deployed. All liability now transfers to you."
+- `gunship`: "Asset Recovery Gunship inbound at 40 meters. Please remain on the ground."
+- `blackbudget`: "No unit detected. No budget allocated. Please disregard the footsteps."
+
 ---
 
 ## A3M1 · The Preserve

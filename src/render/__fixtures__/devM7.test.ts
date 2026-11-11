@@ -49,9 +49,8 @@ describe('the M7 dev maps', () => {
   it('dev_jam: the tendril, the rings, the healer, System Reboot (T702, T703, T707)', () => {
     expect(maps.dev_jam?.builds.referenceProfile.technicianAbility).toBe('system_reboot');
     expect(refused('dev_jam')).toEqual([
-      "the 'reboot' ability (system_reboot) is not simulated until T702",
-      "a 'tendril' jam (silencer) is not simulated until T702",
-      'a healer aura (associate) is not simulated until T703',
+      // System Reboot and the tendril run since T702 (dev_silence: devJam.test.ts), the healer
+      // aura since T703.
       "a 'ring' jam (auditor) is not simulated until T707",
     ]);
   });
@@ -59,12 +58,10 @@ describe('the M7 dev maps', () => {
   it('dev_takeover: Shareholder Value’s phases and its four crash markers (T707)', () => {
     const map = maps.dev_takeover!;
     expect(Object.keys(map.markers)).toEqual(['crash_1', 'crash_2', 'crash_3', 'crash_4']);
-    // Its jams need the Jammed state (T702) as well as the Takeover itself (T707).
+    // Its jams need the Jammed state (live since T702) as well as the Takeover itself (T707).
     expect(refused('dev_takeover')).toEqual([
-      "the 'reboot' ability (system_reboot) is not simulated until T702",
       "a 'ring' jam (auditor) is not simulated until T707",
       'a hangar (shareholder_value) is not simulated until T707',
-      "Hostile Takeover's jam (shareholder_value) is not simulated until T702",
       'Hostile Takeover (shareholder_value) is not simulated until T707',
       'a jettison (shareholder_value) is not simulated until T707',
     ]);
@@ -86,25 +83,21 @@ describe('the M7 dev maps', () => {
     expect(map.markerWhen).toEqual({ banner: { flag: 'door_choice', eq: 'convoy' } });
     expect(map.dressing[0]?.when).toEqual({ flag: 'door_choice', eq: 'convoy' });
     expect(map.scriptGroups.surge).toMatchObject({ count: 6, route: { id: 'a' } });
-    expect(refused('dev_bearers')).toEqual([
-      "a flag-gated post ('militia' at 'militia_post') is not simulated until T706",
-      'bearers (bearers) is not simulated until T706',
-      "event 'surge': action spawnWave is not simulated until T706",
-      "event 'feed_cut': trigger objectiveCompleted is not simulated until T706",
-      "objective 'cut_the_feed': condition: condition cleared is not simulated until T706",
-    ]);
+    // T706 runs it (sim/bearers.test.ts), registered in DEV_CONTENT with smoke/bearers.spec.ts.
+    expect(refused('dev_bearers')).toEqual([]);
+    expect(Object.hasOwn(DEV_CONTENT.maps, 'dev_bearers')).toBe(true);
   });
 
-  it('dev_sproing: the Sproing Pad and the Gloop Spitter are stubs (T704, T705)', () => {
+  it('dev_sproing: the Sproing Pad is a stub (T704); the Gloop Spitter runs (T705)', () => {
     expect(refused('dev_sproing')).toEqual([
       "the 'sproing' tower is not simulated until T704",
-      "the 'gloop' tower is not simulated until T705",
       "a 'leaper' attack (sproing) is not simulated until T704",
     ]);
   });
 
   it('are not in DEV_CONTENT until their tasks register them', () => {
     for (const id of Object.keys(DEV_M7_MAPS)) {
+      if (id === 'dev_bearers') continue; // T706
       expect(Object.hasOwn(DEV_CONTENT.maps, id), id).toBe(false);
     }
   });

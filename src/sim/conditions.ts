@@ -201,7 +201,10 @@ export function clearedInTime(
   byWave: number,
 ): boolean {
   const cleared = state.wreckage.cleared;
-  const n = state.wave < byWave ? cleared.length : (state.wreckageAtWave[byWave - 1] ?? 0);
+  // Not recorded yet: the wave started this tick, before the triggers system (a call in
+  // applyCommands), so the drone's count now is its count at the start.
+  const n =
+    state.wave < byWave ? cleared.length : (state.wreckageAtWave[byWave - 1] ?? cleared.length);
   for (let i = 0; i < markers.length; i++) {
     const pos = map.markers[markers[i]!]; // i < length
     if (pos === undefined) return false; // validateScripts rejects an unknown marker

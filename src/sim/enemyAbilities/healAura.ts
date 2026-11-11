@@ -9,8 +9,8 @@
 // - **Who regains:** every live unit **of the source's faction with the aura's `body`** (the
 //   Associate's: Mechanical) whose centre is within the radius (any layer, so a gunship over the
 //   road is in it; cloaked or not: the untouchable rule is about what the player sends, enemies.md
-//   § 2.5), never past its max HP (`gatherMaxHp`: `def.hp + bonusMaxHp`). Not the source itself ("allies": an
-//   Associate is mended only by another Associate), not a boss (a boss's HP is its phases'
+//   § 2.5), never past its max HP (`gatherMaxHp`: `def.hp + bonusMaxHp`). Not the source itself
+//   ("allies": an Associate is mended only by another Associate), not a boss (a boss's HP is its phases'
 //   business: "Shareholder Value" is never mended), not a neutral unit, and not one that's leaving,
 //   burrowed or Phased.
 // - **Stacking:** auras of one kind don't stack (towers.md § 4): a unit inside two rings regains
@@ -49,7 +49,12 @@ export interface HealUnits {
  * holds the slots of the units projecting a healer aura (`projectedHeal`), the first `n` of them.
  * The pass and HealAuraView's ✚ both read it, so the two never disagree.
  */
-export function healRate(pool: HealUnits, slot: number, sources: ArrayLike<number>, n: number): number {
+export function healRate(
+  pool: HealUnits,
+  slot: number,
+  sources: ArrayLike<number>,
+  n: number,
+): number {
   const a = pool.items[slot];
   const d = a?.def ?? null;
   if (a === undefined || d === null || !a.alive || d.neutral || d.boss !== null) return 0;

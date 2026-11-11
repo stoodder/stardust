@@ -285,8 +285,8 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   // posts (T706), the Auditor and Shareholder Value (T707), the Gathering Maw (T708).
   'attack.leaper': 'T704',
   'tower.puddle': null, // T705 lifted: sim/puddles.ts
-  'ability.reboot': 'T702',
-  'enemy.jam': 'T702',
+  'ability.reboot': null,
+  'enemy.jam': null,
   'enemy.jam.ring': 'T707',
   'enemy.healAura': null, // T703
   'enemy.boss.hangar': 'T707',
@@ -294,8 +294,8 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   'enemy.boss.jettison': 'T707',
   'enemy.boss.gather': 'T708',
   'enemy.boss.split': 'T708',
-  'map.bearers': 'T706',
-  'ally.flagGated': 'T706',
+  'map.bearers': null,
+  'ally.flagGated': null,
   'map.rift': null,
   'map.holdout': null,
   'ally.blocker': null,

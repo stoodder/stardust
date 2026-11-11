@@ -33,12 +33,17 @@
 // - **Losses by group** (`stats.lostByGroup`; the `groupLost` condition): a refugee hushed or
 //   gathered on the road is its group's loss; one taken at the exit was already sheltered, so it
 //   is the shelter's, booked to no group.
+// - **Bearers** (T706; sim/bearers.ts, their rules' home) are a refugee group of `kind: 'bearer'`
+//   on a Protect map: they spawn and walk as refugees (AllySpawned with kind `bearer`), a hushed one
+//   also costs the asset 1, and one that reaches its exit is home, not evacuated (`evacuate` leaves
+//   it for the bearers system).
 // T506's pivot (`standDown`, the Ward, `bossEnd: 'pivot'`) runs `setObjective` and `spawnAllies`
 // from the same script as any other map.
 import type { CompiledMapDef, CompiledRefugeeGroup } from '../content/compiled.ts';
 import type { IdSpace, MeterLabel, ObjectiveKind } from '../content/types.ts';
 import type { ScriptFlags } from './config.ts';
 import type { DeepReadonly } from '../shared/types.ts';
+import { chargeBearer } from './bearers.ts';
 import { ALLY_BLANK, type Ally, type Enemy } from './entities.ts';
 import { bookRefugeeLost } from './medals.ts';
 import { pointAt } from './path.ts';
@@ -118,7 +123,7 @@ function spawnOne(
   pebble: boolean,
 ): void {
   const a = poolAlloc(state.allies, ALLY_BLANK, takeUid(state));
-  a.kind = 'refugee';
+  a.kind = g.kind;
   a.mode = 'route';
   a.vulnerability = pebble ? 'never' : 'hush';
   a.route = g.route;
@@ -127,7 +132,7 @@ function spawnOne(
   a.group = groupIndex;
   a.speedTilesPerTick = g.speedTilesPerTick;
   a.pebble = pebble;
-  emit(state, { type: 'AllySpawned', uid: a.uid, kind: 'refugee', x: a.x, y: a.y });
+  emit(state, { type: 'AllySpawned', uid: a.uid, kind: g.kind, x: a.x, y: a.y });
 }
 
 /** Whether refugee `a` is on the field (filed in past its route's start). */
@@ -135,8 +140,12 @@ export function onField(a: Pick<Ally, 'dist'>): boolean {
   return a.dist >= 0;
 }
 
-/** A refugee reached the safe exit: evacuated (Pebble: not counted), and gone from the map. */
+/**
+ * A refugee reached the safe exit: evacuated (Pebble: not counted), and gone from the map. A bearer
+ * stays where it stands: the bearers system takes it home this tick (sim/bearers.ts).
+ */
 export function evacuate(state: SimState, a: Ally): void {
+  if (a.kind === 'bearer') return;
   if (!a.pebble) state.stats.evacuated++;
   emit(state, { type: 'RefugeeEvacuated', uid: a.uid, pebble: a.pebble });
   poolKill(state.allies, a);
@@ -146,7 +155,8 @@ export function evacuate(state: SimState, a: Ally): void {
 /**
  * Books a lost refugee (hushed on the road by enemy `enemyUid`, or one sheltered at the exit taken
  * by it): `stats.refugeesLost` + 1, its group's loss (`group`: its index in the escort's groups;
- * −1 for one taken at the exit), RefugeeLost, and Perfect forfeited.
+ * −1 for one taken at the exit), RefugeeLost, and Perfect forfeited. A bearer (`uid`, still in its
+ * pool slot) also costs the asset 1 (sim/bearers.ts `chargeBearer`).
  */
 export function loseRefugee(
   state: SimState,
@@ -158,6 +168,7 @@ export function loseRefugee(
   state.stats.refugeesLost++;
   if (group >= 0 && group < state.stats.lostByGroup.length) state.stats.lostByGroup[group]!++;
   emit(state, { type: 'RefugeeLost', uid, cause, enemyUid });
+  if (cause === 'hushed') chargeBearer(state, uid, enemyUid);
   bookRefugeeLost(state);
 }
 
@@ -231,31 +242,38 @@ export function refugeesOnRoad(state: DeepReadonly<Pick<SimState, 'allies'>>): n
 }
 
 /**
- * Refugees not yet safe or lost, spawned or not (Pebble not counted): the `refugeesRemaining`
- * trigger's count. Only falls. 0 on a map without escort data.
+ * Refugees not yet safe or lost, spawned or not (Pebble not counted; a bearer home is safe): the
+ * `refugeesRemaining` trigger's count. Only falls. 0 on a map without escort data.
  */
 export function refugeesRemaining(
   state: DeepReadonly<Pick<SimState, 'stats' | 'refugeeTotal'>>,
   map: EscortMap,
 ): number {
   if (map.escort === null) return 0;
-  const left = state.refugeeTotal - state.stats.evacuated - state.stats.refugeesLost;
+  const s = state.stats;
+  const left = state.refugeeTotal - s.evacuated - s.bearersHome - s.refugeesLost;
   return left > 0 ? left : 0;
 }
 
 /**
- * The story flags a run takes when it sets none for a flag that gates a refugee group (T605): that
- * flag's first `flagVariants` value, so the group's door is open (an unset flag gates every group
- * out: A3M3's `door_choice`, a Holdout with no refugees). The balance harness's runs and a dev
- * battle with no save start from these (`flags` laid over them). Empty when no group is gated.
+ * The story flags a run takes when it sets none for a flag that gates a refugee group (T605) or an
+ * ally post (T706: A3M6's militia): that flag's first `flagVariants` value, so the group's door is
+ * open (an unset flag gates every group out: A3M3's `door_choice`, a Holdout with no refugees) and
+ * the post is manned as its first variant says. The balance harness's runs and a dev battle with
+ * no save start from these (`flags` laid over them). Empty when nothing is gated.
  */
 export function gatedFlagDefaults(
-  map: Pick<CompiledMapDef<IdSpace>, 'escort' | 'builds'>,
+  map: Pick<CompiledMapDef<IdSpace>, 'escort' | 'builds'> &
+    Partial<Pick<CompiledMapDef<IdSpace>, 'allies'>>,
   flags: ScriptFlags = {},
 ): ScriptFlags {
   const out: Partial<Record<keyof ScriptFlags, NonNullable<ScriptFlags[keyof ScriptFlags]>>> = {};
-  for (const g of map.escort?.groups ?? []) {
-    const flag = g.when?.flag;
+  const gates = [
+    ...(map.escort?.groups ?? []).map((g) => g.when),
+    ...(map.allies ?? []).map((a) => a.when),
+  ];
+  for (const when of gates) {
+    const flag = when?.flag;
     if (flag === undefined || flags[flag] !== undefined || out[flag] !== undefined) continue;
     const first = map.builds.flagVariants[flag]?.[0];
     if (first !== undefined) out[flag] = first;

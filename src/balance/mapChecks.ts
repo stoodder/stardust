@@ -13,6 +13,7 @@ import {
   variantChecks,
 } from './parChecks.ts';
 import { holdoutBand } from './holdout.ts';
+import { jamLimitChecks } from './jamLimit.ts';
 import { parBand } from './rules.ts';
 
 /**
@@ -32,6 +33,7 @@ export function mapChecks<K extends IdSpace>(
     ...parOutcomeChecks(map, every, band),
     ...noCounterChecks(map, few, leftOut),
     ...parFairnessChecks(map, every, few, band),
+    ...jamLimitChecks(map, every), // #10 on a map that sends jammers (T702)
     ...altBuildChecks(map, few),
     ...variantChecks(map, few, band),
     ...freeChoiceChecks(map, few, band),

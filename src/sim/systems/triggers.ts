@@ -5,8 +5,10 @@
 // or a later one), and `wreckageCleared` (the drone cleared the wreckage under that marker; T400a:
 // A2M1's crew logs), and `interacted` (T409: a clickable world object was interacted with, by
 // click or by fallback; sim/clickables.ts), `refugeesRemaining` (T305c: at most that many
-// refugees not yet safe or lost; sim/escort.ts), and `forcedInputResolved` (T605: that forced
-// input was pressed; sim/forcedInput.ts), guarded by an optional `when` condition
+// refugees not yet safe or lost; sim/escort.ts), `forcedInputResolved` (T605: that forced
+// input was pressed; sim/forcedInput.ts), and `objectiveCompleted` (T706: that optional objective
+// settled `done`; cleanup settles it, so it fires on the next tick's triggers, like a wave's
+// `cleared`), guarded by an optional `when` condition
 // (sim/conditions.ts), with the actions `unlockTowerClass` (what `towerUnlockWave` compiles to),
 // `cue`, `grantCredits`, `bossEnd` (`driveOff`, `retreat`, or `pivot`: every live boss starts that
 // ending now, whatever its HP; enemyAbilities/bossPhases.ts, pivot.ts), `standDown` (T506: every
@@ -15,10 +17,14 @@
 // `forceInput` (T605: the SEAL; sim/forcedInput.ts) and `endMap` (T605: the map ends as won, on
 // the tick it runs; sim/objectives.ts `endMap`, from an event only), and A3M2's Clean Exit (T606;
 // sim/revoke.ts): `revokeTowerClass` and `revokeAbility` (from an event only: they read the run's
-// loadout and slots) and `setModifier` (QUILL's lockout, the hidden preview). A pivot's event runs the
+// loadout and slots) and `setModifier` (QUILL's lockout, the hidden preview), and `spawnWave`
+// (T706: a script group walks in; sim/scriptGroups.ts, whose units spawn at the end of this
+// system, after the events). A pivot's event runs the
 // objective switch and the refugees beside it, in its action order. Before the events,
 // each clickable marker's fallback trigger is checked: reached, the sim interacts with it itself
-// (`byFallback`), so its `interacted` events fire on this same pass. createSim refuses a map that
+// (`byFallback`), so its `interacted` events fire on this same pass; and on a map whose conditions
+// use `cleared` (T706), each wave that started since the last pass records how many wreckage tiles
+// the drone had cleared by then (`state.wreckageAtWave`; sim/conditions.ts). createSim refuses a map that
 // uses anything else
 // (unsupportedScript below, which names the task that lifts each part: SCRIPT_GATES), so a run never
 // silently skips part of its script.
@@ -34,9 +40,9 @@ import type {
   CompiledScriptAction,
   CompiledScriptTrigger,
 } from '../../content/compiled.ts';
-import type { ConditionDef, IdSpace } from '../../content/types.ts';
+import type { IdSpace } from '../../content/types.ts';
 import { interact, setClickable } from '../clickables.ts';
-import { evaluateCondition, wreckageClearedAt } from '../conditions.ts';
+import { evaluateCondition, usesCleared, wreckageClearedAt } from '../conditions.ts';
 import { earn } from '../economy.ts';
 import { refugeesRemaining, setObjective, spawnRefugees } from '../escort.ts';
 import { forcedInputResolved, requestForcedInput } from '../forcedInput.ts';
@@ -44,10 +50,12 @@ import { endMap } from '../objectives.ts';
 import { startBossEnding } from '../enemyAbilities/bossPhases.ts';
 import { standDown } from '../enemyAbilities/pivot.ts';
 import { revokeAbility, revokeTowerClass, setScriptModifier } from '../revoke.ts';
+import { scriptGroupSpawns, spawnScriptGroup } from '../scriptGroups.ts';
 import { emit, type SimState } from '../state.ts';
 import type { TickContext } from '../tick.ts';
 
 export function triggers(state: SimState, ctx: TickContext): void {
+  if (mapUsesCleared(ctx.map)) recordWreckageAtWave(state);
   clickFallbacks(state, ctx);
   const events = ctx.map.events;
   const fired = state.scriptFired;
@@ -68,6 +76,33 @@ export function triggers(state: SimState, ctx: TickContext): void {
     }
     if (state.outcome !== 'playing') return; // endMap: nothing after it runs
   }
+  scriptGroupSpawns(state, ctx);
+}
+
+/** Maps whose conditions use `cleared` (compiled maps are frozen, so once per map). */
+const USES_CLEARED = new WeakMap<object, boolean>();
+
+function mapUsesCleared(map: CompiledMapDef<IdSpace>): boolean {
+  let v = USES_CLEARED.get(map);
+  if (v === undefined) {
+    v =
+      map.events.some((e) => e.when !== null && usesCleared(e.when)) ||
+      map.objectives.some((o) => usesCleared(o.condition)) ||
+      (map.medals !== null && usesCleared(map.medals.challenge.condition)) ||
+      map.lockedAbilities.some((l) => usesCleared(l.when));
+    USES_CLEARED.set(map, v);
+  }
+  return v;
+}
+
+/**
+ * Each wave started since the last pass records the drone's count of cleared tiles (the
+ * `cleared` atom's "before wave N"). The wreckage system runs before the waves, so a tile cleared
+ * on a wave's starting tick counts as before it.
+ */
+function recordWreckageAtWave(state: SimState): void {
+  const at = state.wreckageAtWave;
+  while (at.length < state.wave) at.push(state.wreckage.cleared.length);
 }
 
 /**
@@ -105,6 +140,7 @@ function reached(state: SimState, ctx: TickContext, on: CompiledScriptTrigger<Id
     return ctx.map.escort !== null && refugeesRemaining(state, ctx.map) <= on.refugeesRemaining;
   }
   if ('forcedInputResolved' in on) return forcedInputResolved(state, on.forcedInputResolved);
+  if ('objectiveCompleted' in on) return objectiveDoneNow(state, ctx.map, on.objectiveCompleted);
   return false; // refused by createSim (unsupportedScript)
 }
 
@@ -121,11 +157,22 @@ function bossReached(state: SimState, boss: string | null, hpPct: number, phase:
   return false;
 }
 
-/** Runs one script action (an event's, or a completed objective's `onComplete`; sim/objectives.ts). */
+/** Whether the map's objective `id` has settled `done` (the `objectiveCompleted` trigger). */
+function objectiveDoneNow(state: SimState, map: CompiledMapDef<IdSpace>, id: string): boolean {
+  const i = map.objectives.findIndex((o) => o.id === id);
+  return i >= 0 && state.objectives[i] === 'done';
+}
+
+/**
+ * Runs one script action (an event's, or a completed objective's `onComplete`; sim/objectives.ts).
+ * `firstTick` is when a `spawnWave` group's clock starts: this tick from an event, the next from
+ * an `onComplete` (cleanup runs after this tick's spawns; sim/scriptGroups.ts).
+ */
 export function runScriptAction(
   state: SimState,
   action: CompiledScriptAction<IdSpace>,
-  map: Pick<CompiledMapDef<IdSpace>, 'escort'>,
+  map: Pick<CompiledMapDef<IdSpace>, 'escort' | 'scriptGroups' | 'waves'>,
+  firstTick: number = state.tick,
 ): void {
   if ('unlockTowerClass' in action) {
     const idx = state.lockedTowers.indexOf(action.unlockTowerClass);
@@ -156,6 +203,8 @@ export function runScriptAction(
     requestForcedInput(state, action.forceInput.id);
   } else if ('setModifier' in action) {
     setScriptModifier(state, action.setModifier, action.on);
+  } else if ('spawnWave' in action) {
+    spawnScriptGroup(state, map, action.spawnWave, firstTick);
   }
   // `endMap`, `revokeTowerClass`, and `revokeAbility` run in triggers() (they need the tick's
   // context); anything else is refused by createSim (unsupportedScript).
@@ -167,16 +216,12 @@ export function runScriptAction(
  * own rows when it lands, and a part not listed here waits for a later milestone.
  */
 export const SCRIPT_GATES: Readonly<Record<string, string>> = Object.freeze({
-  // Triggers (D141, D146). `objectiveCompleted` (A3M5's Cut the Feed) is T706's; the finale's
-  // rest (M8).
-  objectiveCompleted: 'T706',
+  // Triggers (D141, D146). A3M5's `objectiveCompleted` runs since T706; the finale's rest (M8).
   restProgressPct: 'M8',
-  // Actions (D141, D146). M6's Clean Exit (revocations, QUILL's lockout) runs since T606.
-  // M7: A3M5's opened tiles (Shareholder Value's jettison; T707) and a script group (T706).
+  // Actions (D141, D146). M6's Clean Exit (revocations, QUILL's lockout) runs since T606, M7's
+  // script groups (`spawnWave`) since T706. A3M5's opened tiles (Shareholder Value's jettison):
+  // T707.
   openTile: 'T707',
-  spawnWave: 'T706',
-  // Condition atoms (D146): `cleared` (Cut the Feed's markers before a wave; T706).
-  cleared: 'T706',
   // M8, the finale: a lighting change at a script moment (Dawn; wave-paced light is map data,
   // `MapDef.lighting`, T410a, Sundown's darkness included, T505), the Phase 2 checkpoint (T305b
   // runs the wave checkpoints, not this action), the restored class after "Who's there?", and the
@@ -198,8 +243,8 @@ function notYet(key: string): string {
 /**
  * The map-script parts the sim can't run yet. createSim refuses a map whose events use any other
  * trigger or action, listing each one with the task that lifts it (SCRIPT_GATES), until it lands.
- * Every condition atom (`when`, the Challenge medal, objectives, ability locks) is simulated but
- * M7's `cleared` (T706); an objective's `onComplete` actions are held to the same list as an
+ * Every condition atom (`when`, the Challenge medal, objectives, ability locks) is simulated (M7's
+ * `cleared` since T706); an objective's `onComplete` actions are held to the same list as an
  * event's (sim/objectives.ts runs them).
  */
 export function unsupportedScript(map: CompiledMapDef<IdSpace>): string[] {
@@ -207,16 +252,6 @@ export function unsupportedScript(map: CompiledMapDef<IdSpace>): string[] {
   for (const ev of map.events) {
     unsupportedTrigger(ev.on, `event '${ev.id}': trigger`, out);
     for (const a of ev.actions) unsupportedAction(a, `event '${ev.id}'`, out);
-    if (ev.when !== null) unsupportedCondition(ev.when, `event '${ev.id}': when`, out);
-  }
-  if (map.medals !== null) {
-    unsupportedCondition(map.medals.challenge.condition, 'the Challenge medal', out);
-  }
-  for (const l of map.lockedAbilities) {
-    unsupportedCondition(l.when, `the lock on '${l.ability}'`, out);
-  }
-  for (const o of map.objectives) {
-    unsupportedCondition(o.condition, `objective '${o.id}': condition`, out);
   }
   for (const o of map.objectives) {
     for (const a of o.onComplete) {
@@ -229,19 +264,6 @@ export function unsupportedScript(map: CompiledMapDef<IdSpace>): string[] {
     }
   }
   return out;
-}
-
-/** The condition atoms the sim can't judge yet (`cleared`; SCRIPT_GATES), once per condition. */
-function unsupportedCondition(c: ConditionDef<IdSpace>, where: string, out: string[]): void {
-  if (usesCleared(c)) out.push(`${where}: condition cleared ${notYet('cleared')}`);
-}
-
-function usesCleared(c: ConditionDef<IdSpace>): boolean {
-  if ('cleared' in c) return true;
-  if ('all' in c) return c.all.some(usesCleared);
-  if ('any' in c) return c.any.some(usesCleared);
-  if ('not' in c) return usesCleared(c.not);
-  return false;
 }
 
 /** Actions an objective's `onComplete` can't run: they need the tick's context (triggers()). */
@@ -260,7 +282,8 @@ function unsupportedTrigger(
     !('wreckageCleared' in on) &&
     !('interacted' in on) &&
     !('refugeesRemaining' in on) &&
-    !('forcedInputResolved' in on)
+    !('forcedInputResolved' in on) &&
+    !('objectiveCompleted' in on)
   ) {
     const key = Object.keys(on).join('/');
     out.push(`${where} ${key} ${notYet(key)}`);
@@ -284,7 +307,8 @@ function unsupportedAction(a: CompiledScriptAction<IdSpace>, where: string, out:
     !('endMap' in a) &&
     !('revokeTowerClass' in a) &&
     !('revokeAbility' in a) &&
-    !('setModifier' in a)
+    !('setModifier' in a) &&
+    !('spawnWave' in a)
   ) {
     // An action is named by its first key (`revokeTowerClass`, not its `refundPct` beside it).
     const key = Object.keys(a)[0] ?? '?';

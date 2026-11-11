@@ -309,7 +309,8 @@ function spawnDue(
   }
 }
 
-function spawn(
+/** Spawns one unit of group `g` into wave `wave` (also a script group's; sim/scriptGroups.ts). */
+export function spawn(
   state: SimState,
   wave: number,
   g: CompiledWave<IdSpace>['groups'][number],

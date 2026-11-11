@@ -7,7 +7,8 @@
 //   their marker tiles' centers: mode `post`, vulnerability `never` (Bricks is never hurt before
 //   A3M3). A blocker post (`block`; T605, Bricks at the Gap) spawns `scripted`, with its capacity
 //   and its timeline's W1 health; sim/blocker.ts holds units and runs the timeline. Each emits
-//   AllySpawned.
+//   AllySpawned. A flag-gated post (`when`: A3M6's militia under `convoy`; T706) is manned only
+//   when its gate holds under the run's story flags (sim/bearers.ts `postManned`).
 // - **Attacks.** Like a hitscan tower: an ally fires on a tick whose cooldown starts at 0, then
 //   waits `periodTicks`. It picks the **nearest** enemy in range (inclusive; ties to the lowest
 //   uid) on a layer it hits, re-picking every shot, and **never** a unit whose wave group is tagged
@@ -31,6 +32,7 @@ import { applyChill, applyDamage, PLAIN_HIT } from '../combat/damage.ts';
 import { isNeutral } from '../combat/neutral.ts';
 import { distSqTo } from '../combat/targeting.ts';
 import { blockerLevel } from '../blocker.ts';
+import { postManned } from '../bearers.ts';
 import { evacuate } from '../escort.ts';
 import { pointAt } from '../path.ts';
 import { ARRIVE_EPS_TILES } from './movement.ts';
@@ -113,6 +115,7 @@ export function wardAuras(state: SimState): void {
 /** Spawns the map's ally posts (tick 0), in map order. */
 function spawnPosts(state: SimState, ctx: TickContext): void {
   for (const post of ctx.map.allies) {
+    if (!postManned(post, ctx.config.scriptFlags)) continue; // a flag-gated post (T706)
     const a = poolAlloc(state.allies, ALLY_BLANK, takeUid(state));
     a.kind = post.kind;
     a.mode = 'post';

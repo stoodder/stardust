@@ -102,6 +102,7 @@ import { SpecFx } from '../views/SpecFx.ts';
 import { CoreView } from '../views/CoreView.ts';
 import { BlinkView } from '../views/BlinkView.ts';
 import { PhaseView } from '../views/PhaseView.ts';
+import { JamView } from '../views/JamView.ts'; // T702
 import { HollowView } from '../views/HollowView.ts'; // T602
 import { RiftView } from '../views/RiftView.ts'; // T630b
 import { ShuttleView } from '../views/ShuttleView.ts'; // T630b
@@ -159,6 +160,7 @@ import { KeepClear, type Box } from '../vfx/keepClear.ts';
 import { PlinkFx } from '../views/PlinkFx.ts';
 import { ShieldAuraView } from '../views/ShieldAuraView.ts';
 import { EverglowView } from '../views/EverglowView.ts';
+import { HealAuraView } from '../views/HealAuraView.ts'; // T703
 import { WardView } from '../views/WardView.ts';
 import type { UnitAnchors } from '../views/unitAnchor.ts';
 import { ShieldView } from '../views/ShieldView.ts';
@@ -166,6 +168,8 @@ import { shardDepthFloor } from '../views/shardLook.ts';
 import { PlacementView } from '../views/PlacementView.ts';
 import { ProjectileView } from '../views/ProjectileView.ts';
 import { RefugeeViews } from '../views/RefugeeView.ts';
+import { BearerViews } from '../views/BearerView.ts'; // T706
+import { flagGatedGround } from '../views/flagDressing.ts'; // T706
 import { enemyBody, facingOf } from '../views/spriteInfo.ts';
 import { TowerView } from '../views/TowerView.ts';
 import type { ViewContext } from '../views/ViewContext.ts';
@@ -225,6 +229,7 @@ export class BattleScene extends Phaser.Scene {
   #allies!: ViewPool<AllyView>;
   /** Escort refugees (T305c). */
   #refugees!: RefugeeViews;
+  #bearers!: BearerViews; // T706: bearers with their burden, militia posts
   #placement!: PlacementView;
   #fx!: FxView;
   #core!: CoreView;
@@ -266,12 +271,14 @@ export class BattleScene extends Phaser.Scene {
   #auras!: ShieldAuraView;
   /** Everglow Security: the Expediter's haste ring and speed lines, the shutdown (T603). */
   #everglow!: EverglowView;
+  #heal!: HealAuraView; // T703
   /** The Ward (T506): a pivoted boss kneeling, its chill ring. */
   #wards!: WardView;
   /** Blinks: the tell's ghost at the landing, the afterimage (T404). */
   #blinks!: BlinkView;
   /** Phasing: the broken ring under a telling or Phased unit (T503). */
   #phases!: PhaseView;
+  #jams!: JamView; // T702: the Silencer's tendril, the Jammed static, System Reboot's pops
   #hollow!: HollowView; // T602
   #rifts!: RiftView; // T630b: the rift cracks, a wave ahead
   #shuttle!: ShuttleView; // T630b: Sterling's shuttle lifting off (A3M2)
@@ -401,7 +408,9 @@ export class BattleScene extends Phaser.Scene {
     const ctx: ViewContext = { scene: this, sprites, layers, origin: this.#origin };
 
     const wreckProps = new Map<number, Phaser.GameObjects.Sprite>();
-    const coreProps = drawGround(ctx, map, map.env, wreckProps);
+    // T706: a dressing layer or decor marker shows only under its story-flag gate.
+    const ground = flagGatedGround(map, sim.config.scriptFlags);
+    const coreProps = drawGround(ctx, ground, map.env, wreckProps);
     // T630b: before the world's glow, so it sees doors and the cracks lie first in `decal`.
     const flags = sim.config.scriptFlags;
     this.#doors = new BlastDoorView(ctx, map, flags, coreProps, prefersReducedMotion);
@@ -416,6 +425,7 @@ export class BattleScene extends Phaser.Scene {
     this.#projectiles = new ViewPool(() => new ProjectileView(ctx));
     this.#allies = new ViewPool(() => new AllyView(ctx, prefersReducedMotion));
     this.#refugees = new RefugeeViews(ctx);
+    this.#bearers = new BearerViews(ctx, prefersReducedMotion); // T706
     this.#placement = new PlacementView(ctx, this.#elevationOf);
     this.#links = new LinkView(ctx, prefersReducedMotion);
     this.#fx = new FxView(ctx, prefersReducedMotion);
@@ -461,6 +471,7 @@ export class BattleScene extends Phaser.Scene {
     const anchors: UnitAnchors = { box: (uid, out) => this.#enemies.get(uid)?.box(out) ?? false };
     this.#auras = new ShieldAuraView(ctx, prefersReducedMotion, anchors);
     this.#everglow = new EverglowView(ctx, prefersReducedMotion, anchors, nightRings(map.env)); // T630a
+    this.#heal = new HealAuraView(ctx, prefersReducedMotion, anchors); // T703
     this.#wards = new WardView(
       ctx,
       (id) => this.#deps.sim.config.content.enemies[id]?.sprites.body ?? `enemy.${id}`,
@@ -468,6 +479,7 @@ export class BattleScene extends Phaser.Scene {
     );
     this.#blinks = new BlinkView(ctx, this.#fx, prefersReducedMotion);
     this.#phases = new PhaseView(ctx, this.#fx, prefersReducedMotion, anchors);
+    this.#jams = new JamView(ctx, this.#fx, prefersReducedMotion, (c, r) => this.#liftPx(c, r)); // T702
     this.#hollow = new HollowView(ctx, prefersReducedMotion); // T602
     this.#blocker = new BlockerView(ctx, prefersReducedMotion); // T605
     this.#choir = new ChoirView(ctx, prefersReducedMotion, anchors); // T607
@@ -609,6 +621,7 @@ export class BattleScene extends Phaser.Scene {
       this.#shields.bind(bus, () => sim.state.enemies),
       this.#blinks.bind(bus, () => sim.state.enemies),
       this.#phases.bind(bus),
+      this.#jams.bind(bus, () => sim.state.towers), // T702
       this.#bloom.bind(bus), // T630a: Gravity Well's pull streak
       this.#shuttle.bind(bus, () => sim.state.tick), // T630b
       this.#doors.bind(bus), // T630b
@@ -629,6 +642,7 @@ export class BattleScene extends Phaser.Scene {
       for (const off of this.#offs) off();
       this.#allies.releaseAll();
       this.#refugees.releaseAll();
+      this.#bearers.releaseAll(); // T706
       this.#offs.length = 0;
       this.#fx.reset();
       this.#sacks.reset();
@@ -654,9 +668,11 @@ export class BattleScene extends Phaser.Scene {
       this.#shields.reset();
       this.#auras.reset();
       this.#everglow.reset();
+      this.#heal.reset(); // T703
       this.#wards.reset();
       this.#blinks.reset();
       this.#phases.reset();
+      this.#jams.reset(); // T702
       this.#hollow.reset(); // T602
       this.#rifts.reset(); // T630b
       this.#shuttle.reset(); // T630b
@@ -708,9 +724,11 @@ export class BattleScene extends Phaser.Scene {
     this.#shields.update(dt, state.enemies);
     this.#auras.update(state.enemies, state.tick);
     this.#everglow.update(state.enemies, state.tick, dt);
+    this.#heal.update(state.enemies, state.tick); // T703
     this.#wards.update(state.allies, state.enemies);
     this.#blinks.update(dt, state.enemies);
     this.#phases.update(state.enemies);
+    this.#jams.update(state); // T702
     this.#hollow.update(dt, state.enemies, state.allies); // T602
     this.#rifts.update(state.wave); // T630b
     this.#shuttle.update(state.tick, state.scriptFired); // T630b
@@ -828,6 +846,7 @@ export class BattleScene extends Phaser.Scene {
       enemies,
       allies,
       refugees: this.#refugees.counts,
+      bearers: this.#bearers.counts, // T706
       shields: {
         ripples: sh.ripples,
         breaks: sh.breaks,
@@ -846,6 +865,13 @@ export class BattleScene extends Phaser.Scene {
         shutdowns: this.#everglow.shutdowns,
         shutdownsPlayed: this.#everglow.shutdownsPlayed,
       },
+      heal: this.#heal.shown, // T703
+      jams: {
+        ...this.#jams.shown,
+        tellsSeen: this.#jams.tellsSeen,
+        jamsSeen: this.#jams.jamsSeen,
+        reboots: this.#jams.reboots,
+      }, // T702
       phases: {
         ...this.#phases.shown,
         phasedIn: this.#phases.phasedIn,
@@ -1204,6 +1230,7 @@ export class BattleScene extends Phaser.Scene {
     this.#shooter = fireFrom;
     this.#allies.sweep(stamp);
     this.#refugees.sync(allies, stamp);
+    this.#bearers.sync(state, stamp, this.time.now); // T706
     if (fireFrom === null) {
       this.#fx.setFireSource(Number.NaN, Number.NaN);
     } else {

@@ -89,7 +89,8 @@ describe('offers', () => {
     // and Lookout's). Granted-only upgrades (C2's Zibzab Tune-up) never reach a shelf: the story
     // gives them.
     const shopUpgrades = Object.values(UPGRADES).filter((u) => u.kind === 'shop').length;
-    expect(shop.length).toBe(shopUpgrades - 6 + Object.keys(PROTOCOLS).length + 4);
+    // The Gloop Spitter's tune-up waits for its gift too (T705).
+    expect(shop.length).toBe(shopUpgrades - 7 + Object.keys(PROTOCOLS).length + 4);
     expect(new Set(shop.map((o) => o.refusal))).toEqual(new Set(['pane_locked']));
     expect(shelf(DEV_SAVES.after_a1m1.build(), 'engineering')[0]?.refusal).toBe('pane_locked');
   });
@@ -165,7 +166,7 @@ describe('offers', () => {
     const save = afterA1M4();
     expect(offerFor(save, { kind: 'upgrade', id: 'nope' })).toBeNull();
     expect(offerFor(save, { kind: 'protocol', id: '__proto__' })).toBeNull();
-    expect(offerFor(save, { kind: 'specs', tower: 'gloop' })).toBeNull();
+    expect(offerFor(save, { kind: 'specs', tower: 'sproing' })).toBeNull(); // a stub (T704)
     expect(buy(save, { kind: 'upgrade', id: 'nope' })).toMatchObject({
       ok: false,
       reason: 'unknown',

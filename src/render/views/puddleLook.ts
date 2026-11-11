@@ -2,8 +2,9 @@
 // may replace it with `fx.puddle`; PuddleView applies them): pure, so they're unit-tested.
 // - **The pool:** a 2:1 ellipse at the puddle's reach (the sim's radius, snapped to the ring bake
 //   step), filled `green.3` at ~45% with a ragged (dithered) edge, a solid `green.4` rim, and three
-//   `white.1` glints (bubbles) inside, so it reads as acid on the ground, not a range ring (dashed)
-//   or the Bloom's frost disc (blue).
+//   `white.1` glints (bubbles) inside, so it reads as a pool on the ground, not a range ring
+//   (dashed), the Bloom's frost disc (blue), or Underfoot's toothed snare (a ring). Not the `acid`
+//   ramp: its yellow-green is the Hollow's reserved hue (art-direction §2).
 // - **Drying:** whole while it lives, then the stepped fade over its last half second
 //   (`puddleAlpha`), so its end is no surprise; under reduced motion it holds whole and vanishes.
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';

@@ -58,6 +58,7 @@ describe('purchases in the save session', () => {
       'maxed', // the Scuttle Den's (T604)
       'maxed', // the Hum Choir's (T607)
       'maxed', // the Stasis Bloom's (T608)
+      'maxed', // the Gloop Spitter's (T705)
     ]);
   });
 });

@@ -11,8 +11,9 @@
 //   Takeover at 66%, the jettison at 33% onto four `crash_*` decor markers off the road.
 // - `dev_gmaw` (T708): Motes catching up the Gathering Maw (its wide gather), its split at 50%
 //   and the merge 12 s later.
-// - `dev_bearers` (T706): a Protect map whose asset is the bearers: a bearer group walks home to
-//   the west-edge door while Motes come down the road; Cut the Feed (two `feed_*` wreckage markers
+// - `dev_bearers` (T706): a Protect map whose asset is the bearers: as W2 starts a bearer group
+//   walks home to the west-edge door while Motes come down the road and three come out of the
+//   vats behind the bearers to hunt them (each hushed costs the asset 1); Cut the Feed (two `feed_*` wreckage markers
 //   cleared before W3) or W3's surge script group walks in; a militia post and a dressing layer
 //   and a banner marker under `door_choice = convoy`.
 // - `dev_sproing` (T704, T705, T703): the Sproing Pad against Puffwings and Asset Recovery
@@ -261,7 +262,7 @@ export const bearersMap = dev.defineMap({
     },
   ],
   events: [
-    { id: 'walk', on: { wave: 1, phase: 'start' }, actions: [{ spawnAllies: 'bearers' }] },
+    { id: 'walk', on: { wave: 2, phase: 'start' }, actions: [{ spawnAllies: 'bearers' }] },
     {
       id: 'surge',
       on: { wave: 3, phase: 'start' },
@@ -281,7 +282,14 @@ export const bearersMap = dev.defineMap({
   companion: null,
   waves: dev.defineWaves([
     { groups: [{ enemy: 'mote', count: 6, route: 'a', delaySec: 4, intervalSec: 0.3 }] },
-    { countdownSec: 10, groups: [{ enemy: 'mote', count: 8, route: 'a', intervalSec: 0.3 }] },
+    {
+      countdownSec: 10,
+      groups: [
+        { enemy: 'mote', count: 8, route: 'a', intervalSec: 0.3 },
+        // T706: three Motes come out of the vats behind the bearers and hunt them.
+        { enemy: 'mote', count: 3, route: 'home', delaySec: 5, intervalSec: 1 },
+      ],
+    },
     { countdownSec: 10, groups: [{ enemy: 'mote', count: 10, route: 'a', intervalSec: 0.3 }] },
   ]),
   flagVariants: { door_choice: ['convoy', 'warren'] },

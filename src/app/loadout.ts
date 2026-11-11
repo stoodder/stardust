@@ -122,7 +122,9 @@ function partnerText(p: (typeof LINKS)[keyof typeof LINKS]['partners'][number]):
   if (p.pulseSoonerSec !== undefined) parts.push(`pulses ${p.pulseSoonerSec} s sooner`);
   // Acid Rain, Sticky Flak (T705).
   if (p.corrodedStacks !== undefined) {
-    parts.push(`hits add ${p.corrodedStacks} Corroded ${p.corrodedStacks === 1 ? 'stack' : 'stacks'}`);
+    parts.push(
+      `hits add ${p.corrodedStacks} Corroded ${p.corrodedStacks === 1 ? 'stack' : 'stacks'}`,
+    );
   }
   return parts.join(', ');
 }

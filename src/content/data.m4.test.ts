@@ -126,6 +126,9 @@ describe('M4 towers, ability, links, and catalog rows', () => {
       // The Stasis Bloom's (T608; sim/bloom.test.ts).
       'pinned_down',
       'stillmind',
+      // M7's: the Gloop Spitter's (T705; sim/gloop.test.ts).
+      'acid_rain',
+      'sticky_flak',
     ]);
     expect(TOWER_ACCESS.lookout).toMatchObject({ price: 150, availableAfter: 'a1_m05' });
     expect(TOWER_ACCESS.harpoon).toMatchObject({ price: 250, availableAfter: 'a2_m01' });

@@ -64,8 +64,8 @@ export const HARNESS_GATES: Readonly<Record<HarnessFeature, string | null>> = Ob
   flagVariants: null,
   companionPick: null,
   holdFireRuns: null,
-  // The jam-limit check (#10) lands with the jamming core (D146: T702).
-  jamLimit: 'T702',
+  // The jam-limit check (#10; balance/jamLimit.ts) landed with the jamming core (D146: T702).
+  jamLimit: null,
 });
 
 /**

@@ -327,7 +327,7 @@ export function tierExtrasDelta(
  * Mindspike's and Lantern's do too: "3 beams", "ramp ×4 in 6 s", "echo 50%", "1.2 tiles",
  * "Unnerves 1.5 s", "Mark +35%", "no evading", "detect 3.5", "Marks all in 3.5". A spec card
  * also says what its choice gives up against `from`, the tier it replaces (D138): Truthlight's
- * "1 beam" against tier 3's two.
+ * "1 beam" against tier 3's two. Big Glorp's (T705): "puddle 3 s".
  */
 export function traitTexts(
   tier: DeepReadonly<CompiledTier>,
@@ -374,6 +374,8 @@ export function traitTexts(
   if (tier.markArea !== null) {
     parts.push(`Marks all in ${statNum(tier.markArea.radiusTiles)} ${pctText(tier.markArea.pct)}`);
   }
+  // Big Glorp's puddle (T705): how long each one lies.
+  if (tier.puddle !== null) parts.push(`puddle ${statNum(tier.puddle.durationTicks / TICK_HZ)} s`);
   return parts;
 }
 

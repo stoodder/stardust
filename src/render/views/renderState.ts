@@ -85,6 +85,16 @@ export interface RenderState {
     readonly shutdowns: number;
     readonly shutdownsPlayed: number;
   };
+  /**
+   * HealAuraView (T703): healer rings and their pulses up now, units wearing the ✚ (being mended)
+   * now, and C4 Purge's open panels shown now.
+   */
+  readonly heal: {
+    readonly rings: number;
+    readonly pulses: number;
+    readonly pluses: number;
+    readonly panels: number;
+  };
   /** PhaseView's rings up now (telling, Phased) and units seen phasing in since the battle began. */
   readonly phases: {
     readonly tells: number;
@@ -118,6 +128,17 @@ export interface RenderState {
   };
   /** BloomView (T608): Stasis Bloom fields drawn now, and those flashing for a pulse now. */
   readonly bloom: { readonly fields: number; readonly flashing: number };
+  /**
+   * JamView (T702): Silencer tendrils drawn now and Jammed towers showing their static now; tells
+   * and jams seen, and System Reboots played, since the battle began.
+   */
+  readonly jams: {
+    readonly tells: number;
+    readonly jammed: number;
+    readonly tellsSeen: number;
+    readonly jamsSeen: number;
+    readonly reboots: number;
+  };
   /** Big Glorp's puddles showing now, and seen since the battle began (T705). */
   readonly gloop: { readonly puddles: number; readonly spawned: number };
   /**
@@ -158,6 +179,17 @@ export interface RenderState {
   };
   /** Refugees drawn now (on the field), and those frozen in a hush (T305c, RefugeeView). */
   readonly refugees: { readonly shown: number; readonly held: number };
+  /**
+   * BearerViews (T706): bearers drawn now, those frozen in a hush, and those wearing their burden;
+   * militia posts drawn now, and their shots (tracers) since the battle began.
+   */
+  readonly bearers: {
+    readonly shown: number;
+    readonly held: number;
+    readonly burdens: number;
+    readonly militia: number;
+    readonly shots: number;
+  };
   /** Pinned units roped to a stake now, and Skewer lines drawn so far (T408, HarpoonView). */
   readonly harpoon: { readonly pins: number; readonly skewered: number };
   /**

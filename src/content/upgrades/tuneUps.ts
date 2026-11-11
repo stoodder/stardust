@@ -160,6 +160,14 @@ export const tune_choir = supportTuneUp('tune_choir', 'choir', 'Hum Choir Tune-u
 export const tune_bloom = supportTuneUp('tune_bloom', 'bloom', 'Stasis Bloom Tune-up', 'a3_m01');
 
 /**
+ * The Gloop Spitter's tune-up (T705): the usual three ranks (+5% damage, its glob's and, through
+ * the damage percent, Big Glorp's acid; −5% cost; +5% range). Zibzab's; stocked after A3M3 with
+ * its earliest gift (the warren's, in A3M4's briefing), and off the shelf until the Gloop is given
+ * (meta/purchase.ts `shelf`), so the shop never names it early (under `convoy` it waits for A3M6).
+ */
+export const tune_gloop = tuneUp('tune_gloop', 'gloop', 'Gloop Spitter Tune-up', 'a3_m03');
+
+/**
  * The Zibzab Tune-up (design/progression.md § 2.1, C2 Sell; "Ten percent. Honestly, eight."): +8%
  * damage for every Vrell tower, permanently: one `towerStat` grant per Vrell tower in the registry,
  * so a later Vrell tower joins by itself. Never sold (`kind: 'grant'`, price 0): A2M4's C2 Sell

@@ -65,6 +65,11 @@ import { mawMap } from './devM6.ts'; // T602
 import { denMap } from './devM6.ts'; // T604
 import { holdoutMap } from './devM6.ts'; // T605
 import { choirMap } from './devChoir.ts'; // T607
+import { silenceMap } from './devJam.ts'; // T702
+import { healMap } from './devHeal.ts'; // T703
+import { gloopMap } from './devGloop.ts'; // T705
+import { bearersMap } from './devM7.ts'; // T706
+import { blackbudget } from '../../content/enemies/blackbudget.ts'; // T703
 import { choir } from '../../content/towers/choir.ts'; // T607
 import { harmony } from '../../content/links/harmony.ts'; // T607
 import { bloomMap } from './devBloom.ts'; // T608
@@ -84,6 +89,7 @@ import { gloop } from '../../content/towers/gloop.ts';
 import { sproing } from '../../content/towers/sproing.ts';
 import { pinned_down } from '../../content/links/pinned_down.ts'; // T608
 import { stillmind } from '../../content/links/stillmind.ts'; // T608
+import { sticky_flak } from '../../content/links/sticky_flak.ts'; // T705
 import { lantern } from '../../content/towers/lantern.ts';
 import { lightsong } from '../../content/links/lightsong.ts';
 import { underfoot } from '../../content/abilities/underfoot.ts';
@@ -300,6 +306,7 @@ const DEV_ENTITIES = {
     associate,
     liability,
     gunship,
+    blackbudget, // dev_heal's Operatives (devHeal.ts; T703)
     shareholder_value,
     gathering_maw,
     gathering_maw_part,
@@ -1492,6 +1499,10 @@ export const DEV_CONTENT: RawContent<DevIds> = {
     dev_holdout: holdoutMap, // T605 (devM6.ts: the Holdout, Bricks's block, the SEAL)
     dev_choir: choirMap, // T607 (devChoir.ts: the Hum Choir's rings, Harmony, Lulled)
     dev_bloom: bloomMap, // T608 (devBloom.ts: the Stasis Bloom's field, pulse, pull, links)
+    dev_silence: silenceMap, // T702 (devJam.ts: the Silencer's tendril, Jammed, System Reboot)
+    dev_heal: healMap, // T703 (devHeal.ts: the Associate's ring, Liability, gunships, Black Budget)
+    dev_gloop: gloopMap, // T705 (devGloop.ts: the Gloop's spit, Corroded, Big Glorp, Sticky Flak)
+    dev_bearers: bearersMap, // T706 (devM7.ts: bearers home, Cut the Feed or the surge, militia)
   }),
   links: {
     // Conductive is the live content's link (its partners are the real Zapcoil and Sprinkler).
@@ -1511,6 +1522,9 @@ export const DEV_CONTENT: RawContent<DevIds> = {
     pinned_down: pinned_down as unknown as LinkDef<DevIds>,
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the ids it names are DevIds too
     stillmind: stillmind as unknown as LinkDef<DevIds>,
+    // Sticky Flak (T705): the real Skyhook and Gloop Spitter, for dev_gloop.
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the ids it names are DevIds too
+    sticky_flak: sticky_flak as unknown as LinkDef<DevIds>,
   },
   campaign: ['dev_range'],
 };

@@ -5,7 +5,9 @@
 // `failed`. Every change emits `ObjectiveProgress`. cleanup drives it, like the medals:
 // - While playing, an objective whose condition has settled (settledCondition: a run atom passed
 //   its bound, a marker was passed) is `done` or `failed` at once. A `done` objective runs its
-//   `onComplete` actions then, so a mid-run objective can change the rest of the map (A3M5).
+//   `onComplete` actions then, so a mid-run objective can change the rest of the map (A3M5); a
+//   `spawnWave` among them starts its group's clock on the next tick (sim/scriptGroups.ts). The
+//   map's `objectiveCompleted` events fire on the next tick's triggers (T706).
 // - A win judges every open objective as things stand on the win tick (state atoms) and over the
 //   run (run atoms). A loss fails every open one.
 // Meta pays an objective's Intel only on a win, once per save (meta/runEnd.ts).
@@ -36,7 +38,10 @@ import { settleWin } from './medals.ts';
 import { emit, type ObjectiveStatus, type SimState } from './state.ts';
 import { runScriptAction } from './systems/triggers.ts';
 
-type ObjectiveMap = Pick<CompiledMapDef<IdSpace>, 'objectives' | 'escort'>;
+type ObjectiveMap = Pick<
+  CompiledMapDef<IdSpace>,
+  'objectives' | 'escort' | 'scriptGroups' | 'waves'
+>;
 
 /**
  * Whether selling `tower` now is a late sell (Clean Audit): a wave has started since it was built
@@ -118,7 +123,9 @@ export function watchObjectives(state: SimState, map: ObjectiveMap, ctx: Conditi
     set(state, map, i, v ? 'done' : 'failed');
     if (v) {
       const actions = def.onComplete;
-      for (let a = 0; a < actions.length; a++) runScriptAction(state, actions[a]!, map); // a < length
+      for (let a = 0; a < actions.length; a++) {
+        runScriptAction(state, actions[a]!, map, state.tick + 1); // a < length
+      }
     }
   }
 }
