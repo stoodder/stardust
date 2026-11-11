@@ -2,10 +2,9 @@
 // `commitChoice`, so the pick is written as a real card's is; the run itself isn't filed) offers
 // "QUILL's directives" in the way on's place, its options waiting 700 ms; the answer commits at
 // once (Keep inherits Time Dilation; Purge refunds nothing here, no Rapport owned); then the base
-// plays Night Shift, mandatory: Esc skips nothing, Next reads every line to the end, and it is
-// seen once. Until T720 registers A3M4's debrief and Night Shift, placeholders play them
-// (app/storyStubs.ts). Then Purge in a battle: a dev battle (`?map=dev_heal`) on the Purge save
-// sends its Everglow units with their maintenance panels open and 2 less armor (T703's view).
+// plays Night Shift (T720's lines), mandatory: Esc skips nothing, Next reads every line to the
+// end, and it is seen once. Then Purge in a battle: a dev battle (`?map=dev_heal`) on the Purge
+// save sends its Everglow units with their maintenance panels open (T703's view).
 // Screenshots in <out>/screens/c4/.
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';

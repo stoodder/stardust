@@ -157,7 +157,7 @@ describe('C4 on the card (D146: asked once, committed on the answer)', () => {
     expect(again.story.flags.quill_choice).toBe('keep');
   });
 
-  it('plays A3M4\'s registered debrief and Night Shift', () => {
+  it("plays A3M4's registered debrief and Night Shift", () => {
     expect(SCENES['a3_m04_debrief']).toBeDefined();
     expect(SCENES['a3_m04_base_night_shift']).toBeDefined();
   });

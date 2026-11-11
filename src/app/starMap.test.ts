@@ -155,31 +155,31 @@ describe('starMapView', () => {
     for (const m of CAMPAIGN_PLAN.slice(14)) expect(JSON.stringify(after2)).not.toContain(m.name);
   });
 
-  it("after A3M3 (M6's close): Empty Slot teased, Coming soon, as Act II's close teased the Preserve", () => {
+  it('after A3M3: Empty Slot is open (M7 built it), and nothing later is named yet', () => {
     const view = starMapView(DEV_SAVES.after_a3m3_convoy.build());
     expect(view).toMatchObject({ phase: 'act3', act: '3', marker: 'a3_m03', frontier: 'a3_m04' });
     expect(view.nodes).toHaveLength(15);
     expect(view.nodes.slice(0, 14).every((n) => n.state === 'won')).toBe(true);
-    const teaser = view.nodes.at(-1)!;
-    expect(teaser).toMatchObject({
+    const next = view.nodes.at(-1)!;
+    expect(next).toMatchObject({
       id: 'a3_m04',
-      state: 'coming_soon',
+      state: 'open',
       name: 'Empty Slot',
       place: 'The Shelters',
       tagline: 'The shelters. His portrait is dark. The mail still comes.',
-      brief: null,
       x: 296,
       y: 248,
     });
-    expect(teaser.label).toBe(
-      'Shift 15, Empty Slot, The Shelters. Coming soon. ' +
-        'The shelters. His portrait is dark. The mail still comes.',
-    );
-    // The leg from the Gap to the teaser wears the accent; nothing later is named anywhere.
+    // Its briefing card: the jammer first, jam, armor and air required, and its medals.
+    expect(next.brief?.threats[0]?.id).toBe('jammer');
+    expect(next.brief?.required).toEqual(['Jam', 'Armor', 'Air']);
+    expect(next.brief?.medals.map((m) => m.name)).toContain('Keep the Lights On');
+    expect(next.brief?.objectives.map((o) => o.name)).toEqual(['Signature: Received']);
+    // The leg from the Gap to it wears the accent; nothing later is named anywhere.
     expect(view.legs.at(-1)).toMatchObject({ accent: true, from: { x: 372, y: 136 } });
     const text = JSON.stringify(view);
     for (const m of CAMPAIGN_PLAN.slice(15)) expect(text).not.toContain(m.name);
-    // No M6 map names the Deep Halls: the chart doesn't either (A3M4's mail does).
+    // The Deep Halls are named by A3M4's mail: the chart labels them only once it is won.
     expect(view.regions.map((r) => r.id)).not.toContain('deep_halls');
     expect(text).not.toContain('Deep Halls');
   });

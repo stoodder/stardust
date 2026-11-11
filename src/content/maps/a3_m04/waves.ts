@@ -138,9 +138,9 @@ export const waves = defineWaves([
   {
     countdownSec: COUNTDOWN,
     groups: [
-      drones(5, 0, 1.0),
+      drones(4, 0, 1.0),
       liabilities(2, 6),
-      moths(6, 10),
+      moths(5, 10),
       g('expediter', 2, 'service', 12, 6),
       silencers(4, 'rift_w', 0, SIL_GAP),
       silencers(3, 'rift_e', 1.2, SIL_GAP),
