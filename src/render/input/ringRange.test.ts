@@ -117,9 +117,9 @@ describe('the placement preview ring (D139 S2)', () => {
 
 describe("the Hum Choir's preview ring (review R14)", () => {
   it("is the song's gold when valid, red when not; every other tower's stays white", () => {
-    expect(songRing(LIVE.towers['choir']!.tiers[0])).toBe(true);
+    expect(songRing(LIVE.towers['choir'].tiers[0])).toBe(true);
     for (const id of ['rivet', 'lookout', 'lantern', 'bloom'] as const) {
-      expect(songRing(LIVE.towers[id]!.tiers[0]), id).toBe(false);
+      expect(songRing(LIVE.towers[id].tiers[0]), id).toBe(false);
     }
     expect(ringKind(true, true)).toBe('song');
     expect(ringKind(false, true)).toBe('invalid');

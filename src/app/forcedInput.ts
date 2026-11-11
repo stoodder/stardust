@@ -223,7 +223,6 @@ export function startSeal(map: string, input: string, deps: SealDeps = defaultDe
   };
   // Permission: the arming's delay and the waiting line's clock both start from it.
   let fallback: TimerId | null = null;
-  let cancelPermission = (): void => {};
   const permit = (): void => {
     if (permittedAt !== null) return;
     permittedAt = deps.now();
@@ -239,7 +238,7 @@ export function startSeal(map: string, input: string, deps: SealDeps = defaultDe
     fallback = null;
     permit();
   }, PERMISSION_FALLBACK_MS);
-  cancelPermission = deps.awaitPermission(map, input, permit);
+  const cancelPermission = deps.awaitPermission(map, input, permit);
 
   return {
     input,

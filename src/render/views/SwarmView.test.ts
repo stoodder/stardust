@@ -57,20 +57,21 @@ function stubContext(made: StubSprite[]): ViewContext {
 
 /** `n` swarmlings out of their Den, dashing (x moves by `step` to set a facing). */
 function swarm(n: number, step = 0): { used: number; items: DeepReadonly<Ally>[] } {
-  const items = Array.from(
-    { length: n },
-    (_, i) =>
-      ({
-        uid: i + 1,
-        alive: true,
-        mode: 'owner',
-        kind: 'swarmling',
-        swarmState: 'out',
-        x: i + step,
-        y: 0,
-        targetUid: 0,
-      }) as unknown as DeepReadonly<Ally>, // oxlint-disable-line typescript/no-unsafe-type-assertion -- the fields SwarmView reads
-  );
+  const items: DeepReadonly<Ally>[] = [];
+  for (let i = 0; i < n; i++) {
+    const a = {
+      uid: i + 1,
+      alive: true,
+      mode: 'owner',
+      kind: 'swarmling',
+      swarmState: 'out',
+      x: i + step,
+      y: 0,
+      targetUid: 0,
+    };
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the fields SwarmView reads
+    items.push(a as unknown as DeepReadonly<Ally>);
+  }
   return { used: n, items };
 }
 
