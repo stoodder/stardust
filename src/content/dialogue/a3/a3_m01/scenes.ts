@@ -21,9 +21,11 @@ export const scenes = defineScenes([
   // The briefing: the matriarch's terms, her name, the Scuttle Den (the briefing's gift), and
   // QUILL's threat intel (the Maw foreshadowed).
   defineScene('a3_m01_brief', [
+    // Plated "The Matriarch" until Pebble names her on the next line.
     {
       kind: 'line',
       speaker: 'chitterbloom',
+      plateAs: 'The Matriarch',
       text: 'You chased me off my own road. Now help me walk it.',
     },
     {

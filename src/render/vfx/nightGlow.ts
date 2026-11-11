@@ -8,9 +8,7 @@
 // exactly as before: its glow follows the sim's `dark`, its moons the lighting schedule. Pure, so
 // the rule is unit-tested.
 import type { SpriteId } from '../../content/sprites/index.ts';
-
-/** The env whose world glows as a full night without a darkness schedule. */
-const NIGHT_ENV = 'act3';
+import { envLook } from '../views/envLook.ts';
 
 /**
  * How far into the night the Long Night's glows read (a share of their full-dark strength): the
@@ -27,7 +25,7 @@ export const OWN_GLOW: ReadonlySet<SpriteId> = new Set<SpriteId>([
 
 /** Whether a map of `env` is in the Long Night (lit as a full night with no darkness). */
 export function isLongNight(env: string | undefined): boolean {
-  return env === NIGHT_ENV;
+  return envLook(env).longNight;
 }
 
 /**

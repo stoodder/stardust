@@ -19,7 +19,9 @@
 // - **Releasing.** Each tick, before taking, a held unit is let go (Blocked `off`) once it's no
 //   longer eligible (it burrowed, stood down, began to leave) or something moved it past the hold
 //   point (a blink). One that died is simply gone: its slot's next unit starts unblocked. A freed
-//   place is taken again the same tick. `blocking` is the count it holds after the pass.
+//   place is taken again the same tick. `blocking` is the count it holds after the pass. A unit
+//   whose blocker is gone (no live ally of its uid with `blockCapacity` on a blocking post: removed
+//   by a script, say) is let go the same way, first, so nothing stands frozen with nobody there.
 // - **Health** (`Ally.health`, a fraction of full; `vulnerability: 'scripted'`): the timeline's
 //   level at each wave's start (`blockerLevel`: full before the first key, each key's `pct` from
 //   its wave, equal steps per wave between two keys, the last key's after). While a wave plays, he
@@ -137,6 +139,7 @@ export function blockable(e: BlockableEnemy): boolean {
 }
 
 export function blockers(state: SimState, ctx: TickContext): void {
+  releaseOrphans(state, ctx);
   const pool = state.allies;
   for (let i = 0; i < pool.used; i++) {
     const a = pool.items[i]!; // i < used ≤ items.length
@@ -145,6 +148,29 @@ export function blockers(state: SimState, ctx: TickContext): void {
     if (post === null || post.block === null) continue;
     stepHealth(state, ctx, a, post.block.health);
     hold(state, ctx, a);
+  }
+}
+
+/** Whether ally `uid` is a live blocker on its post (one `blockers` runs). */
+function isLiveBlocker(state: SimState, ctx: TickContext, uid: number): boolean {
+  const pool = state.allies;
+  for (let i = 0; i < pool.used; i++) {
+    const a = pool.items[i]!; // i < used ≤ items.length
+    if (!a.alive || a.uid !== uid) continue;
+    return a.blockCapacity > 0 && blockerPost(ctx.map, a)?.block != null;
+  }
+  return false;
+}
+
+/** Lets go (Blocked `off`) of every held unit whose blocker is gone (see the header's "Releasing"). */
+function releaseOrphans(state: SimState, ctx: TickContext): void {
+  const enemies = state.enemies;
+  for (let i = 0; i < enemies.used; i++) {
+    const e = enemies.items[i]!; // i < used ≤ items.length
+    if (!e.alive || e.blockerUid === 0 || isLiveBlocker(state, ctx, e.blockerUid)) continue;
+    const allyUid = e.blockerUid;
+    e.blockerUid = 0;
+    emit(state, { type: 'Blocked', allyUid, enemyUid: e.uid, on: false });
   }
 }
 

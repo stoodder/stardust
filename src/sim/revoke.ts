@@ -15,8 +15,9 @@
 //   `stats.revocations`) and emits `AbilityRevoked` with the slot that held it (null if neither).
 //   A strike already cast still lands; only new casts are refused.
 // - **`setModifier`** turns a script modifier on or off (`ModifierChanged`, only on a change):
-//   `quillLockout` hides the wave preview and disables QUILL's companion ability (slot 2 when
-//   QUILL is the companion); `previewHidden` hides the preview alone.
+//   `quillLockout` hides the wave preview and disables the companion ability that names it as its
+//   `lockedOutBy` (QUILL's Time Dilation), in slot 2 while its companion is the map's (the data
+//   names the slot, not the sim); `previewHidden` hides the preview alone.
 // - **The input edges (D141):** a command for a revoked class (a build of it, an upgrade, spec,
 //   sell, targeting, or fire-control command naming one of its folded towers) or a cast from a
 //   revoked slot is rejected `revoked` (systems/applyCommands.ts). The app cancels a placement or
@@ -38,9 +39,6 @@ type RevokeClassAction = Extract<CompiledScriptAction<IdSpace>, { revokeTowerCla
 
 /** A script modifier (`setModifier`). */
 export type ScriptModifier = keyof SimState['scriptModifiers'];
-
-/** The companion whose ability QUILL's lockout disables. */
-const QUILL = 'quill';
 
 /**
  * The class a `revokeTowerClass` takes now (towers.md § 9's `mostInvested`), or null when the
@@ -150,22 +148,26 @@ export function previewHidden(state: {
 }
 
 /**
- * Whether ability slot `slot` is dark: its ability was revoked, or it is QUILL's companion slot
- * under her lockout. An empty slot isn't revoked.
+ * Whether ability slot `slot` is dark: its ability was revoked, or it is the companion slot and its
+ * ability (the map's companion's) is locked out by a script modifier that is on (`lockedOutBy`:
+ * QUILL's lockout). An empty slot isn't revoked.
  */
 export function slotRevoked(
   state: {
     readonly revoked: { readonly abilities: readonly string[] };
-    readonly scriptModifiers: { readonly quillLockout: boolean };
+    readonly scriptModifiers: Readonly<SimState['scriptModifiers']>;
   },
-  config: Pick<SimConfig<IdSpace>, 'abilities' | 'companion'>,
+  config: Pick<SimConfig<IdSpace>, 'abilities' | 'companion' | 'content'>,
   slot: 1 | 2,
 ): boolean {
   const a = config.abilities;
   const id = slot === 1 ? a.slot1 : a.slot2;
   if (id === null) return false;
   if (state.revoked.abilities.includes(id)) return true;
-  return slot === 2 && config.companion === QUILL && state.scriptModifiers.quillLockout;
+  if (slot !== 2) return false;
+  const def = Object.hasOwn(config.content.abilities, id) ? config.content.abilities[id] : undefined;
+  if (def === undefined || def.lockedOutBy === null) return false;
+  return def.companion === config.companion && state.scriptModifiers[def.lockedOutBy];
 }
 
 /**

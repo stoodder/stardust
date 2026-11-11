@@ -12,6 +12,7 @@ import type { DressingLayerDef, GridPos, MarkerId, TileChar } from '../../conten
 import { assertNever } from '../../shared/types.ts';
 import { DEFAULT_VARIANT } from '../sprites/bake.ts';
 import { riftCrackTiles } from './riftCrack.ts';
+import { envLook } from './envLook.ts';
 
 export interface TileLook {
   readonly sprite: SpriteId;
@@ -148,12 +149,9 @@ export function kerbEdges(g: GroundGrid, col: number, row: number): VergeEdge[] 
 /** A wreck's look (`prop.wreckage`'s base frames; `wreckageFrame`). */
 export type WreckLook = 'v0' | 'v1' | 'v2' | 'v3' | 'v4' | 'v5';
 
-/** The env palettes whose maps take Act II's looks (art-direction §3, §6). */
-const ACT2_ENVS: ReadonlySet<string> = new Set(['act2.gold', 'act2.dusk']);
-
-/** True on an Act II map (by its env). */
+/** True on an Act II map (by its env: its decor takes Act II's looks; art-direction §3, §6). */
 export function isActTwo(env: string | undefined): boolean {
-  return env !== undefined && ACT2_ENVS.has(env);
+  return envLook(env).decor === 'act2';
 }
 
 /**
@@ -267,7 +265,9 @@ export function decorLook(
   sprite: SpriteId,
   env: string | undefined,
 ): { frame: string; anim: string | null } {
-  const act = isActTwo(env) ? ACT2_LOOKS[sprite] : env === 'act3' ? ACT3_LOOKS[sprite] : undefined;
+  const decor = envLook(env).decor;
+  const act =
+    decor === 'act2' ? ACT2_LOOKS[sprite] : decor === 'act3' ? ACT3_LOOKS[sprite] : undefined;
   return act ?? DECOR_LOOKS[sprite] ?? { frame: 'v0', anim: null };
 }
 
@@ -277,7 +277,7 @@ export function decorLook(
  * stays bare.
  */
 export function peekerShows(env: string | undefined): boolean {
-  return env !== 'act3';
+  return envLook(env).peeker;
 }
 
 /**

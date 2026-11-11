@@ -49,8 +49,8 @@ export const MASTER = {
   'act3.crystal.0': '#2a0a4c', 'act3.crystal.1': '#5a1aa2', 'act3.crystal.2': '#9a42ff', 'act3.crystal.3': '#d294ff', 'act3.crystal.4': '#ffffff',
   'act3.path.0': '#160a16', 'act3.path.1': '#2c1224', 'act3.path.2': '#461c30', 'act3.path.3': '#66283a',
   'act3.alarm.1': '#d4162e', 'act3.alarm.2': '#ff2e3e',
-  'act3.sky.0': '#000000', 'act3.sky.1': '#07040f',
-  'act3.shade': '#000000', 'act3.light': '#8a6ec4', 'act3.emergency': '#ff2e3e',
+  'act3.sky.0': '#0b0620', 'act3.sky.1': '#07040f',
+  'act3.shade': '#05020e', 'act3.light': '#8a6ec4', 'act3.emergency': '#ff2e3e',
   // Finale: dawn through the dark
   'finale.ground.0': '#0f0a1c', 'finale.ground.1': '#2a1a3a', 'finale.ground.2': '#5c3050', 'finale.ground.3': '#b4606a', 'finale.ground.4': '#ffc68c',
   'finale.sky.0': '#1a0c36', 'finale.sky.1': '#5e2a6a', 'finale.sky.2': '#d0586a', 'finale.sky.3': '#ff9c5a', 'finale.sky.4': '#ffd87a',

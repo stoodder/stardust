@@ -548,11 +548,13 @@ function publish(): void {
   const step = h.cursor.step;
   // Shown whole (dialogue off), a scene stops short of its first choice: nobody is there to pick.
   const stopped = h.instant && step.kind === 'choice';
-  // C3's choice waits STORY_CHOICE_LOCK_MS before it takes a press (isStoryChoice; D141).
+  // C3's choice, and every choice in its scene (A3M3's arrival question), waits
+  // STORY_CHOICE_LOCK_MS before it takes a press (`locksChoices`; D141, D143 R1).
+  const locked = step.kind === 'choice' && !stopped && locksChoices(h.scene);
   const story = step.kind === 'choice' && !stopped && isStoryChoice(step.node.options);
   if (step.kind !== 'choice') h.choiceAt = 0;
   else if (h.choiceAt === 0) h.choiceAt = performance.now();
-  const lockedUntil = story ? h.choiceAt + STORY_CHOICE_LOCK_MS : 0;
+  const lockedUntil = locked ? h.choiceAt + STORY_CHOICE_LOCK_MS : 0;
   const view: SceneView = {
     sceneId: h.scene.id,
     mode: h.mode,
@@ -563,7 +565,7 @@ function publish(): void {
         ? step.node.options.map((o) => ({
             text: silkText(resolveText(o.text, textContext())),
             tone: o.tone,
-            ...(story ? { lockedUntil } : {}),
+            ...(locked ? { lockedUntil } : {}),
           }))
         : null,
     remember: h.remember,
@@ -733,16 +735,23 @@ export function isStoryChoice(
   );
 }
 
-/** Takes option `index` at the choice on screen (a story choice only once its lock has passed). */
+/**
+ * Whether `scene`'s choices are locked: it holds a story choice (`isStoryChoice`), so each of its
+ * choices waits STORY_CHOICE_LOCK_MS and takes the focus on its group, never an option (D143 R1:
+ * A3M3's arrival question, asked just before C3, can't be answered by Enter mashed through the
+ * briefing either). Its other choices don't hold the briefing (`held` is the story choice's).
+ */
+export function locksChoices(scene: Pick<Scene, 'nodes'>): boolean {
+  return scene.nodes.some((n) => n.kind === 'choice' && isStoryChoice(n.options));
+}
+
+/** Takes option `index` at the choice on screen (a locked one only once its lock has passed). */
 export function chooseOption(index: number): void {
   const h = holding;
   if (h === null || h.cursor.step.kind !== 'choice') return;
   const option = h.cursor.step.node.options[index];
   if (option === undefined) return;
-  if (
-    isStoryChoice(h.cursor.step.node.options) &&
-    performance.now() - h.choiceAt < STORY_CHOICE_LOCK_MS
-  ) {
+  if (locksChoices(h.scene) && performance.now() - h.choiceAt < STORY_CHOICE_LOCK_MS) {
     return;
   }
   const ctx = storyContext(h.map);

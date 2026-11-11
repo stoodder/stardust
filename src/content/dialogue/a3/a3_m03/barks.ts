@@ -8,7 +8,7 @@ export const barks = defineBarks([
   {
     id: 'bricks_ally_hushed_a3_03',
     speaker: 'bricks',
-    text: "Got through. Keep 'em coming.",
+    text: "Lost one. Keep 'em coming.",
     trigger: { on: 'ally_hushed', ally: 'refugee' },
   },
   {

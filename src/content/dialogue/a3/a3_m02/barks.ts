@@ -22,4 +22,11 @@ export const barks = defineBarks([
     when: { runStat: 'revocations', gte: 1 },
     once: 'map',
   },
+  // Lucky's class taken by the Clean Exit (her name tag goes with the turret; D143).
+  {
+    id: 'bricks_tower_revoked_a3_02',
+    speaker: 'bricks',
+    text: 'Lucky too, huh. ...Still walking, probably.',
+    trigger: { on: 'tower_revoked', tagged: true },
+  },
 ]);

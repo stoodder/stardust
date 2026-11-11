@@ -84,7 +84,21 @@ export const scenes = defineScenes([
         },
       ],
     },
-    { label: 'done', kind: 'end' },
+    // The intel when A3M2's Clean Exit took the Thumper (D143): help, never a scolding.
+    {
+      label: 'done',
+      kind: 'branch',
+      cond: { revokedTower: 'thumper' },
+      goto: 'packed',
+      else: 'end',
+    },
+    { label: 'end', kind: 'end' },
+    {
+      label: 'packed',
+      kind: 'line',
+      speaker: 'bricks',
+      text: 'They come packed through here. Sterling took your thumpers. Bring something that chains.',
+    },
   ]),
   defineScene('a3_m03_w02', [
     {
