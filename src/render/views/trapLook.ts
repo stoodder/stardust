@@ -8,7 +8,6 @@
 //   on at 4 Hz, so its end is no surprise. Held lit under reduced motion, both.
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
 import { TICK_HZ } from '../../shared/time.ts';
-import type { RgbaImage } from '../sprites/rasterize.ts';
 import { STEPPED_ALPHA } from '../vfx/fxTiming.ts';
 import { ringImage, type RingImage } from '../vfx/overlayPixels.ts';
 

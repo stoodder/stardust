@@ -79,7 +79,8 @@ describe('choirLook', () => {
     expect(LULLED_DROP_PX).toBeGreaterThan(0);
     const at = (x: number, y: number): number => img.data[(y * img.w + x) * 4 + 3]!;
     expect(at(3, 1)).toBe(255); // the beam
-    expect(at(4, 4)).toBe(0); // open between the stems
+    expect(at(0, 0)).toBe(0); // clear corners
+    expect(at(8, 8)).toBe(0);
   });
 
   it("the Choir's note stands aside, clear of a 4-digit purchase float up the middle", () => {

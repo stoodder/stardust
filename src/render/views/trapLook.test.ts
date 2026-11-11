@@ -43,10 +43,10 @@ describe("Underfoot's snare (T630a)", () => {
     const armed = new Set<number>();
     for (let t = WARN_TICKS + 1; t < WARN_TICKS + 4 * BREATH_TICKS; t++)
       armed.add(trapAlpha(t, false));
-    expect([...armed].toSorted()).toEqual([STEPPED_ALPHA[1], 1]);
+    expect([...armed].toSorted((a, b) => a - b)).toEqual([STEPPED_ALPHA[1], 1]);
     const warn = new Set<number>();
     for (let t = 1; t <= WARN_TICKS; t++) warn.add(trapAlpha(t, false));
-    expect([...warn].toSorted()).toEqual([0, 1]);
+    expect([...warn].toSorted((a, b) => a - b)).toEqual([0, 1]);
     expect(trapAlpha(BLINK_TICKS, false)).toBe(0);
     for (let t = 1; t < 300; t++) expect(trapAlpha(t, true)).toBe(1);
     expect(trapAlpha(0, true)).toBe(0);
