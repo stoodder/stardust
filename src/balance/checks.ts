@@ -6,7 +6,7 @@
 // yet are refused for maps that need them, never skipped quietly (refusals.ts).
 import type { CompiledMapDef } from '../content/compiled.ts';
 import type { FlagValue, IdSpace } from '../content/types.ts';
-import type { HeadlessResult, ScriptFlags } from '../sim/index.ts';
+import { gatedFlagDefaults, type HeadlessResult, type ScriptFlags } from '../sim/index.ts';
 import { isScriptFlagId } from '../story/flags.ts';
 import { LEAK_LEAD_WAVES, MAX_WAVE_LOSS_PCT } from './rules.ts';
 
@@ -119,19 +119,21 @@ export const flagVariantLabel = (flag: string, value: FlagValue): string =>
 
 /**
  * The story flags a run sets (`SimConfig.scriptFlags`): for a 'flag:x=v' label, x set to the
- * `flagVariants` value that reads v; none for other labels. Null for a 'flag:' label naming a
- * value the map doesn't list.
+ * `flagVariants` value that reads v; none for other labels, except that a flag gating a refugee
+ * group takes its first `flagVariants` value (sim/escort.ts `gatedFlagDefaults`: A3M3's door;
+ * T605). Null for a 'flag:' label naming a value the map doesn't list.
  */
 export function flagsFor<K extends IdSpace>(
   label: string,
   map: CompiledMapDef<K>,
 ): ScriptFlags | null {
   const build = splitMeta(label).build;
-  if (!build.startsWith('flag:')) return {};
+  // A flag that gates a refugee group (A3M3's door) takes its first variant (T605).
+  if (!build.startsWith('flag:')) return gatedFlagDefaults(map);
   for (const [flag, values] of Object.entries(map.builds.flagVariants)) {
     if (!isScriptFlagId(flag)) continue; // the type allows only script flags
     for (const value of values) {
-      if (flagVariantLabel(flag, value) === build) return { [flag]: value };
+      if (flagVariantLabel(flag, value) === build) return gatedFlagDefaults(map, { [flag]: value });
     }
   }
   return null;

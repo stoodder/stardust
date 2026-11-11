@@ -59,6 +59,9 @@ export const LINK_CALLOUT: Readonly<Record<string, { ring: ColorName; text: Colo
   // M5's links (T500a first pass; T530a may restyle them).
   resonance: { ring: 'blue.3', text: 'teal.4' },
   lightsong: { ring: 'pink.3', text: 'pink.4' },
+  // M6's links (T604 first pass; T630a may restyle them): water and moss, then salvage gold.
+  splash_zone: { ring: 'blue.3', text: 'green.4' },
+  finders_keepers: { ring: 'gold.3', text: 'green.4' },
 };
 
 /** A link's callout text: its name in capitals, with feeling ("CROSSFIRE!"). */

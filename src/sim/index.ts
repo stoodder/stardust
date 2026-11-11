@@ -38,6 +38,8 @@ export { projectedAura } from './enemyAbilities/shieldAura.ts';
 export { projectedHaste } from './enemyAbilities/hasteAura.ts';
 export { gatherMaxHp, gatherScale, gatherTelling } from './enemyAbilities/gather.ts';
 export { riftStatus, type RiftStatus } from './rifts.ts';
+export { gatedFlagDefaults } from './escort.ts'; // T605
+export { blockerLevel, BLOCK_FRONT_TILES } from './blocker.ts'; // T605
 // Detection (T406): whether a cloaked unit is hidden now (render's shimmer), and a detector's ring.
 export { cloakedOut } from './enemyAbilities/cloak.ts';
 // A Capacitor Bank's full charge under its bonuses (T407b): render's orb grows against it.

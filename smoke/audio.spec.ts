@@ -10,7 +10,7 @@
 import type { Page } from '@playwright/test';
 import type { AudioSample, RenderSample } from '../src/app/testHookTypes.ts';
 import { expect, test } from './fixtures.ts';
-import { shot, waitForReady } from './hooks.ts';
+import { holdFrames, shot, waitForReady } from './hooks.ts';
 
 /** A ducked storm's speech margin (`src/audio/offline.ts` SpeechMargin). */
 interface SpeechMargin {
@@ -201,6 +201,8 @@ test('audio: every sound, cue, and theme renders at a sane level', async ({ page
   test.setTimeout(240_000);
   await page.goto('/?test=1&audio=1');
   await waitForReady(page);
+  // The renders run off the frame loop: the title needn't draw meanwhile.
+  await holdFrames(page);
   const ids = await page.evaluate(() => globalThis.__sd!.audio.ids());
   const report = await renderAll(page, [
     ...ids.sfx.map((id) => `sfx:${id}`),
@@ -257,6 +259,7 @@ for (const storm of STORM_IDS) {
     test.setTimeout(240_000);
     await page.goto('/?test=1&audio=1');
     await waitForReady(page);
+    await holdFrames(page);
     const ids = await page.evaluate(() => globalThis.__sd!.audio.ids());
     expect(ids.storms.toSorted()).toEqual([...STORM_IDS].toSorted());
     const report = await renderAll(page, [`storm:${storm}`, `storm:${storm}:ducked`]);

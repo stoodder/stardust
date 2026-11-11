@@ -231,9 +231,12 @@ describe('catalog: progression.md numbers', () => {
   it('stocking (campaign.md § 4.6): the shop and protocols after A1M3, R&D Command after A1M1', () => {
     // The Aelari tune-ups wait for their towers, the Prism (Ves'thara's gift), the Mindspike and
     // the Lantern (attuned), all after A2M5 (T504, T507, T508).
+    // The Scuttle Den's waits for its gift, after A2M6 (T604).
     const aelari = new Set(['tune_prism', 'tune_mindspike', 'tune_lantern']);
+    const after = (id: string): string =>
+      aelari.has(id) ? 'a2_m05' : id === 'tune_burrow' ? 'a2_m06' : 'a1_m03';
     for (const u of upgrades.filter((x) => x.kind === 'shop')) {
-      expect(u.availableAfter, u.id).toBe(aelari.has(u.id) ? 'a2_m05' : 'a1_m03');
+      expect(u.availableAfter, u.id).toBe(after(u.id));
     }
     for (const p of protocols) expect(p.availableAfter, p.id).toBe('a1_m03');
     expect(UPGRADES.protocol_slots.availableAfter).toBe('a1_m03');

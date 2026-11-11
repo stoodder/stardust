@@ -77,11 +77,12 @@ describe('offers', () => {
     expect(offerFor(fresh, MK2)?.refusal).toBe('pane_locked');
     const shop = shelf(DEV_SAVES.after_a1m1.build(), 'shop');
     // Every shop upgrade but the Aelari tune-ups (kept off the shelf until A2M5: they'd name
-    // Ves'thara's towers early, T509), every protocol, and the four Vrell licenses (T408: the
-    // Harpoon's and Crane's joined the Zapcoil's and Lookout's). Granted-only upgrades (C2's
-    // Zibzab Tune-up) never reach a shelf: the story gives them.
+    // Ves'thara's towers early, T509) and the Scuttle Den's (until it's given, T604), every
+    // protocol, and the four Vrell licenses (T408: the Harpoon's and Crane's joined the Zapcoil's
+    // and Lookout's). Granted-only upgrades (C2's Zibzab Tune-up) never reach a shelf: the story
+    // gives them.
     const shopUpgrades = Object.values(UPGRADES).filter((u) => u.kind === 'shop').length;
-    expect(shop.length).toBe(shopUpgrades - 3 + Object.keys(PROTOCOLS).length + 4);
+    expect(shop.length).toBe(shopUpgrades - 4 + Object.keys(PROTOCOLS).length + 4);
     expect(new Set(shop.map((o) => o.refusal))).toEqual(new Set(['pane_locked']));
     expect(shelf(DEV_SAVES.after_a1m1.build(), 'engineering')[0]?.refusal).toBe('pane_locked');
   });

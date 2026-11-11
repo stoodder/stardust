@@ -16,21 +16,24 @@ const FPS = Number(process.env['SMOKE_FPS'] ?? 30);
  * Caps `requestAnimationFrame` at `fps` (an init script, so it is in place before boot): a frame
  * runs its callbacks only once `1000 / fps` ms have passed since the last one that ran; the rest
  * wait for a later frame. Every callback asked for in a frame that runs, runs in it, and
- * `cancelAnimationFrame` still cancels a waiting one. A spec that installs Playwright's clock
- * (`page.clock.install()`) replaces both with the clock's own.
+ * `cancelAnimationFrame` still cancels a waiting one. While `globalThis.smokeHoldFrames` is true
+ * (`holdFrames` in hooks.ts) no frame runs at all, for a test that only needs the page's work, not
+ * its drawing. A spec that installs Playwright's clock (`page.clock.install()`) replaces both with
+ * the clock's own.
  */
 function capFrames(fps: number): void {
   const raf = window.requestAnimationFrame.bind(window);
   const caf = window.cancelAnimationFrame.bind(window);
   // 2 ms of slack, so a 60 Hz frame that lands a hair early still counts.
-  const every = 1000 / fps - 2;
+  const every = fps >= 60 ? 0 : 1000 / fps - 2;
   const waiting = new Map<number, number>();
   let last = -Infinity;
   let next = 1;
   window.requestAnimationFrame = (cb: FrameRequestCallback): number => {
     const id = next++;
     const step = (t: number): void => {
-      if (t === last || t - last >= every) {
+      const held = globalThis.smokeHoldFrames === true;
+      if (!held && (t === last || t - last >= every)) {
         waiting.delete(id);
         last = t;
         cb(t);
@@ -50,7 +53,7 @@ function capFrames(fps: number): void {
 export const test = base.extend<{ consoleProblems: string[]; frameCap: void }>({
   frameCap: [
     async ({ page }, use) => {
-      if (FPS < 60) await page.addInitScript(capFrames, FPS);
+      await page.addInitScript(capFrames, FPS);
       await use();
     },
     { auto: true },

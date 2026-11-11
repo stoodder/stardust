@@ -135,6 +135,13 @@ export const tune_lantern = defineUpgrade({
 });
 
 /**
+ * The Scuttle Den's tune-up (T604): the usual three ranks (its swarmlings' DoT, its cost, its
+ * range). Zibzab's, like every tune-up; stocked after A2M6 with the gift, and off the shelf until
+ * the Den is given (meta/purchase.ts `shelf`), so the shop never names it early.
+ */
+export const tune_burrow = tuneUp('tune_burrow', 'burrow', 'Scuttle Den Tune-up', 'a2_m06');
+
+/**
  * The Zibzab Tune-up (design/progression.md § 2.1, C2 Sell; "Ten percent. Honestly, eight."): +8%
  * damage for every Vrell tower, permanently: one `towerStat` grant per Vrell tower in the registry,
  * so a later Vrell tower joins by itself. Never sold (`kind: 'grant'`, price 0): A2M4's C2 Sell

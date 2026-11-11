@@ -70,6 +70,7 @@ describe('effect summaries', () => {
       'Unlocks tier 4: Refractor or Sunlance', // the Prism's (T504)
       'Unlocks tier 4: Echo Spike or Dread', // the Mindspike's (T507)
       'Unlocks tier 4: All-Seeing or Truthlight', // the Lantern's (T508)
+      'Unlocks tier 4: Big Family or Brave Hearts', // the Scuttle Den's (T604)
     ]);
     // R&D's Technician ability (T406).
     const sweep = rnd.find((o) => o.item.kind === 'ability');

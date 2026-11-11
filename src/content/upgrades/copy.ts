@@ -67,6 +67,9 @@ export const ITEM_COPY: Readonly<Record<string, string>> = {
     'Price first: 40 stardust, rising. It hums in my teeth. I tuned it anyway. Teeth are fine.',
   tune_lantern:
     'Price first: 40 stardust, rising. Rank three, it sees further. It looked at me. All of me.',
+  // The Skitterkin tune-ups (T604): Zibzab's too. Shown once the Den is given.
+  tune_burrow:
+    'Price first: 40 stardust, rising. Sharper little teeth, a wider yard. They paid in moss. I took it.',
   // Granted, never sold: C2 Sell's (progression.md § 2.1; T510).
   tune_zibzab: 'Ten percent. Honestly, eight.',
 

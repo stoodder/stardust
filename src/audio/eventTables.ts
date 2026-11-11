@@ -23,6 +23,9 @@ export const ATTACK_SOUNDS: Readonly<
   // A beam locking a target (T504, T550; ProjectileFired kind 'beam', once per lock, not per beam
   // tick): the Prism's glass "ting-ting". While it holds, the beam hums (BEAM_SOUNDS).
   beam: { fire: 'prism_lock', land: null },
+  // The Scuttle Den (T604) fires no shot: its swarmlings latch (SwarmLatch, T650's chitter). The
+  // row keeps the table whole; a placeholder until T650.
+  spawner: { fire: 'burrow_dig', land: null },
 };
 
 /**

@@ -312,7 +312,7 @@ describe('FEATURE_GATES (T400a rows)', () => {
       'attack.beam': null,
       'status.unnerved': null, // T507
       'enemy.boss.pivot': null, // T506
-      'attack.spawner': 'T604', // D141
+      'attack.spawner': null, // T604
       'enemy.boss.layToRest': 'M8',
     });
   });

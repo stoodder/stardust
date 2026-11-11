@@ -23,6 +23,7 @@ import { scriptFlagsOf } from '../story/flags.ts';
 import {
   companionSlot,
   FEATURE_GATES,
+  gatedFlagDefaults,
   modifierFeature,
   type CompanionSlot,
   type Feature,
@@ -162,7 +163,8 @@ export function battleConfig(
       modifiers: [],
       difficulty: 'standard',
       abilities: { slot1: par.technicianAbility, slot2, slot2State },
-      scriptFlags: {},
+      // A flag that gates a refugee group (A3M3's door) takes its first variant until set (T605).
+      scriptFlags: gatedFlagDefaults(map),
       specsUnlocked: [],
     };
     if (save === null) {
@@ -191,7 +193,7 @@ export function battleConfig(
       // Slot 1 is the Technician's, from the save; slot 2 is the map's companion's.
       abilities: { slot1: pick.ability, slot2, slot2State },
       // The save's story flags that map scripts may read (story-runtime.md § Map scripts).
-      scriptFlags: scriptFlagsOf(save.story.flags),
+      scriptFlags: gatedFlagDefaults(map, scriptFlagsOf(save.story.flags)),
       specsUnlocked: simulated('specs')
         ? save.unlocks.specs.filter((t) => loadout.includes(t))
         : [],

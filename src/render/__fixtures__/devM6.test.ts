@@ -70,17 +70,13 @@ describe('the M6 dev maps', () => {
         { wave: 3, pct: 0.05 },
       ],
     });
-    expect(refused('dev_holdout')).toEqual([
-      'a Holdout is not simulated until T605',
-      "a blocker ('bricks' at 'bricks_post') is not simulated until T605",
-      "event 'seal': action forceInput is not simulated until T605",
-      "event 'held': trigger forcedInputResolved is not simulated until T605",
-      "event 'held': action endMap is not simulated until T605",
-    ]);
+    // Runs since T605 (sim/holdout.test.ts), registered in DEV_CONTENT with its smoke flow.
+    expect(refused('dev_holdout')).toEqual([]);
+    expect(Object.hasOwn(DEV_CONTENT.maps, 'dev_holdout')).toBe(true);
   });
 
   it('are not in DEV_CONTENT until their tasks register them', () => {
-    const registered = new Set(['dev_revoke', 'dev_maw', 'dev_den']); // T603, T602, T604
+    const registered = new Set(['dev_revoke', 'dev_maw', 'dev_den', 'dev_holdout']); // T603, T602, T604, T605
     for (const id of Object.keys(DEV_M6_MAPS)) {
       expect(Object.hasOwn(DEV_CONTENT.maps, id), id).toBe(registered.has(id));
     }

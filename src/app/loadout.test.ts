@@ -54,6 +54,7 @@ describe('the loadout screen (app side)', () => {
       ['prism', ['T1']], // plays since T504: its beam's armor applies per second
       ['mindspike', []], // plays since T507: answers armor only where Hollow or Aelari wear it
       ['lantern', []], // plays since T508: detection, air, and (Truthlight) burrowed; A1M2 asks armor
+      ['burrow', []], // plays since T604: burrowed (and Brave Hearts air); A1M2 asks armor
     ]);
     // Costs after the save's tune-ups (the sim charges the same: costFor).
     const cfg = battleConfig('a1_m02', 0, activeSave());

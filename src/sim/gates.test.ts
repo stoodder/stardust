@@ -83,7 +83,7 @@ describe('T121: unsimulated attack kinds and statuses', () => {
     expect(FEATURE_GATES['attack.projectile']).toBeNull(); // T304a
     expect(FEATURE_GATES['attack.chain']).toBeNull(); // T304b
     expect(FEATURE_GATES['attack.beam']).toBeNull(); // the Prism (T504)
-    expect(FEATURE_GATES['attack.spawner']).toBe('T604'); // Scuttle Den (D141)
+    expect(FEATURE_GATES['attack.spawner']).toBeNull(); // the Scuttle Den (T604)
     expect(FEATURE_GATES['status.stasis']).toBeNull(); // Flash Freeze (T407a)
     expect(FEATURE_GATES['status.pinned']).toBeNull(); // Tether, Magnet Crane (T408)
     expect(FEATURE_GATES['status.unnerved']).toBeNull(); // Mindspike [Dread] (T507)

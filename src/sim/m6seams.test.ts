@@ -156,8 +156,8 @@ describe('FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES (T600a rows; D141)', ()
       'enemy.gather': null, // T602
       'map.rift': null, // T602
       'enemy.hasteAura': null, // T603
-      'attack.spawner': 'T604',
-      'ability.pathTrap': 'T604',
+      'attack.spawner': null, // T604
+      'ability.pathTrap': null, // T604
       'map.holdout': null, // T605
       'ally.blocker': null, // T605
       'status.lulled': 'T607',
@@ -182,22 +182,18 @@ describe('FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES (T600a rows; D141)', ()
     });
   });
 
-  it('refuse the Act III towers whole, naming their task, and Underfoot by its effect', () => {
-    expect(STUB_TOWER_TASKS).toEqual({ burrow: 'T604', choir: 'T607', bloom: 'T608' });
-    expect(towerRefusal(TOWERS.burrow)).toBe("the 'burrow' tower is not simulated until T604");
+  it('refuse the Act III towers whole, naming their task (the Den and Underfoot run)', () => {
+    // The Scuttle Den and Underfoot run since T604 (sim/swarmlings.test.ts).
+    expect(STUB_TOWER_TASKS).toEqual({ choir: 'T607', bloom: 'T608' });
+    expect(towerRefusal(TOWERS.burrow)).toBeNull();
     expect(towerRefusal(TOWERS.choir)).toBe("the 'choir' tower is not simulated until T607");
     expect(towerRefusal(TOWERS.bloom)).toBe("the 'bloom' tower is not simulated until T608");
     // Lifted, each is refused by what its tiers use until its own row opens.
-    expect(towerRefusal(TOWERS.burrow, FEATURE_GATES, {})).toBe(
-      "a 'spawner' attack (burrow) is not simulated until T604",
-    );
     expect(towerRefusal(TOWERS.choir, FEATURE_GATES, {})).toBeNull(); // Lullaby is a spec
     expect(towerRefusal(TOWERS.bloom, FEATURE_GATES, {})).toBe(
       'a field (bloom) is not simulated until T608',
     );
-    expect(abilityRefusal(LIVE.abilities.underfoot)).toBe(
-      "the 'pathTrap' ability (underfoot) is not simulated until T604",
-    );
+    expect(abilityRefusal(LIVE.abilities.underfoot)).toBeNull();
   });
 });
 

@@ -62,16 +62,18 @@ describe('the live links (towers.md § 6.2)', () => {
   it('lists each tower’s links on its compiled def', () => {
     expect(live.towers.rivet.links).toEqual(['crossfire', 'overwatch']);
     expect(live.towers.thumper.links).toEqual(['crossfire', 'sitting_ducks']);
-    expect(live.towers.sprinkler.links).toEqual(['sitting_ducks', 'conductive']);
+    expect(live.towers.sprinkler.links).toEqual(['sitting_ducks', 'conductive', 'splash_zone']);
     expect(live.towers.zapcoil.links).toEqual(['conductive', 'resonance']);
     // M4's (T400a stubs).
     expect(live.towers.skyhook.links).toEqual(['skywatch']);
     expect(live.towers.lookout.links).toEqual(['overwatch', 'skywatch']);
     expect(live.towers.harpoon.links).toEqual(['reel_it_in']);
-    expect(live.towers.crane.links).toEqual(['reel_it_in']);
+    expect(live.towers.crane.links).toEqual(['reel_it_in', 'finders_keepers']);
     // M5's (T500a stubs).
     expect(live.towers.prism.links).toEqual(['resonance', 'lightsong']);
     expect(live.towers.lantern.links).toEqual(['lightsong']);
+    // M6's: the Scuttle Den's (T604).
+    expect(live.towers.burrow.links).toEqual(['splash_zone', 'finders_keepers']);
   });
 
   it('refuses chain jumps that aren’t a whole number > 0, and a Soak that isn’t > 0', () => {
