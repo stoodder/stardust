@@ -697,6 +697,8 @@ export function bindHud(
       syncCursor();
     }),
     host.bus.on('TowerSold', syncTowers),
+    // A3M2's Clean Exit folds a class away (T606): its towers leave the field like sold ones.
+    host.bus.on('TowerRevoked', syncTowers),
     host.bus.on('ObjectiveProgress', syncObjectives),
     host.bus.on('SpareRunnersChanged', (e) => {
       if (e.on) spareUsed = true;

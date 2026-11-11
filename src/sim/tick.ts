@@ -9,6 +9,7 @@ import type { SimState } from './state.ts';
 import { traps } from './abilities/underfoot.ts';
 import { blockers } from './blocker.ts';
 import { darkness } from './darkness.ts';
+import { createGatherScratch, type GatherScratch } from './enemyAbilities/gather.ts';
 import { enemyAbilities } from './enemyAbilities/index.ts';
 import { forcedInput } from './forcedInput.ts';
 import { rifts } from './rifts.ts';
@@ -44,6 +45,8 @@ export interface Scratch {
   readonly crane: { speedPct: number; salvagePct: number };
   /** A shot's extra targets, slot and uid pairs (Harmony; attacks/extraTargets.ts, T607). */
   readonly extraTargets: number[];
+  /** Gathering's matching (enemyAbilities/gather.ts; R15). */
+  readonly gather: GatherScratch;
 }
 
 /** Fresh scratch space for one sim. */
@@ -56,6 +59,7 @@ export function createScratch(): Scratch {
     price: { cost: 0, discounted: false },
     crane: { speedPct: 0, salvagePct: 0 },
     extraTargets: [],
+    gather: createGatherScratch(),
   };
 }
 

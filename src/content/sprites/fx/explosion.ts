@@ -1,6 +1,8 @@
 // The explosive burst (art-direction §7): Thumper shells, the Orbital Strike, and Act I's death pop.
 // Four frames at 12 fps (render/vfx/fxTiming.ts BURST_MS): a big white star of a flash, a fireball
-// flinging debris, a ring of fire around thinning smoke, then smoke puffs with dying embers. The
+// flinging debris, a ring of fire around rising puffs, then the puffs drifting apart with dying embers. The smoke
+// is solid puffs (a `3` rim, a `4` core), never a 1 px checker, so it never reads as a
+// transparency grid at 1× (review R14). The
 // first frame is the biggest and brightest, so the hit lands on the frame it happens (D024's punch).
 import { defineSprite } from '../defineSprite.ts';
 import { disc, grid, hash01, plot, rows, type CharGrid } from '../helpers.ts';
@@ -15,6 +17,21 @@ function spike(g: CharGrid, dx: number, dy: number, len: number): void {
     const y = Math.round(C - 0.5 + dy * k);
     plot(g, x, y, k <= len - 3 ? 'w' : k <= len - 1 ? 'e' : 'd');
   }
+}
+
+/**
+ * A puff of smoke: a solid disc, a `3` rim round a `4` core. Solid, never a 1 px checker, which
+ * reads as a transparency grid at 1× (review R14); the view fades the puffs by alpha instead.
+ */
+export function puff(g: CharGrid, cx: number, cy: number, r: number): void {
+  // A little cloud: a round crown over two lobes, lit from the upper left.
+  const lobes = [
+    [cx, cy - r * 0.25, r],
+    [cx - r * 0.75, cy + r * 0.3, r * 0.7],
+    [cx + r * 0.75, cy + r * 0.3, r * 0.7],
+  ] as const;
+  for (const [lx, ly, lr] of lobes) disc(g, lx, ly, lr, () => '3');
+  disc(g, cx - r * 0.3, cy - r * 0.45, r * 0.5, () => '4');
 }
 
 /** Burst frame `k` of 4: flash, fireball, ring, smoke. */
@@ -51,22 +68,28 @@ function burst(k: number): string[] {
       }
     }
   } else if (k === 2) {
+    // A ring of fire round a clearing, three small solid puffs of smoke rising inside it.
     disc(g, C, C, 8.8, (d, x, y) => {
-      if (d < 6.2) return (x + y) % 2 === 0 && hash01(x, y, 2) < 0.55 ? '4' : '.';
+      if (d < 6.2) return '.';
       return hash01(x, y, 3) < 0.45 ? 'd' : d < 7.6 ? 'e' : '4';
     });
-  } else {
-    // Smoke: light puffs, dithered so they read as thinning, with a couple of dying embers.
-    const puffs = [
-      [5, 6, 2.8],
-      [13, 5, 3],
-      [12, 13, 2.5],
-      [5.5, 13.5, 2.2],
-      [9.5, 9.5, 1.8],
-    ] as const;
-    for (const [px, py, r] of puffs) {
-      disc(g, px, py, r, (d, x, y) => (d < 1.3 ? '4' : (x + y) % 2 === 0 ? '3' : '.'));
+    for (const [px, py, r] of [
+      [7, 8, 1.6],
+      [11.5, 7.5, 1.4],
+      [9.5, 11.5, 1.3],
+    ] as const) {
+      puff(g, px, py, r);
     }
+  } else {
+    // Smoke: small solid puffs drifting apart (the view fades them out), a few dying embers.
+    const puffs = [
+      [5, 6, 1.8],
+      [13, 5, 2],
+      [12, 13, 1.6],
+      [5.5, 13.5, 1.4],
+      [9.5, 9.5, 1.1],
+    ] as const;
+    for (const [px, py, r] of puffs) puff(g, px, py, r);
     plot(g, 9, 3, 'd');
     plot(g, 16, 10, 'c');
     plot(g, 2, 10, 'd');

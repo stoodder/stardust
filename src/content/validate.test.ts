@@ -254,6 +254,14 @@ describe('validate: entities', () => {
       { ...BASE, abilities: { ...BASE.abilities, fx_strike: { ...strike, companion: 'bricks' } } },
       'companion',
     );
+    // A lockout darkens a companion's slot: never on a Technician-only ability (R15).
+    rejects(
+      {
+        ...BASE,
+        abilities: { ...BASE.abilities, fx_strike: { ...strike, lockedOutBy: 'quillLockout' } },
+      },
+      'companion',
+    );
   });
 
   it('[campaign] a map listed twice', () => {

@@ -37,7 +37,7 @@
 // - [dialogue-pause]: `pause: true` only on a cue scene (`cue_<name>`, D134; T501l): the briefing,
 //   full-screen scenes, and base topics already hold input, and radio and debriefs never pause.
 // - [dialogue-bark]: trigger waves and phases are positive integers; a `flag` trigger has a
-//   `when`; `cooldownSec` > 0 and not with `once`.
+//   `when`; a `tower_revoked` bark is a map's, never shared; `cooldownSec` > 0 and not with `once`.
 // - [dialogue-tag]: name tags are on planned maps in campaign order.
 import { CAMPAIGN_PLAN_IDS, type CampaignMapId } from './campaign.ts';
 import { FLAG_RULES, type FlagSet } from './dialogue/flags.ts';
@@ -361,6 +361,10 @@ function validateBark(
   }
   if ('phase' in t && t.phase !== undefined && !(Number.isInteger(t.phase) && t.phase >= 1)) {
     issues.add('dialogue-bark', `${where}.trigger`, 'phase must be a positive integer');
+  }
+  // Only a map with a Clean Exit revokes (A3M2): its line is that map's, never a shared pool's.
+  if (t.on === 'tower_revoked' && map === null) {
+    issues.add('dialogue-bark', `${where}.trigger`, "a 'tower_revoked' bark is a map bark");
   }
   if (t.on === 'flag' && b.when === undefined) {
     issues.add('dialogue-bark', `${where}.trigger`, "a 'flag' bark needs a `when` naming the flag");

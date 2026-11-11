@@ -28,7 +28,8 @@
 //   the Hollow gathers, its tell fits in its period, its absorbs and growth are whole and sane; a
 //   haste aura's pct is within HASTE_CAP.
 // - [jammer-source]: only the listed jammers jam (enemies.md § 4).
-// - [companion]: at most one ability per companion (its slot-2 signature).
+// - [companion]: at most one ability per companion (its slot-2 signature); a `lockedOutBy` only
+//   on a companion's ability (the lockout darkens its companion's slot).
 // - [campaign]: no map twice.
 // - [vs-shielded]: a link's `vsShielded` bonus only on towers whose attacks read it
 //   (validateLinks.ts).
@@ -631,10 +632,13 @@ function validateAbility(issues: Issues, def: AbilityDef): void {
   }
 }
 
-/** [companion]: at most one ability per companion (its slot-2 signature). */
+/** [companion]: at most one ability per companion (its slot-2 signature); `lockedOutBy` on one. */
 function validateCompanionAbilities(issues: Issues, defs: readonly AbilityDef[]): void {
   const owner = new Map<string, string>();
   for (const def of defs) {
+    if (def.lockedOutBy !== undefined && def.companion === undefined) {
+      issues.add('companion', `abilities.${def.id}.lockedOutBy`, "only a companion's ability");
+    }
     if (def.companion === undefined) continue;
     const prev = owner.get(def.companion);
     if (prev !== undefined) {

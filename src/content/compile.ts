@@ -142,6 +142,7 @@ export function compileContent<K extends IdSpace = LiveIds>(
       cooldownWaves: def.cooldownWaves ?? 0,
       effect: compileAbilityEffect(ctx, def.effect, `${where}.effect`),
       companion: def.companion ?? null,
+      lockedOutBy: def.lockedOutBy ?? null,
       sprites: def.sprites,
     });
   }

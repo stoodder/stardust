@@ -39,6 +39,7 @@ import {
   SCENE_ID,
   type Bark,
   type BarkTrigger,
+  type Condition,
   type HushableAllyKind,
   type LineNode,
   type ReplyButton,
@@ -1142,25 +1143,35 @@ function offerBarks(offered: readonly BarkTrigger[], pool?: readonly Bark[]): vo
   const s = session;
   if (s === null || !enabled) return;
   const all = s.silent ? offered.filter((t) => SILENT_ZONE_TRIGGERS.has(t.on)) : offered;
-  for (const t of all) if (isQueuedTrigger(t)) queueBark(t);
-  const triggers = all.filter((t) => !isQueuedTrigger(t));
+  const ctx = storyContext(s.map);
+  const queued = all.filter((t) => isQueuedTrigger(t, ctx));
+  for (const t of queued) queueBark(t);
+  const triggers = all.filter((t) => !queued.includes(t));
   if (triggers.length === 0) return;
   const atSec = s.simSec();
   const events: BarkEvent[] = triggers.map((trigger) => ({ trigger, atSec, present: s.present }));
   const busy = commsNow !== null || commsHeld || commsQueue.length > 0;
-  const pick = pickBarkOf(busy ? [] : (pool ?? s.pool), events, s.barks, storyContext(s.map));
+  const pick = pickBarkOf(busy ? [] : (pool ?? s.pool), events, s.barks, ctx);
   s.barks = pick.state;
   if (pick.bark !== null && !s.replaying()) showBark(pick.bark);
 }
 
+/** A revocation has taken effect this run (A3M2's Clean Exit): `runStat` revocations ≥ 1. */
+const AFTER_REVOCATION: Condition = { runStat: 'revocations', gte: 1 };
+
 /**
  * Whether a trigger's bark queues behind the line on the panel instead of dropping: the battle's
- * first leak (QUILL's "Toward... the wilderness?", a fair-play seed) and selling the turret Bricks
- * named. Their pick ignores the 6 s spacing (later barks keep theirs from it), but not the bark's
- * `when`, presence, or once limits.
+ * first leak (QUILL's "Toward... the wilderness?", a fair-play seed), selling the turret Bricks
+ * named, its revocation (`tower_revoked` with `tagged: true`; D143 R5), and a tower built after a
+ * revocation this run (Bricks's "Build what you've got.", which W8's leak line would otherwise
+ * drop; D143 R6; `ctx` is the battle's story context, without which it doesn't queue). Their pick
+ * ignores the 6 s spacing (later barks keep theirs from it), but not the bark's `when`, presence,
+ * or once limits.
  */
-export function isQueuedTrigger(t: BarkTrigger): boolean {
-  return t.on === 'first_leak' || (t.on === 'tower_sold' && t.tagged === true);
+export function isQueuedTrigger(t: BarkTrigger, ctx?: StoryContext): boolean {
+  if (t.on === 'first_leak') return true;
+  if ((t.on === 'tower_sold' || t.on === 'tower_revoked') && t.tagged === true) return true;
+  return t.on === 'tower_built' && ctx !== undefined && evaluateCondition(AFTER_REVOCATION, ctx);
 }
 
 /** Picks a queued trigger's bark (`isQueuedTrigger`) and queues it on the panel. */

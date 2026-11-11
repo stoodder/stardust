@@ -812,6 +812,11 @@ interface AbilityCommon<Id extends string> {
    * to. At most one ability per companion; absent for Technician-only abilities.
    */
   readonly companion?: CompanionId;
+  /**
+   * The script modifier (`setModifier`) that locks this companion ability out while it's on, in its
+   * companion's slot 2 (QUILL's Time Dilation: `quillLockout`, A3M2; sim/revoke.ts `slotRevoked`).
+   */
+  readonly lockedOutBy?: 'quillLockout';
   readonly sprites: { readonly icon: SpriteId };
 }
 /**

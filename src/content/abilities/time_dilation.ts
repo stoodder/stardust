@@ -12,5 +12,6 @@ export const time_dilation = defineAbility({
   cooldownSec: 60,
   effect: { kind: 'slowAll', slowPct: 0.4, bossSlowPct: 0.2, durationSec: 6 },
   companion: 'quill',
+  lockedOutBy: 'quillLockout', // A3M2: QUILL locks you out (sim/revoke.ts `slotRevoked`)
   sprites: { icon: 'icon.ability.time_dilation' },
 });

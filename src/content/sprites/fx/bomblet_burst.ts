@@ -1,8 +1,9 @@
 // A bomblet's pop (Cluster Thumper, design/towers.md § 7): a small burst, sized to the bomblet's
 // 0.6-tile splash, so four of them around a shell's big `fx.explosion` read as a cluster. Three
-// frames at 12 fps: flash, fireball, ring. Anchored like `fx.explosion` (below its center).
+// frames at 12 fps: flash, fireball, a ring round a puff of smoke. Anchored like `fx.explosion` (below its center).
 import { defineSprite } from '../defineSprite.ts';
 import { disc, grid, hash01, plot, rows } from '../helpers.ts';
+import { puff } from './explosion.ts';
 
 const S = 11;
 const C = S / 2;
@@ -25,10 +26,12 @@ function pop(k: number): string[] {
       d < 1.6 ? 'w' : d < 2.8 ? 'e' : hash01(x, y, 6) < 0.3 ? 'c' : 'd',
     );
   } else {
+    // The ring, and one small solid puff of smoke in it (no 1 px checker; review R14).
     disc(g, C, C, 5, (d, x, y) => {
-      if (d < 3.4) return (x + y) % 2 === 0 && hash01(x, y, 7) < 0.5 ? '4' : '.';
+      if (d < 3.4) return '.';
       return hash01(x, y, 8) < 0.5 ? 'd' : '4';
     });
+    puff(g, C, C + 0.3, 1.3);
   }
   return rows(g);
 }

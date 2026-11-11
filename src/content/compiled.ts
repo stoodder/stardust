@@ -504,6 +504,8 @@ export interface CompiledAbilityDef<Id extends string = string> {
   readonly effect: CompiledAbilityEffect;
   /** The companion whose slot-2 ability this is, or null (Technician only). */
   readonly companion: CompanionId | null;
+  /** The script modifier that locks it out in its companion's slot, or null. */
+  readonly lockedOutBy: 'quillLockout' | null;
   readonly sprites: { readonly icon: SpriteId };
 }
 export type CompiledAbilityEffect =
