@@ -100,7 +100,8 @@ describe("A3M5's Carried line", () => {
     const total = bearerTotal(config.content.maps.a3_m05!, config.scriptFlags);
     expect(total).toBeGreaterThan(0);
     const won = fixtureResult({ map: 'a3_m05', outcome: 'won' }, save);
-    expect(won.asset).toEqual({ name: 'Bearers', value: 12, max: 12 });
+    // The meter is named for what it guards, the bearers' road home (D150).
+    expect(won.asset).toEqual({ name: 'Long Walk', value: 12, max: 12 });
     expect(won.meter).toEqual({ kind: 'carried', n: total, total });
     expect(resultsCounter(won.counter, 0, 0, won.meter)?.line).toBe(
       `Carried: ${total} of ${total}.`,

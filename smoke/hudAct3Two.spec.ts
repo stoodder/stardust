@@ -155,7 +155,7 @@ test('hudAct3Two: A3M5 under Rewrite: Reboot locked, the bearers’ meter, the l
   await expect(carried).toContainText(/CARRIED\s*0\s*OF\s*\d+/i);
   await expect(page.getByTestId('asset-meter')).toHaveAttribute(
     'aria-label',
-    /^Bearers \d+ of \d+(, low)?\. Carried home 0 of \d+$/,
+    /^Long Walk \d+ of \d+(, low)?\. Carried home 0 of \d+$/,
   );
   // Par plays until the first bearers are home.
   await page.evaluate(() => globalThis.__sd!.autoplay('par'));

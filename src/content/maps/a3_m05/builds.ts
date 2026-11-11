@@ -200,7 +200,7 @@ export const builds = defineBuilds({
   // Jam stays required (the no-jam build carries no answer), but the harness doesn't hold it to a
   // loss: the jam exam is the bearers' hub, where the hunt's Silencers hush the guns over the old
   // intake in W13 and W15 (par answers with System Reboot and Stillness, and its Bloom). The
-  // reference no-jam build loses 10 of the 12 bearers there and ends ~47 points under par, but
+  // reference no-jam build loses 10 of the 12 bearers there and ends ~51 points under par, but
   // every hunt that takes the last two also breaks the alts and Story (more Silencers on the hunt
   // hush bearers whatever the answer). balance/a3m5Jam.test.ts pins what jam costs instead (D146
   // addenda, T721, T760).
