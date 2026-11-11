@@ -1,6 +1,6 @@
 // npm run check: the whole gate (docs/tech/conventions.md § The test loop). Runs each step as
-// `npm run <step>`, in phases: the steps of a phase run at the same time (the CPU-bound steps leave
-// cores idle that the others fill), and the gate stops after the first phase with a failing step.
+// `npm run <step>`, in phases: the steps of a phase run at the same time (`sim` beside `smoke`, whose
+// browsers leave cores idle), and the gate stops after the first phase with a failing step.
 // Then it prints each step's time against its share and the gate's wall time against the budget
 // (GATE_BUDGET_SEC: 8 minutes, under the 10-minute command cap; D137). A step over its share is a
 // warning, not a failure: wall time is noisy under load, and a red gate must mean broken code. The
@@ -19,22 +19,22 @@ interface Step {
 
 /**
  * The gate's phases, in order. In a phase the first step streams its output live; the others'
- * output is held and printed when each ends. `sim` runs beside `smoke`, filling the cores smoke's
- * browsers leave idle while they wait on real-time beats (T764); typecheck, lint and check:docs
- * beside `test`. Each step needs only what an earlier phase made (`smoke` serves `build`'s dist/).
+ * output is held and printed when each ends. `sim` runs beside `smoke` (T764): smoke's browsers
+ * leave cores idle while they wait on real-time beats, and the harness fills them (about 20 s off
+ * the gate). The other steps run alone: typecheck and lint beside `test` cost the test step more
+ * than they saved (T764, measured). Each step needs only what an earlier phase made (`smoke`
+ * serves `build`'s dist/).
  */
 const PHASES: readonly (readonly Step[])[] = [
+  [{ step: 'typecheck', budgetSec: 10 }],
+  [{ step: 'lint', budgetSec: 20 }],
+  [{ step: 'test', budgetSec: 85 }],
+  [{ step: 'build', budgetSec: 5 }],
   [
-    { step: 'test', budgetSec: 85 },
-    { step: 'typecheck', budgetSec: 15 },
-    { step: 'lint', budgetSec: 25 },
-    { step: 'check:docs', budgetSec: 5 },
+    { step: 'smoke', budgetSec: 420 },
+    { step: 'sim', budgetSec: 90 },
   ],
-  [{ step: 'build', budgetSec: 15 }],
-  [
-    { step: 'smoke', budgetSec: 380 },
-    { step: 'sim', budgetSec: 60 },
-  ],
+  [{ step: 'check:docs', budgetSec: 5 }],
 ];
 /** The whole gate's budget, in seconds of wall time (conventions.md § Gate time). */
 const GATE_BUDGET_SEC = 480;
