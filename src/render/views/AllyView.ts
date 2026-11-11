@@ -53,6 +53,7 @@ export const ALLY_SPRITES: Readonly<Record<AllyKind, SpriteId | null>> = {
   refugee: null,
   bearer: null,
   singer: null,
+  echo: null, // Thrum's echo (T800a kind; T841 draws it, T830 shows it)
   militia: null,
   ward: null,
 };

@@ -156,8 +156,8 @@ function closed(expression: string, variant: string | null): PaintArgs {
  * no portrait paints none (~0.2 s of a boot's CPU). Once painted, the def keeps them.
  */
 export function definePortrait<const Id extends string>(spec: PortraitSpec<Id>): SpriteDef<Id> {
-  let painted: Pick<SpriteDef<Id>, 'frames' | 'anims'> | null = null;
-  const frameSet = (): Pick<SpriteDef<Id>, 'frames' | 'anims'> => (painted ??= paintAll(spec));
+  let painted: Painted | null = null;
+  const frameSet = (): Painted => (painted ??= paintAll(spec));
   return defineSprite({
     id: spec.id,
     size: { w: PORTRAIT_SIZE, h: PORTRAIT_SIZE },
@@ -175,10 +175,14 @@ export function definePortrait<const Id extends string>(spec: PortraitSpec<Id>):
   });
 }
 
+/** A portrait's painted frames and anims. */
+interface Painted {
+  readonly frames: Readonly<Record<string, FrameDef>>;
+  readonly anims: Readonly<Record<string, AnimDef>>;
+}
+
 /** Paints every frame and anim of a portrait (definePortrait's lazy half). */
-function paintAll<const Id extends string>(
-  spec: PortraitSpec<Id>,
-): Pick<SpriteDef<Id>, 'frames' | 'anims'> {
+function paintAll<const Id extends string>(spec: PortraitSpec<Id>): Painted {
   const cache = new Map<string, readonly string[]>();
   const paint = (args: PaintArgs): readonly string[] => {
     const key = `${args.variant ?? ''}|${args.expression}|${args.mouth}|${String(args.scan)}`;

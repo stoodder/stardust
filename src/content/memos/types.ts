@@ -7,12 +7,12 @@ import type { Condition } from '../dialogue/types.ts';
 import type { AbilityId, TowerId } from '../types.ts';
 
 /**
- * A memo id: `memo_a<act>_<nn>` (style-guide § 5.3); a form that arrives with a memo is
- * `memo_a<act>_<nn>_<form>` (A2M2's KFA form, `memo_a2_02_kfa`).
+ * A memo id: `memo_a<act>_<nn>`, or `memo_fin_<nn>` for the finale's (style-guide § 5.3); a form that
+ * arrives with a memo is `memo_a<act>_<nn>_<form>` (A2M2's KFA form, `memo_a2_02_kfa`).
  */
 export type MemoId = string;
 /** The memo-id pattern. */
-export const MEMO_ID = /^memo_a[1-3]_\d\d(_[a-z]+)?$/;
+export const MEMO_ID = /^memo_(a[1-3]|fin)_\d\d(_[a-z]+)?$/;
 
 /**
  * How an Inbox item looks: a `memo` on Everglow letterhead (the default), or a `form` on the KFA's

@@ -262,19 +262,20 @@ describe('wreckage by marker and objectives as conditions', () => {
     expect(SCRIPT_GATES).not.toHaveProperty('interacted');
     expect(SCRIPT_GATES).not.toHaveProperty('setClickable');
     expect(SCRIPT_GATES).toMatchObject({
-      // Wave-paced light is map data since T410a (MapDef.lighting); the action is the finale's.
-      setLighting: 'M8',
-      checkpoint: 'M8',
+      // Wave-paced light is map data since T410a (MapDef.lighting); the action is the finale's
+      // (D154: T806; sim/m8seams.test.ts).
+      setLighting: 'T806',
+      checkpoint: 'T806',
     });
     expect(SCRIPT_GATES).not.toHaveProperty('bossEnd.pivot'); // the pivot runs since T506
     // `objectiveCompleted` runs since T706 (render/__fixtures__/devBearers.test.ts).
     const events = [
       { id: 'b', on: { tick: 1 }, when: null, actions: [{ setLighting: 'dusk' }], once: true },
-      { id: 'c', on: { tick: 1 }, when: null, actions: [{ checkpoint: true }], once: true },
+      { id: 'c', on: { tick: 1 }, when: null, actions: [{ checkpoint: 'halls' }], once: true },
     ] as const;
     expect(unsupportedScript({ ...MAP, events })).toEqual([
-      "event 'b': action setLighting is not simulated until M8",
-      "event 'c': action checkpoint is not simulated until M8",
+      "event 'b': action setLighting is not simulated until T806",
+      "event 'c': action checkpoint is not simulated until T806",
     ]);
   });
 });

@@ -773,6 +773,19 @@ export function createEventSounds(
         // M7's silent ones (T750): the Reboot (its cast says it) and a script group (the horn).
         case 'Rebooted':
         case 'ScriptGroupSpawned':
+        // The finale's (declared by T800a): silent until T850 gives them sounds.
+        case 'PhaseChanged':
+        case 'ChoirHalted':
+        case 'SingerHushed':
+        case 'LaidToRest':
+        case 'Scattered':
+        case 'Reformed':
+        case 'TimerFull':
+        case 'LightingSet':
+        case 'ClassRestored':
+        case 'AbilityLocked':
+        case 'EchoArrived':
+        case 'DawnBroke':
           return;
         default:
           assertNever(e);

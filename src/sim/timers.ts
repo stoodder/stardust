@@ -10,25 +10,28 @@ import type { IdSpace } from '../content/types.ts';
 import type { SimState } from './state.ts';
 import type { TickContext } from './tick.ts';
 
+/** What the timers read of the map: its timers, in order. */
+type TimerMap = Pick<CompiledMapDef<IdSpace>, 'timers'>;
+
 export function timers(_state: SimState, _ctx: TickContext): void {
   // T806.
 }
 
 /** Whether timer `id` has filled (the `{ timerFull }` trigger; T806). */
-export function timerFull(state: SimState, map: CompiledMapDef<IdSpace>, id: string): boolean {
+export function timerFull(state: SimState, map: TimerMap, id: string): boolean {
   const i = map.timers.findIndex((t) => t.id === id);
   return i >= 0 && state.timers[i]?.full === true;
 }
 
 /** The `startTimer` action (T806). */
-export function startTimer(_state: SimState, _map: CompiledMapDef<IdSpace>, _id: string): void {
+export function startTimer(_state: SimState, _map: TimerMap, _id: string): void {
   // T806.
 }
 
 /** The `setTimerRate` action (T806): `pct` of full speed, 0 to stop it. */
 export function setTimerRate(
   _state: SimState,
-  _map: CompiledMapDef<IdSpace>,
+  _map: TimerMap,
   _id: string,
   _pct: number,
 ): void {

@@ -40,7 +40,7 @@ import { runScriptAction } from './systems/triggers.ts';
 
 type ObjectiveMap = Pick<
   CompiledMapDef<IdSpace>,
-  'objectives' | 'escort' | 'scriptGroups' | 'waves'
+  'objectives' | 'escort' | 'scriptGroups' | 'waves' | 'timers'
 >;
 
 /**
