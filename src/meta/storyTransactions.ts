@@ -26,15 +26,7 @@ import type { FlagValueOf } from '../content/dialogue/flags.ts';
 import type { Condition } from '../content/dialogue/types.ts';
 import type { MemoId } from '../content/memos/types.ts';
 import { TOWERS } from '../content/towers/index.ts';
-import type {
-  AbilityId,
-  IdSpace,
-  MapId,
-  ScriptedEvent,
-  TowerFaction,
-  TowerId,
-  UpgradeId,
-} from '../content/types.ts';
+import type { AbilityId, MapId, TowerFaction, TowerId, UpgradeId } from '../content/types.ts';
 import { UPGRADES } from '../content/upgrades/index.ts';
 import type { Currency } from '../content/upgrades/types.ts';
 import { evaluateCondition } from '../story/conditions.ts';
@@ -373,14 +365,27 @@ export function revokeAbility(
 export interface RunRevocations {
   readonly towers: readonly TowerId[];
   readonly abilities: readonly AbilityId[];
+  /**
+   * The factions of the run's `revokeTowerClass` cues that fired (`revokedClassFactions` over the
+   * map's events whose `scriptFired` holds; null: any class). One the run took no class of (the
+   * loadout held none, so the cue took nothing mid-map) takes the save's first owned class of it
+   * at map end (towers.md § 9). Default none; a cue that never fired takes nothing.
+   */
+  readonly atMapEnd?: readonly (TowerFaction | null)[];
 }
 
 /**
- * The factions of a map's `revokeTowerClass` actions, in event order (null: any class), which run
- * end's step 3 reads for towers.md § 9's map-end rule (`runEndRevocations`' `atMapEnd`).
+ * The factions of `events`' `revokeTowerClass` actions, in event order (null: any class): the app
+ * passes the events that fired, as `RunRevocations.atMapEnd` (towers.md § 9's map-end rule).
  */
 export function revokedClassFactions(
-  events: readonly ScriptedEvent<IdSpace>[] | undefined,
+  events:
+    | readonly {
+        readonly actions: readonly (
+          { readonly revokeTowerClass: { readonly faction?: TowerFaction } } | object
+        )[];
+      }[]
+    | undefined,
 ): (TowerFaction | null)[] {
   const out: (TowerFaction | null)[] = [];
   for (const e of events ?? []) {
@@ -397,12 +402,6 @@ export interface RunEndRevocationInput {
   readonly wonBefore: boolean;
   /** What the run's script revoked (the sim's `state.revoked`); absent: nothing is saved. */
   readonly revoked?: RunRevocations;
-  /**
-   * The map's `revokeTowerClass` factions (`revokedClassFactions`): one the run took no class of
-   * (the loadout held none, so the cue took nothing mid-map) takes the save's first owned class of
-   * it at map end instead (towers.md § 9). Default none.
-   */
-  readonly atMapEnd?: readonly (TowerFaction | null)[];
 }
 
 /** Whether `tower` belongs to `faction` (null: any). Unknown ids belong to none. */
@@ -417,7 +416,7 @@ function ofFaction(tower: string, faction: TowerFaction | null): boolean {
  * ability it revoked, in order (`revokeTower`, `revokeAbility`); nothing on a loss or a replay
  * (D141: saved only on a win; a replay's Clean Exit, which may take another class, changes
  * nothing, like the flags and transactions of a replay). Between the two, towers.md § 9's map-end
- * rule: for each `atMapEnd` faction the run revoked no class of, the save's first owned, unrevoked
+ * rule: for each `revoked.atMapEnd` faction (a class cue that fired) the run revoked no class of, the save's first owned, unrevoked
  * class of that faction (its `unlocks.towers` order: the order it was acquired) is revoked, with
  * no refund (nothing was built). A save owning none loses nothing.
  */
@@ -436,7 +435,7 @@ export function runEndRevocations(
     if (r.applied !== null) revocations.push(r.applied);
   }
   const taken: string[] = [...input.revoked.towers];
-  for (const faction of input.atMapEnd ?? []) {
+  for (const faction of input.revoked.atMapEnd ?? []) {
     if (taken.some((t) => ofFaction(t, faction))) continue;
     const u = next.unlocks;
     const first = u.towers.find((t) => !u.revokedTowers.includes(t) && ofFaction(t, faction));

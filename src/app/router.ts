@@ -417,7 +417,7 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
       resumedFromWave: resumed?.wave ?? null,
       checkpointWave: usableCheckpoint(b.host.checkpoints, s.tick)?.wave ?? null,
       // Act III part one (T610): what the script revoked, and the turret under the {name} plate.
-      revoked: revokedAtEnd(s.revoked),
+      revoked: revokedAtEnd(s.revoked, sim.map.events, s.scriptFired),
       memorialTower: memorialAtEnd(sim, hud.nameTag.value),
     };
     const summary = recordRun(metaRunEndOf(input, outcome));

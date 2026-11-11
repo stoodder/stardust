@@ -18,6 +18,7 @@ import type { AbilityId, IdSpace, TowerId } from '../content/types.ts';
 import { UPGRADES } from '../content/upgrades/index.ts';
 import {
   briefingGifts,
+  revokedClassFactions,
   type RevocationTransaction,
   type RunRevocations,
   type SaveData,
@@ -46,12 +47,23 @@ export function grantBriefingGifts(mapId: string): readonly StoryTransaction[] {
   return r.transactions;
 }
 
-/** What a finished battle's script revoked (the sim's `state.revoked`), as run end reads it. */
-export function revokedAtEnd(revoked: {
-  readonly towers: readonly string[];
-  readonly abilities: readonly string[];
-}): RunRevocations {
-  return { towers: revoked.towers.filter(isTower), abilities: revoked.abilities.filter(isAbility) };
+/**
+ * What a finished battle's script revoked (the sim's `state.revoked`), as run end reads it: the
+ * classes and abilities by live id, and the factions of the `revokeTowerClass` cues that fired
+ * (`events` index-aligned with `fired`, the sim's `scriptFired`), for towers.md § 9's map-end class.
+ * A cue that never fired takes nothing.
+ */
+export function revokedAtEnd(
+  revoked: { readonly towers: readonly string[]; readonly abilities: readonly string[] },
+  events: Parameters<typeof revokedClassFactions>[0] = [],
+  fired: readonly boolean[] = [],
+): RunRevocations {
+  const atMapEnd = revokedClassFactions((events ?? []).filter((_, i) => fired[i] === true));
+  return {
+    towers: revoked.towers.filter(isTower),
+    abilities: revoked.abilities.filter(isAbility),
+    ...(atMapEnd.length > 0 ? { atMapEnd } : {}),
+  };
 }
 
 /** What `memorialAtEnd` reads of the finished battle. */

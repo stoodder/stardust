@@ -21,6 +21,8 @@ const ctx = (flags: FlagSet, run: StoryContext['run'] = null): StoryContext => (
   run,
 });
 const SPARED = ctx({ spared_quiet_wave: true });
+/** A finished run's context, for the debrief. */
+const run = (outcome: 'won' | 'lost'): StoryContext['run'] => ({ outcome, ruleFlags: {} });
 const CLEARED = ctx({ spared_quiet_wave: false });
 
 /** Every line `id` plays in `c`, taking option `pick` at each choice, as `speaker: text`. */
@@ -100,7 +102,6 @@ describe('A3M1 scenes', () => {
   });
 
   it('gives the first gift stones in the debrief on a win, and sends you back on a loss', () => {
-    const run = (outcome: 'won' | 'lost'): StoryContext['run'] => ({ outcome, ruleFlags: {} });
     expect(playThrough('a3_m01_debrief', ctx({}, run('won')), 0)).toEqual([
       'vesthara: She says: these are ours. Sung, and warm. Take them.',
       'vesthara: She says: the dead do not mind being useful. They mind being forgotten.',
