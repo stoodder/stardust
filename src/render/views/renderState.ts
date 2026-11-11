@@ -99,6 +99,16 @@ export interface RenderState {
    */
   readonly blocker: { readonly shown: number; readonly holding: number; readonly health: number };
   /**
+   * ChoirView (T607): Hum Choir song rings and Lullaby rings drawn now, notes over Choirs, and
+   * Lulled units wearing their note.
+   */
+  readonly choir: {
+    readonly rings: number;
+    readonly lullRings: number;
+    readonly notes: number;
+    readonly lulled: number;
+  };
+  /**
    * HollowView (T602): Maw tendril tells up now and seen since the battle began, Maws wearing a
    * growth ring, ripples drawn behind burrowed Hollow units, and each rift lane's status.
    */

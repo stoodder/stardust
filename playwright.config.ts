@@ -32,10 +32,10 @@ const executablePath =
   process.env['CHROME_PATH'];
 
 // Smoke workers (conventions.md § Gate time): SMOKE_WORKERS (a count, or a share of the cores
-// such as '75%'), else half the cores. Each worker's headless Chromium renders WebGL in software
-// (SwiftShader), close to two cores while a battle draws, so more workers than half the cores
-// mostly makes each test slower.
-const WORKERS = process.env['SMOKE_WORKERS'] ?? '50%';
+// such as '50%'), else three quarters of them (3 on the 4-core cloud session). With software
+// compositing and the 30 fps cap (smoke/fixtures.ts) a worker's browser no longer needs two cores
+// to draw, and 3 workers beat 2 both quiet and under load (T564).
+const WORKERS = process.env['SMOKE_WORKERS'] ?? '75%';
 
 export default defineConfig({
   testDir: './smoke',
@@ -59,6 +59,9 @@ export default defineConfig({
     launchOptions: {
       ...(executablePath ? { executablePath } : {}),
       // Software WebGL (SwiftShader), explicitly: Chrome's automatic fallback to it is deprecated.
+      // Software compositing too (T564): compositing every frame through SwiftShader cost the GPU
+      // process about a core per page, and a screenshot ~1 s under load (0.3 s without);
+      // SMOKE_GPU_COMPOSITING=1 puts it back.
       args: [
         '--use-angle=swiftshader',
         '--enable-unsafe-swiftshader',

@@ -39,6 +39,8 @@
 // M5 (T503): a phaser's tell and Phased stretch show a broken teal ring under it (PhaseView).
 // M6 (T602): a Maw's tendril tell and growth ring, a burrowed Undertow's ripple trail, and the rift
 // cracks (closed, opening a wave ahead, open) (HollowView).
+// M6 (T607): the Hum Choir's dashed gold song ring and a Lullaby's blue ring, a note over each
+// Choir, and a blue note over each Lulled unit (ChoirView).
 // M6 (T605): a blocker's health bar over Bricks at the Gap, and a bracket under each unit he holds
 // (BlockerView).
 // M5 (T502): an Aegis Cantor's continuous shield aura shows as a crawling dashed blue ring
@@ -99,6 +101,7 @@ import { BlinkView } from '../views/BlinkView.ts';
 import { PhaseView } from '../views/PhaseView.ts';
 import { HollowView } from '../views/HollowView.ts'; // T602
 import { BlockerView } from '../views/BlockerView.ts'; // T605
+import { ChoirView } from '../views/ChoirView.ts'; // T607
 import { SwarmView } from '../views/SwarmView.ts'; // T604
 import { TrapView } from '../views/TrapView.ts'; // T604
 import { MindView } from '../views/MindView.ts';
@@ -258,6 +261,7 @@ export class BattleScene extends Phaser.Scene {
   #phases!: PhaseView;
   #hollow!: HollowView; // T602
   #blocker!: BlockerView; // T605: Bricks's bar at the Gap, the units he holds
+  #choir!: ChoirView; // T607: the Hum Choir's song and Lullaby rings, its notes, Lulled notes
   #swarm!: SwarmView; // T604: the Scuttle Den's swarmlings dashing and latched
   #traps!: TrapView; // T604: Underfoot's trap ring and its springs
   /** Unnerved squiggles, Echo Spike rings, and Stillness's disc (T507). */
@@ -436,6 +440,7 @@ export class BattleScene extends Phaser.Scene {
     this.#phases = new PhaseView(ctx, this.#fx, prefersReducedMotion, anchors);
     this.#hollow = new HollowView(ctx, map, prefersReducedMotion, pulseOn); // T602
     this.#blocker = new BlockerView(ctx, prefersReducedMotion); // T605
+    this.#choir = new ChoirView(ctx, prefersReducedMotion, anchors); // T607
     this.#swarm = new SwarmView(ctx, anchors, prefersReducedMotion); // T604
     this.#traps = new TrapView(ctx, this.#fx, prefersReducedMotion); // T604
     this.#mind = new MindView(ctx, this.#fx, prefersReducedMotion, anchors);
@@ -603,6 +608,7 @@ export class BattleScene extends Phaser.Scene {
       this.#phases.reset();
       this.#hollow.reset(); // T602
       this.#blocker.reset(); // T605
+      this.#choir.reset(); // T607
       this.#swarm.reset(); // T604
       this.#traps.reset(); // T604
       this.#mind.reset();
@@ -650,6 +656,7 @@ export class BattleScene extends Phaser.Scene {
     this.#phases.update(state.enemies);
     this.#hollow.update(dt, state.wave, state.enemies, state.allies); // T602
     this.#blocker.update(dt, state); // T605
+    this.#choir.update(state, state.tick); // T607
     this.#swarm.update(state.allies, state.enemies); // T604
     this.#traps.update(state.zones, state.trapSprung); // T604
     this.#mind.update(dt, state.enemies);
@@ -788,6 +795,12 @@ export class BattleScene extends Phaser.Scene {
         holding: this.#blocker.holding,
         health: this.#blocker.health,
       }, // T605
+      choir: {
+        rings: this.#choir.rings,
+        lullRings: this.#choir.lullRings,
+        notes: this.#choir.notes,
+        lulled: this.#choir.lulled,
+      }, // T607
       mind: { unnerved: this.#mind.unnerved, echoes: this.#mind.echoes, stills: this.#mind.stills },
       marks: this.#marks.shown,
       harpoon: { pins: this.#harpoon.pins, skewered: this.#harpoon.skewered },

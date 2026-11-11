@@ -39,7 +39,17 @@ export function pickExtraTargets(
   chosen.push(target.slot);
   const priority = t.priority ?? 'first';
   for (let k = 0; k < n; k++) {
-    const e = pickTarget(state.enemies, t.x, t.y, layers, range, priority, t.spareRunners, chosen, filter);
+    const e = pickTarget(
+      state.enemies,
+      t.x,
+      t.y,
+      layers,
+      range,
+      priority,
+      t.spareRunners,
+      chosen,
+      filter,
+    );
     if (e === null) break;
     chosen.push(e.slot);
     out.push(e.slot, e.uid);

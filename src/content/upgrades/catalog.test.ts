@@ -235,8 +235,7 @@ describe('catalog: progression.md numbers', () => {
     // after A3M1 (T607).
     const aelari = new Set(['tune_prism', 'tune_mindspike', 'tune_lantern']);
     const later: Readonly<Record<string, string>> = { tune_burrow: 'a2_m06', tune_choir: 'a3_m01' };
-    const after = (id: string): string =>
-      aelari.has(id) ? 'a2_m05' : (later[id] ?? 'a1_m03');
+    const after = (id: string): string => (aelari.has(id) ? 'a2_m05' : (later[id] ?? 'a1_m03'));
     for (const u of upgrades.filter((x) => x.kind === 'shop')) {
       expect(u.availableAfter, u.id).toBe(after(u.id));
     }

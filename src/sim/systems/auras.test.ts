@@ -49,7 +49,12 @@ function placed(
 
 describe('the Hum Choir (content: towers.md § 7)', () => {
   it('T1 130 r1.5 +10% jams ×0.5; T2 100 r2 +15%; T3 195 +20% jams ×0.25; specs 390', () => {
-    const rows = CHOIR.tiers.map((t) => [t.cost, t.auras[0]?.radiusTiles, t.auras[0]?.pct, t.jamMul]);
+    const rows = CHOIR.tiers.map((t) => [
+      t.cost,
+      t.auras[0]?.radiusTiles,
+      t.auras[0]?.pct,
+      t.jamMul,
+    ]);
     expect(rows).toEqual([
       [130, 1.5, 0.1, 0.5],
       [100, 2, 0.15, 0.5],
@@ -60,12 +65,17 @@ describe('the Hum Choir (content: towers.md § 7)', () => {
     expect([LULLABY.name, LULLABY.cost, LULLABY.auras, LULLABY.jamMul]).toEqual([
       'Lullaby',
       390,
-      CHOIR.tiers[2]!.auras,
+      CHOIR.tiers[2].auras,
       0.25,
     ]);
     expect(LULLABY.lull).toEqual({ radiusTiles: 2.5, radiusSq: 6.25 });
     // Rally Chorus: two `choir` auras, one per stat, and immunity.
-    expect([RALLY.name, RALLY.cost, RALLY.jamMul, RALLY.lull]).toEqual(['Rally Chorus', 390, 0, null]);
+    expect([RALLY.name, RALLY.cost, RALLY.jamMul, RALLY.lull]).toEqual([
+      'Rally Chorus',
+      390,
+      0,
+      null,
+    ]);
     expect(RALLY.auras.map((a) => [a.kind, a.stat, a.pct, a.radiusTiles])).toEqual([
       ['choir', 'damage', 0.3, 2],
       ['choir', 'rate', 0.1, 2],
@@ -113,7 +123,9 @@ describe('auras: the Choir (towers.md § 4)', () => {
       [CHOIR, 3, 2, RALLY],
       [RIVET, 2, 2],
     ]);
-    expect([t[1]!.pctDamage, t[1]!.pctRate, t[1]!.pctRange, t[1]!.jamMul]).toEqual([0.3, 0.1, 0, 0]);
+    expect([t[1]!.pctDamage, t[1]!.pctRate, t[1]!.pctRange, t[1]!.jamMul]).toEqual([
+      0.3, 0.1, 0, 0,
+    ]);
   });
 
   it('two Choirs never stack: the strongest source wins, with every aura it has', () => {
@@ -250,7 +262,8 @@ describe('Harmony (Mindspike + Choir)', () => {
     ]);
     const hits = (): number[] => {
       const out: number[] = [];
-      for (const e of state.events) if (e.type === 'ProjectileHit' && e.towerUid === 2) out.push(e.hits);
+      for (const e of state.events)
+        if (e.type === 'ProjectileHit' && e.towerUid === 2) out.push(e.hits);
       state.events.length = 0;
       return out;
     };
@@ -277,7 +290,10 @@ describe('Bounce Chorus’s Choir half (`auraPct`; the link itself joins with th
       { tower: 'choir', bonuses: [], auraPct: 0.05 },
     ],
   };
-  const raw: RawContent<IdSpace> = { ...RAW_CONTENT, links: { ...RAW_CONTENT.links, fx_bounce: bounce } };
+  const raw: RawContent<IdSpace> = {
+    ...RAW_CONTENT,
+    links: { ...RAW_CONTENT.links, fx_bounce: bounce },
+  };
   const content = compileContent(raw);
 
   it('adds +5% to its damage auras only (Rally Chorus: +35% damage, +10% fire rate)', () => {
@@ -306,6 +322,8 @@ describe('Choir link fields (compileLinks)', () => {
     };
     expect(() =>
       compileContent({ ...RAW_CONTENT, links: { ...RAW_CONTENT.links, fx_bad: bad } }),
-    ).toThrow(/extraTargets: needs a whole number > 0[\s\S]*auraRadiusTiles: needs a radius > 0[\s\S]*auraPct: needs a fraction > 0/);
+    ).toThrow(
+      /extraTargets: needs a whole number > 0[\s\S]*auraRadiusTiles: needs a radius > 0[\s\S]*auraPct: needs a fraction > 0/,
+    );
   });
 });

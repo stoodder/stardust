@@ -29,7 +29,7 @@ import { supportPct } from './detection.ts';
 import { liveTileAt } from './wreckage.ts';
 
 /** The aura kinds whose projectors are never covered by that kind (towers.md § 7: the Choir). */
-const NEVER_COVERS_ITS_KIND: readonly AuraKind[] = ['choir'];
+const NEVER_COVERS_ITS_KIND: ReadonlySet<AuraKind> = new Set(['choir']);
 
 /** Whether `t` projects an aura of `kind` at its tier (or specialization). */
 export function projectsAura(t: Readonly<Tower>, kind: AuraKind): boolean {
@@ -64,7 +64,7 @@ export function applyAuras(state: SimState, ctx: TickContext, powerNodeAuraPct: 
     t.jamMul = 1;
     if (!t.alive || t.def === null) continue;
     for (const kind of AURA_KINDS) {
-      if (NEVER_COVERS_ITS_KIND.includes(kind) && projectsAura(t, kind)) continue;
+      if (NEVER_COVERS_ITS_KIND.has(kind) && projectsAura(t, kind)) continue;
       let best = 0;
       let bestSlot = -1;
       let bestStrength = 1;
@@ -113,7 +113,10 @@ export function applyAuras(state: SimState, ctx: TickContext, powerNodeAuraPct: 
 }
 
 /** An aura's pct with its source's Bounce Chorus extra (damage auras only). */
-function auraPct(aura: { readonly stat: TowerStat; readonly pct: number }, linkPct: number): number {
+function auraPct(
+  aura: { readonly stat: TowerStat; readonly pct: number },
+  linkPct: number,
+): number {
   return aura.stat === 'damage' ? aura.pct + linkPct : aura.pct;
 }
 
