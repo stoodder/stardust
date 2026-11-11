@@ -55,34 +55,38 @@ describe('A3M4–A3M6 dev saves against the reference (T767)', () => {
   });
 });
 
-describe('A3M4 par on the protocol a live flow carries in (T767)', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
-  const map = content.maps.a3_m04;
-  const play = (def: ProfileDef, build: CompiledBuild): number => {
-    const r = runHeadless(
-      runConfig(
-        content,
-        map,
+describe(
+  'A3M4 par on the protocol a live flow carries in (T767)',
+  { timeout: HARNESS_TEST_TIMEOUT_MS },
+  () => {
+    const map = content.maps.a3_m04;
+    const play = (def: ProfileDef, build: CompiledBuild): number => {
+      const r = runHeadless(
+        runConfig(
+          content,
+          map,
+          build,
+          {
+            difficulty: 'standard',
+            modifiers: profileModifiers(def, content),
+            specs: def.specs,
+          },
+          1,
+          { door_choice: 'convoy' },
+        ),
         build,
-        {
-          difficulty: 'standard',
-          modifiers: profileModifiers(def, content),
-          specs: def.specs,
-        },
-        1,
-        { door_choice: 'convoy' },
-      ),
-      build,
-    );
-    expect(r.outcome).toBe('won');
-    return r.integrity;
-  };
+      );
+      expect(r.outcome).toBe('won');
+      return r.integrity;
+    };
 
-  it('ends five short of the reference on Head Start: the Bulkhead’s absorbed leaks, nothing else', () => {
-    const ref = map.builds.referenceProfile;
-    const par = parBuildFor(map, { door_choice: 'convoy' }) ?? buildFor('par', map, content)!;
-    const withBulkhead = play(ref, par);
-    const withHeadStart = play({ ...ref, protocols: ['head_start'] }, par);
-    expect(withBulkhead).toBe(15);
-    expect(withBulkhead - withHeadStart).toBe(5);
-  });
-});
+    it('ends five short of the reference on Head Start: the Bulkhead’s absorbed leaks, nothing else', () => {
+      const ref = map.builds.referenceProfile;
+      const par = parBuildFor(map, { door_choice: 'convoy' }) ?? buildFor('par', map, content)!;
+      const withBulkhead = play(ref, par);
+      const withHeadStart = play({ ...ref, protocols: ['head_start'] }, par);
+      expect(withBulkhead).toBe(15);
+      expect(withBulkhead - withHeadStart).toBe(5);
+    });
+  },
+);

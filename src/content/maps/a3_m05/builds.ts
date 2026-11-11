@@ -133,6 +133,10 @@ const HUNT_STILL: GridPos = [0, 6];
 const YARD_STILL_SEC = 12;
 const YARD_N_ROAD: GridPos = [5, 4];
 
+/** W13 under Rewrite: Stillness on the hunt as its Silencers reach the hub. */
+const REWRITE_HUNT_STILL_SEC = 17.5;
+/** W13 under Rewrite: Suppressing Fire on the hunt once its Silencers stand telling. */
+const REWRITE_HUNT_SF_SEC = 20;
 /** W13 and W15 under Rewrite: Suppressing Fire on the hunt's Silencers by the old intake. */
 const HUNT_SUPPRESS: GridPos = [0, 6];
 /** W14 under Rewrite: Suppressing Fire on the vats' row, then on the turn down to the core. */
@@ -162,11 +166,18 @@ const PAR: ScriptedBuild = {
 const REWRITE_PAR: ScriptedBuild = {
   loadout: PAR.loadout,
   technicianAbility: 'suppressing_fire',
-  steps: PAR.steps.map((st) => {
-    if (!('ability' in st) || st.ability !== 1) return st;
-    if (st.wave !== 14) return { ...st, target: HUNT_SUPPRESS };
+  steps: PAR.steps.flatMap((st): BuildStep[] => {
+    if (!('ability' in st) || st.ability !== 1) return [st];
+    // W13's hunt: no Reboot to spend the Silencers' tells, so Stillness holds them too.
+    if (st.wave === 13) {
+      return [
+        { ...st, target: HUNT_SUPPRESS, when: { afterSec: REWRITE_HUNT_SF_SEC } },
+        still(13, REWRITE_HUNT_STILL_SEC, HUNT_STILL),
+      ];
+    }
+    if (st.wave !== 14) return [{ ...st, target: HUNT_SUPPRESS }];
     const first = PAR.steps.find((x) => 'ability' in x && x.ability === 1 && x.wave === 14);
-    return { ...st, target: st === first ? SUPPRESS_1 : SUPPRESS_2 };
+    return [{ ...st, target: st === first ? SUPPRESS_1 : SUPPRESS_2 }];
   }),
 };
 
@@ -185,7 +196,10 @@ export const builds = defineBuilds({
   // hush bearers whatever the answer). balance/a3m5Jam.test.ts pins what jam costs instead (D146
   // addenda, T721, T760).
   counterExemptions: [
-    { counter: 'jam', reason: 'jam exam is the hub under the hunt (W13, W15): no-jam ≥ 40 under par' },
+    {
+      counter: 'jam',
+      reason: 'jam exam is the hub under the hunt (W13, W15): no-jam ≥ 40 under par',
+    },
   ],
   // The armor exam is the W11 Liability column (it walks the 39-tile road for ~80 s, so it lands
   // in W12) and then the platform at W14.

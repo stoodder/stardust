@@ -142,7 +142,7 @@ export const waves = defineWaves([
       liabilities(2, 6),
       moths(5, 10),
       silencers(4, 'rift_w', 0, SIL_GAP),
-      silencers(3, 'rift_e', 6, SIL_GAP),
+      silencers(2, 'rift_e', 6, SIL_GAP),
       silencers(4, 'tunnel', 0, SIL_GAP),
       motes(6, 'rift_w', 12),
     ],
