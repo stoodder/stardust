@@ -1,15 +1,17 @@
-// A3M6 waves: docs/story/campaign/act3.md § A3M6, Waves. Routes: `north` (the road: in at the north
-// edge, down A1M1's S-road to the gate; the refugees, everything Everglow walks, and the Hollow
-// behind them), the rift lanes `rift_w` and `rift_e` (from W12, along row 5 onto the road), and
-// the air lanes `sky_w` and `sky_e` (the gunships and the Rift Moths, from the north corners, in
-// over the gate's approach). A countdown opens once the wave before it finishes spawning. Groups
-// without an `intervalSec` use the enemy's default spacing (Mote 0.3 s, Compliance Drone 1.0 s,
-// Expediter 1.5 s, Gunship 2.0 s, Operative 1.5 s, Rift Moth 0.8 s, Maw 2.0 s).
+// A3M6 waves: docs/story/campaign/act3.md § A3M6, Waves. Routes: `road` (A1M1's, from its spawn
+// (8,2) at the top of the old map down the S-road to the gate; the refugees, everything Everglow
+// walks, and the Hollow behind them), the rift lanes `rift_w` and `rift_e` (they crack as W11 starts
+// and open as W12 does, along row 5 onto the road), and the air lanes `sky_w` and `sky_e` (the
+// gunships and the Rift Moths, from the north corners in over the gate's approach). A countdown
+// opens once the wave before it finishes spawning. Groups without an `intervalSec` use the enemy's
+// default spacing (Mote 0.3 s, Compliance Drone 1.0 s, Expediter 1.5 s, Gunship 2.0 s, Operative
+// 1.5 s, Rift Moth 0.8 s, Maw 2.0 s).
 //
-// A group walks ahead of the Hollow sent behind it (map.ts GROUP_WAVES, RELEASE_SEC): the Hollow
-// on `north` spawn `BEHIND` s after their group sets off, so the towers meet them before they catch
-// it up. The Gathering Maw walks in W16 `BOSS_SEC` s in, behind the last group; its wave's preview
-// shows it from the moment W15 finishes spawning (W16's countdown), a wave ahead.
+// A group walks ahead of the Hollow sent behind it (map.ts GROUPS): the Hollow on the road spawn
+// `BEHIND` s after their group sets off, so the towers meet them before they catch it up. The
+// Gathering Maw walks alone in W16, `BOSS_SEC` s in, behind the last group; the wave preview shows
+// it from the moment W15 finishes spawning (W16's countdown opens), a wave ahead. W17's countdown is
+// a minute, so the road fills behind it only as it reaches the last bend.
 import { defineWaves } from '../../define.ts';
 import type { EnemyId, RouteId, WaveGroup } from '../../types.ts';
 

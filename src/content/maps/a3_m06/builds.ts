@@ -124,7 +124,8 @@ export const builds = defineBuilds({
   counterExemptions: [
     {
       counter: 'detection',
-      reason: "detection exam is W5/W9's two Operative waves (campaign.md §4.8: one teach, one test)",
+      reason:
+        "detection exam is W5/W9's two Operative waves (campaign.md §4.8: one teach, one test)",
     },
   ],
   // The convoy first: a run with no door set (a dev battle) mans the militia's posts.

@@ -384,15 +384,15 @@ describe('one failing fixture per rule', () => {
       button: { label: "Who's there?", reply: 'a1_m01_cue_look' },
     } as const;
     const answer = defineScene('a1_m01_cue_look', [line]);
-    expect(rules(content({ scenes: [radio('a1_m01_w02', knock, line, line, line), answer] }))).toEqual(
-      [],
-    );
+    expect(
+      rules(content({ scenes: [radio('a1_m01_w02', knock, line, line, line), answer] })),
+    ).toEqual([]);
     expect(
       rules(content({ scenes: [radio('a1_m01_w02', knock, line, line, line, line), answer] })),
     ).toEqual(['dialogue-size']);
-    expect(rules(content({ scenes: [radio('a1_m01_w02', line, knock, line, line), answer] }))).toEqual(
-      ['dialogue-size'],
-    );
+    expect(
+      rules(content({ scenes: [radio('a1_m01_w02', line, knock, line, line), answer] })),
+    ).toEqual(['dialogue-size']);
   });
 
   it('[dialogue-button]', () => {

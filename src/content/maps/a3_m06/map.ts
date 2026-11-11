@@ -6,11 +6,14 @@
 // The road runs the way it ran in A1M1, north to south; what flips is the gate at its end. Goldie
 // has opened Dome 1 beside it, the old road beyond is barricaded with lettuce crates, and every
 // refugee who reaches the gate turns in: the gate is the safe exit (`gate`, A1M1's core tile). The
-// valley's Skitterkin come down from the north edge in groups (`north`: two tiles of the band onto
-// A1M1's spawn (8,2), then its road, 22 tiles; a group takes about half a minute), and the Hollow
-// come down the same road behind them. Everglow's units that reach the gate reseal a dome door (the
-// escort's exit rule, presented as repossession: one sheltered refugee lost); a boss that reaches it,
-// the Gathering Maw or any of its parts, loses the map (sim/escort.ts).
+// valley's Skitterkin come down from the north in groups along A1M1's `road` (from its spawn (8,2) at
+// the top of the old map, 20 tiles; a group takes about half a minute), and the Hollow come down the
+// same road behind them. Everglow's units that reach the gate reseal a dome door (the escort's exit
+// rule, presented as repossession: one sheltered refugee lost); a boss that reaches it, the
+// Gathering Maw or any of its parts, loses the map (sim/escort.ts). The band holds no road of its
+// own: A1M1's spawn `S` composes in at (8,2) and a path's middle tiles must be road, so nothing can
+// join it from the north edge (the 2-wide lanes, D146's cut lever 4, are pulled by geometry; render
+// may draw the approach).
 //
 // The band is this map's own:
 // - **Two rifts** (W12; they crack as W11 starts) break in along row 5 from either edge, through the
@@ -18,10 +21,10 @@
 //   the east one where it turns south (13,5) (20). Both cross only decor and road, never a pad
 //   (maps.md § 4).
 // - **Two air lanes** for Everglow's Asset Recovery Gunships and the Rift Moths, in from the north
-//   corners, down each side of the band, and in over the gate's approach to the gate.
+//   corners over the domes ((6,6) west, (14,5) east), and in over the gate's approach to the gate.
 // - **Nine pads**: either side of the road's way in (7,1) and (9,1); either side of each rift where
-//   it leaves the band ((3,4), (3,6); (18,4), (18,6)), under the air lanes; the east lane's turn
-//   (18,9); and either side of the barricade below the gate ((7,12), (9,12)).
+//   it leaves the band ((3,4), (3,6); (18,4), (18,6)), under the air lanes as they come in; (18,9)
+//   on the east side; and either side of the barricade below the gate ((7,12), (9,12)).
 //
 // Markers (render draws the ones it knows; T740c's props, T730b's world render): Dome 1 open and
 // frosted beside the gate, the lettuce-crate barricade on the old road beyond it, Zibzab's crate (the
@@ -29,16 +32,15 @@
 // `convoy` the colonist militia's three posts (sandbags and lettuce crates) beside the road.
 import { defineMapLayout } from '../../define.ts';
 import type { GridPos } from '../../types.ts';
+import { map as a1m01 } from '../a1_m01/map.ts';
 
-/** A1M1's road on this grid (offset 4, 2): from its spawn (8,2) to the gate (8,11), 20 tiles. */
-// prettier-ignore
-const ROAD: readonly GridPos[] = [
-  [8, 2], [8, 3], [8, 4], [8, 5],                    // south from A1M1's spawn
-  [9, 5], [10, 5], [11, 5], [12, 5], [13, 5],        // east along the domes
-  [13, 6], [13, 7], [13, 8],
-  [12, 8], [11, 8], [10, 8], [9, 8], [8, 8],         // back west
-  [8, 9], [8, 10], [8, 11],                          // to the gate
-];
+/** Where A1M1's tile (0, 0) sits on this grid (its 14×10 centred in 22×14). */
+const AT: GridPos = [4, 2];
+
+/** A1M1's road on this grid: from its spawn (8,2) to the gate (8,11), 20 tiles (read, not copied). */
+const ROAD: readonly GridPos[] = a1m01.paths
+  .find((p) => p.id === 'road')!
+  .tiles.map(([c, r]): GridPos => [c + AT[0], r + AT[1]]);
 
 /** The road from tile (x, y) (inclusive) to the gate. */
 const roadFrom = (x: number, y: number): GridPos[] =>
@@ -74,9 +76,9 @@ export const map = defineMapLayout({
   objective: 'escort',
   meterLabel: 'sheltered',
   revisitOf: 'a1_m01',
-  revisitAt: [4, 2],
+  revisitAt: AT,
   // A generous limit (act3.md § A3M6: the breather inside A3M5 → A3M6 → FIN): the map is lost
-  // once half the refugees are lost (27 of 54).
+  // once 55% of the refugees are lost (30 of 54; par loses 22).
   maxLostPct: 0.55,
   size: { cols: 22, rows: 14 },
   // The band only: '*' is A1M1's footprint, composed in unchanged.
@@ -118,8 +120,8 @@ export const map = defineMapLayout({
       ],
     },
   ],
-  // Everglow's gunships and the Rift Moths: in from each north corner, down that side of the band,
-  // and in over the gate's approach.
+  // Everglow's gunships and the Rift Moths: in from each north corner over the domes, and in over
+  // the gate's approach.
   airLanes: [
     {
       id: 'sky_w',
@@ -209,6 +211,10 @@ export const map = defineMapLayout({
       actions: [{ spawnAllies: id }],
     })),
     // QUILL, as the first of them is sheltered (no refugee is lost before it in any reference run).
-    { id: 'sheltered', on: { refugeesRemaining: REFUGEES - 1 }, actions: [{ cue: 'a3_m06_cue_sheltered' }] },
+    {
+      id: 'sheltered',
+      on: { refugeesRemaining: REFUGEES - 1 },
+      actions: [{ cue: 'a3_m06_cue_sheltered' }],
+    },
   ],
 });

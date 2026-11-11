@@ -128,7 +128,7 @@ export const scenes = defineScenes([
     {
       kind: 'line',
       speaker: 'zibzab',
-      text: 'The Hollow is the worst customer I ever had. It doesn\'t want anything. It only wants.',
+      text: "The Hollow is the worst customer I ever had. It doesn't want anything. It only wants.",
     },
   ]),
   // The first refugee sheltered (map.ts `sheltered`).

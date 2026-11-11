@@ -12,6 +12,7 @@ import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { playSfx } from '../../app/audio.ts';
 import { activeSave, purchase, storeShelf } from '../../app/save.ts';
+import { JailbreakConfirm } from './jailbreakConfirm.tsx'; // T714
 import { quillOffline, type Offer, type StorePane } from '../../meta/index.ts';
 import {
   PRESENTERS,
@@ -157,7 +158,17 @@ export function Shelf({ pane, view, group, lead }: ShelfProps) {
   const groups = group?.(offers) ?? [{ title: '', offers }];
   const bank = pane === 'shop' ? view.stardust : view.intel;
 
+  // T714: the jailbreak asks first (jailbreakConfirm.tsx), so the moment is seen, free or not.
+  const [confirming, setConfirming] = useState<Offer | null>(null);
   const onBuy = (o: Offer): void => {
+    if (o.item.kind === 'jailbreak' && o.refusal === null) {
+      setConfirming(o);
+      return;
+    }
+    buy(o);
+  };
+
+  const buy = (o: Offer): void => {
     if (o.refusal === 'short') {
       playSfx('reject');
       setSaid({ tone: 'refusal', text: p.short(o, bank) });
@@ -195,6 +206,20 @@ export function Shelf({ pane, view, group, lead }: ShelfProps) {
 
   return (
     <div class="sd-store" ref={root}>
+      {confirming !== null && (
+        <JailbreakConfirm
+          towers={activeSave()?.unlocks.revokedTowers ?? []}
+          price={confirming.price}
+          onConfirm={() => {
+            setConfirming(null);
+            buy(confirming);
+          }}
+          onCancel={() => {
+            bought.current = offerKey(confirming);
+            setConfirming(null);
+          }}
+        />
+      )}
       <div class="sd-store-intro">
         <p class="sd-pane-who">{p.who}</p>
         <p
