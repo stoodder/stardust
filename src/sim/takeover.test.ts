@@ -114,14 +114,14 @@ function openMap(to: 'x' | 'o'): CompiledMapDef<IdSpace> {
 }
 
 describe('the phases’ data and gates (D146)', () => {
-  it('2 drones every 8 s; a 3 s laser, a 4 s jam, every 15 s; armor 0, Haste 40%, four plates', () => {
+  it('2 drones every 8 s; a 3 s laser, a 4 s jam, every 20 s; armor 0, Haste 40%, four plates', () => {
     expect(HANGAR).toEqual({ enemy: 'compliance', count: 2, everyTicks: 480 });
-    expect(TAKEOVER).toEqual({ tellTicks: 180, durationTicks: 240, everyTicks: 900 });
+    expect(TAKEOVER).toEqual({ tellTicks: 180, durationTicks: 240, everyTicks: 1200 });
     expect(JETTISON).toEqual({
       hastePct: 0.4,
       plates: ['crash_1', 'crash_2', 'crash_3', 'crash_4'],
     });
-    expect([SV.hp, SV.armor, SV.boss!.ending]).toEqual([4500, 15, 'driveOff']);
+    expect([SV.hp, SV.armor, SV.boss!.ending]).toEqual([3800, 15, 'driveOff']);
     // Every boss ability tells for at least BOSS_MIN_TELL_SEC: the laser, and the hangar's door.
     expect(TAKEOVER.tellTicks).toBeGreaterThanOrEqual(secToTicks(BOSS_MIN_TELL_SEC));
     for (const key of ['hangar', 'takeover', 'jettison'] as const) {
@@ -157,7 +157,7 @@ describe('Hostile Takeover (takeover.ts)', () => {
     expect(takeoverPicks(state)).toEqual([]);
   });
 
-  it('lasers 3 s as the phase begins (after its invulnerability), jams 4 s, again every 15 s', () => {
+  it('lasers 3 s as the phase begins (after its invulnerability), jams 4 s, again every 20 s', () => {
     const { state, ctx } = world();
     const ts = TILES.slice(0, 4).map(([c, r]) => placeTower(state, RIVET, c, r));
     ts[3]!.tier = 2;
@@ -181,7 +181,7 @@ describe('Hostile Takeover (takeover.ts)', () => {
     ]);
     expect(takeoverTelling(boss)).toBe(false);
     expect(ts[3]!.jammedBy).toBe(boss.uid);
-    // The next laser starts 15 s after the first began (the jam and its immunity long over, so
+    // The next laser starts 20 s after the first began (the jam and its immunity long over, so
     // the same tower is taken again).
     const next = run(state, ctx, TAKEOVER.everyTicks - TAKEOVER.tellTicks - 1);
     expect(next.map((e) => e.type)).toEqual(['TowerUnjammed']);
@@ -249,7 +249,7 @@ describe('Hostile Takeover (takeover.ts)', () => {
     boss.stasisTicks = 0;
     boss.unnervedTicks = 5;
     expect(run(state, ctx, 1)).toEqual([{ type: 'JamInterrupted', uid: boss.uid }]);
-    expect([boss.jamTellTicks, boss.jamTicks, boss.takeoverTowers]).toEqual([0, 900, []]);
+    expect([boss.jamTellTicks, boss.jamTicks, boss.takeoverTowers]).toEqual([0, TAKEOVER.everyTicks, []]);
     boss.unnervedTicks = 0;
     const after = run(state, ctx, TAKEOVER.everyTicks - TAKEOVER.tellTicks);
     expect(after).toEqual([{ type: 'TakeoverTell', uid: boss.uid, towers: expect.any(Array) }]);

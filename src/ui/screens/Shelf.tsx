@@ -203,7 +203,9 @@ export function Shelf({ pane, view, group, lead }: ShelfProps) {
           data-testid="store-line"
         >
           {said === null ? (
-            quiet ? null : p.intro
+            quiet ? null : (
+              p.intro
+            )
           ) : (
             <>
               {said.tone !== 'warn' && <span class="sd-store-speaker">{p.speaker}: </span>}

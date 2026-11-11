@@ -103,21 +103,27 @@ const KNOCK: Scene = {
   ],
 };
 
+/** Dev save `after_a3m4_<choice>`, loaded. */
+const c4Save = (choice: 'keep' | 'purge' | 'rewrite'): SaveData => {
+  expect(loadDevSave(`after_a3m4_${choice}`)).toBe(true);
+  return activeSave()!;
+};
+/** The comms line's speaker and text, or null. */
+const comms = (): { speaker: string; text: string; dark: boolean } | null => {
+  const l = dialogue.comms.value?.line;
+  return l === undefined ? null : { speaker: l.speaker, text: l.text, dark: !!l.portrait?.dark };
+};
+
 describe('who is offline', () => {
   beforeEach(() => initSaves(new MemoryStore()));
 
-  const save = (choice: 'keep' | 'purge' | 'rewrite'): SaveData => {
-    expect(loadDevSave(`after_a3m4_${choice}`)).toBe(true);
-    return activeSave()!;
-  };
-
   it('QUILL, on A3M5 under Rewrite only', () => {
-    expect(offlineSpeakers('a3_m05', save('rewrite'))).toEqual(['quill']);
-    expect(offlineSpeakers('a3_m06', save('rewrite'))).toEqual([]);
-    expect(offlineSpeakers('a3_m04', save('rewrite'))).toEqual([]);
-    expect(offlineSpeakers('a3_m05', save('keep'))).toEqual([]);
-    expect(offlineSpeakers('a3_m05', save('purge'))).toEqual([]);
-    expect(offlineSpeakers(null, save('rewrite'))).toEqual([]);
+    expect(offlineSpeakers('a3_m05', c4Save('rewrite'))).toEqual(['quill']);
+    expect(offlineSpeakers('a3_m06', c4Save('rewrite'))).toEqual([]);
+    expect(offlineSpeakers('a3_m04', c4Save('rewrite'))).toEqual([]);
+    expect(offlineSpeakers('a3_m05', c4Save('keep'))).toEqual([]);
+    expect(offlineSpeakers('a3_m05', c4Save('purge'))).toEqual([]);
+    expect(offlineSpeakers(null, c4Save('rewrite'))).toEqual([]);
     expect(offlineSpeakers('a3_m05', null)).toEqual([]);
   });
 });
@@ -182,9 +188,12 @@ describe('portraits and frames', () => {
   });
 
   it("Gerald's status line: his icon frame, the status text style", () => {
-    const view = lineView({ speaker: 'gerald', text: 'DELIVERY: COMPLETE.' }, ctxOn('a3_m04'), TEXT, [
-      'quill',
-    ]);
+    const view = lineView(
+      { speaker: 'gerald', text: 'DELIVERY: COMPLETE.' },
+      ctxOn('a3_m04'),
+      TEXT,
+      ['quill'],
+    );
     expect(view.frame).toBe('icon');
     expect(view.portrait).toMatchObject({ sprite: 'portrait.gerald', icon: true, dark: false });
     expect(view.text).toBe('DELIVERY: COMPLETE.');
@@ -202,7 +211,12 @@ describe("A3M4's silences (Bricks absent)", () => {
     const pool = barksFor('a3_m04');
     const present: SpeakerId[] = ['quill'];
     let state = newBarkState(1);
-    const start = pickBarkOf(pool, [{ trigger: { on: 'map_start' }, atSec: 0, present }], state, ctx);
+    const start = pickBarkOf(
+      pool,
+      [{ trigger: { on: 'map_start' }, atSec: 0, present }],
+      state,
+      ctx,
+    );
     expect(start.bark?.id).toBe('bricks_map_start_a3_04');
     state = start.state;
     const clear = pickBarkOf(
@@ -239,11 +253,6 @@ describe('in a battle', () => {
     unbind = bindDialogue(host, { briefing: false, newTowers: [] });
     // The start's barks (Bricks's silence on A3M4) play out.
     vi.advanceTimersByTime(30_000);
-  };
-  /** The comms line's speaker and text, or null. */
-  const comms = (): { speaker: string; text: string; dark: boolean } | null => {
-    const l = dialogue.comms.value?.line;
-    return l === undefined ? null : { speaker: l.speaker, text: l.text, dark: !!l.portrait?.dark };
   };
   beforeEach(() => {
     vi.useFakeTimers();

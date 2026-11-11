@@ -69,7 +69,7 @@ export const waves = defineWaves([
   // W2 · Compliance + one Maintenance Associate [T: healer aura; focus it]
   { ...NO_CALL, teach: true, groups: [drones(3, 0), associates(1, 3), drones(3, 4.5)] },
   // W3 · Fractures + Motes
-  { ...CALL, groups: [fractures(2, 'road', 0), motes(6, 'road', 4), drones(3, 8)] },
+  { ...CALL, groups: [fractures(2, 'road', 0), motes(5, 'road', 6), drones(3, 9)] },
   // W4 · one Auditor [T: ring tell; interrupt with Stillness or Bloom; Choir]
   { ...NO_CALL, groups: [drones(3, 0), auditors(1, 3), drones(3, 7)] },
   // W5 · Kip opens the vats: the first bearers walk; the Hollow hunt them
@@ -90,15 +90,14 @@ export const waves = defineWaves([
       silencers(2, 0),
       auditors(2, 4),
       drones(4, 8),
-      motes(5, 'hunt', HUNT_SEC),
-      fractures(1, 'hunt', HUNT_SEC + 3),
+      motes(6, 'hunt', HUNT_SEC, 0.5),
     ],
   },
   // W10 · Hollow surge at the vats (one group bigger unless the feed is cut: SCRIPT_GROUPS)
   {
     ...NO_CALL,
     groups: [
-      motes(8, 'vats', 0),
+      motes(7, 'vats', 0),
       fractures(2, 'vats', 3),
       motes(6, 'road', 3),
     ],
@@ -146,10 +145,10 @@ export const waves = defineWaves([
     ...NO_CALL,
     countdownAfter: 'bossEnded',
     groups: [
-      motes(8, 'hunt', HUNT_SEC),
-      fractures(2, 'hunt', HUNT_SEC + 4),
-      motes(10, 'vats', 2),
-      fractures(3, 'vats', 6),
+      motes(6, 'hunt', HUNT_SEC, 0.5),
+      fractures(1, 'hunt', HUNT_SEC + 4),
+      motes(8, 'vats', 2),
+      fractures(2, 'vats', 6),
       g('maw', 1, 'vats', 10),
     ],
   },
@@ -172,7 +171,7 @@ export const waves = defineWaves([
       fractures(4, 'vats', 3),
       g('maw', 2, 'vats', 6, 3),
       motes(12, 'road', 2),
-      fractures(3, 'road', 6),
+      fractures(2, 'road', 6),
       silencers(2, 4),
     ],
   },

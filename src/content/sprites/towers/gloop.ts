@@ -6,14 +6,14 @@
 // lip, and its cheeks working. It **aims**: `se`/`ne` (mirrored `sw`/`nw`), and each shot (`fire_*`,
 // ~0.4 s) is the spit, its mouth thrown open, a glob leaving it in a spray of droplets (facing NE,
 // from behind, the glob arcs up off its far side). From tier 2 (`_t2`) it wears a gourd of acid on
-// its back, strapped on with a teal band; **Big Glorp** (`_spec_a`) is bigger still, drooling a
+// its back, a cork of moss in its neck; **Big Glorp** (`_spec_a`) is bigger still, drooling a
 // long rope of acid off its chin; **Corrosive Kiss** (`_spec_b`) puckers pink lips and bats lashes.
 // The base (one lantern per tier, like every warren gift): T2 sets a clay gourd of acid at each
 // side corner, green sloshing at its mouth; T3 grows a pitcher plant (a tall green tube with a pink
 // lip, acid glinting inside) on the left one; Big Glorp's base has two big acid vats spilling a
 // puddle down the front; Corrosive Kiss's a pink-lipped pitcher at both corners.
 import { defineSprite } from '../defineSprite.ts';
-import { disc, grid, line, plot, rows, stamp, type CharGrid } from '../helpers.ts';
+import { disc, line, plot, rows, stamp, type CharGrid } from '../helpers.ts';
 import { skitterBody } from '../enemies/skitter.ts';
 import { BASE_ANCHOR, BASE_H, BASE_MOUNT, BASE_W } from './base.ts';
 import { WARREN_LEGEND, warrenBase, warrenSpecBase } from './warrenBase.ts';
@@ -56,32 +56,41 @@ function gourds(g: CharGrid, cx: number, cy: number): void {
 }
 
 /**
- * A pitcher plant from row `foot` up to row `top` at column x: a green tube, lit left, its lip
- * rolled pink (`P`), a leaf lid tipped back over it, and acid glinting inside the mouth.
+ * A pitcher plant from row `foot` up to row `top` at column x: a bulbous green jug, lit left and
+ * veined pink, narrowing to a neck, its mouth rolled pink (`P`) round dark with acid glinting in
+ * it, a leaf lid tipped back over it.
  */
 function pitcher(g: CharGrid, x: number, foot: number, top: number): void {
-  for (let y = top + 2; y <= foot; y++) {
-    const bulge = y > foot - 5 ? 1 : 0;
-    for (let dx = -1 - bulge; dx <= 1 + bulge; dx++) {
-      plot(g, x + dx, y, dx < 0 ? 'G' : dx === 0 ? 'H' : 'I');
-    }
-    // Veins down the tube.
-    if ((y - top) % 3 === 0) plot(g, x, y, 'P');
+  const bulb = foot - 3;
+  disc(g, x, bulb, 3.2, (d, px, py) => {
+    const lit = -0.6 * (px + 0.5 - x) - 0.8 * (py + 0.5 - bulb);
+    return lit > 1 && d < 2.3 ? 'G' : lit > -1 ? 'H' : 'I';
+  });
+  for (let y = top + 3; y <= bulb - 2; y++) {
+    plot(g, x - 1, y, 'G');
+    plot(g, x, y, 'H');
+    plot(g, x + 1, y, 'I');
   }
+  // Pink veins on the bulb.
+  plot(g, x - 1, bulb, 'P');
+  plot(g, x + 1, bulb + 1, 'P');
+  plot(g, x, bulb - 2, 'P');
   // The mouth: a pink rolled lip round dark, the acid glinting in it.
-  line(g, x - 2, top + 1, x + 2, top + 1, 'P');
-  plot(g, x - 1, top + 2, 'k');
-  plot(g, x, top + 2, 'A');
-  plot(g, x + 1, top + 2, 'k');
+  line(g, x - 2, top + 2, x + 2, top + 2, 'P');
+  plot(g, x - 2, top + 1, 'P');
+  plot(g, x + 2, top + 1, 'P');
+  plot(g, x - 1, top + 1, 'k');
+  plot(g, x, top + 1, 'A');
+  plot(g, x + 1, top + 1, 'k');
   // The lid: a leaf tipped back over the mouth.
   line(g, x - 1, top, x + 2, top - 1, 'G');
   plot(g, x + 3, top - 1, 'H');
-  plot(g, x + 1, top - 2, 'G');
+  plot(g, x + 3, top - 2, 'G');
 }
 
 /** T3: a pitcher plant on the left gourd's corner. */
 function leftPitcher(g: CharGrid, cx: number, cy: number): void {
-  pitcher(g, cx - 13, cy - 2, cy - 21);
+  pitcher(g, cx - 12, cy - 1, cy - 16);
 }
 
 /** A big acid vat: a squat clay pot, a lip of acid brimming over and spilling down its face. */
@@ -115,8 +124,8 @@ function bigGlorpKit(g: CharGrid, cx: number, cy: number): void {
 
 /** Corrosive Kiss's base: a pink-lipped pitcher at both corners. */
 function corrosiveKissKit(g: CharGrid, cx: number, cy: number): void {
-  pitcher(g, cx - 12, cy - 1, cy - 18);
-  pitcher(g, cx + 12, cy, cy - 15);
+  pitcher(g, cx - 11, cy, cy - 15);
+  pitcher(g, cx + 11, cy + 1, cy - 13);
   // A kiss print on the footing's left face.
   stamp(g, Math.round(cx - 6), Math.round(cy + 1), ['PP.PP', '.PPP.']);
 }
@@ -196,11 +205,11 @@ function face(g: CharGrid, x: number, y: number, look: Look, spit: boolean): voi
       plot(g, ex + 1, y, 'k');
       plot(g, ex + 2, y + 1, 'k');
     } else {
-      stamp(g, ex, y, ['wk', 'kk']);
+      stamp(g, ex, y, ['wk', 'kk', 'kk']);
     }
     if (kiss) plot(g, ex + 2, y - 1, 'k');
   }
-  const my = y + 4;
+  const my = y + 5;
   if (spit) {
     // Thrown wide open: dark mouth, a green tongue of acid, droplets spraying out ahead.
     stamp(g, x, my - 1, ['.kkkkk.', 'kkAGAkk', 'kGGGGGk', '.kkkkk.']);
@@ -222,7 +231,7 @@ function face(g: CharGrid, x: number, y: number, look: Look, spit: boolean): voi
   }
 }
 
-/** The gourd of acid strapped on its back from tier 2 (a teal band round the body). */
+/** The gourd of acid riding on its back from tier 2. */
 function backGourd(g: CharGrid, x: number, y: number): void {
   disc(g, x, y, 2.8, (d, px, py) => (px + py < x + y - 1 && d < 2 ? 'M' : d < 2.2 ? 'N' : 'O'));
   plot(g, Math.floor(x), Math.floor(y - 3), 'G');
@@ -236,10 +245,7 @@ function gloopHead(facing: 'se' | 'ne', look: Look, spit: boolean): string[] {
   const cy = big ? 11.5 : 12.5;
   const rx = big ? 11.5 : 10.5;
   const ry = (big ? 8.5 : 7.5) + (spit ? -0.5 : 0);
-  const g0 = skitterBody({ w: W, h: H, cx, cy, rx, ry, facing, belly: 0.55 });
-  const g: CharGrid = grid(W, H);
-  // Seated: the body sits one row lower than its ellipse, its bottom flattened on the footing.
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) plot(g, x, y, g0[y]?.[x] ?? '.');
+  const g = skitterBody({ w: W, h: H, cx, cy, rx, ry, facing, belly: 0.55 });
   scutes(g, cx, cy, rx, ry, facing === 'se' ? Math.round(cy) - 1 : Math.round(cy) + 2, 0);
   // The teal tuft on its crown (the moss tuft, gone teal in the alliance palette).
   stamp(g, Math.round(cx) - 3, Math.round(cy - ry) - 1, ['.dc.', 'cdcb']);
@@ -247,9 +253,6 @@ function gloopHead(facing: 'se' | 'ne', look: Look, spit: boolean): string[] {
     // From tier 2 its own gourd rides on its back: left shoulder facing SE, right facing NE.
     if (facing === 'se') backGourd(g, cx - 7.5, cy - 4.5);
     else backGourd(g, cx + 6, cy - 5);
-    // The strap: a teal band across the bands.
-    const sx = facing === 'se' ? cx - 4 : cx + 3;
-    line(g, Math.round(sx), Math.round(cy - ry) + 2, Math.round(sx) + 2, Math.round(cy) + 1, 'd');
   }
   // Two front paws planted on the footing.
   const foot = Math.round(cy + ry) - 1;
@@ -260,7 +263,7 @@ function gloopHead(facing: 'se' | 'ne', look: Look, spit: boolean): string[] {
     face(g, Math.round(cx) + 1, Math.round(cy) - 1, look, spit);
     if (spit) {
       // The glob leaving ahead and droplets in a spray.
-      disc(g, cx + 11, cy + 1.5, 1.6, (d) => (d < 0.8 ? 'w' : 'A'));
+      disc(g, cx + 11, cy + 1.5, 2.1, (d) => (d < 0.8 ? 'w' : 'A'));
       plot(g, Math.round(cx) + 9, Math.round(cy) - 1, 'G');
       plot(g, Math.round(cx) + 11, Math.round(cy) - 2, 'A');
     }
@@ -268,7 +271,7 @@ function gloopHead(facing: 'se' | 'ne', look: Look, spit: boolean): string[] {
     // From behind: the gold spots down its back glow, and a spit arcs up off its far side.
     stamp(g, Math.round(cx) - 3, Math.round(cy) + 2, ['+...+', '..*..']);
     if (spit) {
-      disc(g, cx + 8, cy - 8, 1.6, (d) => (d < 0.8 ? 'w' : 'A'));
+      disc(g, cx + 8, cy - 8, 2.1, (d) => (d < 0.8 ? 'w' : 'A'));
       plot(g, Math.round(cx) + 6, Math.round(cy) - 6, 'G');
       plot(g, Math.round(cx) + 10, Math.round(cy) - 7, 'A');
       // Its cheeks bulge out past its sides with the effort.

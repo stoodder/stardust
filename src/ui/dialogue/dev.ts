@@ -94,7 +94,11 @@ export const DEV_SCENES = defineScenes([
   // A3M5's shape under C4 Rewrite (T713; the real lines are T721's): QUILL's intel, then
   // `system`'s. With QUILL offline only `system` speaks; with him online both do.
   defineScene('a1_m01_cue_dev_intel', [
-    { kind: 'line', speaker: 'quill', text: "Jammers inbound. Prim's model. I'm sorry it's her face." },
+    {
+      kind: 'line',
+      speaker: 'quill',
+      text: "Jammers inbound. Prim's model. I'm sorry it's her face.",
+    },
     {
       kind: 'line',
       speaker: 'system',

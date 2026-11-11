@@ -19,6 +19,10 @@
 //   `pickBarkOf` from the map's pools with 6 s of sim-time spacing. Two must never be lost, so they
 //   queue behind the line on the panel instead (`QUEUED_BARKS`): QUILL's first-leak seed, and
 //   Bricks on selling the turret he named.
+// - **Act III part two (T713):** speakers offline (`offlineSpeakers`: QUILL on A3M5 under C4
+//   Rewrite) are off the radio and out of the pool, and their lines are stepped past wherever they
+//   come (`liveStart`, `liveAdvance`); a variant's rule may make a silence blink (Purge's status
+//   bar) or drop the `policy` tell (`lineView`).
 // - Moments that play a map's scenes: wave NN's countdown (`<map>_wNN`), a map script cue (the
 //   scene with the cue's id), Bricks's tag moment (`<map>_cue_name_tag`; story/tags.ts), and a
 //   newly issued tower at the battle's start (`<map>_cue_issued_<tower>`).
@@ -249,7 +253,8 @@ function speakerGone(speaker: SpeakerId, ctx: StoryContext): boolean {
  * The view of line `s`: its speaker's name plate and portrait (the plate and the variant the
  * speaker's rules pick; the `dark` bake for a silence from an absent speaker), and its text with
  * tokens resolved. A line's `plateAs` names the plate instead (Bramble as "The Matriarch" until
- * Pebble names her).
+ * Pebble names her). The variant's rule says whether a present speaker's silence blinks (`blink`)
+ * and whether `policy` flashes (`noPolicy`: Purge's QUILL has no directives).
  * `present`: who is on the radio (a battle), or null (anyone not gone for good).
  */
 export function lineView(
