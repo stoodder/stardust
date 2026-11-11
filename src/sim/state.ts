@@ -410,6 +410,17 @@ export interface SimState<K extends IdSpace = IdSpace> {
   tilesOpenedTo: TileChar[];
   /** Script groups spawned this run (`spawnWave`: A3M5's W10 surge; T706), in order. */
   scriptGroupsSpawned: string[];
+  /**
+   * Index-aligned with `scriptGroupsSpawned` (T706; sim/scriptGroups.ts): the tick each one's
+   * spawn clock started, and the wave its units count in.
+   */
+  scriptGroupStart: number[];
+  scriptGroupWave: number[];
+  /**
+   * How many wreckage tiles the drone had cleared as each wave started (index wave − 1), kept on
+   * a map whose conditions use `cleared` (T706; sim/conditions.ts): Cut the Feed's "before W10".
+   */
+  wreckageAtWave: number[];
   /** Commands enqueued and not yet applied (FIFO). */
   pending: Command<K>[];
   /** Output, not state: every command applied so far, with its tick. Not hashed. */
@@ -535,6 +546,9 @@ export function createState(map: CompiledMapDef<IdSpace>, seed: number): SimStat
     tilesOpened: [],
     tilesOpenedTo: [],
     scriptGroupsSpawned: [],
+    scriptGroupStart: [],
+    scriptGroupWave: [],
+    wreckageAtWave: [],
     pending: [],
     commandLog: [],
     events: [],

@@ -238,7 +238,7 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   'modifier.towerStat': null,
   'modifier.towerCost': null,
   'modifier.enemyStat': null,
-  'modifier.enemyStat.faction': 'T703',
+  'modifier.enemyStat.faction': null, // T703
   'modifier.economy.startCredits': null,
   'modifier.economy.coreIntegrity': null,
   'modifier.economy.bounty': null,
@@ -288,7 +288,7 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   'ability.reboot': 'T702',
   'enemy.jam': 'T702',
   'enemy.jam.ring': 'T707',
-  'enemy.healAura': 'T703',
+  'enemy.healAura': null, // T703
   'enemy.boss.hangar': 'T707',
   'enemy.boss.takeover': 'T707',
   'enemy.boss.jettison': 'T707',

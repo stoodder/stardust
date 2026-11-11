@@ -6,7 +6,8 @@
 //
 // The run's wave modifiers apply here (D032): `countdown` stretches or cuts every countdown, and
 // `enemyStat` scales each unit's def as it spawns (`runWaveModifiers`), so status, movement,
-// damage, and render all read the scaled numbers through `e.def` with no per-system change.
+// damage, and render all read the scaled numbers through `e.def` with no per-system change. A
+// faction's armor (C4 Purge, T703) rides the same defs (factionArmor.ts).
 import type { CompiledEnemyDef, CompiledPulse, CompiledWave } from '../../content/compiled.ts';
 import {
   CHECKPOINT_EVERY_WAVES,
@@ -21,6 +22,7 @@ import { ENEMY_BLANK } from '../entities.ts';
 import { countTags } from '../fireControl.ts';
 import { placeOnRoute } from '../path.ts';
 import { poolAlloc } from '../pool.ts';
+import { factionArmorFlat, withFactionArmor } from '../factionArmor.ts';
 import { emit, takeUid, type SimState } from '../state.ts';
 import type { TickContext } from '../tick.ts';
 import { reduceAbilityCooldowns } from './abilities.ts';
@@ -198,7 +200,7 @@ export function waveModifiers(
   const enemyPct: Record<EnemyStat, number> = { hp: 0, shield: 0, speed: 0 };
   for (const m of modifiers) {
     if (m.kind === 'countdown') countdownPct += m.pct;
-    // A faction's armor (C4 Purge) is refused until T703 (`modifier.enemyStat.faction`).
+    // A faction's armor (C4 Purge; T703) is summed per faction below (factionArmor.ts).
     else if (m.kind === 'enemyStat' && m.stat !== 'armor') enemyPct[m.stat] += m.pct;
   }
   for (const stat of ['hp', 'shield', 'speed'] as const) {
@@ -212,14 +214,21 @@ export function waveModifiers(
     throw new RangeError(`countdown modifiers total ${countdownPct}; they must stay above -1`);
   }
   const enemies = new Map<string, CompiledEnemyDef>();
-  if (enemyPct.hp !== 0 || enemyPct.shield !== 0 || enemyPct.speed !== 0) {
-    for (const def of defs) enemies.set(def.id, scaledEnemy(def, enemyPct));
+  const scaled = enemyPct.hp !== 0 || enemyPct.shield !== 0 || enemyPct.speed !== 0;
+  const armor = factionArmorFlat(modifiers);
+  if (scaled || armor !== null) {
+    for (const def of defs) {
+      const d = scaled ? scaledEnemy(def, enemyPct) : def;
+      const out = withFactionArmor(d, armor?.get(def.faction) ?? 0);
+      if (out !== def) enemies.set(def.id, out);
+    }
   }
   return { countdownPct, enemyPct, enemies };
 }
 
 /**
- * An enemy def with its HP, shield (capacity and regeneration, so it refills in the same time, and
+ * An enemy def with its HP (and a healer aura's rate, so it mends the same share; T703), shield
+ * (capacity and regeneration, so it refills in the same time, and
  * any shield pulse's amount, its own or a boss phase's, so a pulse restores the same share; T403;
  * and a shield aura's rate, likewise; T502),
  * and speed scaled by `1 + pct` (design/progression.md § 9 Story, § 6 Hardened Hides and Double
@@ -243,6 +252,11 @@ export function scaledEnemy(
             regenPerTick: def.shield.regenPerTick * shieldMul,
           }),
     pulse: scaledPulse(def.pulse, shieldMul),
+    // A healer aura mends the same share of a scaled HP (T703).
+    healAura:
+      def.healAura === null || pct.hp === 0
+        ? def.healAura
+        : Object.freeze({ ...def.healAura, hpPerTick: def.healAura.hpPerTick * (1 + pct.hp) }),
     shieldAura:
       def.shieldAura === null || shieldMul === 1
         ? def.shieldAura

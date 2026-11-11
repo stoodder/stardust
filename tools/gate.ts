@@ -57,7 +57,7 @@ const phases: readonly (readonly Step[])[] = fast
       }),
     )
   : PHASES;
-const budgetSec = fast ? FAST_BUDGET_SEC : GATE_BUDGET_SEC;
+const wallBudgetSec = fast ? FAST_BUDGET_SEC : GATE_BUDGET_SEC;
 
 const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 
@@ -108,8 +108,10 @@ for (const o of outcomes) {
     `  ${o.step.padEnd(11)} ${o.sec.toFixed(1).padStart(6)} s / ${String(o.budgetSec).padStart(3)} s${over}`,
   );
 }
-const overall = `  total       ${total.toFixed(1).padStart(6)} s / ${budgetSec} s (wall)`;
-console.log(total > budgetSec ? `${overall}  OVER BUDGET (conventions.md § Gate time)` : overall);
+const overall = `  total       ${total.toFixed(1).padStart(6)} s / ${wallBudgetSec} s (wall)`;
+console.log(
+  total > wallBudgetSec ? `${overall}  OVER BUDGET (conventions.md § Gate time)` : overall,
+);
 if (fast) {
   const ran = fastSpecs.length > 0 ? fastSpecs.join(', ') : 'none';
   console.log(
