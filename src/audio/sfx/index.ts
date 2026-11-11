@@ -5,6 +5,7 @@ import { ACT2_SFX } from './act2.ts';
 import { ACT2B_SFX } from './act2b.ts';
 import { ACT2_TOWER_SFX } from './act2towers.ts';
 import { ACT3_SFX } from './act3.ts';
+import { ACT3B_SFX } from './act3b.ts';
 import { AELARI_SFX } from './aelari.ts';
 import { ALLY_SFX } from './allies.ts';
 import { BATTLE_SFX } from './battle.ts';
@@ -34,6 +35,7 @@ export const SFX = {
   ...ACT2B_SFX,
   ...ACT2_TOWER_SFX,
   ...ACT3_SFX,
+  ...ACT3B_SFX,
   ...SPEECH_SFX,
 } as const satisfies Readonly<Record<string, SfxRecipe>>;
 

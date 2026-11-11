@@ -87,6 +87,12 @@ const C = {
 /** The bar's left edge (inside the frame), centered on the 640 px view. */
 const BAR_X = Math.round((VIEW_W - BOSS_BAR_W) / 2);
 
+/** How many parts a split boss's def splits into (its split phase's `count`), or 0. */
+function splitCount(def: DeepReadonly<Enemy>['splitFrom']): number {
+  for (const p of def?.boss?.phases ?? []) if (p.split !== null) return p.split.count;
+  return 0;
+}
+
 export class BossBarView {
   readonly #ctx: ViewContext;
   readonly #reducedMotion: () => boolean;
@@ -124,6 +130,8 @@ export class BossBarView {
    * the boss isn't split, or once it merged), the cell edges, and each cell's fill and chip (px).
    */
   #parts = 0;
+  /** The split whose cells are cut (its owner's uid; 0: none yet). */
+  #partsOf = 0;
   readonly #partUids: number[] = Array.from({ length: MAX_SEGMENTS }, () => 0);
   #edges: number[] = [];
   readonly #segFill: number[] = Array.from({ length: MAX_SEGMENTS }, () => 0);
@@ -265,12 +273,17 @@ export class BossBarView {
       this.#end = -1;
       this.#endGlyph = null;
       this.#chip = barFillPx(splitHp(enemies, boss.ownerUid), boss.splitMaxHp); // no drain across
-      this.#takeParts(boss.ownerUid, enemies);
     }
-    // The merged boss (T708) is one bar again.
-    if (boss.splitFrom === null && this.#parts > 0) {
-      this.#parts = 0;
-      this.#key = -1;
+    if (boss.splitFrom === null) {
+      // The merged boss (T708) is one bar again.
+      if (this.#parts > 0) {
+        this.#parts = 0;
+        this.#key = -1;
+      }
+    } else if (this.#partsOf !== boss.ownerUid) {
+      // The first frame that sees the parts (the split, or a bar opened on them) cuts the cells.
+      this.#partsOf = boss.ownerUid;
+      this.#takeParts(boss.ownerUid, splitCount(boss.splitFrom), enemies);
     }
     if (boss.bossPhase > this.#phase) {
       if (this.#phase > 0) this.#flashMs = PHASE_FLASH_MS;
@@ -279,10 +292,12 @@ export class BossBarView {
   }
 
   /**
-   * The split's parts as it happens (T731): the live parts of `ownerUid`, in uid order (the order
-   * they split), each a cell; none past MAX_SEGMENTS (the bar stays one summed fill).
+   * The split's parts (T731): `count` cells (the split's), the live parts of `ownerUid` in uid
+   * order (the order they split) in the first of them; a part already dead when the bar first saw
+   * the split is an empty cell at the end. None past MAX_SEGMENTS (the bar stays one summed fill).
    */
-  #takeParts(ownerUid: number, enemies: BossPool): void {
+  #takeParts(ownerUid: number, count: number, enemies: BossPool): void {
+    this.#partUids.fill(0);
     let n = 0;
     for (let i = 0; i < enemies.used; i++) {
       const e = enemies.items[i]!; // i < used ≤ items.length
@@ -299,7 +314,8 @@ export class BossBarView {
       }
       this.#partUids[j] = e.uid;
     }
-    this.#parts = n > 1 ? n : 0;
+    const cells = Math.max(n, count);
+    this.#parts = n > 0 && cells > 1 && cells <= MAX_SEGMENTS ? cells : 0;
     if (this.#parts === 0) return;
     this.#edges = segmentEdgesPx(this.#parts);
     for (let i = 0; i < this.#parts; i++) {
@@ -315,7 +331,7 @@ export class BossBarView {
     for (let i = 0; i < this.#parts; i++) {
       const uid = this.#partUids[i]!; // i < parts ≤ MAX_SEGMENTS
       let hp = 0;
-      if (!gone) {
+      if (!gone && uid !== 0) {
         for (let k = 0; k < enemies.used; k++) {
           const e = enemies.items[k]!; // k < used ≤ items.length
           if (e.alive && e.uid === uid) {
@@ -345,6 +361,7 @@ export class BossBarView {
     this.#endGlyph = this.#end >= 0 ? endGlyph(def.boss?.endAtPct ?? 0) : null;
     this.#maxShield = def.shield?.hp ?? 0;
     this.#parts = 0;
+    this.#partsOf = 0;
     this.#lastShield = -1;
     this.#shieldFlashMs = 0;
     this.#shield = 0;
@@ -380,6 +397,7 @@ export class BossBarView {
     this.#maxShield = 0;
     this.#end = -1;
     this.#parts = 0;
+    this.#partsOf = 0;
     this.#gfx.clear().setVisible(false);
     this.#label.setVisible(false);
   }

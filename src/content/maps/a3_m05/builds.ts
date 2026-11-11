@@ -108,11 +108,13 @@ function parSteps(): BuildStep[] {
     { wave: 12, upgrade: YARD_N },
     { wave: 13, upgrade: SLUICE_S },
     { wave: 13, upgrade: CATWALK_E },
+    slot1(13, HUNT_REBOOT_SEC),
     { wave: 13, build: 'thumper', tile: VAT_E },
     slot1(14, TAKEOVER_SEC),
     still(14, BOSS_STILL_SEC, [14, 10]),
     slot1(14, TAKEOVER_SEC + 45),
     { wave: 14, upgrade: CATWALK_W },
+    slot1(15, W15_REBOOT_SEC),
     { wave: 15, upgrade: VAT_E },
     { wave: 15, upgrade: BEND },
     { wave: 16, build: 'thumper', tile: SOUTH },
@@ -129,10 +131,16 @@ const HUNT_STILL: GridPos = [0, 6];
 const YARD_STILL_SEC = 12;
 const YARD_N_ROAD: GridPos = [5, 4];
 
+/** W13 and W15 under Rewrite: Suppressing Fire on the hunt's Silencers by the old intake. */
+const HUNT_SUPPRESS: GridPos = [0, 6];
 /** W14 under Rewrite: Suppressing Fire on the vats' row, then on the turn down to the core. */
 const SUPPRESS_1: GridPos = [12, 9];
 const SUPPRESS_2: GridPos = [14, 10];
 
+/** W13: System Reboot as the hunt's Silencers start hushing the bearers' hub. */
+const HUNT_REBOOT_SEC = 17.5;
+/** W15: System Reboot as the last hunt's Silencers start hushing (they set off later). */
+const W15_REBOOT_SEC = 23.5;
 /** W14: System Reboot as Hostile Takeover's first jams land (phase 2's laser ends). */
 const TAKEOVER_SEC = 91;
 /** W14: Stillness on the platform as it turns into the vats' row (a boss takes Chilled 50%). */
@@ -152,17 +160,12 @@ const PAR: ScriptedBuild = {
 const REWRITE_PAR: ScriptedBuild = {
   loadout: PAR.loadout,
   technicianAbility: 'suppressing_fire',
-  steps: PAR.steps.map((st) =>
-    'ability' in st && st.ability === 1
-      ? {
-          ...st,
-          target:
-            st === PAR.steps.find((x) => 'ability' in x && x.ability === 1)
-              ? SUPPRESS_1
-              : SUPPRESS_2,
-        }
-      : st,
-  ),
+  steps: PAR.steps.map((st) => {
+    if (!('ability' in st) || st.ability !== 1) return st;
+    if (st.wave !== 14) return { ...st, target: HUNT_SUPPRESS };
+    const first = PAR.steps.find((x) => 'ability' in x && x.ability === 1 && x.wave === 14);
+    return { ...st, target: st === first ? SUPPRESS_1 : SUPPRESS_2 };
+  }),
 };
 
 export const builds = defineBuilds({
@@ -179,7 +182,7 @@ export const builds = defineBuilds({
   counterExemptions: [{ counter: 'jam', reason: "jam exam is W14's Takeover (D146)" }],
   // The armor exam is the W11 Liability column (it walks the 39-tile road for ~80 s, so it lands
   // in W12) and then the platform at W14.
-  noCounterLoseByWave: 14,
+  noCounterLoseByWave: 15,
   // Act III's band (50–70), its top raised 5 points for C4 Purge's cell alone: the −2 Everglow
   // armor is the answer's earned edge, and its par holds the core to 18 of 22 where the others
   // hold 14, so the bearers' 9 of 12 (75%) decide it (balance/a3m5Cells.test.ts).
@@ -229,6 +232,7 @@ export const builds = defineBuilds({
         { wave: 11, specialize: CONDUIT, spec: 'b' },
         { wave: 12, upgrade: CATWALK_E },
         { wave: 12, upgrade: INTAKE_W },
+        slot1(13, HUNT_REBOOT_SEC),
         still(13, HUNT_STILL_SEC, HUNT_STILL),
         { wave: 13, build: 'thumper', tile: VAT_E },
         { wave: 13, upgrade: BEND },
@@ -271,6 +275,7 @@ export const builds = defineBuilds({
         { wave: 11, upgrade: CATWALK_W },
         { wave: 12, upgrade: BEND },
         { wave: 12, upgrade: CATWALK_W },
+        slot1(13, HUNT_REBOOT_SEC),
         { wave: 13, build: 'zapcoil', tile: VAT_E },
         { wave: 13, upgrade: VAT_E },
         slot1(14, TAKEOVER_SEC),

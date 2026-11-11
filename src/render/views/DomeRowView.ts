@@ -63,8 +63,8 @@ export class DomeRowView {
   readonly #facing: Facing = 'se';
   #frost: DomeFrost | null = null;
   #next = 0;
-  /** Real ms since the win (−1: not won). */
-  #wonMs = -1;
+  /** The scene clock's time at the win (real ms; −1: not won). */
+  #wonAt = -1;
   #opened = 0;
   /** Turn-ins seen (the smoke flow's check). */
   turnedIn = 0;
@@ -113,7 +113,7 @@ export class DomeRowView {
     const offs = [
       bus.on('RefugeeEvacuated', (e) => this.#turnIn(e.pebble)),
       bus.on('MapWon', () => {
-        if (this.#wonMs < 0) this.#wonMs = 0;
+        if (this.#wonAt < 0) this.#wonAt = this.#ctx.scene.time.now;
       }),
     ];
     return () => {
@@ -122,7 +122,7 @@ export class DomeRowView {
   }
 
   /** Each frame: Dome 1's frost, the turn-ins under way, and the domes opening after a win. */
-  update(dtMs: number, wave: number, tick: number): void {
+  update(wave: number, tick: number): void {
     const dome = this.#dome;
     if (dome === null) return;
     const frost = domeFrost(wave, this.#waveCount);
@@ -147,9 +147,10 @@ export class DomeRowView {
       t.body.setDepth(worldDepth(y, 'enemy', TURN_IN_TIE + i));
       if (still && t.body.anims.isPlaying) t.body.anims.pause();
     }
-    if (this.#wonMs < 0 || this.#opened >= this.#apron.length) return;
-    this.#wonMs += Number.isFinite(dtMs) && dtMs > 0 ? dtMs : 0;
-    while (this.#opened < this.#apron.length && this.#wonMs >= domeOpensAt(this.#opened, still)) {
+    if (this.#wonAt < 0 || this.#opened >= this.#apron.length) return;
+    // Real time (the sim is frozen in the hold; a slow frame's delta can be clamped).
+    const ms = this.#ctx.scene.time.now - this.#wonAt;
+    while (this.#opened < this.#apron.length && ms >= domeOpensAt(this.#opened, still)) {
       this.#show(this.#apron[this.#opened]!, 'open'); // opened < length
       this.#opened++;
     }

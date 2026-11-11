@@ -49,6 +49,8 @@ export const AUD_GAP = 4;
 export const COUNTDOWN = 30;
 /** How long after a bearer group sets off the Hollow come out of the sluice behind it. */
 export const HUNT_SEC = 10;
+/** W15: the hunt's Silencers set off this long after its Motes (System Reboot is back by then). */
+export const W15_SIL_SEC = 8;
 /** W14: "Shareholder Value" sets off this long in, behind its escort. */
 export const BOSS_SEC = 4;
 
@@ -113,7 +115,13 @@ export const waves = defineWaves([
   // W13 · the bearers' biggest group, and the Hollow behind it
   {
     ...NO_CALL,
-    groups: [motes(9, 'hunt', HUNT_SEC, 0.4), motes(6, 'vats', 4), liabilities(1, 0), drones(4, 4)],
+    groups: [
+      motes(9, 'hunt', HUNT_SEC, 0.4),
+      g('silencer', 2, 'hunt', HUNT_SEC + 2, 2.4),
+      motes(6, 'vats', 4),
+      liabilities(1, 0),
+      drones(4, 4),
+    ],
   },
   // W14 · "Shareholder Value" (Sterling by remote): drones from the hangar, Hostile Takeover,
   // the jettison
@@ -129,6 +137,7 @@ export const waves = defineWaves([
     groups: [
       motes(6, 'hunt', HUNT_SEC, 0.5),
       fractures(1, 'hunt', HUNT_SEC + 4),
+      g('silencer', 2, 'hunt', HUNT_SEC + W15_SIL_SEC, 2.4),
       motes(8, 'vats', 2),
       fractures(2, 'vats', 6),
       g('maw', 1, 'vats', 10),

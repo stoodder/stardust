@@ -780,7 +780,7 @@ export class BattleScene extends Phaser.Scene {
     this.#takeover.update(state); // T707
     this.#gmaw.update(dt, state.enemies); // T708
     this.#site.update(state); // T730b
-    this.#domes.update(dt, state.wave, state.tick); // T730b
+    this.#domes.update(state.wave, state.tick); // T730b
     this.#hollow.update(dt, state.enemies, state.allies); // T602
     this.#rifts.update(state.wave); // T630b
     this.#shuttle.update(state.tick, state.scriptFired); // T630b

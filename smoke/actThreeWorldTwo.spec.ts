@@ -149,7 +149,7 @@ test('A3M6: Dome 1 by the gate, Pebble on her rock; the turn-in; the frost', asy
   await shot(page, 'act-three-world-two', 9, 'a3m6-frost');
   // The win: in the hold before Results, the apron's dark domes open one after another.
   expect(await until(page, 'won')).toBe(true);
-  await expect.poll(async () => (await world(page)).domes.opened, { timeout: 1200 }).toBe(2);
+  await expect.poll(async () => (await world(page)).domes.opened, { timeout: 1400 }).toBe(2);
   await shot(page, 'act-three-world-two', 10, 'a3m6-domes-open');
 });
 
