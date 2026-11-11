@@ -203,6 +203,7 @@ export function poseFacts(e: PoseEnemy, out: MutablePoseFacts): MutablePoseFacts
     if (phase !== undefined) {
       if (out.telling === null && hangarTelling(live, phase.hangar)) out.telling = 'tell';
       out.aiming = phase.takeover !== null;
+      if (phase.jettison !== null) out.panic = true; // its haste rides the jettison, not hastePct
     }
     // The Gathering Maw (T740a): a part's merge tell, and the merged Maw's rage.
     if (out.telling === null && mergeTelling(live)) out.telling = 'tell';

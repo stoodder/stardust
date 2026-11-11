@@ -35,13 +35,14 @@ const E = compileContent(RAW_CONTENT).enemies;
 
 type Unit = Pick<
   Enemy,
-  'alive' | 'def' | 'gatherUid' | 'gatherTicks' | 'absorbs' | 'burrowed' | 'leaving'
+  'alive' | 'def' | 'bossPhase' | 'gatherUid' | 'gatherTicks' | 'absorbs' | 'burrowed' | 'leaving'
 >;
 
 function unit(over: Partial<Unit>): Unit {
   return {
     alive: true,
     def: null,
+    bossPhase: 0,
     gatherUid: 0,
     gatherTicks: 0,
     absorbs: 0,

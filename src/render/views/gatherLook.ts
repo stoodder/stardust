@@ -89,8 +89,10 @@ const BEAD_LAG = 0.12;
  * The size a grown Maw's gulp ring reaches (tiles), by its growth (`gatherScale`), or 0 for a unit
  * that hasn't gathered.
  */
-export function growthRingTiles(e: DeepReadonly<Pick<Enemy, 'def' | 'absorbs'>>): number {
-  if ((e.def?.gather ?? null) === null || e.absorbs <= 0) return 0;
+export function growthRingTiles(
+  e: DeepReadonly<Pick<Enemy, 'def' | 'bossPhase' | 'absorbs'>>,
+): number {
+  if (!canGather(e.def) || e.absorbs <= 0) return 0;
   return GROWTH_RING_BASE_TILES * gatherScale(e);
 }
 export const GROWTH_RING_BASE_TILES = 0.6;

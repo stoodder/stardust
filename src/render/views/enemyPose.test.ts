@@ -290,4 +290,23 @@ describe('poseFacts for M7 units (T740a)', () => {
     sv.invulnerableTicks = 10;
     expect(statePose(poseFacts(sv, f))).toBe('puff');
   });
+
+  it('the Gathering Maw: a part walking together in the merge tell is `tell`, the merged Maw `panic`', () => {
+    const sim = createSim(battleConfig('dev_gmaw', 1));
+    const m = firstLive(sim, (e) => e.def?.id === 'gathering_maw');
+    const f = blankFacts();
+    m.invulnerableTicks = 0;
+    m.gatherUid = 0;
+    expect(statePose(poseFacts(m, f))).toBe('walk');
+    // As a part (split-born, its merge's clock in the last 1.5 s).
+    m.splitFrom = m.def;
+    m.mergeTicks = 30;
+    expect(statePose(poseFacts(m, f))).toBe('tell');
+    // Merged: a fresh whole Maw with the split's bar, enraged.
+    m.splitFrom = null;
+    m.mergeTicks = 0;
+    m.splitMaxHp = 1000;
+    m.bossPhase = 3;
+    expect(statePose(poseFacts(m, f))).toBe('panic');
+  });
 });

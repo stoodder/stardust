@@ -922,7 +922,8 @@ export class EnemyView implements PooledView {
       this.#barHpPx = -1;
       this.#syncBar();
     }
-    if (canGather(e.def)) { // T708: a boss phase's gather too (the Gathering Maw)
+    if (canGather(e.def)) {
+      // T708: a boss phase's gather too (the Gathering Maw)
       const id = spriteId(mawBody(this.#baseBody, e));
       if (id !== this.#id) {
         this.#id = id;
