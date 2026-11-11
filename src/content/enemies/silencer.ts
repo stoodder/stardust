@@ -5,9 +5,10 @@
 // it for 2 s, then jams it for 4 s (× its `jamMul`) if it's still in reach. Dialogue and the codex
 // call it *hushing*; the UI says Jammed.
 //
-// A stub registered ahead of its task (T700a): T702 confirms the numbers and the spawn interval
-// (not in the docs: 2.0 s is a stub) and runs the tendril (`enemy.jam`). Sprites: placeholders
-// under their final ids (T740a).
+// Live since T702 (sim/enemyAbilities/jamTendril.ts; the rules: enemies.md § 4's *How jamming
+// runs*): the roster row's numbers, and a 2.0 s spawn interval (the docs give none: a jammer pair
+// two tells apart). It holds still through its tell. Sprites: placeholders under their final ids
+// (T740a).
 import { defineEnemy } from '../define.ts';
 
 export const silencer = defineEnemy({

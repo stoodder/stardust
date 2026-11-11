@@ -147,7 +147,7 @@ export interface Tower extends PoolEntity {
   // M6 (T600a seams).
   /**
    * The Hum Choir's jam rule on this tower (T607): Jammed durations × this, the strongest Choir
-   * aura covering it (1: none; 0: immune, Rally Chorus). Inert until M7's jammers (D141).
+   * aura covering it (1: none; 0: immune, Rally Chorus). Read as a jam lands (sim/jam.ts; T702).
    */
   jamMul: number;
   /** A Scuttle Den's swarmlings or Champions alive now (≤ its `maxAlive`; T604). */

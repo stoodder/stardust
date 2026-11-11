@@ -164,6 +164,7 @@ export function createRunTracker<K extends IdSpace>(
     }
     if (t === undefined) return;
     if (t.holdFire) violate(`tower ${towerUid} fired while holding fire`);
+    if (t.jamTicks > 0) violate(`tower ${towerUid} fired while Jammed`); // T702
     if (t.spareRunners && targetUid !== 0 && spared.has(targetUid)) {
       violate(`tower ${towerUid} with spare runners on targeted spared enemy ${targetUid}`);
     }
