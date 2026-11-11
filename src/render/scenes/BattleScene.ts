@@ -776,7 +776,7 @@ export class BattleScene extends Phaser.Scene {
     this.#blinks.update(dt, state.enemies);
     this.#phases.update(state.enemies);
     this.#jams.update(state, dt); // T702; T730a: dt for Reboot's columns
-    this.#rings.update(state.enemies, state.towers); // T707; D150: a doomed ring stops
+    this.#rings.update(state.enemies); // T707; D151: a ring draws its whole tell
     this.#takeover.update(state); // T707
     this.#gmaw.update(dt, state.enemies); // T708
     this.#site.update(state); // T730b

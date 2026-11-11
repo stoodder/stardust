@@ -28,6 +28,7 @@ import { LICENSE_STAMP } from '../hud/BuildBar.tsx';
 import { Icon, JAILBROKEN_ICON } from '../hud/Icon.tsx';
 import { useEscape } from './escape.ts';
 import { focusOnce } from './focus.ts';
+import { prefersReducedMotion } from '../motion.ts';
 import {
   loadout,
   type LoadoutAbilityView,
@@ -73,7 +74,11 @@ function TowerCard(props: {
           (answers.length > 0 ? `, answers ${answers.join(', ')}` : '') +
           (slot !== null ? `, build slot ${slot}` : '')
         }
-        onClick={props.onToggle}
+        onClick={(e) => {
+          props.onToggle();
+          // A pick half under the grid's fold scrolls into view, so its slot number shows (D151).
+          if (slot === null && !blocked) e.currentTarget.scrollIntoView?.({ block: 'nearest' });
+        }}
         onKeyDown={(e) => {
           const by: Readonly<Record<string, number>> = {
             ArrowLeft: -1,
@@ -334,16 +339,43 @@ function Links({ view, pick }: { view: LoadoutView; pick: LoadoutPickView }) {
   );
 }
 
-/**
- * Whether the scrolling tower grid has cards below what shows (D150: A3M5's 16 towers at
- * 1280×720), kept up to date as it scrolls or resizes.
- */
-function useMoreBelow(ref: RefObject<HTMLElement | null>): boolean {
-  const [more, setMore] = useState(false);
+/** Where the scrolling tower grid stands (D150, D151). */
+interface GridScroll {
+  /** It holds more cards than show (A3M5's 16 at 1280×720). */
+  readonly scrolls: boolean;
+  /** Cards wait below what shows. */
+  readonly more: boolean;
+  /** The rail's thumb: its top and height as fractions of the grid's. */
+  readonly thumb: { readonly top: number; readonly size: number };
+}
+
+const NO_SCROLL: GridScroll = { scrolls: false, more: false, thumb: { top: 0, size: 1 } };
+
+/** The tower grid's scroll (`GridScroll`), kept up to date as it scrolls or resizes. */
+function useGridScroll(ref: RefObject<HTMLElement | null>): GridScroll {
+  const [at, setAt] = useState<GridScroll>(NO_SCROLL);
   useEffect(() => {
     const el = ref.current;
     if (el === null) return undefined;
-    const check = (): void => setMore(el.scrollTop + el.clientHeight < el.scrollHeight - 1);
+    const check = (): void => {
+      const { scrollTop: top, clientHeight: shown, scrollHeight: all } = el;
+      const scrolls = all > shown + 1;
+      const next: GridScroll = scrolls
+        ? {
+            scrolls,
+            more: top + shown < all - 1,
+            thumb: { top: top / all, size: shown / all },
+          }
+        : NO_SCROLL;
+      setAt((was) =>
+        was.scrolls === next.scrolls &&
+        was.more === next.more &&
+        was.thumb.top === next.thumb.top &&
+        was.thumb.size === next.thumb.size
+          ? was
+          : next,
+      );
+    };
     check();
     el.addEventListener('scroll', check, { passive: true });
     const resize = new ResizeObserver(check);
@@ -353,7 +385,18 @@ function useMoreBelow(ref: RefObject<HTMLElement | null>): boolean {
       resize.disconnect();
     };
   }, []);
-  return more;
+  return at;
+}
+
+/**
+ * "▾ More" (D151): a button in the gutter under the grid, so it covers no card. It scrolls the
+ * grid down most of a view; at the bottom it reads "▴ Top" and scrolls back up.
+ */
+function scrollGrid(el: HTMLElement | null, down: boolean): void {
+  if (el === null) return;
+  const behavior = prefersReducedMotion() ? 'instant' : 'smooth';
+  if (down) el.scrollBy({ top: Math.max(16, el.clientHeight - 24), behavior });
+  else el.scrollTo({ top: 0, behavior });
 }
 
 /** The loadout screen for the open map. */
@@ -364,7 +407,7 @@ export function Loadout() {
   );
   const [notice, setNotice] = useState<string | null>(null);
   const grid = useRef<HTMLUListElement>(null);
-  const more = useMoreBelow(grid);
+  const scroll = useGridScroll(grid);
   // Esc (T212) goes back to the Shift board, as its button does.
   useEscape(() => {
     toCampaign();
@@ -433,32 +476,58 @@ export function Loadout() {
               </span>
             </h2>
             <div class="sd-lo-towers-wrap">
-              <ul ref={grid} class="sd-lo-towers" aria-label={`Towers, pick up to ${view.max}`}>
-                {view.towers.map((t, i) => {
-                  const at = pick.towers.indexOf(t.id);
-                  return (
-                    <TowerCard
-                      key={t.id}
-                      t={t}
-                      index={i}
-                      slot={at < 0 ? null : at + 1}
-                      full={full}
-                      onToggle={() => toggle(t.id)}
+              <div class="sd-lo-grid-row">
+                <ul
+                  ref={grid}
+                  id="sd-lo-towers"
+                  class="sd-lo-towers"
+                  aria-label={`Towers, pick up to ${view.max}`}
+                >
+                  {view.towers.map((t, i) => {
+                    const at = pick.towers.indexOf(t.id);
+                    return (
+                      <TowerCard
+                        key={t.id}
+                        t={t}
+                        index={i}
+                        slot={at < 0 ? null : at + 1}
+                        full={full}
+                        onToggle={() => toggle(t.id)}
+                      />
+                    );
+                  })}
+                  {view.revoked.map((r) => (
+                    <li key={r.id}>
+                      <RevokedCard r={r} stamp={LICENSE_STAMP} what="License revoked" />
+                    </li>
+                  ))}
+                </ul>
+                {/* The grid scrolls past what fits (D150): its own thin rail beside the cards
+                    (on every platform, never an overlay scrollbar that hides), and More in the
+                    gutter under them, where it covers no card (D151). */}
+                {scroll.scrolls && (
+                  <span class="sd-lo-rail" aria-hidden="true" data-testid="loadout-rail">
+                    <span
+                      class="sd-lo-thumb"
+                      style={{
+                        top: `${(scroll.thumb.top * 100).toFixed(2)}%`,
+                        height: `${(scroll.thumb.size * 100).toFixed(2)}%`,
+                      }}
                     />
-                  );
-                })}
-                {view.revoked.map((r) => (
-                  <li key={r.id}>
-                    <RevokedCard r={r} stamp={LICENSE_STAMP} what="License revoked" />
-                  </li>
-                ))}
-              </ul>
-              {/* The grid scrolls past what fits (D150): a cue while cards wait below. Clicks pass
-                through it to the card under it. */}
-              {more && (
-                <span class="sd-lo-more" aria-hidden="true" data-testid="loadout-more">
-                  ▾ More
-                </span>
+                  </span>
+                )}
+              </div>
+              {scroll.scrolls && (
+                <button
+                  type="button"
+                  class="sd-lo-more"
+                  data-testid="loadout-more"
+                  aria-controls="sd-lo-towers"
+                  onClick={() => scrollGrid(grid.current, scroll.more)}
+                >
+                  <span aria-hidden="true">{scroll.more ? '▾ ' : '▴ '}</span>
+                  {scroll.more ? 'More' : 'Top'}
+                </button>
               )}
             </div>
             {view.protocolSlots > 0 && (

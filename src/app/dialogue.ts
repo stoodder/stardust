@@ -244,6 +244,13 @@ interface Spoken {
 
 let lineSerial = 0;
 
+/** `ctx` as scene `sceneId` first played in: that scene not yet in `seen`. */
+function asFirstPlayed(ctx: StoryContext, sceneId: string): StoryContext {
+  return ctx.seen.includes(sceneId)
+    ? { ...ctx, seen: ctx.seen.filter((id) => id !== sceneId) }
+    : ctx;
+}
+
 /** Whether `speaker` is gone for good outside a battle's radio (Bricks after A3M3). */
 function speakerGone(speaker: SpeakerId, ctx: StoryContext): boolean {
   return speaker === 'bricks' && evaluateCondition({ mapAtLeast: 'a3_m04' }, ctx);
@@ -257,13 +264,18 @@ function speakerGone(speaker: SpeakerId, ctx: StoryContext): boolean {
  * and whether `policy` flashes (`noPolicy`: Purge's QUILL has no directives); a `silenceOnly`
  * rule holds only for a silence (Kip's pin, gone in A3M5's briefing).
  * `present`: who is on the radio (a battle), or null (anyone not gone for good).
+ * `scene`: the scene the line is in. A replayed scene looks as it first played: the speaker's
+ * variant and plate are judged with that scene not yet seen (Kip wears his pin on the ledger line
+ * every time A3M5's briefing runs; D151).
  */
 export function lineView(
   s: Spoken,
-  ctx: StoryContext,
+  storyCtx: StoryContext,
   text: TextContext,
   present: readonly SpeakerId[] | null,
+  scene: string | null = null,
 ): LineView {
+  const ctx = scene === null ? storyCtx : asFirstPlayed(storyCtx, scene);
   const def = SPEAKER_DEFS[s.speaker];
   const silence = s.text === '';
   const absent = present === null ? speakerGone(s.speaker, ctx) : !present.includes(s.speaker);
@@ -671,7 +683,13 @@ function settle(h: Holding): void {
     // hers, not an absent speaker's dark silence; T613), and a briefing's are in the room (Kip's
     // silence as he leaves his pin in A3M5's, lit so the pin's absence shows; D150): only one gone
     // for good shows dark.
-    const view = lineView(step.node, ctx, textContext(), inPerson(h.mode) ? null : onRadio());
+    const view = lineView(
+      step.node,
+      ctx,
+      textContext(),
+      inPerson(h.mode) ? null : onRadio(),
+      h.scene.id,
+    );
     if (!h.instant) {
       h.line = view;
       h.typedFrom = performance.now();
@@ -841,10 +859,14 @@ export function chooseOption(index: number): void {
   }
   const ctx = storyContext(h.map);
   // The pick joins the transcript as the player's own line.
-  h.transcript.push(lineView({ speaker: 'player', text: option.text }, ctx, textContext(), null));
+  h.transcript.push(
+    lineView({ speaker: 'player', text: option.text }, ctx, textContext(), null, h.scene.id),
+  );
   h.cursor = liveAdvance(h.scene, h.cursor, ctx, index);
   h.remember =
-    option.remember === undefined ? null : `${plateName(option.remember, ctx)} will remember that.`;
+    option.remember === undefined
+      ? null
+      : `${plateName(option.remember, asFirstPlayed(ctx, h.scene.id))} will remember that.`;
   // A choice right after this one gets its own lock from when it shows (D144 S6).
   h.choiceAt = 0;
   settle(h);
@@ -872,7 +894,13 @@ export function skipScene(): boolean {
   while (h.cursor.step.kind === 'line') {
     h.transcript.push(
       h.line ??
-        lineView(h.cursor.step.node, ctx, textContext(), inPerson(h.mode) ? null : onRadio()),
+        lineView(
+          h.cursor.step.node,
+          ctx,
+          textContext(),
+          inPerson(h.mode) ? null : onRadio(),
+          h.scene.id,
+        ),
     );
     h.cursor = liveAdvance(h.scene, h.cursor, ctx);
     h.line = null;
@@ -1191,7 +1219,7 @@ function showCommsLine(): void {
     return;
   }
   const node = step.node;
-  const view = lineView(node, ctx, textContext(), onRadio());
+  const view = lineView(node, ctx, textContext(), onRadio(), c.scene.id);
   const cue = c.prev !== null && c.prev.speaker !== view.speaker ? c.prev : null;
   c.button = node.button ?? null;
   dialogue.comms.value = {

@@ -119,6 +119,14 @@ describe("A3M5's Carried line", () => {
     expect(rigs.meter).toBeNull();
     expect(rigs.rewards?.medals.map((m) => m.name)).toContain('Perfect Core');
   });
+
+  it("the results fixture's asset is out of the run's max: Story's ×1.5 (D151)", () => {
+    const base = DEV_SAVES.after_a3m4_keep.build();
+    const story = { ...base, settings: { ...base.settings, difficulty: 'story' as const } };
+    const won = fixtureResult({ map: 'a3_m05', outcome: 'won' }, story);
+    expect(won.asset).toEqual({ name: 'Long Walk', value: 18, max: 18 });
+    expect(fixtureResult({ map: 'a3_m05', outcome: 'lost' }, story).asset?.value).toBe(9);
+  });
 });
 
 describe("A3M6's Sheltered", () => {

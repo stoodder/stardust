@@ -73,17 +73,24 @@
   color: var(--sd-white-1);
 }
 
-/* The tower grid: two columns of cards; it scrolls, with a thin bar like the links list, when the
-   collection outgrows the column (A3M5's 16 at 1280×720; D150). It gives up its height before the
-   Field Protocols under it do (shrink 1000 to their 1), down to two rows, so no card ever sits
-   under the footer. "▾ More" sits on its bottom edge while cards wait below (an overlay
-   scrollbar hides until scrolled). */
+/* The tower grid: two columns of cards; it scrolls when the collection outgrows the column
+   (A3M5's 16 at 1280×720; D150). It gives up its height before the Field Protocols under it do
+   (shrink 1000 to their 1), down to two rows, so no card ever sits under the footer. While it
+   scrolls, its own 2 px rail stands beside the cards (the native bar is hidden: an overlay one
+   hides until scrolled) and "▾ More" sits in the gutter under them, covering no card (D151). */
 .sd-lo-towers-wrap {
-  position: relative;
   display: flex;
   flex: 0 1000 auto;
   flex-direction: column;
+  gap: 2px;
   min-height: 60px;
+}
+
+.sd-lo-grid-row {
+  display: flex;
+  flex: 1 1 auto;
+  gap: 2px;
+  min-height: 0;
 }
 
 .sd-lo-towers {
@@ -92,13 +99,28 @@
   grid-template-columns: repeat(2, 1fr);
   align-content: start;
   gap: 3px 4px;
+  min-width: 0;
   min-height: 0;
   margin: 0;
   padding: 0;
   overflow-y: auto;
   list-style: none;
-  scrollbar-width: thin;
-  scrollbar-color: var(--sd-steel-1) var(--sd-ink-1);
+  scrollbar-width: none;
+}
+
+.sd-lo-rail {
+  position: relative;
+  flex: none;
+  width: 2px;
+  background: var(--sd-ink-3);
+}
+
+.sd-lo-thumb {
+  position: absolute;
+  right: 0;
+  left: 0;
+  min-height: 4px;
+  background: var(--sd-teal-3);
 }
 
 .sd-lo-tower,
@@ -411,18 +433,31 @@
   color: var(--sd-teal-4);
 }
 
-/* Clear of the scrollbar, on the grid's bottom edge; never takes a click. */
+/* In the gutter under the grid, right-aligned under the rail: a button that scrolls the grid. */
 .sd-lo-more {
-  position: absolute;
-  right: 10px;
-  bottom: 0;
+  flex: none;
+  align-self: flex-end;
+  margin: 0 1px 1px 0;
   padding: 1px 4px;
+  border: 0;
   background: var(--sd-ink-1);
   box-shadow: 0 0 0 1px var(--sd-teal-3);
   color: var(--sd-teal-4);
+  font: inherit;
   font-family: var(--font-heading);
+  line-height: inherit;
   text-transform: uppercase;
-  pointer-events: none;
+  cursor: pointer;
+}
+
+.sd-lo-more:hover {
+  background: var(--sd-ink-2);
+  color: var(--sd-white-0);
+}
+
+.sd-lo-more:focus-visible {
+  outline: 1px solid var(--sd-white-0);
+  outline-offset: 1px;
 }
 
 /* Field Protocols (T308): toggles like the ability rows, the effect under the name. */

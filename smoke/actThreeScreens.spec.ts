@@ -183,6 +183,14 @@ test("t714: QUILL's own list shows with its header line (A3M6, Rewrite)", async 
     .filter({ hasText: /QUILL\.DIRECTIVES/i });
   await expect(header.locator('.dlg-name')).toHaveText(/^QUILL\.SYS$/i);
   await shot(page, 't714', 11, 'quill-list');
+  // It stays up through QUILL's payoff line, Directive 1 (D151), then goes.
+  const now = page.getByTestId('briefing-lines').locator('.hud-briefing-line.now');
+  await readUntil(page, async () => /written by me/.test((await now.textContent()) ?? ''));
+  await expect(now).toContainText('Directive 1, written by me');
+  await expect(list).toBeVisible();
+  await page.getByRole('button', { name: /^(Skip|Next)$/ }).click();
+  await expect(now).toHaveCount(0);
+  await expect(list).toBeHidden();
 });
 
 test('t714: Pebble names you Waykeeper at Dome 1', async ({ page }) => {

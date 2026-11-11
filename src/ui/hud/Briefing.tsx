@@ -21,7 +21,7 @@ import { Icon } from './Icon.tsx';
 import { crate } from '../screens/crate.ts'; // T714: Zibzab's crate's card over A3M6's briefing
 import { CrateCard } from '../screens/crateCard.tsx';
 import { QUILL_LIST } from '../../content/dialogue/a3/a3_m06/quillList.ts'; // T714: QUILL's own list
-import { isQuillListHeader } from '../screens/quillList.ts';
+import { quillListUp } from '../screens/quillList.ts';
 import { QuillListCard } from '../screens/quillListCard.tsx';
 
 /**
@@ -125,7 +125,7 @@ export function Briefing({ view }: { view: SceneView }) {
   // The portrait shows whoever speaks now (or spoke last).
   const speaker = view.line ?? view.transcript.at(-1) ?? null;
   const clockIn = useFocusOn(view.ended, view.ended);
-  const listUp = isQuillListHeader(view.line);
+  const listUp = quillListUp(view.line, view.transcript.at(-1) ?? null);
   return (
     <div class="hud-briefing-scrim">
       <section
@@ -170,8 +170,9 @@ export function Briefing({ view }: { view: SceneView }) {
           </div>
         </div>
         <LineAnnouncer line={view.line} />
-        {/* A3M6 under Rewrite (T714): while the `system` header line is on screen, the list QUILL
-            wrote stands where the intel and medals do (they come back with the next line). */}
+        {/* A3M6 under Rewrite (T714): from the `system` header line through QUILL's Directive 1
+            (D151), the list QUILL wrote stands where the intel and medals do (they come back
+            after). */}
         {listUp && view.line !== null ? (
           <QuillListCard entries={QUILL_LIST} />
         ) : (

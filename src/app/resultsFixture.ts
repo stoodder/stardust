@@ -11,7 +11,7 @@ import { runEnd, type SaveData } from '../meta/index.ts';
 import type { FlagRuleStats } from '../story/flags.ts';
 import { DEV_SCENES } from '../ui/dialogue/dev.ts';
 import type { RunAsset, RunBearers, RunEscort, RunResult } from '../ui/screens/state.ts';
-import { bearerTotal, escortTotal } from '../sim/index.ts';
+import { bearerTotal, createSim, escortTotal } from '../sim/index.ts';
 import { battleConfig } from './battleSetup.ts';
 import { meterLabelText } from './hudText.ts';
 import type { ResultsScenes } from './router.ts';
@@ -90,7 +90,7 @@ function escortOf(f: ResultsFixture, save: SaveData | null): { escort?: RunEscor
 
 /**
  * The fixture's Protect meter and bearers (A3M5; T712): the asset whole on a win and at half on a
- * loss; the bearers its flags walk (`bearerTotal`, as the battle counts them), every one home on a
+ * loss, out of the run's max (the sim's `maxAsset`: Story ×1.5); the bearers its flags walk (`bearerTotal`, as the battle counts them), every one home on a
  * win and half of them on a loss, unless `f.bearers` says. None on a map with no asset or bearers.
  */
 function protectOf(
@@ -101,7 +101,8 @@ function protectOf(
   const map = config.content.maps[f.map];
   if (map === undefined || map.asset === null) return {};
   const won = f.outcome === 'won';
-  const max = map.asset.integrity;
+  // The run's own meter: the asset's integrity under the run's modifiers (Story's ×1.5).
+  const max = createSim(config).state.maxAsset;
   const asset = { name: map.asset.name, value: won ? max : Math.floor(max / 2), max };
   const total = bearerTotal(map, config.scriptFlags);
   if (total === 0) return { asset };

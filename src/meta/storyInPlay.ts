@@ -1,11 +1,14 @@
 // What the save's story changes in a battle (meta-runtime.md § Story transactions; D146): C4's
 // effects in play (`C4_IN_PLAY`: Purge's −2 Everglow armor from A3M5 on, QUILL offline on A3M5
 // under Rewrite), and the Technician abilities slot 1 can't hold on a map (its `lockedAbilities`
-// whose condition holds over the save's flags: System Reboot on A3M5 under Rewrite). Pure;
+// whose condition holds over the run's flags: System Reboot on A3M5 under Rewrite). Pure;
 // app/battleSetup.ts and the loadout screen read it.
 import { CAMPAIGN_PLAN_IDS } from '../content/campaign.ts';
-import type { ConditionDef, IdSpace } from '../content/types.ts';
+import type { CompiledMapDef } from '../content/compiled.ts';
+import { flagConditionHolds } from '../content/flagConditions.ts';
+import type { IdSpace } from '../content/types.ts';
 import { isCampaignMapId } from '../content/dialogue/rules.ts';
+import { gatedFlagDefaults } from '../sim/escort.ts';
 import type { Modifier } from '../sim/index.ts';
 import { evaluateCondition } from '../story/conditions.ts';
 import { scriptFlagsOf } from '../story/flags.ts';
@@ -40,32 +43,17 @@ export function quillOffline(mapId: string, save: SaveData | null): boolean {
   return save !== null && mapId === off.map && evaluateCondition(off.when, baseStoryContext(save));
 }
 
-/**
- * Whether a map condition holds over the save's script flags before the battle: its `flag` atoms
- * and `all`/`any`/`not` over them; every run atom (a stat, a leak, a tower count) is false, since
- * nothing has run yet.
- */
-function flagsHold(cond: ConditionDef<IdSpace>, flags: Readonly<Record<string, unknown>>): boolean {
-  if ('flag' in cond) return flags[cond.flag] === cond.eq;
-  if ('all' in cond) return cond.all.every((c) => flagsHold(c, flags));
-  if ('any' in cond) return cond.any.some((c) => flagsHold(c, flags));
-  if ('not' in cond) return !flagsHold(cond.not, flags);
-  return false;
-}
+/** What `abilitiesOffOn` reads of a map: its locks, and what gates its flags' defaults. */
+export type LockingMap = Pick<CompiledMapDef<IdSpace>, 'lockedAbilities' | 'escort' | 'builds'> &
+  Partial<Pick<CompiledMapDef<IdSpace>, 'allies'>>;
 
 /**
  * The Technician abilities slot 1 can't hold on `map` for `save`: each `lockedAbilities` row whose
- * condition holds over the save's flags (System Reboot on A3M5 under Rewrite).
+ * condition holds (System Reboot on A3M5 under Rewrite). Judged as createSim judges it (D151), by
+ * `flagConditionHolds` over the run's script flags: the save's, over the map's gated defaults
+ * (`gatedFlagDefaults`), so the loadout never offers what the sim refuses.
  */
-export function abilitiesOffOn(
-  map: {
-    readonly lockedAbilities: readonly {
-      readonly ability: string;
-      readonly when: ConditionDef<IdSpace>;
-    }[];
-  },
-  save: SaveData,
-): string[] {
-  const flags: Readonly<Record<string, unknown>> = scriptFlagsOf(save.story.flags);
-  return map.lockedAbilities.filter((l) => flagsHold(l.when, flags)).map((l) => l.ability);
+export function abilitiesOffOn(map: LockingMap, save: SaveData): string[] {
+  const flags = gatedFlagDefaults(map, scriptFlagsOf(save.story.flags));
+  return map.lockedAbilities.filter((l) => flagConditionHolds(l.when, flags)).map((l) => l.ability);
 }

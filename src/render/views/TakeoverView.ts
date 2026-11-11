@@ -1,7 +1,9 @@
 // "Shareholder Value" (T707's minimal view, polished by T730a; takeoverLook.ts has the rules): the
 // hazard frame and launch gauge on the hangar door (where the sprite's `tell` opens it, by the
 // boss's drawn facing: UnitAnchors) before each launch, Hostile Takeover's laser from the dish's
-// lens to each tower it picked with brackets closing on it, and the jettison's burst. Its plates
+// lens to each tower it picked with brackets closing on it (but one that stays jam-immune past the
+// landing, jamLook.ts `tellDoomed`: a System Reboot spent it; when every one is, JamView fizzles
+// the laser, D151), and the jettison's burst. Its plates
 // flying off and landing on their opened `crash_*` tiles are PlatformSiteView's (T730b). The door
 // and the laser redraw each frame into one Graphics on the vfx layer. Allocation-free per frame:
 // the scratch points are module-level.
@@ -21,7 +23,7 @@ import {
 } from '../../sim/index.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
 import { TELL_STEP_TICKS } from '../vfx/fxTiming.ts';
-import { hexOf } from './jamLook.ts';
+import { hexOf, tellDoomed } from './jamLook.ts';
 import {
   DOOR_COLOR,
   DOOR_FRAME_PX,
@@ -178,7 +180,7 @@ export class TakeoverView {
         const progress = tellProgress(e.jamTellTicks, p.takeover.tellTicks);
         for (let k = 0; k < e.takeoverTowers.length; k++) {
           const t = findTower(state.towers, e.takeoverTowers[k]!); // k < length
-          if (t === null) continue;
+          if (t === null || tellDoomed(t.jamImmuneTicks, e.jamTellTicks)) continue;
           lasers++;
           this.#drawLaser(g, t, progress);
         }

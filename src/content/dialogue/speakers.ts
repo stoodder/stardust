@@ -208,7 +208,8 @@ export const SPEAKERS = {
     portrait: 'portrait.kip',
     // The Reclamation Lead's coat from Act II. In A3M5's briefing he hands over the ledger with the
     // #1 pin still on (`act2`), and his silence is where it's gone (`act3`: pinholes, no cap, the
-    // ledger), seen before nobody mentions it (D150). After the briefing, `act3` on every map.
+    // ledger), seen before nobody mentions it (D150). After the briefing, `act3` on every map. A
+    // replayed briefing looks as it first played (a scene's lines judge it unseen; D151).
     variants: [
       {
         variant: 'act3',

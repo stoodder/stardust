@@ -1,7 +1,7 @@
 // A3M5's balance-test runner (src/balance/a3m5*.test.ts): one run of a harness label (or a build)
 // on A3M5, logging what its beats need: the waves' starts and countdowns, the bearer groups' walks,
 // Cut the Feed and its surge, the platform's phases, cues, jams (by source and wave), plates, and
-// where it was driven off.
+// where it was driven off. `human` plays par's builds with the cluster-aware caster (clusterCaster.ts).
 import type { CompiledBuild, CompiledContent } from '../../content/compiled.ts';
 import { BEARER_WAVES } from '../../content/maps/a3_m05/map.ts';
 import type { ScriptFlags } from '../../sim/index.ts';
@@ -10,6 +10,7 @@ import type { DeepReadonly } from '../../shared/types.ts';
 import { flagsFor } from '../checks.ts';
 import { buildFor } from '../harness.ts';
 import { referenceRunProfile, runConfig, type RunProfile } from '../profile.ts';
+import { castsStripped, clusterCaster } from './clusterCaster.ts';
 
 export const TICK_HZ = 60;
 /** The platform's route length (A2M4's road, in tiles to the core): where it would leak. */
@@ -61,15 +62,19 @@ export function runA3m5(
     readonly difficulty?: 'standard' | 'story';
     readonly flags?: ScriptFlags;
     readonly profile?: Pick<RunProfile, 'difficulty' | 'modifiers' | 'specs'>;
+    /** Par's casts taken out, and the cluster-aware human caster casting instead (D151). */
+    readonly human?: true;
   } = {},
 ): A3m5Run {
   const map = c.maps.a3_m05;
   const flags = opts.flags ?? flagsFor(label, map) ?? {};
-  const build = opts.build ?? buildFor(label, map, c)!;
+  const scripted = opts.build ?? buildFor(label, map, c)!;
+  const build = opts.human === true ? castsStripped(scripted) : scripted;
   const difficulty = opts.difficulty ?? (label.endsWith('@story') ? 'story' : 'standard');
   const profile = opts.profile ?? referenceRunProfile(map, c, difficulty, undefined, flags);
   const sim = createSim(runConfig(c, map, build, profile, 1, flags));
   const exec = createBuildExecutor(sim, build);
+  const cast = opts.human === true ? clusterCaster(sim, c, process.env.HEED ? { waves: (process.env.HEEDW ?? '13').split(',').map(Number), route: 'hunt', at: [0, 6] } : undefined) : null;
   const st = sim.state;
   const out: SimEvent[] = [];
   const at: Record<string, number[]> = {};
@@ -90,6 +95,7 @@ export function runA3m5(
   };
   while (st.outcome === 'playing' && st.tick < 60 * 60 * 30) {
     exec.beforeTick();
+    cast?.();
     sim.step();
     out.length = 0;
     sim.drainEvents(out);

@@ -17,14 +17,18 @@
 //   `teal.4` power-on column rises through it (`rebootColumn`: up over the first third of
 //   REBOOT_MS, then stepping out), with a `teal.4` ring (TransientFx); every tower it covered gets
 //   a smaller `white.1` ring. Under reduced motion the column stands whole and steps out.
-// - **The fizzle** (D150: a cancelled tell reads, so the counter teaches its timing): a tell that
-//   can no longer land snaps off at once, a `violet.4` puff where its tip was and `FIZZLED` rising
-//   over it in `teal.4` (the 3×5 font). A tell is cancelled when the sim interrupts it (Stasis on a
-//   non-boss, Unnerved: JamInterrupted; the ring's and Hostile Takeover's too), or the moment it is
-//   doomed (`tellDoomed`): a tendril whose tower stays jam-immune past its landing (a System Reboot
-//   during the tell), a ring whose every tower in reach does (`ringDoomed`). Doomed is read from
-//   the state each frame and holds once true (immunity and the tell count down together), so the
-//   sim needs no event for it. Under reduced motion the puff holds its size and fades.
+// - **The fizzle** (D150, D151: a cancelled tell reads, so the counter teaches its timing): a tell
+//   that lands on nothing snaps off with a `violet.4` puff where its tip was and `FIZZLED` rising
+//   over it in `teal.4` (the 3×5 font), held whole FIZZLE_HOLD_MS at 1× and kept up (TransientFx
+//   `keep`) so a crowd of floaters can't take it over. It shows when the sim interrupts a tell
+//   (Stasis on a non-boss, Unnerved: JamInterrupted; the ring's and Hostile Takeover's too), and
+//   for a tell that can no longer land: a tendril the moment it's doomed (`tellDoomed`: its tower
+//   stays jam-immune past the landing, a System Reboot in the tell), a Takeover laser the moment
+//   every tower it picked is (`lasersDoomed`). Its targets are fixed and immunity only counts down
+//   with the tell, so doomed is read from the state each frame and holds once true. A ring has no
+//   fixed targets (a tower built in reach after a Reboot isn't immune), so it fizzles only on its
+//   landing tick (`ringLanded`) and only if it jammed nothing (no TowerJammed from it). Under
+//   reduced motion the puff holds its size and fades.
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
 import type { SpriteId } from '../../content/sprites/index.ts';
 import { JAM_MAX_SEC } from '../../content/rules.ts';
@@ -59,6 +63,9 @@ export const FIZZLE_COLOR: ColorName = 'teal.4';
 export const FIZZLE_PUFF: ColorName = 'violet.4';
 export const FIZZLE_PUFF_TILES = 0.4;
 export const FIZZLE_MS = 360;
+/** FIZZLED's whole time up (ms) and how long of it it holds at full alpha (fxTiming `fadeAlpha`). */
+export const FIZZLE_TEXT_MS = 1600;
+export const FIZZLE_HOLD_MS = FIZZLE_TEXT_MS / 2;
 export const FIZZLE_BODY_LIFT_PX = 22;
 export const FIZZLE_BOSS_LIFT_PX = 40;
 
@@ -119,38 +126,42 @@ export function tellDoomed(immuneTicks: number, tellLeft: number): boolean {
   return tellLeft > 0 && immuneTicks > tellLeft;
 }
 
-/** A tower as `ringDoomed` reads it. */
-interface RingTower {
+/** A tower as `lasersDoomed` reads it. */
+interface PickedTower {
   readonly alive: boolean;
-  readonly def: unknown;
-  readonly x: number;
-  readonly y: number;
+  readonly uid: number;
   readonly jamImmuneTicks: number;
 }
 
 /**
- * Whether a ring centred on (x, y) reaching `radiusTiles`, `tellLeft` ticks from landing, can no
- * longer jam anything: at least one tower stands in its reach and every one of them is doomed
- * (`tellDoomed`). With none in reach it isn't (the ring only starts with one; a tower sold
- * mid-ring is the player's business, not a fizzle).
+ * Whether a Hostile Takeover laser, `tellLeft` ticks from landing on the towers `picked`, can no
+ * longer jam any: at least one of them still stands and every one standing is doomed
+ * (`tellDoomed`). With none standing it isn't (a sale is the player's business, not a fizzle).
  */
-export function ringDoomed(
-  x: number,
-  y: number,
-  radiusTiles: number,
+export function lasersDoomed(
+  picked: readonly number[],
   tellLeft: number,
-  towers: { readonly used: number; readonly items: readonly RingTower[] },
+  towers: { readonly used: number; readonly items: readonly PickedTower[] },
 ): boolean {
-  const r2 = radiusTiles * radiusTiles;
-  let inReach = 0;
-  for (let i = 0; i < towers.used; i++) {
-    const t = towers.items[i]!; // i < used ≤ items.length
-    if (!t.alive || t.def === null) continue;
-    const dx = t.x - x;
-    const dy = t.y - y;
-    if (dx * dx + dy * dy > r2) continue;
-    if (!tellDoomed(t.jamImmuneTicks, tellLeft)) return false;
-    inReach++;
+  let standing = 0;
+  for (let k = 0; k < picked.length; k++) {
+    const uid = picked[k]!; // k < length
+    for (let i = 0; i < towers.used; i++) {
+      const t = towers.items[i]!; // i < used ≤ items.length
+      if (!t.alive || t.uid !== uid) continue;
+      if (!tellDoomed(t.jamImmuneTicks, tellLeft)) return false;
+      standing++;
+      break;
+    }
   }
-  return inReach > 0;
+  return standing > 0;
+}
+
+/**
+ * Whether a ring seen `left` ticks from landing has landed `elapsed` ticks later (it stopped
+ * telling then: the sim counts its tell down to the landing tick, sim/enemyAbilities/jamRing.ts).
+ * One that stops earlier was dropped (out of reach, standing down) or interrupted, not landed.
+ */
+export function ringLanded(left: number, elapsed: number): boolean {
+  return left > 0 && left <= elapsed;
 }

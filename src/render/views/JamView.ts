@@ -3,19 +3,27 @@
 // `fx.jam_static` crackling over it (the tower itself draws in its steel `+jammed` variant:
 // TowerView) and its countdown ring round its base; and System Reboot's pops: each tower it freed
 // flashes white (`flashTower`, TowerView's upgrade flash) under a teal power-on column and ring,
-// every tower it covered a smaller white ring (TransientFx); and the fizzle (D150; jamLook.ts): a
-// tell interrupted (JamInterrupted) or doomed (`tellDoomed`, `ringDoomed`: a System Reboot in the
-// tell) snaps off with a puff and FIZZLED where its tendril's tip was, or over the jammer (an
-// Auditor's ring, Hostile Takeover's laser). The tendrils, rings, and columns redraw each frame
-// into one Graphics on the vfx layer, the static in pooled sprites over it. Allocation-free per
-// frame: the scratch points are module-level, the Graphics redraws in place, the static and column
-// slots are reused (the static pool grows the first time more towers are Jammed at once than it
-// holds), and the fizzle's books are fixed typed arrays (past FIZZLE_SLOTS a fizzle goes unshown).
+// every tower it covered a smaller white ring (TransientFx); and the fizzle (D150, D151;
+// jamLook.ts): a tell interrupted (JamInterrupted), doomed (`tellDoomed`, `lasersDoomed`: a System
+// Reboot in a tendril's or a Takeover laser's tell), or a ring landed on nothing (`ringLanded`, no
+// TowerJammed from it) snaps off with a puff and FIZZLED where its tendril's tip was, or over the
+// jammer (an Auditor's ring, Hostile Takeover's laser). The tendrils, rings, and columns redraw
+// each frame into one Graphics on the vfx layer, the static in pooled sprites over it.
+// Allocation-free per frame: the scratch points are module-level, the Graphics redraws in place,
+// the static and column slots are reused (the static pool grows the first time more towers are
+// Jammed at once than it holds), and the fizzle's books are fixed typed arrays (past FIZZLE_SLOTS a
+// fizzle goes unshown).
 import type * as Phaser from 'phaser';
 import type { IdSpace } from '../../content/types.ts';
 import type { Bus } from '../../shared/bus.ts';
 import type { DeepReadonly } from '../../shared/types.ts';
-import { ringTelling, type Enemy, type SimEvent, type Tower } from '../../sim/index.ts';
+import {
+  ringTelling,
+  takeoverTelling,
+  type Enemy,
+  type SimEvent,
+  type Tower,
+} from '../../sim/index.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
 import {
   ARC_COLOR,
@@ -26,12 +34,14 @@ import {
   FIZZLE_PUFF,
   FIZZLE_PUFF_TILES,
   FIZZLE_TEXT,
+  FIZZLE_TEXT_MS,
   hexOf,
   jamArc,
+  lasersDoomed,
   REBOOT_COLOR,
   REBOOT_COLUMN_W,
   rebootColumn,
-  ringDoomed,
+  ringLanded,
   RING_SEGMENTS,
   ringPoint,
   STATIC_ANIM,
@@ -130,6 +140,16 @@ export class JamView {
   /** Jammers interrupted since the last frame (JamInterrupted). */
   readonly #interrupted = new Int32Array(FIZZLE_SLOTS);
   #interruptedN = 0;
+  /** The jammers a jam landed from since the last frame (TowerJammed's `source`). */
+  readonly #landedFrom = new Int32Array(FIZZLE_SLOTS);
+  #landedFromN = 0;
+  /** More landed than the books hold: no ring fizzles this frame (it can't be told). */
+  #landedOverflow = false;
+  /** Each ring under way last frame: its Auditor and its tell's ticks left; that frame's tick. */
+  readonly #ringUid = new Int32Array(FIZZLE_SLOTS);
+  readonly #ringLeft = new Int32Array(FIZZLE_SLOTS);
+  #ringN = 0;
+  #lastTick = -1;
   /** Tendril tells and jams seen since the view was made, Reboots played, fizzles (smoke's). */
   tellsSeen = 0;
   jamsSeen = 0;
@@ -160,8 +180,10 @@ export class JamView {
       bus.on('JamTell', () => {
         this.tellsSeen++;
       }),
-      bus.on('TowerJammed', () => {
+      bus.on('TowerJammed', (ev) => {
         this.jamsSeen++;
+        if (this.#landedFromN < FIZZLE_SLOTS) this.#landedFrom[this.#landedFromN++] = ev.source;
+        else this.#landedOverflow = true;
       }),
       bus.on('JamInterrupted', (ev) => {
         if (this.#interruptedN < FIZZLE_SLOTS) this.#interrupted[this.#interruptedN++] = ev.uid;
@@ -204,18 +226,29 @@ export class JamView {
     const g = this.#g;
     g.clear();
     const enemies = state.enemies;
+    this.#fizzleEmptyRings(enemies, state.tick);
     this.#fizzleInterrupted(enemies);
     let tells = 0;
     this.#tipN = 0;
     this.#nextDoomedN = 0;
+    this.#ringN = 0;
     for (let i = 0; i < enemies.used; i++) {
       const e = enemies.items[i]!; // i < used ≤ items.length
+      if (!e.alive) continue;
+      if (takeoverTelling(e)) {
+        // Hostile Takeover's laser: doomed once every tower it picked stays immune past it.
+        if (lasersDoomed(e.takeoverTowers, e.jamTellTicks, state.towers)) {
+          this.#doom(e.uid, e.x, e.y, FIZZLE_BOSS_LIFT_PX);
+        }
+        continue;
+      }
       const jam = e.def?.jam ?? null;
-      if (!e.alive || jam === null) continue;
+      if (jam === null) continue;
       if (jam.kind === 'ring') {
-        if (!ringTelling(e)) continue;
-        if (ringDoomed(e.x, e.y, jam.radiusTiles, e.jamTellTicks, state.towers)) {
-          this.#doom(e.uid, e.x, e.y, FIZZLE_BODY_LIFT_PX);
+        // A ring fizzles on its landing tick, if it jams nothing (`#fizzleEmptyRings`).
+        if (ringTelling(e) && this.#ringN < FIZZLE_SLOTS) {
+          this.#ringUid[this.#ringN] = e.uid;
+          this.#ringLeft[this.#ringN++] = e.jamTellTicks;
         }
         continue;
       }
@@ -275,10 +308,48 @@ export class JamView {
     return false;
   }
 
-  /** A doomed tell this frame: fizzles at grid (x, y), `liftPx` up, the first frame it's doomed. */
+  /**
+   * A doomed tell this frame: fizzles at grid (x, y), `liftPx` up, the first frame it's doomed.
+   * With the books full it isn't shown (unbooked, it would fizzle again every frame).
+   */
   #doom(uid: number, x: number, y: number, liftPx: number): void {
+    if (this.#nextDoomedN >= FIZZLE_SLOTS) return;
+    this.#nextDoomed[this.#nextDoomedN++] = uid;
     if (!this.#wasDoomed(uid)) this.#fizzle(x, y, liftPx);
-    if (this.#nextDoomedN < FIZZLE_SLOTS) this.#nextDoomed[this.#nextDoomedN++] = uid;
+  }
+
+  /**
+   * The rings under way last frame that have landed since (`ringLanded`) on nothing (no
+   * TowerJammed from them): each fizzles over its Auditor. One interrupted fizzles as such.
+   */
+  #fizzleEmptyRings(enemies: Pool<Enemy>, tick: number): void {
+    const elapsed = tick - this.#lastTick;
+    const n = this.#ringN;
+    const blind = this.#landedOverflow;
+    this.#lastTick = tick;
+    this.#ringN = 0;
+    this.#landedOverflow = false;
+    const landed = this.#landedFromN;
+    this.#landedFromN = 0;
+    if (blind) return;
+    for (let r = 0; r < n; r++) {
+      const uid = this.#ringUid[r]!; // r < n ≤ FIZZLE_SLOTS
+      if (!ringLanded(this.#ringLeft[r]!, elapsed)) continue;
+      if (this.#listed(this.#landedFrom, landed, uid)) continue;
+      if (this.#listed(this.#interrupted, this.#interruptedN, uid)) continue;
+      for (let i = 0; i < enemies.used; i++) {
+        const e = enemies.items[i]!; // i < used ≤ items.length
+        if (!e.alive || e.uid !== uid) continue;
+        if (!ringTelling(e)) this.#fizzle(e.x, e.y, FIZZLE_BODY_LIFT_PX);
+        break;
+      }
+    }
+  }
+
+  /** Whether `uid` is among the first `n` of `list`. */
+  #listed(list: Int32Array, n: number, uid: number): boolean {
+    for (let k = 0; k < n; k++) if (list[k] === uid) return true;
+    return false;
   }
 
   /**
@@ -316,7 +387,7 @@ export class JamView {
   #fizzle(x: number, y: number, liftPx: number): void {
     this.fizzles++;
     this.#fx.ring(x, y, FIZZLE_PUFF_TILES, FIZZLE_PUFF, FIZZLE_MS, !this.#reducedMotion(), liftPx);
-    this.#fx.floatText(FIZZLE_TEXT, FIZZLE_COLOR, x, y, liftPx + 4);
+    this.#fx.floatText(FIZZLE_TEXT, FIZZLE_COLOR, x, y, liftPx + 4, FIZZLE_TEXT_MS, true);
   }
 
   #drawTendril(
@@ -461,6 +532,10 @@ export class JamView {
     this.#nextDoomedN = 0;
     this.#tipN = 0;
     this.#interruptedN = 0;
+    this.#landedFromN = 0;
+    this.#landedOverflow = false;
+    this.#ringN = 0;
+    this.#lastTick = -1;
     this.#tells = 0;
     this.#jammed = 0;
     this.#columnsShown = 0;

@@ -120,6 +120,8 @@ interface Decal {
 /** A floating number rising from a point. */
 interface Float extends FloatSlot {
   active: boolean;
+  /** A callout newer floaters don't take over while it's up (FIZZLED: jamLook.ts). */
+  keep: boolean;
   ms: number;
   durationMs: number;
   x: number;
@@ -300,6 +302,7 @@ export class TransientFx {
       layers.overlay.add(img);
       this.#floats.push({
         active: false,
+        keep: false,
         ms: 0,
         durationMs: FLOAT_MS,
         x: 0,
@@ -650,7 +653,8 @@ export class TransientFx {
 
   /**
    * A floating number or callout (the 3×5 font) rising from grid (x, y), `liftPx` above the
-   * ground, for `ms` (a callout stays up longer, to be read).
+   * ground, for `ms` (a callout stays up longer, to be read). A `keep` one isn't taken over by a
+   * newer floater while it's up (the oldest of the rest is), unless every slot is kept.
    */
   floatText(
     text: string,
@@ -659,9 +663,15 @@ export class TransientFx {
     y: number,
     liftPx: number,
     ms = FLOAT_MS,
+    keep = false,
   ): void {
     // Nothing rises over what the player can reach (D134 K2).
     if (this.#keepClear?.near(x, y) === true) return;
+    for (let k = 0; k < MAX_FLOATS; k++) {
+      const q = this.#floats[this.#nextFloat]!; // index < MAX_FLOATS
+      if (!q.active || !q.keep) break;
+      this.#nextFloat = (this.#nextFloat + 1) % MAX_FLOATS;
+    }
     const f = this.#floats[this.#nextFloat]!; // index < MAX_FLOATS
     gridToScreen(x, y, this.ctx.origin, pos);
     const key = floatTextTexture(this.ctx.scene, text, color);
@@ -687,6 +697,7 @@ export class TransientFx {
     f.w = w;
     f.ms = 0;
     f.durationMs = ms;
+    f.keep = keep;
     f.active = true;
     this.#syncFloat(f);
   }

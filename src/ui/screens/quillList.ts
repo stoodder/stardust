@@ -1,9 +1,9 @@
 // QUILL's own list (act3.md § A3M6, *Briefing*, under C4 Rewrite; T714): in A3M6's briefing,
 // between QUILL's "Do you want to see?" and its Directive 1, a `system` line heads the list it
-// wrote while it was dark ("QUILL.DIRECTIVES (rewritten offline). Entries: 5.", T722's), and while
-// that line is on screen the list itself shows as a card over the briefing: the five directives in
-// its own words (content/dialogue/a3/a3_m06/quillList.ts `QUILL_LIST`). Pure; the card is
-// quillListCard.tsx.
+// wrote while it was dark ("QUILL.DIRECTIVES (rewritten offline). Entries: 5.", T722's), and from
+// that line through QUILL's next (its payoff, "Directive 1, written by me"; D151) the list itself
+// shows as a card over the briefing: the five directives in its own words
+// (content/dialogue/a3/a3_m06/quillList.ts `QUILL_LIST`). Pure; the card is quillListCard.tsx.
 
 /** The header line's opening words: a `system` line starting so heads QUILL's list. */
 export const QUILL_LIST_HEADER = 'QUILL.DIRECTIVES';
@@ -23,4 +23,13 @@ export function isQuillListHeader(l: ListLine | null): boolean {
 export function directiveParts(entry: string): { readonly label: string; readonly words: string } {
   const m = /^(Directive \d+):\s*(.*)$/u.exec(entry);
   return m === null ? { label: '', words: entry } : { label: m[1]!, words: m[2]! };
+}
+
+/**
+ * Whether the list card is up: its header is the line on screen, or QUILL's line right after the
+ * header is (`previous`: the line before the one on screen). It goes with the line after that.
+ */
+export function quillListUp(line: ListLine | null, previous: ListLine | null): boolean {
+  if (isQuillListHeader(line)) return true;
+  return line !== null && line.speaker === 'quill' && isQuillListHeader(previous);
 }

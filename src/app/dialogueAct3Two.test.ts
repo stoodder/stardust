@@ -37,7 +37,7 @@ import {
   skipScene,
 } from './dialogue.ts';
 import { createHost, type Host } from './host.ts';
-import { activeSave, initSaves, loadDevSave } from './save.ts';
+import { activeSave, initSaves, loadDevSave, updateActiveSave } from './save.ts';
 
 vi.mock('./battle.ts', () => ({
   startBattle: () => {
@@ -166,6 +166,15 @@ describe('portraits and frames', () => {
     expect(silence.portrait?.variant).toBe('act3');
     // After the briefing (its radio, its debrief) and on every map after: pinholes.
     expect(variantOf('kip', { ...ctxOn('a3_m05'), seen: ['a3_m05_brief'] })).toBe('act3');
+    // Inside the briefing, a replay looks as the first play did (D151).
+    const replay = lineView(
+      { speaker: 'kip', text: 'The ledger.' },
+      { ...ctxOn('a3_m05'), seen: ['a3_m05_brief'] },
+      TEXT,
+      null,
+      'a3_m05_brief',
+    );
+    expect(replay.portrait?.variant).toBe('act2');
     expect(variantOf('kip', ctxOn('a3_m06'))).toBe('act3');
     // The real briefing has the silence, after the ledger line.
     const brief = SCENES.a3_m05_brief!.nodes.filter(
@@ -310,8 +319,8 @@ describe('in a battle', () => {
     expect(dialogue.scene.value).toBeNull();
   });
 
-  it("A3M5's briefing: Kip's silence is lit, in the frame without the pin (D150)", () => {
-    bind('a3_m05', 'after_a3m4_keep');
+  /** Plays A3M5's briefing through; Kip's lines as drawn. */
+  const kipInBriefing = (): { variant: string | null; dark: boolean; silence: boolean }[] => {
     playScene(SCENES.a3_m05_brief!, { mode: 'briefing' });
     const kip: { variant: string | null; dark: boolean; silence: boolean }[] = [];
     for (let i = 0; i < 12 && dialogue.scene.value !== null; i++) {
@@ -323,10 +332,29 @@ describe('in a battle', () => {
       nextScene();
       nextScene();
     }
-    expect(kip).toEqual([
-      { variant: 'act2', dark: false, silence: false },
-      { variant: 'act3', dark: false, silence: true },
-    ]);
+    return kip;
+  };
+  const KIP_IN_BRIEFING = [
+    { variant: 'act2', dark: false, silence: false },
+    { variant: 'act3', dark: false, silence: true },
+  ];
+
+  it("A3M5's briefing: Kip's silence is lit, in the frame without the pin (D150)", () => {
+    bind('a3_m05', 'after_a3m4_keep');
+    expect(kipInBriefing()).toEqual(KIP_IN_BRIEFING);
+  });
+
+  it("A3M5's briefing replays as it first played: the pin on Kip's ledger line (D151)", () => {
+    bind('a3_m05', 'after_a3m4_keep');
+    // Played once before (the save has it seen) and relaunched from the star map.
+    const seen = (sv: SaveData): SaveData => ({
+      ...sv,
+      story: { ...sv.story, seen: [...sv.story.seen, 'a3_m05_brief'] },
+    });
+    expect(updateActiveSave(seen).ok).toBe(true);
+    expect(activeSave()!.story.seen).toContain('a3_m05_brief');
+    // The briefing from the star map: the briefing runs again, the pin still on the ledger line.
+    expect(kipInBriefing()).toEqual(KIP_IN_BRIEFING);
   });
 
   it('A3M5 under Keep (and A3M6 under Rewrite): QUILL speaks', () => {

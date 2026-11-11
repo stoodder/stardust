@@ -399,7 +399,8 @@ export function bindHud(
   );
   hud.abilities.value = abilityViews;
   // What the map locks under the save's story (T731: A3M5's System Reboot under Rewrite), dark
-  // beside the bar, unless a slot holds it anyway (a dev battle's config).
+  // beside the bar. createSim refuses a slot 1 holding one; the filter keeps any ability a slot
+  // does hold (a companion's slot 2) off the dark row.
   hud.lockedAbilities.value = lockedAbilityViews(
     sim.config.content.abilities,
     (saveInfo.lockedAbilities ?? lockedOnMap(sim.map)).filter(

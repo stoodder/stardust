@@ -93,7 +93,8 @@ test('A2: the tower grid scrolls; the mouse reaches the Sproing Pad at 1280×720
   const sproing = page.getByRole('button', { name: /^Sproing Pad,/ });
   await page.mouse.move(gridBox.x + gridBox.width / 2, gridBox.y + gridBox.height / 2);
   await page.mouse.wheel(0, 600);
-  await expect(more).toBeHidden();
+  // At the bottom, More reads Top (D151).
+  await expect(more).toHaveText(/Top/);
   const box = (await sproing.boundingBox())!;
   expect(box.y + box.height).toBeLessThanOrEqual(gridBox.y + gridBox.height + 0.5);
   const cx = box.x + box.width / 2;

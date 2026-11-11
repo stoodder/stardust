@@ -6,6 +6,9 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { createNewSave, MemoryStore, shelf, buy, type SaveData } from '../meta/index.ts';
 import { abilitiesOffOn, onOrAfter, quillOffline, storyModifiers } from '../meta/storyInPlay.ts';
 import { C4_IN_PLAY } from '../meta/storyTransactions.ts';
+import { createSim } from '../sim/index.ts';
+import type { CompiledMapDef } from '../content/compiled.ts';
+import type { IdSpace } from '../content/types.ts';
 import { runResult } from '../ui/screens/state.ts';
 import { battleConfig } from './battleSetup.ts';
 import { withSceneEffects } from './dialogue.ts';
@@ -191,20 +194,33 @@ describe("C4's effects in a battle (core-loop.md § 6.11)", () => {
   });
 
   it("keeps out of slot 1 the map's locked abilities under the save's flags", () => {
-    const map = {
-      lockedAbilities: [
-        { ability: 'system_reboot', when: { flag: 'quill_choice', eq: 'rewrite' } as const },
-      ],
-    };
-    expect(abilitiesOffOn(map, withC4('rewrite'))).toEqual(['system_reboot']);
-    expect(abilitiesOffOn(map, withC4('keep'))).toEqual([]);
+    const a3m5 = battleConfig('a3_m05', 1, withC4('rewrite')).content.maps.a3_m05!;
+    expect(abilitiesOffOn(a3m5, withC4('rewrite'))).toEqual(['system_reboot']);
+    expect(abilitiesOffOn(a3m5, withC4('keep'))).toEqual([]);
     // A run atom never holds before the battle.
-    const run = {
-      lockedAbilities: [
-        { ability: 'scanner_sweep', when: { stat: 'abilityUses', gte: 0 } as const },
-      ],
+    const run: CompiledMapDef<IdSpace> = {
+      ...a3m5,
+      lockedAbilities: [{ ability: 'scanner_sweep', when: { stat: 'abilityUses', gte: 0 } }],
     };
     expect(abilitiesOffOn(run, withC4())).toEqual([]);
+  });
+
+  it("judges a lock on a gated flag as createSim does: over the map's defaults (D151)", () => {
+    // A3M3's door gates its refugee groups: unset, the run plays `convoy` (gatedFlagDefaults).
+    const unset = withC4('keep');
+    const cfg = battleConfig('a3_m03', 1, unset);
+    const lock = {
+      ability: cfg.abilities.slot1!,
+      when: { flag: 'door_choice', eq: 'convoy' } as const,
+    };
+    const a3m3: CompiledMapDef<IdSpace> = { ...cfg.content.maps.a3_m03!, lockedAbilities: [lock] };
+    expect(abilitiesOffOn(a3m3, unset)).toEqual([lock.ability]);
+    // The sim refuses the same pick under the same flags, so the loadout never offers it.
+    const map = { ...cfg.content.maps, a3_m03: a3m3 };
+    expect(() => createSim({ ...cfg, content: { ...cfg.content, maps: map } })).toThrow(/locked/);
+    const warren = withC4('keep');
+    warren.story.flags.door_choice = 'warren';
+    expect(abilitiesOffOn(a3m3, warren)).toEqual([]);
   });
 });
 

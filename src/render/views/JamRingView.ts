@@ -1,17 +1,18 @@
 // The Auditor's ring, minimal (T707; takeoverLook.ts has the rules; T730a polishes it): each
 // Auditor ringing shows the whole reach it will jam as a faint outline from the tell's first tick
 // and an orange ring growing out to it, redrawn each frame into one Graphics on the vfx layer
-// (over the towers it reaches). The jams themselves show as JamView's static and arc. A ring that
-// can no longer land (jamLook.ts `ringDoomed`: a System Reboot in its tell) stops drawing, the
-// frame JamView fizzles it.
+// (over the towers it reaches). The jams themselves show as JamView's static and arc. A ring
+// draws through its whole tell (a tower built in its reach after a System Reboot can still be
+// jammed); one that lands on nothing, JamView fizzles on its landing tick (D151; jamLook.ts
+// `ringLanded`).
 // Allocation-free per frame: the scratch points are module-level, the Graphics redraws in place.
 import type * as Phaser from 'phaser';
 import type { IdSpace } from '../../content/types.ts';
 import type { Bus } from '../../shared/bus.ts';
 import type { DeepReadonly } from '../../shared/types.ts';
-import { ringGrowth, ringTelling, type Enemy, type SimEvent, type Tower } from '../../sim/index.ts';
+import { ringGrowth, ringTelling, type Enemy, type SimEvent } from '../../sim/index.ts';
 import { gridToScreen, rangeEllipsePx, type Vec2 } from '../iso.ts';
-import { hexOf, ringDoomed } from './jamLook.ts';
+import { hexOf } from './jamLook.ts';
 import {
   RING_COLOR,
   RING_OUTLINE,
@@ -56,8 +57,8 @@ export class JamRingView {
     });
   }
 
-  /** Each frame: every Auditor's ring under way (but a doomed one: `towers` say which). */
-  update(enemies: Pool<Enemy>, towers: Pool<Tower>): void {
+  /** Each frame: every Auditor's ring under way. */
+  update(enemies: Pool<Enemy>): void {
     const g = this.#g;
     g.clear();
     const still = this.#reducedMotion();
@@ -66,7 +67,6 @@ export class JamRingView {
       const e = enemies.items[i]!; // i < used ≤ items.length
       if (!ringTelling(e)) continue;
       const reach = e.def!.jam!.radiusTiles; // ringTelling: a ring jammer
-      if (ringDoomed(e.x, e.y, reach, e.jamTellTicks, towers)) continue; // JamView fizzles it
       const growth = ringGrowth(e);
       gridToScreen(e.x, e.y, this.#ctx.origin, at);
       rangeEllipsePx(reach, semi);
