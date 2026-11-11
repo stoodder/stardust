@@ -129,8 +129,8 @@ describe('event sounds', () => {
       },
     ]);
     expect(ids(landing)).toEqual(['sfx:thumper_launch', 'sfx:thumper_impact']);
-    // The Scuttle Den's row (T604) is a placeholder until T650: a Den fires no ProjectileFired.
-    expect(ids(run([fired('spawner', 0)]))).toEqual(['sfx:burrow_dig']);
+    // The Scuttle Den fires no shot (a Den sends no ProjectileFired; its swarmlings latch, T650).
+    expect(ids(run([fired('spawner', 0)]))).toEqual([]);
   });
 
   it("merges a Cluster Thumper's bomblets: no launch each, one rate-limited crackle on landing", () => {

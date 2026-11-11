@@ -144,7 +144,9 @@ export const CUE_HUSHES: Readonly<
 };
 
 /** The music hush scene `sceneId` holds while it shows (CUE_HUSHES), or null. */
-export function cueHush(sceneId: string): { readonly musicDuck: number; readonly fadeSec: number } | null {
+export function cueHush(
+  sceneId: string,
+): { readonly musicDuck: number; readonly fadeSec: number } | null {
   const slot = parseSceneId(sceneId)?.slot;
   return slot?.kind === 'cue' ? (CUE_HUSHES[slot.name] ?? null) : null;
 }

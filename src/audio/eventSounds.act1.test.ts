@@ -198,7 +198,10 @@ describe('the sound tables cover the content', () => {
         'specs' in t ? [t.specs.a, t.specs.b] : [];
       for (const tier of [...t.tiers, ...specs]) {
         const kind = tier.attack?.kind;
-        if (kind !== undefined) expect(ATTACK_SOUNDS[kind]?.fire, `${t.id}: ${kind}`).toBeTruthy();
+        if (kind === undefined) continue;
+        // A spawner (the Scuttle Den) fires no shot: its swarmlings' latches sound (SWARM_SOUNDS).
+        if (kind === 'spawner') expect(ATTACK_SOUNDS[kind], t.id).toBeDefined();
+        else expect(ATTACK_SOUNDS[kind]?.fire, `${t.id}: ${kind}`).toBeTruthy();
       }
     }
   });

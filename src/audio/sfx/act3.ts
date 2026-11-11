@@ -440,7 +440,13 @@ export const ACT3_SFX = {
     layers: [
       { wave: 'sine', freq: 1567.98, env: { a: 0.002, d: 0.8, s: 0, r: 0.4 }, gain: 0.4 },
       { wave: 'sine', freq: 1567.98 * 2.76, env: { a: 0.001, d: 0.15, s: 0, r: 0.08 }, gain: 0.12 },
-      { wave: 'sine', at: 0.05, freq: 2349.32, env: { a: 0.002, d: 0.7, s: 0, r: 0.35 }, gain: 0.3 },
+      {
+        wave: 'sine',
+        at: 0.05,
+        freq: 2349.32,
+        env: { a: 0.002, d: 0.7, s: 0, r: 0.35 },
+        gain: 0.3,
+      },
       {
         wave: 'triangle',
         freq: 783.99,

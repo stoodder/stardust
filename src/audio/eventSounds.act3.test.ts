@@ -40,9 +40,12 @@ const died = (enemy: string): E => ({
 const { byAct } = PRESENTATION;
 
 describe("Act III's sound dials (T613)", () => {
-  it('plays no win jingle in Act III; the loss cue still plays', () => {
+  it('plays no win jingle in Act III; its loss hums, never the sad trombone', () => {
     expect(run(byAct[3], [{ type: 'MapWon' }])).toEqual([]);
-    expect(run(byAct[3], [{ type: 'MapLost' }])).toEqual(['cue:lose']);
+    expect(run(byAct[3], [{ type: 'MapLost' }])).toEqual(['cue:lose_hush']);
+    for (const act of [1, 2] as const) {
+      expect(run(byAct[act], [{ type: 'MapLost' }]), String(act)).toEqual(['cue:lose']);
+    }
     for (const act of [1, 2, 'finale'] as const) {
       expect(run(byAct[act], [{ type: 'MapWon' }]), String(act)).toEqual(['cue:win']);
     }

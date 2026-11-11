@@ -183,6 +183,25 @@ describe('sound effect recipes', () => {
         'stand_down',
         'stillness_cast',
         'void_crack',
+        'maw_tell',
+        'maw_gulp',
+        'undertow_sink',
+        'undertow_rise',
+        'rift_crack',
+        'rift_open',
+        'swarm_latch',
+        'swarm_home',
+        'underfoot_cast',
+        'trap_snap',
+        'everglow_shutdown',
+        'compliance_step',
+        'haste_tick',
+        'bloom_chime',
+        'gravity_pull',
+        'revoke_stamp',
+        'bricks_brace',
+        'door_hum',
+        'door_seal',
       ].toSorted(),
     );
   });
@@ -321,7 +340,7 @@ describe('instruments and songs', () => {
 
   it("Act II's theme has every layer; its stings keep the phrase's shape in minor (T450)", () => {
     const layers = new Set(THEMES.act2_battle.tracks.map((t) => t.layer));
-    expect([...layers].toSorted()).toEqual(['base', 'drums', 'lead']);
+    expect([...layers].toSorted()).toEqual(['base', 'choir', 'drums', 'lead']);
     // The minor-bridges sting: the six notes as Act I sang them, then a sigh off home.
     expect(lead('bright_minor').slice(0, 6)).toEqual(['G5', 'C6', 'E6', 'F6', 'D6', 'C6']);
     expect(lead('bright_minor').slice(6)).toEqual(['Ab5', 'G5']);
@@ -351,7 +370,7 @@ describe('instruments and songs', () => {
 
   it('the Act I battle theme has every layer, and the sting is the six-note phrase', () => {
     const layers = new Set(THEMES.act1_battle.tracks.map((t) => t.layer));
-    expect([...layers].toSorted()).toEqual(['base', 'drums', 'lead']);
+    expect([...layers].toSorted()).toEqual(['base', 'choir', 'drums', 'lead']);
     const sting = CUES.bright_sting.tracks.find((t) => t.layer === 'lead')!;
     const notes = sting.pattern.split(/\s+/).filter((t) => /^[A-G]/.test(t));
     expect(notes).toEqual(['G5', 'C6', 'E6', 'F6', 'D6', 'C6']);

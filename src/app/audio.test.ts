@@ -239,8 +239,10 @@ describe("installAudio's speech and Results", () => {
 
   it("sings Pebble's hum in place of her blip, hushes the music through the silence after, and lets go", () => {
     rec.log.length = 0;
-    show('a2_m06_base_whistle', 3, line('pebble'));
-    expect(rec.log).toEqual(['dip', 'cue:home_hum']);
+    const hum = { text: 'Hm. Hm-hm. Hmmm.' };
+    show('a2_m06_base_whistle', 3, line('pebble', hum));
+    // Sung, not spoken: no blip, and no dip under it.
+    expect(rec.log).toEqual(['cue:home_hum']);
     const hushed = [...rec.ducks.entries()].find(([k]) => k === 'line_cue');
     expect(hushed?.[1]).toBeLessThan(0.5);
     // Bricks's two seconds of silence keep it hushed; his next line lets the music back.
@@ -250,7 +252,7 @@ describe("installAudio's speech and Results", () => {
     expect(rec.ducks.has('line_cue')).toBe(false);
     expect(rec.log.at(-1)).toBe('sfx:blip.bricks');
     // The same line in another scene is spoken.
-    show('a2_m06_base_loophole', 3, line('pebble'));
+    show('a2_m06_base_loophole', 3, line('pebble', hum));
     expect(rec.log.at(-1)).toBe('sfx:blip.pebble');
   });
 

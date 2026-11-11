@@ -5,13 +5,7 @@ import type { Act } from '../../content/types.ts';
 import type { Song } from '../types.ts';
 import { ACT1_BATTLE, TITLE_THEME } from './act1.ts';
 import { ACT2_BATTLE } from './act2.ts';
-import {
-  ACT3_BATTLE,
-  LEAVING_HUM,
-  LEAVING_HUM_ALONG,
-  LEAVING_HUM_TWO,
-  LOSE_HUSH,
-} from './act3.ts';
+import { ACT3_BATTLE, LEAVING_HUM, LEAVING_HUM_ALONG, LEAVING_HUM_TWO, LOSE_HUSH } from './act3.ts';
 import {
   BOSS_STING,
   BRIGHT_MINOR,
