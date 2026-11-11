@@ -89,7 +89,8 @@ function bonusText(b: LinkBonusDef): string {
  * the Lookout's detection radius from Overwatch and Skywatch (T406), Reel It In's kill credits
  * (T408), Lightsong's faster ramp and stronger Marks (T508), and the Scuttle Den's swarmling,
  * dash, and latch (T604), the Hum Choir's aura extras and Harmony's extra target (T607), and the
- * Stasis Bloom's wider field and sooner pulse (T608).
+ * Stasis Bloom's wider field and sooner pulse (T608), and the Sproing Pad's longer Pin and
+ * Marked-first pick (T704).
  */
 function partnerText(p: (typeof LINKS)[keyof typeof LINKS]['partners'][number]): string {
   const parts = p.bonuses.map(bonusText);
@@ -127,6 +128,9 @@ function partnerText(p: (typeof LINKS)[keyof typeof LINKS]['partners'][number]):
       `hits add ${p.corrodedStacks} Corroded ${p.corrodedStacks === 1 ? 'stack' : 'stacks'}`,
     );
   }
+  // The Sproing Pad's: Bounce Chorus's longer Pin, Lookie Here's Marked-first pick (T704).
+  if (p.pinSec !== undefined) parts.push(`Pin +${p.pinSec} s`);
+  if (p.preferMarked === true) parts.push('leapers pick Marked first');
   return parts.join(', ');
 }
 

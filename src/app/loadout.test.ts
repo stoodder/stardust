@@ -89,7 +89,13 @@ describe('the loadout screen (app side)', () => {
       'Stillmind', // the Mindspike's and Stasis Bloom's (T608)
       'Acid Rain', // the Thumper's and Gloop's (T705)
       'Sticky Flak', // the Skyhook's and Gloop's (T705)
+      'Lookie Here', // the Lantern's and Sproing Pad's (T704)
+      'Bounce Chorus', // the Sproing Pad's and Hum Choir's (T704)
     ]);
+    expect(view.links[15]?.bonus).toBe(
+      "Seer's Lantern +0.5 detection radius · Sproing Pad +0.5 range, leapers pick Marked first",
+    );
+    expect(view.links[16]?.bonus).toBe('Sproing Pad Pin +0.5 s · Hum Choir aura +5% damage');
     expect(view.links[11]?.bonus).toBe(
       'Grapple Harpoon +30% damage vs Chilled/Stasis · Stasis Bloom field +0.3 radius',
     );
