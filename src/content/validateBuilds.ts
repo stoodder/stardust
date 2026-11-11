@@ -32,7 +32,8 @@
 //   `noCounterLoseByWave` override is a whole wave from 1 to waves − 1 (never the final wave) on a
 //   map with no-counter builds, or up to the final wave on a `teachMap` (a campaign map that
 //   introduces a required-counter category); each `counterExemptions` entry names one of the map's
-//   required counters, once, with a reason.
+//   required counters, once, with a reason and the unit test that pins it (`pinnedBy`:
+//   src/balance/<name>.test.ts; tools/counterExemptions.test.ts checks the file).
 // - [flag-profile] (T700a): each `referenceProfileByFlag` cell names at least one flag, each with a
 //   `flagVariants` entry listing its value; no two cells name the same values, and no cell is
 //   unreachable (an earlier cell names a subset of its values: first match wins); its profile
@@ -81,6 +82,9 @@ import type {
 import type { MapCtx } from './validateMap.ts';
 import { BUILDABLE, Issues, duplicates, fmt, keyOf, type Grid } from './validateHelpers.ts';
 import { revocationCandidates, validateRevocation } from './validateRevocation.ts'; // T606
+
+/** A counter exemption's `pinnedBy`: a balance unit test, by repo path. */
+const PINNED_BY_RE = /^src\/balance\/[A-Za-z0-9_]+\.test\.ts$/;
 
 export function validateBuilds(
   issues: Issues,
@@ -223,6 +227,13 @@ export function validateBuilds(
     if (exempt.has(x.counter)) issues.add('builds-range', w, `'${x.counter}' is listed twice`);
     exempt.add(x.counter);
     if (x.reason.trim() === '') issues.add('builds-range', w, 'needs a reason');
+    if (!PINNED_BY_RE.test(x.pinnedBy)) {
+      issues.add(
+        'builds-range',
+        `${w}.pinnedBy`,
+        `'${x.pinnedBy}' must name the unit test that pins the counter: src/balance/<name>.test.ts`,
+      );
+    }
   }
 
   if (def.teachMap === true && !introducesCounter) {

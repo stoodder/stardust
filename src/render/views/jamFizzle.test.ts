@@ -1,12 +1,17 @@
 // The fizzle's prediction against the sim (D150; jamLook.ts `tellDoomed`, `ringDoomed`): a System
 // Reboot cast in a Silencer's or an Auditor's tell dooms it the same tick (the view snaps it off
 // and shows FIZZLED), and a doomed tell never lands; with no Reboot the same tell is never doomed
-// and lands. On the dev ranges (dev_silence, dev_jam's ring wave via dev_takeover's W1 Auditors).
+// and lands. On the dev ranges: dev_silence's Silencer, dev_takeover's W1 Auditors.
 import { describe, expect, it } from 'vitest';
 import { compileContent } from '../../content/compile.ts';
 import type { IdSpace } from '../../content/types.ts';
-import { createSim, ringTelling, type Sim, type SimConfig } from '../../sim/index.ts';
-import type { SimEvent } from '../../sim/events.ts';
+import {
+  createSim,
+  ringTelling,
+  type Sim,
+  type SimConfig,
+  type SimEvent,
+} from '../../sim/index.ts';
 import { DEV_CONTENT } from '../__fixtures__/devBattle.ts';
 import { ringDoomed, tellDoomed } from './jamLook.ts';
 

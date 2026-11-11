@@ -22,6 +22,7 @@ import { battleConfig, DEFAULT_MAP_ID, randomSeed } from './battleSetup.ts';
 import { attemptKills, resumeOf, usableCheckpoint, type Resume } from './checkpoints.ts';
 import { cancel, setSpeed } from './commands.ts';
 import { showNotice } from './hud.ts';
+import { logError } from './log.ts';
 import type { IdSpace } from '../content/types.ts';
 import type { SimConfig } from '../sim/index.ts';
 import { playMapEndLines } from './dialogue.ts';
@@ -352,13 +353,20 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
         openCrateAtBriefing(cfg.mapId, takenPick());
         resetCrate();
         if (!briefingChangedBattle(cfg, activeSave())) return;
+        // A config the sim refuses after the crate wrote its tune-ups is a failed launch, never
+        // a battle left running on the stale config (D150): the notice, the Shift board, the log.
         let next: SimConfig<IdSpace>;
         try {
           next = battleConfig(cfg.mapId, cfg.seed, activeSave());
-        } catch {
+        } catch (err) {
+          menuNotice.value = BATTLE_FAILED;
+          logError('briefing: restart failed', err);
+          void showFailed();
           return;
         }
-        void launch(request, next, false, null);
+        launch(request, next, false, null).catch((err: unknown) => {
+          logError('briefing: restart failed', err);
+        });
       });
     };
     off = hud.briefing.subscribe((v) => {

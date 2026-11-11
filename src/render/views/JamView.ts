@@ -302,7 +302,11 @@ export class JamView {
       for (let i = 0; i < enemies.used; i++) {
         const e = enemies.items[i]!; // i < used ≤ items.length
         if (!e.alive || e.uid !== uid) continue;
-        this.#fizzle(e.x, e.y, (e.def?.boss ?? null) !== null ? FIZZLE_BOSS_LIFT_PX : FIZZLE_BODY_LIFT_PX);
+        this.#fizzle(
+          e.x,
+          e.y,
+          (e.def?.boss ?? null) !== null ? FIZZLE_BOSS_LIFT_PX : FIZZLE_BODY_LIFT_PX,
+        );
         break;
       }
     }

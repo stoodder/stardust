@@ -1566,6 +1566,12 @@ export interface BuildsDef<K extends IdSpace = LiveIds> {
 export interface CounterExemption {
   readonly counter: 'jam' | 'detection';
   readonly reason: string;
+  /**
+   * The unit test that pins what the counter's absence costs on this map instead, as a repo path
+   * (`src/balance/a3m5Jam.test.ts`; D150). [builds-range] checks its shape;
+   * tools/counterExemptions.test.ts checks the file exists and names the map and counter.
+   */
+  readonly pinnedBy: string;
 }
 
 export interface MapDef<K extends IdSpace = LiveIds, Id extends string = string>
