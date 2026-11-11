@@ -1867,3 +1867,14 @@ Act III's curve, part two, is in D149 and its addenda: par 68.2 / 68.2 / 59.3. A
   - A listen (T750's list): A3M4's bed (Bricks hums half the phrase, a Choir finishes it), `domes_open` as the first warm cadence, the Waykeeper sting, `pa_frantic` against the no-jingle rule, `gmaw_beaten`, and the bearers' six notes over the vats.
   - A play of A3M5 under all three C4 answers, to judge whether jamming feels like a verb. Reboot on the tell now pays, and Kip's W13 line points the way.
   - The rulings taken in your absence: A3M5 easing W2 rather than lowering par, A3M4's W16 cliff left for the finale's economy pass (T773), Shareholder Value at 3800 HP and the Gathering Maw at 4000.
+
+### D153 — 2026-11-11 — Owner: M8 adds a declutter pass
+
+On M7's ship the owner said: "Everything looks great, one thing I'd like to add to the polish is a run through to declutter some of the app. It all looks great but some of the screens have a lot on them to consume." M8 proceeds (the finale, post-game and polish) with a declutter pass in its polish wave (T803).
+
+The approach (main's recommendation, taken):
+- Audit every screen at 1280×720.
+- Keep only what the player needs to decide *now* in view. Move secondary detail behind hover, focus, a tooltip or a "more" panel, merge repeated information, and trim copy. Nothing becomes unreachable.
+- Show the owner before and after screenshots of each screen.
+
+It runs after the finale's screens exist, so the finale's own screens are decluttered in the same pass.
