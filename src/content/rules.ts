@@ -171,8 +171,17 @@ export const JAM_MIN_TELL_SEC = 1.5;
 export const JAM_IMMUNITY_SEC = 3;
 /** System Reboot's immunity: longer than a jam's own, so the ability stays the stronger answer. */
 export const REBOOT_IMMUNITY_SEC = 6;
-/** In par play, at most this share of the player's towers is jammed at once (harness check). */
+/**
+ * The jam limit (T760): at most this share of the player's towers is Jammed at once. A jam lands
+ * only while the towers Jammed stay within max(1, floor(share × towers placed)) (sim/jam.ts
+ * `jamRoom`), so with four towers or more the limit holds by construction (harness #10 checks it).
+ */
 export const JAM_MAX_TOWER_SHARE = 0.25;
+/**
+ * A jammer's first tell may start this long after it spawns, and then as soon as a tower it may
+ * jam is in reach (T760): it hushes the first tower it meets, not one 8–10 s down the road.
+ */
+export const JAM_FIRST_READY_SEC = 0;
 /**
  * Hostile Takeover jams `min(TAKEOVER_MAX_TOWERS, floor(JAM_MAX_TOWER_SHARE × towers placed))`
  * towers (D146; T707: enemyAbilities/takeover.ts).

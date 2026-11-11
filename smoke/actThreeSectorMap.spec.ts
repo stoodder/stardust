@@ -1,9 +1,9 @@
 // Act III on the Sector map and its Results cards (T612; core-loop.md § 1.1 and § 6.2,
 // art-direction.md § 10). (1) The night chart across M6's maps on the dev saves: after A3M1, *License
 // Revoked* next up beside Admin Plaza; after A3M2, *The Gap* next up on the Long Walk; after A3M3,
-// *Empty Slot* teased ("Coming soon", its tagline, no Start), as Act II's close teased the
-// Preserve; the next glyph in Act III's alarm red; nothing past the frontier named, the Deep Halls
-// unlabeled. (2) Act III's cards: the report "Auto-filed" on a win and a loss alike; A3M1's counter
+// *Empty Slot* next up by the shelters (M7 built it; actThreeSectorMapTwo.spec.ts follows the act
+// on to the finale's teaser); the next glyph in Act III's alarm red; nothing past the frontier
+// named, the Deep Halls unlabeled. (2) Act III's cards: the report "Auto-filed" on a win and a loss alike; A3M1's counter
 // its Evacuated line; A3M2, a Defend map, no counter line at all (never "Held."); A3M3 the Held
 // card. Screenshots in <out>/screens/act3-sector/ (look at them: the nodes on their landmarks, the
 // red next glyph, the teaser, and each card are the point).
@@ -36,7 +36,7 @@ async function nextCore(page: Page): Promise<string> {
 /** Act III's accent, `red.3` (content/palettes/master.ts). */
 const RED_3 = '#f0384a';
 
-test('act three on the Sector map: License Revoked, then The Gap, then Empty Slot teased', async ({
+test('act three on the Sector map: License Revoked, then The Gap, then Empty Slot', async ({
   page,
 }) => {
   const later = ['Unsung', 'Let Them In', 'Clearing the Way', 'Deep Halls'];
@@ -76,29 +76,27 @@ test('act three on the Sector map: License Revoked, then The Gap, then Empty Slo
   await nextFrames(page);
   await shot(page, 'act3-sector', 2, 'after-a3m2');
 
-  // After A3M3 (M6's last screen): Empty Slot teased, its node taking the arrival focus.
+  // After A3M3 (M6's last screen): Empty Slot next up by the shelters.
   await page.goto('/?test=1&seed=1&save=after_a3m3_convoy');
   await waitForReady(page);
   await expect(map).toHaveAttribute('data-phase', 'act3');
   await expect(node(page, 'The Gap')).toHaveAttribute('aria-current', 'location');
-  const teaser = node(page, 'Empty Slot');
-  await expect(teaser).toHaveAccessibleName(
-    'Shift 15, Empty Slot, The Shelters. Coming soon. ' +
-      'The shelters. His portrait is dark. The mail still comes.',
+  await expect(node(page, 'Empty Slot')).toHaveAccessibleName(
+    'Shift 15, Empty Slot, The Shelters. Next up. 0 of 3 medals.',
   );
-  await expect(teaser).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Start Empty Slot' })).toBeFocused();
   const panel = page.getByRole('region', { name: 'Empty Slot' });
-  await expect(panel).toContainText('Coming soon');
   await expect(panel).toContainText('The shelters. His portrait is dark. The mail still comes.');
-  await expect(panel.getByRole('button')).toHaveCount(0);
+  expect(await nextCore(page)).toBe(RED_3);
   for (const name of later) {
     // oxlint-disable-next-line no-await-in-loop -- one assertion per name
     await expect(page.locator('body')).not.toContainText(name);
   }
   await nextFrames(page);
-  await shot(page, 'act3-sector', 3, 'after-a3m3-teaser');
+  await shot(page, 'act3-sector', 3, 'after-a3m3');
   // Every cleared node of Act III, selected in turn: its panel stays clear of its node.
-  await node(page, 'The Preserve').click();
+  // (By key: Empty Slot's briefing panel lies over the Preserve's node.)
+  await node(page, 'The Preserve').press('Enter');
   await expect(page.getByRole('region', { name: 'The Preserve' })).toBeVisible();
   await nextFrames(page);
   await shot(page, 'act3-sector', 4, 'preserve-selected');

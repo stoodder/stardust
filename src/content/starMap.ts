@@ -262,7 +262,7 @@ export const NODE_BOX = { dx: -8, dy: -8, w: 16, h: 16 } as const;
 
 /**
  * What the node panel keeps clear of around a node: its glyph, its pips, and its name plate
- * below (a plate up to 96 px wide: "Clearing the Way", the widest name, is 90).
+ * below (a plate up to 96 px wide: "Clearing the Way", the widest, with its padding and edge).
  */
 export const NODE_CLEAR_BOX = { dx: -48, dy: -9, w: 96, h: 36 } as const;
 

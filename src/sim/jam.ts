@@ -26,7 +26,12 @@
 //   the Lights On), `jamOverLimitTicks` (ticks with more than JAM_MAX_TOWER_SHARE of the live towers
 //   Jammed: harness #10, balance/jamLimit.ts), and `jammedTowerTicks` / `towerTicks` (jam uptime,
 //   the report's). One pass over the towers a tick; no allocation.
-import { JAM_IMMUNITY_SEC, JAM_MAX_SEC, JAM_MAX_TOWER_SHARE } from '../content/rules.ts';
+import {
+  JAM_FIRST_READY_SEC,
+  JAM_IMMUNITY_SEC,
+  JAM_MAX_SEC,
+  JAM_MAX_TOWER_SHARE,
+} from '../content/rules.ts';
 import { secToTicks } from '../shared/time.ts';
 import { jamRingPass } from './enemyAbilities/jamRing.ts'; // T707
 import { jamTendrilPass } from './enemyAbilities/jamTendril.ts';
@@ -40,6 +45,32 @@ import type { TickContext } from './tick.ts';
 export const JAM_MAX_TICKS = secToTicks(JAM_MAX_SEC);
 /** JAM_IMMUNITY_SEC in ticks: the immunity after a jam ends. */
 export const JAM_IMMUNITY_TICKS = secToTicks(JAM_IMMUNITY_SEC);
+/** JAM_FIRST_READY_SEC in ticks: how long after its spawn a jammer's first tell may start. */
+export const JAM_FIRST_READY_TICKS = secToTicks(JAM_FIRST_READY_SEC);
+
+/**
+ * The jam limit with `placed` towers on the map: max(1, floor(JAM_MAX_TOWER_SHARE × placed)), so
+ * one jam may always land, and with four towers or more no more than 25% are ever Jammed.
+ */
+export function jamLimitFor(placed: number): number {
+  const share = Math.floor(JAM_MAX_TOWER_SHARE * placed);
+  return share > 1 ? share : 1;
+}
+
+/** How many more towers a jam may land on now within the jam limit (never below 0). */
+export function jamRoom(state: Readonly<SimState>): number {
+  const pool = state.towers;
+  let placed = 0;
+  let jammed = 0;
+  for (let i = 0; i < pool.used; i++) {
+    const t = pool.items[i]!; // i < used ≤ items.length
+    if (!t.alive || t.def === null) continue;
+    placed++;
+    if (t.jamTicks > 0) jammed++;
+  }
+  const room = jamLimitFor(placed) - jammed;
+  return room > 0 ? room : 0;
+}
 
 /** Whether `t` is Jammed now. */
 export function isJammed(t: Readonly<Pick<Tower, 'jamTicks'>>): boolean {
@@ -66,10 +97,11 @@ export function jamTicksFor(t: Readonly<Pick<Tower, 'jamMul'>>, durationTicks: n
 
 /**
  * Jams `t` for `durationTicks` (before its `jamMul`) from `source` (a jammer's uid, or a boss's):
- * lands only when `canJam`. Returns the ticks it landed for, or 0 when it didn't.
+ * lands only when `canJam` and within the jam limit (`jamRoom`). Returns the ticks it landed for,
+ * or 0 when it didn't.
  */
 export function jamTower(state: SimState, t: Tower, durationTicks: number, source: number): number {
-  if (!canJam(t)) return 0;
+  if (!canJam(t) || jamRoom(state) <= 0) return 0;
   const ticks = jamTicksFor(t, durationTicks);
   if (ticks <= 0) return 0;
   t.jamTicks = ticks;

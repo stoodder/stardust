@@ -21,7 +21,7 @@
 // - No allocation but the JamTell event's tower list, on a ring's start.
 import type { CompiledJam } from '../../content/compiled.ts';
 import type { Enemy } from '../entities.ts';
-import { canJam, jamTower } from '../jam.ts';
+import { canJam, JAM_FIRST_READY_TICKS, jamTower } from '../jam.ts';
 import { emit, type SimState } from '../state.ts';
 import { cooldownHeld, isInterrupted } from '../systems/status.ts';
 import type { TickContext } from '../tick.ts';
@@ -107,7 +107,7 @@ export function ringStep(state: SimState, e: Enemy, j: CompiledJam): void {
     return;
   }
   if (e.jamTicks <= 0) {
-    e.jamTicks = periodTicksOf(j); // first tick alive
+    e.jamTicks = tell + JAM_FIRST_READY_TICKS; // first tick alive: ready (T760)
     return;
   }
   if (e.jamTicks > tell && !cooldownHeld(e)) e.jamTicks--; // Lulled: its beat
