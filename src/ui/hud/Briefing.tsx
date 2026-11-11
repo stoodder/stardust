@@ -176,7 +176,9 @@ export function Briefing({ view }: { view: SceneView }) {
             // Focused once the briefing has played out (at once while dialogue is off), so Enter
             // (or Space) clocks in.
             ref={clockIn}
-            onClick={dismissBriefing}
+            // C3 waits for an answer (D141; app/commands.ts refuses the press until then).
+            aria-disabled={view.held === true ? 'true' : undefined}
+            onClick={() => dismissBriefing()}
           >
             Clock in
           </button>

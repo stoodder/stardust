@@ -88,8 +88,26 @@ function moveChoiceFocus(e: KeyboardEvent & { currentTarget: HTMLElement }): voi
   next?.focus();
 }
 
+/**
+ * Whether a locked story choice (C3, D141: `ChoiceView.lockedUntil`) still waits; it re-renders
+ * as the lock passes. The press itself is refused until then by app/dialogue.ts `chooseOption`.
+ */
+function useChoiceLock(choices: readonly ChoiceView[]): boolean {
+  const until = choices[0]?.lockedUntil ?? 0;
+  const [locked, setLocked] = useState(() => performance.now() < until);
+  useEffect(() => {
+    const left = until - performance.now();
+    setLocked(left > 0);
+    if (left <= 0) return undefined;
+    const t = setTimeout(() => setLocked(false), left);
+    return () => clearTimeout(t);
+  }, [until]);
+  return locked;
+}
+
 export function ChoiceList({ choices }: { choices: readonly ChoiceView[] }) {
   const first = useFocusOn(choices);
+  const locked = useChoiceLock(choices);
   return (
     <div class="dlg-choices" role="group" aria-label="Your answer" onKeyDown={moveChoiceFocus}>
       {choices.map((c, i) => (
@@ -99,6 +117,7 @@ export function ChoiceList({ choices }: { choices: readonly ChoiceView[] }) {
           type="button"
           class="hud-btn chamfer dlg-choice"
           data-tone={c.tone}
+          aria-disabled={locked ? 'true' : undefined}
           onClick={() => chooseOption(i)}
         >
           <span class="dlg-choice-n" aria-hidden="true">

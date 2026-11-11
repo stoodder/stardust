@@ -6,32 +6,19 @@ import { defineBuilds } from '../../define.ts';
 import { REFERENCE_PROFILES } from '../../upgrades/reference.ts';
 import type { BuildStep, GridPos, TowerId } from '../../types.ts';
 
-/** North of the outer ring, either side of the north road in. */
-const NORTH_W: GridPos = [11, 1];
-const NORTH_E: GridPos = [15, 1];
 /** Between the outer ring (row 2) and the basin's ring (row 4). */
 const RING_NW: GridPos = [10, 3];
-const RING_NE: GridPos = [13, 3];
 /** Between the east ring (column 16) and the basin's east side. */
 const RING_E: GridPos = [15, 5];
 /** Between the west ring (column 8) and the basin's west side. */
 const RING_W: GridPos = [9, 6];
-/** Inside the basin, among the warren homes. */
-const BASIN: GridPos = [12, 7];
 /** Between the north rift (column 5) and the west ring. */
 const RIFT_NW: GridPos = [6, 4];
 const RIFT_SW: GridPos = [6, 8];
-/** Either side of the east rift, outside the east fence. */
-const RIFT_EN: GridPos = [18, 4];
-const RIFT_ES: GridPos = [18, 8];
-/** By the gate road, west of the north rift. */
-const GATE_N: GridPos = [3, 9];
 /** South of the long run east. */
 const SOUTH: GridPos = [13, 9];
 /** Inside the south-west corner of the spiral. */
 const CORNER: GridPos = [9, 10];
-/** Out in the south-east. */
-const FAR_SE: GridPos = [19, 10];
 /** Beside the gate. */
 const GATE: GridPos = [4, 12];
 
@@ -74,9 +61,11 @@ function swapped(
   swap: Readonly<Partial<Record<TowerId, TowerId>>>,
   extra: readonly BuildStep[] = [],
 ): BuildStep[] {
-  const out = parSteps().map((st) =>
-    'build' in st && swap[st.build] !== undefined ? { ...st, build: swap[st.build]! } : st,
-  );
+  const out: BuildStep[] = [];
+  for (const st of parSteps()) {
+    const to = 'build' in st ? swap[st.build] : undefined;
+    out.push('build' in st && to !== undefined ? { ...st, build: to } : st);
+  }
   for (const st of extra) {
     const at = out.findIndex((o) => o.wave > st.wave);
     out.splice(at < 0 ? out.length : at, 0, st);

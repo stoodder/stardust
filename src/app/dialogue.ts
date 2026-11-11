@@ -399,6 +399,8 @@ interface Holding {
   remember: string | null;
   /** A full-screen scene's staging (ui/dialogue/staging.ts): its clock and lead-in, else null. */
   staging: StagingView | null;
+  /** When the choice on screen showed (performance.now), for a story choice's lock; 0 for none. */
+  choiceAt: number;
 }
 
 let holding: Holding | null = null;
@@ -488,6 +490,11 @@ function publish(): void {
   const step = h.cursor.step;
   // Shown whole (dialogue off), a scene stops short of its first choice: nobody is there to pick.
   const stopped = h.instant && step.kind === 'choice';
+  // C3's choice waits STORY_CHOICE_LOCK_MS before it takes a press (isStoryChoice; D141).
+  const story = step.kind === 'choice' && !stopped && isStoryChoice(step.node.options);
+  if (step.kind !== 'choice') h.choiceAt = 0;
+  else if (h.choiceAt === 0) h.choiceAt = performance.now();
+  const lockedUntil = story ? h.choiceAt + STORY_CHOICE_LOCK_MS : 0;
   const view: SceneView = {
     sceneId: h.scene.id,
     mode: h.mode,
@@ -498,10 +505,13 @@ function publish(): void {
         ? step.node.options.map((o) => ({
             text: silkText(resolveText(o.text, textContext())),
             tone: o.tone,
+            ...(story ? { lockedUntil } : {}),
           }))
         : null,
     remember: h.remember,
     ended: step.kind === 'end' || stopped,
+    // The briefing waits on its story choice: Clock in and Esc wait for an answer (C3; D141).
+    held: story && h.mode === 'briefing',
     instant: h.instant,
     typing: { from: h.typedFrom, done: h.typedOut },
     staging: h.staging,
@@ -550,6 +560,7 @@ function open(scene: Scene, opts: PlayOptions, mode: SceneMode): void {
     typedOut: false,
     remember: null,
     staging: openStaging(scene.id, mode, opts.instant ?? false),
+    choiceAt: 0,
   };
   holding = h;
   settle(h);
@@ -639,12 +650,39 @@ export function advanceScene(): void {
   publish();
 }
 
-/** Takes option `index` at the choice on screen. */
+/**
+ * How long C3's choice waits before it takes a press, so a stray key or click can't make it (D141:
+ * "its buttons waiting 700 ms"; the same wait as C2's card, D138, ui/screens/StoryChoice.tsx).
+ */
+export const STORY_CHOICE_LOCK_MS = 700;
+
+/**
+ * The flags whose choice is locked for STORY_CHOICE_LOCK_MS and holds the briefing until answered:
+ * C3's door (D141). Other choices, flag-setting or not, take a press at once.
+ */
+export const LOCKED_CHOICE_FLAGS: readonly string[] = ['door_choice'];
+
+/** Whether a choice is a locked story choice: one of its options sets a LOCKED_CHOICE_FLAGS flag. */
+export function isStoryChoice(
+  options: readonly { readonly set?: Readonly<Record<string, unknown>> }[],
+): boolean {
+  return options.some(
+    (o) => o.set !== undefined && Object.keys(o.set).some((f) => LOCKED_CHOICE_FLAGS.includes(f)),
+  );
+}
+
+/** Takes option `index` at the choice on screen (a story choice only once its lock has passed). */
 export function chooseOption(index: number): void {
   const h = holding;
   if (h === null || h.cursor.step.kind !== 'choice') return;
   const option = h.cursor.step.node.options[index];
   if (option === undefined) return;
+  if (
+    isStoryChoice(h.cursor.step.node.options) &&
+    performance.now() - h.choiceAt < STORY_CHOICE_LOCK_MS
+  ) {
+    return;
+  }
   const ctx = storyContext(h.map);
   // The pick joins the transcript as the player's own line.
   h.transcript.push(lineView({ speaker: 'player', text: option.text }, ctx, textContext(), null));

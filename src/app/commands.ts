@@ -17,6 +17,7 @@ import {
   slotAimsAtPath,
 } from '../render/input/tileFacts.ts';
 import { abilityReady, isBuildableTile, slotRevoked, type Command } from '../sim/index.ts';
+import { dialogue as dialogueView } from '../ui/dialogue/state.ts';
 import { hud, speed as speedSignal } from '../ui/state.ts';
 import { PRIORITY_LABEL } from '../ui/hud/words.ts';
 import type { Host } from './host.ts';
@@ -277,7 +278,10 @@ export function cooldownText(slot: 1 | 2, name: string | null): string {
 }
 
 /** Closes the map's briefing (its button, Enter, or Esc); game hotkeys come back on. */
-export function dismissBriefing(): void {
+export function dismissBriefing(force = false): void {
+  // A briefing waiting on its story choice (C3) closes only once it's answered (D141; T610);
+  // autoplay (`force`) clocks in regardless, leaving the choice unmade.
+  if (!force && dialogueView.scene.value?.held === true) return;
   hud.briefing.value = null;
 }
 

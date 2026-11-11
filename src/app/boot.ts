@@ -108,7 +108,7 @@ export async function boot(): Promise<void> {
         autoplay: (build) => {
           const b = router.battle;
           if (b === null) throw new Error('__sd.autoplay: no battle is running');
-          dismissBriefing();
+          dismissBriefing(true);
           startAutoplay(b.host, build);
         },
         setSpeed,

@@ -55,6 +55,11 @@ export interface CommsView {
 export interface ChoiceView {
   readonly text: string;
   readonly tone: ChoiceTone;
+  /**
+   * A story choice (C3) takes no press before this performance.now() time (app/dialogue.ts
+   * STORY_CHOICE_LOCK_MS); absent for any other choice.
+   */
+  readonly lockedUntil?: number;
 }
 
 /** The scene on screen (it holds input; the briefing, a panel, or full-screen). */
@@ -71,6 +76,11 @@ export interface SceneView {
   readonly remember: string | null;
   /** The scene has played out (the briefing then waits on Clock in). */
   readonly ended: boolean;
+  /**
+   * The briefing waits on a story choice (A3M3's C3, committed as the briefing closes): Clock in
+   * and Esc wait for an answer (D141; T610). Absent or false otherwise.
+   */
+  readonly held?: boolean;
   /** Text shows whole, with no typewriter (dialogue off under `?test=1`). */
   readonly instant: boolean;
   /** The line's typewriter: when it started (performance.now), and whether Next finished it. */
