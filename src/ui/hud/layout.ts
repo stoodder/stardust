@@ -139,8 +139,8 @@ function covers(
  * The first one that covers none of the `others` (the other towers' ground points, or nodes'
  * centres, with `othersBox`, by default the same box) and none of the `blocked` rectangles (the HUD corners, T213) wins;
  * failing that, the cheapest (another box costs 1, a blocked rectangle `blockedCost`, by default
- * 2; the star map's chrome costs more, T631: its buttons under a panel can't be reached). A candidate that
- * covers the selected box itself only wins when every one does.
+ * 2; the star map's chrome costs more, T631: its buttons under a panel can't be reached). A
+ * candidate that covers the selected box itself only wins when every one does.
  */
 export function placePanel(
   towerX: number,

@@ -178,10 +178,10 @@ export function statLineText(
 type DenAttack = Extract<NonNullable<CompiledTier['attack']>, { kind: 'spawner' }>;
 
 /**
- * A Scuttle Den's line (towers.md § Scuttle Den; T604, T631): how many swarmlings (or Champions) it
- * keeps, each one's damage per second as it lands (the tier's `damage` per second at the DoT tick,
- * quickened by a rate bonus, like a beam's), its reach, how long each holds on, its chill each,
- * the burrowed multiplier, and "air too" for Champions, e.g.
+ * A Scuttle Den's line (towers.md § Scuttle Den; T604, T631): how many swarmlings (or Champions)
+ * it keeps, each one's damage per second as it lands (the tier's `damage` per second at the DoT
+ * tick, quickened by a rate bonus, like a beam's), its reach, how long each holds on, its chill
+ * each, the burrowed multiplier, and "air too" for Champions, e.g.
  * "3 swarmlings · 5 dmg/s each · range 2.5 · latch 4 s · Chilled 10% · ×2.5 burrowed".
  */
 export function denText(
