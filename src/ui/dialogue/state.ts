@@ -96,6 +96,8 @@ export interface StagingView {
   readonly from: number;
   /** The lines wait this long from `from` (the stinger's feed); 0 for none. */
   readonly leadInMs: number;
+  /** Next and Esc are swallowed this long from `from` (`stagingLockMs`); absent or 0 for none. */
+  readonly lockMs?: number;
 }
 
 export const dialogue = {

@@ -83,7 +83,7 @@ import {
   type SceneView,
   type StagingView,
 } from '../ui/dialogue/state.ts';
-import { stagingLeadInMs, stagingOf } from '../ui/dialogue/staging.ts';
+import { stagingLeadInMs, stagingLockMs, stagingOf } from '../ui/dialogue/staging.ts';
 import { fastText, typedLength, typeMs } from '../ui/dialogue/text.ts';
 import { prefersReducedMotion } from '../ui/motion.ts';
 import { silkText } from '../ui/silk.ts';
@@ -466,7 +466,18 @@ function armSilence(h: Holding): void {
 function openStaging(sceneId: string, mode: SceneMode, instant: boolean): StagingView | null {
   const kind = stagingOf(sceneId);
   if (kind === null || mode !== 'fullscreen' || instant) return null;
-  return { kind, from: performance.now(), leadInMs: stagingLeadInMs(kind, reducedMotion()) };
+  const still = reducedMotion();
+  return {
+    kind,
+    from: performance.now(),
+    leadInMs: stagingLeadInMs(kind, still),
+    lockMs: stagingLockMs(kind, still),
+  };
+}
+
+/** Whether `h`'s staging still swallows Next and Esc at `now` (its `lockMs` from `from`). */
+function stagingLocked(h: Holding, now: number): boolean {
+  return h.staging !== null && now < h.staging.from + (h.staging.lockMs ?? 0);
 }
 
 /** The reduced-motion preference (none outside a browser: the unit tests). */
@@ -620,6 +631,8 @@ export function nextScene(): void {
   if (h === null) return;
   // During a staged lead-in, Skip cuts to its end: the staging jumps on, and the line types now.
   const now = performance.now();
+  // A locked staging (`lockMs`, T614) swallows Next until its lock runs out.
+  if (stagingLocked(h, now)) return;
   if (h.staging !== null && now < h.staging.from + h.staging.leadInMs) {
     h.staging = { ...h.staging, from: now - h.staging.leadInMs };
     h.typedFrom = now;
@@ -709,6 +722,8 @@ export function chooseOption(index: number): void {
 export function skipScene(): boolean {
   const h = holding;
   if (h === null || h.mode === 'briefing') return false;
+  // A locked staging swallows Esc too (the key is taken; nothing skips).
+  if (stagingLocked(h, performance.now())) return true;
   const ctx = storyContext(h.map);
   // Every skipped line joins the transcript (T327), not only the one on screen.
   while (h.cursor.step.kind === 'line') {

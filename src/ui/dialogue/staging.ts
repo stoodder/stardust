@@ -88,6 +88,14 @@ export function stagingLeadInMs(kind: StagingKind, still: boolean): number {
 }
 
 /**
+ * How long after a staging's start Next and Esc are swallowed (ms), by kind: a scene that must not
+ * be skipped past at once (T614 fills it in; 0 for every kind until then).
+ */
+export function stagingLockMs(_kind: StagingKind, _still: boolean): number {
+  return 0;
+}
+
+/**
  * The frame on show `ms` into `beats` (anims looked up in `anims`): a looping anim cycles, a
  * one-shot holds its last frame, and past the last timed beat the held one plays on. Null for an
  * anim the sprite doesn't define.

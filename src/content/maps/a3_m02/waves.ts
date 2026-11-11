@@ -39,6 +39,7 @@ export const W7_GAP = 2;
 export const W12_DRONES = Number(process.env.W12 ?? 16);
 export const W14_DRONES = Number(process.env.W14 ?? 18);
 export const W15_DRONES = Number(process.env.W15 ?? 12);
+export const GAP = Number(process.env.GAP ?? 1);
 
 export const waves = defineWaves([
   // W1 · Motes down the old road
@@ -85,12 +86,12 @@ export const waves = defineWaves([
   // W11 · drones + Motes
   {
     countdownSec: COUNTDOWN,
-    groups: [drones(12, 0, 0.8), expediters(2, 3, 4), motes(12, 'rift_e', 8, 0.3)],
+    groups: [drones(6, 0, 1.0), expediters(1, 3), motes(14, 'rift_e', 6, 0.3)],
   },
   // W12 · the big drone wave (Sterling's shuttle leaves: map.ts `shuttle`)
   {
     countdownSec: COUNTDOWN,
-    groups: [drones(W12_DRONES, 0, 0.7), expediters(4, 2, 3), drones(W12_DRONES, 16, 0.7)],
+    groups: [drones(W12_DRONES, 0, GAP), expediters(4, 2, 4), drones(W12_DRONES, W12_DRONES * GAP + 4, GAP)],
   },
   // W13 · the Hollow, both rifts
   {
@@ -105,18 +106,18 @@ export const waves = defineWaves([
   // W14 · everything Everglow
   {
     countdownSec: COUNTDOWN,
-    groups: [drones(W14_DRONES, 0, 0.6), expediters(5, 2, 2.5), drones(W14_DRONES, 16, 0.6)],
+    groups: [drones(W14_DRONES, 0, GAP), expediters(5, 2, 4), drones(W14_DRONES, W14_DRONES * GAP + 4, GAP)],
   },
   // W15 · everything
   {
     countdownSec: COUNTDOWN,
     groups: [
-      drones(W15_DRONES, 0, 0.7),
+      drones(W15_DRONES, 0, GAP),
       expediters(4, 2, 3),
       motes(18, 'rift_w', 8, 0.3),
       g('fracture', 2, 'rift_e', 10, 4),
       motes(18, 'rift_e', 16, 0.3),
-      drones(W15_DRONES, 20, 0.7),
+      drones(W15_DRONES, 20, GAP),
     ],
   },
 ]);
