@@ -108,7 +108,8 @@ export function Base() {
     (t) =>
       (t.id !== 'bounty' || view.bountyBoard.shown) &&
       (t.id !== 'xenotech' || view.systems.xenotech.unlocked),
-  ).map((t) => (t.id === 'codex' ? { ...t, label: codexLabel } : t));
+  );
+  const labelOf = (t: (typeof TABS)[number]): string => (t.id === 'codex' ? codexLabel : t.label);
   const move = (by: number): void => {
     picked.current = true;
     const i = tabs.findIndex((t) => t.id === tab);
@@ -144,7 +145,7 @@ export function Base() {
                 // One name, said once (D138, U3): "Xenotech (new)", "Inbox (2 new)", "Shop (locked)";
                 // the lock and the NEW tag are only for the eyes.
                 aria-label={tabName(
-                  t.label,
+                  labelOf(t),
                   open,
                   t.id === 'xenotech' && badge > 0 ? 'new' : badge,
                 )}
@@ -164,7 +165,7 @@ export function Base() {
                 }}
               >
                 {!open && <span class="sd-lock" aria-hidden="true" />}
-                {t.label}
+                {labelOf(t)}
                 {badge > 0 && <NewTag />}
               </button>
             );

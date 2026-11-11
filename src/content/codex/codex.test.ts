@@ -308,6 +308,9 @@ describe("the later acts' versions of earlier entries", () => {
   });
 });
 
+/** A codex text without its closing citation (the Elder's "(…)"). */
+const body = (t: string): string => t.slice(0, t.lastIndexOf(' ('));
+
 describe("the Field Journal's text (Act III, T611)", () => {
   const act3Ids = new Set<string>([
     ...Object.values(ACT3_LISTS).flat(),
@@ -346,7 +349,6 @@ describe("the Field Journal's text (Act III, T611)", () => {
     expect(elder.text).toMatch(/\(Survey 2346, Okonkwo\.\)$/);
     expect(elder.revised?.when).toEqual({ mapAtLeast: 'a3_m03' });
     // The same correction, only its citation changed.
-    const body = (t: string): string => t.slice(0, t.lastIndexOf(' ('));
     expect(body(elder.revised!.text)).toBe(body(elder.text));
   });
 

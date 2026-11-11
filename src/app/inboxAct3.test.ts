@@ -106,19 +106,19 @@ function afterA3M3(): void {
   catchUpStory();
 }
 
-describe('A3M3: the Amended Survey', () => {
-  /** After A3M3, with the Elder's correction read at A3M1 (its old wording). */
-  function readAtA3M1(): void {
-    afterA3M3();
-    updateActiveSave((s) => ({
-      ...s,
-      story: {
-        ...s.story,
-        seen: [...s.story.seen, 'codex_elder__original', 'codex_elder__corrected'],
-      },
-    }));
-  }
+/** After A3M3, with the Elder's correction read at A3M1 (its old wording). */
+function readAtA3M1(): void {
+  afterA3M3();
+  updateActiveSave((s) => ({
+    ...s,
+    story: {
+      ...s.story,
+      seen: [...s.story.seen, 'codex_elder__original', 'codex_elder__corrected'],
+    },
+  }));
+}
 
+describe('A3M3: the Amended Survey', () => {
   it("rewords the Elder's citation, NEW again until its new wording is read", () => {
     readAtA3M1();
     const elder = entry('codex_elder');

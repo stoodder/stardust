@@ -159,14 +159,14 @@ describe('codex lines the docs quote', () => {
   });
 });
 
-describe("the Field Journal's lines the docs quote (Act III, T611)", () => {
-  /** An entry's version text, the revised wording where `revised` is asked for. */
-  function text(id: string, version: 'original' | 'corrected' | 'revised'): string {
-    const v = CODEX[id]?.versions;
-    if (version === 'revised') return v?.corrected?.revised?.text ?? '';
-    return v?.[version]?.text ?? '';
-  }
+/** An entry's version text, the revised wording where `revised` is asked for. */
+function text(id: string, version: 'original' | 'corrected' | 'revised'): string {
+  const v = CODEX[id]?.versions;
+  if (version === 'revised') return v?.corrected?.revised?.text ?? '';
+  return v?.[version]?.text ?? '';
+}
 
+describe("the Field Journal's lines the docs quote (Act III, T611)", () => {
   it("corrects the Hauler and the Elder as the style guide quotes them, the Elder's citation the act file's", () => {
     expectQuoted(STYLE, `"${text('codex_brood_hauler', 'corrected')}"`);
     expectQuoted(STYLE, `"${text('codex_elder', 'revised')}"`);
