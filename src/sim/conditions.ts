@@ -29,6 +29,8 @@
 //   uses the atom), and a marker counts if its tile is among those. A tile the drone finishes on
 //   the tick the wave starts counts (the wreckage system runs before the waves). Settles false
 //   once the wave has started without them all.
+// - `phaseAtLeast` (T800a): the map's script phase (`setPhase`; the finale's 1–3) is at least
+//   that. The phase only rises, so it settles true once reached (Ves'thara's `dawn` rule, T809).
 // - `all`, `any`, `not`.
 //
 // settledCondition() says whether the rest of the run can still change a condition's value: a
@@ -99,7 +101,10 @@ export function settledCondition(c: Condition, state: View, ctx: ConditionContex
     return v === null ? null : !v;
   }
   if ('flag' in c) return atom(c, state, ctx);
-  if ('passedMarker' in c || 'wreckageCleared' in c) return atom(c, state, ctx) ? true : null;
+  // The script phase only rises (T800a), so a reached phase settles true.
+  if ('passedMarker' in c || 'wreckageCleared' in c || 'phaseAtLeast' in c) {
+    return atom(c, state, ctx) ? true : null;
+  }
   if ('stat' in c || 'leaks' in c || 'groupLost' in c) {
     const v =
       'stat' in c
@@ -137,6 +142,7 @@ function atom(c: Condition, state: View, ctx: ConditionContext): boolean {
     return markerPassedTick(state, marker, markerKey(enemy, unrevealed === true)) >= 0;
   }
   if ('flag' in c) return ctx.config.scriptFlags[c.flag] === c.eq;
+  if ('phaseAtLeast' in c) return state.phase >= c.phaseAtLeast;
   if ('leaks' in c) return within(leakCount(state, c.leaks), c.gte, c.lte);
   if ('wreckageCleared' in c) return wreckageClearedAt(state, ctx.map, c.wreckageCleared);
   if ('objectiveDone' in c) return objectiveStatus(state, ctx, c.objectiveDone) === 'done';

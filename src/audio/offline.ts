@@ -607,20 +607,22 @@ export async function renderStorm(
   { ducked = false }: { readonly ducked?: boolean } = {},
 ): Promise<RenderLevels> {
   const storm: Storm = STORMS[id];
-  if (!ducked) {
-    return both(
-      STORM_SEC,
-      (s) => {
-        stormMusic(storm, s);
-        for (const [t, sfxId, pitch] of stormPlays(storm, true)) {
-          s.play(sfxId, { delay: t, pitch });
-        }
-        s.pump(STORM_SEC);
-      },
-      true,
-    );
-  }
   const music = (s: Synth): void => stormMusic(storm, s);
+  if (!ducked) {
+    // Stepped like the ducked render (T766), with ducking off: each sound is made when its step
+    // comes, as the live pump makes it, rather than all of them on the clock's zero. Scheduled up
+    // front, the storm's thousands of waiting voices sat in the graph for the whole render (~3×
+    // the render's time); the plays, their order and their start times are the same.
+    const plays: Timed[] = stormPlays(storm, true).map(([t, sfxId, pitch]) => ({
+      t,
+      run: (s, delay) => s.play(sfxId, { delay, pitch }),
+    }));
+    const [out, raw] = await Promise.all([
+      renderBuffer(STORM_SEC, music, { noDuck: true }, plays),
+      renderBuffer(STORM_SEC, music, { noDuck: true, rawMaster: true }, plays),
+    ]);
+    return { out: analyze([out], RATE), raw: analyze([raw], RATE) };
+  }
   const full = duckedTimeline(storm, true);
   // Three independent contexts, rendered at once (each on its own audio thread, so a stepped
   // render's suspends overlap the others' work; T564b): the mix, its raw master, and the rest of

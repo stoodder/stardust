@@ -54,6 +54,13 @@ import { revokeAbility, revokeTowerClass, setScriptModifier } from '../revoke.ts
 import { scriptGroupSpawns, spawnScriptGroup } from '../scriptGroups.ts';
 import { isBuildableTile } from '../grid.ts';
 import { openTile } from '../openTile.ts'; // T707
+// The finale's slots (T800a; each filled by the task named in SCRIPT_GATES).
+import { choirAt } from '../choir.ts';
+import { spawnEcho } from '../echo.ts';
+import { phaseReached, scriptCheckpoint, setLighting, setPhase } from '../phases.ts';
+import { lockAbility, restoreTowerClass } from '../revoke.ts';
+import { restAll, restProgress } from '../song.ts';
+import { setTimerRate, startTimer, timerFull } from '../timers.ts';
 import { emit, type SimState } from '../state.ts';
 import type { TickContext } from '../tick.ts';
 
@@ -75,6 +82,11 @@ export function triggers(state: SimState, ctx: TickContext): void {
       if ('endMap' in action) endMap(state, ctx);
       else if ('revokeTowerClass' in action) revokeTowerClass(state, ctx, action);
       else if ('revokeAbility' in action) revokeAbility(state, ctx.config, action.revokeAbility);
+      // The finale's context actions (T800a slots): the restore (T807), the echo (T807), Dawn's
+      // laying to rest (T805).
+      else if ('restoreTowerClass' in action) restoreTowerClass(state, ctx);
+      else if ('spawnEcho' in action) spawnEcho(state, ctx, action.spawnEcho);
+      else if ('restAll' in action) restAll(state, ctx);
       else runScriptAction(state, action, ctx.map);
     }
     if (state.outcome !== 'playing') return; // endMap: nothing after it runs
@@ -144,6 +156,11 @@ function reached(state: SimState, ctx: TickContext, on: CompiledScriptTrigger<Id
   }
   if ('forcedInputResolved' in on) return forcedInputResolved(state, on.forcedInputResolved);
   if ('objectiveCompleted' in on) return objectiveDoneNow(state, ctx.map, on.objectiveCompleted);
+  // The finale (T800a slots; refused until their tasks: SCRIPT_GATES).
+  if ('restProgressPct' in on) return restProgress(state) >= on.restProgressPct;
+  if ('choirAt' in on) return choirAt(state, ctx.map, on.choirAt);
+  if ('timerFull' in on) return timerFull(state, ctx.map, on.timerFull);
+  if ('phase' in on) return phaseReached(state, on.phase, on.afterTicks);
   return false; // refused by createSim (unsupportedScript)
 }
 
@@ -174,7 +191,7 @@ function objectiveDoneNow(state: SimState, map: CompiledMapDef<IdSpace>, id: str
 export function runScriptAction(
   state: SimState,
   action: CompiledScriptAction<IdSpace>,
-  map: Pick<CompiledMapDef<IdSpace>, 'escort' | 'scriptGroups' | 'waves'>,
+  map: Pick<CompiledMapDef<IdSpace>, 'escort' | 'scriptGroups' | 'waves' | 'timers'>,
   firstTick: number = state.tick,
 ): void {
   if ('unlockTowerClass' in action) {
@@ -210,9 +227,22 @@ export function runScriptAction(
     spawnScriptGroup(state, map, action.spawnWave, firstTick);
   } else if ('openTile' in action) {
     openTile(state, action.openTile, action.to); // T707 (sim/openTile.ts)
+  } else if ('setPhase' in action) {
+    setPhase(state, action.setPhase); // T806 (sim/phases.ts)
+  } else if ('checkpoint' in action) {
+    scriptCheckpoint(state, action.checkpoint); // T806
+  } else if ('setLighting' in action) {
+    setLighting(state, action.setLighting); // T806
+  } else if ('startTimer' in action) {
+    startTimer(state, map, action.startTimer); // T806 (sim/timers.ts)
+  } else if ('setTimerRate' in action) {
+    setTimerRate(state, map, action.setTimerRate.timer, action.setTimerRate.pct); // T806
+  } else if ('lockAbility' in action) {
+    lockAbility(state, action.lockAbility, action.on); // T807 (sim/revoke.ts)
   }
-  // `endMap`, `revokeTowerClass`, and `revokeAbility` run in triggers() (they need the tick's
-  // context); anything else is refused by createSim (unsupportedScript).
+  // `endMap`, `revokeTowerClass`, `revokeAbility`, `restoreTowerClass`, `spawnEcho`, and
+  // `restAll` run in triggers() (they need the tick's context); anything else is refused by
+  // createSim (unsupportedScript).
 }
 
 /**
@@ -221,20 +251,28 @@ export function runScriptAction(
  * own rows when it lands, and a part not listed here waits for a later milestone.
  */
 export const SCRIPT_GATES: Readonly<Record<string, string>> = Object.freeze({
-  // Triggers (D141, D146). A3M5's `objectiveCompleted` runs since T706; the finale's rest (M8).
-  restProgressPct: 'M8',
-  // Actions (D141, D146). M6's Clean Exit (revocations, QUILL's lockout) runs since T606, M7's
-  // script groups (`spawnWave`) since T706, opened tiles (`openTile`) since T707.
-  // M8, the finale: a lighting change at a script moment (Dawn; wave-paced light is map data,
-  // `MapDef.lighting`, T410a, Sundown's darkness included, T505), the Phase 2 checkpoint (T305b
-  // runs the wave checkpoints, not this action), the restored class after "Who's there?", and the
-  // song's timers and phases.
-  setLighting: 'M8',
-  checkpoint: 'M8',
-  restoreTowerClass: 'M8',
-  startTimer: 'M8',
-  setTimerRate: 'M8',
-  setPhase: 'M8',
+  // Triggers (D141, D146, D154). A3M5's `objectiveCompleted` runs since T706. The finale's: the
+  // song's rest progress (T805), the choir at a marker, a full timer, and a script phase (T806).
+  restProgressPct: 'T805',
+  choirAt: 'T806',
+  timerFull: 'T806',
+  phase: 'T806',
+  // Actions (D141, D146, D154). M6's Clean Exit (revocations, QUILL's lockout) runs since T606,
+  // M7's script groups (`spawnWave`) since T706, opened tiles (`openTile`) since T707.
+  // The finale: phases, timers, a lighting change at a script moment (Dawn; wave-paced light is
+  // map data, `MapDef.lighting`, T410a, Sundown's darkness included, T505), and the Phase 2
+  // checkpoint (T305b runs the wave checkpoints, not this action) are T806's; the restored class
+  // after "Who's there?", the phase-scoped ability lock, and Thrum's echo T807's; Dawn's laying
+  // every Hollow unit to rest T805's.
+  setPhase: 'T806',
+  startTimer: 'T806',
+  setTimerRate: 'T806',
+  setLighting: 'T806',
+  checkpoint: 'T806',
+  restoreTowerClass: 'T807',
+  lockAbility: 'T807',
+  spawnEcho: 'T807',
+  restAll: 'T805',
 });
 
 /** "not simulated yet", with the task that lifts it when SCRIPT_GATES names one. */
@@ -258,8 +296,8 @@ export function unsupportedScript(map: CompiledMapDef<IdSpace>): string[] {
   }
   for (const o of map.objectives) {
     for (const a of o.onComplete) {
-      // The Holdout's end (T605) and the revocations (T606) run from a map event, never from an
-      // objective.
+      // The Holdout's end (T605), the revocations (T606), and the finale's restore, echo, and
+      // Dawn (T800a) run from a map event, never from an objective.
       const eventOnly = FROM_EVENTS_ONLY.find((k) => k in a);
       if (eventOnly !== undefined) {
         out.push(`objective '${o.id}': action ${eventOnly} runs from map events only`);
@@ -270,7 +308,15 @@ export function unsupportedScript(map: CompiledMapDef<IdSpace>): string[] {
 }
 
 /** Actions an objective's `onComplete` can't run: they need the tick's context (triggers()). */
-const FROM_EVENTS_ONLY = ['endMap', 'revokeTowerClass', 'revokeAbility'] as const;
+const FROM_EVENTS_ONLY = [
+  'endMap',
+  'revokeTowerClass',
+  'revokeAbility',
+  // The finale's (T800a slots).
+  'restoreTowerClass',
+  'spawnEcho',
+  'restAll',
+] as const;
 
 function unsupportedTrigger(
   on: CompiledScriptTrigger<IdSpace>,
@@ -288,7 +334,8 @@ function unsupportedTrigger(
     !('forcedInputResolved' in on) &&
     !('objectiveCompleted' in on)
   ) {
-    const key = Object.keys(on).join('/');
+    // A script phase's trigger is named `phase` (its compiled `afterTicks` beside it).
+    const key = 'phase' in on ? 'phase' : Object.keys(on).join('/');
     out.push(`${where} ${key} ${notYet(key)}`);
   }
 }

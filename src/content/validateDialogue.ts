@@ -74,6 +74,7 @@ import {
   type StoryAct,
 } from './dialogue/types.ts';
 import { TOWERS } from './towers/index.ts';
+import { validateEpilogue } from './validateEpilogue.ts';
 import { Issues } from './validateHelpers.ts';
 
 /** What dialogue validation reads. */
@@ -94,9 +95,12 @@ export const LIVE_DIALOGUE: DialogueContent = {
 
 let cache: readonly string[] | null = null;
 
-/** The live dialogue's errors, computed once per process (the registries are static). */
+/**
+ * The live dialogue's errors, with the epilogue cards' (validateEpilogue.ts), computed once per
+ * process (the registries are static).
+ */
 export function dialogueErrors(): readonly string[] {
-  cache ??= validateDialogue(LIVE_DIALOGUE);
+  cache ??= [...validateDialogue(LIVE_DIALOGUE), ...validateEpilogue()];
   return cache;
 }
 

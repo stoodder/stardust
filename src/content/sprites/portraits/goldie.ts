@@ -358,9 +358,9 @@ function paint({ expression, variant, mouth }: PaintArgs): CharGrid {
   if (variant === 'party_hat') {
     // Perched on the sun hat's brim; Duchess has hers.
     paintPartyHat(g, {
-      base: [38, 12],
-      tip: [43, 3],
-      halfWidth: 3.5,
+      base: [37, 12],
+      tip: [44, 2],
+      halfWidth: 4.5,
       ink: { stripe: 'P', stripeShade: 'Q', gold: 'M', goldShade: 'd', pom: 'w', pomShade: '4' },
     });
     thimble(g);

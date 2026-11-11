@@ -290,9 +290,9 @@ function paint({ expression, variant, mouth }: PaintArgs): CharGrid {
   if (variant === 'party_hat') {
     // A small pink cone, sliding off a very large head.
     paintPartyHat(g, {
-      base: [19, 6],
-      tip: [12, 1],
-      halfWidth: 3.5,
+      base: [18, 7],
+      tip: [10, 0],
+      halfWidth: 4.5,
       ink: { stripe: 'T', stripeShade: 'O', gold: 'Y', goldShade: 'Z', pom: 'w', pomShade: '4' },
     });
   }

@@ -370,6 +370,19 @@ export function createRunTracker<K extends IdSpace>(
           case 'PuddleSpawned':
           case 'BearerHome':
           case 'ScriptGroupSpawned':
+          // The finale (T800a seams): their tasks may tally them.
+          case 'PhaseChanged':
+          case 'ChoirHalted':
+          case 'SingerHushed':
+          case 'LaidToRest':
+          case 'Scattered':
+          case 'Reformed':
+          case 'TimerFull':
+          case 'LightingSet':
+          case 'ClassRestored':
+          case 'AbilityLocked':
+          case 'EchoArrived':
+          case 'DawnBroke':
             break;
           default:
             e satisfies never;

@@ -224,6 +224,19 @@ const MAKES_SOUND: Readonly<Record<SimEventType, boolean>> = {
   BearerHome: true,
   // The wave's horn covers a script group walking in (A3M5's W10 surge).
   ScriptGroupSpawned: false,
+  // The finale's events (declared by T800a): silent until T850 sorts their sounds.
+  PhaseChanged: false,
+  ChoirHalted: false,
+  SingerHushed: false,
+  LaidToRest: false,
+  Scattered: false,
+  Reformed: false,
+  TimerFull: false,
+  LightingSet: false,
+  ClassRestored: false,
+  AbilityLocked: false,
+  EchoArrived: false,
+  DawnBroke: false,
 };
 
 /** The sim event types the binder hands to `EventSounds.sounds` (the rest are always silent). */

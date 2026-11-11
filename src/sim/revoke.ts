@@ -24,7 +24,7 @@
 //   aim of it as the event arrives (app/revoked.ts). A checkpoint replay re-runs the cue from the
 //   command log, so its refund is paid once, in the replayed state.
 // Revocations persist only through meta, on the run that first wins the map (meta-runtime.md
-// § Run end, step 3).
+// § Run end, step 3). The finale's `restoreTowerClass` and `lockAbility` (T800a slots) are T807's.
 import type { CompiledScriptAction } from '../content/compiled.ts';
 import type { IdSpace, TowerFaction } from '../content/types.ts';
 import { assertNever } from '../shared/types.ts';
@@ -131,6 +131,24 @@ export function revokeAbility(state: SimState, config: SimConfig<IdSpace>, abili
   const a = config.abilities;
   const slot = a.slot1 === ability ? 1 : a.slot2 === ability ? 2 : null;
   emit(state, { type: 'AbilityRevoked', ability, slot });
+}
+
+/**
+ * The finale's `restoreTowerClass: 'lastRevoked'` (T800a seam, T807 fills it): after "Who's
+ * there?", the class Directive 0 revoked comes back (`ClassRestored`). Refused by createSim until
+ * T807 (SCRIPT_GATES).
+ */
+export function restoreTowerClass(_state: SimState, _ctx: TickContext): void {
+  // T807.
+}
+
+/**
+ * The finale's `lockAbility` (T800a seam, T807 fills it; D154, T501): an ability locked (or
+ * unlocked) for the phase, never revoked and never saved (`state.abilitiesLocked`,
+ * `AbilityLocked`). Refused by createSim until T807 (SCRIPT_GATES).
+ */
+export function lockAbility(_state: SimState, _ability: string, _on: boolean): void {
+  // T807.
 }
 
 /** The `setModifier` script action: `ModifierChanged` when it changes anything. */

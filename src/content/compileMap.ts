@@ -18,6 +18,7 @@ import type {
   CompiledWaveGroup,
 } from './compiled.ts';
 import { compileBuilds } from './compileBuilds.ts';
+import { compileChoir, compileSong, compileTimers } from './compileFinale.ts'; // T800a
 import { checkId, entriesOf, periodTicks, ticks, type Ctx, type Refs } from './compileHelpers.ts';
 import {
   DEFAULT_CORE_INTEGRITY,
@@ -130,6 +131,10 @@ export function compileMap<K extends IdSpace>(
     const group = compileGroup(ctx, refs, routes, g, `${where}.scriptGroups.${id}`);
     if (group !== null) scriptGroups[id] = group;
   }
+  // The finale (T800a seams): the choir, the song, and the timers (compileFinale.ts).
+  const choir = compileChoir(ctx, def, routes, where);
+  const song = compileSong(ctx, def, where);
+  const timers = compileTimers(ctx, def, where);
   if (ctx.errors.length > errorsBefore) return null;
   return {
     id: def.id,
@@ -178,6 +183,9 @@ export function compileMap<K extends IdSpace>(
     clickables: { ...def.clickables },
     markerWhen: { ...def.markerWhen },
     scriptGroups,
+    choir,
+    song,
+    timers,
     builds,
   };
 }
@@ -619,6 +627,10 @@ function compileTrigger<K extends IdSpace>(
       phase: { afterTicks: ticks(ctx, t.phase.afterSec, `${where}.afterSec`) },
     };
   }
+  // A script phase's trigger (T800a): `afterSec` after the phase began, 0 when absent.
+  if ('phase' in t) {
+    return { phase: t.phase, afterTicks: ticks(ctx, t.afterSec ?? 0, `${where}.afterSec`) };
+  }
   if ('bossHpPct' in t && t.boss !== undefined) checkId(ctx, refs.enemies, t.boss, where, 'enemy');
   return t;
 }
@@ -642,5 +654,6 @@ function compileAction<K extends IdSpace>(
   }
   if ('unlockTowerClass' in a) checkId(ctx, refs.towers, a.unlockTowerClass, where, 'tower');
   if ('revokeAbility' in a) checkId(ctx, refs.abilities, a.revokeAbility, where, 'ability');
+  if ('lockAbility' in a) checkId(ctx, refs.abilities, a.lockAbility, where, 'ability'); // T800a
   return a;
 }

@@ -171,6 +171,49 @@ export interface SimStats {
   takeoverJamTicks: number;
   /** Bearers who reached home (A3M5's Results line; T706). */
   bearersHome: number;
+  // The finale (T800a seams; each counted by the task named).
+  /**
+   * Phase 2's Hollow units laid to rest inside the song and scattered outside it (T805; the Laid
+   * to Rest medal: rested ≥ 90% of the two). A unit that re-forms and falls again counts again.
+   */
+  restedKills: number;
+  scatteredKills: number;
+  /**
+   * The fewest Voices (singers still singing) this run (T804): the choir's size at the start, 0
+   * on a map without a choir. It falls, so it is no condition `stat` (those only grow).
+   */
+  voicesMin: number;
+  /** The Deep Bore's highest fill, in whole percent 0–100 (T806; the first map timer's). */
+  boreProgress: number;
+}
+
+/**
+ * The finale's choir now (T800a seam, T804 runs it; design/maps.md § 5.5). Blank (all 0, not
+ * halted) on a map without one.
+ */
+export interface ChoirState {
+  /** The run's choir: singers that walk under its story flags (Pebble not counted; Thrum is). */
+  singers: number;
+  /** Singers still singing: the Voices meter. */
+  voices: number;
+  /** The leader's distance walked along the choir's road (from its core end), and position. */
+  dist: number;
+  x: number;
+  y: number;
+  /** The choir is halted: a Hollow unit is within `haltTiles` ahead of the leader. */
+  halted: boolean;
+  /** The leader has reached the choir's `stopAt` marker (the Halls mouth). */
+  arrived: boolean;
+}
+
+/** A secondary timer now (T800a seam, T806 runs it), index-aligned with `map.timers`. */
+export interface TimerState {
+  /** Ticks of fill so far, at 100% rate (full at the timer's `fillTicks`). */
+  filled: number;
+  /** Its rate now, a share (1 = 100%; `setTimerRate`); 0 until `startTimer`. */
+  ratePct: number;
+  running: boolean;
+  full: boolean;
 }
 
 /** A count per enemy faction (fixed keys, so the shape is monomorphic and hash order is stable). */
@@ -424,6 +467,23 @@ export interface SimState<K extends IdSpace = IdSpace> {
    * a map whose conditions use `cleared` (T706; sim/conditions.ts): Cut the Feed's "before W10".
    */
   wreckageAtWave: number[];
+  // The finale (T800a seams; each run by the task named).
+  /** The map's script phase (`setPhase`; the finale's 1–3, T806): 1 from the start. */
+  phase: number;
+  /** The tick the current phase began (0 for phase 1): the `{ phase, afterSec }` trigger's clock. */
+  phaseTick: number;
+  /** The secondary timers (T806), index-aligned with `map.timers`; empty without any. */
+  timers: TimerState[];
+  /** The song's rest points so far (T805; the countdown's p = restPoints ÷ restTarget). */
+  restPoints: number;
+  /** The run's rest target (T805: the map's `song.restTarget`; 0 without a song). */
+  restTarget: number;
+  /** The choir (T804); blank without one. */
+  choir: ChoirState;
+  /** The lighting key a `setLighting` set (Dawn; T806), or null: render reads it. */
+  lightingKey: string | null;
+  /** Abilities a `lockAbility` locked for the phase (Directive 0's Time Dilation; T807). */
+  abilitiesLocked: string[];
   /** Commands enqueued and not yet applied (FIFO). */
   pending: Command<K>[];
   /** Output, not state: every command applied so far, with its tick. Not hashed. */
@@ -518,6 +578,10 @@ export function createState(map: CompiledMapDef<IdSpace>, seed: number): SimStat
       towerTicks: 0,
       takeoverJamTicks: 0,
       bearersHome: 0,
+      restedKills: 0,
+      scatteredKills: 0,
+      voicesMin: 0,
+      boreProgress: 0,
     },
     abilityCooldownTicks: [0, 0],
     abilityCooldownWaves: [0, 0],
@@ -552,6 +616,16 @@ export function createState(map: CompiledMapDef<IdSpace>, seed: number): SimStat
     scriptGroupStart: [],
     scriptGroupWave: [],
     wreckageAtWave: [],
+    phase: 1,
+    phaseTick: 0,
+    timers: map.timers.map(
+      (): TimerState => ({ filled: 0, ratePct: 0, running: false, full: false }),
+    ),
+    restPoints: 0,
+    restTarget: map.song?.restTarget ?? 0,
+    choir: { singers: 0, voices: 0, dist: 0, x: 0, y: 0, halted: false, arrived: false },
+    lightingKey: null,
+    abilitiesLocked: [],
     pending: [],
     commandLog: [],
     events: [],

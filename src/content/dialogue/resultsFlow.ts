@@ -11,10 +11,14 @@
 //   (the PA's minor shift change that closes Act II, after A2M6's card);
 // - `stamps`: story-only stamps on the card. Each `when` reads the run that just ended (`outcome`,
 //   `thisRun`), so a replay shows what that run did, not what the save's flag remembers. Stamps
-//   never change rewards.
+//   never change rewards;
+// - `ending`: the campaign's close once a **win**'s card is dismissed (the finale only, D154):
+//   Sterling's memo as a card, C5, the epilogue over the credits, then the post-game star map; a
+//   later win, C5 answered, goes straight to the post-game star map (app/finaleFlow.ts).
 // A scene listed here plays only once it is registered (content/dialogue/index.ts), so a map's
 // flow can be wired before its dialogue lands.
 import type { CampaignMapId } from '../campaign.ts';
+import type { MemoId } from '../memos/types.ts';
 import type { JingleVariant } from '../presentation.ts';
 import { isCampaignMapId } from './rules.ts';
 import type { Condition, SceneId } from './types.ts';
@@ -41,6 +45,33 @@ export interface FlowJingle {
   readonly jingle: Exclude<JingleVariant, 'none' | 'song'>;
 }
 
+/**
+ * The screens the campaign's close plays that are neither a scene nor a memo: `epilogue`, the
+ * epilogue cards over the credits roll, the counter card, and the final image by ending
+ * (core-loop.md § 6.8; T810); `post_game`, the post-game star map at dawn (T863).
+ */
+export const ENDING_SCREENS = ['epilogue', 'post_game'] as const;
+export type EndingScreen = (typeof ENDING_SCREENS)[number];
+
+/** One step of the campaign's close, played full-screen in order. */
+export type EndingStep =
+  /** A memo shown as a full-screen card (Sterling's farewell, `memo_fin_01`), once registered. */
+  | { readonly memo: MemoId }
+  /** One of the map's own full-screen scenes (C5's, which sets `ending_choice`), once registered. */
+  | { readonly scene: SceneId }
+  | { readonly screen: EndingScreen };
+
+/**
+ * The campaign's close after the card (D154): `first` on the win that leaves C5 to answer
+ * (`ending_choice` unset as the card closes, so a tab closed before C5 asks it again on the next
+ * win), `replay` on any later win (C5 is committed once and never re-asked; the post-game star map
+ * offers "Watch the epilogue").
+ */
+export interface EndingFlow {
+  readonly first: readonly EndingStep[];
+  readonly replay: readonly EndingStep[];
+}
+
 /** One map's results flow. Scene ids are its own `scene_*` slots (style-guide.md § 5.3). */
 export interface ResultsFlow {
   readonly beforeResults?: readonly SceneId[];
@@ -51,6 +82,8 @@ export interface ResultsFlow {
   readonly debriefAsScene?: boolean;
   readonly jingles?: readonly FlowJingle[];
   readonly stamps?: readonly ResultsStamp[];
+  /** The campaign's close once the card is dismissed (the finale only). */
+  readonly ending?: EndingFlow;
 }
 
 /** Every map's results flow (a map with none plays straight to its card). */
@@ -94,6 +127,21 @@ export const RESULTS_FLOW: Readonly<Partial<Record<CampaignMapId, ResultsFlow>>>
   // before the card at Dome 1 (T714's staging, ui/dialogue/staging.ts), so the callsign turns on
   // the stage, not under a payroll.
   a3_m06: { debriefAsScene: true },
+  // FIN · Clearing the Way (finale.md § FIN; D154): Dawn full-screen as the light lands (the map is
+  // won 8 s after it breaks), then the card (REMEMBERED: {n}), then the campaign's close: Sterling's
+  // farewell memo as a card, C5, the epilogue over the credits, and the post-game star map.
+  fin_m01: {
+    beforeResults: ['fin_m01_scene_dawn'],
+    ending: {
+      first: [
+        { memo: 'memo_fin_01' },
+        { scene: 'fin_m01_scene_c5' },
+        { screen: 'epilogue' },
+        { screen: 'post_game' },
+      ],
+      replay: [{ screen: 'post_game' }],
+    },
+  },
 };
 
 /** Map `map`'s results flow (an empty one when it has none). */

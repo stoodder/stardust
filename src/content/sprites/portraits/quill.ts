@@ -7,6 +7,11 @@
 // flat teal), and the smile is gone: in its place, in every expression, a plain status bar (a
 // teal frame, six of nine segments lit), whose next segment blinks on as it talks. The eye keeps
 // its shapes, so the expressions still read; `policy` is the neutral face (no directives, no tell).
+// Variant `damaged` (C4 Keep, finale Phase 2, after Directive 0 fires and "Not Everglow." lands;
+// bible.md § C4): still QUILL, still smiling, but it fought itself and it shows. The glass is
+// cracked from an impact in the upper right, the crack running down the hexagon's right side clear
+// of the eye and the mouth (so every expression reads), a band of the picture torn three pixels
+// sideways across the lower hexagon, and the power LED burning warning amber.
 import { grid, line, plot, type CharGrid } from '../helpers.ts';
 import type { FrameDef } from '../types.ts';
 import { definePortrait, portraitFrame, PORTRAIT_SIZE, type PaintArgs } from './portrait.ts';
@@ -200,6 +205,46 @@ function bead(g: CharGrid): void {
   put(g, 34, 16, ['.E.', 'EwE', 'EEE']);
 }
 
+/** Rows of the `damaged` tear band: the picture there slips three pixels right. */
+export const QUILL_TEAR_ROWS = { y0: 33, y1: 35 } as const;
+/** How far the tear band slips. */
+const TEAR = 3;
+
+/** The `damaged` crack: polylines from the impact point, in glass-white. */
+// prettier-ignore
+export const QUILL_CRACK: readonly (readonly (readonly [number, number])[])[] = [
+  [[37, 10], [43, 5]],
+  [[37, 10], [43, 14]],
+  [[37, 10], [35, 7], [32, 4]],
+  [[37, 10], [34, 16], [35, 22], [32, 30], [34, 37], [31, 43]],
+  [[35, 22], [40, 26], [43, 25]],
+];
+
+/** `damaged`: the tear band, the crack over the glass, and the amber LED. */
+function damage(g: CharGrid): void {
+  for (let y = QUILL_TEAR_ROWS.y0; y <= QUILL_TEAR_ROWS.y1; y++) {
+    const row = g[y];
+    if (row === undefined) continue;
+    const src = row.slice();
+    for (let x = 4 + TEAR; x < S - 4; x++) row[x] = src[x - TEAR] ?? 'A';
+    // The torn-away strip at its left edge shows bare glass.
+    for (let x = 4; x < 4 + TEAR; x++) row[x] = 'B';
+  }
+  for (const path of QUILL_CRACK) {
+    for (let i = 1; i < path.length; i++) {
+      const a = path[i - 1];
+      const b = path[i];
+      if (a !== undefined && b !== undefined) line(g, a[0], a[1], b[0], b[1], 'w');
+    }
+  }
+  // The impact: a small star of shattered glass.
+  put(g, 36, 9, ['.C.', 'CwC', '.C.']);
+  plot(g, 37, 10, 'w');
+  // The power LED, amber.
+  plot(g, 39, 45, 'I');
+  plot(g, 40, 45, 'H');
+}
+
 /** The party hat (A1M5): a jaunty striped cone, tipped right, a pom-pom and an elastic. */
 function partyHat(g: CharGrid): void {
   // prettier-ignore
@@ -234,6 +279,7 @@ function paint({ expression, variant, mouth, scan }: PaintArgs): CharGrid {
   if (m !== undefined) put(g, HX - 6, HY + 2, mouth === 'talk' ? m.talk : m.closed);
   if (expression === 'worried') bead(g);
   if (variant === 'party_hat') partyHat(g);
+  if (variant === 'damaged') damage(g);
   return g;
 }
 
@@ -274,7 +320,7 @@ export const portraitQuill = definePortrait({
     P: 'pink.3', Q: 'pink.2',
   },
   expressions: ['neutral', 'happy', 'worried', 'angry', 'sad', 'policy'],
-  variants: ['party_hat', 'purge'],
+  variants: ['party_hat', 'purge', 'damaged'],
   scanlines: true,
   paint,
   extra: (rowsOf) => {

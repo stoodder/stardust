@@ -1,9 +1,9 @@
 // Enemy compilation: seconds to ticks, optional fields resolved to a value or null. The enemy
 // abilities (burrow, split, huddle, boss: T300a; pulse, blink, and the derived hush and cloak
 // flags: T400a; phase, the shield aura, a boss's shield-broken phase and ward: T500a; gathering
-// and the haste aura: T600a; jamming, the healer aura, and M7's boss phase kinds: T700a) compile
-// here; the sim runs them in sim/enemyAbilities/. Their ids (a split's or a spawn's enemy) are
-// checked by validate().
+// and the haste aura: T600a; jamming, the healer aura, and M7's boss phase kinds: T700a; the
+// finale's floor, `burrowTo`, and adds: T800a) compile here; the sim runs them in
+// sim/enemyAbilities/. Their ids (a split's or a spawn's enemy) are checked by validate().
 import { perSecToPerTick } from '../shared/time.ts';
 import type {
   CompiledBlink,
@@ -254,6 +254,17 @@ function compileBoss(ctx: Ctx, b: BossDef, where: string): CompiledBoss {
               hpPct: p.split.hpPct,
               mergeAfterTicks: ticks(ctx, p.split.mergeAfterSec, `${w}.split.mergeAfterSec`),
               mergeHastePct: p.split.mergeHastePct,
+            },
+      // The finale's phase kinds (T800a seams; T808 runs them).
+      floorPct: p.floorPct ?? 0,
+      burrowTo: p.burrowTo ?? null,
+      adds:
+        p.adds === undefined
+          ? null
+          : {
+              enemy: p.adds.enemy,
+              count: p.adds.count ?? 1,
+              everyTicks: ticks(ctx, p.adds.everySec, `${w}.adds.everySec`),
             },
     };
   });

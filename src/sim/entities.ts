@@ -16,8 +16,8 @@
 //   T305c), and T600a the M6 ones (gathering T602; the haste aura T603; swarmlings, their chill,
 //   and Underfoot's trap T604; the blocker T605; the Choir's jam rule and Lulled T607; the Bloom's
 //   pull-back T608), and T700a the M7 ones (the Jammed state and the jammers' tells T702, T707;
-//   the boss split's merge T708; Big Glorp's puddle T705); until then they keep their blank
-//   values.
+//   the boss split's merge T708; Big Glorp's puddle T705), and T800a the finale's (scatter and
+//   re-form T805); until then they keep their blank values.
 import type {
   CompiledBomblets,
   CompiledEffect,
@@ -441,6 +441,14 @@ export interface Enemy extends PoolEntity {
   splitFrom: CompiledEnemyDef | null;
   /** A split boss's parts and its merged self (T708): the one boss bar's maximum (their HP summed at the split); 0 otherwise. */
   splitMaxHp: number;
+  // The finale's enemy state (T800a seams; T805 runs it). Blank until then.
+  /**
+   * Scattered (design/maps.md § 5.5, Phase 2 only): ticks until it re-forms at the song's
+   * `scatter.hpPct` (0: not scattered; `reformTicks` is the Penitent's shield's), and whether it
+   * has scattered once already (a second fall outside the song is for good).
+   */
+  scatterTicks: number;
+  scatteredOnce: boolean;
 }
 
 export const ENEMY_BLANK: Readonly<Enemy> = Object.freeze({
@@ -517,6 +525,8 @@ export const ENEMY_BLANK: Readonly<Enemy> = Object.freeze({
   mergeTicks: 0,
   splitFrom: null,
   splitMaxHp: 0,
+  scatterTicks: 0,
+  scatteredOnce: false,
 });
 
 /**

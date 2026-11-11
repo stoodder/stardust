@@ -570,6 +570,14 @@ export interface CompiledBossPhase {
     readonly mergeAfterTicks: number;
     readonly mergeHastePct: number;
   } | null;
+  /** The finale's phase kinds (BossPhaseDef; T800a seams, T808): the floor, 0 for none. */
+  readonly floorPct: number;
+  readonly burrowTo: 'choir' | null;
+  readonly adds: {
+    readonly enemy: string;
+    readonly count: number;
+    readonly everyTicks: number;
+  } | null;
 }
 
 export interface CompiledAbilityDef<Id extends string = string> {
@@ -700,10 +708,11 @@ export interface CompiledWaveGroup<K extends IdSpace = LiveIds> {
   readonly teach: boolean;
 }
 
-/** ScriptTrigger with `afterSec` converted to ticks. */
+/** ScriptTrigger with `afterSec` converted to ticks (a wave's, and a script phase's: 0 if absent). */
 export type CompiledScriptTrigger<K extends IdSpace = LiveIds> =
-  | Exclude<ScriptTrigger<K>, { readonly wave: number }>
-  | { readonly wave: number; readonly phase: WavePhase | { readonly afterTicks: number } };
+  | Exclude<ScriptTrigger<K>, { readonly wave: number } | { readonly phase: number }>
+  | { readonly wave: number; readonly phase: WavePhase | { readonly afterTicks: number } }
+  | { readonly phase: number; readonly afterTicks: number };
 /** ScriptAction with setClickable's fallback trigger compiled. */
 export type CompiledScriptAction<K extends IdSpace = LiveIds> =
   | Exclude<ScriptAction<K>, { readonly setClickable: unknown }>
@@ -937,5 +946,57 @@ export interface CompiledMapDef<K extends IdSpace = LiveIds> {
   readonly markerWhen: Readonly<Record<MarkerId, FlagGateDef>>;
   /** Wave groups a `spawnWave` action spawns, by id (MapDef.scriptGroups; T706); empty for none. */
   readonly scriptGroups: Readonly<Record<string, CompiledWaveGroup<K>>>;
+  /** The finale's choir (MapDef.choir; T800a seam, T804), its route resolved, or null. */
+  readonly choir: CompiledChoir | null;
+  /** The Leaving Song (MapDef.song; T800a seam, T805), in ticks, or null. */
+  readonly song: CompiledSong | null;
+  /** Secondary timers (MapDef.timers; T800a seam, T806), in authored order; empty for none. */
+  readonly timers: readonly CompiledTimer[];
   readonly builds: CompiledBuilds<K>;
+}
+
+/** ChoirDef with its route and stop resolved and its pace per tick. */
+export interface CompiledChoir {
+  readonly leader: 'pebble';
+  readonly route: CompiledRoute;
+  readonly stopAt: MarkerId;
+  readonly stopTile: GridPos;
+  readonly singers: number;
+  readonly paceTilesPerTick: number;
+  readonly haltTiles: number;
+  readonly groups: readonly {
+    readonly when: { readonly flag: ScriptFlagId; readonly eq: FlagValue };
+    readonly singers: number;
+  }[];
+  readonly thrum: {
+    readonly when: { readonly flag: ScriptFlagId; readonly eq: FlagValue };
+    readonly radiusBonus: number;
+  } | null;
+  readonly returned: {
+    readonly when: { readonly flag: ScriptFlagId; readonly eq: FlagValue };
+    readonly count: number;
+    readonly auraRadius: number;
+  } | null;
+}
+
+/** SongDef per tick, its defaults resolved. */
+export interface CompiledSong {
+  readonly baseRadius: number;
+  readonly silentPct: number;
+  readonly restTarget: number;
+  readonly restPerTick: number;
+  readonly restPerBossHp: number;
+  readonly multipliers: readonly {
+    readonly flag: ScriptFlagId;
+    readonly value: FlagValue;
+    readonly mul: number;
+  }[];
+  readonly scatter: { readonly reformTicks: number; readonly hpPct: number };
+}
+
+/** A secondary timer (TimerDef) in ticks, with its id. */
+export interface CompiledTimer {
+  readonly id: string;
+  readonly fillTicks: number;
+  readonly bossHpPerTenth: number;
 }

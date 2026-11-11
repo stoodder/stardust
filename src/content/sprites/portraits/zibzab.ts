@@ -356,17 +356,17 @@ function paint({ expression, variant, mouth }: PaintArgs): CharGrid {
   shell(g);
   lantern(g);
   body(g);
+  stalk(g, face.left);
+  stalk(g, face.right);
   if (variant === 'party_hat') {
-    // His own stock, two stardust (honestly, one), in place of the visor cap, behind the stalks.
+    // His own stock, two stardust (honestly, one), in place of the visor cap, between the stalks.
     paintPartyHat(g, {
       base: [20.5, 19],
-      tip: [22, 8],
+      tip: [20, 6],
       halfWidth: 4.5,
       ink: { stripe: 'V', stripeShade: 'X', gold: 'H', goldShade: 'G', pom: 'w', pomShade: 'W' },
     });
   }
-  stalk(g, face.left);
-  stalk(g, face.right);
   eyeball(g, face.left);
   eyeball(g, face.right);
   if (variant !== 'party_hat') cap(g);

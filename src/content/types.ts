@@ -169,6 +169,8 @@ export type AllyKind =
   | 'refugee'
   | 'bearer'
   | 'singer'
+  /** Thrum's echo in the finale (M8; T800a seam, T807 runs it): untargetable, laid to rest in gold. */
+  | 'echo'
   | 'bricks'
   | 'militia'
   | 'ward';
@@ -908,6 +910,29 @@ export interface BossPhaseDef {
    * merge: the boss is beaten.
    */
   readonly split?: BossSplitDef;
+  // The finale's phase kinds (T800a seams; the Unsung, enemies.md § 6; T808 runs them).
+  /**
+   * The boss's HP can't fall below this share of its max HP while in this phase (the Unsung's last
+   * phase, the Song: 0.01). It ends by its `layToRest` ending, scripted to the song's countdown.
+   */
+  readonly floorPct?: number;
+  /**
+   * Where this phase's `burrow` surfaces (the Unsung's phase 3: `'choir'`, among the singers;
+   * D154 Fork 2). Needs a `burrow` in the same phase; without it a burrow surfaces where it dug.
+   */
+  readonly burrowTo?: 'choir';
+  /**
+   * Adds while in this phase (the Unsung's Song: Silencer adds): `count` (default 1) of `enemy`
+   * (an EnemyId) every `everySec`, walking in from the map's spawns (T808 places them).
+   */
+  readonly adds?: BossAddsDef;
+}
+
+/** A boss phase's adds (BossPhaseDef.adds; the finale's Unsung). */
+export interface BossAddsDef {
+  readonly enemy: string;
+  readonly count?: number;
+  readonly everySec: number;
 }
 
 /** A boss hangar (BossPhaseDef.hangar): `count` of `enemy` every `everySec`. */
@@ -1267,7 +1292,104 @@ export interface MapLayoutDef<K extends IdSpace = LiveIds, Id extends string = s
    * runs, counted in the wave then running.
    */
   readonly scriptGroups?: Readonly<Record<string, WaveGroup<K>>>;
-  // Not yet: song (finale).
+  // The finale (T800a seams; design/maps.md § 5.5; each run by the task named).
+  /**
+   * The choir (a `choir` map's walkers, and only there; T804): Pebble leading the singers up its
+   * road, halting while the Hollow is close ahead. Its Voices meter is the singers still singing.
+   */
+  readonly choir?: ChoirDef;
+  /** The Leaving Song's rules (a `choir` map's Phase 2; T805): the radius, rest, and scatter. */
+  readonly song?: SongDef;
+  /**
+   * Secondary timers by id (maps.md § 5.1, *Secondary timer*: the Deep Bore, `deep_bore`; T806):
+   * a HUD bar that fills on sim time once a `startTimer` action starts it, at the rate a
+   * `setTimerRate` sets, and fires `{ timerFull: id }` when full. It never ends the map.
+   */
+  readonly timers?: Readonly<Record<string, TimerDef>>;
+}
+
+/**
+ * The finale's choir (MapDef.choir; design/maps.md § 5.5; T800a seam, T804 runs it). Its leader
+ * (Pebble) walks `route` from its core end back toward its spawn (the finale's walk runs against
+ * the Hollow's road, south to north) at `pace`, the singers filing behind her, halting while any
+ * Hollow unit is within `haltTiles` ahead of her, and stops beside `stopAt` (the Halls mouth). A
+ * hushed singer stops singing and trails at the back; the map is lost when fewer than the map's
+ * `minVoices` still sing.
+ */
+export interface ChoirDef {
+  /** The leader, who is never hushed and never counted (D154: Pebble). */
+  readonly leader: 'pebble';
+  /** The road: a ground path the choir walks from its core end toward its spawn. */
+  readonly route: RouteId;
+  /** Where the choir stops and sings: a marker beside the route (the Halls mouth). */
+  readonly stopAt: MarkerId;
+  /** The base choir (D154: 10), Pebble not counted. */
+  readonly singers: number;
+  /** The leader's pace in tiles per second (D154: ~0.35). */
+  readonly pace: number;
+  /** The choir halts while a Hollow unit is within this many route tiles ahead of the leader (1.5). */
+  readonly haltTiles: number;
+  /** Singers added (or, negative, kept home) by story flag: warren +4, convoy −2 (D154). */
+  readonly groups?: readonly { readonly when: FlagGateDef; readonly singers: number }[];
+  /**
+   * Old Thrum beside the leader when `when` holds (`spared_quiet_wave`): counts as a singer, can't
+   * be hushed, and adds `radiusBonus` tiles to the song (+0.5).
+   */
+  readonly thrum?: { readonly when: FlagGateDef; readonly radiusBonus: number };
+  /**
+   * The Returned when `when` holds (`stardust_choice = returned`): `count` bearers walking with
+   * the choir, each with its own song aura of `auraRadius` tiles. Not Voices.
+   */
+  readonly returned?: {
+    readonly when: FlagGateDef;
+    readonly count: number;
+    readonly auraRadius: number;
+  };
+}
+
+/**
+ * The Leaving Song (MapDef.song; design/maps.md § 5.5; T800a seam, T805 runs it). Its circle is
+ * centred on the choir's leader: `baseRadius` × (`silentPct` + (1 − `silentPct`) × singing ÷
+ * choir), plus Thrum's bonus. In Phase 2 a Hollow unit destroyed inside it is laid to rest (its
+ * `restValue` in rest points); outside it scatters and re-forms once. The countdown's progress is
+ * `p = restPoints ÷ restTarget`, capped at 1.
+ */
+export interface SongDef {
+  /** The radius in tiles with the whole choir singing (2.5). */
+  readonly baseRadius: number;
+  /** The share of `baseRadius` left with no singer singing (default 0.6; D154). */
+  readonly silentPct?: number;
+  /** Rest points that end Phase 2 (`p` = 1). */
+  readonly restTarget: number;
+  /** The song's trickle: rest points per second through Phase 2, so it can't stall. */
+  readonly restPerSec: number;
+  /** Rest points per point of damage the boss takes inside the song (its last phase feeds it). */
+  readonly restPerBossHp?: number;
+  /**
+   * Rest-point multipliers by story flag (C4: rewrite ×1.5, keep ×1.25, purge ×1.0); the first
+   * whose flag has that value applies, else ×1.
+   */
+  readonly multipliers: readonly {
+    readonly flag: ScriptFlagId;
+    readonly value: FlagValue;
+    readonly mul: number;
+  }[];
+  /**
+   * Scatter (Phase 2 only, D154): a Hollow unit destroyed outside the song drifts back along its
+   * route and re-forms `reformSec` later at `hpPct` of its max HP, once, paying no bounty again.
+   */
+  readonly scatter: { readonly reformSec: number; readonly hpPct: number };
+}
+
+/** A secondary timer (MapDef.timers; T800a seam, T806 runs it): the Deep Bore. */
+export interface TimerDef {
+  /** Seconds of sim time to fill at 100% rate. */
+  readonly fillSec: number;
+  /**
+   * A boss that spawns once the timer has stopped gains this share of its max HP per tenth the
+   * timer filled (the Bore: 0.05, "+5% Unsung HP per 10%"). Default 0.
+   */
+  readonly bossHpPerTenth?: number;
 }
 
 /** One key of a map's lighting schedule (MapLayoutDef.lighting). */
@@ -1623,7 +1745,15 @@ export type RunStat =
    */
   | 'jammedPeak'
   | 'takeoverJamTicks'
-  | 'bearersHome';
+  | 'bearersHome'
+  /**
+   * The finale (T800a seams; each counted by the task named): Hollow units laid to rest and
+   * scattered in Phase 2 (Laid to Rest: rested ≥ 90% of both; T805), and the Deep Bore's highest
+   * fill in whole percent (T806).
+   */
+  | 'restedKills'
+  | 'scatteredKills'
+  | 'boreProgress';
 
 /**
  * Medal, objective, and script `when` conditions: one grammar, evaluated by the sim over run state
@@ -1633,6 +1763,8 @@ export type RunStat =
  */
 export type ConditionDef<K extends IdSpace = LiveIds> =
   | { readonly stat: RunStat; readonly gte?: number; readonly lte?: number }
+  /** The map's script phase (`setPhase`; the finale's 1–3) is at least this (T800a; a run atom). */
+  | { readonly phaseAtLeast: number }
   | {
       /** Live towers of that tower (or faction; both optional, all towers if neither). */
       readonly towers: { readonly tower?: K['tower']; readonly faction?: TowerFaction };
@@ -1752,7 +1884,14 @@ export type ScriptTrigger<K extends IdSpace = LiveIds> =
   | { readonly interacted: MarkerId } // by click or by fallback
   | { readonly wreckageCleared: MarkerId } // the drone cleared the wreckage under that marker
   | { readonly forcedInputResolved: string }
-  | { readonly tick: number };
+  | { readonly tick: number }
+  // The finale (T800a seams; each run by the task named in SCRIPT_GATES).
+  /** The choir's leader has reached that marker (the Halls mouth; T806 with T804's choir). */
+  | { readonly choirAt: MarkerId }
+  /** That timer (MapDef.timers) has filled (the Deep Bore's breakthrough; T806). */
+  | { readonly timerFull: string }
+  /** The map's script phase is `phase` or later, `afterSec` (default 0) after it began (T806). */
+  | { readonly phase: number; readonly afterSec?: number };
 
 export type ScriptAction<K extends IdSpace = LiveIds> =
   | { readonly cue: string } // story binds it to a scene or bark
@@ -1786,7 +1925,18 @@ export type ScriptAction<K extends IdSpace = LiveIds> =
   | { readonly setTimerRate: { readonly timer: string; readonly pct: number } }
   | { readonly setPhase: number }
   | { readonly setLighting: string }
-  | { readonly checkpoint: true }
+  /** A retry checkpoint at a script moment, under a label the app names ('halls'; T806). */
+  | { readonly checkpoint: string }
+  // The finale (T800a seams; each run by the task named in SCRIPT_GATES).
+  /**
+   * Locks (or unlocks) a commander ability for the rest of the map's phase: Directive 0's dark
+   * Time Dilation (D154, T501). Never saved; never a revocation (T807).
+   */
+  | { readonly lockAbility: K['ability']; readonly on: boolean }
+  /** Thrum's echo walks into the song under this id (`EchoArrived`; T807). */
+  | { readonly spawnEcho: string }
+  /** Every live Hollow unit is laid to rest (Dawn; T805). */
+  | { readonly restAll: true }
   | { readonly grantCredits: number }
   | { readonly openTile: MarkerId; readonly to: TileChar } // a predefined decor marker
   | { readonly endMap: 'won' | 'completed' };

@@ -14,7 +14,8 @@
 // cloaks, Protect, revisits, and clickable objects; T500a: phasing, shield auras, a boss's
 // shield-broken phase, Escort, and Sundown's darkness; T600a: gathering, haste auras, rift lanes,
 // the Holdout, and blockers; T700a: jamming (the tendril, the ring), healer auras, the M7 boss
-// phases, bearers, and flag-gated ally posts). The loadout adds T600a's Lullaby and the Bloom's
+// phases, bearers, and flag-gated ally posts; T800a: the finale's choir, song, timers, and the
+// Unsung's phase kinds and `layToRest`). The loadout adds T600a's Lullaby and the Bloom's
 // field, and slot 2 Underfoot's trap (`pathTrap`); T700a the Sproing Pad's leapers, Big Glorp's
 // puddle, System Reboot (`reboot`), and C4 Purge's faction armor modifier. Wreckage needs no gate: the `clear`
 // command and the salvage drone run since T304b (systems/wreckage.ts).
@@ -144,6 +145,18 @@ export type Feature =
   | 'enemy.boss.split'
   /** Bearer groups (`kind: 'bearer'`, A3M5's asset that walks; T706). */
   | 'map.bearers'
+  /**
+   * The finale (T800a rows; D154): the choir and its Voices (a `choir` map or `MapDef.choir`;
+   * T804), the Leaving Song (`MapDef.song`: rest, scatter, the countdown; T805), and secondary
+   * timers (`MapDef.timers`: the Deep Bore; T806).
+   */
+  | 'map.choir'
+  | 'map.song'
+  | 'map.timers'
+  /** The Unsung's phase kinds (T808): a phase's HP floor, a burrow toward the choir, and adds. */
+  | 'enemy.boss.floor'
+  | 'enemy.boss.burrowTo'
+  | 'enemy.boss.adds'
   /** An ally post gated on a story flag (`AllyPostDef.when`: A3M6's militia; T706). */
   | 'ally.flagGated'
   /** Rift lanes: Hollow routes that open at a wave, telegraphed a wave ahead (T602). */
@@ -269,8 +282,8 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   'enemy.boss': null,
   'enemy.boss.pivot': null,
   'enemy.boss.shieldBroken': null,
-  // The finale's ending (D141: M8).
-  'enemy.boss.layToRest': 'M8',
+  // The finale's ending (D154: T808, the Unsung).
+  'enemy.boss.layToRest': 'T808',
   'enemy.hush': null,
   'enemy.skittish': null,
   'enemy.pulse': null,
@@ -298,6 +311,14 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   'enemy.boss.split': null, // T708: enemyAbilities/bossSplit.ts, bossMerge.ts
   'map.bearers': null,
   'ally.flagGated': null,
+  // The finale (D154; T800a rows): the choir (T804), the song (T805), the timers (T806), and the
+  // Unsung's phase kinds (T808).
+  'map.choir': 'T804',
+  'map.song': 'T805',
+  'map.timers': 'T806',
+  'enemy.boss.floor': 'T808',
+  'enemy.boss.burrowTo': 'T808',
+  'enemy.boss.adds': 'T808',
   'map.rift': null,
   'map.holdout': null,
   'ally.blocker': null,
@@ -461,6 +482,12 @@ function useEnemy(def: CompiledEnemyDef, flyingRoute: boolean, use: Use): void {
   if (phases.some((p) => p.jettison !== null)) use('enemy.boss.jettison', `a jettison (${id})`);
   if (phases.some((p) => p.gather !== null)) use('enemy.boss.gather', `a boss's gather (${id})`);
   if (phases.some((p) => p.split !== null)) use('enemy.boss.split', `a boss split (${id})`);
+  // The finale (T800a).
+  if (phases.some((p) => p.floorPct > 0)) use('enemy.boss.floor', `a phase's HP floor (${id})`);
+  if (phases.some((p) => p.burrowTo !== null)) {
+    use('enemy.boss.burrowTo', `a burrow toward the choir (${id})`);
+  }
+  if (phases.some((p) => p.adds !== null)) use('enemy.boss.adds', `a phase's adds (${id})`);
 }
 
 /** The features a map needs from its waves and layout (T300a; T400a). */
@@ -493,6 +520,12 @@ function useMap(map: CompiledMapDef<IdSpace>, use: Use): void {
   }
   const bearers = (map.escort?.groups ?? []).filter((g) => g.kind === 'bearer').map((g) => g.id);
   if (bearers.length > 0) use('map.bearers', `bearers (${bearers.join(', ')})`);
+  // The finale (T800a).
+  if (map.objective === 'choir' || map.choir !== null) use('map.choir', 'the choir (Voices)');
+  if (map.song !== null) use('map.song', 'the Leaving Song');
+  if (map.timers.length > 0) {
+    use('map.timers', `secondary timers (${map.timers.map((t) => t.id).join(', ')})`);
+  }
   // A script group walks in only by `spawnWave` (SCRIPT_GATES), but its units are the map's too.
   for (const g of Object.values(map.scriptGroups)) {
     useEnemy(g.enemy, g.route.kind === 'air', use);

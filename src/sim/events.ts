@@ -484,6 +484,11 @@ export type SimEvent<K extends IdSpace = LiveIds> =
        * once it ends). Replaying the logged commands with `tick` below it reproduces that state.
        */
       readonly tick: number;
+      /**
+       * A script checkpoint's label (the finale's `checkpoint: 'halls'`, "Retry from the Halls";
+       * T806); absent on a wave checkpoint.
+       */
+      readonly label?: string;
     }
   | {
       /** A clickable world object turned on or off (`setClickable`; T409). */
@@ -770,6 +775,36 @@ export type SimEvent<K extends IdSpace = LiveIds> =
   | { readonly type: 'BearerHome'; readonly uid: number; readonly group: string }
   /** A script group walked in (`spawnWave`; T706). */
   | { readonly type: 'ScriptGroupSpawned'; readonly id: string }
+  // ── The finale (declared by T800a; emitted by the tasks each names) ───────────────────────────
+  /** The map's script phase changed (`setPhase`; T806): the finale's 2 (the Unsung), 3 (Dawn). */
+  | { readonly type: 'PhaseChanged'; readonly phase: number }
+  /** The choir halted (a Hollow unit close ahead of its leader) or walked on (T804). */
+  | { readonly type: 'ChoirHalted'; readonly on: boolean }
+  /** A singer was hushed (T804): it stops singing and trails behind; Voices falls by one. */
+  | { readonly type: 'SingerHushed'; readonly uid: number }
+  /** A Hollow unit was laid to rest inside the song (T805) at `at`, for `points` rest points. */
+  | {
+      readonly type: 'LaidToRest';
+      readonly uid: number;
+      readonly at: readonly [x: number, y: number];
+      readonly points: number;
+    }
+  /** A Hollow unit fell outside the song and scattered (T805; Phase 2), from `at`. */
+  | { readonly type: 'Scattered'; readonly uid: number; readonly at: readonly [x: number, y: number] }
+  /** A scattered unit re-formed (T805). */
+  | { readonly type: 'Reformed'; readonly uid: number }
+  /** A secondary timer filled (T806): the Deep Bore's breakthrough. */
+  | { readonly type: 'TimerFull'; readonly id: string }
+  /** A `setLighting` changed the light (T806): render eases to `key` (Dawn). */
+  | { readonly type: 'LightingSet'; readonly key: string }
+  /** A revoked class came back (`restoreTowerClass`; T807): "Not Everglow." */
+  | { readonly type: 'ClassRestored'; readonly tower: K['tower'] }
+  /** An ability was locked or unlocked for the phase (`lockAbility`; T807: Directive 0). */
+  | { readonly type: 'AbilityLocked'; readonly ability: string; readonly on: boolean }
+  /** Thrum's echo reached the song and was laid to rest in gold (`spawnEcho`; T807). */
+  | { readonly type: 'EchoArrived'; readonly id: string }
+  /** Dawn broke (T805/T806: p reached 1; every Hollow unit laid to rest, singers recover). */
+  | { readonly type: 'DawnBroke' }
   | { readonly type: 'MapWon' }
   | { readonly type: 'MapLost' }
   | { readonly type: 'CommandRejected'; readonly cmd: Command<K>; readonly reason: RejectReason };

@@ -474,9 +474,9 @@ function paint({ expression, variant, mouth }: PaintArgs): CharGrid {
   if (variant === 'party_hat') {
     // On top of the backwards cap, naturally.
     paintPartyHat(g, {
-      base: [19, 4],
-      tip: [11, 0],
-      halfWidth: 3.5,
+      base: [16, 7],
+      tip: [8, 0],
+      halfWidth: 4.5,
       ink: { stripe: 'd', stripeShade: 'c', gold: 'M', goldShade: 'L', pom: 'w', pomShade: '4' },
     });
   }

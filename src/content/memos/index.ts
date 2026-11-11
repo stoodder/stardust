@@ -1,5 +1,6 @@
 // The Everglow Inbox registry (docs/story/style-guide.md § 6.1): every memo by id. The memo
 // bodies are written in the act files (their one home).
+import type { CampaignMapId } from '../campaign.ts';
 import { ACT1_MEMOS } from './act1.ts';
 import { ACT2_MEMOS } from './act2.ts';
 import { ACT3_MEMOS } from './act3.ts';
@@ -17,3 +18,19 @@ export const MEMOS: Readonly<Record<MemoId, MemoDef>> = Object.fromEntries(
 
 /** Every registered memo id, in delivery order. */
 export const MEMO_IDS: readonly MemoId[] = MEMO_LIST.map((m) => m.id);
+
+/**
+ * Memos the act files name whose content hasn't landed: reserved ids (T800b), so dev saves, tests,
+ * the results flow (`RESULTS_FLOW.fin_m01.ending`), and other tasks can name them before their task
+ * (`task`) writes them into a memo list. Each arrives after `afterMap` is first won, once
+ * registered; planned.test.ts checks each id's form and, once it lands, its map.
+ */
+export const PLANNED_MEMOS: readonly {
+  readonly id: MemoId;
+  readonly afterMap: CampaignMapId;
+  readonly task: string;
+}[] = [
+  // Sterling's farewell, *Clean Exit Complete!*, with the reference letter: after Dawn, shown as a
+  // card between the finale's Results and C5 (finale.md § FIN, *Then*).
+  { id: 'memo_fin_01', afterMap: 'fin_m01', task: 'T811' },
+];

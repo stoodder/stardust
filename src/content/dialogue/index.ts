@@ -40,6 +40,8 @@ import { barks as a3m05Barks } from './a3/a3_m05/barks.ts';
 import { scenes as a3m05Scenes } from './a3/a3_m05/scenes.ts';
 import { barks as a3m06Barks } from './a3/a3_m06/barks.ts';
 import { scenes as a3m06Scenes } from './a3/a3_m06/scenes.ts';
+import { barks as finM01Barks } from './fin/fin_m01/barks.ts';
+import { scenes as finM01Scenes } from './fin/fin_m01/scenes.ts';
 import { SHARED_BARKS } from './barks/index.ts';
 import type { Bark, BarkId, MapDialogue, Scene, SceneId } from './types.ts';
 
@@ -68,6 +70,8 @@ export const MAP_DIALOGUE: readonly MapDialogue[] = [
   { map: 'a3_m04', scenes: a3m04Scenes, barks: a3m04Barks },
   { map: 'a3_m05', scenes: a3m05Scenes, barks: a3m05Barks },
   { map: 'a3_m06', scenes: a3m06Scenes, barks: a3m06Barks },
+  // The finale: registered empty (T800b) so its map and words tasks fill only their own files.
+  { map: 'fin_m01', scenes: finM01Scenes, barks: finM01Barks },
 ];
 
 /** Every scene, by id. */

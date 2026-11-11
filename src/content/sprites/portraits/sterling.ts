@@ -250,9 +250,9 @@ function paint({ expression, variant, mouth }: PaintArgs): CharGrid {
   if (variant === 'party_hat') {
     // Everglow teal, of course: she ordered the hats.
     paintPartyHat(g, {
-      base: [29, 5],
-      tip: [36, 0],
-      halfWidth: 4,
+      base: [30, 7],
+      tip: [40, 1],
+      halfWidth: 4.5,
       ink: { stripe: '8', stripeShade: '7', gold: 'I', goldShade: 'Q', pom: 'w', pomShade: '4' },
     });
   }
