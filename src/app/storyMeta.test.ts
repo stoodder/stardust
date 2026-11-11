@@ -7,6 +7,7 @@ import { MemoryStore, createNewSave, type RunEndSummary, type SaveData } from '.
 import { runEnd } from '../meta/runEnd.ts';
 import { battleConfig } from './battleSetup.ts';
 import { isStoryChoice, LOCKED_CHOICE_FLAGS, withSceneEffects } from './dialogue.ts';
+import { flowScenes } from './runFlow.ts';
 import { giftStones, runResultOf, runRewardsOf, type RunEndInput } from './runResult.ts';
 import { activeSave, initSaves, loadDevSave } from './save.ts';
 import {
@@ -156,6 +157,18 @@ function input(mapId: string, act: 1 | 2 | 3): RunEndInput {
     earnedMedals: ['victory'],
   };
 }
+
+describe("A3M2's results flow (T621's confession)", () => {
+  it('plays the Asset Yield Log after the card on a win, once registered', () => {
+    const confession = { id: 'a3_m02_scene_confession', nodes: [] };
+    const lookup = (id: string) => (id === confession.id ? confession : undefined);
+    expect(flowScenes('a3_m02', 'won', 'before', lookup)).toEqual([]);
+    expect(flowScenes('a3_m02', 'won', 'after', lookup)).toEqual([confession]);
+    expect(flowScenes('a3_m02', 'lost', 'after', lookup)).toEqual([]);
+    // Not registered yet: the card leads straight to the base.
+    expect(flowScenes('a3_m02', 'won', 'after', () => undefined)).toEqual([]);
+  });
+});
 
 describe('Results in Act III (core-loop.md § 6.2)', () => {
   it('shows the Stardust as gift stones in Act III and the finale', () => {

@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { FIXTURE, fxMap } from './__fixtures__/content.ts';
 import { compileContent, ContentCompileError } from './compile.ts';
 import { composeRevisit, composeRevisits, REVISIT_TILE } from './compileRevisit.ts';
+import { RAW_CONTENT } from './registry.ts';
 import type { IdSpace, MapDef, RawContent } from './types.ts';
 
 type Map_ = MapDef<IdSpace>;
@@ -190,6 +191,46 @@ describe('composeRevisit (T410a)', () => {
     expect((out.raw.maps as Record<string, Map_>)['fx_revisit']!.tiles[1]).toBe('.S##....');
     // Content without revisits comes back as it was.
     expect(composeRevisits(FIXTURE).raw).toBe(FIXTURE);
+  });
+
+  it("leaves the original's wreckage out under revisitWreckage: 'gone' (A3M2's carts)", () => {
+    const { map, errors } = compose({ revisitWreckage: 'gone' });
+    expect(errors).toEqual([]);
+    // fx_map's cart (4,3) is bare decor at (5,4); every other tile is the original's.
+    expect(map.tiles[4]).toBe('..o##...');
+    expect(map.tiles.filter((_, r) => r !== 4)).toEqual(
+      compose().map.tiles.filter((_, r) => r !== 4),
+    );
+    expect(map.underWreckage).toEqual({});
+    expect(map.salvage).toEqual({});
+    // The revisit's own wreckage still joins.
+    const own = compose({
+      revisitWreckage: 'gone',
+      underWreckage: { '7,2': 'o' },
+      salvage: { '7,2': 30 },
+    }).map;
+    expect([own.underWreckage, own.salvage]).toEqual([{ '7,2': 'o' }, { '7,2': 30 }]);
+  });
+
+  it("composes every registered revisit identically under 'keep' and the default", () => {
+    const maps = RAW_CONTENT.maps as Readonly<Record<string, Map_>>;
+    const revisits = Object.values(maps).filter(
+      (m) => m.revisitOf !== undefined && m.revisitWreckage !== 'gone',
+    );
+    expect(revisits.length).toBeGreaterThan(0);
+    for (const def of revisits) {
+      const original = maps[def.revisitOf!]!;
+      const at = def.revisitAt!;
+      const base = composeRevisit(original, def, at, []);
+      const kept = composeRevisit(original, { ...def, revisitWreckage: 'keep' }, at, []);
+      const { revisitWreckage: _, ...keptRest } = kept;
+      expect(JSON.stringify(keptRest), def.id).toBe(JSON.stringify(base));
+    }
+    // The originals (A1M4 too) come through composition as the very same objects.
+    const composed = composeRevisits(RAW_CONTENT).raw.maps as Readonly<Record<string, Map_>>;
+    for (const def of Object.values(maps)) {
+      if (def.revisitOf === undefined) expect(composed[def.id], def.id).toBe(def);
+    }
   });
 
   it('fails compileContent on a layout error', () => {

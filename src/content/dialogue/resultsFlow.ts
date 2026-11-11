@@ -82,6 +82,9 @@ export const RESULTS_FLOW: Readonly<Partial<Record<CampaignMapId, ResultsFlow>>>
   // A3M1 · The Preserve (act3.md § A3M1): the Leaving Song, full-screen over the emptied road
   // after W14 (the map is won once the last refugee is out), then the card with the gift stones.
   a3_m01: { beforeResults: ['a3_m01_scene_song'] },
+  // A3M2 · License Revoked (act3.md § A3M2): after the card, QUILL's confession, the Asset Yield
+  // Log (T621's scene; it plays once registered).
+  a3_m02: { afterResults: ['a3_m02_scene_confession'] },
 };
 
 /** Map `map`'s results flow (an empty one when it has none). */

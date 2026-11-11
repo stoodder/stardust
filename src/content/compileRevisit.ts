@@ -10,11 +10,15 @@
 // a revisit; it sits centred in the revisit (an odd margin may lean either way) and inside it; the
 // footprint is all `REVISIT_TILE` and the band has none, so the original's pads stay unchanged and
 // new pads appear only in the band; no route, marker, or wreckage key of the revisit's collides
-// with the original's.
+// with the original's. A revisit with `revisitWreckage: 'gone'` (A3M2) leaves the original's
+// wreckage out: its wreckage tiles compose as bare decor and its `underWreckage` and `salvage`
+// don't come along (the default, `'keep'`, composes them like the rest).
 import type { GridPos, IdSpace, MapDef, RawContent, TileKey } from './types.ts';
 
 /** The character a revisit's `tiles` (and `terraces`) hold on the original's footprint. */
 export const REVISIT_TILE = '*';
+/** The wreckage tile (design/maps.md § 3), left as bare decor under `revisitWreckage: 'gone'`. */
+const WRECKAGE = 'x';
 
 /**
  * Every revisit in `raw.maps` composed with its original (the rest unchanged), and the layout
@@ -64,7 +68,9 @@ export function composeRevisit<K extends IdSpace, M extends MapDef<K>>(
   }
   const inFoot = (c: number, r: number): boolean =>
     c >= ax && r >= ay && c < ax + o.cols && r < ay + o.rows;
-  const tiles = overlay(revisit.tiles, original.tiles, at, inFoot, `${where}.tiles`, errors);
+  const gone = revisit.revisitWreckage === 'gone';
+  const inner = gone ? original.tiles.map((row) => row.replaceAll(WRECKAGE, '.')) : original.tiles;
+  const tiles = overlay(revisit.tiles, inner, at, inFoot, `${where}.tiles`, errors);
   const terraces =
     revisit.terraces === undefined && original.terraces === undefined
       ? undefined
@@ -116,13 +122,19 @@ export function composeRevisit<K extends IdSpace, M extends MapDef<K>>(
     ],
     markers,
     underWreckage: mergeKeyed(
-      original.underWreckage,
+      gone ? undefined : original.underWreckage,
       revisit.underWreckage,
       shift,
       `${where}.underWreckage`,
       errors,
     ),
-    salvage: mergeKeyed(original.salvage, revisit.salvage, shift, `${where}.salvage`, errors),
+    salvage: mergeKeyed(
+      gone ? undefined : original.salvage,
+      revisit.salvage,
+      shift,
+      `${where}.salvage`,
+      errors,
+    ),
   };
 }
 

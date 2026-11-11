@@ -1005,6 +1005,13 @@ export interface MapLayoutDef<K extends IdSpace = LiveIds, Id extends string = s
   /** Where the original's tile (0, 0) sits on this map's grid: the original centred. */
   readonly revisitAt?: GridPos;
   /**
+   * A revisit's take on the original's wreckage (default `'keep'`: composed like the rest).
+   * `'gone'`: the original's `underWreckage` and `salvage` are left out and each of its wreckage
+   * tiles composes as bare decor ('.'), so its pads stay the original's and the carts are gone
+   * (A3M2 of A1M4: "A1M4's wreckage carts are gone", story/campaign/act3.md § A3M2).
+   */
+  readonly revisitWreckage?: 'keep' | 'gone';
+  /**
    * The lighting schedule (art-direction.md § 7, the lighting overlay's tint path): keyframes the
    * light reaches as each named wave starts, crossfading the sky and the shade from the map's
    * `env` (the light before wave 1) through each key in turn. The tint is cosmetic (A2M3's

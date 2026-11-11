@@ -60,6 +60,11 @@ describe('RESULTS_FLOW', () => {
     expect(resultsFlow('dev_range')).toEqual({});
   });
 
+  it("plays A3M2's confession (the Asset Yield Log) after its card, nothing before (T621)", () => {
+    const a3m02 = resultsFlow('a3_m02');
+    expect(a3m02).toEqual({ afterResults: ['a3_m02_scene_confession'] });
+  });
+
   it("closes Act II after A2M6's card: the stinger, the PA's jingle in minor on its caption", () => {
     const a2m06 = resultsFlow('a2_m06');
     expect(a2m06.beforeResults).toBeUndefined();
