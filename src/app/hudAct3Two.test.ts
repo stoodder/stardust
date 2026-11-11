@@ -109,7 +109,7 @@ describe('the tower panel: the Sproing Pad (T731, T704)', () => {
 
 describe('a locked ability (T731; A3M5 System Reboot under Rewrite)', () => {
   it('reads why, in Act III copy', () => {
-    expect(lockedAbilityReason('system_reboot')).toBe('QUILL is offline. She runs it.');
+    expect(lockedAbilityReason('system_reboot')).toBe('QUILL is offline. It runs the reboot.');
     for (const id of ['system_reboot', 'orbital_strike']) {
       expect(lockedAbilityReason(id)).not.toContain('!');
     }
@@ -121,7 +121,7 @@ describe('a locked ability (T731; A3M5 System Reboot under Rewrite)', () => {
         ability: 'system_reboot',
         label: 'System Reboot',
         icon: 'icon.ability.system_reboot',
-        reason: 'QUILL is offline. She runs it.',
+        reason: 'QUILL is offline. It runs the reboot.',
       },
     ]);
   });

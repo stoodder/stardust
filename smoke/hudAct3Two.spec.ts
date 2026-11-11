@@ -143,7 +143,7 @@ test('hudAct3Two: A3M5 under Rewrite: Reboot locked, the bearers’ meter, the l
   const locked = page.getByTestId('ability-locked-system_reboot');
   await expect(locked).toBeVisible();
   await expect(locked).toHaveAccessibleName(
-    'System Reboot, locked. QUILL is offline. She runs it.',
+    'System Reboot, locked. QUILL is offline. It runs the reboot.',
   );
   await expect(locked).toContainText(/OFFLINE/i);
   // Keyboard reachable: it takes the focus, and Enter says why.

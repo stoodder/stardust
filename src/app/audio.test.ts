@@ -370,4 +370,62 @@ describe("installAudio's speech and Results", () => {
     playJingle('none');
     expect(rec.log).toEqual(['cue:pa_shift_minor', 'cue:bright_sting']);
   });
+
+  it("makes Bricks's silences truly silent: the music falls to nothing, then comes back (T750)", () => {
+    dialogue.comms.value = { line: line('quill'), cue: null, button: null };
+    expect(rec.ducks.has('silence')).toBe(false);
+    dialogue.comms.value = {
+      line: line('bricks', { silence: true, text: '' }),
+      cue: null,
+      button: null,
+    };
+    expect(rec.ducks.get('silence')).toBe(0);
+    // Another speaker's silence keeps the radio's duck only (QUILL's Purge blink).
+    dialogue.comms.value = {
+      line: line('quill', { silence: true, text: '' }),
+      cue: null,
+      button: null,
+    };
+    expect(rec.ducks.has('silence')).toBe(false);
+    dialogue.comms.value = {
+      line: line('bricks', { silence: true, text: '' }),
+      cue: null,
+      button: null,
+    };
+    dialogue.comms.value = null;
+    expect(rec.ducks.has('silence')).toBe(false);
+  });
+
+  it("knocks twice on the dome's door for Pebble's knock-knock, then squeaks (T750)", () => {
+    rec.log.length = 0;
+    dialogue.comms.value = {
+      line: line('pebble', { text: 'Knock knock! (squeak)' }),
+      cue: null,
+      button: "Who's there?",
+    };
+    expect(rec.log).toEqual(['dip', 'sfx:knock_knock', 'sfx:blip.pebble']);
+  });
+
+  it("stings Waykeeper once as the plate turns in A3M6's debrief, never elsewhere (T750)", () => {
+    rec.log.length = 0;
+    const naming = line('pebble', { text: 'I picked Waykeeper. You have to like it.' });
+    const view = (sceneId: string, typedAt: number): SceneView => ({
+      sceneId,
+      mode: 'fullscreen',
+      transcript: [],
+      line: naming,
+      choices: null,
+      remember: null,
+      ended: false,
+      instant: false,
+      typing: { from: typedAt, done: true },
+      staging: null,
+    });
+    // Her line was whole long enough ago: the plate has turned.
+    dialogue.scene.value = view('a2_m02_debrief', performance.now() - 10_000);
+    expect(rec.log.filter((l) => l.startsWith('cue:'))).toEqual([]);
+    dialogue.scene.value = view('a3_m06_debrief', performance.now() - 10_000);
+    dialogue.scene.value = { ...view('a3_m06_debrief', performance.now() - 10_000) };
+    expect(rec.log.filter((l) => l.startsWith('cue:'))).toEqual(['cue:waykeeper']);
+  });
 });

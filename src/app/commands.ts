@@ -218,7 +218,7 @@ export function cycleTargeting(): void {
 
 /**
  * A locked ability's dark slot pressed (T731; A3M5's System Reboot under Rewrite): nothing casts,
- * and the notice says why ("System Reboot: QUILL is offline. She runs it.").
+ * and the notice says why ("System Reboot: QUILL is offline. It runs the reboot.").
  */
 export function explainLockedAbility(ability: string): void {
   const v = hud.lockedAbilities.value.find((l) => l.ability === ability);

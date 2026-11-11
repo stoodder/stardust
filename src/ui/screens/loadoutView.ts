@@ -55,7 +55,7 @@ export interface LoadoutLockedAbilityView {
   readonly id: string;
   readonly name: string;
   readonly icon: string;
-  /** "QUILL is offline. She runs it." */
+  /** "QUILL is offline. It runs the reboot." */
   readonly reason: string;
 }
 

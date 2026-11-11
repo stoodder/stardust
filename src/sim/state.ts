@@ -385,7 +385,7 @@ export interface SimState<K extends IdSpace = IdSpace> {
    */
   revoked: { towers: string[]; abilities: string[]; uids: number[] };
   /**
-   * Script modifiers on now (`setModifier`; T606): `quillLockout` (A3M2: QUILL locks you out; her
+   * Script modifiers on now (`setModifier`; T606): `quillLockout` (A3M2: QUILL locks you out; its
    * ability is disabled and the preview hidden, core-loop.md § 2.2 and § 2.11) and `previewHidden`
    * (the wave preview reads "ACCESS RESTRICTED").
    */

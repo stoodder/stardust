@@ -14,7 +14,16 @@ import {
   recipeProblems,
 } from './recipes.ts';
 import { SFX, SFX_IDS, sfxRecipe } from './sfx/index.ts';
-import { C2_STINGS, LINE_CUES, lineCue, PA_JINGLE_CUE } from './storyCues.ts';
+import {
+  C2_STINGS,
+  LINE_CUES,
+  LINE_SFX,
+  lineCue,
+  lineSfx,
+  PA_JINGLE_CUE,
+  silenceHush,
+  WAYKEEPER_STING,
+} from './storyCues.ts';
 import type { ToneLayer } from './types.ts';
 
 const instrumentIds = new Set([...Object.keys(INSTRUMENTS), ...Object.keys(DRUMS)]);
@@ -202,6 +211,37 @@ describe('sound effect recipes', () => {
         'bricks_brace',
         'door_hum',
         'door_seal',
+        // Act III, part two (T750).
+        'jam_tendril',
+        'jam_ring',
+        'jammed',
+        'jam_static',
+        'jam_clear',
+        'reboot',
+        'sv_arrive',
+        'sv_hangar',
+        'sv_launch',
+        'sv_takeover',
+        'takeover_laser',
+        'jettison',
+        'plate_crash',
+        'sv_retreat',
+        'gmaw_arrive',
+        'gmaw_strain',
+        'gmaw_split',
+        'gmaw_merge',
+        'leaper_boing',
+        'grounded_thud',
+        'gloop_spit',
+        'gloop_splat',
+        'puddle_hiss',
+        'liability_stomp',
+        'gunship_rotor',
+        'bb_shimmer',
+        'associate_hum',
+        'bearer_note',
+        'mail_delivered',
+        'knock_knock',
       ].toSorted(),
     );
   });
@@ -451,5 +491,85 @@ describe("Act II's story cues (T550)", () => {
     expect(lineCue(null, 'bricks', '(hum, six notes, slow)')?.cue).toBeNull();
     expect(lineCue(null, 'bricks', '(hum, six notes, slow)')).not.toBeNull();
     expect(lineCue(null, 'pebble', 'Hm. Hm-hm. Hmmm.')).toBeNull();
+  });
+});
+
+const trackNotes = (song: {
+  tracks: readonly { instrument: string; layer: string; pattern: string }[];
+}) => song.tracks.map((t) => ({ ...t, notes: notes(t.pattern) }));
+
+describe("Act III, part two's music (T750)", () => {
+  it("stops Bricks's hum halfway in the shelters' bed; the Choir's line, where one stands, finishes it", () => {
+    const tracks = trackNotes(THEMES.act3_shelters);
+    const bricks = tracks.filter((t) => t.layer === 'base' && t.instrument === 'hum');
+    expect(bricks).toHaveLength(1);
+    expect(bricks[0]!.notes).toEqual(['G2', 'C3', 'E3']);
+    // His bar is the Choir's "Ev-er-glow" bar (bar 5), and the Choir sings on to F–D–C.
+    const bars = bricks[0]!.pattern.split('|');
+    const choir = THEMES.act3_shelters.tracks.find((t) => t.layer === 'choir')!;
+    const choirBars = choir.pattern.split('|');
+    const at = bars.findIndex((b) => /[A-G]/.test(b));
+    expect(notes(choirBars[at]!)).toEqual(['G4', 'C5', 'E5']);
+    expect(notes(choirBars[at + 1]!)).toEqual(['F5', 'D5', 'C5']);
+  });
+
+  it("hums the six notes in the vats' bed, low, on a machine's voice", () => {
+    const vats = trackNotes(THEMES.act3_vats).find((t) => t.instrument === 'bass')!;
+    expect(vats.notes.slice(0, 6)).toEqual(['G2', 'C3', 'E3', 'F3', 'D3', 'C3']);
+    const layers = new Set(THEMES.act3_vats.tracks.map((t) => t.layer));
+    expect([...layers].toSorted()).toEqual(['base', 'choir', 'drums', 'lead']);
+  });
+
+  it('lands the domes opening home: F–D–C over IV–V–I in C major, a major third on top', () => {
+    const t = trackNotes(CUES.domes_open);
+    expect(t.find((x) => x.instrument === 'hum')!.notes).toEqual(['F4', 'D4', 'C4']);
+    const roots = t.filter((x) => x.instrument === 'pad').map((x) => x.notes);
+    expect(roots[0]).toEqual(['F2', 'G2', 'C3']);
+    expect(t.find((x) => x.instrument === 'glass')!.notes.at(-1)).toBe('E5');
+  });
+
+  it("lifts the home motif to E for Waykeeper, then climbs the jingle's first notes on glass", () => {
+    const t = trackNotes(CUES.waykeeper);
+    const [h1, h2, h3] = HOME_MOTIF.map((n) => n.replace(/\d$/, (d) => String(Number(d) + 1)));
+    expect(t.find((x) => x.instrument === 'hum')!.notes).toEqual([h1, h2, h3, 'E5']);
+    expect(t.find((x) => x.instrument === 'glass')!.notes.slice(0, 3)).toEqual(['G4', 'C5', 'E5']);
+  });
+
+  it("stutters the PA's chime up a semitone at a time as the platform flees, and finishes the Maw in tune", () => {
+    const pa = trackNotes(CUES.pa_frantic)[0]!;
+    expect(pa.instrument).toBe('pa');
+    expect(pa.notes.slice(0, 6)).toEqual(['G4', 'C5', 'E5', 'Ab4', 'Db5', 'F5']);
+    for (const t of trackNotes(CUES.gmaw_beaten).filter((x) => x.instrument === 'hum')) {
+      expect(t.notes.map((n) => n.slice(0, -1))).toEqual(['F', 'D', 'C']);
+    }
+  });
+});
+
+describe("Act III, part two's story sounds (T750)", () => {
+  it("makes Bricks's silences truly silent, and only his", () => {
+    expect(silenceHush('bricks')?.musicDuck).toBe(0);
+    expect(silenceHush('bricks')!.sfxDuck).toBeLessThan(0.5);
+    expect(silenceHush('quill')).toBeNull();
+    expect(silenceHush('kip')).toBeNull();
+  });
+
+  it("knocks on Pebble's knock-knock, matched to the line as written", () => {
+    for (const l of LINE_SFX) {
+      const found = Object.values(SCENES).some((scene) =>
+        scene.nodes.some((n) => n.kind === 'line' && n.speaker === l.speaker && n.text === l.text),
+      );
+      expect(found, l.text).toBe(true);
+    }
+    expect(lineSfx('pebble', 'Knock knock! (squeak)')?.sfx).toBe('knock_knock');
+    expect(lineSfx('pebble', 'Knock knock!')).toBeNull();
+  });
+
+  it("stings Waykeeper in A3M6's debrief, where Pebble names you", () => {
+    const scene = SCENES[WAYKEEPER_STING.scene];
+    expect(scene).toBeDefined();
+    const named = scene!.nodes.some(
+      (n) => n.kind === 'line' && n.speaker === 'pebble' && n.text.includes('Waykeeper'),
+    );
+    expect(named).toBe(true);
   });
 });

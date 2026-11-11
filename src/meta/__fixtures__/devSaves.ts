@@ -724,7 +724,7 @@ export const DEV_SAVES: Readonly<Record<DevSaveId, DevSave>> = {
       // The story as far as the wins go: the intake done, the callsign and tags they gave, and
       // every memo due delivered and read (so no NEW badge pulls the base to the Inbox).
       save.profile = { ...DEV_PROFILE, callsign: callsignFor(save) };
-      // C4 answered (Keep, QUILL as she was), so the base never stops on A3M4's card (D146).
+      // C4 answered (Keep, QUILL as it was), so the base never stops on A3M4's card (D146).
       save.story.flags = { arrival_reason: 'lettuce', quill_choice: 'keep' };
       save.story.bricksTagIndex = tagIndexFor(save);
       const story = withStoryUnlocks(save).save;

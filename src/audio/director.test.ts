@@ -92,3 +92,20 @@ describe('countdown ticks and the integrity alarm', () => {
     expect(crossedLowIntegrity(3, 0)).toBe(false);
   });
 });
+
+describe('map beds (T750)', () => {
+  it("plays a map's own bed ahead of its act's: A3M4's shelters, A3M5's vats; A3M6 keeps Act III's", () => {
+    const act3 = { ...MOOD, act: 3 as const };
+    expect(battleMusic({ ...act3, map: 'a3_m04' }).theme).toBe('act3_shelters');
+    expect(battleMusic({ ...act3, map: 'a3_m05' }).theme).toBe('act3_vats');
+    expect(battleMusic({ ...act3, map: 'a3_m06' }).theme).toBe('act3_battle');
+    expect(battleMusic(act3).theme).toBe('act3_battle');
+    // The layers still follow the battle.
+    expect(battleMusic({ ...act3, map: 'a3_m04', waveActive: true, choir: true }).layers).toEqual({
+      base: 1,
+      drums: 1,
+      lead: 0,
+      choir: 1,
+    });
+  });
+});

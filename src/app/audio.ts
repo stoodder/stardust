@@ -254,6 +254,15 @@ function bindSpeechAudio(ticker: TypeTicker): () => void {
   });
 }
 
+/** Reduced motion (the Waykeeper plate turns at once), false where there's no media query. */
+function stillMotion(): boolean {
+  return (
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    prefersReducedMotion()
+  );
+}
+
 /** The music and low sound effects a silence's hush holds (SILENCE_HUSHES). */
 const SILENCE_DUCK = 'silence';
 
@@ -293,7 +302,7 @@ function bindWaykeeperSting(): () => void {
     const now = performance.now();
     const { from, done } = view.typing;
     const whole = done ? from : from + typeMs(line.text);
-    const due = prefersReducedMotion() ? now : Math.max(from, whole) + PLATE_TURN_HOLD_MS;
+    const due = stillMotion() ? now : Math.max(from, whole) + PLATE_TURN_HOLD_MS;
     if (due <= now) sting();
     else timer = setTimeout(sting, due - now);
   });

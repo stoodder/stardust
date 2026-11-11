@@ -96,7 +96,7 @@ export interface LockedAbilityView {
   readonly label: string;
   /** The `icon.ability.*` sprite id. */
   readonly icon: string;
-  /** Why it's locked here ("QUILL is offline. She runs it."). */
+  /** Why it's locked here ("QUILL is offline. It runs the reboot."). */
   readonly reason: string;
 }
 

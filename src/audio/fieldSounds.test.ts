@@ -8,6 +8,7 @@ import type { SoundCall } from './eventSounds.ts';
 import { DRONE_SOUNDS, ENEMY_LOOPS } from './eventTables.ts';
 import { CHARGE_SOUNDS, CLOAK_SOUNDS, HOLLOW_QUIET } from './eventTablesAct2.ts';
 import { BEAM_SOUNDS, DARK_SOUNDS } from './eventTablesAct2b.ts';
+import { ENEMY_CLOAK_SOUNDS, JAM_SOUNDS } from './eventTablesAct3b.ts';
 import {
   beamPitch,
   createFieldSounds,
@@ -511,5 +512,70 @@ describe('Act III field sounds (T650)', () => {
     w.towers = { items: [tower([{ kind: 'choir' }], false)], used: 1 };
     frame(f, w);
     expect(f.choirLive()).toBe(false);
+  });
+});
+
+describe('Act III, part two field sounds (T750)', () => {
+  it('crackles the Jammed static while any tower is jammed, one voice on sim time, and stops', () => {
+    const f = createFieldSounds(CLEAR);
+    const w = world();
+    const a = { ...tower(null), uid: 1, jamTicks: 40 };
+    const b = { ...tower(null), uid: 2, jamTicks: 40 };
+    w.towers = { items: [a, b], used: 2 };
+    expect(frame(f, w)).toEqual([JAM_SOUNDS.static]);
+    w.tick += 1;
+    expect(frame(f, w)).toEqual([]);
+    w.tick += Math.round(JAM_SOUNDS.staticEverySec * TICK_HZ);
+    expect(frame(f, w)).toEqual([JAM_SOUNDS.static]);
+    a.jamTicks = 0;
+    b.jamTicks = 0;
+    w.tick += 100;
+    expect(frame(f, w)).toEqual([]);
+    // A sold tower's last jam is no jam.
+    w.towers = { items: [{ ...b, jamTicks: 30, alive: false }], used: 1 };
+    expect(frame(f, w)).toEqual([]);
+  });
+
+  it("opens the platform's hangar door through its launch's tell, and launches as it runs out", () => {
+    const def = {
+      id: 'shareholder_value',
+      faction: 'everglow' as const,
+      cloaked: false,
+      boss: { phases: [{ spawn: null, burrow: null, hangar: { enemy: 'compliance' } }] },
+    };
+    const boss = unit(9, def, { bossPhase: 1, abilityTicks: TELL + 1 });
+    expect(spawnTelling(boss)).toBe(false);
+    const f = createFieldSounds(CLEAR);
+    const w = world(boss);
+    frame(f, w);
+    boss.abilityTicks = TELL;
+    expect(spawnTelling(boss)).toBe(true);
+    expect(frame(f, w)).toEqual(['sv_hangar']);
+    boss.abilityTicks = 400;
+    expect(frame(f, w)).toEqual(['sv_launch']);
+  });
+
+  it("shimmers a hidden Black Budget Operative instead of footsteps; others' steps still walk", () => {
+    const f = createFieldSounds(CLEAR);
+    const w = world(unit(1, plain('blackbudget', 'everglow', true)));
+    expect(frame(f, w)).toEqual([ENEMY_CLOAK_SOUNDS.blackbudget]);
+    w.enemies = {
+      items: [...w.enemies.items, unit(2, plain('veilwalker', 'aelari', true))],
+      used: 2,
+    };
+    w.tick += Math.round(CLOAK_SOUNDS.everySec * TICK_HZ);
+    expect(frame(f, w).toSorted()).toEqual(['bb_shimmer', CLOAK_SOUNDS.steps].toSorted());
+  });
+
+  it("stomps a Liability, chops a Gunship's rotor, and hums an Associate's repairs while they're on the field", () => {
+    const f = createFieldSounds(CLEAR);
+    const w = world(
+      unit(1, plain('liability', 'everglow')),
+      unit(2, plain('gunship', 'everglow')),
+      unit(3, plain('associate', 'everglow')),
+    );
+    expect(frame(f, w).toSorted()).toEqual(
+      ['liability_stomp', 'gunship_rotor', 'associate_hum'].toSorted(),
+    );
   });
 });
