@@ -11,7 +11,7 @@ const ROOT = fileURLToPath(new URL('..', import.meta.url));
 
 describe('counter exemptions name the tests that pin them', () => {
   const entries = Object.values(RAW_CONTENT.maps).flatMap((m) =>
-    (m.counterExemptions ?? []).map((x) => ({ map: m.id, ...x })),
+    (m.counterExemptions ?? []).map((x) => Object.assign({ map: m.id }, x)),
   );
 
   it('the live content has some (A3M5 jam, A3M6 detection)', () => {

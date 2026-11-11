@@ -1,8 +1,8 @@
 /* Zibzab's crate (crateCard.tsx; T714; art-direction.md § Menu screens and § Dialogue
    presentation): a chamfered card over A3M6's briefing in Vrell orange on deep ink, its lid a
-   band of crate slats with the NO REFUNDS sticker peeled half off; the tune-ups as shelf-style
-   rows, the protocols as a pick of `ink.2` options (steel through their 700 ms lock, the picked
-   one on the accent). */
+   band of crate slats with the NO REFUNDS sticker peeled off, Zibzab's word under his plate; the
+   tune-ups as shelf-style rows, the protocols as a pick of `ink.2` options (steel through their
+   700 ms lock, the picked one on the accent). */
 /* The card's layer over the briefing's scrim, centring it (the card itself is a chamfered frame,
    positioned relative). */
 .cr-layer {
@@ -62,33 +62,30 @@
   letter-spacing: 1px;
 }
 
-/* Peeling: the sticker whole and readable (the joke is that it's there at all: "the sticker was
-   the point"), its top-right corner folded back, the flap's pale underside showing and the lid
-   behind the fold. Static, so nothing on the card is ever caught mid-wipe (D150). */
+/* Peeled off (act3.md § A3M6): a torn white scrap still stuck at its left end, then the pale
+   ghost of the sticker in old adhesive, NO REFUNDS left behind faintly in it. The scrap's edge is
+   torn, never a straight line, and nothing moves, so it never reads as a wipe caught mid-way
+   (D150). */
 .cr-sticker {
   position: absolute;
   right: 14px;
   top: 5px;
-  padding: 2px 8px 2px 4px;
-  color: var(--sd-red-2);
-  background: var(--sd-white-0);
-  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+  padding: 2px 4px 2px 9px;
+  color: rgb(220 210 200 / 38%);
+  background: rgb(220 210 200 / 14%);
+  box-shadow: inset 0 0 0 1px rgb(220 210 200 / 24%);
 }
 
-/* The flap: the corner's lower-left half, its underside, a shadow along the fold. */
-.cr-sticker::after {
+/* The scrap: white, its right edge torn. */
+.cr-sticker::before {
   content: '';
   position: absolute;
-  right: 0;
+  left: 0;
   top: 0;
+  bottom: 0;
   width: 6px;
-  height: 6px;
-  background: linear-gradient(
-    to top right,
-    rgb(220 210 200) 0 calc(50% - 1px),
-    var(--sd-steel-2) calc(50% - 1px) 50%,
-    transparent 50%
-  );
+  background: var(--sd-white-0);
+  clip-path: polygon(0 0, 100% 0, 50% 25%, 100% 50%, 34% 75%, 84% 100%, 0 100%);
 }
 
 .cr-title {

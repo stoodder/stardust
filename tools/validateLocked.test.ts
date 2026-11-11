@@ -69,10 +69,11 @@ describe('[flag-profile] reachability', () => {
       { when: { door_choice: 'warren' as const, quill_choice: 'purge' as const }, profile },
       { when: { quill_choice: 'purge' as const }, profile },
     ];
-    const flagVariants = { door_choice: ['convoy', 'warren'], quill_choice: ['keep', 'purge'] };
-    expect(
-      errors({ referenceProfileByFlag: cells, flagVariants } as never, 'flag-profile'),
-    ).toEqual([
+    const flagVariants = {
+      door_choice: ['convoy', 'warren'] as const,
+      quill_choice: ['keep', 'purge'] as const,
+    };
+    expect(errors({ referenceProfileByFlag: cells, flagVariants }, 'flag-profile')).toEqual([
       `[flag-profile] ${W}.referenceProfileByFlag[1].when: unreachable: referenceProfileByFlag[0] matches every run this cell does (first match wins)`,
     ]);
   });

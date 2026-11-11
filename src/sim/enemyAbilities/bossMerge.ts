@@ -71,12 +71,26 @@ function fillGroup(state: SimState, ownerUid: number): void {
   }
 }
 
+/**
+ * Whether a live part of `e`'s group sits in a lower slot than `e` (that part runs the group). A
+ * scan up to `e`'s slot only, so the parts that don't lead never gather the group.
+ */
+function leadIsBefore(state: SimState, e: Enemy): boolean {
+  const pool = state.enemies;
+  for (let i = 0; i < e.slot; i++) {
+    const p = pool.items[i]!; // i < e.slot < used ≤ items.length
+    if (p.alive && !p.leaving && p.splitFrom !== null && p.ownerUid === e.ownerUid) return true;
+  }
+  return false;
+}
+
 /** One tick of a split-born unit (see the header): a part's group, or the merged boss. */
 export function splitBornStep(state: SimState, e: Enemy): void {
   if (e.splitFrom === null) {
     mergedStep(state, e);
     return;
   }
+  if (e.leaving || leadIsBefore(state, e)) return; // only the group's lead gathers it
   fillGroup(state, e.ownerUid);
   if (group[0] !== e) return; // the group ran with its lowest-slot part (or runs when it's met)
   if (e.spawnTick === state.tick) return; // born this tick: the clock starts on the next

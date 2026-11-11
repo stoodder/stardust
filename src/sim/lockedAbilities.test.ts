@@ -65,6 +65,6 @@ describe('flag conditions', () => {
   it('isFlagCondition rejects any run atom, however deep', () => {
     expect(isFlagCondition({ all: [rewrite, { not: rewrite }] })).toBe(true);
     expect(isFlagCondition({ not: { stat: 'abilityUses', gte: 1 } })).toBe(false);
-    expect(isFlagCondition({ any: [rewrite, { leaks: 'any', gte: 1 }] } as never)).toBe(false);
+    expect(isFlagCondition({ any: [rewrite, { leaks: {}, gte: 1 }] })).toBe(false);
   });
 });

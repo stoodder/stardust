@@ -66,8 +66,10 @@ export const SCRIPT_GROUPS = {
 export const waves = defineWaves([
   // W1 · Motes toward the vats
   { groups: [motes(6, 'road', 0), motes(6, 'road', 8)] },
-  // W2 · Compliance + one Maintenance Associate [T: healer aura; focus it]
-  { ...NO_CALL, teach: true, groups: [drones(3, 0), associates(1, 3), drones(3, 4.5)] },
+  // W2 · Compliance + one Maintenance Associate [T: healer aura; focus it]. The second drones walk
+  // in 8 s after the first, once the yard has had the Associate to itself (D150: a teach, not a
+  // drain on a player without the Bulkhead).
+  { ...NO_CALL, teach: true, groups: [drones(3, 0), associates(1, 3), drones(3, 8)] },
   // W3 · Fractures + Motes
   { ...CALL, groups: [fractures(2, 'road', 0), motes(5, 'road', 6), drones(3, 9)] },
   // W4 · one Auditor [T: ring tell; interrupt with Stillness or Bloom; Choir]

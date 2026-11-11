@@ -477,7 +477,10 @@ function flagAssignments(
 ): Record<string, unknown>[] {
   let out: Record<string, unknown>[] = [{}];
   for (const [flag, values] of Object.entries(variants)) {
-    out = out.flatMap((a) => [a, ...(values ?? []).map((v) => ({ ...a, [flag]: v }))]);
+    out = out.flatMap((a) => [
+      a,
+      ...(values ?? []).map((v) => Object.assign({}, a, { [flag]: v })),
+    ]);
   }
   return out;
 }

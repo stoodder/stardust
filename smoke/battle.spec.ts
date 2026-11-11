@@ -3,8 +3,13 @@
 // battle (`?map=dev_range`, app/battleSetup.ts DEV_MAP_ID), whose layout the pads below name;
 // every registered map, A1M1 included, gets the boot check at the end.
 import { battleMapIds, DEV_MAP_ID } from '../src/app/battleSetup.ts';
+import { DEV_FIXTURES } from '../src/app/devFixtures.ts';
+import { setDevFixtures } from '../src/app/devRegistry.ts';
 import { expect, test } from './fixtures.ts';
 import { shot, waitForReady } from './hooks.ts';
+
+// The dev battles count as registered maps here, as a dev URL loads them in the game (D150).
+setDevFixtures(DEV_FIXTURES);
 
 /** A free pad on the default map, and a second one for the real click (dev_range's layout). */
 const HOOK_PAD = [3, 1] as const;
