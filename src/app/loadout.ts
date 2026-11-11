@@ -84,7 +84,8 @@ function bonusText(b: LinkBonusDef): string {
 /**
  * A partner's whole bonus: its stat bonuses, then Conductive's chain jumps and Soak (T304b), and
  * the Lookout's detection radius from Overwatch and Skywatch (T406), Reel It In's kill credits
- * (T408), and Lightsong's faster ramp and stronger Marks (T508).
+ * (T408), Lightsong's faster ramp and stronger Marks (T508), and the Scuttle Den's swarmling,
+ * dash, and latch (T604).
  */
 function partnerText(p: (typeof LINKS)[keyof typeof LINKS]['partners'][number]): string {
   const parts = p.bonuses.map(bonusText);
@@ -93,10 +94,20 @@ function partnerText(p: (typeof LINKS)[keyof typeof LINKS]['partners'][number]):
   // Overwatch, Skywatch (T406).
   if (p.detectRadiusTiles !== undefined) parts.push(`+${p.detectRadiusTiles} detection radius`);
   // Reel It In (T408).
-  if (p.killCredits !== undefined) parts.push(`+${p.killCredits} credits per kill`);
+  if (p.killCredits !== undefined) {
+    parts.push(`+${p.killCredits} ${p.killCredits === 1 ? 'credit' : 'credits'} per kill`);
+  }
   // Lightsong (T508).
   if (p.rampPct !== undefined) parts.push(`ramps ${Math.round(p.rampPct * 100)}% faster`);
   if (p.markPct !== undefined) parts.push(`Marks +${Math.round(p.markPct * 100)}%`);
+  // The Scuttle Den's: Finders Keepers' swarmling, Splash Zone's faster dash and longer latch (T604).
+  if (p.swarmlings !== undefined) {
+    parts.push(`+${p.swarmlings} ${p.swarmlings === 1 ? 'swarmling' : 'swarmlings'}`);
+  }
+  if (p.swarmSpeedPct !== undefined) {
+    parts.push(`swarmlings ${Math.round(p.swarmSpeedPct * 100)}% faster`);
+  }
+  if (p.latchSec !== undefined) parts.push(`+${p.latchSec} s latch`);
   return parts.join(', ');
 }
 

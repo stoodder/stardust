@@ -66,6 +66,7 @@ describe('the loadout screen (app side)', () => {
       'Clearance Sale',
       'Scanner Sweep', // plays since T406
       'Stillness', // plays since T507
+      'Underfoot', // plays since T604
     ]);
     expect(view.links.map((l) => l.name)).toEqual([
       'Crossfire',
@@ -76,7 +77,13 @@ describe('the loadout screen (app side)', () => {
       'Reel It In', // the Harpoon's and Crane's (T408): the Crane gets nothing itself
       'Resonance', // the Zapcoil's and Prism's (T504)
       'Lightsong', // the Prism's and Lantern's (T508)
+      'Splash Zone', // the Sprinkler's and Scuttle Den's (T604)
+      'Finders Keepers', // the Crane's and Scuttle Den's (T604)
     ]);
+    expect(view.links[8]?.bonus).toBe(
+      'Sprinkler +0.3 range · Scuttle Den swarmlings 30% faster, +1 s latch',
+    );
+    expect(view.links[9]?.bonus).toBe('Scuttle Den +1 credit per kill, +1 swarmling');
     expect(view.links[7]?.bonus).toBe("Prism Spire ramps 30% faster · Seer's Lantern Marks +5%");
     // Resonance holds only while a shield is up (T531).
     expect(view.links[6]?.bonus).toBe(

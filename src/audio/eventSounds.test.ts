@@ -129,8 +129,8 @@ describe('event sounds', () => {
       },
     ]);
     expect(ids(landing)).toEqual(['sfx:thumper_launch', 'sfx:thumper_impact']);
-    // Attack kinds with no sound yet stay silent.
-    expect(run([fired('spawner', 0)])).toEqual([]);
+    // The Scuttle Den's row (T604) is a placeholder until T650: a Den fires no ProjectileFired.
+    expect(ids(run([fired('spawner', 0)]))).toEqual(['sfx:burrow_dig']);
   });
 
   it("merges a Cluster Thumper's bomblets: no launch each, one rate-limited crackle on landing", () => {

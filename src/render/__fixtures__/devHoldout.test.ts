@@ -94,53 +94,58 @@ describe('dev_holdout: the Holdout (T605)', () => {
       sim.step(); // posts spawn on tick 0
       expect(bricksOf(sim)).toMatchObject({ vulnerability: 'scripted', blockCapacity: 2 });
       let last = 1;
-      let wave = 0;
-      const atStart: number[] = [];
+      let wave = sim.state.wave;
+      const atStart: number[] = [1]; // W1 started on tick 0, before Bricks stood
       for (let i = 0; i < 60 * 120 && sim.state.pendingInput === null; i++) {
+        const before = bricksOf(sim).health;
+        sim.step();
+        // A wave starts on the level its tick began with (the tick's blockers ease on from it).
         if (sim.state.wave !== wave) {
           wave = sim.state.wave;
-          atStart.push(bricksOf(sim).health);
+          atStart.push(before);
         }
-        sim.step();
         const h = bricksOf(sim).health;
         expect(h).toBeLessThanOrEqual(last + 1e-12); // never rises
         expect(h).toBeGreaterThanOrEqual(0.05);
         last = h;
       }
-      atStart.push(bricksOf(sim).health); // W3's start: the SEAL froze it there
+      expect(bricksOf(sim).health).toBe(0.05); // the SEAL froze it on the floor
       expect(sim.state).toMatchObject({ wave: 3, pendingInput: 'seal' });
-      expect(atStart[1]).toBe(1); // W1 starts full
-      expect(atStart[2]).toBeCloseTo(0.6, 12); // W2
+      expect(atStart).toHaveLength(3);
+      expect(atStart[0]).toBe(1); // W1 starts full
+      expect(atStart[1]).toBeCloseTo(0.6, 12); // W2
       expect(atStart.at(-1)).toBe(0.05); // W3, as the SEAL fires: the floor
     }
   });
 
-  it('blocks at most 2 ground units at a time in front of the post; they stand still, then release as they die', () => {
-    // No towers: Bricks fights alone, so his hold stays full while Motes queue past.
-    const sim = createSim(config('convoy'));
+  it('holds at most 2 ground units, in front of the post and still; the rest walk past', () => {
+    // Bricks with no damage, and no towers: his hold stays full while Motes walk past.
+    const cfg = config('convoy');
+    const map = cfg.content.maps[MAP]!;
+    const post = map.allies[0]!;
+    const harmless = { ...post, attack: { ...post.attack, damage: 0 } };
+    const content = {
+      ...cfg.content,
+      maps: { ...cfg.content.maps, [MAP]: { ...map, allies: [harmless] } },
+    };
+    const sim = createSim({ ...cfg, content });
     sim.enqueue({ type: 'callWave' });
     let maxHeld = 0;
-    let sawFull = false;
     const stillDist = new Map<number, number>();
-    const out: SimEvent<IdSpace>[] = [];
-    let ons = 0;
-    let offs = 0;
-    for (let i = 0; i < 60 * 40 && sim.state.wave < 2; i++) {
+    let passed = 0;
+    for (let i = 0; i < 60 * 30 && sim.state.wave < 2; i++) {
       sim.step();
-      out.length = 0;
-      sim.drainEvents(out);
-      for (const e of out) {
-        if (e.type !== 'Blocked') continue;
-        if (e.on) ons++;
-        else offs++;
-      }
       const b = bricksOf(sim);
       let held = 0;
       for (const e of sim.state.enemies.items) {
-        if (!e.alive || e.blockerUid === 0) continue;
+        if (!e.alive) continue;
+        if (e.blockerUid === 0) {
+          if (e.dist > 3 + 1e-6) passed++;
+          continue;
+        }
         held++;
         expect(e.blockerUid).toBe(b.uid);
-        // Taken in front of him (his post is beside (6,3): 3 tiles down the road).
+        // Taken in front of him (his post is beside the road's (6,3): 3 tiles down it).
         expect(e.dist).toBeGreaterThanOrEqual(3 - BLOCK_FRONT_TILES - 1e-9);
         expect(e.dist).toBeLessThanOrEqual(3 + 1e-6);
         const was = stillDist.get(e.uid);
@@ -149,12 +154,25 @@ describe('dev_holdout: the Holdout (T605)', () => {
       }
       expect(held).toBe(b.blocking);
       maxHeld = Math.max(maxHeld, held);
-      if (held === 2) sawFull = true;
     }
     expect(maxHeld).toBe(2);
-    expect(sawFull).toBe(true);
-    expect(ons).toBeGreaterThan(2); // a freed place is taken again
-    expect(offs).toBeGreaterThanOrEqual(0);
+    expect(passed).toBeGreaterThan(0);
+    expect(stillDist.size).toBe(2); // the first two, held all along
+  });
+
+  it('lets a held unit go as it dies, and takes the next one (Bricks fights)', () => {
+    const sim = createSim(config('convoy'));
+    sim.enqueue({ type: 'callWave' });
+    const events = play(sim, () => sim.state.pendingInput !== null);
+    const on = events.filter((e) => e.type === 'Blocked' && e.on);
+    const died = new Set(events.flatMap((e) => (e.type === 'EnemyDied' ? [e.uid] : [])));
+    expect(on.length).toBeGreaterThan(2); // a place freed by a death is taken again
+    // Every unit he held died or was let go by name.
+    for (const e of on) {
+      if (e.type !== 'Blocked') continue;
+      const off = events.some((x) => x.type === 'Blocked' && !x.on && x.enemyUid === e.enemyUid);
+      expect(died.has(e.enemyUid) || off).toBe(true);
+    }
   });
 
   it('the SEAL freezes waves, movement, and fire while the sim ticks; only its press applies', () => {
@@ -202,7 +220,9 @@ describe('dev_holdout: the Holdout (T605)', () => {
     sim.step();
     out.length = 0;
     sim.drainEvents(out);
-    expect(out.map((e) => e.type)).toEqual(['ForcedInputResolved', 'MapWon']);
+    // The tick runs whole up to the triggers (W3 spawns on), whose endMap ends it.
+    expect(out[0]).toEqual({ type: 'ForcedInputResolved', id: 'seal' });
+    expect(out.at(-1)).toEqual({ type: 'MapWon' });
     expect(sim.state).toMatchObject({
       outcome: 'won',
       pendingInput: null,
