@@ -18,7 +18,7 @@ export const TICK_HZ = 60;
 export const ROAD_TILES = 38;
 
 /**
- * What a player who heeds Kip's w13 line ("Save what you have. Freeze them at the old intake.")
+ * What a player who heeds Kip's w13 line ("Save what you have. Freeze them on the back path, by the old intake.")
  * saves their targeted casts for: the hunt's Silencers by the old intake, in W13 and again in W15
  * (the same hunt, one Silencer; a player who learned it in W13 meets it the same way).
  */

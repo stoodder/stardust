@@ -104,13 +104,13 @@ export const scenes = defineScenes([
       kind: 'line',
       speaker: 'kip',
       expression: 'worried',
-      text: 'This is the biggest group. They will come up the sluice behind it.',
+      text: 'This is the biggest group. The Hollow will come up the sluice behind it.',
     },
     {
       kind: 'line',
       speaker: 'kip',
       expression: 'worried',
-      text: 'Save what you have. Freeze them at the old intake.',
+      text: 'Save what you have. Freeze them on the back path, by the old intake.',
     },
   ]),
   // The hint for Declined, before the layout is set (D151): the Hum Choir shortens a hostile jam
