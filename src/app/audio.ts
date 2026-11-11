@@ -37,7 +37,16 @@ import { HOLLOW_DUCK, TIDYBOT_SOUNDS } from '../audio/eventTablesAct2.ts';
 import { DARK_SOUNDS, METER_ALARM } from '../audio/eventTablesAct2b.ts';
 import { FORCED_INPUT_SOUNDS } from '../audio/eventTablesAct3.ts';
 import { WAVE_CLEAR_CUE, type CueId } from '../audio/music/index.ts';
-import { C2_STINGS, cueHush, lineCue, PA_JINGLE_CUE, type LineCue } from '../audio/storyCues.ts';
+import {
+  C2_STINGS,
+  cueHush,
+  lineCue,
+  lineSfx,
+  PA_JINGLE_CUE,
+  silenceHush,
+  WAYKEEPER_STING,
+  type LineCue,
+} from '../audio/storyCues.ts';
 import {
   isStormId,
   renderCue,
@@ -52,6 +61,9 @@ import type { IdSpace } from '../content/types.ts';
 import { TICK_HZ } from '../shared/time.ts';
 import { clearTicksFor, type SimEvent } from '../sim/index.ts';
 import { setTypeTick } from '../ui/dialogue/LineText.tsx';
+import { prefersReducedMotion } from '../ui/motion.ts';
+import { typeMs } from '../ui/dialogue/text.ts';
+import { isNaming, PLATE_TURN_HOLD_MS } from '../ui/screens/waykeeper.ts';
 import { presentationOfMap } from '../story/presentation.ts';
 import { dialogue, speaking } from '../ui/dialogue/state.ts';
 import {
@@ -110,7 +122,8 @@ function playCalls(calls: SoundCall[]): void {
           ? { pitch: c.pitch, delay: c.delay }
           : { pitch: c.pitch, delay: c.delay, gain: c.gain },
       );
-    } else engine.cue(c.id);
+    } else if (c.kind === 'stop') engine.stop(c.id);
+    else engine.cue(c.id);
   }
   calls.length = 0;
 }
