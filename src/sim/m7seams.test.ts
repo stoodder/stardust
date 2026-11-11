@@ -3,17 +3,14 @@
 // and the Sproing Pad are refused whole until their tasks (STUB_TOWER_TASKS), System Reboot until
 // T702, C4 Purge's faction armor until T703; the `cleared` atom reads false and never settles until
 // T706 judges it; the new content compiles to its rows; and the validators reject each malformed
-// seam shape. The dev maps: render/__fixtures__/devM7.test.ts; the flag-variant profiles:
-// balance/flagProfile.test.ts.
+// unit and tower seam shape. The dev maps and the map-level shapes: render/__fixtures__/
+// devM7.test.ts; the flag-variant profiles: balance/flagProfile.test.ts.
 import { describe, expect, it } from 'vitest';
-import { HARNESS_GATES } from '../balance/refusals.ts';
 import { compileContent } from '../content/compile.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
 import { STUB_TOWER_TASKS, TOWERS } from '../content/towers/index.ts';
-import type { EnemyDef, IdSpace, MapDef, RawContent, TowerDef } from '../content/types.ts';
+import type { EnemyDef, IdSpace, RawContent, TowerDef } from '../content/types.ts';
 import { validate } from '../content/validate.ts';
-import { DEV_CONTENT, type DevIds } from '../render/__fixtures__/devBattle.ts';
-import { DEV_M7_MAPS, bearersMap } from '../render/__fixtures__/devM7.ts';
 import { SIM_FIXTURE, fixtureConfig } from './__fixtures__/sim.ts';
 import { evaluateCondition, settledCondition } from './conditions.ts';
 import { ALLY_BLANK, ENEMY_BLANK, TOWER_BLANK, ZONE_BLANK } from './entities.ts';
@@ -74,7 +71,7 @@ describe('FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES (T700a rows; D146)', ()
       cleared: 'T706',
       openTile: 'T707',
     });
-    expect(HARNESS_GATES.jamLimit).toBe('T702');
+    // HARNESS_GATES.jamLimit (T702): balance/refusals.m5.test.ts.
   });
 
   it('refuse the M7 stubs whole, naming their task', () => {
@@ -200,16 +197,14 @@ describe('the M7 content (stubs under their final ids)', () => {
 
 // ── The validators reject each malformed seam shape ───────────────────────────────────────────
 
-/** DEV_CONTENT's entities with the M7 dev maps only (or `maps`), patched by `over`. */
-function dev(
+/** The live content with `over` patched in. */
+function live(
   over: { enemies?: Record<string, EnemyDef>; towers?: Record<string, TowerDef> } = {},
-  maps: Readonly<Record<string, MapDef<DevIds>>> = DEV_M7_MAPS,
 ): RawContent<IdSpace> {
   return {
-    ...DEV_CONTENT,
-    enemies: { ...DEV_CONTENT.enemies, ...over.enemies },
-    towers: { ...DEV_CONTENT.towers, ...over.towers },
-    maps: { ...maps },
+    ...RAW_CONTENT,
+    enemies: { ...RAW_CONTENT.enemies, ...over.enemies },
+    towers: { ...RAW_CONTENT.towers, ...over.towers },
   };
 }
 /** The errors of rule `rule` in `raw`. */
@@ -218,27 +213,23 @@ function errors(raw: RawContent<IdSpace>, rule: string): string[] {
 }
 const SV = RAW_CONTENT.enemies.shareholder_value;
 const MAW = RAW_CONTENT.enemies.gathering_maw;
-function bearers(patch: Partial<MapDef<DevIds>>): RawContent<IdSpace> {
-  return dev({}, { dev_bearers: { ...bearersMap, ...patch } });
-}
 
 describe('validation of the M7 seams', () => {
-  it('accepts the live content and the M7 dev maps', () => {
+  it('accepts the live content (the dev maps: render/__fixtures__/devM7.test.ts)', () => {
     // compileContent validates (a revisit composed first) and throws on any problem.
     expect(() => compileContent(RAW_CONTENT)).not.toThrow();
-    expect(validate(dev())).toEqual([]);
   });
 
   it('[enemy-ability]: jams tell ≥ 1.5 s and last ≤ 4 s; only a tendril picks', () => {
     const silencer = RAW_CONTENT.enemies.silencer;
     const bad = { ...silencer, jam: { ...silencer.jam!, tellSec: 1, durationSec: 5 } };
-    expect(errors(dev({ enemies: { silencer: bad } }), 'enemy-ability')).toEqual([
+    expect(errors(live({ enemies: { silencer: bad } }), 'enemy-ability')).toEqual([
       '[enemy-ability] enemies.silencer.jam.tellSec: must be ≥ 1.5 s (JAM_MIN_TELL_SEC) and below periodSec',
       '[enemy-ability] enemies.silencer.jam.durationSec: must be in (0, 4] s (JAM_MAX_SEC)',
     ]);
     const auditor = RAW_CONTENT.enemies.auditor;
     const picky = { ...auditor, jam: { ...auditor.jam!, prefer: 'choir' as const } };
-    expect(errors(dev({ enemies: { auditor: picky } }), 'enemy-ability')).toEqual([
+    expect(errors(live({ enemies: { auditor: picky } }), 'enemy-ability')).toEqual([
       "[enemy-ability] enemies.auditor.jam.prefer: only a 'tendril' picks its target",
     ]);
   });
@@ -246,13 +237,13 @@ describe('validation of the M7 seams', () => {
   it('[jammer-source] and [enemy-traits]: only the listed jammers jam; the trait goes with a jam', () => {
     const liability = RAW_CONTENT.enemies.liability;
     const rogue = { ...liability, jam: RAW_CONTENT.enemies.auditor.jam! };
-    expect(errors(dev({ enemies: { liability: rogue } }), 'jammer-source')).toHaveLength(1);
-    expect(errors(dev({ enemies: { liability: rogue } }), 'enemy-traits')).toEqual([
+    expect(errors(live({ enemies: { liability: rogue } }), 'jammer-source')).toHaveLength(1);
+    expect(errors(live({ enemies: { liability: rogue } }), 'enemy-traits')).toEqual([
       "[enemy-traits] enemies.liability.traits: 'jammer' goes with `jam` or a Hostile Takeover phase",
     ]);
     const associate = RAW_CONTENT.enemies.associate;
     const { healAura: _gone, ...noAura } = associate;
-    expect(errors(dev({ enemies: { associate: noAura } }), 'enemy-traits')).toEqual([
+    expect(errors(live({ enemies: { associate: noAura } }), 'enemy-traits')).toEqual([
       "[enemy-traits] enemies.associate.traits: 'healer_aura' goes with `healAura`",
     ]);
   });
@@ -270,7 +261,7 @@ describe('validation of the M7 seams', () => {
         ],
       },
     };
-    expect(errors(dev({ enemies: { shareholder_value: sv } }), 'enemy-ability')).toEqual([
+    expect(errors(live({ enemies: { shareholder_value: sv } }), 'enemy-ability')).toEqual([
       "[enemy-ability] enemies.shareholder_value.boss.phases[0].hangar.enemy: unknown enemy 'nobody'",
       '[enemy-ability] enemies.shareholder_value.boss.phases[0].hangar.count: must be a whole number ≥ 1',
       '[enemy-ability] enemies.shareholder_value.boss.phases[1].takeover.tellSec: a boss ability tells for at least 1.5 s',
@@ -288,7 +279,7 @@ describe('validation of the M7 seams', () => {
         ],
       },
     };
-    expect(errors(dev({ enemies: { gathering_maw: maw } }), 'enemy-ability')).toEqual([
+    expect(errors(live({ enemies: { gathering_maw: maw } }), 'enemy-ability')).toEqual([
       '[enemy-ability] enemies.gathering_maw.boss.phases[0].gather.tellSec: must be > 0 and below everySec',
       '[enemy-ability] enemies.gathering_maw.boss.phases[1].split.enemy: an enemy may not spawn itself',
       '[enemy-ability] enemies.gathering_maw.boss.phases[1].split.part: a boss splits into parts, never itself',
@@ -304,7 +295,7 @@ describe('validation of the M7 seams', () => {
       ...sproing,
       tiers: [{ ...t1, attack: { ...t1.attack!, kind: 'leaper', leapers: 0, pinSec: 0 } }, t2, t3],
     };
-    expect(errors(dev({ towers: { sproing: noLeapers } }), 'tower-range')).toContain(
+    expect(errors(live({ towers: { sproing: noLeapers } }), 'tower-range')).toContain(
       '[tower-range] towers.sproing.tiers[0].attack.leapers: must be a whole number ≥ 1',
     );
     const gloop = RAW_CONTENT.towers.gloop;
@@ -315,92 +306,8 @@ describe('validation of the M7 seams', () => {
         b: gloop.specs!.b,
       },
     };
-    expect(errors(dev({ towers: { gloop: wet } }), 'tower-range')).toEqual([
+    expect(errors(live({ towers: { gloop: wet } }), 'tower-range')).toEqual([
       '[tower-range] towers.gloop.specs.a.puddle.chillPct: 0.9 must be in [0, 0.7] (it lands as Chilled)',
-    ]);
-  });
-
-  it('[bearers], [core]: bearers walk with an asset that has them, home by a door of their own', () => {
-    const { bearers: _off, ...asset } = bearersMap.asset!;
-    expect(errors(bearers({ asset }), 'bearers')).toEqual([
-      '[bearers] maps.dev_bearers.refugees.bearers.kind: bearers walk with an asset that has `bearers`',
-    ]);
-    // The bearers' door isn't the map's core; as plain refugees it would be a second core.
-    const plain = { bearers: { route: 'home', count: 6 } };
-    expect(errors(bearers({ refugees: plain, asset }), 'core')).toHaveLength(1);
-    expect(errors(bearers({ refugees: plain }), 'bearers')).toEqual([
-      "[bearers] maps.dev_bearers.asset.bearers: needs a refugee group of kind 'bearer'",
-    ]);
-  });
-
-  it('[script-group], [script]: spawnWave names a group; `cleared` names wreckage before a wave', () => {
-    const events = bearersMap.events!.map((e) =>
-      e.id === 'surge' ? { ...e, actions: [{ spawnWave: 'nope' }] } : e,
-    );
-    expect(errors(bearers({ events }), 'script-group')).toEqual([
-      "[script-group] maps.dev_bearers.events: spawnWave names no script group 'nope'",
-      '[script-group] maps.dev_bearers.scriptGroups.surge: no spawnWave action spawns it',
-    ]);
-    const [cut] = bearersMap.objectives!;
-    const objectives = [{ ...cut!, condition: { cleared: ['door', 'door'], byWave: 9 } }];
-    expect(errors(bearers({ objectives }), 'script')).toEqual([
-      "[script] maps.dev_bearers.objectives[0].condition: marker 'door' is not on a wreckage tile ('x')",
-      "[script] maps.dev_bearers.objectives[0].condition: marker 'door' is not on a wreckage tile ('x')",
-      "[script] maps.dev_bearers.objectives[0].condition: 'door' is listed twice",
-      '[script] maps.dev_bearers.objectives[0].condition: byWave 9 must be a wave of the map from 2 to 3',
-    ]);
-  });
-
-  it('[flag-gate], [flag-variants]: gates name a script flag and its value', () => {
-    const [post] = bearersMap.allies!;
-    const allies = [{ ...post!, when: { flag: 'door_choice' as const, eq: 'tunnel' } }];
-    expect(errors(bearers({ allies }), 'flag-gate')).toEqual([
-      "[flag-gate] maps.dev_bearers.allies[0].when.eq: 'tunnel' is not a value of 'door_choice'",
-    ]);
-    const { flagVariants: _none, ...noVariants } = bearersMap;
-    expect(
-      errors(dev({}, { dev_bearers: noVariants }), 'flag-variants').filter((e) =>
-        e.includes('allies'),
-      ),
-    ).toHaveLength(1);
-    expect(
-      errors(
-        bearers({ markerWhen: { nowhere: { flag: 'door_choice', eq: 'convoy' } } }),
-        'flag-gate',
-      ),
-    ).toEqual(["[flag-gate] maps.dev_bearers.markerWhen.nowhere: unknown marker 'nowhere'"]);
-  });
-
-  it('[jettison]: a boss in the waves lands its plates on decor markers of the map', () => {
-    const takeover = DEV_M7_MAPS.dev_takeover!;
-    const map = { ...takeover, markers: { crash_1: [2, 0], crash_2: [3, 2], crash_3: [6, 0] } };
-    expect(errors(dev({}, { dev_takeover: map } as never), 'jettison')).toEqual([
-      "[jettison] maps.dev_takeover.markers: plate marker 'crash_2' (3,2) must sit on decor ('.')",
-      "[jettison] maps.dev_takeover.markers: 'shareholder_value' jettisons a plate on 'crash_4', which isn't a marker",
-    ]);
-  });
-
-  it('[flag-profile]: each cell names flagVariants values once, and its par is owned', () => {
-    const cell = {
-      when: { door_choice: 'warren' as const },
-      profile: { ...bearersMap.referenceProfile, towers: ['zapcoil' as const] },
-    };
-    const raw = bearers({
-      referenceProfileByFlag: [
-        cell,
-        cell,
-        { when: { quill_choice: 'purge' as const }, profile: cell.profile },
-      ],
-    });
-    expect(errors(raw, 'flag-profile')).toEqual([
-      '[flag-profile] maps.dev_bearers.referenceProfileByFlag[1].when: another cell names these values',
-      "[flag-profile] maps.dev_bearers.referenceProfileByFlag[2].when: flagVariants has no 'quill_choice' entry",
-    ]);
-    const owned = bearers({
-      referenceProfileByFlag: [{ ...cell, parBuild: bearersMap.parBuild }],
-    });
-    expect(errors(owned, 'loadout')).toEqual([
-      "[loadout] maps.dev_bearers.referenceProfileByFlag[0].parBuild.loadout: 'rivet' isn't in the reference profile",
     ]);
   });
 });

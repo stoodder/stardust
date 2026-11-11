@@ -1,10 +1,10 @@
 // Flag-variant reference profiles (T700a; BuildsDef.referenceProfileByFlag): a run whose story
 // flags match a cell is owned by that cell's profile and plays its par build, first match wins;
 // any other run, the map's own (balance/profile.ts). The harness keys its runs by them (T764).
+// Validation's side ([flag-profile]) is render/__fixtures__/devM7.test.ts's.
 import { describe, expect, it } from 'vitest';
+import { FIXTURE, fxMap } from '../content/__fixtures__/content.ts';
 import { compileContent } from '../content/compile.ts';
-import { DEV_CONTENT } from '../render/__fixtures__/devBattle.ts';
-import { bearersMap } from '../render/__fixtures__/devM7.ts';
 import {
   flagProfileCell,
   parBuildFor,
@@ -12,44 +12,44 @@ import {
   referenceRunProfile,
 } from './profile.ts';
 
-const WARREN = { ...bearersMap.referenceProfile, towers: ['zapcoil'] as const, specs: [] };
-const PAR = {
-  loadout: ['zapcoil' as const],
-  steps: [{ wave: 1, build: 'zapcoil' as const, tile: [7, 2] as const }],
-};
+const WARREN = { ...fxMap.referenceProfile, towers: ['fx_gun'] } as const;
+const PAR = { loadout: ['fx_gun'], steps: [{ wave: 1, build: 'fx_gun', tile: [1, 1] }] } as const;
 const content = compileContent({
-  ...DEV_CONTENT,
+  ...FIXTURE,
   maps: {
-    ...DEV_CONTENT.maps,
-    dev_bearers: {
-      ...bearersMap,
+    fx_map: {
+      ...fxMap,
+      flagVariants: { door_choice: ['convoy', 'warren'] },
       referenceProfileByFlag: [
         { when: { door_choice: 'warren' }, profile: WARREN, parBuild: PAR },
-        // A later cell that also matches warren never wins: the first match does.
-        { when: { door_choice: 'warren' as const }, profile: bearersMap.referenceProfile },
+        { when: { door_choice: 'convoy' }, profile: fxMap.referenceProfile },
       ],
     },
   },
 });
-const map = content.maps['dev_bearers' as keyof typeof content.maps];
+const map = content.maps.fx_map;
+const [warrenCell, convoyCell] = map.builds.referenceProfileByFlag;
 
 describe('referenceProfileByFlag', () => {
   it('compiles each cell, its par build against its own profile', () => {
-    expect(map.builds.referenceProfileByFlag[0]).toMatchObject({
+    expect(warrenCell).toMatchObject({
       when: { door_choice: 'warren' },
-      profile: { towers: ['zapcoil'] },
-      parBuild: { loadout: ['zapcoil'], technicianAbility: 'dev_strike' },
+      profile: { towers: ['fx_gun'] },
+      parBuild: { loadout: ['fx_gun'], technicianAbility: 'fx_strike' },
     });
-    expect(map.builds.referenceProfileByFlag[1]?.parBuild).toBeNull();
+    // A cell without a par build plays the map's.
+    expect(convoyCell?.parBuild).toBeNull();
   });
 
-  it('picks the first matching cell, else the map’s own profile and par', () => {
-    expect(flagProfileCell(map, { door_choice: 'warren' })).toBe(
-      map.builds.referenceProfileByFlag[0],
-    );
-    expect(referenceProfileFor(map, { door_choice: 'warren' }).towers).toEqual(['zapcoil']);
-    expect(parBuildFor(map, { door_choice: 'warren' }).loadout).toEqual(['zapcoil']);
-    for (const flags of [{}, { door_choice: 'convoy' as const }]) {
+  it('picks the matching cell, else the map’s own profile and par', () => {
+    expect(flagProfileCell(map, { door_choice: 'warren' })).toBe(warrenCell);
+    // Flags a cell doesn't name don't stop it matching.
+    expect(flagProfileCell(map, { door_choice: 'warren', quill_choice: 'purge' })).toBe(warrenCell);
+    expect(referenceProfileFor(map, { door_choice: 'warren' }).towers).toEqual(['fx_gun']);
+    expect(parBuildFor(map, { door_choice: 'warren' }).loadout).toEqual(['fx_gun']);
+    expect(flagProfileCell(map, { door_choice: 'convoy' })).toBe(convoyCell);
+    expect(parBuildFor(map, { door_choice: 'convoy' })).toBe(map.builds.parBuild);
+    for (const flags of [{}, { quill_choice: 'purge' as const }]) {
       expect(flagProfileCell(map, flags)).toBeNull();
       expect(referenceProfileFor(map, flags)).toBe(map.builds.referenceProfile);
       expect(parBuildFor(map, flags)).toBe(map.builds.parBuild);
@@ -57,11 +57,10 @@ describe('referenceProfileByFlag', () => {
   });
 
   it('feeds the run profile (no flags: today’s behaviour)', () => {
-    const own = referenceRunProfile(map, content);
-    expect(own.specs).toEqual(map.builds.referenceProfile.specs);
+    expect(referenceRunProfile(map, content)).toMatchObject({ kind: 'reference', specs: [] });
     const warren = referenceRunProfile(map, content, 'standard', undefined, {
       door_choice: 'warren',
     });
-    expect(warren).toMatchObject({ kind: 'reference', specs: [] });
+    expect(warren).toMatchObject({ kind: 'reference', difficulty: 'standard', specs: [] });
   });
 });
