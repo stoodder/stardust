@@ -70,6 +70,18 @@ import { harmony } from '../../content/links/harmony.ts'; // T607
 import { bloomMap } from './devBloom.ts'; // T608
 import { bloom } from '../../content/towers/bloom.ts'; // T608
 import { harpoon } from '../../content/towers/harpoon.ts'; // T608
+// M7's dev entities (devM7.ts; T700a).
+import { system_reboot } from '../../content/abilities/system_reboot.ts';
+import { associate } from '../../content/enemies/associate.ts';
+import { auditor } from '../../content/enemies/auditor.ts';
+import { gathering_maw } from '../../content/enemies/gathering_maw.ts';
+import { gathering_maw_part } from '../../content/enemies/gathering_maw_part.ts';
+import { gunship } from '../../content/enemies/gunship.ts';
+import { liability } from '../../content/enemies/liability.ts';
+import { shareholder_value } from '../../content/enemies/shareholder_value.ts';
+import { silencer } from '../../content/enemies/silencer.ts';
+import { gloop } from '../../content/towers/gloop.ts';
+import { sproing } from '../../content/towers/sproing.ts';
 import { pinned_down } from '../../content/links/pinned_down.ts'; // T608
 import { stillmind } from '../../content/links/stillmind.ts'; // T608
 import { lantern } from '../../content/towers/lantern.ts';
@@ -242,6 +254,9 @@ const DEV_ENTITIES = {
     // dev_bloom's Stasis Bloom and its Pinned Down partner (devBloom.ts; T608).
     bloom,
     harpoon,
+    // M7's dev maps (devM7.ts; T700a): the Gloop Spitter (T705), the Sproing Pad (T704).
+    gloop,
+    sproing,
   }),
   enemies: defineRegistry({
     dev_nibbler: devNibbler,
@@ -278,6 +293,16 @@ const DEV_ENTITIES = {
     undertow,
     compliance,
     expediter,
+    // M7's dev maps (devM7.ts; T700a): jammers (T702, T707), Everglow part two (T703), the bosses
+    // (T707, T708).
+    silencer,
+    auditor,
+    associate,
+    liability,
+    gunship,
+    shareholder_value,
+    gathering_maw,
+    gathering_maw_part,
   }),
   // Bricks's real Suppressing Fire, so slot 2, its aiming, and its sounds run here (T207b), and
   // QUILL's Time Dilation for dev_sky (T312a).
@@ -291,6 +316,8 @@ const DEV_ENTITIES = {
     stillness,
     // Bramble's Underfoot for dev_den (devM6.ts; T604).
     underfoot,
+    // QUILL's System Reboot for dev_jam and dev_takeover (devM7.ts; T702).
+    system_reboot,
   }),
 };
 export type DevIds = IdsOf<typeof DEV_ENTITIES, 'dev_range'>;

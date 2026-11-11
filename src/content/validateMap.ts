@@ -16,8 +16,9 @@
 //   `forceInput` ends with a `scriptInput` step (validateBuilds.ts [build-step]).
 // - [map-range]: start credits, core integrity, and first-clear Stardust.
 // - [grid-span]: campaign maps fit on one screen, `cols + rows ≤ 36` (maps.md § 1).
-// - [core]: a Defend, Protect, or Escort map has exactly one core `C` (an Escort's is its safe exit);
-//   a Holdout has at least one (each a door its refugees leave by: A3M3's two blast doors).
+// - [core]: a Defend, Protect, or Escort map has exactly one core `C` (an Escort's is its safe exit)
+//   besides its bearers' doors home (T700a: a bearer group's exit, on a core tile of its own); a
+//   Holdout has at least one (each a door its refugees leave by: A3M3's two blast doors).
 // - [escort], [darkness]: validateEscort.ts (T500a): refugees and the safe exit; Sundown's `dark`
 //   keys and lamps.
 // - [marker]: markers sit inside the map, off the path (`#`, `S`, `C`); ally posts and scripted
@@ -323,6 +324,18 @@ function validateDressing(issues: Issues, def: MapDef<IdSpace>, where: string): 
   }
 }
 
+/** The distinct tiles bearer groups leave by (their `exit`, else the map's `safeExit`). */
+function bearerHomes(def: MapDef<IdSpace>): number {
+  const tiles = new Set<string>();
+  for (const g of Object.values(def.refugees ?? {})) {
+    if (g.kind !== 'bearer') continue;
+    const exit = g.exit ?? def.safeExit;
+    const at = exit === undefined ? undefined : def.markers?.[exit];
+    if (at !== undefined) tiles.add(`${at[0]},${at[1]}`);
+  }
+  return tiles.size;
+}
+
 /** Tiles a route walks: a marker never sits on one. */
 const PATH_TILES: ReadonlySet<string> = new Set(['#', 'S', 'C']);
 
@@ -343,11 +356,14 @@ function validateGeometry(
     );
   }
   const cored = def.objective === 'defend' || def.objective === 'protect';
-  if ((cored || def.objective === 'escort') && grid.count('C') !== 1) {
+  // A bearer group's exit is a door home of its own, on a core tile beside the map's core (A3M5's
+  // west edge; T700a), so it isn't counted.
+  const homes = bearerHomes(def);
+  if ((cored || def.objective === 'escort') && grid.count('C') - homes !== 1) {
     issues.add(
       'core',
       `${where}.tiles`,
-      `a Defend, Protect, or Escort map has exactly one core 'C' (found ${grid.count('C')})`,
+      `a Defend, Protect, or Escort map has exactly one core 'C' besides its bearers' doors (found ${grid.count('C') - homes})`,
     );
   }
   if (def.objective === 'holdout' && grid.count('C') < 1) {
