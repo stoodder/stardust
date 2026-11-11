@@ -69,9 +69,7 @@ export const GROUPS = ['first', 'second', 'third', 'fourth', 'fifth', 'last'] as
 
 /** The script event releasing group `g` through both doors (the door C3 didn't pick stays home). */
 function release(g: (typeof GROUPS)[number], on: ScriptTrigger): ScriptedEvent[] {
-  return [
-    { id: g, on, actions: [{ spawnAllies: `convoy_${g}` }, { spawnAllies: `warren_${g}` }] },
-  ];
+  return [{ id: g, on, actions: [{ spawnAllies: `convoy_${g}` }, { spawnAllies: `warren_${g}` }] }];
 }
 
 export const map = defineMapLayout({

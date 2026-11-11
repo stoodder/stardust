@@ -166,6 +166,13 @@ export interface Tower extends PoolEntity {
   linkAuraRadiusTiles: number;
   linkAuraPct: number;
   linkExtraTargets: number;
+  /**
+   * The Stasis Bloom's link extras (T608; systems/links.ts, read by systems/fields.ts):
+   * `linkFieldRadiusTiles` added to its field's radius (Pinned Down's +0.3), and
+   * `linkPulseSoonerTicks` off its pulse's period (Stillmind's −1 s). 0 for none.
+   */
+  linkFieldRadiusTiles: number;
+  linkPulseSoonerTicks: number;
 }
 
 export const TOWER_BLANK: Readonly<Tower> = Object.freeze({
@@ -225,6 +232,8 @@ export const TOWER_BLANK: Readonly<Tower> = Object.freeze({
   linkAuraRadiusTiles: 0,
   linkAuraPct: 0,
   linkExtraTargets: 0,
+  linkFieldRadiusTiles: 0,
+  linkPulseSoonerTicks: 0,
 });
 
 export interface Enemy extends PoolEntity {

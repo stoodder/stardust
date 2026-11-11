@@ -520,6 +520,12 @@ export interface LinkPartnerDef<K extends IdSpace = LiveIds> {
   readonly auraRadiusTiles?: number;
   readonly auraPct?: number;
   readonly extraTargets?: number;
+  /**
+   * A Stasis Bloom partner (T608): `fieldRadiusTiles` added to its field's radius (Pinned Down:
+   * +0.3), and its pulse `pulseSoonerSec` sooner (Stillmind: the cooldown −1 s).
+   */
+  readonly fieldRadiusTiles?: number;
+  readonly pulseSoonerSec?: number;
 }
 /**
  * A stat bonus under the stacking formula (towers.md § 4): `flat` adds to the stat, `pct` (a

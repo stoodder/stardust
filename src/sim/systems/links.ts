@@ -169,6 +169,10 @@ function recompute(state: SimState, ctx: TickContext): void {
       t.linkAuraRadiusTiles += p.auraRadiusTiles * k;
       t.linkAuraPct += p.auraPct * k;
       if (p.extraTargets !== 0) t.linkExtraTargets += Math.floor(p.extraTargets * k + 1e-9);
+      // The Stasis Bloom's (T608): its field wider, scaled like any link bonus; its pulse sooner, a
+      // duration scaled like Splash Zone's latch (rounded to whole ticks).
+      t.linkFieldRadiusTiles += p.fieldRadiusTiles * k;
+      t.linkPulseSoonerTicks += Math.round(p.pulseSoonerTicks * k);
     }
   }
 
@@ -200,6 +204,8 @@ function clearBonuses(t: Tower): void {
   t.linkAuraRadiusTiles = 0;
   t.linkAuraPct = 0;
   t.linkExtraTargets = 0;
+  t.linkFieldRadiusTiles = 0;
+  t.linkPulseSoonerTicks = 0;
 }
 
 function towerAt(state: SimState, map: TickContext['map'], col: number, row: number): Tower | null {

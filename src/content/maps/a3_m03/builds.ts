@@ -15,14 +15,11 @@ const CHOKE_E: GridPos = [12, 5];
 /** The rock behind Bricks, either side. */
 const BEHIND_W: GridPos = [8, 7];
 const BEHIND_E: GridPos = [12, 7];
-/** Between each fork and the refugees' road. */
-const FORK_W: GridPos = [6, 9];
-const FORK_E: GridPos = [14, 9];
+/** Beside each rift, north of the forks. */
+const RIFT_W: GridPos = [4, 3];
+const RIFT_E: GridPos = [16, 3];
 /** Under the fork, over the refugees' road. */
 const MID: GridPos = [10, 10];
-/** On each door's approach. */
-const DOOR_W: GridPos = [5, 12];
-const DOOR_E: GridPos = [15, 12];
 /** Where Suppressing Fire goes: the choke, in front of Bricks. */
 const CHOKE: GridPos = [10, 5];
 
@@ -45,22 +42,23 @@ function parSteps(): BuildStep[] {
     { wave: 1, build: 'mindspike', tile: BEHIND_E },
     { wave: 2, build: 'prism', tile: MID },
     { wave: 3, build: 'burrow', tile: CHOKE_W },
-    { wave: 4, build: 'thumper', tile: FORK_E },
+    { wave: 4, build: 'thumper', tile: RIFT_E },
     suppress(5),
-    { wave: 5, upgrade: MID },
+    { wave: 5, upgrade: RIFT_E },
+    { wave: 6, upgrade: MID },
     { wave: 6, upgrade: BEHIND_E },
     { wave: 7, upgrade: CHOKE_E },
-    { wave: 7, upgrade: FORK_E },
     suppress(8),
     { wave: 8, upgrade: CHOKE_W },
-    { wave: 9, upgrade: BEND },
+    { wave: 8, upgrade: BEND },
     { wave: 9, build: 'prism', tile: BEHIND_W },
     suppress(10),
     { wave: 10, upgrade: MID },
+    { wave: 10, build: 'thumper', tile: RIFT_W },
+    { wave: 11, upgrade: RIFT_W },
     { wave: 11, upgrade: BEHIND_E },
-    { wave: 11, build: 'thumper', tile: FORK_W },
     suppress(12),
-    { wave: 12, upgrade: FORK_E },
+    { wave: 12, upgrade: RIFT_E },
     { wave: 13, upgrade: BEHIND_W },
     SEAL,
   ];
@@ -115,4 +113,3 @@ export const builds = defineBuilds({
   },
   flagVariants: { door_choice: ['convoy', 'warren'] },
 });
-

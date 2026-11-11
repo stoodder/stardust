@@ -335,6 +335,12 @@ export interface CompiledLinkPartner<K extends IdSpace = LiveIds> {
   readonly auraRadiusTiles: number;
   readonly auraPct: number;
   readonly extraTargets: number;
+  /**
+   * A Stasis Bloom partner (T608): added to its field's radius (Pinned Down), and its pulse's
+   * period shortened by this many ticks (Stillmind). 0: none.
+   */
+  readonly fieldRadiusTiles: number;
+  readonly pulseSoonerTicks: number;
 }
 
 // ── Enemies and abilities ────────────────────────────────────────────────────────────────────

@@ -9,7 +9,8 @@
 // and (T604) a Scuttle Den's extras: `swarmlings` a whole number > 0 (Finders Keepers), and
 // `swarmSpeedPct` a fraction > 0 with `latchSec` a duration > 0 (Splash Zone); and (T607) a Hum
 // Choir's `auraRadiusTiles` > 0 (Harmony) and `auraPct` a fraction > 0 (Bounce Chorus), and a
-// hitscan partner's `extraTargets` a whole number > 0 (Harmony's Mindspike).
+// hitscan partner's `extraTargets` a whole number > 0 (Harmony's Mindspike); and (T608) a Stasis
+// Bloom's `fieldRadiusTiles` > 0 (Pinned Down) and `pulseSoonerSec` a duration > 0 (Stillmind).
 import type { CompiledLinkDef, CompiledLinkPartner } from './compiled.ts';
 import { entriesOf, checkKey, ticks, type Ctx } from './compileHelpers.ts';
 import { MAX_LINKS, statusMask } from './rules.ts';
@@ -93,6 +94,8 @@ function partner<K extends IdSpace>(
     auraRadiusTiles: 0,
     auraPct: 0,
     extraTargets: 0,
+    fieldRadiusTiles: 0,
+    pulseSoonerTicks: 0,
   };
   if (def.chainJumps !== undefined) {
     if (Number.isInteger(def.chainJumps) && def.chainJumps > 0) out.chainJumps = def.chainJumps;
@@ -133,6 +136,17 @@ function partner<K extends IdSpace>(
     if (Number.isInteger(def.extraTargets) && def.extraTargets > 0) {
       out.extraTargets = def.extraTargets;
     } else ctx.errors.push(`${where}.extraTargets: needs a whole number > 0`);
+  }
+  // A Stasis Bloom's (T608): its field wider (Pinned Down) and its pulse sooner (Stillmind).
+  if (def.fieldRadiusTiles !== undefined) {
+    if (Number.isFinite(def.fieldRadiusTiles) && def.fieldRadiusTiles > 0) {
+      out.fieldRadiusTiles = def.fieldRadiusTiles;
+    } else ctx.errors.push(`${where}.fieldRadiusTiles: needs a radius > 0`);
+  }
+  if (def.pulseSoonerSec !== undefined) {
+    if (Number.isFinite(def.pulseSoonerSec) && def.pulseSoonerSec > 0) {
+      out.pulseSoonerTicks = ticks(ctx, def.pulseSoonerSec, `${where}.pulseSoonerSec`);
+    } else ctx.errors.push(`${where}.pulseSoonerSec: needs a duration > 0`);
   }
   for (const f of ['rampPct', 'markPct', 'swarmSpeedPct', 'auraPct'] as const) {
     const v = def[f];

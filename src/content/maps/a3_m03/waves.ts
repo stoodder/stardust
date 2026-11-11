@@ -70,7 +70,7 @@ export const waves = defineWaves([
   {
     countdownSec: COUNTDOWN,
     noCall: true,
-    groups: [motes(12, 'rift_east', OPEN), motes(12, 'cut_west', OPEN + 6)],
+    groups: [motes(10, 'cut_west', OPEN), motes(8, 'rift_east', OPEN + 8, 0.35)],
   },
   // W5 · a Maw, Motes catching it up
   {
@@ -94,7 +94,7 @@ export const waves = defineWaves([
     noCall: true,
     groups: [
       g('undertow', 2, 'cut_west', OPEN, 2),
-      motes(12, 'rift_east', OPEN + 4),
+      motes(10, 'rift_east', OPEN + 4, 0.3),
       g('undertow', 1, 'cut_east', OPEN + 8),
     ],
   },

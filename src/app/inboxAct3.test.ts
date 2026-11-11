@@ -100,7 +100,8 @@ function afterA3M3(): void {
   loadDevSave('after_a3m3_convoy');
   updateActiveSave((s) => {
     const maps = { ...s.campaign.maps };
-    maps.a3_m03 ??= maps.a3_m02;
+    const a3m2 = maps.a3_m02;
+    if (maps.a3_m03 === undefined && a3m2 !== undefined) maps.a3_m03 = a3m2;
     return { ...s, campaign: { ...s.campaign, maps } };
   });
   catchUpStory();
