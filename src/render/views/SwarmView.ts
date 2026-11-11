@@ -1,13 +1,13 @@
 // The Scuttle Den's swarmlings (towers.md § 7; T604): the minimal readable view (T630a polishes
-// it; T640a draws the swarmlings and Champions, `ally.swarmling` and `ally.champion`, placeholders
-// of the refugee body until then). Read from the sim's owner allies each frame:
+// it). Its bodies are `ally.swarmling` and `ally.champion` (T640a: young Skitterkin, the Champion a
+// size up in a red headband). Read from the sim's owner allies each frame:
 // - at home (resting in the mound) none is drawn;
 // - dashing out or running home, each scurries in its walk anim in the Skitterkin allies' palette,
 //   facing the way it moves, depth-sorted in `world` like a unit;
 // - latched, it rides its target: its feet on the top of the body as drawn (the lane offset, a
 //   flyer's lift; unitAnchor.ts, falling back to the grid point), so the body still shows under
-//   it, spread a few px by uid so a pile reads as a pile, its anim held on a frame (it holds on),
-//   sorted just in front of the body. On a burrowed unit it rides the mound.
+//   it, spread a few px by uid so a pile reads as a pile, nibbling in its `latch` anim (squashed
+//   flat, legs splayed), sorted just in front of the body. On a burrowed unit it rides the mound.
 // Allocation-free per frame: a fixed pool of sprites, set up once; an anim restarts only when the
 // slot's look changes.
 import type * as Phaser from 'phaser';
@@ -18,7 +18,7 @@ import { worldDepth } from '../depth.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
 import { DEFAULT_VARIANT } from '../sprites/bake.ts';
 import { REFUGEE_VARIANT } from './RefugeeView.ts';
-import { facingOf, type Facing } from './spriteInfo.ts';
+import { facingOf, hasAnim, type Facing } from './spriteInfo.ts';
 import { AIR_LIFT_PX, BODY_LIFT_PX } from './TransientFx.ts';
 import { blankBox, NO_ANCHORS, type UnitAnchors } from './unitAnchor.ts';
 import type { ViewContext } from './ViewContext.ts';
@@ -33,7 +33,7 @@ export interface SwarmEnemies {
   readonly items: readonly DeepReadonly<Enemy>[];
 }
 
-/** Each kind's body (T640a replaces the placeholders behind these ids). */
+/** Each kind's body (T640a). */
 export const SWARM_SPRITES: Readonly<Record<'swarmling' | 'champion', SpriteId>> = {
   swarmling: 'ally.swarmling',
   champion: 'ally.champion',
@@ -41,7 +41,7 @@ export const SWARM_SPRITES: Readonly<Record<'swarmling' | 'champion', SpriteId>>
 
 /**
  * The palette each body wears: the Skitterkin allies' (as the refugees') where the sprite bakes
- * it, else its own (the placeholders carry no variants until T640a).
+ * it, else its own.
  */
 export const SWARM_VARIANT: ReadonlyMap<string, string> = new Map(
   Object.values(SWARM_SPRITES).map((id) => {
@@ -167,17 +167,22 @@ export class SwarmView {
     return last.facing;
   }
 
-  /** Plays the slot's walk for `facing`, held on its first frame while latched (or reduced motion). */
+  /**
+   * Plays the slot's dash for `facing`, or latched its `latch` (T640a: squashed flat, legs splayed,
+   * nibbling) where the sprite draws one, else the dash held on its first frame. Still under reduced
+   * motion.
+   */
   #look(slot: Slot, sprite: SpriteId, facing: Facing, held: boolean): void {
     const look = `${sprite}:${facing}:${held ? 1 : 0}`;
     if (slot.look === look) return;
     slot.look = look;
     const { sprites } = this.#ctx;
-    const anim = `walk_${facing}`;
+    const latch = held && hasAnim(sprite, `latch_${facing}`);
+    const anim = latch ? `latch_${facing}` : `walk_${facing}`;
     const a = sprites.frameAnchor(sprite, `${anim}_0`);
     slot.body.play(sprites.anim(sprite, anim, SWARM_VARIANT.get(sprite) ?? DEFAULT_VARIANT), true);
     slot.body.setDisplayOrigin(a.x, a.y);
-    if (held || this.#reducedMotion()) slot.body.anims.pause();
+    if ((held && !latch) || this.#reducedMotion()) slot.body.anims.pause();
   }
 
   #hide(slot: Slot): void {

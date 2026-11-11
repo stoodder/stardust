@@ -84,10 +84,10 @@ async function prepare(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Base' }).click();
   // A base visit scene may be due first (they wait for nothing here): read each one through.
   const scene = page.getByTestId('scene');
-  for (let i = 0; i < 20 && (await scene.isVisible()); i++) {
-    // oxlint-disable-next-line no-await-in-loop -- each press depends on what the last one showed
-    await page.keyboard.press('Escape');
-  }
+  await expect(async () => {
+    if (await scene.isVisible()) await page.keyboard.press('Escape');
+    await expect(scene).toBeHidden({ timeout: 500 });
+  }).toPass({ timeout: 15_000 });
   await page.getByRole('tab', { name: 'Shop', exact: true }).click();
   const harpoon = offerRow(page, 'Grapple Harpoon license');
   await harpoon.getByRole('button', { name: /^(Buy|License|Order)/ }).click();
@@ -198,9 +198,10 @@ test('A3M2: from the Sector map, the drones, the Clean Exit, the locked preview,
   });
   await nextFrames(page);
   await expect(page.getByTestId('slot-revoked')).toBeVisible();
-  await expect(page.getByText("I'm revoking your Corporate Tower License now!")).toBeVisible({
-    timeout: 10_000,
-  });
+  await expect(page.getByTestId('line-announce')).toContainText(
+    "Sterling: I'm revoking your Corporate Tower License now!",
+    { timeout: 10_000 },
+  );
   await shot(page, 'a3m2', 5, 'clean-exit');
 
   // W8's countdown: the preview is locked, and QUILL leaks the wave's trait under it.
@@ -226,12 +227,16 @@ test('A3M2: from the Sector map, the drones, the Clean Exit, the locked preview,
   // The win: Results, then Continue plays the Asset Yield Log, and QUILL's lines come in over it.
   expect(await until(page, 'end', 60 * 900)).toBe(true);
   expect(await page.evaluate(() => globalThis.__sd!.state()!.outcome)).toBe('won');
-  const card = page.getByRole('dialog').filter({ has: page.getByRole('button', { name: 'Continue' }) });
+  const card = page
+    .getByRole('dialog')
+    .filter({ has: page.getByRole('button', { name: 'Continue' }) });
   await expect(card).toBeVisible({ timeout: 15_000 });
   await shot(page, 'a3m2', 9, 'results');
   await card.getByRole('button', { name: 'Continue' }).click();
   await expect(page.getByTestId('stage-yield-log')).toBeVisible({ timeout: 10_000 });
-  await expect(page.getByTestId('yield-log-header')).toContainText('ASSET YIELD LOG · ENTRIES: 41,206 + ');
+  await expect(page.getByTestId('yield-log-header')).toContainText(
+    'ASSET YIELD LOG · ENTRIES: 41,206 + ',
+  );
   await page.waitForTimeout(3000);
   await shot(page, 'a3m2', 10, 'yield-log');
   const scene = page.getByRole('dialog', { name: 'Scene' });

@@ -2,6 +2,8 @@
 import { allyBricks } from './allies/bricks.ts';
 import { allyPebble } from './allies/pebble.ts';
 import { allyRefugee } from './allies/refugee.ts';
+import { allyChampion } from './allies/champion.ts';
+import { allySwarmling } from './allies/swarmling.ts';
 import { enemyBroodHauler } from './enemies/brood_hauler.ts';
 import { enemyChonk } from './enemies/chonk.ts';
 import { enemyHaulerYoung } from './enemies/hauler_young.ts';
@@ -23,6 +25,7 @@ import {
   enemyMawG5,
 } from './enemies/maw.ts';
 import { enemyCompliance } from './enemies/compliance.ts';
+import { enemyExpediter } from './enemies/expediter.ts';
 import { enemyMote } from './enemies/mote.ts';
 import { enemyUndertow } from './enemies/undertow.ts';
 import { enemyGlimmer } from './enemies/glimmer.ts';
@@ -61,7 +64,10 @@ import { fxOrbitalReticle } from './fx/orbital_reticle.ts';
 import { fxConfettiBurst } from './fx/confetti_burst.ts';
 import { sceneRig9Feed } from './scenes/rig9_feed.ts';
 import { uiStarMarker, uiStarNode, uiStarPips } from './starmap/star.ts';
+import { fxPowerOff } from './fx/power_off.ts';
+import { fxPriceTag } from './fx/price_tag.ts';
 import { fxShadow } from './fx/shadow.ts';
+import { fxUnravelMote } from './fx/unravel_mote.ts';
 import { iconEnemyBroodHauler, iconEnemyBroodHaulerFleeing } from './icons/brood_hauler.ts';
 import { iconEnemyChonk } from './icons/chonk.ts';
 import { iconAbilityOrbitalStrike } from './icons/orbital_strike.ts';
@@ -194,18 +200,17 @@ import {
   iconTellShieldAura,
   iconTellStealth,
 } from './icons/m5_glyphs.ts';
-import { iconAbilityStillness } from './icons/stillness.ts';
-import { iconEnemySunderglassPenitent } from './icons/sunderglass_penitent.ts';
-import { towerLantern, towerLanternHead } from './towers/lantern.ts';
 import {
-  allyChampion,
-  allySwarmling,
-  enemyExpediter,
-  iconAbilityUnderfoot,
   iconEnemyCompliance,
   iconEnemyExpediter,
   iconEnemyMaw,
   iconEnemyUndertow,
+} from './icons/m6_enemies.ts';
+import { iconAbilityStillness } from './icons/stillness.ts';
+import { iconEnemySunderglassPenitent } from './icons/sunderglass_penitent.ts';
+import { towerLantern, towerLanternHead } from './towers/lantern.ts';
+import {
+  iconAbilityUnderfoot,
   iconTellConsumer,
   iconTellHasteAura,
   iconTowerBloom,
@@ -347,7 +352,7 @@ export const SPRITES = [
   // M5's escort: the refugees and Pebble among them (T540a).
   allyRefugee,
   allyPebble,
-  // M6's swarmlings and Champions (placeholders until T640a).
+  // M6's swarmlings and Champions (T640a).
   allySwarmling,
   allyChampion,
   projectileRivetTracer,
@@ -365,6 +370,10 @@ export const SPRITES = [
   fxBeamKnot,
   fxOrbitalReticle,
   fxConfettiBurst,
+  // M6's deaths (T640a): Everglow Security's shutdown, and the Hollow's unravel mote.
+  fxPowerOff,
+  fxPriceTag,
+  fxUnravelMote,
   iconTowerRivet,
   iconTowerThumper,
   iconTowerSprinkler,

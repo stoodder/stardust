@@ -34,7 +34,7 @@ describe('the Asset Yield Log', () => {
 
   it('every entry after the 41,206 is yours, and none before', () => {
     expect(yieldRow(PRIOR_ENTRIES, 50)).toMatchObject({ yours: false });
-    expect(yieldRow(PRIOR_ENTRIES).tech).not.toBe(PLAYER_TECH);
+    expect(yieldRow(PRIOR_ENTRIES, 0).tech).not.toBe(PLAYER_TECH);
     expect(yieldRow(PRIOR_ENTRIES + 1, 50)).toMatchObject({ yours: true, tech: PLAYER_TECH });
     expect(yieldRow(PRIOR_ENTRIES + 50, 50).yours).toBe(true);
     expect(yieldRow(PRIOR_ENTRIES + 51, 50).yours).toBe(false);
@@ -53,7 +53,7 @@ describe('the Asset Yield Log', () => {
     expect(entryNumber(5)).toBe('000,005');
     // Time only moves forward down the log.
     for (let n = FIRST_SHOWN; n < PRIOR_ENTRIES + 40; n++) {
-      expect(yieldRow(n + 1).time >= yieldRow(n).time).toBe(true);
+      expect(yieldRow(n + 1, 0).time >= yieldRow(n, 0).time).toBe(true);
     }
   });
 

@@ -27,7 +27,7 @@ describe('Evie dark (Act III billboards)', () => {
     expect(dark.length).toBe(peeling.length);
     // Same shape: every pixel the peeling board draws, the dark one draws (only colors change).
     dark.forEach((row, y) =>
-      [...row].forEach((c, x) => expect(c === '.', `${x},${y}`).toBe(peeling[y]![x] === '.')),
+      row.split('').forEach((c, x) => expect(c === '.', `${x},${y}`).toBe(peeling[y]![x] === '.')),
     );
   });
 

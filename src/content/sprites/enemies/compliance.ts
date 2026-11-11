@@ -28,12 +28,14 @@ const STRUT: readonly { near: number; far: number; bob: number }[] = [
 function leg(g: CharGrid, hx: number, hy: number, fx: number, near: boolean): void {
   const kx = hx + 1; // the knee bends back (toward the tail)
   const ky = hy + 3;
-  line(g, hx, hy, kx, ky, near ? '2' : '1');
-  line(g, kx, ky, fx, H - 2, near ? '1' : '0');
+  // Steel lit enough to read on Act III's near-black road (the far leg a step darker).
+  line(g, hx, hy, kx, ky, near ? '3' : '2');
+  line(g, kx, ky, fx, H - 2, near ? '2' : '1');
+  plot(g, kx, ky, near ? 'c' : 'b'); // an orange knee joint
   // The foot: a flat steel pad.
-  plot(g, fx - 1, H - 1, '0');
-  plot(g, fx, H - 1, near ? '1' : '0');
-  plot(g, fx + 1, H - 1, '0');
+  plot(g, fx - 1, H - 1, '1');
+  plot(g, fx, H - 1, near ? '3' : '2');
+  plot(g, fx + 1, H - 1, '1');
 }
 
 function drone(facing: 'se' | 'ne', step: 0 | 1 | 2 | 3): string[] {
@@ -71,7 +73,12 @@ function drone(facing: 'se' | 'ne', step: 0 | 1 | 2 | 3): string[] {
     stamp(g, 3, top + 4, ['8.8', '.8.']);
   } else {
     // From behind: a vent grille and its status lamp; the chevron on the near flank.
-    stamp(g, 5, top + 2, ['000', '...', '000'].map((r) => r.replace(/\./g, '1')));
+    stamp(
+      g,
+      5,
+      top + 2,
+      ['000', '...', '000'].map((r) => r.replace(/\./g, '1')),
+    );
     plot(g, 9, top + 2, '+');
     stamp(g, 9, top + 4, ['8.8', '.8.']);
   }

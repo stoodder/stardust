@@ -52,7 +52,7 @@ test('seal: one button armed late, the rest locked but the Menu and the speaker;
       .locator(sel)
       .first()
       .evaluate((el) => {
-        (el as HTMLElement).focus();
+        el.focus();
         return document.activeElement === el;
       });
   expect(await focusable('.hud-speed button')).toBe(false);
@@ -87,14 +87,18 @@ test('seal: one button armed late, the rest locked but the Menu and the speaker;
   await shot(page, 'seal', 2, 'pause-menu');
   await page.keyboard.press('Escape');
   await expect(page.getByTestId('pause-menu')).toBeHidden();
+  // The focus comes back to the button.
+  await expect(seal).toBeFocused();
   await page.getByRole('button', { name: 'Menu' }).click();
+  // Under the menu, the button is out of reach too.
+  await expect(page.locator('.hud-forced-input')).toHaveAttribute('inert', '');
   await expect(page.getByTestId('pause-menu')).toBeVisible();
   await page.getByRole('button', { name: 'Resume' }).click();
   await expect(page.getByTestId('pause-menu')).toBeHidden();
   expect(await page.evaluate(() => globalThis.__sd!.state()!.pendingInput)).toBe('seal');
 
-  // A fresh Enter presses it, wherever the focus went: the map ends won, on the Held card.
-  await seal.focus();
+  // A fresh Enter presses it: the map ends won, on the Held card.
+  await expect(seal).toBeFocused();
   await page.keyboard.press('Enter');
   await expect.poll(() => page.evaluate(() => globalThis.__sd!.state()?.outcome)).toBe('won');
   const card = page.getByTestId('results-held');

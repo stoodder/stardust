@@ -342,7 +342,7 @@ describe('the armored tell glyph', () => {
 });
 
 describe('Bricks at his post', () => {
-  it('idles, fires, and lowers his cannon in four facings (SE and NE authored, mirrored)', () => {
+  it('idles, fires, lowers his cannon, and blocks in four facings (SE and NE authored, mirrored)', () => {
     const anims = Object.keys(def('ally.bricks').anims ?? {}).toSorted();
     expect(anims).toEqual(
       [
@@ -358,6 +358,10 @@ describe('Bricks at his post', () => {
         'lowered_nw',
         'lowered_se',
         'lowered_sw',
+        // At the Gap (T640a): each blocker stance idles and fires (m6units.test.ts).
+        ...['block', 'strain', 'last'].flatMap((s) =>
+          ['ne', 'nw', 'se', 'sw'].flatMap((f) => [`${s}_${f}`, `${s}_fire_${f}`]),
+        ),
       ].toSorted(),
     );
     // Lowered, the cannon is grounded (S11): its top sits well down his body, not up by his head

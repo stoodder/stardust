@@ -7,12 +7,17 @@
 // Lowered (`setLowered`, allyPose.ts: A1M5's Quiet Wave, T330), he idles on `lowered_<facing>`
 // instead, the cannon grounded (butt on his post plate, hands resting on the muzzle), and stays so:
 // a silent tell, never mentioned.
+// A blocker (Bricks at the Gap, T605) braces, strains, and goes down on one knee as his health
+// falls (BlockerView `blockerPose`, T640a): `<stance>_<facing>` idles and `<stance>_fire_<facing>`
+// shots, where the sprite draws them.
 import * as Phaser from 'phaser';
+import { STANCE_DROP } from '../../content/sprites/allies/bricks.ts';
 import type { SpriteId } from '../../content/sprites/index.ts';
 import type { AllyKind } from '../../content/types.ts';
 import { worldDepth } from '../depth.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
 import { DEFAULT_VARIANT } from '../sprites/bake.ts';
+import { blockerPose, type BlockerStance } from './BlockerView.ts';
 import { hasAnim, type Facing } from './spriteInfo.ts';
 import type { ViewContext } from './ViewContext.ts';
 import type { PooledView } from './ViewPool.ts';
@@ -21,6 +26,14 @@ import type { PooledView } from './ViewPool.ts';
 export interface AllyLike {
   readonly x: number;
   readonly y: number;
+  /** A blocker's (T605): BlockerView's `blockerPose` reads them for his stance (T640a). */
+  readonly blockCapacity?: number;
+  readonly health?: number;
+}
+
+/** An anim key that is a shot (`fire_<facing>`, a stance's `<stance>_fire_<facing>`). */
+function isShot(key: string | undefined): boolean {
+  return key !== undefined && key.includes('fire_');
 }
 
 /** Each ally kind's sprite (null: not drawn yet). */
@@ -88,6 +101,8 @@ export class AllyView implements PooledView {
   readonly #loweredAnchors: { x: number; y: number }[] = [];
   /** Weapon lowered: idles on `lowered_<facing>` (when the sprite has it). */
   #isLowered = false;
+  /** A blocker's stance (BlockerView `blockerPose`, T640a), where the sprite draws it. */
+  #stance: BlockerStance | null = null;
 
   constructor(ctx: ViewContext) {
     this.#ctx = ctx;
@@ -125,6 +140,7 @@ export class AllyView implements PooledView {
     this.#anchors.length = 0;
     this.#loweredAnchors.length = 0;
     this.#isLowered = false;
+    this.#stance = null;
     if (this.#id === null) {
       this.#body.setVisible(false);
       return;
@@ -161,7 +177,7 @@ export class AllyView implements PooledView {
     if (lowered === this.#isLowered) return;
     this.#isLowered = lowered;
     const current = this.#body.anims.currentAnim?.key;
-    if (!this.#body.anims.isPlaying || !this.#fire.includes(current ?? '')) this.#play(false);
+    if (!this.#body.anims.isPlaying || !isShot(current)) this.#play(false);
   }
 
   /** Turns to a facing (idle anim); a shot in progress finishes first. */
@@ -169,7 +185,7 @@ export class AllyView implements PooledView {
     if (facing === this.#facing) return;
     this.#facing = facing;
     const current = this.#body.anims.currentAnim?.key;
-    if (!this.#body.anims.isPlaying || !this.#fire.includes(current ?? '')) this.#play(false);
+    if (!this.#body.anims.isPlaying || !isShot(current)) this.#play(false);
   }
 
   /** A shot: faces `facing`, plays the fire anim once, then idles again. */
@@ -182,12 +198,19 @@ export class AllyView implements PooledView {
   muzzle(out: Vec2): Vec2 {
     const m = BRICKS_MUZZLE[this.#facing];
     out.x = this.#sx + m.dx;
-    out.y = this.#sy + m.dy;
+    out.y = this.#sy + m.dy + (this.#stance === null ? 0 : STANCE_DROP[this.#stance]);
     return out;
   }
 
   /** Positions the ally at its sim position. Cheap when it hasn't moved (a post never does). */
   sync(a: AllyLike): void {
+    // A blocker braces, strains, and goes down on one knee with his health (T640a).
+    const stance = this.#id !== null && hasAnim(this.#id, 'block_se') ? blockerPose(a) : null;
+    if (stance !== this.#stance) {
+      this.#stance = stance;
+      if (!this.#body.anims.isPlaying || !isShot(this.#body.anims.currentAnim?.key))
+        this.#play(false);
+    }
     if (a.x === this.#x && a.y === this.#y) return;
     this.#x = a.x;
     this.#y = a.y;
@@ -243,6 +266,17 @@ export class AllyView implements PooledView {
   #play(fire: boolean): void {
     if (this.#id === null) return;
     const i = FACING_INDEX[this.#facing];
+    const st = this.#stance;
+    if (st !== null && !this.#isLowered) {
+      // A blocker's stance (T640a): its own idle and shot, and its own anchor.
+      const f = this.#facing;
+      const { sprites } = this.#ctx;
+      const anim = fire ? `${st}_fire_${f}` : `${st}_${f}`;
+      const sa = sprites.frameAnchor(this.#id, `${st}_${f}_0`);
+      this.#body.play(sprites.anim(this.#id, anim, DEFAULT_VARIANT), !fire);
+      this.#body.setDisplayOrigin(sa.x, sa.y);
+      return;
+    }
     const low = !fire && this.#isLowered ? this.#lowered[i] : undefined;
     const idle = low ?? this.#idle[i];
     const shot = this.#fire[i];

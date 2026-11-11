@@ -6,6 +6,7 @@
 // tower (no plinth block, no chevrons, no teal sensor).
 import { defineSprite } from '../defineSprite.ts';
 import { disc, grid, line, plot, rows, type CharGrid } from '../helpers.ts';
+import type { AnimDef } from '../types.ts';
 
 const W = 28;
 const H = 30;
@@ -116,12 +117,14 @@ function figure(
   breath: 0 | 1,
   fire: boolean,
   lowered = false,
+  stance: Stance = 'stand',
 ): void {
   const b = breath; // shoulders and head rise 1 px on the in-breath
   const s = lowered ? 1 : 0; // slack: shoulders and head sit 1 px lower with the cannon grounded
   if (lowered && facing === 'ne') groundedCannon(g, facing); // ahead of him, so behind his body
-  // Legs in fatigues, planted wide; boots.
-  for (let y = 19; y <= 24; y++) {
+  // Legs in fatigues, planted wide; boots (a blocker's stance draws its own: `blockerLegs`).
+  const legsTo = stance === 'stand' ? 24 : 18; // none: the stance's own
+  for (let y = 19; y <= legsTo; y++) {
     const legs: readonly (readonly [number, number])[] = [
       [8, 10],
       [13, 15],
@@ -175,6 +178,25 @@ function figure(
   if (lowered) {
     if (facing === 'se') groundedCannon(g, facing); // in front of him
     restingHands(g, facing, b);
+  } else if (stance !== 'stand') {
+    // Holding the line: the free arm thrust out to the side, palm open and up (halt).
+    for (const [x, y, ch] of [
+      [4, 11, 'L'],
+      [3, 11, 'L'],
+      [2, 10, 'K'],
+      [3, 10, 'L'],
+      [1, 10, 'K'],
+    ] as const)
+      plot(g, x, y - b, ch);
+    for (const [x, y, ch] of [
+      [0, 8, 'C'],
+      [1, 8, 'B'],
+      [0, 9, 'C'],
+      [1, 9, 'B'],
+      [2, 9, 'A'],
+      [0, 7, 'B'],
+    ] as const)
+      plot(g, x, y - b, ch);
   } else {
     // The hanging arm (screen left): sleeve, then a big hand.
     for (let y = 11 - b; y <= 16; y++) {
@@ -277,6 +299,119 @@ function figure(
   }
 }
 
+/**
+ * A blocker's stance (design/maps.md § 5.4: Bricks at the Gap, worn down on his map's timeline;
+ * BlockerView picks it from his health): `block` braced, feet planted wide, his free arm thrust out
+ * to hold the line; `strain` (at half or less) the same with his knees giving a pixel and sweat on
+ * his brow; `last` (a quarter or less) down on one knee on his post plate, cannon still up, arm
+ * still out. `stand` is his ordinary post.
+ */
+export type Stance = 'stand' | 'block' | 'strain' | 'last';
+
+/** How far each stance drops his upper body, cannon and all (px; AllyView lowers the muzzle). */
+export const STANCE_DROP: Readonly<Record<Stance, number>> = {
+  stand: 0,
+  block: 0,
+  strain: 1,
+  last: 4,
+};
+
+/** A blocker's legs for `stance`, under a body dropped `drop` px. */
+function blockerLegs(g: CharGrid, stance: Stance): void {
+  if (stance === 'last') {
+    // Down on one knee: the rear shin flat on the plate, the front knee up, its boot planted.
+    for (let x = 4; x <= 9; x++) plot(g, x, 24, x <= 5 ? 'I' : 'N');
+    for (let x = 6; x <= 9; x++) plot(g, x, 23, x === 9 ? 'M' : 'N');
+    for (const [x, y, ch] of [
+      [14, 22, 'N'],
+      [15, 21, 'N'],
+      [16, 21, 'N'],
+      [17, 21, 'M'],
+      [16, 22, 'N'],
+      [17, 22, 'M'],
+      [17, 23, 'I'],
+      [18, 23, 'I'],
+      [17, 24, 'I'],
+      [18, 24, 'I'],
+      [16, 24, 'I'],
+    ] as const)
+      plot(g, x, y, ch);
+    return;
+  }
+  // Braced: each leg angles out from the hip, planted wider than at ease; strained, the knees bend
+  // (a dark crease where each one gives).
+  const top = 19 + STANCE_DROP[stance];
+  for (let y = top; y <= 24; y++) {
+    const out = Math.round((y - top) * 0.5);
+    for (const [x0, side] of [
+      [8, -1],
+      [13, 1],
+    ] as const) {
+      const lx = x0 + side * out;
+      for (let x = lx; x < lx + 3; x++) {
+        const knee = stance === 'strain' && y === 21;
+        plot(g, x, y, y >= 23 ? 'I' : knee || x === lx + 2 ? 'M' : 'N');
+      }
+    }
+  }
+}
+
+/** A drop of sweat beside his head (`T`), when he's straining or down. */
+function sweat(g: CharGrid, facing: 'se' | 'ne', drop: number, breath: 0 | 1): void {
+  const x = facing === 'se' ? 16 : 7;
+  plot(g, x, 5 + drop + breath, 'T');
+  plot(g, x, 6 + drop + breath, 'T');
+}
+
+/** Bricks as a blocker in `stance`, breathing or firing. */
+function blocker(facing: 'se' | 'ne', breath: 0 | 1, fire: boolean, stance: Stance): string[] {
+  const g = grid(W, H);
+  post(g);
+  blockerLegs(g, stance);
+  const upper = grid(W, H);
+  figure(upper, facing, breath, fire, false, stance);
+  const drop = STANCE_DROP[stance];
+  upper.forEach((row, y) =>
+    row.forEach((ch, x) => {
+      if (ch !== '.') plot(g, x, y + drop, ch);
+    }),
+  );
+  if (stance === 'strain' || stance === 'last') sweat(g, facing, drop, breath);
+  return rows(g);
+}
+
+/** A blocker stance's frames and anims (`<stance>_<facing>`, `<stance>_fire_<facing>`). */
+function stanceFrames(stance: Exclude<Stance, 'stand'>): Record<string, readonly string[]> {
+  const out: Record<string, readonly string[]> = {};
+  for (const f of ['se', 'ne'] as const) {
+    out[`${stance}_${f}_0`] = blocker(f, 0, false, stance);
+    out[`${stance}_${f}_1`] = blocker(f, 1, false, stance);
+    out[`${stance}_fire_${f}_0`] = blocker(f, 0, true, stance);
+  }
+  return out;
+}
+
+function stanceAnims(stance: Exclude<Stance, 'stand'>): Record<string, AnimDef> {
+  return {
+    [`${stance}_se`]: { frames: [`${stance}_se_0`, `${stance}_se_1`], fps: 2 },
+    [`${stance}_sw`]: { mirrorOf: `${stance}_se` },
+    [`${stance}_ne`]: { frames: [`${stance}_ne_0`, `${stance}_ne_1`], fps: 2 },
+    [`${stance}_nw`]: { mirrorOf: `${stance}_ne` },
+    [`${stance}_fire_se`]: {
+      frames: [`${stance}_fire_se_0`, `${stance}_se_0`],
+      fps: 10,
+      loop: false,
+    },
+    [`${stance}_fire_sw`]: { mirrorOf: `${stance}_fire_se` },
+    [`${stance}_fire_ne`]: {
+      frames: [`${stance}_fire_ne_0`, `${stance}_ne_0`],
+      fps: 10,
+      loop: false,
+    },
+    [`${stance}_fire_nw`]: { mirrorOf: `${stance}_fire_ne` },
+  };
+}
+
 function bricks(facing: 'se' | 'ne', breath: 0 | 1, fire: boolean, lowered = false): string[] {
   const g = grid(W, H);
   post(g);
@@ -295,7 +430,7 @@ export const allyBricks = defineSprite({
   legend: {
     A: 'skin.c.2', B: 'skin.c.3', C: 'skin.c.4', D: 'skin.b.4', E: 'steel.3',
     I: 'grime.2', J: 'grime.3', K: 'grime.4', L: 'orange.4', O: 'grime.3',
-    M: 'teal.2', N: 'teal.3', Q: 'pink.3', R: 'steel.3',
+    M: 'teal.2', N: 'teal.3', Q: 'pink.3', R: 'steel.3', T: 'blue.4',
   },
   frames: {
     idle_se_0: bricks('se', 0, false),
@@ -308,6 +443,10 @@ export const allyBricks = defineSprite({
     lowered_se_1: bricks('se', 1, false, true),
     lowered_ne_0: bricks('ne', 0, false, true),
     lowered_ne_1: bricks('ne', 1, false, true),
+    // At the Gap (a blocker, A3M3): braced, straining, and down on one knee (BlockerView).
+    ...stanceFrames('block'),
+    ...stanceFrames('strain'),
+    ...stanceFrames('last'),
   },
   anims: {
     idle_se: { frames: ['idle_se_0', 'idle_se_1'], fps: 2 },
@@ -323,5 +462,8 @@ export const allyBricks = defineSprite({
     lowered_sw: { mirrorOf: 'lowered_se' },
     lowered_ne: { frames: ['lowered_ne_0', 'lowered_ne_1'], fps: 2 },
     lowered_nw: { mirrorOf: 'lowered_ne' },
+    ...stanceAnims('block'),
+    ...stanceAnims('strain'),
+    ...stanceAnims('last'),
   },
 });

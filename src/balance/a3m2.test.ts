@@ -16,12 +16,14 @@
 // Fracture group shifted ±0.2 s, where par stays in the band.
 import { describe, expect, it } from 'vitest';
 import { compileContent } from '../content/compile.ts';
-import type { CompiledContent } from '../content/compiled.ts';
+import type { CompiledBuild, CompiledBuildStep, CompiledContent } from '../content/compiled.ts';
+import { CRANE_ALT } from '../content/maps/a3_m02/builds.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
-import type { WaveGroup } from '../content/types.ts';
-import { createBuildExecutor, createSim, type SimEvent } from '../sim/index.ts';
+import type { BuildStep, WaveGroup } from '../content/types.ts';
+import { secToTicks } from '../shared/time.ts';
+import { createBuildExecutor, createSim, runHeadless, type SimEvent } from '../sim/index.ts';
 import { bothWays, delay, shiftedContent } from './__fixtures__/shifts.ts';
-import { flagsFor } from './checks.ts';
+import { flagsFor, marginOf } from './checks.ts';
 import { buildFor, runMap } from './harness.ts';
 import { referenceRunProfile, runConfig } from './profile.ts';
 import { revokeClassOf } from './revokeChecks.ts';
@@ -40,10 +42,7 @@ const LEAK_WAVES = [8, 9, 10, 11, 12, 13, 14, 15] as const;
 /** Every group of `enemy`, in every wave, `d` s later. */
 const allOf = (enemy: string, d: number) =>
   Object.fromEntries(
-    Array.from({ length: WAVES }, (_, i) => [
-      i + 1,
-      delay((g: WaveGroup) => g.enemy === enemy, d),
-    ]),
+    Array.from({ length: WAVES }, (_, i) => [i + 1, delay((g: WaveGroup) => g.enemy === enemy, d)]),
   );
 
 /** The compound shifts, each run both ways (`s` = ±1). */
@@ -60,7 +59,7 @@ interface Beats {
   readonly integrity: number;
   /** Each event's ticks by key: `WaveStarted N`, `CountdownStarted N`, cue ids, and so on. */
   readonly at: Readonly<Record<string, readonly number[]>>;
-  /** Each wave's last spawn tick (1-based). */
+  /** Each wave's last scheduled spawn tick (1-based): its start plus `lastSpawnTicks`. */
   readonly lastSpawn: readonly number[];
   /** The first spawn tick on each rift lane. */
   readonly firstOnRift: Readonly<Record<string, number>>;
@@ -77,9 +76,9 @@ function beats(
   const map = c.maps.a3_m02;
   const build = buildFor(label, map, c)!;
   const flags = flagsFor(label, map) ?? {};
-  const forced = revokeClassOf(label);
+  const forced = build.loadout.find((t) => t === revokeClassOf(label));
   const cfg = runConfig(c, map, build, referenceRunProfile(map, c, difficulty), 1, flags);
-  const sim = createSim(forced === null ? cfg : { ...cfg, revokeClass: forced });
+  const sim = createSim(forced === undefined ? cfg : { ...cfg, revokeClass: forced });
   const exec = createBuildExecutor(sim, build);
   const st = sim.state;
   const out: SimEvent[] = [];
@@ -96,8 +95,10 @@ function beats(
     out.length = 0;
     sim.drainEvents(out);
     for (const e of out) {
-      if (e.type === 'WaveStarted') push(`WaveStarted ${e.wave}`);
-      else if (e.type === 'CountdownStarted') push(`CountdownStarted ${e.wave}`);
+      if (e.type === 'WaveStarted') {
+        push(`WaveStarted ${e.wave}`);
+        lastSpawn[e.wave] = st.tick + map.waves[e.wave - 1]!.lastSpawnTicks;
+      } else if (e.type === 'CountdownStarted') push(`CountdownStarted ${e.wave}`);
       else if (e.type === 'RiftOpening' || e.type === 'RiftOpened') push(`${e.type} ${e.route}`);
       else if (e.type === 'ScriptCue') push(e.cueId);
       else if (e.type === 'MapWon' || e.type === 'MapLost') push(e.type);
@@ -111,7 +112,6 @@ function beats(
         push('ModifierChanged');
         revoked.push(e.modifier);
       } else if (e.type === 'EnemySpawned') {
-        lastSpawn[e.wave] = st.tick;
         if (e.route.startsWith('rift_')) firstOnRift[e.route] ??= st.tick;
       }
     }
@@ -157,6 +157,43 @@ function expectBeats(b: Beats, label: string, cls: string): void {
   expect(shuttle, label).toBeLessThan(b.lastSpawn[12]!);
 }
 
+/** A build step as the content compiler shapes it (compileBuilds.ts; the kinds CRANE_ALT uses). */
+function compileStep(st: BuildStep): CompiledBuildStep {
+  const wave = st.wave;
+  if ('build' in st) return { wave, kind: 'build', tower: st.build, tile: st.tile };
+  if ('upgrade' in st) return { wave, kind: 'upgrade', tile: st.upgrade };
+  if ('specialize' in st) return { wave, kind: 'specialize', tile: st.specialize, spec: st.spec };
+  if ('ability' in st) {
+    const when = st.when;
+    return {
+      wave,
+      kind: 'ability',
+      slot: st.ability,
+      target: st.target ?? null,
+      when:
+        when === undefined
+          ? 'asap'
+          : when === 'waveStart'
+            ? when
+            : { afterTicks: secToTicks(when.afterSec) },
+    };
+  }
+  throw new Error(`a test-level build step this helper doesn't compile: ${JSON.stringify(st)}`);
+}
+
+/**
+ * The Crane alt (T501c-M6; D137) compiled by hand: the reference profile owns neither the Crane nor
+ * its specs, so it can't be an `altBuilds` entry; it runs on the reference profile plus the
+ * Crane's specs (the sim doesn't check a loadout against a license).
+ */
+const CRANE: CompiledBuild = {
+  loadout: CRANE_ALT.loadout,
+  companion: null,
+  technicianAbility: content.maps.a3_m02.builds.referenceProfile.technicianAbility,
+  callEarly: false,
+  steps: CRANE_ALT.steps.map(compileStep),
+};
+
 // Each test re-runs a whole map's harness (or its par): seconds, not milliseconds.
 describe('A3M2 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
   const report = runMap(content, 'a3_m02', { seeds: 1 });
@@ -198,6 +235,17 @@ describe('A3M2 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
       expect(r.marginPct, label).toBeGreaterThanOrEqual(20);
     }
     expect(run('par@story').result!.outcome).toBe('won');
+  });
+
+  it('lets the Crane alt win (T501c-M6): Magnet Crane slams the drones, the cue takes the Thumper', () => {
+    const map = content.maps.a3_m02;
+    const ref = referenceRunProfile(map, content);
+    const profile = { ...ref, specs: [...ref.specs, 'crane' as const] };
+    const r = runHeadless(runConfig(content, map, CRANE, profile, 1), CRANE);
+    expect(r.outcome).toBe('won');
+    expect(r.revoked.towers).toEqual(['thumper']);
+    expect(marginOf(r)).toBeGreaterThanOrEqual(20);
+    expect(r.steps.filter((st) => st.error !== null)).toEqual([]);
   });
 
   it('runs twelve to fourteen minutes at 1× (Act III: 12–18)', () => {

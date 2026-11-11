@@ -4,9 +4,12 @@ import { describe, expect, it } from 'vitest';
 import { compileContent } from '../../content/compile.ts';
 import { RAW_CONTENT } from '../../content/registry.ts';
 import type { Enemy } from '../../sim/index.ts';
+import { SPRITES } from '../../content/sprites/index.ts';
 import {
   GROWTH_RING_BASE_TILES,
+  GROWTH_STEPS,
   growthRingTiles,
+  mawBody,
   nooseTiles,
   riftLook,
   showsRipples,
@@ -64,5 +67,22 @@ describe('the Hollow looks (T602)', () => {
     expect(riftLook('opening', true)).toEqual({ drawn: true, dashed: true, alpha: 1 });
     expect(riftLook('opening', false).alpha).toBeLessThan(1);
     expect(riftLook('open', false)).toEqual({ drawn: true, dashed: false, alpha: 1 });
+  });
+});
+
+describe("the Maw's growth sprites (T640a)", () => {
+  it('draws `enemy.maw` until it gathers, then `enemy.maw_g<n>` per absorb, capped', () => {
+    const body = E.maw.sprites.body;
+    expect(mawBody(body, unit({ def: E.maw, absorbs: 0 }))).toBe('enemy.maw');
+    expect(mawBody(body, unit({ def: E.maw, absorbs: 1 }))).toBe('enemy.maw_g1');
+    expect(mawBody(body, unit({ def: E.maw, absorbs: 5 }))).toBe('enemy.maw_g5');
+    expect(mawBody(body, unit({ def: E.maw, absorbs: 9 }))).toBe(`enemy.maw_g${GROWTH_STEPS}`);
+    expect(mawBody('enemy.mote', unit({ def: E.mote, absorbs: 3 }))).toBe('enemy.mote');
+    // Every step it can reach is a registered sprite, as many as the Maw's absorbs.
+    const ids = new Set<string>(SPRITES.map((s) => s.id));
+    expect(GROWTH_STEPS).toBe(E.maw.gather!.maxAbsorbs);
+    for (let n = 0; n <= GROWTH_STEPS; n++) {
+      expect(ids.has(mawBody(body, unit({ def: E.maw, absorbs: n }))), String(n)).toBe(true);
+    }
   });
 });

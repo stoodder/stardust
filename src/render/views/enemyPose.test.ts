@@ -232,3 +232,14 @@ describe('poseFacts for M5 units (T530a)', () => {
     expect(statePose(poseFacts(boss, f))).toBe('walk'); // re-formed
   });
 });
+
+const maw = (e: Enemy): boolean => e.def?.id === 'maw';
+
+describe('poseFacts for the Maw (T640a)', () => {
+  it('reaches into its `tell` (mouth agape, tendrils out) while it holds a unit to gather', () => {
+    const sim = createSim(battleConfig('dev_maw', 1));
+    sim.enqueue({ type: 'callWave' });
+    expect(poseWhen(sim, (e) => maw(e) && e.gatherUid === 0)).toBe('walk');
+    expect(poseWhen(sim, (e) => maw(e) && e.gatherUid !== 0)).toBe('tell');
+  });
+});

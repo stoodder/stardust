@@ -4,9 +4,11 @@
 // inert (index.tsx), and one large button, centered low, labelled with the input ("SEAL"), is the
 // only way on. It has the focus as it appears, dimmed and "Not yet" to a screen reader until it
 // arms (ARM_DELAY_MS, and then only from a fresh key-down or pointer-down). Reduced motion: the veil
-// is there at once and the armed button holds still (no breathing edge).
+// is there at once and the armed button holds still (no breathing fill). The focus comes back to it as the pause menu or a scene closes.
 import { useEffect, useRef } from 'preact/hooks';
 import { currentSeal } from '../../app/forcedInput.ts';
+import { sceneBlocks } from '../dialogue/state.ts';
+import { pauseMenu } from '../pause/state.ts';
 import { forcedInput, forcedInputArmed } from './forcedInputState.ts';
 import './forcedInput.css';
 
@@ -20,14 +22,16 @@ export function ForcedInputVeil() {
 export function ForcedInputButton() {
   const id = forcedInput.value;
   const armed = forcedInputArmed.value;
+  const covered = pauseMenu.value || sceneBlocks.value;
   const ref = useRef<HTMLButtonElement>(null);
   useEffect(() => {
-    if (id !== null) ref.current?.focus();
-  }, [id]);
+    if (id !== null && !covered) ref.current?.focus();
+  }, [id, covered]);
   if (id === null) return null;
   const label = id.toUpperCase();
   return (
-    <div class="hud-forced-input">
+    // Under the pause menu or a scene, theirs are the only live controls.
+    <div class="hud-forced-input" inert={covered}>
       <button
         ref={ref}
         type="button"

@@ -105,6 +105,7 @@ import type { DeathStyle } from './deathLook.ts';
 import { QUIET_DEATH_FRAMES } from './deathLook.ts';
 import { EnemyDress, type RimMode } from './EnemyDress.ts';
 import { fleeTempo, glanceFacing, glancing } from './fleeLook.ts';
+import { mawBody } from './gatherLook.ts';
 import { glitches, hollowGlitch, type HollowGlitch } from './hollowLook.ts';
 import {
   HEAVY_TINT,
@@ -333,6 +334,8 @@ export class EnemyView implements PooledView {
   /** The body's height above its anchor (px), for placing the tell glyph. */
   #headroom = 0;
   #id: SpriteId | null = null;
+  /** The def's body sprite; a Maw's grown bodies derive from it (gatherLook.ts `mawBody`, T640a). */
+  #baseBody = '';
   #uid = 0;
   #flying = false;
   #selected = false;
@@ -561,6 +564,7 @@ export class EnemyView implements PooledView {
     this.#dirX = dx;
     this.#dirY = dy;
     this.#id = spriteId(body);
+    this.#baseBody = body;
     this.#set = animSetFor(this.#ctx.sprites, this.#ctx.scene, this.#id);
     this.#flying = flying;
     this.#selected = false;
@@ -897,6 +901,21 @@ export class EnemyView implements PooledView {
     if (band !== this.#fray) {
       this.#fray = band;
       dirty = true;
+    }
+    // A Maw grows (T640a): each absorb count is its own, bigger body (gatherLook.ts `mawBody`).
+    if (e.def !== null && e.def.gather !== null) {
+      const id = spriteId(mawBody(this.#baseBody, e));
+      if (id !== this.#id) {
+        this.#id = id;
+        this.#set = animSetFor(this.#ctx.sprites, this.#ctx.scene, id);
+        const meta = this.#ctx.sprites.meta(id);
+        this.#headroom = meta.anchor.y;
+        this.#metaW = meta.w;
+        this.#metaH = meta.h;
+        this.#barW = healthBarWidth(meta.w);
+        this.#barHpPx = -1;
+        dirty = true;
+      }
     }
     if (dirty) this.#play();
     // Scurrying: a fleeing runner's legs run faster than its pace, a bolting one's faster still.

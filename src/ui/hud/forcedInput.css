@@ -5,7 +5,7 @@
   position: absolute;
   inset: 0;
   pointer-events: auto;
-  background: radial-gradient(ellipse at 50% 45%, transparent 45%, rgb(5 4 12 / 55%) 100%);
+  background: radial-gradient(ellipse at 50% 45%, transparent 40%, rgb(5 4 12 / 70%) 100%);
   animation: hud-forced-veil-in 1200ms ease-out both;
 }
 

@@ -46,8 +46,27 @@ const SUPPRESS_W14: BuildStep = {
   wave: 14,
   ability: 2,
   target: GATE_ROAD,
-  when: { afterSec: Number(process.env.SF14 ?? 63) },
+  when: { afterSec: 74 },
 };
+
+/** Par's steps with every Thumper it builds built as `tower` instead (the no-splash build). */
+function thumpersAs(tower: 'prism'): BuildStep[] {
+  const out: BuildStep[] = [];
+  for (const st of withCast(parSteps())) {
+    if ('build' in st && st.build === 'thumper')
+      out.push({ wave: st.wave, build: tower, tile: st.tile });
+    else out.push(st);
+  }
+  return out;
+}
+
+/** `steps` with the Suppressing Fire cast after the last step of its wave (or before). */
+function withCast(steps: readonly BuildStep[]): BuildStep[] {
+  const at = steps.findIndex((st) => st.wave >= SUPPRESS_W14.wave);
+  const out = [...steps];
+  out.splice(at < 0 ? out.length : at, 0, SUPPRESS_W14);
+  return out;
+}
 
 function parSteps(): BuildStep[] {
   return [
@@ -83,10 +102,6 @@ function parSteps(): BuildStep[] {
     { wave: 14, upgrade: EDGE_S },
     { wave: 14, build: 'harpoon', tile: EDGE_N },
     { wave: 14, upgrade: EDGE_N },
-    SUPPRESS_W14,
-    { wave: 15, upgrade: EDGE_N },
-    { wave: 15, build: 'harpoon', tile: NE },
-    { wave: 15, upgrade: NE },
   ];
 }
 
@@ -94,7 +109,7 @@ export const builds = defineBuilds({
   // A3M2's reference profile (campaign.md § 4.9): A3M1's, plus the Harpoon's license and the
   // Mindspike's attunement, with Emergency Bulkhead in the protocol slot.
   referenceProfile: REFERENCE_PROFILES.a3_m02,
-  parBuild: { loadout: ['harpoon', 'mindspike', 'rivet', 'thumper'], steps: parSteps() },
+  parBuild: { loadout: ['harpoon', 'mindspike', 'rivet', 'thumper'], steps: withCast(parSteps()) },
   noCounterBuilds: {
     // No armor answer: Mindspike, Thumper, Zapcoil, Sprinkler (no Harpoon, no Prism, no Rivet,
     // no Bunker Buster); Psionic barely scratches the drones.
@@ -123,9 +138,7 @@ export const builds = defineBuilds({
     // Echo Spike): par with a Prism where its Thumper stands.
     splash: {
       loadout: ['harpoon', 'mindspike', 'rivet', 'prism'],
-      steps: parSteps().map((s) =>
-        'build' in s && s.build === 'thumper' ? { ...s, build: 'prism' } : s,
-      ),
+      steps: thumpersAs('prism'),
     },
   },
   altBuilds: {
@@ -134,7 +147,7 @@ export const builds = defineBuilds({
     // the Harpoons and the Prism carry the armor.
     coil_and_beam: {
       loadout: ['harpoon', 'prism', 'zapcoil', 'sprinkler'],
-      steps: [
+      steps: withCast([
         { wave: 1, build: 'zapcoil', tile: COURT_W },
         { wave: 1, build: 'sprinkler', tile: COURT_E }, // Conductive with the court's Zapcoil
         { wave: 1, build: 'zapcoil', tile: WEST_N },
@@ -162,14 +175,13 @@ export const builds = defineBuilds({
         { wave: 13, upgrade: SOUTH_E },
         { wave: 13, upgrade: NW },
         { wave: 14, upgrade: GATE_S },
-        SUPPRESS_W14,
-      ],
+      ]),
     },
     // Mindspike, Prism, Zapcoil, Rivet: the cue takes the Rivets; the Prisms' beams carry the
     // armor after it, the Zapcoils the clusters, a Mindspike the Hollow.
     beam_and_spike: {
       loadout: ['mindspike', 'prism', 'zapcoil', 'rivet'],
-      steps: [
+      steps: withCast([
         { wave: 1, build: 'zapcoil', tile: WEST_N },
         { wave: 1, build: 'mindspike', tile: NW },
         { wave: 1, build: 'zapcoil', tile: COURT_W },
@@ -200,8 +212,7 @@ export const builds = defineBuilds({
         { wave: 13, upgrade: EDGE_S },
         { wave: 14, upgrade: GATE_S },
         { wave: 14, upgrade: EDGE_S },
-        SUPPRESS_W14,
-      ],
+      ]),
     },
   },
 });
@@ -238,34 +249,35 @@ export const PADS = {
  */
 export const CRANE_ALT: ScriptedBuild = {
   loadout: ['crane', 'harpoon', 'thumper', 'zapcoil'],
-  steps: [
+  steps: withCast([
     { wave: 1, build: 'thumper', tile: COURT_W },
-    { wave: 1, build: 'crane', tile: COURT_E },
     { wave: 1, build: 'zapcoil', tile: WEST_N },
+    { wave: 1, build: 'harpoon', tile: BEND },
     { wave: 1, upgrade: COURT_W },
     { wave: 1, ability: 1, target: WEST_SIDE, when: { afterSec: 6 } },
-    { wave: 2, build: 'harpoon', tile: BEND },
+    { wave: 2, build: 'crane', tile: COURT_E },
     { wave: 2, upgrade: WEST_N },
-    { wave: 3, build: 'harpoon', tile: NW },
-    { wave: 4, upgrade: COURT_E },
+    { wave: 3, build: 'zapcoil', tile: SOUTH_W },
+    { wave: 4, build: 'harpoon', tile: NW },
     { wave: 4, ability: 1, target: SOUTH_SIDE, when: { afterSec: 8 } },
     { wave: 5, upgrade: BEND },
-    { wave: 5, upgrade: NW },
+    { wave: 5, upgrade: SOUTH_W },
     { wave: 6, upgrade: COURT_E },
+    { wave: 6, upgrade: NW },
     { wave: 8, build: 'zapcoil', tile: COURT_N },
     { wave: 8, upgrade: COURT_N },
-    { wave: 8, build: 'zapcoil', tile: SOUTH_W },
-    { wave: 9, specialize: COURT_E, spec: 'b' }, // Magnet Crane
-    { wave: 10, upgrade: SOUTH_W },
-    { wave: 10, upgrade: COURT_N },
+    { wave: 8, upgrade: WEST_N },
+    { wave: 9, upgrade: COURT_E },
+    { wave: 9, build: 'zapcoil', tile: GATE_S },
+    { wave: 10, upgrade: GATE_S },
+    { wave: 10, specialize: COURT_E, spec: 'b' }, // Magnet Crane
     { wave: 11, upgrade: BEND },
-    { wave: 11, upgrade: WEST_N },
+    { wave: 11, upgrade: COURT_N },
     { wave: 12, build: 'harpoon', tile: EDGE_S },
     { wave: 12, upgrade: NW },
     { wave: 13, upgrade: EDGE_S },
     { wave: 13, upgrade: SOUTH_W },
     { wave: 14, upgrade: EDGE_S },
-    SUPPRESS_W14,
     { wave: 15, build: 'harpoon', tile: EDGE_N },
-  ],
+  ]),
 };

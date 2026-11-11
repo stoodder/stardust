@@ -132,7 +132,8 @@ test("act three: Sterling's Clean Exit cue holds the battle on a panel, her paus
     sd.setSpeed(1);
     sd.dialogue.play('a3_m02_cue_revoke');
   });
-  const panel = page.getByRole('dialog', { name: 'Scene' });
+  // The pausing panel (SceneLayer's non-full-screen dialog, named Comms).
+  const panel = page.getByRole('dialog', { name: 'Comms' });
   await expect(panel).toContainText("I'm revoking your Corporate Tower License now!");
   // A pausing panel: the battle holds at speed 0 while it's open (the sim would keep ticking).
   const tick = () => page.evaluate(() => globalThis.__sd!.state()?.tick ?? -1);
@@ -141,11 +142,14 @@ test("act three: Sterling's Clean Exit cue holds the battle on a panel, her paus
   expect(await tick()).toBe(before);
   await nextFrames(page);
   await shot(page, 'act-three', 8, 'clean-exit-sterling');
-  // Through QUILL's apology to her held beat, which moves on by itself to her next line.
+  // Through QUILL's two lines to her held beat (fast text: each line is whole, so a Next moves on),
+  // which then moves on by itself, with no press, to her next line.
   const next = panel.getByRole('button', { name: 'Next' });
-  await expect(async () => {
-    await next.click();
-    await expect(panel).toContainText('Oh! The Preserve was always the buffer', { timeout: 500 });
-  }).toPass({ timeout: 15_000 });
+  await next.click();
+  await expect(panel).toContainText('License revoked.');
+  await next.click();
+  await expect(panel).toContainText("I'm so sorry.");
+  await next.click();
+  await expect(panel).toContainText('Oh! The Preserve was always the buffer', { timeout: 5000 });
   await shot(page, 'act-three', 9, 'clean-exit-buffer');
 });

@@ -35,11 +35,20 @@ const expediters = (count: number, delaySec: number, intervalSec?: number): Wave
 export const COUNTDOWN = 30;
 /** W7's drone column: ten, this far apart, so the Clean Exit (map.ts, 12 s in) lands mid-column. */
 export const W7_GAP = 2;
-const E = (k: string, d: number): number => Number(process.env[k] ?? d);
-export const W12_RUSH = E('R12', 10);
-export const W14_RUSH = E('R14', 12);
-export const W15_RUSH = E('R15', 10);
-const RUSH_GAP = E('RG', 0.4);
+/**
+ * The late waves' hasted rushes (W12's, W14's, W15's): this many drones packed in among two or three
+ * Expediters, RUSH_GAP s apart, at the end of each wave. A rush is what gets through: par holds
+ * everything else and gives up some of W12's rush, about one drone for each over its 17.
+ */
+export const W12_RUSH = 30;
+export const W14_RUSH = 28;
+export const W15_RUSH = 28;
+const RUSH_GAP = 0.6;
+/**
+ * The late waves open with this long a lull before their first group, so a wave called early
+ * doesn't land on the last one's rush.
+ */
+const LEAD = 12;
 /** A hasted rush: `e` Expediters with `n` drones packed in among them, `delaySec` into the wave. */
 const rush = (delaySec: number, e: number, n: number): WaveGroup[] => [
   expediters(e, delaySec, 1.2),
@@ -108,7 +117,7 @@ export const waves = defineWaves([
   // a hasted rush
   {
     countdownSec: COUNTDOWN,
-    groups: [...rush(0, 2, W12_RUSH), drones(20, 12, 1.2)],
+    groups: [drones(20, LEAD, 1.2), ...rush(LEAD + 28, 2, W12_RUSH)],
   },
   // W13 · the Hollow, both rifts
   {
@@ -123,18 +132,18 @@ export const waves = defineWaves([
   // W14 · everything Everglow: a column with its escorts, then the biggest rush
   {
     countdownSec: COUNTDOWN,
-    groups: [...rush(0, 3, W14_RUSH), drones(22, 12, 1.0), expediters(2, 18, 8)],
+    groups: [drones(22, LEAD, 1.0), expediters(2, LEAD + 6, 8), ...rush(LEAD + 30, 3, W14_RUSH)],
   },
   // W15 · everything
   {
     countdownSec: COUNTDOWN,
     groups: [
-      ...rush(0, 2, W15_RUSH),
-      motes(18, 'rift_w', 8, 0.3),
-      drones(14, 12, 1.0),
-      g('fracture', 2, 'rift_e', 14, 4),
-      expediters(2, 15, 6),
-      motes(18, 'rift_e', 24, 0.3),
+      motes(18, 'rift_w', LEAD, 0.3),
+      g('fracture', 2, 'rift_e', LEAD + 4, 4),
+      motes(18, 'rift_e', LEAD + 10, 0.3),
+      drones(14, LEAD + 18, 1.0),
+      expediters(2, LEAD + 21, 6),
+      ...rush(LEAD + 42, 2, W15_RUSH),
     ],
   },
 ]);

@@ -82,13 +82,16 @@ export function sealKey(
   return 'block';
 }
 
+/** A timer's handle (the browser's: a number). */
+export type TimerId = ReturnType<typeof globalThis.setTimeout>;
+
 /** What the SEAL's clocks do in the world: injectable for the unit tests. */
 export interface SealDeps {
   now(): number;
-  setTimeout(fn: () => void, ms: number): unknown;
-  clearTimeout(id: unknown): void;
-  setInterval(fn: () => void, ms: number): unknown;
-  clearInterval(id: unknown): void;
+  setTimeout(fn: () => void, ms: number): TimerId;
+  clearTimeout(id: TimerId): void;
+  setInterval(fn: () => void, ms: number): TimerId;
+  clearInterval(id: TimerId): void;
   /** Plays the waiting line's scene, if the map has one (once). */
   playWaitLine(map: string, input: string): void;
   /** Strikes the hum once. */
@@ -102,9 +105,9 @@ export interface SealDeps {
 const defaultDeps: SealDeps = {
   now: () => performance.now(),
   setTimeout: (fn, ms) => globalThis.setTimeout(fn, ms),
-  clearTimeout: (id) => globalThis.clearTimeout(id as ReturnType<typeof globalThis.setTimeout>),
+  clearTimeout: (id) => globalThis.clearTimeout(id),
   setInterval: (fn, ms) => globalThis.setInterval(fn, ms),
-  clearInterval: (id) => globalThis.clearInterval(id as ReturnType<typeof globalThis.setInterval>),
+  clearInterval: (id) => globalThis.clearInterval(id),
   playWaitLine(map, input) {
     const scene = SCENES[waitSceneId(map, input)];
     if (scene !== undefined && dialogueEnabled()) playScene(scene);
@@ -147,7 +150,7 @@ export function startSeal(map: string, input: string, deps: SealDeps = defaultDe
   let waited = false;
   let ranMs = 0;
   let runningSince: number | null = null;
-  let waitTimer: unknown = null;
+  let waitTimer: TimerId | null = null;
   forcedInputArmed.value = false;
   const armTimer = deps.setTimeout(() => {
     forcedInputArmed.value = true;

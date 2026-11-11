@@ -16,7 +16,7 @@
 //   every Hollow unit that hushes.
 // No death frames: it unravels (render).
 import { defineSprite } from '../defineSprite.ts';
-import { at, grid, line, plot, rows, stamp, type CharGrid } from '../helpers.ts';
+import { at, grid, plot, rows, stamp, type CharGrid } from '../helpers.ts';
 import { dropPixels, heavyDress, hollowBody, inkContour, reach } from './hollow.ts';
 import { MOTE_BODY_LEGEND } from './mote.ts';
 
@@ -60,7 +60,8 @@ function body(g: CharGrid, cy: number, rx: number, ry: number, dark: boolean): v
       if (Math.abs(y + 0.5 - cy) > ry - trim) plot(tmp, x, y, '.');
     }
   }
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (at(tmp, x, y) !== '.') plot(g, x, y, at(tmp, x, y));
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) if (at(tmp, x, y) !== '.') plot(g, x, y, at(tmp, x, y));
 }
 
 function undertow(facing: Facing, step: 0 | 1 | 2, look: Look): string[] {
@@ -129,7 +130,18 @@ function undertow(facing: Facing, step: 0 | 1 | 2, look: Look): string[] {
     // The nose gone under: a pale ripple opening round it, dark clods flung up behind.
     for (let x = nose - 3; x <= W - 1; x++) plot(g, x, H - 1, x % 2 === 0 ? 'w' : '3');
     plot(g, nose - 4, H - 2, 'w');
-    const clods = step === 0 ? [[nose - 1, 2], [nose + 2, 1], [nose - 4, 0]] : [[nose, 0], [nose + 3, 3], [nose - 3, 1]];
+    const clods =
+      step === 0
+        ? [
+            [nose - 1, 2],
+            [nose + 2, 1],
+            [nose - 4, 0],
+          ]
+        : [
+            [nose, 0],
+            [nose + 3, 3],
+            [nose - 3, 1],
+          ];
     for (const [x, y] of clods) {
       plot(g, x ?? 0, y ?? 0, 'G');
       plot(g, (x ?? 0) + 1, y ?? 0, 'H');

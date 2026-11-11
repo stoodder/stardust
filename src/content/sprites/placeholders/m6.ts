@@ -3,16 +3,11 @@
 // the new id, without palette variants, so it keeps the sprite contract (enemy walks in four
 // facings, tower t1–t3 frames with a mount and a head, 14×14 icons, 8×8 glyphs). A placeholder
 // keeps its source's palette where the new faction's ramps may not carry the source's colours.
-// The art tasks replace each behind the same id and delete its line here: T640a the units (Maw,
-// Undertow, Compliance Drone, Expediter, swarmlings and Champions), T640b the towers (Scuttle Den,
-// Hum Choir, Stasis Bloom), their icons, Underfoot's icon, and the `consumer` and `haste_aura`
-// glyphs. This file goes away with the last of them.
-import { allyRefugee } from '../allies/refugee.ts';
-import { enemyGerald } from '../enemies/gerald.ts';
-import { enemyMote } from '../enemies/mote.ts';
-import { iconEnemyMote } from '../icons/act2_enemies.ts';
+// The art tasks replace each behind the same id and delete its line here: T640a has drawn the
+// units and their icons; T640b the towers (Scuttle Den, Hum Choir, Stasis Bloom), their icons,
+// Underfoot's icon, and the `consumer` and `haste_aura` glyphs remain. This file goes away with the
+// last of them.
 import { iconTowerPrism } from '../icons/aelari_towers.ts';
-import { iconEnemyGerald } from '../icons/gerald.ts';
 import { iconTellFast, iconTellHollow } from '../icons/glyphs.ts';
 import { iconAbilitySuppressingFire } from '../icons/suppressing_fire.ts';
 import { iconTowerThumper } from '../icons/thumper.ts';
@@ -31,15 +26,6 @@ function placeholder<const Id extends string>(
   const { variants: _variants, ...rest } = base;
   return { ...rest, id, palette };
 }
-
-// Units (T640a).
-export const enemyExpediter = placeholder(enemyGerald, 'enemy.expediter');
-export const allySwarmling = placeholder(allyRefugee, 'ally.swarmling');
-export const allyChampion = placeholder(allyRefugee, 'ally.champion');
-export const iconEnemyMaw = placeholder(iconEnemyMote, 'icon.enemy.maw', 'hollow');
-export const iconEnemyUndertow = placeholder(iconEnemyMote, 'icon.enemy.undertow', 'hollow');
-export const iconEnemyCompliance = placeholder(iconEnemyGerald, 'icon.enemy.compliance');
-export const iconEnemyExpediter = placeholder(iconEnemyGerald, 'icon.enemy.expediter');
 
 // Towers and icons (T640b), for now in borrowed shapes.
 export const towerBurrow = placeholder(towerThumper, 'tower.burrow');

@@ -161,7 +161,8 @@ function maw(stage: number, facing: Facing, step: 0 | 1 | 2, look: Look): string
     if (tell && i % 2 === 1) continue;
     const lx = Math.round(left + bw * f);
     const foot = h - 1 - ((i + step) % 3 === 0 ? 1 : 0); // a leg or two lifted, popping
-    for (let y = Math.max(Math.round(cy + ry) - 1, h - 3); y <= foot; y++) plot(g, lx, y, y === foot ? '0' : '1');
+    for (let y = Math.max(Math.round(cy + ry) - 1, h - 3); y <= foot; y++)
+      plot(g, lx, y, y === foot ? '0' : '1');
   }
   if (tell) {
     // Three tendrils writhe out of the mouth (or the front, from behind), fanning to the leading

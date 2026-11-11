@@ -5,8 +5,12 @@
 //   rings the unit, closing as the tell runs (the unit drawn in), and three wavy tendrils run from it to
 //   the Maw's body, over the units (a held unit stands close, so they'd hide under the sprites).
 //   Under reduced motion they hold still (no waver, no turn).
-// - **Growth** (+10% size per absorb): a `violet.3` ring on the ground under a Maw that has
-//   gathered, sized by its scale (`gatherScale`), so its size reads before the T640a sprites do.
+// - **Growth** (+10% size per absorb): the Maw's body is a sprite per absorb count, `enemy.maw`
+//   and `enemy.maw_g1`–`enemy.maw_g5` (T640a; `mawBody` picks it, EnemyView swaps it as `absorbs`
+//   changes), and a `violet.3` ring on the ground under a Maw that has gathered, sized by its scale
+//   (`gatherScale`).
+// - **The tendril pose:** a Maw in its tell (`gatherTelling`) plays its sprite's `tell_<facing>`,
+//   the mouth agape and three tendrils out (enemyPose.ts).
 // - **The ripple trail** (the Undertow's `burrower` tell underground): small `hollow.4` ripples at
 //   fixed distances behind a burrowed Hollow unit along its route, fading with distance.
 // - **Rift cracks** (maps.md § 4): a rift lane's tiles joined by a jagged line: none while closed,
@@ -14,6 +18,18 @@
 //   solid `hollow.4` one once open, each over an `ink.0` under-stroke.
 import type { DeepReadonly } from '../../shared/types.ts';
 import { gatherScale, type Enemy, type RiftStatus } from '../../sim/index.ts';
+
+/** The growth steps a gatherer's body is drawn in (the Maw's `maxAbsorbs`): one sprite each. */
+export const GROWTH_STEPS = 5;
+
+/**
+ * The body a gatherer draws now: its own sprite (`body`, the def's) until it has gathered, then
+ * `<body>_g<n>` for `absorbs` = n (capped at GROWTH_STEPS). A unit that doesn't gather keeps `body`.
+ */
+export function mawBody(body: string, e: DeepReadonly<Pick<Enemy, 'def' | 'absorbs'>>): string {
+  if ((e.def?.gather ?? null) === null || e.absorbs <= 0) return body;
+  return `${body}_g${Math.min(GROWTH_STEPS, Math.floor(e.absorbs))}`;
+}
 
 /** How far through its tendril tell a Maw is (0 at the start, 1 as it gathers). */
 export function tendrilProgress(

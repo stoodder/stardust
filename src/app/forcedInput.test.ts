@@ -37,13 +37,13 @@ function fakeWorld() {
       timers.set(id, { at: now + ms, fn, every: null });
       return id;
     },
-    clearTimeout: (id) => void timers.delete(id as number),
+    clearTimeout: (id) => void timers.delete(id),
     setInterval(fn, ms) {
       const id = nextId++;
       timers.set(id, { at: now + ms, fn, every: ms });
       return id;
     },
-    clearInterval: (id) => void timers.delete(id as number),
+    clearInterval: (id) => void timers.delete(id),
     playWaitLine: (map, input) => log.push(`line ${map} ${input}`),
     hum: () => log.push('hum'),
     press: (input) => log.push(`press ${input}`),

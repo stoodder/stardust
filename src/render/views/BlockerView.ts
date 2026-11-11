@@ -33,6 +33,23 @@ export function blockerBarColor(health: number): 'green.3' | 'gold.3' | 'red.3' 
   return 'green.3';
 }
 
+/** A blocker's stance: braced, straining, or down on one knee (the `ally.bricks` anims). */
+export type BlockerStance = 'block' | 'strain' | 'last';
+
+/**
+ * The stance a blocker shows at his sim health (no easing: the pose changes as the level does), or
+ * null for an ally that doesn't block. The same thresholds as the bar's colours.
+ */
+export function blockerPose(a: {
+  readonly blockCapacity?: number;
+  readonly health?: number;
+}): BlockerStance | null {
+  if ((a.blockCapacity ?? 0) <= 0) return null;
+  const h = a.health ?? 1;
+  if (h <= 0.25) return 'last';
+  return h <= 0.5 ? 'strain' : 'block';
+}
+
 /** `shown` eased towards `target` over `dtMs` (BAR_EASE_MS to close the whole gap; snaps if `snap`). */
 export function easeBar(shown: number, target: number, dtMs: number, snap: boolean): number {
   if (snap || Number.isNaN(shown)) return target;

@@ -12,6 +12,7 @@
 // - **Panicking** (a boss phase with haste or a huddle: Chitterbloom's phase 3; a runner held in a
 //   hush tell or bolting, T402): `panic` (a fleeing runner's panic hop, T440a).
 // - **A Hollow unit's hush tell** (T440a): `tell`, its reach (no sneeze follows: a Mote has none).
+//   A Maw's gather tell (`gatherTelling`, T640a) is `tell` too: its mouth agape, tendrils out.
 // - **Phased** (T503, T530a): `phase`, the Rift Moth's wings folded into a blade (EnemyView draws it
 //   dithered and faint; its tell flickers the walk, phaseLook.ts).
 // - **Shield broken** (a boss in a shield-broken phase with its shield down, T530a): `broken`, the
@@ -35,6 +36,7 @@ import {
   blinkTelling,
   burrowTelling,
   cloakedOut,
+  gatherTelling,
   pulseTelling,
   type Enemy,
 } from '../../sim/index.ts';
@@ -196,6 +198,8 @@ export function poseFacts(e: PoseEnemy, out: MutablePoseFacts): MutablePoseFacts
   // since no Hollow sprite has one).
   if (!def.hushes && (e.hushUid !== 0 || e.skittishTicks > 0)) out.panic = true;
   if (def.hushes && e.hushUid !== 0 && e.hushTicks > 0) out.telling = 'tell';
+  // A Maw's gather tell (T640a): its tendril pose, `tell` (mouth agape, tendrils out).
+  if (out.telling === null && gatherTelling(live)) out.telling = 'tell';
   return out;
 }
 
