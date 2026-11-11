@@ -7,7 +7,6 @@ import {
   fixtureSim,
   type FixtureIds,
 } from './__fixtures__/sim.ts';
-import { GUN } from './__fixtures__/combat.ts';
 import type { Command } from './commands.ts';
 import type { SimEvent } from './events.ts';
 import { createSim } from './sim.ts';
@@ -31,27 +30,20 @@ function rejections(events: readonly Ev[]): string[] {
   return events.flatMap((e) => (e.type === 'CommandRejected' ? [e.reason] : []));
 }
 
-/** fx_gun with a spawner attack on tier 1: a feature the sim still refuses (FEATURE_GATES, M6). */
-/** A field (the Stasis Bloom's: `tower.field`, refused until T608) on fx_gun's tier 1. */
-const FIELD = Object.freeze({
-  radiusTiles: 2,
-  radiusSq: 4,
-  chillPct: 0.3,
-  pulseEveryTicks: 600,
-  stasisTicks: 90,
-  pullBackTiles: 0,
-  pullBackCooldownTicks: 0,
-});
-const FIELD_GUN = {
-  ...FIXTURE_CONTENT,
-  towers: {
-    ...FIXTURE_CONTENT.towers,
-    fx_gun: {
-      ...GUN,
-      tiers: [Object.freeze({ ...GUN.tiers[0], field: FIELD }), GUN.tiers[1], GUN.tiers[2]],
-    },
-  },
-} as typeof FIXTURE_CONTENT;
+/**
+ * fx_map with its walkers a boss that ends `layToRest` (the finale's ending): a feature the sim
+ * still refuses (FEATURE_GATES, M8). The Stasis Bloom's field was the example until T608 lifted it.
+ */
+const LAID_TO_REST = (() => {
+  const boss = { phases: [], ending: 'layToRest', endAtPct: 0, ward: null } as const;
+  const walker = { ...FIXTURE_CONTENT.enemies.fx_walker, boss };
+  const map = FIXTURE_CONTENT.maps.fx_map;
+  const waves = map.waves.map((w) => ({
+    ...w,
+    groups: w.groups.map((g) => ({ ...g, enemy: walker })),
+  }));
+  return { ...FIXTURE_CONTENT, maps: { fx_map: { ...map, waves } } } as typeof FIXTURE_CONTENT;
+})();
 
 /** createSim's error message for a config with `over` applied; fails if it doesn't throw. */
 function bad(over: Parameters<typeof fixtureConfig>[0]): string {
@@ -96,7 +88,9 @@ describe('createSim', () => {
       bad({ loadout: ['fx_gun', 'fx_mortar', 'fx_sprinkler', 'fx_gun', 'fx_mortar'] }),
     ).toMatch(/limit is 4/);
     expect(bad({ companion: 'bricks' })).toMatch(/companion 'bricks' needs a slot/);
-    expect(bad({ content: FIELD_GUN })).toMatch(/a field \(fx_gun\) is not simulated until T608/);
+    expect(bad({ content: LAID_TO_REST })).toMatch(
+      /a boss ending 'layToRest' \(fx_walker\) is not simulated until M8/,
+    );
     // @ts-expect-error -- an unknown tower id is a type error too
     expect(bad({ specsUnlocked: ['nope'] })).toMatch(/specsUnlocked: unknown tower 'nope'/);
     expect(bad({ specsUnlocked: ['fx_gun', 'fx_gun'] })).toMatch(/'fx_gun' appears twice/);
@@ -109,9 +103,9 @@ describe('createSim', () => {
     expect(bad({ content: { ...FIXTURE_CONTENT, maps: { fx_map: waveless } } })).toMatch(
       /map 'fx_map' has no waves/,
     );
-    const both = bad({ seed: -1, content: FIELD_GUN });
+    const both = bad({ seed: -1, content: LAID_TO_REST });
     expect(both).toMatch(/seed/);
-    expect(both).toMatch(/until T608/);
+    expect(both).toMatch(/until M8/);
   });
 
   it('accepts a loadout of exactly 4 and an empty one', () => {

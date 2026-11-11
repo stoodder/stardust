@@ -64,7 +64,7 @@ export const waves = defineWaves([
   {
     countdownSec: COUNTDOWN,
     noCall: true,
-    groups: [g('undertow', 1, 'cut_east', OPEN), motes(8, 'cut_west', OPEN + 6)],
+    groups: [g('undertow', 2, 'cut_east', OPEN), motes(8, 'cut_west', OPEN + 6)],
   },
   // W4 · Motes + a rift (the east rift opens behind Bricks)
   {
@@ -93,9 +93,9 @@ export const waves = defineWaves([
     countdownSec: COUNTDOWN,
     noCall: true,
     groups: [
-      g('undertow', 2, 'cut_west', OPEN, 2),
+      g('undertow', 4, 'cut_west', OPEN, 2),
       motes(8, 'rift_east', OPEN + 4, 0.3),
-      g('undertow', 2, 'cut_east', OPEN + 8, 2),
+      g('undertow', 4, 'cut_east', OPEN + 8, 2),
     ],
   },
   // W8 · everything, larger
@@ -105,7 +105,7 @@ export const waves = defineWaves([
     groups: [
       motes(12, 'cut_west', OPEN),
       g('fracture', 2, 'cut_east', OPEN + 3, 2),
-      g('undertow', 1, 'cut_west', OPEN + 6),
+      g('undertow', 2, 'cut_west', OPEN + 6),
       g('riftmoth', 3, 'sky_west', OPEN + 8, 2),
       g('maw', 1, 'cut_east', OPEN + 12),
       motes(8, 'cut_east', OPEN + 14, 0.3),
@@ -116,7 +116,7 @@ export const waves = defineWaves([
     countdownSec: COUNTDOWN,
     noCall: true,
     groups: [
-      g('undertow', 3, 'cut_east', OPEN, 2),
+      g('undertow', 6, 'cut_east', OPEN, 2),
       motes(12, 'cut_west', OPEN + 3),
       g('riftmoth', 3, 'sky_east', OPEN + 8, 2),
       motes(8, 'rift_east', OPEN + 12),
@@ -130,7 +130,7 @@ export const waves = defineWaves([
       g('maw', 1, 'cut_west', OPEN),
       motes(12, 'cut_west', OPEN + 2, 0.3),
       g('fracture', 2, 'cut_east', OPEN + 6, 2),
-      g('undertow', 3, 'cut_west', OPEN + 10, 2),
+      g('undertow', 6, 'cut_west', OPEN + 10, 2),
       g('riftmoth', 3, 'sky_west', OPEN + 12, 2),
     ],
   },
@@ -140,7 +140,7 @@ export const waves = defineWaves([
     noCall: true,
     groups: [
       motes(10, 'rift_west', OPEN, 0.35),
-      g('undertow', 3, 'cut_east', OPEN + 2, 1.5),
+      g('undertow', 6, 'cut_east', OPEN + 2, 1.5),
       motes(12, 'rift_east', OPEN + 6),
       g('riftmoth', 3, 'sky_east', OPEN + 8, 1.5),
       g('fracture', 2, 'cut_west', OPEN + 10, 2),
@@ -153,7 +153,7 @@ export const waves = defineWaves([
     groups: [
       g('maw', 2, 'cut_west', OPEN, 3),
       motes(14, 'cut_east', OPEN + 2),
-      g('undertow', 3, 'cut_west', OPEN + 6, 1.5),
+      g('undertow', 6, 'cut_west', OPEN + 6, 1.5),
       g('riftmoth', 3, 'sky_west', OPEN + 8, 1.5),
       motes(10, 'rift_east', OPEN + 10),
     ],
@@ -164,12 +164,12 @@ export const waves = defineWaves([
     noCall: true,
     groups: [
       motes(12, 'rift_west', OPEN),
-      g('undertow', 3, 'cut_west', OPEN + 2, 1.5),
+      g('undertow', 6, 'cut_west', OPEN + 2, 1.5),
       motes(12, 'rift_east', OPEN + 4),
       g('fracture', 3, 'cut_east', OPEN + 6, 1.5),
       g('riftmoth', 4, 'sky_east', OPEN + 8, 1.2),
       g('maw', 1, 'cut_east', OPEN + 10),
-      g('undertow', 1, 'rift_west', OPEN + 12),
+      g('undertow', 2, 'rift_west', OPEN + 12),
     ],
   },
   // W14 · never plays: the SEAL fires as it starts, before anything spawns

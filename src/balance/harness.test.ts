@@ -1,7 +1,7 @@
 // The harness end to end on the fixture map: planning, running each run once, judging, and
 // the run-level checks.
 import { describe, expect, it } from 'vitest';
-import type { CompiledContent, CompiledTier } from '../content/compiled.ts';
+import type { CompiledContent } from '../content/compiled.ts';
 import { compileContent } from '../content/compile.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
 import { FIXTURE_CONTENT, type FixtureIds } from '../sim/__fixtures__/sim.ts';
@@ -190,29 +190,22 @@ describe('balance harness', () => {
   });
 
   it('reports a run whose config is refused as a failed run, not a crash', () => {
-    // A Stasis Bloom field on the par loadout's gun, which the sim refuses until T608 (spawners
-    // run since T604, beams since T504).
-    const gun = PLAIN_CONTENT.towers.fx_gun;
-    const [t1, ...rest] = gun.tiers;
-    if (t1 === undefined || t1.attack === null) throw new Error('fx_gun has no tier-1 attack');
-    const field: CompiledTier['field'] = {
-      radiusTiles: 2,
-      radiusSq: 4,
-      chillPct: 0.3,
-      pulseEveryTicks: 600,
-      stasisTicks: 90,
-      pullBackTiles: 0,
-      pullBackCooldownTicks: 0,
-    };
-    const fielded: CompiledTier = { ...t1, field };
+    // A boss ending `layToRest` (the finale's, M8) on every walker, which the sim refuses (the
+    // Stasis Bloom's field was the example until T608 lifted it).
+    const fx = PLAIN_CONTENT.maps.fx_map;
+    const boss = { phases: [], ending: 'layToRest', endAtPct: 0, ward: null } as const;
+    const waves = fx.waves.map((w) => ({
+      ...w,
+      groups: w.groups.map((g) => ({ ...g, enemy: { ...g.enemy, boss } })),
+    }));
     const refused: CompiledContent<FixtureIds> = {
       ...PLAIN_CONTENT,
-      towers: { ...PLAIN_CONTENT.towers, fx_gun: { ...gun, tiers: [fielded, ...rest] } },
+      maps: { ...PLAIN_CONTENT.maps, fx_map: { ...fx, waves } },
     };
     const r = runMap(refused, 'fx_map', { seeds: 1, build: 'par' });
     expect(r.ok).toBe(false);
     expect(r.checks.find((c) => c.id === '1')?.failures[0]).toMatch(
-      /seed 1: error: [^]*a field \(fx_gun\) is not simulated until T608/,
+      /seed 1: error: [^]*a boss ending 'layToRest' \([a-z_]+\) is not simulated until M8/,
     );
   });
 
