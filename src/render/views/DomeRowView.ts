@@ -23,7 +23,7 @@ import {
   type TurnInPose,
 } from './domeRow.ts';
 import { PEBBLE_SPRITE, REFUGEE_SPRITE, REFUGEE_VARIANT } from './RefugeeView.ts';
-import { facingOf } from './spriteInfo.ts';
+import { facingOf, type Facing } from './spriteInfo.ts';
 import type { ViewContext } from './ViewContext.ts';
 
 /** Turn-ins that can play at once (a group arrives a refugee every few ticks). */
@@ -36,7 +36,6 @@ interface TurnIn {
   active: boolean;
   /** Started on the next update's tick (the event carries none): −1 until then. */
   startTick: number;
-  pebble: boolean;
 }
 
 /** The map as the view reads it. */
@@ -60,7 +59,7 @@ export class DomeRowView {
   /** The gate's and Dome 1's door's ground points (screen px). */
   readonly #gate: Vec2 = { x: 0, y: 0 };
   readonly #door: Vec2 = { x: 0, y: 0 };
-  readonly #facing: string = 'se';
+  readonly #facing: Facing = 'se';
   #frost: DomeFrost | null = null;
   #next = 0;
   /** Real ms since the win (−1: not won). */
@@ -74,7 +73,8 @@ export class DomeRowView {
     this.#reducedMotion = reducedMotion;
     this.#waveCount = map.waves.length;
     const domeAt = map.markers[DOME_ONE];
-    const gateAt = map.safeExit === null || map.safeExit === undefined ? undefined : map.markers[map.safeExit];
+    const gateAt =
+      map.safeExit === null || map.safeExit === undefined ? undefined : map.markers[map.safeExit];
     const { scene, layers, origin } = ctx;
     if (domeAt === undefined) {
       this.#dome = null;
@@ -102,7 +102,7 @@ export class DomeRowView {
       for (let i = 0; i < MAX_TURN_INS; i++) {
         const body = scene.make.sprite({}, false).setVisible(false);
         layers.world.add(body);
-        this.#turnIns.push({ body, active: false, startTick: -1, pebble: false });
+        this.#turnIns.push({ body, active: false, startTick: -1 });
       }
     }
   }
@@ -163,7 +163,6 @@ export class DomeRowView {
     this.turnedIn++;
     t.active = true;
     t.startTick = -1;
-    t.pebble = pebble;
     const { sprites } = this.#ctx;
     const sprite = pebble ? PEBBLE_SPRITE : REFUGEE_SPRITE;
     const anim = `walk_${this.#facing}`;

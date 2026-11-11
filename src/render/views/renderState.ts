@@ -147,8 +147,8 @@ export interface RenderState {
   };
   /**
    * JamRingView and TakeoverView (T707): Auditor rings drawn now and seen since the battle began;
-   * Hostile Takeover lasers and hangar doors drawn now, plates lying on opened tiles, lasers seen,
-   * and jettisons played.
+   * Hostile Takeover lasers and hangar doors drawn now, lasers seen, and jettisons played; the
+   * jettison's plates on their opened tiles, in the air or down (PlatformSiteView, T730b).
    */
   readonly everglowJams: {
     readonly rings: number;
@@ -206,7 +206,8 @@ export interface RenderState {
   /**
    * Act III's world (T630b): the rift cracks' `tile.rift` halves drawn and those open now
    * (RiftView); Sterling's shuttle, whether it has left its pad and is climbing now (ShuttleView);
-   * and each blast door's marker and frame, and the SEAL's phase (BlastDoorView). The Long
+   * and each blast door's marker and frame, and the SEAL's phase (BlastDoorView); M7's `site` and
+   * `domes` below. The Long
    * Night's moons are `glow.moons` (vfx/nightGlow.ts).
    */
   readonly world: {
@@ -215,6 +216,19 @@ export interface RenderState {
     readonly shuttle: { readonly left: boolean; readonly lifting: boolean };
     readonly doors: readonly { readonly marker: string; readonly frame: string }[];
     readonly seal: 'none' | 'closing' | 'sealed';
+    /**
+     * M7's (T730b): the jettison's plates on opened tiles and those down, and the hangar's frame
+     * ('none' without one) (PlatformSiteView); Dome 1's frame ('none' without one), refugees
+     * turning in at its door now and since the battle began, and the apron's domes opened on the
+     * win (DomeRowView).
+     */
+    readonly site: { readonly plates: number; readonly landed: number; readonly hangar: string };
+    readonly domes: {
+      readonly dome: string;
+      readonly turningIn: number;
+      readonly turnedIn: number;
+      readonly opened: number;
+    };
   };
   /**
    * The Scuttle Den and Underfoot (T604): swarmlings drawn dashing or running home now and latched
