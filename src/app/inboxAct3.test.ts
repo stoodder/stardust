@@ -99,9 +99,9 @@ describe("A3M2's entries and memo", () => {
 function afterA3M3(): void {
   loadDevSave('after_a3m3_convoy');
   updateActiveSave((s) => {
-    const maps: Record<string, unknown> = { ...s.campaign.maps };
-    maps['a3_m03'] ??= maps['a3_m02'];
-    return { ...s, campaign: { ...s.campaign, maps: maps as typeof s.campaign.maps } };
+    const maps = { ...s.campaign.maps };
+    maps.a3_m03 ??= maps.a3_m02;
+    return { ...s, campaign: { ...s.campaign, maps } };
   });
   catchUpStory();
 }

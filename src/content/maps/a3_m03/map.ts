@@ -111,17 +111,25 @@ export const map = defineMapLayout({
     { id: 'warren_road', tiles: WARREN_ROAD },
   ],
   riftLanes: [
-    // The east rift (W4): in from the east edge along row 6, down onto the east fork (12 tiles).
+    // The east rift (W4): down from the north edge east of the switchback, onto the east fork (16).
     {
       id: 'rift_east',
       opensAtWave: 4,
-      tiles: [[21, 6], [20, 6], [19, 6], [18, 6], [17, 6], [17, 7], ...forkFrom(FORK_EAST, 17, 8)],
+      // prettier-ignore
+      tiles: [
+        [15, 0], [15, 1], [15, 2], [15, 3], [15, 4], [15, 5], [15, 6], [15, 7],
+        ...forkFrom(FORK_EAST, 15, 8),
+      ],
     },
-    // The west rift (W11): the same from the west edge onto the west fork (11 tiles).
+    // The west rift (W11): the same west of it, onto the west fork (16).
     {
       id: 'rift_west',
       opensAtWave: 11,
-      tiles: [[0, 6], [1, 6], [2, 6], [3, 6], [3, 7], ...forkFrom(FORK_WEST, 3, 8)],
+      // prettier-ignore
+      tiles: [
+        [5, 0], [5, 1], [5, 2], [5, 3], [5, 4], [5, 5], [5, 6], [5, 7],
+        ...forkFrom(FORK_WEST, 5, 8),
+      ],
     },
   ],
   // Rift Moths from the north corners, crossing over the choke to the far door.

@@ -3,7 +3,6 @@
 // unlocked; its text and its read mark follow the wording in force, so the new wording is NEW again.
 import { describe, expect, it } from 'vitest';
 import { CODEX, type CodexEntryDef } from '../content/codex/index.ts';
-import { isFreeId } from '../meta/validate.ts';
 import {
   codexSeenId,
   revisionInForce,
@@ -61,8 +60,8 @@ describe("the Elder's citation", () => {
     expect(versionSeenId(ELDER, 'original', ctx('a3_m03'))).toBe('codex_elder__original');
     expect(at('a3_m03', readAtA3M1)).toEqual(['corrected']);
     expect(at('a3_m03', [...readAtA3M1, 'codex_elder__corrected__revised'])).toEqual([]);
-    // The mark is one a save can hold (meta/validate.ts `isFreeId`).
-    expect(isFreeId('codex_elder__corrected__revised')).toBe(true);
+    // The mark is one a save can hold (meta/validate.ts `isFreeId`'s shape; story can't import meta).
+    expect('codex_elder__corrected__revised').toMatch(/^[a-z][a-z0-9_]{0,47}$/);
   });
 
   it('leaves a version without a revision alone', () => {

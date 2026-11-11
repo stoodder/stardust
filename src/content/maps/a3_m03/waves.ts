@@ -35,7 +35,7 @@ const motes = (count: number, route: RouteId, delaySec: number, intervalSec = 0.
   g('mote', count, route, delaySec, intervalSec);
 
 /** The build phase before most waves. */
-export const COUNTDOWN = 25;
+export const COUNTDOWN = 30;
 /**
  * W14's countdown: the last group's walk, from its release as the countdown opens to its last
  * refugee through the door the tick before W14 starts (20 tiles at 0.7 tiles/s, the last one 3
@@ -43,7 +43,7 @@ export const COUNTDOWN = 25;
  */
 export const LAST_WALK_SEC = 33;
 /** Most waves open this long after they start. */
-export const OPEN = 4;
+export const OPEN = 6;
 
 export const waves = defineWaves([
   // W1 · Motes down the cut; the first group out
