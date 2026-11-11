@@ -275,6 +275,25 @@ describe('balance checks', () => {
     expect(judge(nine, { ...standard, 'par@story#1': fakeResult('lost', 0, 2) }).ok).toBe(false);
   });
 
+  it('#9 on a Protect map also holds par on Story to its Standard median asset % (D150)', () => {
+    const asset = { name: 'Rig', integrity: 10, marker: 'rock', tile: [0, 2], routes: ['a'] };
+    const protect = { ...map, objective: 'protect' as const, asset } as typeof map;
+    const nine = mapChecks(protect, [1, 2, 3], [1]).find((c) => c.id === '9')!;
+    const run = (integrity: number, left: number, max = 10) => ({
+      ...fakeResult('won', integrity),
+      objective: 'protect' as const,
+      asset: left,
+      maxAsset: max,
+    });
+    // Standard's core (60%) sets its margin; its asset median is 80%.
+    const standard = { 'par#1': run(12, 6), 'par#2': run(12, 8), 'par#3': run(12, 10) };
+    // Story's meter is ×1.5: 12 of 15 is 80%, the Standard median's; 11 of 15 clears the margin
+    // median (60) but not the asset's.
+    expect(judge(nine, { ...standard, 'par@story#1': run(20, 12, 15) }).ok).toBe(true);
+    const below = judge(nine, { ...standard, 'par@story#1': run(20, 11, 15) });
+    expect(below.failures).toEqual(['seed 1: asset 73.3% is below the Standard median 80%']);
+  });
+
   it('splits a run label into its build and meta', () => {
     expect(splitMeta('par')).toEqual({ build: 'par', meta: 'standard' });
     expect(splitMeta('par@story')).toEqual({ build: 'par', meta: 'story' });

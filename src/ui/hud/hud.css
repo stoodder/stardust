@@ -27,18 +27,20 @@
 }
 
 /* ── Chamfered frames ──────────────────────────────────────────────────────────────────────── */
+/* `--cut` and `--edge` fall back to 3 px and the act accent, so a chamfered panel outside .hud
+   (the jailbreak confirmation, the crate card, QUILL's list) still clips (D150). */
 
 .chamfer {
   position: relative;
   clip-path: polygon(
-    var(--cut) 0,
-    calc(100% - var(--cut)) 0,
-    100% var(--cut),
-    100% calc(100% - var(--cut)),
-    calc(100% - var(--cut)) 100%,
-    var(--cut) 100%,
-    0 calc(100% - var(--cut)),
-    0 var(--cut)
+    var(--cut, 3px) 0,
+    calc(100% - var(--cut, 3px)) 0,
+    100% var(--cut, 3px),
+    100% calc(100% - var(--cut, 3px)),
+    calc(100% - var(--cut, 3px)) 100%,
+    var(--cut, 3px) 100%,
+    0 calc(100% - var(--cut, 3px)),
+    0 var(--cut, 3px)
   );
 }
 
@@ -47,28 +49,28 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: var(--edge);
+  background: var(--edge, var(--accent));
   /* The outer outline, then the inner one 1 px in: even-odd leaves a 1 px ring. */
   clip-path: polygon(
     evenodd,
-    var(--cut) 0,
-    calc(100% - var(--cut)) 0,
-    100% var(--cut),
-    100% calc(100% - var(--cut)),
-    calc(100% - var(--cut)) 100%,
-    var(--cut) 100%,
-    0 calc(100% - var(--cut)),
-    0 var(--cut),
-    var(--cut) 0,
-    var(--cut) 1px,
-    1px var(--cut),
-    1px calc(100% - var(--cut)),
-    var(--cut) calc(100% - 1px),
-    calc(100% - var(--cut)) calc(100% - 1px),
-    calc(100% - 1px) calc(100% - var(--cut)),
-    calc(100% - 1px) var(--cut),
-    calc(100% - var(--cut)) 1px,
-    var(--cut) 1px
+    var(--cut, 3px) 0,
+    calc(100% - var(--cut, 3px)) 0,
+    100% var(--cut, 3px),
+    100% calc(100% - var(--cut, 3px)),
+    calc(100% - var(--cut, 3px)) 100%,
+    var(--cut, 3px) 100%,
+    0 calc(100% - var(--cut, 3px)),
+    0 var(--cut, 3px),
+    var(--cut, 3px) 0,
+    var(--cut, 3px) 1px,
+    1px var(--cut, 3px),
+    1px calc(100% - var(--cut, 3px)),
+    var(--cut, 3px) calc(100% - 1px),
+    calc(100% - var(--cut, 3px)) calc(100% - 1px),
+    calc(100% - 1px) calc(100% - var(--cut, 3px)),
+    calc(100% - 1px) var(--cut, 3px),
+    calc(100% - var(--cut, 3px)) 1px,
+    var(--cut, 3px) 1px
   );
 }
 

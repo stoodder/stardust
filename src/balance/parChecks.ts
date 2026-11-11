@@ -5,6 +5,7 @@
 import type { CompiledMapDef } from '../content/compiled.ts';
 import type { IdSpace } from '../content/types.ts';
 import {
+  assetPctOf,
   describeRun,
   flagVariantLabel,
   fmtPct,
@@ -84,24 +85,39 @@ export function parFairnessChecks<K extends IdSpace>(
   const b = map.builds;
   const checks: CheckSpec[] = [];
   // #9: Story difficulty is easier than Standard: par on Story (seed 1) wins with a margin at
-  // least par's Standard median over every seed.
+  // least par's Standard median over every seed, and on a Protect map with its asset meter at
+  // least par's Standard median asset % (Story softens the asset as it does the core; D150).
   const standardMedian = (get: (r: RunRequest) => RunRecord): number =>
     median(every.map((seed) => get({ build: 'par', seed }).marginPct));
+  const protect = map.asset !== null;
+  const standardAssetMedian = (get: (r: RunRequest) => RunRecord): number =>
+    median(every.map((seed) => assetPctOf(get({ build: 'par', seed })) ?? 0));
   checks.push(
     perRun(
       '9',
-      'par on Story wins with margin ≥ its Standard median',
+      protect
+        ? 'par on Story wins with margin and asset ≥ their Standard medians'
+        : 'par on Story wins with margin ≥ its Standard median',
       'par@story',
       [1],
       (rec, get) => {
         if (rec.result?.outcome !== 'won') return describeRun(rec);
         const med = standardMedian(get);
-        return rec.marginPct >= med
+        if (rec.marginPct < med) {
+          return `margin ${fmtPct(rec.marginPct)} is below the Standard median ${fmtPct(med)}`;
+        }
+        if (!protect) return null;
+        const asset = assetPctOf(rec) ?? 0;
+        const assetMed = standardAssetMedian(get);
+        return asset >= assetMed
           ? null
-          : `margin ${fmtPct(rec.marginPct)} is below the Standard median ${fmtPct(med)}`;
+          : `asset ${fmtPct(asset)}% is below the Standard median ${fmtPct(assetMed)}%`;
       },
       (recs, get) =>
-        `${recs.map(describeRun).join(', ')} vs Standard median ${fmtPct(standardMedian(get))}`,
+        `${recs.map(describeRun).join(', ')} vs Standard median ${fmtPct(standardMedian(get))}` +
+        (protect
+          ? `; asset ${recs.map((r) => fmtPct(assetPctOf(r) ?? 0)).join(', ')}% vs ${fmtPct(standardAssetMedian(get))}%`
+          : ''),
       seedRuns('par', every),
       'par',
     ),

@@ -29,9 +29,16 @@ export type EnemyStat = 'hp' | 'shield' | 'speed';
  * - `earlyCallBonus`: Early Bird.
  * - `salvage`: wreckage salvage (Salvage Rights; wreckage is M3+).
  * - `clearSpeed`: wreckage clearing speed (Salvage Expert; M3+).
+ * - `assetIntegrity`: a Protect map's asset meter (Story difficulty ×1.5; never a catalog grant).
  */
 export type EconomyStat =
-  'startCredits' | 'coreIntegrity' | 'bounty' | 'earlyCallBonus' | 'salvage' | 'clearSpeed';
+  | 'startCredits'
+  | 'coreIntegrity'
+  | 'bounty'
+  | 'earlyCallBonus'
+  | 'salvage'
+  | 'clearSpeed'
+  | 'assetIntegrity';
 /** Commander-ability stats a modifier can change: Ability Coolant, Rapport (cooldown), Mk II (radius). */
 export type AbilityStat = 'cooldown' | 'radius';
 /** Tiles whose built-in bonus a modifier can raise (High Ground Training). */

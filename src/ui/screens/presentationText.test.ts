@@ -4,7 +4,13 @@ import { describe, expect, it } from 'vitest';
 import type { CampaignMapId } from '../../content/campaign.ts';
 import { PRESENTATION } from '../../content/presentation.ts';
 import { resultsCounter } from '../../story/counter.ts';
-import { medalMarks, resultsHeader, spokenCounter, titleTip } from './presentationText.ts';
+import {
+  handoverLine,
+  medalMarks,
+  resultsHeader,
+  spokenCounter,
+  titleTip,
+} from './presentationText.ts';
 import type { SlotView } from './state.ts';
 
 describe('resultsHeader', () => {
@@ -108,5 +114,18 @@ describe('titleTip', () => {
     expect(titleTip([slot('a2_m01', 5), { ...slot('a1_m01'), slot: 2 }], 2)).toBe(
       'Remember: a clean perimeter is a happy perimeter!',
     );
+  });
+});
+
+describe('handoverLine (D150)', () => {
+  it("inherits Bricks's Suppressing Fire and borrows QUILL's Time Dilation", () => {
+    expect(handoverLine({ kind: 'inherit', ability: 'Suppressing Fire' })).toBe(
+      'Inherited: Suppressing Fire · Technician ability',
+    );
+    expect(
+      handoverLine({ kind: 'c4', choice: 'keep', inherited: 'Time Dilation', refund: null }),
+    ).toBe('Lent by QUILL: Time Dilation · Technician ability');
+    expect(handoverLine({ kind: 'c4', choice: 'purge', inherited: null, refund: null })).toBeNull();
+    expect(handoverLine({ kind: 'gift', tower: 'Prism Spire' })).toBeNull();
   });
 });

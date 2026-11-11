@@ -90,6 +90,13 @@ export function marginOf(
   return asset < core ? asset : core;
 }
 
+/** A run's asset meter left, % of its full value, on a Protect map; null elsewhere or without a result. */
+export function assetPctOf(rec: Pick<RunRecord, 'result'>): number | null {
+  const r = rec.result;
+  if (r === null || r.maxAsset <= 0) return null;
+  return (100 * r.asset) / r.maxAsset;
+}
+
 export const runKey = (r: RunRequest): string => `${r.build}#${r.seed}${r.repeat ? '#again' : ''}`;
 
 /**

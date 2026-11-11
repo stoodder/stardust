@@ -179,6 +179,7 @@ export type Feature =
   | 'modifier.economy.earlyCallBonus'
   | 'modifier.economy.salvage'
   | 'modifier.economy.clearSpeed'
+  | 'modifier.economy.assetIntegrity'
   | 'modifier.sellRefund'
   | 'modifier.abilityStat'
   | 'modifier.countdown'
@@ -245,6 +246,7 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   'modifier.economy.earlyCallBonus': null,
   'modifier.economy.salvage': null,
   'modifier.economy.clearSpeed': null,
+  'modifier.economy.assetIntegrity': null,
   'modifier.sellRefund': null,
   'modifier.abilityStat': null,
   'modifier.countdown': null,

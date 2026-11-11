@@ -51,7 +51,13 @@ import { assertNever } from '../../shared/types.ts';
 import { prefersReducedMotion } from '../motion.ts';
 import type { SpokenLine } from '../state.ts';
 import { resultsCounter, type ResultsCounter } from '../../story/counter.ts';
-import { medalMarks, resultsHeader, spokenCounter, type MedalMarks } from './presentationText.ts';
+import {
+  handoverLine,
+  medalMarks,
+  resultsHeader,
+  spokenCounter,
+  type MedalMarks,
+} from './presentationText.ts';
 import './screens.css';
 import './results.css';
 import './resultsCounter.css';
@@ -365,11 +371,10 @@ function StoryAsides({ rewards }: { rewards: RunRewards }) {
           <p key={i} class="sd-results-pay-aside sd-results-issued" data-testid="results-tune-up">
             {silkText(`${t.tuneUp.name}: ${t.tuneUp.line}`)}
           </p>
-        ) : t.kind === 'inherit' || (t.kind === 'c4' && t.inherited !== null) ? (
-          // A companion ability now the Technician's (Gerald's mail; C4 Keep).
+        ) : handoverLine(t) !== null ? (
+          // A companion ability now the Technician's: Gerald's mail inherited, C4 Keep's lent.
           <p key={i} class="sd-results-pay-aside sd-results-issued" data-testid="results-inherit">
-            Inherited: {silkText(t.kind === 'inherit' ? t.ability : (t.inherited ?? ''))} ·
-            Technician ability
+            {silkText(handoverLine(t) ?? '')}
           </p>
         ) : null,
       )}

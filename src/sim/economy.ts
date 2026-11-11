@@ -295,14 +295,15 @@ function economyValue(base: number, t: EconomyTerms): number {
 /**
  * Applies the run's economy modifiers to a fresh state (createSim): starting credits (Seed
  * Money, Head Start, Story +50%), core integrity (Reinforced Core, Story's `set: 30`; at least
- * 1), Emergency Bulkhead's leak absorption, and the per-kill, early-call, and sell percentages in
+ * 1), a Protect map's asset integrity (Story ×1.5; at least 1), Emergency Bulkhead's leak absorption, and the per-kill, early-call, and sell percentages in
  * `state.economy`. Throws a RangeError for a shape the sim doesn't run (refuse, don't ignore):
  * `set` or `flat` on `bounty` or `earlyCallBonus`, which progression only ever raises by percent.
  * `salvage` and `clearSpeed` are refused by their gates (M3).
  */
 export function applyRunModifiers(
   state: SimState,
-  map: Pick<CompiledMapDef<IdSpace>, 'startCredits' | 'coreIntegrity'>,
+  map: Pick<CompiledMapDef<IdSpace>, 'startCredits' | 'coreIntegrity'> &
+    Partial<Pick<CompiledMapDef<IdSpace>, 'asset'>>,
   modifiers: readonly Modifier<IdSpace>[],
 ): void {
   const credits = economyValue(map.startCredits, economyTerms(modifiers, 'startCredits'));
@@ -310,6 +311,11 @@ export function applyRunModifiers(
   const integrity = economyValue(map.coreIntegrity, economyTerms(modifiers, 'coreIntegrity'));
   state.integrity = integrity > 1 ? integrity : 1;
   state.maxIntegrity = state.integrity;
+  if (map.asset !== undefined && map.asset !== null) {
+    const asset = economyValue(map.asset.integrity, economyTerms(modifiers, 'assetIntegrity'));
+    state.asset = asset > 1 ? asset : 1;
+    state.maxAsset = state.asset;
+  }
   const errors: string[] = [];
   for (const stat of ['bounty', 'earlyCallBonus'] as const) {
     const t = economyTerms(modifiers, stat);

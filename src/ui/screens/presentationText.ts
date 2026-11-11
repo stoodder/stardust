@@ -10,7 +10,7 @@ import {
   presentationBetweenMaps,
   presentationFor,
 } from '../../story/presentation.ts';
-import type { SlotView } from './state.ts';
+import type { ResultsTransaction, SlotView } from './state.ts';
 
 /**
  * The headline in Everglow's voice, the same in every act: the system's cheer never changes, only
@@ -91,4 +91,16 @@ export function titleTip(views: readonly SlotView[], continueFrom: 1 | 2 | 3 | n
   const view = views.find((v) => v.slot === continueFrom);
   if (view === undefined || view.status !== 'ok') return loadingTip(presentationFor(null), 0);
   return loadingTip(presentationBetweenMaps(view.frontier), view.mapsWon);
+}
+
+/**
+ * A companion ability's handover on the Results card, or null: Gerald's mail is an inheritance
+ * ("Inherited: Suppressing Fire", Bricks's), C4 Keep a loan, since QUILL is still there (D150;
+ * story/bible.md § 9 C4: QUILL *lends* Time Dilation).
+ */
+export function handoverLine(t: ResultsTransaction): string | null {
+  if (t.kind === 'inherit') return `Inherited: ${t.ability} · Technician ability`;
+  if (t.kind === 'c4' && t.inherited !== null)
+    return `Lent by QUILL: ${t.inherited} · Technician ability`;
+  return null;
 }

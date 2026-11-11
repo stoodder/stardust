@@ -75,6 +75,7 @@ function amount(g: { readonly pct?: number; readonly flat?: number }, flatUnit =
 const ECONOMY_TEXT: Readonly<Record<string, string>> = {
   startCredits: 'starting credits',
   coreIntegrity: 'core integrity',
+  assetIntegrity: 'asset integrity',
   bounty: 'kill bounties',
   earlyCallBonus: 'early-call bonus',
   salvage: 'wreckage salvage',

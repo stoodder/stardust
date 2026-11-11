@@ -43,8 +43,8 @@ export interface MetaLoadout {
 
 /**
  * Each difficulty's modifiers (design/progression.md § 9). Story: enemies −30% HP and shields,
- * +50% starting credits, core integrity 30 (a `set`, before Reinforced Core's flat ranks), and
- * countdowns +50%. Standard is the game as designed.
+ * +50% starting credits, core integrity 30 (a `set`, before Reinforced Core's flat ranks), a
+ * Protect map's asset +50% (A3M5's bearers 12 → 18, D150), and countdowns +50%. Standard is the game as designed.
  */
 export const DIFFICULTY_MODIFIERS: Readonly<Record<DifficultyId, readonly Modifier[]>> = {
   standard: [],
@@ -53,6 +53,7 @@ export const DIFFICULTY_MODIFIERS: Readonly<Record<DifficultyId, readonly Modifi
     { kind: 'enemyStat', stat: 'shield', pct: -0.3, source: 'difficulty:story' },
     { kind: 'economy', stat: 'startCredits', pct: 0.5, source: 'difficulty:story' },
     { kind: 'economy', stat: 'coreIntegrity', set: 30, source: 'difficulty:story' },
+    { kind: 'economy', stat: 'assetIntegrity', pct: 0.5, source: 'difficulty:story' },
     { kind: 'countdown', pct: 0.5, source: 'difficulty:story' },
   ],
 };

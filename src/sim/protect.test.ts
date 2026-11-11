@@ -9,6 +9,7 @@ import { RAW_CONTENT } from '../content/registry.ts';
 import { MAP, WALKER, enemyDef, setup, spawn } from './__fixtures__/combat.ts';
 import { FIXTURE_CONTENT, fixtureConfig, type FixtureIds } from './__fixtures__/sim.ts';
 import type { SimEvent } from './events.ts';
+import { applyRunModifiers } from './economy.ts';
 import { ASSET_CRITICAL_SHARE, assetDamage, isAssetLost } from './objectives.ts';
 import { createSim } from './sim.ts';
 import { createState, type SimState } from './state.ts';
@@ -166,5 +167,29 @@ describe('assetDamage (the rig props and the HUD meter)', () => {
 
   it('isAssetLost is false on a map without an asset', () => {
     expect(isAssetLost({ asset: 0, maxAsset: 0 })).toBe(false);
+  });
+});
+
+describe('the asset meter under run modifiers (applyRunModifiers; D150 Story softens a Protect asset)', () => {
+  const story = { kind: 'economy', stat: 'assetIntegrity', pct: 0.5, source: 'difficulty' } as const;
+
+  it("scales a Protect map's asset and its full value, as Story's ×1.5 does", () => {
+    const map = protectMap(['a'], 12);
+    const state = createState(map, 1);
+    applyRunModifiers(state, map, [story]);
+    expect([state.asset, state.maxAsset]).toEqual([18, 18]);
+  });
+
+  it('leaves the asset alone with no modifier, floors it at 1, and ignores a map without one', () => {
+    const map = protectMap(['a'], 12);
+    const plain = createState(map, 1);
+    applyRunModifiers(plain, map, []);
+    expect([plain.asset, plain.maxAsset]).toEqual([12, 12]);
+    const floored = createState(map, 1);
+    applyRunModifiers(floored, map, [{ ...story, pct: -1 }]);
+    expect([floored.asset, floored.maxAsset]).toEqual([1, 1]);
+    const none = createState(MAP, 1);
+    applyRunModifiers(none, MAP, [story]);
+    expect([none.asset, none.maxAsset]).toEqual([0, 0]);
   });
 });

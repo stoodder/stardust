@@ -53,10 +53,14 @@ for (const [quill, option] of ANSWERS) {
       quill === 'keep',
     );
     if (quill === 'keep') {
-      // Gerald's mail (run end) and C4 Keep: two inheritances on the card.
+      // Gerald's mail (run end) is an inheritance; C4 Keep is QUILL's loan (D150).
       const inherited = card.getByTestId('results-inherit');
-      await expect(inherited.filter({ hasText: 'Suppressing Fire' })).toHaveCount(1);
-      await expect(inherited.filter({ hasText: 'Time Dilation' })).toHaveCount(1);
+      await expect(inherited.filter({ hasText: 'Suppressing Fire' })).toHaveText(
+        'Inherited: Suppressing Fire · Technician ability',
+      );
+      await expect(inherited.filter({ hasText: 'Time Dilation' })).toHaveText(
+        'Lent by QUILL: Time Dilation · Technician ability',
+      );
       await shot(page, 'c4', 2, 'keep-answered');
     }
 
