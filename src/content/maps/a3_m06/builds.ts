@@ -48,10 +48,20 @@ const fire = (wave: number, afterSec: number, target: GridPos): BuildStep => ({
 /** Clearance Sale (slot 2) as `wave` starts: its next three purchases at 40% off. */
 const sale = (wave: number): BuildStep => ({ wave, ability: 2, when: 'waveStart' });
 
-/** Where Suppressing Fire lands on the Gathering Maw: the road's turn south past the domes. */
+/**
+ * Suppressing Fire (slot 1) on the Gathering Maw: on the road below the spawn as it walks in
+ * (`MAW_FIRE_SEC` into W16), and on the gate's approach as the merged Maw comes round the last bend
+ * (`MAW_LAST_SEC`, the cooldown since).
+ */
 export const MAW_TRAP: GridPos = [8, 4];
-/** W16: Suppressing Fire on the Maw on the road below the spawn, and again 50 s later. */
-export const MAW_FIRE_SEC = 26;
+export const MAW_FIRE_SEC = 20;
+export const GATE_TRAP: GridPos = [8, 9];
+export const MAW_LAST_SEC = 64;
+/** Both casts on the Gathering Maw (every build that has Suppressing Fire in slot 1). */
+const MAW_FIRE: readonly BuildStep[] = [
+  fire(16, MAW_FIRE_SEC, MAW_TRAP),
+  fire(16, MAW_LAST_SEC, GATE_TRAP),
+];
 
 function parSteps(): BuildStep[] {
   return [
@@ -81,9 +91,13 @@ function parSteps(): BuildStep[] {
     sale(15),
     { wave: 15, upgrade: EAST_N },
     { wave: 15, upgrade: GATE_E },
-    fire(16, MAW_FIRE_SEC, MAW_TRAP),
-    fire(16, MAW_FIRE_SEC + 50, MAW_TRAP),
+    ...MAW_FIRE,
     { wave: 16, upgrade: BEND_N },
+    { wave: 17, build: 'harpoon', tile: BAR_E },
+    { wave: 17, upgrade: BAR_E },
+    { wave: 17, upgrade: GATE_W },
+    { wave: 18, build: 'harpoon', tile: SPAWN_E },
+    { wave: 18, upgrade: BAR_E },
   ];
 }
 
@@ -154,18 +168,22 @@ export const builds = defineBuilds({
         { wave: 10, build: 'skyhook', tile: BAR_W },
         { wave: 11, upgrade: BEND_N },
         { wave: 12, upgrade: BAR_W },
-        { wave: 13, build: 'thumper', tile: EAST_N },
-        { wave: 14, upgrade: GATE_E },
+        { wave: 13, build: 'harpoon', tile: GATE_W },
+        { wave: 14, upgrade: GATE_W },
+        { wave: 14, build: 'thumper', tile: EAST_N },
         sale(15),
+        { wave: 15, upgrade: GATE_W },
         { wave: 15, upgrade: BEND_S },
         { wave: 15, specialize: BEND_S, spec: 'b' },
-        fire(16, MAW_FIRE_SEC, MAW_TRAP),
-        fire(16, MAW_FIRE_SEC + 50, MAW_TRAP),
+        ...MAW_FIRE,
         { wave: 16, upgrade: EAST_N },
+        { wave: 17, upgrade: DOME_W },
+        { wave: 17, build: 'harpoon', tile: BAR_E },
+        { wave: 18, upgrade: BAR_E },
       ],
     },
     // Lookout, Sproing, Thumper (Bunker Buster), Scuttle Den (act3.md § A3M6): the Sproings bonk
-    // the gunships down, the Bunker Busters crack the armor, the Den holds the Maws.
+    // the gunships and the Moths down for the Bunker Busters, and the Dens hold the Maws.
     bonk_and_bust: {
       loadout: ['lookout', 'sproing', 'thumper', 'burrow'],
       steps: [
@@ -173,32 +191,34 @@ export const builds = defineBuilds({
         { wave: 1, build: 'burrow', tile: BEND_S },
         { wave: 1, build: 'sproing', tile: GATE_E },
         { wave: 1, build: 'sproing', tile: BEND_N },
-        { wave: 2, build: 'thumper', tile: EAST_S },
-        { wave: 3, upgrade: ROOF },
+        { wave: 2, build: 'sproing', tile: EAST_N },
+        { wave: 3, upgrade: GATE_E },
         { wave: 4, build: 'lookout', tile: ROOF_W },
         sale(5),
-        { wave: 5, upgrade: ROOF },
+        { wave: 5, upgrade: BEND_N },
         { wave: 5, upgrade: ROOF_W },
-        { wave: 5, upgrade: EAST_S },
-        { wave: 6, build: 'sproing', tile: EAST_N },
-        { wave: 7, specialize: ROOF, spec: 'b' },
-        { wave: 8, upgrade: GATE_E },
+        { wave: 5, upgrade: ROOF },
+        { wave: 6, upgrade: EAST_N },
+        { wave: 7, build: 'thumper', tile: EAST_S },
         { wave: 8, upgrade: ROOF_W },
-        { wave: 9, upgrade: EAST_N },
+        { wave: 8, upgrade: GATE_E },
+        { wave: 9, upgrade: ROOF },
         sale(10),
+        { wave: 10, specialize: ROOF, spec: 'b' },
         { wave: 10, upgrade: BEND_S },
-        { wave: 10, build: 'sproing', tile: BAR_W },
-        { wave: 10, upgrade: EAST_S },
-        { wave: 11, specialize: EAST_S, spec: 'b' },
-        { wave: 12, upgrade: BEND_N },
-        { wave: 13, build: 'burrow', tile: DOME_W },
-        { wave: 14, upgrade: DOME_W },
+        { wave: 10, upgrade: BEND_N },
+        { wave: 11, upgrade: BEND_S },
+        { wave: 12, build: 'burrow', tile: DOME_W },
+        { wave: 13, upgrade: EAST_S },
+        { wave: 14, upgrade: EAST_N },
         sale(15),
-        { wave: 15, upgrade: BAR_W },
-        { wave: 15, upgrade: GATE_E },
-        fire(16, MAW_FIRE_SEC, MAW_TRAP),
-        fire(16, MAW_FIRE_SEC + 50, MAW_TRAP),
-        { wave: 16, upgrade: BEND_S },
+        { wave: 15, upgrade: EAST_S },
+        { wave: 15, build: 'sproing', tile: BAR_W },
+        ...MAW_FIRE,
+        { wave: 16, specialize: EAST_S, spec: 'b' },
+        { wave: 17, upgrade: BAR_W },
+        { wave: 17, build: 'thumper', tile: GATE_W },
+        { wave: 18, upgrade: GATE_W },
       ],
     },
   },

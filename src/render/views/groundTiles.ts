@@ -203,9 +203,10 @@ export const DECOR_MARKERS: Readonly<Record<MarkerId, SpriteId>> = {
   // M7 (act3.md per map, T740c): A3M4's Shelters (the hall door, the last Fun Friday banner, HE
   // HELD THE DOOR under convoy and the humming ring under warren, by `markerWhen`; Gerald's mail
   // chute; any `bay_<n>`, a shelter bay); A3M5's hangar ("Shareholder Value"'s); A3M6's lettuce-crate
-  // barricade (`barricade_y…` runs along y), Zibzab's crate (opened in the briefing), and Dome 1 by
-  // the gate (`dome_open`, its door open; T730b frosts it). The generator (A3M4's core), the crash
-  // site's plates, and Pebble on the Peeker's rock (A3M6) are their views' (T730b).
+  // barricade (along x, across a road running along y; `barricade_y…` runs along y), Zibzab's crate
+  // (opened in the briefing), and Dome 1 by the gate (`dome_1`, a `prop.dome` drawn `open`; T730b
+  // frosts it). The generator (A3M4's core), the crash site's plates, and Pebble on the Peeker's
+  // rock (A3M6) are their views' (T730b).
   hall_door: 'prop.hall_door',
   banner_friday: 'prop.banner_friday',
   held_door: 'prop.held_door',
@@ -215,7 +216,6 @@ export const DECOR_MARKERS: Readonly<Record<MarkerId, SpriteId>> = {
   hangar: 'prop.hangar',
   barricade: 'prop.barricade',
   zibzab_crate: 'prop.crate',
-  dome_open: 'prop.dome',
 };
 
 /**
@@ -227,7 +227,7 @@ function markerFrame(id: MarkerId): string | null {
   if (id === 'rig_yard') return 'yard';
   if (id === 'warren_spoil') return 'warren';
   if (id === 'dome_window') return 'window';
-  if (id.startsWith('dome_open')) return 'open';
+  if (id === 'dome_1') return 'open'; // A3M6's Dome 1, open beside the gate (T740c)
   if (id === 'zibzab_crate') return 'open';
   if (id.startsWith('barricade')) return /_y(_|$)/.test(id) ? 'y' : 'x';
   const n = Number(/_(\d+)$/.exec(id)?.[1] ?? 0);

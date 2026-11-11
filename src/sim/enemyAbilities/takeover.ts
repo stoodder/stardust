@@ -18,8 +18,12 @@
 //   boss walks on (a boss's pace is its phases').
 // - **The landing** (as the laser ends): a jam of `durationTicks` × each target's `jamMul` from the
 //   boss (`jamTower`, `jammedBy` the boss's uid) on each target still standing that a jam may land
-//   on: a System Reboot during the laser (its immunity), a Rally Chorus, or a sale spends that
-//   target. So a Hum Choir at T3 (×0.25: 1 s) or a Reboot timed to the laser earns **Declined**.
+//   on, in pick order, and only while one more jam keeps the map within the jam limit
+//   (floor(JAM_MAX_TOWER_SHARE × towers placed), counting every jam standing then: an Auditor's
+//   ring or a Silencer's tendril that landed during the laser takes its place; D146 addendum,
+//   T721). So a Takeover never takes the map past the limit (a ring or tendril landing after it
+//   still can; T760). A System Reboot during
+//   the laser (its immunity), a Rally Chorus, or a sale spends that target. So a Hum Choir at T3 (×0.25: 1 s) or a Reboot timed to the laser earns **Declined**.
 // - **Declined's tally:** from the landing, `takeoverHeldTicks` counts each tick (the landing's
 //   included) that any of its jams still holds on its tower, and `stats.takeoverJamTicks` keeps the
 //   run's longest: all of a laser's jams land together, so that is the longest single Takeover jam
@@ -44,6 +48,24 @@ type CompiledTakeover = NonNullable<CompiledBossPhase['takeover']>;
 export function takeoverCount(placed: number): number {
   const share = Math.floor(JAM_MAX_TOWER_SHARE * placed);
   return share < TAKEOVER_MAX_TOWERS ? share : TAKEOVER_MAX_TOWERS;
+}
+
+/**
+ * How many more towers a jam may land on now within the jam limit: floor(JAM_MAX_TOWER_SHARE ×
+ * towers placed) less the towers Jammed now (never below 0).
+ */
+function jamRoom(state: SimState): number {
+  const pool = state.towers;
+  let placed = 0;
+  let jammed = 0;
+  for (let i = 0; i < pool.used; i++) {
+    const t = pool.items[i]!; // i < used ≤ items.length
+    if (!t.alive || t.def === null) continue;
+    placed++;
+    if (t.jamTicks > 0) jammed++;
+  }
+  const room = Math.floor(JAM_MAX_TOWER_SHARE * placed) - jammed;
+  return room > 0 ? room : 0;
 }
 
 /** Whether candidate `t` outranks `best` (the highest tier, then the lowest uid). */
@@ -123,8 +145,11 @@ export function takeoverStep(state: SimState, boss: Enemy, t: CompiledTakeover):
     }
     if (--boss.jamTellTicks > 0) return;
     const picked = boss.takeoverTowers;
+    // The jam limit at the landing: only while one more jam keeps the map within
+    // floor(JAM_MAX_TOWER_SHARE × placed), counting every jam standing (a ring's, a tendril's).
+    const room = jamRoom(state);
     let landed = 0;
-    for (let k = 0; k < picked.length; k++) {
+    for (let k = 0; k < picked.length && landed < room; k++) {
       const target = towerByUid(state, picked[k]!); // k < length
       if (target !== null && jamTower(state, target, t.durationTicks, boss.uid) > 0) landed++;
     }

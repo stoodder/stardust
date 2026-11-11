@@ -115,30 +115,30 @@ const CORNERS: Readonly<Record<M7Scene, Corner>> = {
       ['enemy.associate', 'walk_se_2', 6.6, 1.45],
     ],
   },
-  // The road along row 2; the burst feed lines on the north edge, the vats between, the hangar
-  // east, and the crash site's four plates south of the road.
+  // The road along row 2, the vats north of it and the hangar east; the burst feed lines (moved
+  // south of the road here, where the vats don't hide them) and the crash site's four plates.
   harvest: {
     grid: strip(
-      ['..x.x.x..', '.........', '#########', '.........', '.........'],
+      ['.........', '.........', '#########', '.x.x.x...', '.........'],
       {
-        feed_1: [2, 0],
-        feed_2: [4, 0],
-        feed_3: [6, 0],
+        feed_1: [1, 3],
+        feed_2: [3, 3],
+        feed_3: [5, 3],
         vat_west: [1, 1],
         vat_middle: [3, 1],
         vat_east: [5, 1],
-        hangar: [8, 4],
+        hangar: [8, 0],
       },
       [along(2, 0, 8)],
     ),
     props: [
-      ['prop.crash_plate', 'v0', 1.5, 3.5],
-      ['prop.crash_plate', 'v1', 3.5, 4.5],
-      ['prop.crash_plate', 'v2', 5.5, 3.5],
-      ['prop.crash_plate', 'v3', 6.5, 4.5],
+      ['prop.crash_plate', 'v0', 2.5, 4.5],
+      ['prop.crash_plate', 'v1', 4.5, 4.5],
+      ['prop.crash_plate', 'v2', 6.5, 3.5],
+      ['prop.crash_plate', 'v3', 7.5, 4.5],
     ],
     units: [
-      ['enemy.shareholder_value', 'panic_sw_1', 7.3, 2.5],
+      ['enemy.shareholder_value', 'panic_sw_1', 6.6, 2.5],
       ['ally.bearer', 'walk_sw_0', 0.7, 2.4],
       ['ally.bearer', 'walk_sw_1', 1.9, 2.65],
     ],
@@ -148,7 +148,7 @@ const CORNERS: Readonly<Record<M7Scene, Corner>> = {
   dome_row: {
     grid: strip(
       ['.........', '.........', '#######..', '#######..', '.........', '.........'],
-      { dome_open: [7, 1], barricade_y: [7, 3], zibzab_crate: [4, 5] },
+      { dome_1: [7, 1], barricade_y: [7, 3], zibzab_crate: [4, 5] },
       [along(2, 0, 6), along(3, 0, 6)],
     ),
     ground: Object.fromEntries([
