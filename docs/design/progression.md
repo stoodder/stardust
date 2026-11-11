@@ -279,7 +279,7 @@ Act I burrowing is never a required counter (it is only brief; kill-timing and s
 
 | Setting | Changes | Rewards |
 |---|---|---|
-| **Story** | Enemies −30% HP and shields, +50% starting credits, core integrity 30, countdowns +50% | Full Stardust and all medals. No penalty for choosing comfort. |
+| **Story** | Enemies −30% HP and shields, +50% starting credits, core integrity 30, a Protect asset +50% (A3M5's Long Walk 12 → 18), countdowns +50% | Full Stardust and all medals. No penalty for choosing comfort. |
 | **Standard** (default) | As designed | Full |
 | **Veteran modifiers** | Opt-in per replay (§6) | Bonus Stardust, Veteran medal |
 
