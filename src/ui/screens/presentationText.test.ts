@@ -4,11 +4,11 @@ import { describe, expect, it } from 'vitest';
 import type { CampaignMapId } from '../../content/campaign.ts';
 import { PRESENTATION } from '../../content/presentation.ts';
 import { resultsCounter } from '../../story/counter.ts';
-import { resultsHeader, spokenCounter, titleTip } from './presentationText.ts';
+import { medalMarks, resultsHeader, spokenCounter, titleTip } from './presentationText.ts';
 import type { SlotView } from './state.ts';
 
 describe('resultsHeader', () => {
-  it("Act I's report is Exemplary!; Act II's is only filed; the headline never changes", () => {
+  it("Act I's report is Exemplary!; Act II's is only filed; the headline's words never change", () => {
     expect(resultsHeader(PRESENTATION.byAct[1].counter, 'won')).toEqual({
       kicker: 'Shift report · Exemplary!',
       headline: 'PERIMETER SECURED!',
@@ -28,6 +28,31 @@ describe('resultsHeader', () => {
   it('cheers only in the starred style', () => {
     for (const style of ['plain', 'meter', 'remembered'] as const) {
       expect(resultsHeader(style, 'won').kicker).not.toContain('!');
+    }
+  });
+
+  it("drops the headline's exclamation in Act III and the finale (style-guide § 2, T613)", () => {
+    for (const act of [3, 'finale'] as const) {
+      expect(resultsHeader(PRESENTATION.byAct[act].counter, 'won')).toEqual({
+        kicker: 'Shift report · Filed',
+        headline: 'PERIMETER SECURED.',
+      });
+    }
+  });
+});
+
+describe('medalMarks (T613)', () => {
+  it('marks NEW! and Next time! until Act III, then New and Next time.', () => {
+    for (const act of [1, 2] as const) {
+      expect(medalMarks(PRESENTATION.byAct[act].counter)).toEqual({
+        new: 'NEW!',
+        nextTime: 'Next time!',
+      });
+    }
+    for (const act of [3, 'finale'] as const) {
+      const marks = medalMarks(PRESENTATION.byAct[act].counter);
+      expect(marks).toEqual({ new: 'New', nextTime: 'Next time.' });
+      expect(Object.values(marks).join('')).not.toContain('!');
     }
   });
 });
