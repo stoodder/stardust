@@ -102,7 +102,7 @@ export function WavePanel() {
         <ul class="hud-preview" aria-label={`Next: wave ${next.number}`}>
           <li class="hud-label">Next</li>
           {/* QUILL's lockout (T606, T631): the threats hidden behind ACCESS RESTRICTED and a
-              struck blank where the icons were; her leak line under it, in her color. */}
+              struck blank where the icons were; its leak line under it, in its color. */}
           {restricted && (
             <li class="hud-restricted-row" aria-label="Access restricted">
               <span class="hud-restricted">

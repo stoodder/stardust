@@ -30,8 +30,9 @@ The five Act I maps, A1M1–A1M5, during the Long Afternoon. The campaign overvi
 | Orbital Strike Mk II | 95 → 100, Perfect Core | — | 90 → 100, Perfect Core | 85 → 100, Perfect Core | 81.0 → 95.2 |
 | Rapport: Sgt. Bricks | — | — | not cast (QUILL's map) | not cast (Zibzab's map) | 81.0 → 95.2 |
 | Rapport: QUILL | not stocked yet | not stocked yet | — on a replay | not cast | not cast |
+| Rapport: Zibzab | not stocked yet | not stocked yet | not stocked yet | — on a replay | not cast |
 
-So Mk II matters on every Act I map but A1M2, and Bricks's Rapport on A1M5 only. **QUILL's Rapport matters nowhere in Act I:** it is stocked after A1M3, the only Act I map where Time Dilation is cast, and even on an A1M3 replay par's two casts (W5 and W8) are three waves apart, so the shorter cooldown never binds. Its first chance is A2M2, QUILL's next map as companion.
+So Mk II matters on every Act I map but A1M2, and Bricks's Rapport on A1M5 only. **QUILL's Rapport matters nowhere in Act I:** it is stocked after A1M3, the only Act I map where Time Dilation is cast, and even on an A1M3 replay par's two casts (W5 and W8) are three waves apart, so the shorter cooldown never binds. Its first chance is A2M2, QUILL's next map as companion. **Zibzab's Rapport** (stocked after A1M4) doesn't either: on an A1M4 replay par's two sales (W4 and W8) are four waves apart, so 4 → 3 never binds; it pays on A3M6 ([progression.md §7.3](../../design/progression.md#73-command-abilities-and-protocols)).
 
 
 ---

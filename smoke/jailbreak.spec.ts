@@ -2,8 +2,9 @@
 // revoked class (the reference's Rivet) back, drawn jailbroken: under the convoy it costs nothing
 // ("FREE — Goldie's engineers"), and the player still takes it, so the moment is seen; under the
 // warren it costs 300 Stardust. Taking it moves the Rivet from revoked to jailbroken in the save,
-// and the row reads Owned. (Zibzab's line on the row is T709's.) The Buy button asks first (T714's
-// confirmation: the price line, then Jailbreak it, which waits 700 ms; Not now backs out).
+// and the row reads Owned. (shelvesAct3Two.spec.ts checks Zibzab's line on the row.) The Buy button
+// asks first (T714's confirmation: the price line, then Jailbreak it, which waits 700 ms; Not now
+// backs out).
 // Screenshots in <out>/screens/jailbreak/.
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';

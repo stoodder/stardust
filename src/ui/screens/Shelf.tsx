@@ -193,7 +193,7 @@ export function Shelf({ pane, view, group, lead }: ShelfProps) {
   });
   const p = PRESENTERS[pane];
   const offers = storeShelf(pane);
-  // QUILL offline (A3M5 under Rewrite): R&D runs without a word from him.
+  // QUILL offline (A3M5 under Rewrite): R&D runs without a word from it.
   const quiet = pane === 'rnd' && quillOffline(view.frontier ?? '', activeSave());
   const groups = group?.(offers) ?? [{ title: '', offers }];
   const bank = pane === 'shop' ? view.stardust : view.intel;

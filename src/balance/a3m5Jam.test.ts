@@ -12,7 +12,7 @@
 // - Declined is earnable: par with its Choir built after its other tier-3 towers (so the laser
 //   picks towers inside the Choir's T3 aura: 1 s jams), at T3 by W13, and its yard Harpoon and
 //   the hub's Thumper left at T2.
-// Also the Gravity Well stacking test (towers.md open question 3): two Gravity Wells on the same
+// Also the Gravity Well stacking test (towers.md § Stasis Bloom): two Gravity Wells on the same
 // road pull each unit at most once per 20 s between them, and the stacked build stays in band.
 import { describe, expect, it } from 'vitest';
 import { compileContent } from '../content/compile.ts';

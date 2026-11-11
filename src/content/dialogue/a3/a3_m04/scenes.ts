@@ -14,8 +14,8 @@
 // - The debrief (C4, on the card): asked once, on a win; a replay or a loss plays nothing (the
 //   answer is locked, app/dialogue.ts LOCKED_CHOICE_FLAGS; committed through `resolveC4`, T710).
 // - Night Shift (`a3_m04_base_night_shift`): the base's mandatory visit after C4
-//   (app/baseScenes.ts `NIGHT_SHIFT_SCENE`), QUILL's line by C4's answer (Purge: his status bar
-//   blinks, a silence in his frame).
+//   (app/baseScenes.ts `NIGHT_SHIFT_SCENE`), QUILL's line by C4's answer (Purge: its status bar
+//   blinks, a silence in its frame).
 import { defineScene, defineScenes } from '../../define.ts';
 
 const C4_MADE = {

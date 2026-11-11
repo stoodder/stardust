@@ -393,7 +393,7 @@ const NO_SPEAKERS: readonly SpeakerId[] = [];
 
 /**
  * The speakers offline on `map` for `save` (core-loop.md § 2.11; meta `quillOffline`, whose rule is
- * C4_IN_PLAY's): QUILL on A3M5 under C4 Rewrite, dark while he writes his own directives. Off the
+ * C4_IN_PLAY's): QUILL on A3M5 under C4 Rewrite, dark while it writes its own directives. Off the
  * campaign, or with no save, nobody.
  */
 export function offlineSpeakers(map: CampaignMapId | null, save: SaveData | null): SpeakerId[] {
@@ -1492,7 +1492,7 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
   }
   // Per wave: Everglow Security walks it (its PA is Prim's voice; T603).
   const everglow = everglowWaves(sim.map.waves);
-  // QUILL offline (A3M5 under C4 Rewrite; T713): off the radio, out of the pool, his lines skipped.
+  // QUILL offline (A3M5 under C4 Rewrite; T713): off the radio, out of the pool, its lines skipped.
   const offline = offlineSpeakers(map, activeSave());
   const s: Session = {
     map,

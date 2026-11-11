@@ -92,7 +92,7 @@ export const DEV_SCENES = defineScenes([
     { kind: 'line', speaker: 'quill', text: "Don't decide about me yet." },
   ]),
   // A3M5's shape under C4 Rewrite (T713; the real lines are T721's): QUILL's intel, then
-  // `system`'s. With QUILL offline only `system` speaks; with him online both do.
+  // `system`'s. With QUILL offline only `system` speaks; with it online both do.
   defineScene('a1_m01_cue_dev_intel', [
     {
       kind: 'line',
@@ -120,7 +120,7 @@ export const DEV_BARKS = defineBarks([
     trigger: { on: 'map_start' },
     button: { label: "Who's there?", reply: 'a1_m01_cue_dev_knock' },
   },
-  // A QUILL bark to cue on A3M5 (T713): silent while he is offline.
+  // A QUILL bark to cue on A3M5 (T713): silent while it is offline.
   {
     id: 'quill_boss_phase_a1_98',
     speaker: 'quill',

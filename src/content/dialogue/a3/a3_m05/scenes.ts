@@ -3,7 +3,7 @@
 // § A3M5.
 // - The briefing: Kip hands over the ledger (its first line, `R2-0001`, as a caption), leaves his
 //   #1 pin on the console (a silence: nobody comments), Pebble's Boing (the Sproing Pad gift), then
-//   the threat intel by C4's answer: QUILL's apology (Keep, or no answer yet), her flat Directive 0
+//   the threat intel by C4's answer: QUILL's apology (Keep, or no answer yet), its flat Directive 0
 //   line (Purge), or `system`'s advisory (Rewrite: QUILL is offline here, and app/dialogue.ts skips
 //   her lines wherever she is; T713).
 // - The radio: w05 Ves'thara, w06 Kip, w09 Pebble (Grandmother if Old Thrum was spared, else

@@ -646,7 +646,7 @@ export function cursorText(
 /** Notice text for a rejected command, or null for rejections the player needn't hear about. */
 /**
  * Why the map locks a Technician ability under the save's story (T731; the loadout card's and the
- * HUD's dark slot's words): System Reboot is QUILL's patch, so under C4 Rewrite on A3M5, with her
+ * HUD's dark slot's words): System Reboot is QUILL's patch, so under C4 Rewrite on A3M5, with it
  * offline, it's gone (core-loop.md § 6.11). Act III copy: plain, no "!".
  */
 export function lockedAbilityReason(ability: string): string {

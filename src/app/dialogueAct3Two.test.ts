@@ -1,5 +1,5 @@
-// Act III part two's dialogue in play (T713): QUILL offline on A3M5 under C4 Rewrite (his lines
-// skipped wherever they come, his barks silent, `system` still speaking), Purge's QUILL (the status
+// Act III part two's dialogue in play (T713): QUILL offline on A3M5 under C4 Rewrite (its lines
+// skipped wherever they come, its barks silent, `system` still speaking), Purge's QUILL (the status
 // bar, no `policy` tell, a silence that blinks), Sterling by remote on A3M5, Kip's `act3` from
 // A3M5, Ves'thara's laugh, Gerald's status line, Bricks's dark silences on A3M4, and the A3M6
 // knock-knock's reply button. The scenes are dev data shaped like the maps' (their lines are
@@ -276,7 +276,7 @@ describe('in a battle', () => {
     expect(comms()?.speaker).toBe('system');
     vi.advanceTimersByTime(10_000);
     expect(comms()).toBeNull();
-    // A scene of QUILL alone plays nothing; nor does his bark.
+    // A scene of QUILL alone plays nothing; nor does its bark.
     playScene(QUILL_ONLY);
     expect(comms()).toBeNull();
     dialogueTestHooks().bark(QUILL_BARK.id);

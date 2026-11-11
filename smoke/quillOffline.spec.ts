@@ -57,7 +57,7 @@ test('QUILL offline on A3M5 under Rewrite: `system` speaks, QUILL is silent', as
   await shot(page, 't713', 2, 'rewrite-research');
 });
 
-test('QUILL online on A3M5 under Keep: he speaks, and Research has his copy', async ({ page }) => {
+test('QUILL online on A3M5 under Keep: it speaks, and Research has its copy', async ({ page }) => {
   test.setTimeout(90_000);
   await battle(page, 'a3_m05', 'after_a3m4_keep');
   await page.evaluate(() => globalThis.__sd!.setSpeed(0));

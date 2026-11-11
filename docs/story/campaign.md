@@ -205,7 +205,7 @@ Between A3M2's revocation and A3M4, slot 1 holds only Scanner Sweep if the playe
 | Power node | A1M2 (pump station) | Sprinkler on it |
 | Wreckage + salvage drone | A1M3 (crashed delivery drones, "Gerald's colleagues") | |
 | Hidden node under wreckage | A1M4 (salvage yard) | "Reading a power signature under that cart." |
-| 2-wide lanes | A3M6, FIN | |
+| 2-wide lanes | FIN | |
 | Memorial wreckage | FIN (the turret named `{name}`) | Never on a par tile |
 
 Revisits keep the original map's pads unchanged and add new pads only in the outer band ([maps.md §7](../design/maps.md#7-storytelling-with-the-map)).
@@ -259,7 +259,7 @@ New threats per map under §3 (≤ 2), and the other new things that satisfy "so
 | A3M3 | Undertow | Holdout, blocker ally, SEAL |
 | A3M4 | Silencer, Liability | System Reboot, empty slot, jailbreak |
 | A3M5 | Auditor, Maint. Associate | Capstone boss, bearers, Sproing Pad, crash site, QUILL offline |
-| A3M6 | Gunship, Black Budget | Capstone Maw, Sheltered, militia, 2-wide lanes |
+| A3M6 | Gunship, Black Budget | Capstone Maw, Sheltered, militia |
 | FIN | — | Choir escort, song rules, Deep Bore, Unsung (capstone), Dawn |
 
 ### 4.8 Counter coverage
@@ -395,6 +395,8 @@ Tone: 1 = pure whimsy, 10 = grief. Difficulty: relative effort on Standard. Nove
 | FIN | 8 → 2 | 10 | 4 | 48 (escort) | Tear beat 3, then dawn |
 
 **Act II as built (T460, T560):** Defend chain par 81.0 → 76.2 → 76.2 → 76.2 → 72.7 (A2M1–A2M4, A2M6), the Escort chain from A2M5's 75.0; Story wins everywhere (100, 87.1, 100, 100, 83.3, 100); runtimes at 1× 9.4 / 9.4 / 11.8 / 10.8 / 10.1 / 9.1 min (maps.md §6.1's 9–13). A2M4 holds level with A2M3 because its next step down (71.4) would sit under A2M6, and A2M6 holds a step above its 68 because W14's flock moves it a step either way under the robustness shifts. The R&D picks change a result on A2M1 (Orbital Strike Mk II, 85.7) and A2M2 (QUILL's Rapport, 85.7: the Act I curve's deferred verdict, [act1.md](campaign/act1.md), lands here); Bricks's Rapport changes nothing in Act II so far.
+
+**Act III as built:** par holds the Defend and Protect chain at 63.6 (A3M2) → 68.2 (A3M4) → 63.6 (A3M5), and the Escort chain at 66.7 (A3M1) → 59.3 Sheltered (A3M6); A3M3's Holdout, excluded, holds 69.4 (each map's numbers are its act-file entry's *As tuned*: [A3M1](campaign/act3.md#a3m1--the-preserve), [A3M2](campaign/act3.md#a3m2--license-revoked), [A3M3](campaign/act3.md#a3m3--the-gap), [A3M4](campaign/act3.md#a3m4--empty-slot), [A3M5](campaign/act3.md#a3m5--unsung), [A3M6](campaign/act3.md#a3m6--let-them-in)). A3M4 sits above its 65 target (inside A3M2's 5 points); A3M5 sits below A3M4, so it is still the act's difficulty peak, but above its 57; A3M6 lands on its 60.
 
 **Two chains.** Defend and Protect par margins fall monotonically (each ≤ the previous + 5) inside every act's band ([../tech/conventions.md](../tech/conventions.md#balance-sims-npm-run-sim)): A1M1 → A2M4, then A2M6, A3M2, A3M4, A3M5. A2M1 uses its post-boss re-baseline, A3M3 is excluded, and A3M4 is checked against A3M2. Escort maps form their own band by the same rule: A2M5 → A3M1 → A3M6 → FIN.
 

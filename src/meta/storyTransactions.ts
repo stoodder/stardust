@@ -773,7 +773,7 @@ export const C4_EFFECTS: Readonly<
  * - from `from` on (A3M5, and every later campaign map; a dev map counts as later), Purge's
  *   `purgeArmor`: every Everglow Security unit spawns with −2 armor (minimum 0) and its
  *   maintenance panel open (sim/factionArmor.ts);
- * - on `quillOffline.map` (A3M5) under Rewrite, QUILL is offline: her barks and radio slots are
+ * - on `quillOffline.map` (A3M5) under Rewrite, QUILL is offline: its barks and radio slots are
  *   silent and the threat intel is `system`'s (presentation, T713). System Reboot's lock there is
  *   the map's own `lockedAbilities` row.
  * Keep's Time Dilation needs nothing here: it is inherited (`resolveC4`), so slot 1's pool has it.

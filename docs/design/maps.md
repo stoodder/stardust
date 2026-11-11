@@ -72,7 +72,7 @@ S # # # # # # . . o o . . .
 
 ## 4. Paths and air lanes
 
-- **Ground paths** are ordered tile sequences from a spawn to the core. They are 1 tile wide (Act III and the finale may use 2-wide lanes; enemies get a small visual offset only).
+- **Ground paths** are ordered tile sequences from a spawn to the core. They are 1 tile wide (the finale may use 2-wide lanes; enemies get a small visual offset only).
 - **Rule (route format):** a path lists **every tile it walks, ends included**: the spawn `S` first, then only `#` tiles, then the core `C` last, each step one tile up, down, left, or right (no diagonals, no gaps). Every `#` and `S` tile on the map lies on some path; a decorative road is drawn as decor. An enemy spawns at the `S` tile's center and leaks when it reaches the `C` tile's center, so it visibly walks into the gate. Content compile rejects a path that breaks this, so a path can't cross a buildable tile. On an Escort map the **safe exit is the core tile** (a `safeExit` marker on the `C`, the one marker allowed on a path tile), so every route still ends there: refugees are evacuated at its center, and enemies reach it under the exit rule (§5.2).
 - **Forks:** a path can fork and merge. **Rule (determinism):** each enemy's route is fixed by the wave data (`route` ID), never chosen at random at runtime. The wave preview shows which fork each group takes.
 - **Multiple spawns:** allowed from Act I late. Each spawn's flag shows in the wave preview.

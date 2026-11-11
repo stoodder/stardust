@@ -1779,3 +1779,5 @@ M7's build waves made these rulings. Each landed with its task's tests, and `tas
 - Zibzab's Rapport shipped (Clearance Sale cooldown 4 → 3 waves), and Rapports are numbers only (progression.md §7.3).
 
 **Curve.** As tuned, par is A3M4 68.2, A3M5 63.6 and A3M6 59.3. A3M5 ends below A3M4 but above campaign.md's ~57 target; the gameplay review weighs it. Cut lever 4 (2-wide lanes) was pulled by geometry, since no M7 map has a band road. No other lever was pulled.
+
+*D149 addendum (T761):* towers.md's open question on Gravity Well stacking is answered by `a3m5Jam.test.ts`: 32 units are each pulled once, so stacked wells aren't degenerate. The question is removed.

@@ -36,7 +36,7 @@ export function pickFrame(
   phase: FramePhase,
 ): string | null {
   const variants = variant === null ? [null] : [variant, null];
-  // The resting frame first (expression before variant: QUILL's `policy` tell outranks his hat);
+  // The resting frame first (expression before variant: QUILL's `policy` tell outranks its hat);
   // the talk, scan, and flash frames are that same frame's, else the resting frame.
   for (const expr of expressionChain(expression)) {
     for (const v of variants) {

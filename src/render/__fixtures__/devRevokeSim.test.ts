@@ -263,7 +263,7 @@ describe('revokeAbility and setModifier', () => {
     ]);
   });
 
-  it("QUILL's lockout hides the preview and darkens her companion slot", () => {
+  it("QUILL's lockout hides the preview and darkens its companion slot", () => {
     const { sim } = setup([], [], {
       companion: 'quill',
       abilities: { slot1: 'dev_strike', slot2: 'time_dilation', slot2State: 'present' },

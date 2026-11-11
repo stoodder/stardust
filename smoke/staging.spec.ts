@@ -34,7 +34,7 @@ test('staging: the stinger feed leads in, then the caption and QUILL', async ({ 
   await page.waitForTimeout(1000); // the caption types out
   await shot(page, 'staging', 2, 'stinger-caption');
   // On to the held beat, a silence: no Next to press (D098), and it moves on to QUILL by itself,
-  // whose words the live region reads with her name.
+  // whose words the live region reads with its name.
   await page.keyboard.press('Enter');
   await expect(scene).not.toContainText('Probably a smudge');
   await expect(scene.locator('.dlg-next')).toHaveCount(0);

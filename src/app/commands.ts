@@ -253,7 +253,7 @@ export function pressAbility(slot: 1 | 2): void {
   }
   const def = host.sim.config.content.abilities[id];
   const state = host.sim.state;
-  // T606: a revoked slot (the Orbital Strike's uplink; QUILL's under her lockout) is dark.
+  // T606: a revoked slot (the Orbital Strike's uplink; QUILL's under its lockout) is dark.
   if (slotRevoked(state, host.sim.config, slot)) {
     showNotice(revokedText(state.revoked.abilities.includes(id) ? 'uplink' : 'lockout'));
     return;

@@ -147,7 +147,7 @@ export const map = defineMapLayout({
   ],
   // Ves'thara walks this shift with you: slot 2 is her Stillness.
   companion: { id: 'vesthara', state: 'present' },
-  // Under C4 Rewrite QUILL is offline here, and she runs System Reboot (core-loop.md § 6.11).
+  // Under C4 Rewrite QUILL is offline here, and it runs System Reboot (core-loop.md § 6.11).
   lockedAbilities: [{ ability: 'system_reboot', when: { flag: 'quill_choice', eq: 'rewrite' } }],
   events: [
     // Kip opens the vats as W5 starts: the first bearers walk. Then a group as W9 starts, the

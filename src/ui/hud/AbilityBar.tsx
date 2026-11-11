@@ -75,7 +75,7 @@ function AbilitySlot({ a, cd }: { a: AbilitySlotView; cd: AbilityCooldownView | 
   // The Time Dilation teach (A1M3's flock, D098): the slot pulses at 1 Hz until it's first cast.
   const teach = ready && hud.timeDilationTeach.value === a.slot;
   // A revoked slot (T606, T631): the uplink's is dark under its UPLINK REVOKED stamp; QUILL's,
-  // under her lockout, goes dark like an absent companion's and reads "Locked out" (she is still
+  // under its lockout, goes dark like an absent companion's and reads "Locked out" (it is still
   // there, locked out of the uplink: not a license, so no stamp).
   if (revokedHud.value.slots.includes(a.slot)) {
     const uplink = a.slot === 1;

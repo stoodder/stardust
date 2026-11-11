@@ -1,6 +1,6 @@
 // A3M5 · Unsung: map-scoped barks (story/campaign/act3.md § A3M5, *Barks*), verbatim. They fire
 // only on this map; ids end `_a3_05`. Ves'thara is the companion, so hers plays when the Hollow
-// hush a bearer; QUILL's `boss_phase` line plays only under C4 Keep (the other answers leave her
+// hush a bearer; QUILL's `boss_phase` line plays only under C4 Keep (the other answers leave it
 // flat or offline). QUILL's `skitterkin_killed_ahead` never fires here (no hostile Skitterkin).
 import { defineBarks } from '../../define.ts';
 

@@ -89,7 +89,7 @@ export interface AbilitySlotView {
 
 /**
  * A Technician ability the map locks under the save's story (T731; A3M5's System Reboot under C4
- * Rewrite: QUILL runs it, and she's offline): shown beside the bar, dark, never castable, with why.
+ * Rewrite: QUILL runs it, and it's offline): shown beside the bar, dark, never castable, with why.
  */
 export interface LockedAbilityView {
   readonly ability: string;
