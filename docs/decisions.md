@@ -1628,3 +1628,9 @@ Rulings:
 - **The story-choice lock debounces:** any input while locked restarts the 700 ms, and a pointer answer needs a pointer move over the option after it appears.
 - **The SEAL's fallback counts from the permission scene starting**, not from the button showing. "Do it, {name}." stays up until the press or the wait line. The SEAL clears both doors.
 - Small: back-to-back locked choices each lock; the Gap corner's door reads as closing; the gather equivalence test is broadened.
+
+*As fixed (D144 addenda):*
+- The Thumper exam's gap was money, not damage: energy deals ×0.75 to void bodies, so no W10 retune separated the Zapcoil swap from no-splash once Head Start's credits were gone. A3M3's start credits go from 700 to 770 (Head Start's tenth for everyone; still inside Act III's band), and W10 is unchanged. The fair window is narrow: at 760 the swap loses 4 in W10 again, and at 780 no-splash holds. `a3m3Protocols.test.ts` pins both edges across the reference, no-protocol, carried-Bulkhead and benched profiles. The carried-Bulkhead profile is the `after_a3m2_thumper` save, checked to equal the game's own `saveModifiers`.
+- Benching picks the first owned non-inert protocol in picker order, because the save keeps no equip history. On `after_a3m2_thumper` that is Head Start, and the row reads "Benched: no core on this shift".
+- The x-ray shows Bricks's own pixels under an `ink.0` checker with a `white.1` rim, drawn only over the occluding tower. A pure ink fill took the tower's shape and didn't read as him, so the spire's middle hides while the x-ray shows.
+- The SEAL's backstop is 30 s from the button showing, and its fallback band is the top 64 px. Pointer debounce needs a move over the option, a tap needs none, and a held revocation bark is still dropped once the map has ended.

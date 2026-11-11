@@ -317,6 +317,9 @@ Carried into M6, folded in:
 - [ ] **T601d** M6: Act III's Hollow die with no sound (enemies.md §8) — `hollow_unravel` needs a presentation dial. (→ T613, T650)
 - [x] **T601** M6: draw Act III's `still` death (falls back to the quiet pop until then). (→ T640a: verify no Act III map kills a Skitterkin, then close)
 
+- [ ] **T662** M8 (low): A3M3's Thumper exam rides a narrow credit window (start credits 770; 760 fails the Zapcoil swap, 780 lets no-splash hold). Re-run `a3m3Protocols.test.ts` after any change to costs, Seed Money or Head Start, and widen the window if the finale's tuning allows (D144).
+- [ ] **T663** M8 (low): fast-forward in test hooks replays queued shell bursts all at once at 1×; the `all_unlocked` dev loadout overflows the panel (no campaign save reaches it).
+
 ## M7 — Act III, part two (A3M4–A3M6)
 To be split up when we reach it. Inherits: jamming (Auditor, Silencer, Hostile Takeover, `jamLimit` #10, System Reboot, the Choir's jam rules live); Liability, Associate, Gunship, Black Budget; the bosses Shareholder Value (jettison → `openTile`) and the Gathering Maw; Gloop and Sproing (register Bounce Chorus with the Sproing; the Choir side is built); the absent companion and authored silence; Gerald's mail; `inheritAbility`; C4, Night Shift and C4's effects; the jailbreak; bearers as a walking Protect payload; `objectiveCompleted`; A3M6's Sheltered escort, militia, crate, Who's there? and Waykeeper; QUILL `purge`, Kip `act3`; the A2M4 and A1M1 revisits; the Lantern on Black Budget; Flak Curtain.
 - [ ] **T660b** M7: Act III balance follow-ups from T660: A3M3's Zapcoil alt touches the floor (18/36) under one shift; Truthlight too costly to matter on A3M3 (re-probe with A3M6's Operatives); A3M1 has no non-Skyhook air alt (the design's Den + Zapcoil alt still loses); A3M2's alts win at 100% while par sits at 63.6 (gameplay review).
