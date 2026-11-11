@@ -57,7 +57,8 @@ export const scenes = defineScenes([
       speaker: 'quill',
       text: 'I wrote them while I was dark. Do you want to see?',
     },
-    { kind: 'line', speaker: 'system', text: QUILL_LIST_HEADER },
+    // QUILL's own list: the header plated QUILL.SYS, not Everglow's system plate (D150).
+    { kind: 'line', speaker: 'system', plateAs: 'QUILL.SYS', text: QUILL_LIST_HEADER },
     {
       kind: 'line',
       speaker: 'quill',

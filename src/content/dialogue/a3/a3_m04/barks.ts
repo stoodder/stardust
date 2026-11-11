@@ -24,7 +24,7 @@ export const barks = defineBarks([
     id: 'quill_new_enemy_a3_04',
     speaker: 'quill',
     expression: 'worried',
-    text: 'That one makes things quiet. Reboot. Please reboot.',
+    text: 'That one makes things quiet. Reboot as it reaches out. Before it lands, please.',
     trigger: { on: 'new_enemy', enemy: 'silencer' },
   },
   {

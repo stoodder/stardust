@@ -7,7 +7,7 @@
 //   line (Purge), or `system`'s advisory (Rewrite: QUILL is offline here, and app/dialogue.ts skips
 //   its lines wherever it is; T713).
 // - The radio: w05 Ves'thara, w06 Kip, w09 Pebble (Grandmother if Old Thrum was spared, else
-//   Bramble).
+//   Bramble), w14 Pebble's hint for Declined (the Choir; every C4 answer).
 // - Cut the Feed (`a3_m05_cue_feed_cut`, the objective's `objectiveCompleted`): QUILL's line, or
 //   `system`'s under Rewrite.
 // - Sterling's remote boss cues: the platform's three phases (map.ts `bossPhase` events).
@@ -25,7 +25,9 @@ export const scenes = defineScenes([
       text: 'Here. The ledger. Every batch, every date. Take it before I get scared again.',
     },
     { kind: 'line', speaker: 'narrator', text: 'R2-0001' },
-    // He leaves the #1 EXTERMINATOR pin on the console. Nobody comments.
+    // He leaves the #1 EXTERMINATOR pin on the console (a caption, as the ledger's batch number
+    // is). Nobody comments.
+    { kind: 'line', speaker: 'narrator', text: '#1 EXTERMINATOR' },
     { kind: 'line', speaker: 'kip', text: '', durationSec: 2 },
     {
       kind: 'line',
@@ -91,6 +93,15 @@ export const scenes = defineScenes([
       kind: 'line',
       speaker: 'pebble',
       text: "The big ones carry the morning. That's what Bramble says.",
+    },
+  ]),
+  // The countdown before "Shareholder Value": the hint for Declined, under every C4 answer (the
+  // Hum Choir shortens a hostile jam on the towers in its aura; D150).
+  defineScene('a3_m05_w14', [
+    {
+      kind: 'line',
+      speaker: 'pebble',
+      text: 'If the big machine grabs your towers, keep them near the Choir. Nothing stays quiet long when we sing. (squeak)',
     },
   ]),
   // Cut the Feed: the three vat-feed lines cleared before W10.

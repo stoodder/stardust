@@ -6,7 +6,8 @@
 //   convoy, Pebble for the warren; with no door set, a dev battle, Goldie's).
 // - The radio: W2 Bricks's silence (3 s); w03 Pebble's lettuce joke and the silence where he'd
 //   have fact-checked her (2 s); w05 QUILL; w07 QUILL warns of Gerald's pass (the countdown before
-//   W7, so the player can hold fire); w08 Gerald's status line, once he has delivered. Bricks's
+//   W7, so the player can hold fire); w08 Gerald's status line, once he has delivered; w16 QUILL
+//   on the Silencer exam's timing (reboot as they reach out). Bricks's
 //   other silences (map_start, the first wave cleared) are barks (barks.ts).
 // - The mail scene (`a3_m04_scene_mail`, before the card: content/dialogue/resultsFlow.ts): the
 //   lines over T714's staging of Gerald's envelope. Its grant (Suppressing Fire) is meta's
@@ -77,6 +78,15 @@ export const scenes = defineScenes([
   ]),
   // Gerald's status line, after his pass (T713 frames it).
   defineScene('a3_m04_w08', [{ kind: 'line', speaker: 'gerald', text: 'DELIVERY: COMPLETE.' }]),
+  // The countdown before the Silencer exam (W16): the tell's timing, once more (D150).
+  defineScene('a3_m04_w16', [
+    {
+      kind: 'line',
+      speaker: 'quill',
+      expression: 'worried',
+      text: 'All the Silencers they have left. Both rifts, then the tunnel. When they reach out, reboot.',
+    },
+  ]),
   // Gerald's envelope (T714 stages it): the pension form's beneficiary, the fire-control key, and
   // Kip's blank slip with only a batch number. Nobody comments.
   defineScene('a3_m04_scene_mail', [

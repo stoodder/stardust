@@ -174,6 +174,22 @@ export function runA3m5(
   };
 }
 
+/**
+ * `build` with every timed ability cast `sec` seconds later (earlier when negative; never before
+ * its wave starts): a human's timing around par's scripted beats (D150).
+ */
+export function castsShifted(build: CompiledBuild, sec: number): CompiledBuild {
+  const ticks = Math.round(sec * TICK_HZ);
+  return {
+    ...build,
+    steps: build.steps.map((s) =>
+      s.kind === 'ability' && typeof s.when === 'object'
+        ? { ...s, when: { afterTicks: Math.max(0, s.when.afterTicks + ticks) } }
+        : s,
+    ),
+  };
+}
+
 /** The one tick of event `key` in `r` (throws unless exactly one). */
 export function one(r: A3m5Run, key: string): number {
   const ticks = r.at[key] ?? [];
