@@ -26,11 +26,13 @@ import { campaignScreenName } from '../../app/starMap.ts';
 import { UPLINK_STAMP } from '../hud/AbilityBar.tsx';
 import { LICENSE_STAMP } from '../hud/BuildBar.tsx';
 import { Icon } from '../hud/Icon.tsx';
+import { JAILBROKEN_PALETTE } from '../../render/views/towerLook.ts';
 import { useEscape } from './escape.ts';
 import { focusOnce } from './focus.ts';
 import {
   loadout,
   type LoadoutAbilityView,
+  type LoadoutLockedAbilityView,
   type LoadoutPickView,
   type LoadoutProtocolView,
   type LoadoutRevokedView,
@@ -68,7 +70,7 @@ function TowerCard(props: {
         aria-pressed={slot !== null}
         aria-disabled={blocked}
         aria-label={
-          `${t.name}, ${t.role}, ${t.cost} credits` +
+          `${t.name}${t.jailbroken === true ? ', jailbroken' : ''}, ${t.role}, ${t.cost} credits` +
           (answers.length > 0 ? `, answers ${answers.join(', ')}` : '') +
           (slot !== null ? `, build slot ${slot}` : '')
         }
@@ -89,13 +91,21 @@ function TowerCard(props: {
         <span class="sd-lo-slot" aria-hidden="true">
           {slot ?? ''}
         </span>
-        <Icon id={t.icon} class="sd-lo-icon" />
+        <Icon
+          id={t.icon}
+          class="sd-lo-icon"
+          variant={t.jailbroken === true ? JAILBROKEN_PALETTE : undefined}
+        />
         <span class="sd-lo-text" aria-hidden="true">
           <span class="sd-lo-row">
             <span class="sd-lo-name">{t.name}</span>
             <span class="sd-lo-cost">{t.cost}</span>
           </span>
-          <span class="sd-lo-role">{t.role}</span>
+          <span class="sd-lo-role">
+            {t.role}
+            {/* Zibzab's firmware (T731; towers.md § 9): said in words too, not only the glow. */}
+            {t.jailbroken === true && <span class="sd-lo-jb"> · Jailbroken</span>}
+          </span>
           {t.answers.length > 0 && (
             <span class="sd-lo-chips">
               {t.answers.map((a) => (
@@ -135,6 +145,31 @@ function RevokedCard({ r, stamp, what }: { r: LoadoutRevokedView; stamp: string;
   );
 }
 
+/**
+ * A Technician ability the map locks under the save's story (T731; A3M5's System Reboot under C4
+ * Rewrite): its icon dimmed under the padlock, its name, and why, like a revoked card but with no
+ * stamp (nobody revoked it; QUILL is offline). Not a control: read as one line.
+ */
+function LockedAbilityCard({ l }: { l: LoadoutLockedAbilityView }) {
+  return (
+    <div class="sd-lo-revoked sd-lo-locked" data-testid="loadout-locked" data-locked={l.id}>
+      <span class="sd-lo-revoked-art" aria-hidden="true">
+        <Icon id={l.icon} class="sd-lo-icon" />
+        <span class="sd-lo-locked-pad">
+          <Icon id="icon.lock" />
+        </span>
+      </span>
+      <span class="sd-lo-text">
+        <span class="sd-lo-name">
+          {l.name}
+          <span class="sd-visually-hidden">: locked on this shift.</span>
+        </span>
+        <span class="sd-lo-locked-why">{l.reason}</span>
+      </span>
+    </div>
+  );
+}
+
 function AbilityPicker(props: {
   abilities: readonly LoadoutAbilityView[];
   picked: string | null;
@@ -166,7 +201,16 @@ function AbilityPicker(props: {
           }}
         >
           <Icon id={a.icon} class="sd-lo-icon" />
-          <span class="sd-lo-ability-name">{a.name}</span>
+          <span class="sd-lo-ability-name">
+            {a.name}
+            {/* Inherited from a companion (T731: QUILL's Time Dilation under C4 Keep). */}
+            {a.inheritedFrom !== undefined && (
+              <span class="sd-lo-from" data-testid="loadout-inherited">
+                {' '}
+                · {a.inheritedFrom}
+              </span>
+            )}
+          </span>
           {a.answers.length > 0 && <span class="sd-lo-chip">{a.answers.join(' · ')}</span>}
         </button>
       ))}
@@ -413,7 +457,9 @@ export function Loadout() {
             <h2 id="sd-lo-ability-label" class="sd-panel-heading sd-lo-heading">
               Technician
             </h2>
-            {view.abilities.length === 0 && view.revokedAbilities.length === 0 && (
+            {view.abilities.length === 0 &&
+              view.revokedAbilities.length === 0 &&
+              (view.lockedAbilities ?? []).length === 0 && (
               <p class="sd-lo-dim">No abilities issued yet.</p>
             )}
             {view.abilities.length > 0 && (
@@ -425,6 +471,9 @@ export function Loadout() {
             )}
             {view.revokedAbilities.map((r) => (
               <RevokedCard key={r.id} r={r} stamp={UPLINK_STAMP} what="Uplink revoked" />
+            ))}
+            {(view.lockedAbilities ?? []).map((l) => (
+              <LockedAbilityCard key={l.id} l={l} />
             ))}
             {view.companion !== null && (
               <p class="sd-lo-companion">

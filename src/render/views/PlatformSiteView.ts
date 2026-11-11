@@ -49,6 +49,8 @@ interface Plate {
   openTick: number;
   fromX: number;
   fromY: number;
+  /** How far it is thrown (tiles). */
+  tiles: number;
   landed: boolean;
 }
 
@@ -110,6 +112,7 @@ export class PlatformSiteView {
         openTick: 0,
         fromX: 0,
         fromY: 0,
+        tiles: 0,
         landed: false,
       });
     }
@@ -141,7 +144,7 @@ export class PlatformSiteView {
     for (let i = 0; i < this.#plates.length; i++) {
       const p = this.#plates[i]!; // i < length
       if (p.order < 0 || p.landed) continue;
-      platePose(state.tick - p.openTick, p.order, still, pose);
+      platePose(state.tick - p.openTick, p.order, p.tiles, still, pose);
       if (pose.landed) {
         this.#land(p, !still);
         continue;
@@ -179,6 +182,7 @@ export class PlatformSiteView {
     gridToScreen(hull.x, hull.y, this.#ctx.origin, from);
     p.fromX = from.x;
     p.fromY = from.y;
+    p.tiles = Math.hypot(p.col + 0.5 - hull.x, p.row + 0.5 - hull.y);
   }
 
   /** The plate lies on its tile (with a puff of dust when it came down in sight). */

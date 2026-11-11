@@ -187,6 +187,41 @@
   color: var(--sd-red-4);
 }
 
+/* A Technician ability the map locks under the story (T731; A3M5's System Reboot under C4
+   Rewrite): the revoked card's shape on a `steel.1` bar (nobody revoked it), the icon dimmed under
+   the padlock on its top edge, and why in `orange.3` (a heads-up, never red). */
+.sd-lo-revoked.sd-lo-locked {
+  border-left-color: var(--sd-steel-1);
+}
+
+.sd-lo-locked-pad {
+  position: absolute;
+  left: 13px;
+  top: 0;
+  padding: 1px;
+  background: var(--sd-ink-1);
+  box-shadow: 0 0 0 1px var(--sd-steel-1);
+  pointer-events: none;
+}
+
+.sd-lo-locked-pad .icon {
+  display: block;
+}
+
+.sd-lo-locked-why {
+  color: var(--sd-orange-3);
+}
+
+/* A jailbroken class's card (T731; towers.md § 9): its icon in `everglow.jailbroken`, and the word
+   in Vrell orange after its role. An inherited ability's owner ("· QUILL's") in `steel.4`. */
+.sd-lo-jb {
+  color: var(--sd-orange-3);
+}
+
+.sd-lo-from {
+  color: var(--sd-steel-4);
+}
+
 /* The build slot a picked tower takes (1–4), or an empty box. */
 .sd-lo-slot {
   flex: none;

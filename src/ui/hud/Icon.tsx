@@ -43,12 +43,19 @@ export function Icon({
   id,
   frame = 'icon',
   class: cls,
+  variant,
 }: {
   id: string;
   frame?: string;
   class?: string;
+  /**
+   * A palette variant the sprite declares (T731: `everglow.jailbroken` for a jailbroken class's
+   * icon); its own palette when absent, or when the sprite has no such variant.
+   */
+  variant?: string | undefined;
 }) {
-  const b = baked(id, frame);
+  const b =
+    (variant === undefined ? null : baked(id, frame, variant)) ?? baked(id, frame);
   const name = `icon ${cls ?? ''}`.trim();
   if (b === null) return <span class={`${name} icon-missing`} aria-hidden="true" />;
   return <img class={name} src={b.url} width={b.w} height={b.h} alt="" aria-hidden="true" />;

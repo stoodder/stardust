@@ -3,9 +3,9 @@
 // sim ticks (pause holds a plate in the air, 2× runs it fast), so it is unit-tested.
 // - **The plates** (`prop.crash_plate`): as the jettison opens each `crash_<n>` tile (T707,
 //   sim/openTile.ts), its plate blows off the hull where the platform stands and lands on that
-//   tile: a high arc, the plates leaving one after another in the order their tiles opened, each its
-//   own piece of the shell (`v0` a flank plate, `v1` a shoulder plate, `v2` the hazard skirt, `v3`
-//   the bridge's screen). It lands with a puff of dust and lies there, askew in its gouge. Under
+//   tile: a high arc (higher and longer the farther it is thrown), the plates leaving one after
+//   another in the order their tiles opened, each its own piece of the shell (`v0` a flank plate,
+//   `v1` a shoulder plate, `v2` the hazard skirt, `v3` the bridge's screen). It lands with a puff of dust and lies there, askew in its gouge. Under
 //   reduced motion, or when the battle opens with the tile already open (a checkpoint retry), it
 //   lies there at once.
 // - **The hangar** (`prop.hangar`, the `hangar` marker): shut, its REC lamp blinking, until the
@@ -21,12 +21,31 @@ export const HANGAR_SPRITE = 'prop.hangar' as const;
 export const HANGAR_MARKER = 'hangar';
 export const HANGAR_OPEN = 'open';
 
-/** A plate's flight (sim ticks, 60 a second), and each next plate leaving this much later. */
-export const FLIGHT_TICKS = 36;
+/**
+ * A plate's flight (sim ticks, 60 a second): longer the farther it is thrown (the platform can
+ * jettison anywhere on its road; the crash site is fixed), from FLIGHT_MIN_TICKS up to
+ * FLIGHT_MAX_TICKS; each next plate leaves STAGGER_TICKS later.
+ */
+export const FLIGHT_MIN_TICKS = 30;
+export const FLIGHT_MAX_TICKS = 96;
+const FLIGHT_PER_TILE = 5;
 export const STAGGER_TICKS = 7;
 /** Where it leaves the hull (px up from the platform's ground point), and the arc's top (px). */
 export const HULL_PX = 18;
-export const ARC_PX = 44;
+export const ARC_MIN_PX = 30;
+export const ARC_MAX_PX = 84;
+const ARC_PER_TILE = 4;
+
+/** How long a plate thrown `tiles` tiles flies (ticks). */
+export function flightTicks(tiles: number): number {
+  const t = Math.round(FLIGHT_MIN_TICKS + FLIGHT_PER_TILE * Math.max(0, tiles - 1));
+  return Math.min(FLIGHT_MAX_TICKS, t);
+}
+
+/** How high a plate thrown `tiles` tiles arcs over the ground (px). */
+export function arcPx(tiles: number): number {
+  return Math.min(ARC_MAX_PX, Math.round(ARC_MIN_PX + ARC_PER_TILE * Math.max(0, tiles - 1)));
+}
 
 /** A plate's frame by the order its tile opened. */
 export function plateFrame(order: number): string {
@@ -46,16 +65,22 @@ export interface PlatePose {
 }
 
 /**
- * The pose of the plate that left `order`-th, `ticks` after its tile opened (into `out`). `still`
- * (reduced motion) lands it at once.
+ * The pose of the plate that left `order`-th, thrown `tiles` tiles, `ticks` after its tile opened
+ * (into `out`). `still` (reduced motion) lands it at once.
  */
-export function platePose(ticks: number, order: number, still: boolean, out: PlatePose): PlatePose {
-  const t = still ? 1 : (ticks - order * STAGGER_TICKS) / FLIGHT_TICKS;
+export function platePose(
+  ticks: number,
+  order: number,
+  tiles: number,
+  still: boolean,
+  out: PlatePose,
+): PlatePose {
+  const t = still ? 1 : (ticks - order * STAGGER_TICKS) / flightTicks(tiles);
   out.waiting = t < 0;
   const k = t < 0 ? 0 : t > 1 ? 1 : t;
   out.share = k;
   // Off the hull and up over the arc, then down onto the tile.
-  out.liftPx = Math.round(HULL_PX * (1 - k) + ARC_PX * 4 * k * (1 - k));
+  out.liftPx = Math.round(HULL_PX * (1 - k) + arcPx(tiles) * 4 * k * (1 - k));
   out.landed = t >= 1;
   return out;
 }

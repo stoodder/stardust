@@ -3,8 +3,11 @@
 // there at once; the hangar opens once the platform is out.
 import { describe, expect, it } from 'vitest';
 import {
-  ARC_PX,
-  FLIGHT_TICKS,
+  ARC_MAX_PX,
+  arcPx,
+  FLIGHT_MAX_TICKS,
+  FLIGHT_MIN_TICKS,
+  flightTicks,
   HULL_PX,
   PLATE_LOOKS,
   plateFrame,
@@ -24,24 +27,34 @@ describe('the plates (T730b)', () => {
 
   it('leave the hull one after another, arc over, and land on their tile', () => {
     const p = pose();
+    const tiles = 4;
+    const flight = flightTicks(tiles);
     // The second plate waits on the hull while the first leaves.
-    expect(platePose(STAGGER_TICKS - 1, 1, false, p).waiting).toBe(true);
+    expect(platePose(STAGGER_TICKS - 1, 1, tiles, false, p).waiting).toBe(true);
     // Off the hull at its height.
-    platePose(0, 0, false, p);
+    platePose(0, 0, tiles, false, p);
     expect(p).toEqual({ waiting: false, share: 0, liftPx: HULL_PX, landed: false });
     // Over the top of the arc halfway, higher than the hull.
-    platePose(FLIGHT_TICKS / 2, 0, false, p);
+    platePose(flight / 2, 0, tiles, false, p);
     expect(p.share).toBeCloseTo(0.5);
     expect(p.liftPx).toBeGreaterThan(HULL_PX);
-    expect(p.liftPx).toBeLessThanOrEqual(HULL_PX + ARC_PX);
+    expect(p.liftPx).toBeLessThanOrEqual(HULL_PX + arcPx(tiles));
     // Down on its tile.
-    platePose(FLIGHT_TICKS, 0, false, p);
+    platePose(flight, 0, tiles, false, p);
     expect(p).toEqual({ waiting: false, share: 1, liftPx: 0, landed: true });
-    expect(platePose(FLIGHT_TICKS + 3 * STAGGER_TICKS, 3, false, p).landed).toBe(true);
+    expect(platePose(flight + 3 * STAGGER_TICKS, 3, tiles, false, p).landed).toBe(true);
+  });
+
+  it('fly longer and higher the farther they are thrown, within bounds', () => {
+    expect(flightTicks(0)).toBe(FLIGHT_MIN_TICKS);
+    expect(flightTicks(10)).toBeGreaterThan(flightTicks(3));
+    expect(flightTicks(60)).toBe(FLIGHT_MAX_TICKS);
+    expect(arcPx(10)).toBeGreaterThan(arcPx(1));
+    expect(arcPx(60)).toBe(ARC_MAX_PX);
   });
 
   it('lie there at once under reduced motion', () => {
-    expect(platePose(0, 3, true, pose())).toEqual({
+    expect(platePose(0, 3, 12, true, pose())).toEqual({
       waiting: false,
       share: 1,
       liftPx: 0,
