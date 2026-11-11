@@ -5,9 +5,8 @@
 // or at most one Skitterkin enemy or refugee: that gather is its one hush, so it never turns
 // Heavy), adding that unit's current HP to its own HP and max HP and growing 10%; max 5 absorbs.
 // Never an Everglow or Aelari unit, never a boss, never a Skitterkin tower's swarmlings.
-//
-// A stub registered ahead of its task (T600a): T602 confirms the numbers and the spawn interval
-// (not in the docs: 2.0 s is a stub) and runs the gather (`enemy.gather`). Sprites: placeholders
+// The gather runs in sim/enemyAbilities/gather.ts (T602; enemies.md § How gathering runs). The
+// docs give no spawn interval: 2.0 s apart in a group (a slow heavy; T602). Sprites: placeholders
 // under their final ids (T640a).
 import { defineEnemy } from '../define.ts';
 

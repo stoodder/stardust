@@ -74,6 +74,7 @@ export function fakeResult(
     maxLost: null,
     credits: 0,
     lostAtWave,
+    forcedInputs: [],
     stats: {
       skitterkinKilled: 0,
       killsByEnemy: {},

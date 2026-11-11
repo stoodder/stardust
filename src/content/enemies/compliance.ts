@@ -2,8 +2,11 @@
 // Exit's repossession: a leak is a repossession). The roster row is the spec: 120 HP, armor 4,
 // 1.0 tiles/s, leak 1, bounty 6, ground, mechanical, Armored. Psionic does ×0.35 against it.
 //
-// A stub registered ahead of its task (T600a): T603 confirms the numbers and the spawn interval
-// (not in the docs: 1.0 s is a stub). Sprites: placeholders under their final ids (T640a).
+// T603: the row as built. Spawn interval 1.0 s (no doc number: a drone column one tile apart,
+// the Blinkstrider's and the Digger's spacing, so a Harpoon's Skewer still finds two in a line).
+// Its PA is Prim's voice (story/campaign/act3.md § A3M2: a `wave_start` bark naming `everglow`;
+// app/dialogue.ts). It dies in a clean shutdown with a falling price tag (render/views/
+// deathLook.ts `shutdown`). Sprites: placeholders under their final ids (T640a).
 import { defineEnemy } from '../define.ts';
 
 export const compliance = defineEnemy({

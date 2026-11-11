@@ -1071,15 +1071,31 @@ function playCueBark(b: Bark): void {
 const isEnemy = (id: string): id is EnemyId => Object.hasOwn(ENEMIES, id);
 const isTower = (id: string): id is TowerId => Object.hasOwn(TOWERS, id);
 
-/** Who is on the radio on `map`: QUILL and a present companion (style-guide § 5.5). */
-export function presentSpeakers(map: Pick<MapDef<IdSpace>, 'companion'>): SpeakerId[] {
+/**
+ * Who is on the radio on `map`: QUILL and a present companion (style-guide § 5.5), and Prim when
+ * `pa` (the map sends Everglow Security units, which speak in her voice; T603).
+ */
+export function presentSpeakers(map: Pick<MapDef<IdSpace>, 'companion'>, pa = false): SpeakerId[] {
   const out: SpeakerId[] = ['quill'];
   const c = map.companion;
   if (c !== null && 'id' in c && c.state === 'present') {
     const id = c.id === 'bramble' ? 'chitterbloom' : c.id;
     if (!out.includes(id)) out.push(id);
   }
+  if (pa) out.push('prim');
   return out;
+}
+
+/**
+ * Per wave (index = wave − 1): whether it sends Everglow Security units, so its `wave_start` and
+ * `wave_cleared` say `everglow` and Prim's PA bark can wait for one (T603; act3.md § A3M2).
+ */
+export function everglowWaves(
+  waves: readonly {
+    readonly groups: readonly { readonly enemy: { readonly faction: string } }[];
+  }[],
+): boolean[] {
+  return waves.map((w) => w.groups.some((g) => g.enemy.faction === 'everglow'));
 }
 
 /** The briefing scene of `map` (`<map>_brief`), or null when it has none. */
@@ -1109,9 +1125,11 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
     const slot = sceneSlot(scene.id);
     if (slot?.kind === 'radio') radio.set(slot.wave, scene);
   }
+  // Per wave: Everglow Security walks it (its PA is Prim's voice; T603).
+  const everglow = everglowWaves(sim.map.waves);
   const s: Session = {
     map,
-    present: presentSpeakers(mapDef),
+    present: presentSpeakers(mapDef, everglow.includes(true)),
     simSec: () => sim.state.tick / TICK_HZ,
     runKills: () => attemptKills(host),
     evacuated: () => sim.state.stats.evacuated,
@@ -1127,8 +1145,14 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
   const quiet = sim.map.waves.map((w) => w.groups.some((g) => g.tags.includes('quiet_wave')));
   const hostile = hostileWaves(sim.map.waves);
   const boss = sim.map.waves.map(isBossWave);
-  /** A boss wave's `wave_start` and `wave_cleared` say so (`boss: true`; D098). */
-  const bossOf = (w: number): { boss?: true } => (boss[w - 1] === true ? { boss: true } : {});
+  /**
+   * A wave's `wave_start` and `wave_cleared` say whether it has a boss (`boss: true`; D098) and
+   * whether it sends Everglow Security (`everglow: true`, Prim's PA; T603).
+   */
+  const waveParams = (w: number): { boss?: true; everglow?: true } => ({
+    ...(boss[w - 1] === true ? { boss: true } : {}),
+    ...(everglow[w - 1] === true ? { everglow: true } : {}),
+  });
   session = s;
   storyRun = null;
   dialogue.comms.value = null;
@@ -1254,11 +1278,11 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
       dropRadioFor(e.wave);
       // The Quiet Wave's silence starts with it (before its first spawn) and lasts the map.
       if (quiet[e.wave - 1] === true) s.silent = true;
-      offerBarks([{ on: 'wave_start', wave: e.wave, ...bossOf(e.wave) }]);
+      offerBarks([{ on: 'wave_start', wave: e.wave, ...waveParams(e.wave) }]);
     }),
     bus.on('WaveCleared', (e) => {
       stepTags(e);
-      const triggers: BarkTrigger[] = [{ on: 'wave_cleared', wave: e.wave, ...bossOf(e.wave) }];
+      const triggers: BarkTrigger[] = [{ on: 'wave_cleared', wave: e.wave, ...waveParams(e.wave) }];
       const clean = !leakedWaves.has(e.wave);
       // Praise only for a wave with something hostile in it (D138): never for runners alone.
       if (clean && hostile[e.wave - 1] !== false) triggers.push({ on: 'perfect_wave' });

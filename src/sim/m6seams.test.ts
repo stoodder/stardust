@@ -1,7 +1,7 @@
 // The M6 seams (T600a): the new state, stats, and entity fields start blank; refugee groups gated
 // on a story flag (A3M3's `door_choice`) walk only under it and leave the run's total, and losses
-// are booked to the group (`groupLost`: The Matriarch's Young); the `scriptInput` command is
-// declared and rejected until T605; FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES name the task
+// are booked to the group (`groupLost`: The Matriarch's Young); the `scriptInput` command runs
+// since T605 (sim/holdout.test.ts); FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES name the task
 // that lifts each M6 row (D141), and M7/M8's rows their milestone (HARNESS_GATES:
 // balance/refusals.m5.test.ts); the three Act III towers are
 // refused whole until their tasks (STUB_TOWER_TASKS); the new content compiles. The dev maps:
@@ -136,7 +136,7 @@ describe('refugee groups gated on a story flag (door_choice) and losses by group
 });
 
 describe('the scriptInput command (T605)', () => {
-  it('is declared and rejected until T605 runs the forced input', () => {
+  it('runs since T605: with no forced input pending it is rejected `forcedInput`', () => {
     const sim = createSim(fixtureConfig());
     sim.enqueue({ type: 'scriptInput', id: 'seal' });
     sim.step();
@@ -145,7 +145,7 @@ describe('the scriptInput command (T605)', () => {
     expect(out).toContainEqual({
       type: 'CommandRejected',
       cmd: { type: 'scriptInput', id: 'seal' },
-      reason: 'notImplemented',
+      reason: 'forcedInput',
     });
   });
 });
@@ -153,21 +153,19 @@ describe('the scriptInput command (T605)', () => {
 describe('FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES (T600a rows; D141)', () => {
   it('name the task that lifts each M6 mechanic, and M7/M8 for the later ones', () => {
     expect(FEATURE_GATES).toMatchObject({
-      'enemy.gather': 'T602',
-      'map.rift': 'T602',
-      'enemy.hasteAura': 'T603',
+      'enemy.gather': null, // T602
+      'map.rift': null, // T602
+      'enemy.hasteAura': null, // T603
       'attack.spawner': 'T604',
       'ability.pathTrap': 'T604',
-      'map.holdout': 'T605',
-      'ally.blocker': 'T605',
+      'map.holdout': null, // T605
+      'ally.blocker': null, // T605
       'status.lulled': 'T607',
       'tower.field': 'T608',
       'enemy.boss.layToRest': 'M8',
     });
+    // T605's forcedInputResolved, forceInput, and endMap run (sim/holdout.test.ts).
     expect(SCRIPT_GATES).toEqual({
-      forcedInputResolved: 'T605',
-      forceInput: 'T605',
-      endMap: 'T605',
       revokeTowerClass: 'T606',
       revokeAbility: 'T606',
       setModifier: 'T606',

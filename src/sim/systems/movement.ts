@@ -18,7 +18,8 @@
 // On a Protect map (T305a), a unit whose route leads to the asset (`map.asset.routes`) leaks
 // there instead: the same cost, floor, and boss rule against `state.asset`
 // (sim/objectives.ts `leakToAsset`), and the core loses nothing. While the map is an Escort
-// (T305c), every route ends at the safe exit: sim/escort.ts's exit rule takes the leak instead.
+// (T305c), every route ends at the safe exit, and on a Holdout at a door (T605): sim/escort.ts's
+// exit rule takes the leak instead.
 import {
   BOSS_LEAK_DRAINS_ALL,
   HUSH_SPEED_MUL,
@@ -30,6 +31,7 @@ import type { IdSpace, WaveTag } from '../../content/types.ts';
 import type { Enemy } from '../entities.ts';
 import { isMedalExempt } from '../conditions.ts';
 import { leakAtExit } from '../escort.ts';
+import { gatherLeak } from '../enemyAbilities/gather.ts';
 import { countTags } from '../fireControl.ts';
 import { leakToAsset } from '../objectives.ts';
 import { poolKill } from '../pool.ts';
@@ -41,13 +43,14 @@ import { unnervedSpeedMul } from './status.ts';
  * An enemy's speed this tick, in tiles per tick, ground or air: its base speed (×HUSH_SPEED_MUL
  * once Heavy, enemies.md § 5.4), ×YOUNGLING_SPEED_MUL for a youngling, × its Chilled multiplier,
  * × its pace (`paceMul`: a huddle, a boss's or Skittish haste, a hush tell's stop), × 0.8 while
- * Unnerved (not a boss; T507), × (1 + its aura haste) inside an Expediter's ring (T603); 0 in Stasis
- * or Pinned (so a huddle's leader in either holds its group still too). Lead targeting and flak intercepts
+ * Unnerved (not a boss; T507), × (1 + its aura haste) inside an Expediter's ring (T603); 0 in Stasis,
+ * Pinned, or held by a blocker (T605) (so a huddle's leader in either holds its group still too). Lead targeting and flak intercepts
  * predict with the same number.
  */
 export function enemySpeedPerTick(e: Enemy): number {
   if (e.stasisTicks > 0) return 0; // frozen in Stasis (systems/status.ts; enemies.md § 2.4)
   if (e.pinnedTicks > 0) return 0; // held by a Pin (T408)
+  if (e.blockerUid !== 0) return 0; // held by a blocker (Bricks at the Gap; sim/blocker.ts, T605)
   const own = e.def === null ? 0 : e.def.speedTilesPerTick;
   const base = e.heavy ? own * HUSH_SPEED_MUL : own;
   return (
@@ -127,7 +130,8 @@ function arrive(
   countTags(state.stats.tagLeaked, e.tags);
   countLeak(state, e, def);
   const drains = def.boss !== null && BOSS_LEAK_DRAINS_ALL;
-  const cost = drains ? null : leaksFree(e.tags) ? 0 : def.leak;
+  // A Maw's absorbs add to its leak (+1 each; T602).
+  const cost = drains ? null : leaksFree(e.tags) ? 0 : def.leak + gatherLeak(e);
   // On an Escort (T305c) it reaches the safe exit instead: sim/escort.ts's exit rule.
   if (leakAtExit(state, e, cost)) {
     poolKill(state.enemies, e);

@@ -1,7 +1,7 @@
 // The harness end to end on the fixture map: planning, running each run once, judging, and
 // the run-level checks.
 import { describe, expect, it } from 'vitest';
-import type { CompiledAttack, CompiledContent, CompiledTier } from '../content/compiled.ts';
+import type { CompiledContent, CompiledTier } from '../content/compiled.ts';
 import { compileContent } from '../content/compile.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
 import { FIXTURE_CONTENT, type FixtureIds } from '../sim/__fixtures__/sim.ts';
@@ -190,29 +190,29 @@ describe('balance harness', () => {
   });
 
   it('reports a run whose config is refused as a failed run, not a crash', () => {
-    // A beam attack on the par loadout's gun, which the sim refuses until T504.
+    // A Stasis Bloom field on the par loadout's gun, which the sim refuses until T608 (spawners
+    // run since T604, beams since T504).
     const gun = PLAIN_CONTENT.towers.fx_gun;
     const [t1, ...rest] = gun.tiers;
     if (t1 === undefined || t1.attack === null) throw new Error('fx_gun has no tier-1 attack');
-    const attack: CompiledAttack = {
-      ...t1.attack,
-      // Spawners wait for T604 (beams run since T504).
-      kind: 'spawner',
-      ally: 'swarmling',
-      maxAlive: 1,
-      latchTicks: 240,
-      restTicks: 180,
-      chillPct: 0.1,
+    const field: CompiledTier['field'] = {
+      radiusTiles: 2,
+      radiusSq: 4,
+      chillPct: 0.3,
+      pulseEveryTicks: 600,
+      stasisTicks: 90,
+      pullBackTiles: 0,
+      pullBackCooldownTicks: 0,
     };
-    const spawner: CompiledTier = { ...t1, attack };
+    const fielded: CompiledTier = { ...t1, field };
     const refused: CompiledContent<FixtureIds> = {
       ...PLAIN_CONTENT,
-      towers: { ...PLAIN_CONTENT.towers, fx_gun: { ...gun, tiers: [spawner, ...rest] } },
+      towers: { ...PLAIN_CONTENT.towers, fx_gun: { ...gun, tiers: [fielded, ...rest] } },
     };
     const r = runMap(refused, 'fx_map', { seeds: 1, build: 'par' });
     expect(r.ok).toBe(false);
     expect(r.checks.find((c) => c.id === '1')?.failures[0]).toMatch(
-      /seed 1: error: [^]*a 'spawner' attack \(fx_gun\) is not simulated until T604/,
+      /seed 1: error: [^]*a field \(fx_gun\) is not simulated until T608/,
     );
   });
 

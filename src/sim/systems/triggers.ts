@@ -4,13 +4,16 @@
 // of that id if named, at or below that share of its HP; `bossPhase`: a live boss in that phase
 // or a later one), and `wreckageCleared` (the drone cleared the wreckage under that marker; T400a:
 // A2M1's crew logs), and `interacted` (T409: a clickable world object was interacted with, by
-// click or by fallback; sim/clickables.ts), and `refugeesRemaining` (T305c: at most that many
-// refugees not yet safe or lost; sim/escort.ts), guarded by an optional `when` condition
+// click or by fallback; sim/clickables.ts), `refugeesRemaining` (T305c: at most that many
+// refugees not yet safe or lost; sim/escort.ts), and `forcedInputResolved` (T605: that forced
+// input was pressed; sim/forcedInput.ts), guarded by an optional `when` condition
 // (sim/conditions.ts), with the actions `unlockTowerClass` (what `towerUnlockWave` compiles to),
 // `cue`, `grantCredits`, `bossEnd` (`driveOff`, `retreat`, or `pivot`: every live boss starts that
 // ending now, whatever its HP; enemyAbilities/bossPhases.ts, pivot.ts), `standDown` (T506: every
 // live hostile unit of a faction stands down; enemyAbilities/pivot.ts), `setClickable` (T409), and
-// the Escort's `setObjective` and `spawnAllies` (T305c; sim/escort.ts). A pivot's event runs the
+// the Escort's `setObjective` and `spawnAllies` (T305c; sim/escort.ts), and the Holdout's
+// `forceInput` (T605: the SEAL; sim/forcedInput.ts) and `endMap` (T605: the map ends as won, on
+// the tick it runs; sim/objectives.ts `endMap`, from an event only). A pivot's event runs the
 // objective switch and the refugees beside it, in its action order. Before the events,
 // each clickable marker's fallback trigger is checked: reached, the sim interacts with it itself
 // (`byFallback`), so its `interacted` events fire on this same pass. createSim refuses a map that
@@ -34,6 +37,8 @@ import { interact, setClickable } from '../clickables.ts';
 import { evaluateCondition, wreckageClearedAt } from '../conditions.ts';
 import { earn } from '../economy.ts';
 import { refugeesRemaining, setObjective, spawnRefugees } from '../escort.ts';
+import { forcedInputResolved, requestForcedInput } from '../forcedInput.ts';
+import { endMap } from '../objectives.ts';
 import { startBossEnding } from '../enemyAbilities/bossPhases.ts';
 import { standDown } from '../enemyAbilities/pivot.ts';
 import { emit, type SimState } from '../state.ts';
@@ -49,7 +54,13 @@ export function triggers(state: SimState, ctx: TickContext): void {
     if (!reached(state, ctx, ev.on)) continue;
     fired[i] = true;
     if (ev.when !== null && !evaluateCondition(ev.when, state, ctx)) continue;
-    for (let a = 0; a < ev.actions.length; a++) runScriptAction(state, ev.actions[a]!, ctx.map); // a < length
+    for (let a = 0; a < ev.actions.length; a++) {
+      const action = ev.actions[a]!; // a < length
+      // The Holdout's end (T605) settles the medals, so it needs the whole context.
+      if ('endMap' in action) endMap(state, ctx);
+      else runScriptAction(state, action, ctx.map);
+    }
+    if (state.outcome !== 'playing') return; // endMap: nothing after it runs
   }
 }
 
@@ -87,6 +98,7 @@ function reached(state: SimState, ctx: TickContext, on: CompiledScriptTrigger<Id
   if ('refugeesRemaining' in on) {
     return ctx.map.escort !== null && refugeesRemaining(state, ctx.map) <= on.refugeesRemaining;
   }
+  if ('forcedInputResolved' in on) return forcedInputResolved(state, on.forcedInputResolved);
   return false; // refused by createSim (unsupportedScript)
 }
 
@@ -134,8 +146,11 @@ export function runScriptAction(
     setObjective(state, action.setObjective, action.meterLabel);
   } else if ('spawnAllies' in action) {
     spawnRefugees(state, map, action.spawnAllies);
+  } else if ('forceInput' in action) {
+    requestForcedInput(state, action.forceInput.id);
   }
-  // Anything else is refused by createSim (unsupportedScript).
+  // `endMap` runs in triggers() (it needs the tick's context); anything else is refused by
+  // createSim (unsupportedScript).
 }
 
 /**
@@ -144,15 +159,10 @@ export function runScriptAction(
  * own rows when it lands, and a part not listed here waits for a later milestone.
  */
 export const SCRIPT_GATES: Readonly<Record<string, string>> = Object.freeze({
-  // Triggers (D141). The SEAL's press (T605); `objectiveCompleted` waits for A3M5 (M7); the
-  // finale's rest (M8).
-  forcedInputResolved: 'T605',
+  // Triggers (D141). `objectiveCompleted` waits for A3M5 (M7); the finale's rest (M8).
   objectiveCompleted: 'M7',
   restProgressPct: 'M8',
-  // Actions (D141). M6: the SEAL and the Holdout's end (T605); Clean Exit's revocations and
-  // QUILL's lockout (T606).
-  forceInput: 'T605',
-  endMap: 'T605',
+  // Actions (D141). M6: Clean Exit's revocations and QUILL's lockout (T606).
   revokeTowerClass: 'T606',
   revokeAbility: 'T606',
   setModifier: 'T606',
@@ -190,7 +200,11 @@ export function unsupportedScript(map: CompiledMapDef<IdSpace>): string[] {
     for (const a of ev.actions) unsupportedAction(a, `event '${ev.id}'`, out);
   }
   for (const o of map.objectives) {
-    for (const a of o.onComplete) unsupportedAction(a, `objective '${o.id}'`, out);
+    for (const a of o.onComplete) {
+      // The Holdout's end runs from a map event, never from an objective (T605).
+      if ('endMap' in a) out.push(`objective '${o.id}': action endMap runs from map events only`);
+      else unsupportedAction(a, `objective '${o.id}'`, out);
+    }
   }
   return out;
 }
@@ -207,7 +221,8 @@ function unsupportedTrigger(
     !('bossPhase' in on) &&
     !('wreckageCleared' in on) &&
     !('interacted' in on) &&
-    !('refugeesRemaining' in on)
+    !('refugeesRemaining' in on) &&
+    !('forcedInputResolved' in on)
   ) {
     const key = Object.keys(on).join('/');
     out.push(`${where} ${key} ${notYet(key)}`);
@@ -226,7 +241,9 @@ function unsupportedAction(a: CompiledScriptAction<IdSpace>, where: string, out:
     !('bossEnd' in a) &&
     !('standDown' in a) &&
     !('setObjective' in a) &&
-    !('spawnAllies' in a)
+    !('spawnAllies' in a) &&
+    !('forceInput' in a) &&
+    !('endMap' in a)
   ) {
     // An action is named by its first key (`revokeTowerClass`, not its `refundPct` beside it).
     const key = Object.keys(a)[0] ?? '?';

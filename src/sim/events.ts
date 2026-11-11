@@ -612,7 +612,7 @@ export type SimEvent<K extends IdSpace = LiveIds> =
   | {
       /**
        * A rift lane opens a wave from now (T602; maps.md § 4: telegraphed a wave ahead): emitted as
-       * wave `wave − 1`'s countdown begins (as wave 1's build phase for a lane open from W1).
+       * wave `wave − 1` starts (on the run's first tick, the setup phase, for a lane open from W1).
        */
       readonly type: 'RiftOpening';
       readonly route: RouteId;

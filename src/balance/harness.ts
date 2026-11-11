@@ -20,6 +20,7 @@ import {
   type RunRequest,
 } from './checks.ts';
 import { noCounterAnswerChecks } from './counterChecks.ts';
+import { holdoutBand, judgeHoldout } from './holdout.ts';
 import { mapChecks } from './mapChecks.ts';
 import { medalChecks } from './medals.ts';
 import { policyBuild, withHoldFireWhile, withoutAbilityCasts } from './policies.ts';
@@ -208,10 +209,10 @@ export function runMap<K extends IdSpace = LiveIds>(
     const start = cpuNow();
     try {
       const cfg = runConfig(content, map, build, profile, req.seed, flagsFor(req.build, map) ?? {});
-      const result = runHeadless(
-        cfg,
-        build,
-        opts.maxTicks === undefined ? {} : { maxTicks: opts.maxTicks },
+      // A Holdout's run is judged against its Evacuated floor (balance/holdout.ts; T605).
+      const result = judgeHoldout(
+        map,
+        runHeadless(cfg, build, opts.maxTicks === undefined ? {} : { maxTicks: opts.maxTicks }),
       );
       const marginPct = marginOf(result);
       return { ...base, error: null, result, marginPct, ms: cpuNow() - start };
@@ -242,7 +243,7 @@ export function runMap<K extends IdSpace = LiveIds>(
     mapId,
     act: map.act,
     objective: map.objective,
-    band: parBand(map.act, map.builds.marginBand),
+    band: map.objective === 'holdout' ? holdoutBand(map) : parBand(map.act, map.builds.marginBand),
     ok: checks.every((c) => c.ok),
     checks,
     runs: all,

@@ -149,6 +149,14 @@ export interface Tower extends PoolEntity {
   jamMul: number;
   /** A Scuttle Den's swarmlings or Champions alive now (≤ its `maxAlive`; T604). */
   swarmAlive: number;
+  /**
+   * A Scuttle Den's link extras (T604; systems/links.ts): whole swarmlings added (Finders
+   * Keepers), its swarmlings' dash speed up, a fraction, and their latch longer, in ticks (Splash
+   * Zone). 0 for none.
+   */
+  linkSwarmlings: number;
+  linkSwarmSpeedPct: number;
+  linkLatchTicks: number;
 }
 
 export const TOWER_BLANK: Readonly<Tower> = Object.freeze({
@@ -202,6 +210,9 @@ export const TOWER_BLANK: Readonly<Tower> = Object.freeze({
   darkRangePct: 0,
   jamMul: 1,
   swarmAlive: 0,
+  linkSwarmlings: 0,
+  linkSwarmSpeedPct: 0,
+  linkLatchTicks: 0,
 });
 
 export interface Enemy extends PoolEntity {

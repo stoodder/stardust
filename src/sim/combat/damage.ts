@@ -22,6 +22,8 @@ import { secToTicks } from '../../shared/time.ts';
 import { assertNever } from '../../shared/types.ts';
 import { burstSack } from '../carrier.ts';
 import { bossDamage } from '../enemyAbilities/bossPhases.ts';
+import { cloakedOut } from '../enemyAbilities/cloak.ts';
+import { gatherBounty } from '../enemyAbilities/gather.ts';
 import { immune, untargetable } from '../enemyAbilities/layers.ts';
 import { payBounty } from '../economy.ts';
 import type { Enemy } from '../entities.ts';
@@ -47,6 +49,11 @@ export interface HitMods {
   readonly isDoT?: boolean;
   /** Beam ticks: armor applies at `armor × beamTickSec`. Absent or 0: not a beam. */
   readonly beamTickSec?: number;
+  /**
+   * A burrow answer's hit (T604: a swarmling's DoT, Underfoot's trap): it reaches a burrowed unit
+   * too. Phased, leaving, cloaked-out, and between-phases units stay out of reach.
+   */
+  readonly reachesBurrowed?: boolean;
 }
 
 /** A plain hit: full armor, not DoT, not a beam (Orbital Strike, T113). */
@@ -77,8 +84,10 @@ export function applyDamage(
   hit: HitMods = PLAIN_HIT,
 ): number {
   const def = enemy.def;
-  // Burrowed, leaving, or a boss between phases: nothing lands (enemyAbilities/layers.ts).
-  if (!enemy.alive || def === null || amount <= 0 || immune(enemy)) return 0;
+  // Burrowed, leaving, or a boss between phases: nothing lands (enemyAbilities/layers.ts), but a
+  // burrow answer's hit reaches a burrowed unit (T604).
+  if (!enemy.alive || def === null || amount <= 0) return 0;
+  if (immune(enemy) && !(hit.reachesBurrowed === true && reachableBelow(enemy))) return 0;
 
   let raw = amount * BODY_MULT[type][def.body];
   if (enemy.markTicks > 0) raw *= 1 + enemy.markPct;
@@ -125,6 +134,20 @@ export function applyDamage(
   return damage;
 }
 
+/**
+ * Whether a burrowed `enemy` is in a burrow answer's reach (T604): burrowed, and not Phased,
+ * leaving, cloaked out, or between a boss's phases.
+ */
+function reachableBelow(enemy: Enemy): boolean {
+  return (
+    enemy.burrowed &&
+    !enemy.phased &&
+    !enemy.leaving &&
+    !cloakedOut(enemy) &&
+    enemy.invulnerableTicks <= 0
+  );
+}
+
 /** The ripple (ShieldHit) of a hit that landed on `enemy`'s shield; `broken` if it took it to 0. */
 function shieldHit(state: SimState, enemy: Enemy, broken: boolean): void {
   emit(state, { type: 'ShieldHit', uid: enemy.uid, x: enemy.x, y: enemy.y, broken });
@@ -156,7 +179,8 @@ function killEnemy(state: SimState, enemy: Enemy, source: DamageSource): void {
   countTags(stats.tagKilled, enemy.tags);
   // Youngling units pay 0 and fleeing ones 1 (core-loop.md § 2.3), then the bounty modifiers;
   // leaks pay nothing (movement).
-  const bounty = payBounty(state, def.bounty, enemy.tags);
+  // A Maw's Hollow absorbs add to its bounty (+3 each; T602).
+  const bounty = payBounty(state, def.bounty + gatherBounty(enemy), enemy.tags);
   emit(state, {
     type: 'EnemyDied',
     uid: enemy.uid,

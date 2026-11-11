@@ -375,7 +375,10 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
       views.enemies.release(e.uid);
       if (style === 'shatter') fx.shatter(e.x, e.y, lift);
       else if (style === 'unravel') fx.unravel(e.x, e.y, lift);
-      else if (!popped) fx.burst(e.x, e.y, 0, style !== 'comic' && style !== 'burst');
+      // Everglow's `shutdown` is EverglowView's (it binds EnemyDied itself; T603).
+      else if (!popped && style !== 'shutdown') {
+        fx.burst(e.x, e.y, 0, style !== 'comic' && style !== 'burst');
+      }
       if (style === 'quiet') fx.fleck(e.x, e.y);
       // A splitter's pop (its children spawn here this tick and pop in).
       const split = Object.hasOwn(content.enemies, e.enemy)

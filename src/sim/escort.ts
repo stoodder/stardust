@@ -10,11 +10,12 @@
 // - **The exit rule:** a refugee that reaches its route's end (the safe exit) is evacuated
 //   (`stats.evacuated` + 1, RefugeeEvacuated) and leaves the map. One a Hollow unit hushes on the
 //   road is lost (enemyAbilities/hush.ts; `stats.refugeesLost` + 1, RefugeeLost `hushed`).
-// - **An enemy at the exit** (while the map is an Escort): it follows them in and hushes one
-//   refugee already sheltered there (`evacuated` − 1, `refugeesLost` + 1, RefugeeLost `exit`), a
-//   Heavy unit too; a leak-free unit (fleeing, youngling) takes no one, and with nobody sheltered
-//   yet it takes no one. It costs no integrity (EnemyLeaked with leak 0, so the leak barks still
-//   see it). **A boss at the exit loses the map** (cleanup; enemies.md § 6).
+// - **An enemy at the exit** (while the map is an Escort, or a Holdout at its doors; T605): it
+//   follows them in and hushes one refugee already sheltered there (`evacuated` − 1,
+//   `refugeesLost` + 1, RefugeeLost `exit`), a Heavy unit too; a leak-free unit (fleeing,
+//   youngling) takes no one, and with nobody sheltered yet it takes no one. It costs no integrity
+//   (EnemyLeaked with leak 0, so the leak barks still see it). **A boss at the exit loses an
+//   Escort** (cleanup; enemies.md § 6); a Holdout has no defeat.
 // - **Defeat** also comes when the lost count reaches the map's `maxLost` (`escortLost`): every pip
 //   of the HUD's lost row full is the map lost (D138).
 // - **Perfect** on an Escort is "no refugee lost": a lost refugee forfeits Perfect Core, and a leak
@@ -159,10 +160,11 @@ export function loseRefugee(
 }
 
 /**
- * An enemy reached its route's end while the map is an Escort (movement): the exit rule (see the
- * header). `cost` is its leak cost as the core would take it (0: leak-free; null: a boss). Emits
- * EnemyLeaked with leak 0, then, if it takes a sheltered refugee, RefugeeLost `exit`. Returns
- * whether the leak went to the exit (false: not an Escort now, so the core takes it).
+ * An enemy reached its route's end while the map is an Escort or a Holdout (movement; a Holdout's
+ * route ends are its doors, T605): the exit rule (see the header). `cost` is its leak cost as the
+ * core would take it (0: leak-free; null: a boss). Emits EnemyLeaked with leak 0, then, if it
+ * takes a sheltered refugee, RefugeeLost `exit`. Returns whether the leak went to the exit (false:
+ * neither now, so the core takes it).
  */
 export function leakAtExit(
   state: SimState,
@@ -170,7 +172,8 @@ export function leakAtExit(
   cost: number | null,
 ): boolean {
   const def = e.def;
-  if (state.objective !== 'escort' || def === null) return false;
+  // A Holdout's doors take the same rule (T605; sim/objectives.ts).
+  if ((state.objective !== 'escort' && state.objective !== 'holdout') || def === null) return false;
   emit(state, { type: 'EnemyLeaked', uid: e.uid, enemy: def.id, leak: 0 });
   if (cost !== null && cost > 0 && state.stats.evacuated > 0) {
     state.stats.evacuated--;
@@ -219,4 +222,24 @@ export function refugeesRemaining(
   if (map.escort === null) return 0;
   const left = state.refugeeTotal - state.stats.evacuated - state.stats.refugeesLost;
   return left > 0 ? left : 0;
+}
+
+/**
+ * The story flags a run takes when it sets none for a flag that gates a refugee group (T605): that
+ * flag's first `flagVariants` value, so the group's door is open (an unset flag gates every group
+ * out: A3M3's `door_choice`, a Holdout with no refugees). The balance harness's runs and a dev
+ * battle with no save start from these (`flags` laid over them). Empty when no group is gated.
+ */
+export function gatedFlagDefaults(
+  map: Pick<CompiledMapDef<IdSpace>, 'escort' | 'builds'>,
+  flags: ScriptFlags = {},
+): ScriptFlags {
+  const out: Partial<Record<keyof ScriptFlags, NonNullable<ScriptFlags[keyof ScriptFlags]>>> = {};
+  for (const g of map.escort?.groups ?? []) {
+    const flag = g.when?.flag;
+    if (flag === undefined || flags[flag] !== undefined || out[flag] !== undefined) continue;
+    const first = map.builds.flagVariants[flag]?.[0];
+    if (first !== undefined) out[flag] = first;
+  }
+  return { ...out, ...flags };
 }

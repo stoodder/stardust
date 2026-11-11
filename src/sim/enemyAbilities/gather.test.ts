@@ -1,0 +1,364 @@
+// T602: gathering (design/enemies.md § 3, § 5.4; gather.ts). Unit tests drive the systems directly
+// on fx_map's road (9 tiles: (0,0) → (2,0) → (2,3) → (3,3) → (3,4) → (5,4)) with the live Maw,
+// Mote, Fracture, Rift Moth, and a boss; refugees on the escort variant of fx_map.
+import { describe, expect, it } from 'vitest';
+import { compileContent } from '../../content/compile.ts';
+import type { CompiledContent, CompiledEnemyDef } from '../../content/compiled.ts';
+import { RAW_CONTENT } from '../../content/registry.ts';
+import type { IdSpace, MapDef, WaveTag } from '../../content/types.ts';
+import { secToTicks } from '../../shared/time.ts';
+import { ROAD, WALKER, setup, spawn } from '../__fixtures__/combat.ts';
+import { SIM_FIXTURE, fixtureConfig, type FixtureIds } from '../__fixtures__/sim.ts';
+import { applyDamage } from '../combat/damage.ts';
+import type { Ally, Enemy } from '../entities.ts';
+import { spawnRefugees } from '../escort.ts';
+import { pointAt } from '../path.ts';
+import type { SimEvent } from '../events.ts';
+import { createState, type SimState } from '../state.ts';
+import { allies } from '../systems/allies.ts';
+import { cleanup } from '../systems/cleanup.ts';
+import { movement } from '../systems/movement.ts';
+import { applyMarked, applyStasis, applyUnnerved } from '../systems/status.ts';
+import { createScratch, type TickContext } from '../tick.ts';
+import { gatherBounty, gatherLeak, gatherMaxHp, gatherScale, gatherTelling } from './gather.ts';
+import { enemyAbilities } from './index.ts';
+
+const E = compileContent(RAW_CONTENT).enemies;
+const MAW = E.maw;
+const MOTE = E.mote;
+const SRC = { kind: 'ability', slot: 1 } as const;
+const FLEE: readonly WaveTag[] = ['fleeing'];
+const TELL = secToTicks(1);
+const EVERY = secToTicks(4);
+
+function put(state: SimState, def: CompiledEnemyDef, dist: number, tags?: readonly WaveTag[]) {
+  return spawn(state, def, tags === undefined ? { dist } : { dist, tags });
+}
+
+/** One tick: the abilities, then (when `move`) movement and refugees, then cleanup. */
+function tick(state: SimState, ctx: TickContext, n = 1, move = false): void {
+  for (let i = 0; i < n; i++) {
+    enemyAbilities(state, ctx);
+    if (move) {
+      movement(state, ctx);
+      allies(state, ctx);
+    }
+    cleanup(state, ctx);
+    state.tick++;
+  }
+}
+
+function events<T extends SimEvent<IdSpace>['type']>(
+  state: SimState,
+  type: T,
+): Extract<SimEvent<IdSpace>, { type: T }>[] {
+  return state.events.filter((e): e is Extract<SimEvent<IdSpace>, { type: T }> => e.type === type);
+}
+
+/** Ticks until `m`'s tendril tell starts (at most `max`); how many ticks that took. */
+function untilTell(state: SimState, ctx: TickContext, m: Enemy, max = EVERY * 2): number {
+  for (let t = 1; t <= max; t++) {
+    tick(state, ctx);
+    if (m.gatherUid !== 0) return t;
+  }
+  return -1;
+}
+
+describe('the Maw (content)', () => {
+  it('is the roster row: 400 HP, armor 2, 0.7 tiles/s, leak 2, bounty 20; gathers every 4 s', () => {
+    expect([MAW.hp, MAW.armor, MAW.speedTilesPerTick * 60, MAW.leak, MAW.bounty]).toEqual([
+      400, 2, 0.7, 2, 20,
+    ]);
+    expect(MAW.gather).toMatchObject({
+      everyTicks: EVERY,
+      tellTicks: TELL,
+      radiusTiles: 1,
+      maxAbsorbs: 5,
+      growPct: 0.1,
+      leakPerAbsorb: 1,
+      bountyPerHollowAbsorb: 3,
+    });
+    expect(MAW.hushes).toBe(false); // its one hush is a gather
+    expect(MAW.faction).toBe('hollow');
+  });
+});
+
+describe('gathering', () => {
+  it('tells 3 s after it spawns, holds both still for 1 s, then takes the unit whole', () => {
+    const { state, ctx } = setup();
+    const m = put(state, MAW, 3);
+    const v = put(state, MOTE, 3.5);
+    v.hp = 17;
+    const vUid = v.uid;
+    expect(untilTell(state, ctx, m)).toBe(EVERY - TELL + 1); // the spawn tick sets the period
+    expect(events(state, 'GatherTell')).toEqual([
+      { type: 'GatherTell', uid: m.uid, targetUid: vUid, ally: false },
+    ]);
+    expect(gatherTelling(m)).toBe(true);
+    for (let t = 1; t < TELL; t++) {
+      expect([m.paceMul, v.paceMul, v.alive]).toEqual([0, 0, true]);
+      tick(state, ctx);
+    }
+    expect(v.alive).toBe(true);
+    tick(state, ctx);
+    expect(v.alive).toBe(false);
+    expect(events(state, 'Gathered')).toEqual([
+      { type: 'Gathered', uid: m.uid, victimUid: vUid, victim: 'mote', hp: 17, absorbs: 1 },
+    ]);
+    expect([m.hp, m.bonusMaxHp, m.absorbs, m.hollowAbsorbs, m.gatherUid]).toEqual([
+      417, 17, 1, 1, 0,
+    ]);
+    expect(gatherMaxHp(m)).toBe(417);
+    expect(gatherScale(m)).toBeCloseTo(1.1, 12);
+    expect(m.heavy).toBe(false);
+    // No kill, no leak, no bounty for the gathered unit.
+    expect(events(state, 'EnemyDied')).toEqual([]);
+    expect(events(state, 'EnemyLeaked')).toEqual([]);
+    // The next one is a whole period later.
+    const again = put(state, MOTE, 2.6);
+    expect(untilTell(state, ctx, m)).toBe(EVERY - TELL);
+    expect(m.gatherUid).toBe(again.uid);
+  });
+
+  it('waits, ready, until a unit is within 1 tile (inclusive), the nearest first', () => {
+    const { state, ctx } = setup();
+    const m = put(state, MAW, 3);
+    const far = put(state, MOTE, 4.01);
+    tick(state, ctx, EVERY);
+    expect(m.gatherUid).toBe(0);
+    expect(m.gatherTicks).toBe(TELL); // ready
+    const edge = put(state, MOTE, 2); // exactly 1 tile behind
+    const near = put(state, MOTE, 3.9);
+    tick(state, ctx);
+    expect(m.gatherUid).toBe(near.uid);
+    expect([far.paceMul, edge.paceMul]).toEqual([1, 1]);
+  });
+
+  it('never takes a boss, another Maw, a flyer, a non-fleeing Skitterkin, or another faction', () => {
+    const { state, ctx } = setup();
+    const m = put(state, MAW, 3);
+    put(state, MAW, 3.2);
+    put(state, E.glass_witch, 3.3);
+    put(state, E.riftmoth, 3.4);
+    put(state, E.nibbler, 3.5); // not fleeing
+    put(state, E.compliance, 2.6);
+    put(state, E.veilwalker, 2.7);
+    tick(state, ctx, EVERY * 2);
+    expect(events(state, 'GatherTell')).toEqual([]);
+    expect(m.absorbs).toBe(0);
+  });
+
+  it('takes at most one Skitterkin (its one hush, held as the hush rule pair); never Heavy', () => {
+    const { state, ctx } = setup();
+    const m = put(state, MAW, 3);
+    const a = put(state, WALKER, 3.3, FLEE);
+    const b = put(state, WALKER, 3.6, FLEE);
+    expect(untilTell(state, ctx, m)).toBeGreaterThan(0);
+    expect([m.gatherUid, m.hushUid, a.hushUid]).toEqual([a.uid, a.uid, m.uid]);
+    // A Mote meeting the held runner can't hush it: it takes the free one instead.
+    const mote = put(state, MOTE, 3.4);
+    tick(state, ctx);
+    expect([mote.hushUid, a.hushUid]).toEqual([b.uid, m.uid]);
+    tick(state, ctx, TELL - 1);
+    expect(a.alive).toBe(false);
+    expect([m.absorbs, m.hollowAbsorbs, m.gatheredSkitterkin, m.heavy]).toEqual([
+      1,
+      0,
+      true,
+      false,
+    ]);
+    expect(state.stats.skitterkinKilled).toBe(0); // not Pests Processed
+    // A second runner is never its: Hollow only from now on.
+    applyDamage(state, mote, 1000, 'kinetic', SRC);
+    const c = put(state, WALKER, 3.2, FLEE);
+    tick(state, ctx, EVERY * 2);
+    expect([m.gatherUid, m.absorbs, c.alive]).toEqual([0, 1, true]);
+  });
+
+  it('stops at 5 absorbs: a full Maw never tells again', () => {
+    const { state, ctx } = setup();
+    const m = put(state, MAW, 4);
+    for (let i = 0; i < 8; i++) put(state, MOTE, 3.2 + i * 0.2);
+    tick(state, ctx, EVERY * 8);
+    expect(m.absorbs).toBe(5);
+    expect(events(state, 'Gathered')).toHaveLength(5);
+    expect(events(state, 'GatherTell')).toHaveLength(5);
+    expect(gatherScale(m)).toBeCloseTo(1.5, 12);
+  });
+
+  it('never balloons among Fractures and their Shards: 400 + five units, none split', () => {
+    const { state, ctx } = setup();
+    const m = put(state, MAW, 4.5);
+    const units: Enemy[] = [];
+    for (let i = 0; i < 4; i++) units.push(put(state, E.fracture, 3.6 + i * 0.25));
+    for (let i = 0; i < 6; i++) units.push(put(state, E.fracture_shard, 4.6 + i * 0.15));
+    const most = [...units]
+      .map((u) => u.hp)
+      .toSorted((x, y) => y - x)
+      .slice(0, 5)
+      .reduce((s, x) => s + x, 0);
+    tick(state, ctx, EVERY * 10);
+    expect(m.absorbs).toBe(5);
+    expect(m.bonusMaxHp).toBeLessThanOrEqual(most);
+    expect(gatherMaxHp(m)).toBeLessThanOrEqual(400 + 5 * E.fracture.hp);
+    expect(m.hp).toBe(gatherMaxHp(m));
+    // A gathered Fracture is no kill: no Shards came of it.
+    const shards = state.enemies.items.filter((e) => e.alive && e.def?.id === 'fracture_shard');
+    expect(shards.length).toBeLessThanOrEqual(6);
+  });
+
+  it('Stasis or Unnerved cancel the tell and restart the period; a Truthlight Mark does not', () => {
+    for (const how of ['stasis', 'unnerved', 'mark'] as const) {
+      const { state, ctx } = setup();
+      const m = put(state, MAW, 3);
+      const v = put(state, MOTE, 3.5);
+      untilTell(state, ctx, m);
+      tick(state, ctx, 10);
+      if (how === 'stasis') applyStasis(m, 30);
+      else if (how === 'unnerved') applyUnnerved(m, 30);
+      else applyMarked(m, 0.1, 600, true);
+      tick(state, ctx);
+      if (how === 'mark') {
+        expect(m.gatherUid).toBe(v.uid);
+        continue;
+      }
+      expect([m.gatherUid, m.gatherTicks, v.paceMul]).toEqual([0, EVERY, 1]);
+      m.stasisTicks = 0;
+      m.unnervedTicks = 0;
+      expect(untilTell(state, ctx, m)).toBe(EVERY - TELL);
+    }
+  });
+
+  it('killing the held unit mid-tell spends nothing and restarts the period', () => {
+    const { state, ctx } = setup();
+    const m = put(state, MAW, 3);
+    const v = put(state, MOTE, 3.5);
+    put(state, MOTE, 2.5);
+    untilTell(state, ctx, m);
+    applyDamage(state, v, 1000, 'kinetic', SRC);
+    tick(state, ctx);
+    expect([m.gatherUid, m.absorbs, m.gatherTicks]).toEqual([0, 0, EVERY]);
+  });
+
+  it('two Maws: each unit goes to its nearest, whatever the slot order', () => {
+    for (const order of ['near-first', 'far-first'] as const) {
+      const { state, ctx } = setup();
+      const far = order === 'far-first' ? put(state, MAW, 2.2) : null;
+      const near = put(state, MAW, 3.8);
+      const far2 = far ?? put(state, MAW, 2.2);
+      const v = put(state, MOTE, 3.4);
+      tick(state, ctx, EVERY - TELL + 1);
+      expect(near.gatherUid).toBe(v.uid);
+      expect(far2.gatherUid).toBe(0);
+    }
+  });
+});
+
+describe('a gathered Maw leaks and pays more', () => {
+  it('leaks +1 per absorb (enemies.md: 2, +1 per absorb)', () => {
+    const { state, ctx } = setup();
+    const m = put(state, MAW, ROAD.lengthTiles - 0.001);
+    m.absorbs = 3;
+    m.hollowAbsorbs = 2;
+    expect(gatherLeak(m)).toBe(3);
+    const before = state.integrity;
+    movement(state, ctx);
+    expect(events(state, 'EnemyLeaked')).toEqual([
+      { type: 'EnemyLeaked', uid: m.uid, enemy: 'maw', leak: 5 },
+    ]);
+    expect(state.integrity).toBe(before - 5);
+  });
+
+  it('pays +3 per Hollow absorb only (enemies.md: 20, +3 per Hollow absorb)', () => {
+    const { state } = setup();
+    const m = put(state, MAW, 3);
+    m.absorbs = 3;
+    m.hollowAbsorbs = 2;
+    m.gatheredSkitterkin = true;
+    expect(gatherBounty(m)).toBe(6);
+    applyDamage(state, m, 10_000, 'kinetic', SRC);
+    expect(events(state, 'EnemyDied')[0]?.bounty).toBe(26);
+  });
+
+  it('adds nothing to a unit that doesn’t gather', () => {
+    const w = { def: WALKER, absorbs: 4, hollowAbsorbs: 4, bonusMaxHp: 0 };
+    expect([gatherLeak(w), gatherBounty(w), gatherScale(w), gatherMaxHp(w)]).toEqual([
+      0,
+      0,
+      1,
+      WALKER.hp,
+    ]);
+  });
+});
+
+function refugee(state: SimState): Ally {
+  return state.allies.items.find((a) => a.alive && a.group >= 0)!;
+}
+
+describe('gathering a refugee (Escort)', () => {
+  const ESCORT: Partial<MapDef<FixtureIds, 'fx_map'>> = {
+    objective: 'escort',
+    maxLost: 5,
+    markers: { rock: [0, 2], gate: [5, 4] },
+    safeExit: 'gate',
+    refugees: { g1: { route: 'a', count: 1 }, g2: { route: 'a', count: 1 } },
+  };
+  const fx = SIM_FIXTURE.maps.fx_map;
+  const C: CompiledContent<FixtureIds> = compileContent({
+    ...SIM_FIXTURE,
+    maps: { fx_map: { ...fx, ...ESCORT } },
+  });
+  const MAP = C.maps.fx_map;
+
+  function escortSetup(): { state: SimState; ctx: TickContext } {
+    const config = fixtureConfig({ content: C });
+    return {
+      state: createState(MAP, 1),
+      ctx: { content: C, map: MAP, config, scratch: createScratch() },
+    };
+  }
+
+  it('holds it still for the tell, then it is lost: its group’s, and Nothing Gathered’s count', () => {
+    const { state, ctx } = escortSetup();
+    spawnRefugees(state, MAP, 'g2');
+    const a = refugee(state);
+    a.dist = 3.5;
+    a.seg = pointAt(a.route!, a.dist, a, 0);
+    const m = spawn(state, MAW, { dist: 3, route: MAP.routes.a! });
+    m.gatherTicks = TELL; // ready
+    tick(state, ctx);
+    expect(events(state, 'GatherTell')).toEqual([
+      { type: 'GatherTell', uid: m.uid, targetUid: a.uid, ally: true },
+    ]);
+    // A Mote right on it can't hush it while the tendrils hold it.
+    const mote = spawn(state, MOTE, { dist: 3.6, route: MAP.routes.a! });
+    const at = a.dist;
+    const aUid = a.uid;
+    for (let t = 1; t < TELL; t++) tick(state, ctx, 1, true);
+    expect([a.dist, a.alive, mote.hushUid]).toEqual([at, true, 0]);
+    tick(state, ctx, 1, true);
+    expect(a.alive).toBe(false);
+    expect(events(state, 'Gathered')).toEqual([
+      { type: 'Gathered', uid: m.uid, victimUid: aUid, victim: 'refugee', hp: 0, absorbs: 1 },
+    ]);
+    expect(events(state, 'RefugeeLost')).toEqual([
+      { type: 'RefugeeLost', uid: aUid, cause: 'hushed', enemyUid: m.uid },
+    ]);
+    expect(state.stats.refugeesGathered).toBe(1);
+    expect(state.stats.refugeesLost).toBe(1);
+    expect(state.stats.lostByGroup).toEqual([0, 1]);
+    expect([m.gatheredSkitterkin, m.absorbs, m.hollowAbsorbs, m.hp]).toEqual([true, 1, 0, 400]);
+  });
+
+  it('takes no second Skitterkin: a second refugee walks past a Maw that has had its one', () => {
+    const { state, ctx } = escortSetup();
+    spawnRefugees(state, MAP, 'g1');
+    const a = refugee(state);
+    a.dist = 3.5;
+    a.seg = pointAt(a.route!, a.dist, a, 0);
+    const m = spawn(state, MAW, { dist: 3, route: MAP.routes.a! });
+    m.gatheredSkitterkin = true;
+    tick(state, ctx, EVERY * 2);
+    expect([m.gatherUid, a.alive, state.stats.refugeesGathered]).toEqual([0, true, 0]);
+  });
+});

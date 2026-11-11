@@ -154,11 +154,11 @@ describe('the death tone (enemies.md § 8)', () => {
     expect(deathStyle(dial('finale'), 'skitterkin')).toBe('still');
   });
 
-  it('the Aelari shatter, the Hollow unravel (every act), Everglow bursts', () => {
+  it('the Aelari shatter, the Hollow unravel (every act), Everglow shuts down (T603)', () => {
     expect(deathStyle(dial(2), 'aelari')).toBe('shatter');
     expect(deathStyle(dial(2), 'hollow')).toBe('unravel');
     expect(deathStyle(dial('finale'), 'hollow')).toBe('unravel');
-    expect(deathStyle(dial(3), 'everglow')).toBe('burst');
+    expect(deathStyle(dial(3), 'everglow')).toBe('shutdown');
     expect(deathStyle(dial(1), 'hollow')).toBe('unravel');
   });
 });

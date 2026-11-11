@@ -7,7 +7,7 @@ import {
   fixtureSim,
   type FixtureIds,
 } from './__fixtures__/sim.ts';
-import { GUN, tierWith } from './__fixtures__/combat.ts';
+import { GUN } from './__fixtures__/combat.ts';
 import type { Command } from './commands.ts';
 import type { SimEvent } from './events.ts';
 import { createSim } from './sim.ts';
@@ -32,13 +32,23 @@ function rejections(events: readonly Ev[]): string[] {
 }
 
 /** fx_gun with a spawner attack on tier 1: a feature the sim still refuses (FEATURE_GATES, M6). */
-const SPAWNER_GUN = {
+/** A field (the Stasis Bloom's: `tower.field`, refused until T608) on fx_gun's tier 1. */
+const FIELD = Object.freeze({
+  radiusTiles: 2,
+  radiusSq: 4,
+  chillPct: 0.3,
+  pulseEveryTicks: 600,
+  stasisTicks: 90,
+  pullBackTiles: 0,
+  pullBackCooldownTicks: 0,
+});
+const FIELD_GUN = {
   ...FIXTURE_CONTENT,
   towers: {
     ...FIXTURE_CONTENT.towers,
     fx_gun: {
       ...GUN,
-      tiers: [tierWith(GUN.tiers[0], { kind: 'spawner' }), GUN.tiers[1], GUN.tiers[2]],
+      tiers: [Object.freeze({ ...GUN.tiers[0], field: FIELD }), GUN.tiers[1], GUN.tiers[2]],
     },
   },
 } as typeof FIXTURE_CONTENT;
@@ -86,9 +96,7 @@ describe('createSim', () => {
       bad({ loadout: ['fx_gun', 'fx_mortar', 'fx_sprinkler', 'fx_gun', 'fx_mortar'] }),
     ).toMatch(/limit is 4/);
     expect(bad({ companion: 'bricks' })).toMatch(/companion 'bricks' needs a slot/);
-    expect(bad({ content: SPAWNER_GUN })).toMatch(
-      /'spawner' attack \(fx_gun\) is not simulated until T604/,
-    );
+    expect(bad({ content: FIELD_GUN })).toMatch(/a field \(fx_gun\) is not simulated until T608/);
     // @ts-expect-error -- an unknown tower id is a type error too
     expect(bad({ specsUnlocked: ['nope'] })).toMatch(/specsUnlocked: unknown tower 'nope'/);
     expect(bad({ specsUnlocked: ['fx_gun', 'fx_gun'] })).toMatch(/'fx_gun' appears twice/);
@@ -101,9 +109,9 @@ describe('createSim', () => {
     expect(bad({ content: { ...FIXTURE_CONTENT, maps: { fx_map: waveless } } })).toMatch(
       /map 'fx_map' has no waves/,
     );
-    const both = bad({ seed: -1, content: SPAWNER_GUN });
+    const both = bad({ seed: -1, content: FIELD_GUN });
     expect(both).toMatch(/seed/);
-    expect(both).toMatch(/until T604/);
+    expect(both).toMatch(/until T608/);
   });
 
   it('accepts a loadout of exactly 4 and an empty one', () => {

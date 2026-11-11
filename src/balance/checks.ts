@@ -59,7 +59,8 @@ export interface CheckSpec {
  * A run's margin % (design/maps.md § 6.1): integrity left ÷ max integrity × 100, and on a Protect
  * map the lower of that and asset left ÷ max asset (D101: the weaker objective decides, as losing
  * either loses), so a loss is 0. A run that ends as an Escort (from the start, or by a pivot;
- * T305c) measures Evacuated instead: refugees evacuated ÷ the map's refugees × 100, 0 on a loss.
+ * T305c) measures Evacuated instead: refugees evacuated ÷ the map's refugees × 100, 0 on a loss;
+ * a Holdout measures it on every run (balance/holdout.ts; T605).
  */
 export function marginOf(
   r: Pick<
@@ -77,6 +78,10 @@ export function marginOf(
   if (r.objective === 'escort') {
     if (r.outcome === 'lost' || r.escortTotal <= 0) return 0;
     return (100 * r.stats.evacuated) / r.escortTotal;
+  }
+  // A Holdout (T605) is scored by Evacuated on every run: a loss is judged against its floor.
+  if (r.objective === 'holdout') {
+    return r.escortTotal <= 0 ? 0 : (100 * r.stats.evacuated) / r.escortTotal;
   }
   const core = (100 * r.integrity) / r.maxIntegrity;
   if (r.maxAsset <= 0) return core;

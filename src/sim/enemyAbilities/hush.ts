@@ -207,7 +207,8 @@ export function hushPass(state: SimState, ctx: TickContext): void {
   // 1. Tells under way: count down, land, or let go when the other side is gone.
   for (let i = 0; i < pool.used; i++) {
     const e = pool.items[i]!; // i < used ≤ items.length
-    if (!e.alive || e.hushUid === 0 || e.def === null) continue;
+    // A gatherer's pair is its gather's tendril hold (gather.ts keeps it; T602).
+    if (!e.alive || e.hushUid === 0 || e.def === null || e.def.gather !== null) continue;
     const other = liveByUid(pool, e.hushUid);
     if (e.def.hushes && other === null) {
       if (tellOnAlly(state, e)) continue; // its victim is a refugee (T305c)

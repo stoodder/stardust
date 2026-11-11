@@ -5,7 +5,9 @@
 // hold (no link in the design gives a tower two). A partner can also take chain jumps and a Soaked
 // it applies (Conductive, T304b): `chainJumps` a whole number ≥ 0, `soakedSec` a duration > 0;
 // and (T500a) a damage bonus against a raised shield (`vsShielded`: Resonance, one per partner), a
-// faster beam ramp (`rampPct`), and a stronger Mark (`markPct`: Lightsong), each a fraction > 0.
+// faster beam ramp (`rampPct`), and a stronger Mark (`markPct`: Lightsong), each a fraction > 0;
+// and (T604) a Scuttle Den's extras: `swarmlings` a whole number > 0 (Finders Keepers), and
+// `swarmSpeedPct` a fraction > 0 with `latchSec` a duration > 0 (Splash Zone).
 import type { CompiledLinkDef, CompiledLinkPartner } from './compiled.ts';
 import { entriesOf, checkKey, ticks, type Ctx } from './compileHelpers.ts';
 import { MAX_LINKS, statusMask } from './rules.ts';
@@ -83,6 +85,9 @@ function partner<K extends IdSpace>(
     vsShieldPct: 0,
     rampPct: 0,
     markPct: 0,
+    swarmlings: 0,
+    swarmSpeedPct: 0,
+    latchTicks: 0,
   };
   if (def.chainJumps !== undefined) {
     if (Number.isInteger(def.chainJumps) && def.chainJumps > 0) out.chainJumps = def.chainJumps;
@@ -102,7 +107,17 @@ function partner<K extends IdSpace>(
     if (Number.isInteger(def.killCredits) && def.killCredits > 0) out.killCredits = def.killCredits;
     else ctx.errors.push(`${where}.killCredits: needs a whole number > 0`);
   }
-  for (const f of ['rampPct', 'markPct'] as const) {
+  // A Scuttle Den partner's extras (T604): whole swarmlings, a dash speed fraction, a latch time.
+  if (def.swarmlings !== undefined) {
+    if (Number.isInteger(def.swarmlings) && def.swarmlings > 0) out.swarmlings = def.swarmlings;
+    else ctx.errors.push(`${where}.swarmlings: needs a whole number > 0`);
+  }
+  if (def.latchSec !== undefined) {
+    if (Number.isFinite(def.latchSec) && def.latchSec > 0) {
+      out.latchTicks = ticks(ctx, def.latchSec, `${where}.latchSec`);
+    } else ctx.errors.push(`${where}.latchSec: needs a duration > 0`);
+  }
+  for (const f of ['rampPct', 'markPct', 'swarmSpeedPct'] as const) {
     const v = def[f];
     if (v === undefined) continue;
     if (Number.isFinite(v) && v > 0) out[f] = v;

@@ -119,14 +119,25 @@ export const SYSTEMS: readonly { readonly name: SystemName; readonly run: System
     { name: 'cleanup', run: cleanup },
   ]);
 
-/** Runs one tick: every system in order, then advances `state.tick`. */
+/** The systems that still run while a forced input is pending (T605; sim/forcedInput.ts). */
+const WHILE_FORCED: ReadonlySet<System> = new Set([applyCommands]);
+
+/**
+ * Runs one tick: every system in order, then advances `state.tick`. While a forced input is
+ * pending (`state.pendingInput`; sim/forcedInput.ts, T605) only the WHILE_FORCED systems run (only
+ * commands apply), so a `forceInput` action freezes the rest of its tick; and once the map has
+ * ended mid-tick (a Holdout's `endMap`, sim/objectives.ts) the systems after it don't run.
+ */
 export function runTick(
   state: SimState,
   ctx: TickContext,
   systems: readonly { readonly run: System }[] = SYSTEMS,
 ): void {
   for (let i = 0; i < systems.length; i++) {
-    systems[i]!.run(state, ctx); // i < length
+    const run = systems[i]!.run; // i < length
+    if (state.pendingInput !== null && !WHILE_FORCED.has(run)) continue;
+    run(state, ctx);
+    if (state.outcome !== 'playing') break;
   }
   state.tick++;
 }

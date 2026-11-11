@@ -504,6 +504,14 @@ export interface LinkPartnerDef<K extends IdSpace = LiveIds> {
   readonly rampPct?: number;
   /** Added to the partner's Marks, a fraction (Lightsong: Lantern Mark +5%; T508). */
   readonly markPct?: number;
+  /**
+   * A Scuttle Den partner's swarmlings (T604): `swarmlings` more of them (Finders Keepers: +1),
+   * their dash `swarmSpeedPct` faster, a fraction, and their latch `latchSec` longer (Splash
+   * Zone: +30%, +1 s).
+   */
+  readonly swarmlings?: number;
+  readonly swarmSpeedPct?: number;
+  readonly latchSec?: number;
 }
 /**
  * A stat bonus under the stacking formula (towers.md § 4): `flat` adds to the stat, `pct` (a

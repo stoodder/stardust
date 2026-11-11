@@ -4,13 +4,15 @@
 // DevIds type comes back from there. Each is registered in DEV_CONTENT.maps by the task that lifts
 // its gates, with its smoke flow; until then devM6.test.ts checks it compiles and is refused,
 // naming its tasks.
-// - `dev_maw` (T602): Motes and a Maw down the road (the gather, its tendril tell, its growth),
-//   then Motes up a rift lane that opens at W2 (telegraphed as W2's countdown begins).
+// - `dev_maw` (T602): a Maw down the road with Motes catching it up (the gather, its tendril tell,
+//   its growth), then Motes up a rift lane that opens at W2 (cracking from W1's start), then an
+//   Undertow on the road (its ripple trail underground).
 // - `dev_den` (T604): a Scuttle Den beside the road and Bramble's Underfoot, against Undertows
 //   (burrowed: the swarmlings follow them down, the trap reaches them).
 // - `dev_revoke` (T603, T606): Compliance Drones with an Expediter (its haste ring), then a W2
 //   revocation inside the wave's spawn window: the Everglow class with the most credits invested
-//   (100% refund), the slot-1 ability, and QUILL's lockout.
+//   (100% refund), the slot-1 ability, and QUILL's lockout. Registered by T603 with the units
+//   alone; T606 adds the revocation event.
 // - `dev_holdout` (T605): a Holdout with two doors; the `door_choice` side's refugees walk to
 //   theirs while Hollow come down the choke past Bricks (a blocker, 2 at a time, his health on a
 //   three-wave timeline to the 5% floor); W3's start forces the SEAL, and its press ends the map
@@ -101,20 +103,23 @@ const RIFT = {
   ],
 } as const;
 
-/** dev_maw (T602): a Maw among Motes, then a rift lane from W2. */
+/** dev_maw (T602): a Maw among Motes, a rift lane from W2, then an Undertow (its ripples). */
 export const mawMap = dev.defineMap({
   ...ROAD,
   riftLanes: [RIFT],
-  threatIntel: ['armored', 'gathering', 'clustered'],
+  threatIntel: ['armored', 'gathering', 'clustered', 'burrowing'],
   requiredCounters: ['splash', 'armor'],
   waves: dev.defineWaves([
     {
       groups: [
-        { enemy: 'mote', count: 6, route: 'a', intervalSec: 0.3 },
-        { enemy: 'maw', count: 1, route: 'a', delaySec: 1 },
+        // The Maw first, its pieces 2 s behind: they catch it up as its first gather comes ready.
+        { enemy: 'maw', count: 1, route: 'a' },
+        { enemy: 'mote', count: 6, route: 'a', delaySec: 2, intervalSec: 0.3 },
       ],
     },
     { countdownSec: 10, groups: [{ enemy: 'mote', count: 8, route: 'rift', intervalSec: 0.3 }] },
+    // An Undertow, for its ripple trail underground (T602's view; the Scuttle Den is dev_den's).
+    { countdownSec: 8, groups: [{ enemy: 'undertow', count: 1, route: 'a' }] },
   ]),
   referenceProfile: { ...PROFILE, towers: ['rivet', 'zapcoil'] },
   parBuild: {
@@ -172,18 +177,10 @@ export const revokeMap = dev.defineMap({
     },
     { countdownSec: 10, groups: [{ enemy: 'compliance', count: 10, route: 'a' }] },
   ]),
-  events: [
-    {
-      id: 'revoke',
-      on: { wave: 2, phase: { afterSec: 5 } },
-      actions: [
-        { cue: 'dev_revoke_cue_revoke' },
-        { revokeTowerClass: { select: 'mostInvested', faction: 'everglow' }, refundPct: 100 },
-        { revokeAbility: 'dev_strike' },
-        { setModifier: 'quillLockout', on: true },
-      ],
-    },
-  ],
+  // T606 adds the revocation here: an event `revoke` on `{ wave: 2, phase: { afterSec: 5 } }` with
+  // the cue `dev_revoke_cue_revoke`, `revokeTowerClass: { select: 'mostInvested', faction:
+  // 'everglow' }` at `refundPct: 100`, `revokeAbility: 'dev_strike'`, and `setModifier:
+  // 'quillLockout'` on. Until then the map runs Everglow Security alone (T603's smoke flow).
   referenceProfile: { ...PROFILE, towers: ['rivet', 'sprinkler', 'zapcoil'] },
   parBuild: {
     loadout: ['rivet', 'sprinkler', 'zapcoil'],

@@ -33,7 +33,8 @@ export const POOL_CAPACITY = {
   enemies: 256,
   projectiles: 256,
   zones: 32,
-  allies: 16,
+  // Escort refugees plus the Scuttle Dens' swarmlings (T604: up to 8 a Den).
+  allies: 64,
 } as const;
 
 /**

@@ -15,12 +15,24 @@
 // once any wave has started since its build. A misclick-grace refund (core-loop.md § 2.3) is
 // never a sale. Rearranging during the countdown you built in is free; selling a tower that has
 // seen a wave start is a write-off the auditor notices.
+//
+// The Holdout (design/maps.md § 5.2, core-loop.md § 2.10; T605; A3M3) is an Escort with no defeat
+// that ends on a scripted event, here and in the systems it touches:
+// - **No defeat.** Its refugees walk to their doors (each group's `exit`, a core `C`) as on an
+//   Escort, and an enemy reaching a door follows the Escort's exit rule (sim/escort.ts `leakAtExit`:
+//   it takes one sheltered refugee, costs no integrity), so the core never falls. It has no
+//   `maxLost` (validation) and a boss at a door isn't a loss there, so cleanup never loses it.
+// - **No checkpoints** (systems/waves.ts `checkpointAt`).
+// - **The end** is a script's `endMap` (`'completed'` or `'won'`, both ending the map as won;
+//   `endMap` below), normally on the SEAL's press (`forcedInputResolved`; sim/forcedInput.ts). Its
+//   score is Evacuated; its pay is flat (meta), and the harness holds it to `evacuatedFloor`.
 import type { CompiledMapDef } from '../content/compiled.ts';
 import type { IdSpace } from '../content/types.ts';
 import type { DeepReadonly } from '../shared/types.ts';
 import { evaluateCondition, settledCondition, type ConditionContext } from './conditions.ts';
 import { sellValue } from './economy.ts';
 import type { Enemy, Tower } from './entities.ts';
+import { settleWin } from './medals.ts';
 import { emit, type ObjectiveStatus, type SimState } from './state.ts';
 import { runScriptAction } from './systems/triggers.ts';
 
@@ -158,4 +170,20 @@ function set(
 ): void {
   state.objectives[i] = status;
   emit(state, { type: 'ObjectiveProgress', id: map.objectives[i]!.id, status }); // i < length
+}
+
+/**
+ * `endMap` (a script action; the Holdout's end, T605): the map is won on this tick, whatever its
+ * waves (`'completed'` and `'won'` alike; no `completed` outcome exists): the medals and the open
+ * objectives settle as on any win, then MapWon. The rest of the tick doesn't run (tick.ts).
+ */
+export function endMap(
+  state: SimState,
+  ctx: ConditionContext & { readonly map: ObjectiveMap & Pick<CompiledMapDef<IdSpace>, 'medals'> },
+): void {
+  if (state.outcome !== 'playing') return;
+  state.outcome = 'won';
+  settleWin(state, ctx.map, ctx);
+  settleObjectivesWin(state, ctx.map, ctx);
+  emit(state, { type: 'MapWon' });
 }

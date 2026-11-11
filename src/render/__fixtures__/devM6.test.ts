@@ -10,6 +10,8 @@ import { DEV_M6_MAPS } from './devM6.ts';
 
 const dev = compileContent({ ...DEV_CONTENT, maps: { ...DEV_CONTENT.maps, ...DEV_M6_MAPS } });
 const maps: Readonly<Record<string, (typeof dev.maps)[keyof typeof dev.maps]>> = dev.maps;
+/** DEV_CONTENT's maps by any id (its type names only dev_range). */
+const devMaps: Readonly<Record<string, unknown>> = DEV_CONTENT.maps;
 
 function config(mapId: string, slot2: string | null = null): SimConfig<IdSpace> {
   return {
@@ -38,29 +40,20 @@ function refused(mapId: string, slot2: string | null = null): string[] {
 }
 
 describe('the M6 dev maps', () => {
-  it('dev_maw: a Maw among Motes, a rift lane open from W2 (T602)', () => {
+  it('dev_maw: a Maw among Motes, a rift lane open from W2 (T602, registered)', () => {
     expect(maps.dev_maw?.routes.rift).toMatchObject({ kind: 'rift', opensAtWave: 2 });
-    expect(refused('dev_maw')).toEqual([
-      'gathering (maw) is not simulated until T602',
-      'rift lanes (rift) is not simulated until T602',
-    ]);
+    expect(refused('dev_maw')).toEqual([]);
+    expect(devMaps['dev_maw']).toBe(DEV_M6_MAPS.dev_maw);
   });
 
-  it('dev_den: the Scuttle Den and Underfoot against Undertows (T604)', () => {
-    expect(refused('dev_den', 'underfoot')).toEqual([
-      "the 'burrow' tower is not simulated until T604",
-      "a 'spawner' attack (burrow) is not simulated until T604",
-      "the 'pathTrap' ability (underfoot) is not simulated until T604",
-    ]);
+  it('dev_den: the Scuttle Den and Underfoot against Undertows (T604, registered)', () => {
+    expect(refused('dev_den', 'underfoot')).toEqual([]);
+    expect(devMaps['dev_den']).toBe(DEV_M6_MAPS.dev_den);
   });
 
-  it('dev_revoke: Everglow Security, then the revocation inside W2 (T603, T606)', () => {
-    expect(refused('dev_revoke')).toEqual([
-      'a haste aura (expediter) is not simulated until T603',
-      "event 'revoke': action revokeTowerClass is not simulated until T606",
-      "event 'revoke': action revokeAbility is not simulated until T606",
-      "event 'revoke': action setModifier is not simulated until T606",
-    ]);
+  it('dev_revoke: Everglow Security runs (T603, registered); T606 adds the revocation', () => {
+    expect(refused('dev_revoke')).toEqual([]);
+    expect(devMaps['dev_revoke']).toBe(DEV_M6_MAPS.dev_revoke);
   });
 
   it('dev_holdout: two doors by door_choice, Bricks blocking on a timeline, the SEAL (T605)', () => {
@@ -87,8 +80,9 @@ describe('the M6 dev maps', () => {
   });
 
   it('are not in DEV_CONTENT until their tasks register them', () => {
+    const registered = new Set(['dev_revoke', 'dev_maw', 'dev_den']); // T603, T602, T604
     for (const id of Object.keys(DEV_M6_MAPS)) {
-      expect(Object.hasOwn(DEV_CONTENT.maps, id), id).toBe(false);
+      expect(Object.hasOwn(DEV_CONTENT.maps, id), id).toBe(registered.has(id));
     }
   });
 });

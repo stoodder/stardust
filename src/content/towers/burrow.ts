@@ -6,10 +6,11 @@
 // T3 (210) 8/s and a 5 s latch. Big Family (420): 7 swarmlings. Brave Hearts (420): 3 Champions,
 // 20/s and Chilled 15% each, and they leap onto flyers too (the tier targets air).
 //
-// A stub registered ahead of its task (T600a): T604 confirms the numbers, runs the spawner
-// (`attack.spawner`) and lifts it from towers/index.ts STUB_TOWER_TASKS. No priority: swarmlings
-// pick their own (T604 settles). `ratePerSec` restates the DoT tick (4/s). Sprites: placeholders
-// under their final ids (T640b).
+// The numbers are towers.md's first pass, confirmed by T604, which runs the spawner
+// (sim/swarmlings.ts: the dash, the latch, the DoT and stacked chill, the rest). No targeting
+// priority: each swarmling picks the First unit in range, spreading once the chill is stacked.
+// `ratePerSec` restates the DoT tick (4/s; a rate bonus quickens it). Links: Splash Zone
+// (Sprinkler), Finders Keepers (Crane). Sprites: placeholders under their final ids (T640b).
 import { DOT_TICK_SEC } from '../rules.ts';
 import { defineTower } from '../define.ts';
 

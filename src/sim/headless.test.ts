@@ -170,10 +170,16 @@ describe('scripted-build executor', () => {
     });
   });
 
-  it("refuses step kinds the sim can't run yet", () => {
+  it('runs every step kind (scriptInput since T605: armed, pressed once its input is pending)', () => {
     const sim = fixtureSim();
     const b = build([{ wave: 1, kind: 'scriptInput', id: 'press' }]);
-    expect(() => createBuildExecutor(sim, b)).toThrow(/can't run yet: 0:scriptInput/);
+    const exec = createBuildExecutor(sim, b);
+    // Nothing requests 'press' on the fixture: the press never goes in, and nothing waits on it.
+    for (let i = 0; i < 60; i++) {
+      exec.beforeTick();
+      sim.step();
+    }
+    expect(exec.steps[0]).toMatchObject({ kind: 'scriptInput', issuedTick: -1, error: null });
   });
 
   it('specialize: waits for the spec cost, then takes the tower to tier 4 (T215)', () => {

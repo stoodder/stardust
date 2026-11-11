@@ -3,8 +3,8 @@
 // per enemy; it reaches burrowed enemies (the `burrowed` answer, rules.ts COUNTER_ANSWERS). 50 s
 // cooldown. A cooldown hit never answers armor or splash.
 //
-// A stub registered ahead of its task (T600a): T604 runs the `pathTrap` effect and lifts its
-// FEATURE_GATES row. Icon: a placeholder under its final id (T640b).
+// The `pathTrap` effect runs since T604 (sim/abilities/underfoot.ts: the trap, its crossings, the
+// once-per-enemy rule). Icon: a placeholder under its final id (T640b).
 import { defineAbility } from '../define.ts';
 
 export const underfoot = defineAbility({

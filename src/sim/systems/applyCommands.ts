@@ -9,6 +9,7 @@ import type { Command, RejectReason } from '../commands.ts';
 import { TOWER_BLANK } from '../entities.ts';
 import { isBuildableTile, tileIndex } from '../grid.ts';
 import { interact } from '../clickables.ts';
+import { pressForcedInput } from '../forcedInput.ts';
 import { pay, sellValue } from '../economy.ts';
 import { isLateSell } from '../objectives.ts';
 import { poolAlloc, poolFind, poolKill } from '../pool.ts';
@@ -46,6 +47,8 @@ function applyCommand(
   ctx: TickContext,
   cmd: Command<IdSpace>,
 ): RejectReason | null {
+  // A forced input (T605; sim/forcedInput.ts): only its `scriptInput` applies until it's pressed.
+  if (state.pendingInput !== null && cmd.type !== 'scriptInput') return 'forcedInput';
   switch (cmd.type) {
     case 'build':
       return build(state, ctx, cmd);
@@ -76,8 +79,8 @@ function applyCommand(
       // A clickable world object (T409): `notClickable` unless a script has made it clickable.
       return interact(state, cmd.marker, false);
     case 'scriptInput':
-      // The forced input (A3M3's SEAL) runs with T605 (sim/forcedInput.ts).
-      return 'notImplemented';
+      // The forced input (A3M3's SEAL; T605): presses the pending one, else `forcedInput`.
+      return pressForcedInput(state, cmd.id);
     default:
       return assertNever(cmd);
   }

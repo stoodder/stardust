@@ -312,7 +312,17 @@ export type BarkTrigger =
         /** Entering the map with the bark's `when` flag condition holding; first build phase only. */
         | 'flag';
     }
-  | { readonly on: 'wave_start' | 'wave_cleared'; readonly wave?: number; readonly boss?: true }
+  /**
+   * A wave starts or resolves. `boss`: the wave has a boss (D098). `everglow`: it sends Everglow
+   * Security units, whose PA is Prim's voice (T603; A3M2's "Repossession in progress." is a Prim
+   * bark naming it, so it never plays on a wave of Hollow alone).
+   */
+  | {
+      readonly on: 'wave_start' | 'wave_cleared';
+      readonly wave?: number;
+      readonly boss?: true;
+      readonly everglow?: true;
+    }
   /**
    * Skitterkin in range for NOT_FIRING_SEC with no tower firing at them. A bark naming `wave`
    * plays only when the trigger fires during that wave (A1M5's "...You okay, Sprout?" is W10's;

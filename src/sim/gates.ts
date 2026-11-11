@@ -188,12 +188,12 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   // (T407b, live), Pin, line, target filters, and tower economy with the Harpoon and Crane (T408,
   // live), detection with the Lookout (T406, live). M5 (D137): beams with the Prism (T504, live), Unnerved
   // and echoes with the Mindspike and Stillness's Stasis area (T507, live), area Marks and Truthlight
-  // with the Lantern (T508, live). M6 (D141): spawners with the Scuttle Den (T604), Lulled with the
+  // with the Lantern (T508, live). M6 (D141): spawners with the Scuttle Den (T604, live), Lulled with the
   // Hum Choir's Lullaby (T607), the Stasis Bloom's field (T608).
   'attack.projectile': null,
   'attack.beam': null,
   'attack.chain': null,
-  'attack.spawner': 'T604',
+  'attack.spawner': null,
   'attack.homing': null,
   'attack.charge': null,
   'attack.line': null,
@@ -230,7 +230,7 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   'ability.discount': null,
   'ability.reveal': null,
   'ability.stasisArea': null,
-  'ability.pathTrap': 'T604',
+  'ability.pathTrap': null,
   'enemy.flying': null,
   'enemy.neutral': null,
   'enemy.burrow': null,
@@ -250,11 +250,11 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   'enemy.shieldAura': null,
   // M6 (D141): the Hollow's Maw and rift lanes (T602), Everglow Security's haste aura (T603), the
   // Holdout and Bricks's block (T605).
-  'enemy.gather': 'T602',
+  'enemy.gather': null,
   'enemy.hasteAura': null,
-  'map.rift': 'T602',
-  'map.holdout': 'T605',
-  'ally.blocker': 'T605',
+  'map.rift': null,
+  'map.holdout': null,
+  'ally.blocker': null,
   'map.objectives': null,
   'map.protect': null,
   'map.revisit': null,

@@ -36,6 +36,8 @@ export { activeBlink, blinkLanding, blinkTelling } from './enemyAbilities/blink.
 export { phaseTelling } from './enemyAbilities/phase.ts';
 export { projectedAura } from './enemyAbilities/shieldAura.ts';
 export { projectedHaste } from './enemyAbilities/hasteAura.ts';
+export { gatherMaxHp, gatherScale, gatherTelling } from './enemyAbilities/gather.ts';
+export { riftStatus, type RiftStatus } from './rifts.ts';
 // Detection (T406): whether a cloaked unit is hidden now (render's shimmer), and a detector's ring.
 export { cloakedOut } from './enemyAbilities/cloak.ts';
 // A Capacitor Bank's full charge under its bonuses (T407b): render's orb grows against it.

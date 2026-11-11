@@ -37,8 +37,13 @@
 // M4 (T404): a blink's tell shows a ghost where the unit will land, and leaves an afterimage
 // (BlinkView).
 // M5 (T503): a phaser's tell and Phased stretch show a broken teal ring under it (PhaseView).
+// M6 (T602): a Maw's tendril tell and growth ring, a burrowed Undertow's ripple trail, and the rift
+// cracks (closed, opening a wave ahead, open) (HollowView).
 // M5 (T502): an Aegis Cantor's continuous shield aura shows as a crawling dashed blue ring
 // (ShieldAuraView).
+// M6 (T603): an Expediter's haste aura shows as a solid orange ring beating like a metronome, the
+// units it hastes trail speed lines, and Everglow units shut down with a falling price tag
+// (EverglowView).
 // M5 (T504): a beam tower's lit beams run from its crystal to their targets, wider and brighter as
 // each ramps (BeamView).
 // M5 (T507): an Unnerved unit wears a wobbling violet squiggle overhead, an Echo Spike hit rings
@@ -90,6 +95,7 @@ import { SpecFx } from '../views/SpecFx.ts';
 import { CoreView } from '../views/CoreView.ts';
 import { BlinkView } from '../views/BlinkView.ts';
 import { PhaseView } from '../views/PhaseView.ts';
+import { HollowView } from '../views/HollowView.ts'; // T602
 import { MindView } from '../views/MindView.ts';
 import { MarkView } from '../views/MarkView.ts';
 import { BossBarView } from '../views/BossBarView.ts';
@@ -132,6 +138,7 @@ import {
 import { KeepClear, type Box } from '../vfx/keepClear.ts';
 import { PlinkFx } from '../views/PlinkFx.ts';
 import { ShieldAuraView } from '../views/ShieldAuraView.ts';
+import { EverglowView } from '../views/EverglowView.ts';
 import { WardView } from '../views/WardView.ts';
 import type { UnitAnchors } from '../views/unitAnchor.ts';
 import { ShieldView } from '../views/ShieldView.ts';
@@ -236,12 +243,15 @@ export class BattleScene extends Phaser.Scene {
   #shields!: ShieldView;
   /** The Aegis Cantor's shield aura ring (T502). */
   #auras!: ShieldAuraView;
+  /** Everglow Security: the Expediter's haste ring and speed lines, the shutdown (T603). */
+  #everglow!: EverglowView;
   /** The Ward (T506): a pivoted boss kneeling, its chill ring. */
   #wards!: WardView;
   /** Blinks: the tell's ghost at the landing, the afterimage (T404). */
   #blinks!: BlinkView;
   /** Phasing: the broken ring under a telling or Phased unit (T503). */
   #phases!: PhaseView;
+  #hollow!: HollowView; // T602
   /** Unnerved squiggles, Echo Spike rings, and Stillness's disc (T507). */
   #mind!: MindView;
   /** Marks and Truthlight's no-evade (T508). */
@@ -408,6 +418,7 @@ export class BattleScene extends Phaser.Scene {
     // T530a: views that mark a unit find its body as EnemyView draws it (unitAnchor.ts).
     const anchors: UnitAnchors = { box: (uid, out) => this.#enemies.get(uid)?.box(out) ?? false };
     this.#auras = new ShieldAuraView(ctx, prefersReducedMotion, anchors);
+    this.#everglow = new EverglowView(ctx, prefersReducedMotion, anchors);
     this.#wards = new WardView(
       ctx,
       (id) => this.#deps.sim.config.content.enemies[id]?.sprites.body ?? `enemy.${id}`,
@@ -415,6 +426,7 @@ export class BattleScene extends Phaser.Scene {
     );
     this.#blinks = new BlinkView(ctx, this.#fx, prefersReducedMotion);
     this.#phases = new PhaseView(ctx, this.#fx, prefersReducedMotion, anchors);
+    this.#hollow = new HollowView(ctx, map, prefersReducedMotion, pulseOn); // T602
     this.#mind = new MindView(ctx, this.#fx, prefersReducedMotion, anchors);
     this.#marks = new MarkView(ctx);
     this.#harpoon = new HarpoonView(ctx, prefersReducedMotion);
@@ -535,6 +547,7 @@ export class BattleScene extends Phaser.Scene {
       this.#blinks.bind(bus, () => sim.state.enemies),
       this.#phases.bind(bus),
       this.#mind.bind(bus),
+      this.#everglow.bind(bus, sim.config.content.enemies, presentationOfMap(map).skitterkinDeath),
       this.#harpoon.bind(bus, (uid) => {
         const t = sim.state.towers.items.find((x) => x.alive && x.uid === uid);
         return t === undefined ? 0 : this.#liftPx(t.col, t.row);
@@ -573,9 +586,11 @@ export class BattleScene extends Phaser.Scene {
       this.#huddles.reset();
       this.#shields.reset();
       this.#auras.reset();
+      this.#everglow.reset();
       this.#wards.reset();
       this.#blinks.reset();
       this.#phases.reset();
+      this.#hollow.reset(); // T602
       this.#mind.reset();
       this.#marks.reset();
       this.#harpoon.reset();
@@ -615,9 +630,11 @@ export class BattleScene extends Phaser.Scene {
     this.#huddles.update(state.enemies);
     this.#shields.update(dt, state.enemies);
     this.#auras.update(state.enemies, state.tick);
+    this.#everglow.update(state.enemies, state.tick, dt);
     this.#wards.update(state.allies, state.enemies);
     this.#blinks.update(dt, state.enemies);
     this.#phases.update(state.enemies);
+    this.#hollow.update(dt, state.wave, state.enemies, state.allies); // T602
     this.#mind.update(dt, state.enemies);
     this.#marks.update(state.enemies);
     this.#harpoon.update(dt, state.enemies);
@@ -736,11 +753,18 @@ export class BattleScene extends Phaser.Scene {
       wards: this.#wards.shown,
       wardAlpha: this.#wards.alpha,
       blinks: { tells: this.#blinks.tells, afterimages: this.#blinks.afterimages },
+      everglow: {
+        rings: this.#everglow.rings,
+        lines: this.#everglow.lines,
+        shutdowns: this.#everglow.shutdowns,
+        shutdownsPlayed: this.#everglow.shutdownsPlayed,
+      },
       phases: {
         ...this.#phases.shown,
         phasedIn: this.#phases.phasedIn,
         phasedOut: this.#phases.phasedOut,
       },
+      hollow: { ...this.#hollow.shown, tellsSeen: this.#hollow.tellsSeen }, // T602
       mind: { unnerved: this.#mind.unnerved, echoes: this.#mind.echoes, stills: this.#mind.stills },
       marks: this.#marks.shown,
       harpoon: { pins: this.#harpoon.pins, skewered: this.#harpoon.skewered },

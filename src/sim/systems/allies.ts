@@ -4,8 +4,10 @@
 // auras, and scripted health are M3.
 //
 // - **Spawning.** The map's ally posts (`CompiledMapDef.allies`) spawn on tick 0, in map order, at
-//   their marker tiles' centers: mode `post`, vulnerability `never` (Bricks is never hurt in Act I;
-//   the A3M3 timeline is M3). Each emits AllySpawned.
+//   their marker tiles' centers: mode `post`, vulnerability `never` (Bricks is never hurt before
+//   A3M3). A blocker post (`block`; T605, Bricks at the Gap) spawns `scripted`, with its capacity
+//   and its timeline's W1 health; sim/blocker.ts holds units and runs the timeline. Each emits
+//   AllySpawned.
 // - **Attacks.** Like a hitscan tower: an ally fires on a tick whose cooldown starts at 0, then
 //   waits `periodTicks`. It picks the **nearest** enemy in range (inclusive; ties to the lowest
 //   uid) on a layer it hits, re-picking every shot, and **never** a unit whose wave group is tagged
@@ -28,6 +30,7 @@ import type { WaveTag } from '../../content/types.ts';
 import { applyChill, applyDamage, PLAIN_HIT } from '../combat/damage.ts';
 import { isNeutral } from '../combat/neutral.ts';
 import { distSqTo } from '../combat/targeting.ts';
+import { blockerLevel } from '../blocker.ts';
 import { evacuate } from '../escort.ts';
 import { pointAt } from '../path.ts';
 import { ARRIVE_EPS_TILES } from './movement.ts';
@@ -122,6 +125,12 @@ function spawnPosts(state: SimState, ctx: TickContext): void {
     a.rangeSq = post.attack.rangeSq;
     a.hitsGround = post.attack.hitsGround;
     a.hitsAir = post.attack.hitsAir;
+    if (post.block !== null) {
+      // A blocker (T605; sim/blocker.ts): its health follows the timeline from W1's level.
+      a.vulnerability = 'scripted';
+      a.blockCapacity = post.block.capacity;
+      a.health = blockerLevel(post.block.health, 1);
+    }
     emit(state, { type: 'AllySpawned', uid: a.uid, kind: post.kind, x: a.x, y: a.y });
   }
 }

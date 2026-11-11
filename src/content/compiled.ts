@@ -321,6 +321,13 @@ export interface CompiledLinkPartner<K extends IdSpace = LiveIds> {
   readonly rampPct: number;
   /** Added to the partner's Marks, a fraction (Lightsong's Lantern; 0: none). */
   readonly markPct: number;
+  /**
+   * A Scuttle Den partner (T604): whole swarmlings added (Finders Keepers), their dash speed up,
+   * a fraction, and their latch longer, in ticks (Splash Zone). 0: none.
+   */
+  readonly swarmlings: number;
+  readonly swarmSpeedPct: number;
+  readonly latchTicks: number;
 }
 
 // ── Enemies and abilities ────────────────────────────────────────────────────────────────────

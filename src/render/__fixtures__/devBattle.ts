@@ -60,6 +60,10 @@ import type { IdsOf, LinkDef, RawContent } from '../../content/types.ts';
 import { prismMap } from './devPrism.ts';
 import { mindMap } from './devMind.ts';
 import { lanternMap } from './devLantern.ts';
+import { revokeMap } from './devM6.ts'; // T603
+import { mawMap } from './devM6.ts'; // T602
+import { denMap } from './devM6.ts'; // T604
+import { holdoutMap } from './devM6.ts'; // T605
 import { lantern } from '../../content/towers/lantern.ts';
 import { lightsong } from '../../content/links/lightsong.ts';
 import { underfoot } from '../../content/abilities/underfoot.ts';
@@ -1442,6 +1446,10 @@ export const DEV_CONTENT: RawContent<DevIds> = {
     dev_dark: darkMap, // T505
     dev_mind: mindMap, // T507 (devMind.ts)
     dev_lantern: lanternMap, // T508 (devLantern.ts)
+    dev_maw: mawMap, // T602 (devM6.ts: the Maw's gather, a rift lane from W2)
+    dev_revoke: revokeMap, // T603 (devM6.ts: Everglow Security; T606 adds the revocation)
+    dev_den: denMap, // T604 (devM6.ts: the Scuttle Den and Underfoot against Undertows)
+    dev_holdout: holdoutMap, // T605 (devM6.ts: the Holdout, Bricks's block, the SEAL)
   }),
   links: {
     // Conductive is the live content's link (its partners are the real Zapcoil and Sprinkler).

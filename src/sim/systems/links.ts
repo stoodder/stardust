@@ -22,7 +22,10 @@
 //   systems/towers.ts `damageOn` reads it);
 // - Lightsong's faster beam ramp (`linkRampPct`: the Prism's +30%; attacks/beam.ts reads it) and
 //   its stronger Marks (`linkMarkPct`: the Lantern's +5%; systems/status.ts `applyLinkStatuses` and
-//   systems/markArea.ts read it), each scaled like any link bonus (T508).
+//   systems/markArea.ts read it), each scaled like any link bonus (T508);
+// - the Scuttle Den's (T604; sim/swarmlings.ts reads them): Finders Keepers' extra swarmling
+//   (`linkSwarmlings`, scaled and rounded down like jumps), Splash Zone's faster dash
+//   (`linkSwarmSpeedPct`) and longer latch (`linkLatchTicks`), each scaled like any link bonus.
 // The caps apply when a stat is read (sim/bonuses.ts), never here. Recomputing allocates a little
 // (the new pair list); it runs only when dirty, never per tick.
 import type { CompiledContent, CompiledLinkDef } from '../../content/compiled.ts';
@@ -153,6 +156,11 @@ function recompute(state: SimState, ctx: TickContext): void {
       // Lightsong (T508): a faster ramp and stronger Marks, scaled like any link bonus.
       t.linkRampPct += p.rampPct * k;
       t.linkMarkPct += p.markPct * k;
+      // The Scuttle Den's (T604): whole swarmlings, scaled like jumps and rounded down; its dash
+      // speed and its latch time scaled like any link bonus (the latch rounds to whole ticks).
+      if (p.swarmlings !== 0) t.linkSwarmlings += Math.floor(p.swarmlings * k + 1e-9);
+      t.linkSwarmSpeedPct += p.swarmSpeedPct * k;
+      t.linkLatchTicks += Math.round(p.latchTicks * k);
     }
   }
 
@@ -215,6 +223,9 @@ function clearBonuses(t: Tower): void {
   t.vsShieldPct = 0;
   t.linkRampPct = 0;
   t.linkMarkPct = 0;
+  t.linkSwarmlings = 0;
+  t.linkSwarmSpeedPct = 0;
+  t.linkLatchTicks = 0;
 }
 
 function addBonus(t: Tower, stat: TowerStat, flat: number, pct: number): void {

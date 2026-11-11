@@ -29,6 +29,9 @@
 //     target tile; systems/detection.ts Reveals the cloaked units inside it on each of those ticks.
 //   - **Stillness** (`stasisArea`, T507) opens no zone: it lands on the cast's tick, after
 //     AbilityUsed (sim/abilities/stillness.ts: Stasis in a circle, then StasisArea).
+//   - **Underfoot** (`pathTrap`, T604) opens a `trap` zone on its ground path tile
+//     (abilities/underfoot.ts `openTrap`); the traps system springs it after movement, so this
+//     pass leaves it alone.
 //   - A unit out of reach (cloaked out, burrowed, Phased, or leaving; enemyAbilities/layers.ts
 //     `untargetable`) is untouchable: a strike or segment tick deals it nothing (the damage
 //     pipeline's `immune`), and a segment doesn't slow it (T507 widened that from cloaks alone).
@@ -49,6 +52,7 @@ import { applyChill, applyDamage, PLAIN_HIT, type HitMods } from '../combat/dama
 import type { Command, RejectReason } from '../commands.ts';
 import type { Modifier, SimConfig } from '../config.ts';
 import { castStillness } from '../abilities/stillness.ts';
+import { openTrap } from '../abilities/underfoot.ts';
 import { untargetable } from '../enemyAbilities/layers.ts';
 import { ZONE_BLANK, type Zone } from '../entities.ts';
 import type { DamageSource } from '../events.ts';
@@ -227,7 +231,7 @@ function hasRadiusEffect(
 /**
  * Validates and applies an `ability` command: the slot holds an ability, it is off cooldown (in
  * ticks and in waves), and a targeted one's target is a tile on the map (a strike, a reveal, or
- * Stillness may land on any tile; a segment needs a tile of a ground route). Time Dilation and Clearance Sale take no
+ * Stillness may land on any tile; a segment or Underfoot's trap needs a tile of a ground route). Time Dilation and Clearance Sale take no
  * target and ignore one if given. Returns null on success, else why it was rejected.
  */
 export function applyAbilityCommand(
@@ -312,6 +316,8 @@ function openTargeted(
 ): number {
   const e = def.effect;
   if (e.kind === 'segment') return openSegments(state, ctx, e, col, row, slot);
+  // Underfoot (T604): a trap on one ground path tile; abilities/underfoot.ts springs it.
+  if (e.kind === 'pathTrap') return openTrap(state, ctx, e, col, row, slot);
   if (e.kind === 'strike') {
     const radius = abilityStats(def, ctx.config.modifiers).radiusTiles;
     const zone = poolAlloc(state.zones, ZONE_BLANK, takeUid(state));
@@ -447,7 +453,8 @@ export function abilities(state: SimState, ctx: TickContext): void {
   const zones = state.zones;
   for (let i = 0; i < zones.used; i++) {
     const z = zones.items[i]!; // i < used ≤ items.length
-    if (!z.alive || z.abilitySlot === 0) continue;
+    // A trap (Underfoot) is the traps system's, after movement (abilities/underfoot.ts).
+    if (!z.alive || z.abilitySlot === 0 || z.kind === 'trap') continue;
     if (z.kind === 'segment') {
       z.ticksLeft--;
       suppress(state, ctx, z, z.ticksLeft % SEGMENT_TICK_TICKS === 0);

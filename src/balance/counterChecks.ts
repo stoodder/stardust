@@ -124,9 +124,16 @@ export function noCounterChecks<K extends IdSpace>(
   const b = map.builds;
   const checks: CheckSpec[] = [];
   // A map may push the lose-by wave later (BuildsDef.noCounterLoseByWave, capped by the validator).
-  const loseBy = b.noCounterLoseByWave ?? noCounterLoseByWave(map.waves.length);
-  const loseByWhy =
-    b.noCounterLoseByWave === null ? 'before the final third' : "by the map's override";
+  // A Holdout's no-counter build loses by finishing below its floor, whenever it ends (T605).
+  const holdout = map.objective === 'holdout';
+  const loseBy = holdout
+    ? map.waves.length
+    : (b.noCounterLoseByWave ?? noCounterLoseByWave(map.waves.length));
+  const loseByWhy = holdout
+    ? 'below the Evacuated floor'
+    : b.noCounterLoseByWave === null
+      ? 'before the final third'
+      : "by the map's override";
   for (const counter of Object.keys(b.noCounterBuilds)) {
     const label = `noCounter:${counter}`;
     checks.push(

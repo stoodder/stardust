@@ -19,6 +19,7 @@
 // - line (the Harpoon's Skewer, T408): sim/attacks/line.ts.
 // - beam (the Prism Spire, T504; the Lantern's light-beam, T508): sim/attacks/beam.ts. Holding
 //   fire puts its beams out (their ramps reset).
+// - spawner (the Scuttle Den, T604): nothing here; its swarmlings attack (sim/swarmlings.ts).
 // A `targetFilter` (Magnet Crane, T408) narrows a single-target tower's pick and keep to the units
 // it passes (combat/targeting.ts `passesFilter`).
 // A link's statuses (Conductive's Soak; systems/status.ts `applyLinkStatuses`) land after the
@@ -124,8 +125,8 @@ export function towers(state: SimState, ctx: TickContext): void {
       case 'beam':
         if (beamAttack(state, ctx, t, tier, attack)) firedAtSkitterkin = true;
         break;
-      // Spawners (Scuttle Den, M6) arrive with their tower. createSim refuses it until then
-      // (FEATURE_GATES).
+      // A spawner (the Scuttle Den; T604) attacks through its swarmlings: sim/swarmlings.ts runs
+      // them after the towers.
       case 'spawner':
         break;
       default:

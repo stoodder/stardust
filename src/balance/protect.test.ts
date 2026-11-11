@@ -103,11 +103,11 @@ describe('the Protect margin', () => {
 });
 
 describe('the harness on a Protect map', () => {
-  it('lifts its refusal (the Holdout and the Choir stay refused)', () => {
+  it('lifts its refusal (the Choir stays refused; the Holdout is checked since T605)', () => {
     expect(HARNESS_GATES.protect).toBeNull();
     expect(refusedFeatures(PROTECT.maps.fx_map)).toEqual([]);
-    const holdout = Object.assign({}, PLAIN_CONTENT.maps.fx_map, { objective: 'holdout' as const });
-    expect(refusedFeatures(holdout).map((c) => c.title)).toEqual(['holdout floor']);
+    const choir = Object.assign({}, PLAIN_CONTENT.maps.fx_map, { objective: 'choir' as const });
+    expect(refusedFeatures(choir).map((c) => c.title)).toEqual(['choir margins']);
   });
 
   it("judges par by min(core %, asset %) and tallies the asset's losses per wave", () => {

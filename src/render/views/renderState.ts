@@ -75,6 +75,16 @@ export interface RenderState {
   readonly wardAlpha: number;
   /** BlinkView's tells up now and afterimages since the battle began. */
   readonly blinks: { readonly tells: number; readonly afterimages: number };
+  /**
+   * EverglowView (T603): haste rings up now, hasted units trailing speed lines now, shutdowns
+   * playing now, and shutdowns played since the battle began.
+   */
+  readonly everglow: {
+    readonly rings: number;
+    readonly lines: number;
+    readonly shutdowns: number;
+    readonly shutdownsPlayed: number;
+  };
   /** PhaseView's rings up now (telling, Phased) and units seen phasing in since the battle began. */
   readonly phases: {
     readonly tells: number;
@@ -82,6 +92,17 @@ export interface RenderState {
     readonly phasedIn: number;
     /** Units seen coming back solid (their white pop; T530a). */
     readonly phasedOut: number;
+  };
+  /**
+   * HollowView (T602): Maw tendril tells up now and seen since the battle began, Maws wearing a
+   * growth ring, ripples drawn behind burrowed Hollow units, and each rift lane's status.
+   */
+  readonly hollow: {
+    readonly tells: number;
+    readonly tellsSeen: number;
+    readonly grown: number;
+    readonly ripples: number;
+    readonly rifts: readonly ('closed' | 'opening' | 'open')[];
   };
   /** Refugees drawn now (on the field), and those frozen in a hush (T305c, RefugeeView). */
   readonly refugees: { readonly shown: number; readonly held: number };

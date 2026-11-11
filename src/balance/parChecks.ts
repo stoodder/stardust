@@ -19,6 +19,7 @@ import {
   type RunRecord,
   type RunRequest,
 } from './checks.ts';
+import { holdoutParCheck } from './holdout.ts';
 import { EARLY_CALL_SLACK_PCT } from './rules.ts';
 
 /** A map's par band (rules.ts `parBand`), or null for an act without one yet. */
@@ -55,6 +56,8 @@ export function parOutcomeChecks<K extends IdSpace>(
       },
     ),
   );
+  // A Holdout asserts #17 instead of #1–#2 (balance/holdout.ts; T605).
+  if (map.objective === 'holdout') checks.splice(0, 2, holdoutParCheck(map, every));
   checks.push(
     perRun(
       '4',

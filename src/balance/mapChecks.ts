@@ -12,6 +12,7 @@ import {
   parOutcomeChecks,
   variantChecks,
 } from './parChecks.ts';
+import { holdoutBand } from './holdout.ts';
 import { parBand } from './rules.ts';
 
 /**
@@ -24,7 +25,9 @@ export function mapChecks<K extends IdSpace>(
   few: readonly number[],
   leftOut: readonly string[] = [],
 ): CheckSpec[] {
-  const band = parBand(map.act, map.builds.marginBand);
+  // A Holdout is held to its Evacuated floor (balance/holdout.ts; T605), not the act's band.
+  const band =
+    map.objective === 'holdout' ? holdoutBand(map) : parBand(map.act, map.builds.marginBand);
   return [
     ...parOutcomeChecks(map, every, band),
     ...noCounterChecks(map, few, leftOut),

@@ -359,7 +359,7 @@ Barks are one-line, non-blocking reactions to game state, drawn from pools (auth
 
 | Trigger id | Fires when |
 |---|---|
-| `map_start` / `wave_start` / `wave_cleared` | The map's first build phase; a wave starts; a wave resolves (both say `boss` for a boss wave). Act I's shared `wave_cleared` jingle jokes play only after a wave with no leaks |
+| `map_start` / `wave_start` / `wave_cleared` | The map's first build phase; a wave starts; a wave resolves (both say `boss` for a boss wave, and `everglow` for a wave that sends Everglow Security). Act I's shared `wave_cleared` jingle jokes play only after a wave with no leaks |
 | `first_leak` | The first enemy of the map leaks |
 | `perfect_wave` | A wave with something hostile in it (a group not tagged `fleeing`) resolves with no leaks (medal-exempt groups ignored) |
 | `tower_built` / `tower_sold` | A tower is built; sold (condition data can check whether it carried a name tag) |
@@ -380,7 +380,7 @@ Barks are one-line, non-blocking reactions to game state, drawn from pools (auth
 | `tower_issued` | The battle starts with a newly issued tower in the loadout (its first battle in the save), once the briefing closes |
 | `menu` | The player enters a base screen (the base, shop, R&D, Engineering, Inbox, codex, or star map) |
 
-Conditions can test the act, the map, flags, and run stats. Only speakers present on the map may bark: QUILL plus the companion. **The Quiet Wave is silent:** from its start to the map's end no bark fires but `not_firing` (Bricks's "...You okay, Sprout?"); its scripted lines still play (D098).
+Conditions can test the act, the map, flags, and run stats. Only speakers present on the map may bark: QUILL plus the companion, and Compliance Officer Prim on a map that sends Everglow Security (she speaks through their PA, so her barks name `everglow`). **The Quiet Wave is silent:** from its start to the map's end no bark fires but `not_firing` (Bricks's "...You okay, Sprout?"); its scripted lines still play (D098).
 
 ### 6.4 Everglow Inbox (memos)
 

@@ -12,17 +12,20 @@
 //   small white flash (the chime is audio's).
 // - `unravel` (the Hollow, every act): it comes apart into cold-violet `stardust.unsung` motes
 //   that drift up and away. Never a pop, never warm colour.
-// - `burst` (Everglow, and a sprite with no death anim): `fx.explosion`.
+// - `shutdown` (Everglow Security, every act; enemies.md § 8: a clean shutdown and a falling price
+//   tag; T603): no pop, no debris: a power-off line at the body and a price tag dropping to the
+//   ground (EverglowView, everglowLook.ts; T640a draws them as sprites).
+// - `burst` (a sprite with no death anim): `fx.explosion`.
 import type { SkitterkinDeath } from '../../content/presentation.ts';
 import type { EnemyFaction } from '../../content/types.ts';
 
-export type DeathStyle = 'comic' | 'quiet' | 'still' | 'shatter' | 'unravel' | 'burst';
+export type DeathStyle = 'comic' | 'quiet' | 'still' | 'shatter' | 'unravel' | 'shutdown' | 'burst';
 
 /** Each faction's death in every act; the Skitterkin's is the map's dial (BY_DIAL). */
 const BY_FACTION: Readonly<Record<Exclude<EnemyFaction, 'skitterkin'>, DeathStyle>> = {
   hollow: 'unravel',
   aelari: 'shatter',
-  everglow: 'burst',
+  everglow: 'shutdown',
 };
 
 /** The Skitterkin death dial's look: confetti, a sad squeak's quiet pop, a lingering still body. */

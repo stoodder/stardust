@@ -34,6 +34,13 @@
 //   marker the script has already turned on goes at once), and that's the step's issued tick. If
 //   the marker is interacted with before the click (its fallback fired), the step records
 //   `notClickable` at that tick; if the map ends first, the step was never issued.
+// - `scriptInput` (T605: A3M3's SEAL) arms a press of a forced input, like `interact`, and holds
+//   nothing behind it: the `scriptInput` command is issued on the first tick that input is pending
+//   (`state.pendingInput`), and that's the step's issued tick; if the map ends first, it was never
+//   issued. While any forced input is pending the executor issues nothing else (the sim would
+//   reject it `forcedInput`, as it does a player's): steps, macros, and wave calls wait, except
+//   that a later `scriptInput` step for the pending input is armed ahead of its turn (the freeze
+//   would otherwise stall the steps before it for good).
 import type { CompiledBuild, CompiledBuildStep } from '../content/compiled.ts';
 import { MAX_TIER_BEFORE_SPEC } from '../content/rules.ts';
 import type { GridPos, IdSpace, LiveIds, MedalKind, WaveTag } from '../content/types.ts';
@@ -70,6 +77,7 @@ const SUPPORTED_STEPS: ReadonlySet<CompiledBuildStep['kind']> = new Set([
   'ability',
   'callWave',
   'interact',
+  'scriptInput',
 ]);
 
 /** What happened to one step of the build. */
@@ -139,6 +147,16 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
   const neutralWatchers: { holding: boolean; rec: StepRecord }[] = [];
   /** Armed `interact` steps: the marker to click, and the step's record (T409). */
   const clicks: { marker: string; rec: StepRecord }[] = [];
+  /** Armed `scriptInput` steps: the forced input to press, and the step's record (T605). */
+  const presses: { id: string; rec: StepRecord }[] = [];
+  /** The `scriptInput` steps armed so far, by index (one may be armed ahead of its turn). */
+  const armed = new Set<number>();
+  /** Arms `scriptInput` step `rec` (once). */
+  const arm = (id: string, rec: StepRecord): void => {
+    if (armed.has(rec.index)) return;
+    armed.add(rec.index);
+    presses.push({ id, rec });
+  };
   /** The build phase (countdownWave) already called early, so each is called once. */
   let calledPhase = 0;
 
@@ -297,8 +315,9 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
         clicks.push({ marker: s.marker, rec });
         return 'done';
       case 'scriptInput':
-        // assertRunnableBuild refused it up front.
-        throw new RangeError(`unsupported step kind '${s.kind}'`);
+        // Armed: pressed by `press` once its input is pending; later steps don't wait for it.
+        arm(s.id, rec);
+        return 'done';
       default:
         return assertNever(s);
     }
@@ -348,6 +367,18 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
     }
   };
 
+  /** Presses each armed forced input that is pending now (T605). */
+  const press = (): void => {
+    for (let i = 0; i < presses.length; i++) {
+      const p = presses[i]!; // i < length
+      if (state.pendingInput !== p.id) continue;
+      p.rec.issuedTick = state.tick;
+      p.rec.error = apply({ type: 'scriptInput', id: p.id });
+      presses.splice(i, 1);
+      i--;
+    }
+  };
+
   /** Runs the armed holdFireWhile macros. */
   const watch = (): void => {
     for (const w of watchers) {
@@ -383,10 +414,21 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
       watchers.length = 0;
       neutralWatchers.length = 0;
       clicks.length = 0;
+      presses.length = 0;
       if (held !== undefined && state.outcome === 'playing') toggle(held.rec, false);
     },
     beforeTick() {
       if (state.outcome !== 'playing' || released) return;
+      if (state.pendingInput !== null) {
+        // A forced input freezes play (T605): only its press goes in. A step that presses it but
+        // waits behind a step the freeze stalls (a build short of credits) is armed ahead.
+        for (let j = next; j < build.steps.length; j++) {
+          const s = build.steps[j]!; // j < length
+          if (s.kind === 'scriptInput' && s.id === state.pendingInput) arm(s.id, steps[j]!);
+        }
+        press();
+        return;
+      }
       watch();
       while (next < build.steps.length) {
         const s = build.steps[next]!; // next < length
@@ -432,6 +474,11 @@ export interface HeadlessResult extends RunSummary {
    * Heavy; enemies.md § The hush rule). The free-choice checks report them (T412).
    */
   readonly hushes: number;
+  /**
+   * The forced inputs pressed this run, in order (`state.forcedResolved`; T605): a Holdout ends
+   * through its SEAL (harness #17).
+   */
+  readonly forcedInputs: readonly string[];
 }
 
 /** 30 minutes of sim time: longer than any map (the finale is about 25). */
@@ -474,5 +521,6 @@ export function runHeadless<K extends IdSpace = LiveIds>(
     medals: { ...sim.state.medals },
     objectives: [...sim.state.objectives],
     hushes,
+    forcedInputs: [...sim.state.forcedResolved],
   };
 }
