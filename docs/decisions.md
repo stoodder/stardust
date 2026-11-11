@@ -1645,3 +1645,85 @@ Act III's curve so far: A3M1 66.7 Evacuated (cleared and spared), A3M2 63.6 on t
 - **Art trail:** [docs/art/gallery/m6/](art/gallery/m6/), eight sheets of ≤ 8,000 px, with two M6 corners on sheet 1 (the Preserve's homes, Den and Maw; the Gap at the SEAL, the door closing).
 - **Next:** M7, Act III part two (A3M4–A3M6), as the owner asked. Open follow-ups: T660b, T609c, T501c-M6 (M7); T801-burrow (the burrowed exam moved to the finale, D142), T802-bundle, T662–T664 (M8).
 - **Owner asks:** the gate fork above; a listen to the Leaving Song's harmony and Thrum's timbre, Pebble's late hum in the SEAL's `door_hum`, Sterling's 2 s silence with the stamps, `lose_hush`, and the Choir layer under speech (D143); the burrowed exam's move to the finale (D142); and A3M3's start credits going to 770, so the Thumper exam is fair whichever protocol the player brings (D144).
+
+### D146 — 2026-11-11 — M7 cut: Act III, part two (A3M4–A3M6)
+
+The owner, before going AFK: "once this is done let's also move on to the second half of this work, the additional maps". The plan is approved under "use your best judgement", for the owner to review on return; tasks.md § M7 holds the 30 tasks and their waves.
+
+**The cut.** M7 is A3M4 *Empty Slot*, A3M5 *Unsung* and A3M6 *Let Them In*. It ends on the domes open and the Waykeeper callsign, then the Sector map teases the finale. M8 is unchanged: the finale, C5 and the epilogue, post-game and polish. The size is about 1.25× M6:
+- 6 enemies and 2 bosses (Shareholder Value, the Gathering Maw)
+- the Gloop Spitter and the Sproing Pad
+- System Reboot
+- 4 links
+- jamming, the healer aura, bearers with script groups, the new boss phases, and C4's effects
+
+**Cut lever**, pulled in this order if M7 runs long:
+1. Zibzab's Rapport and the report-only probes
+2. Big Glorp's puddle
+3. the Gathering Maw's merge walk
+4. A3M6's 2-wide lane offsets
+
+**Forks, each taken as recommended:**
+1. All three maps stay in M7. A3M6 is the act's hope beat, so splitting it off would end M7 mid-turn.
+2. One gate with the 8-minute budget. T764, which takes over T564b, runs first and must find at least 60 s of headroom. The owner still holds the D145 fork: a 10-minute budget or a split gate.
+3. The harness runs all three C4 outcomes on A3M5 and A3M6, because Purge's −2 armor carries forward.
+
+**Rulings where the docs are silent.** These are proposed in the plan's §1 and taken here.
+
+*Gate retargets*
+- `jamLimit` (#10) goes to T702.
+- `objectiveCompleted` and `spawnWave` go to T706.
+- `openTile` goes to T707.
+
+*Jamming*
+- Jammed is a tower state.
+- A jam lasts up to `JAM_MAX_SEC`, scaled by the tower's `jamMul` at the jam's start.
+- A jammed tower gets 6 s of immunity after the jam ends. Reboot clears every jam and grants the same immunity.
+- A jammed tower can still be sold, upgraded or retargeted. Its auras and links go off.
+- An interrupted tell restarts the jammer's period, and Lulled stretches it ×1.5.
+- The Silencer picks its target at the tell's start: a Choir within 2.5 tiles, else the highest tier.
+- The Auditor jams every non-immune tower within 2 tiles.
+
+*Hostile Takeover*
+- It jams `min(2, floor(0.25 × towers placed))` towers, picked as the laser starts.
+- **Declined:** `takeoverJamMaxSec ≤ 1`, so a Choir at T3 earns it.
+- **Keep the Lights On:** `jammedPeak ≤ 1`.
+
+*Jettison*
+- At phase 3 armor drops to 0 and haste goes to 40%.
+- Four plates land through `openTile` on the `crash_*` markers, never on a par pad.
+
+*The Gathering Maw*
+- It gathers within 2 tiles every 5 s, with a 1 s tell.
+- At 50% HP it splits into 3 parts of 20% each, with one boss bar and boss rules for each part.
+- The parts merge 12 s after the split, with 30% haste. Killing all three before the merge wins.
+
+*Bearers*
+- Bearers are an Escort-shaped group, `kind: 'bearer'`.
+- A hushed bearer costs the asset 1 of 12. A bearer that reaches the band's edge is home.
+
+*Cut the Feed*
+- The three `feed_*` wreckage markers must be cleared before W10.
+- If they aren't, W10 gets an extra script group through `spawnWave`, using a new `{ objectiveDone }` atom.
+
+*C4*
+- It is asked once, in A3M4's debrief on the first win, with C3's lock, and committed on the answer.
+- Night Shift is mandatory at the next base visit.
+- The mail scene grants Suppressing Fire (`inheritAbility`) on the first win.
+- **Purge:** a faction-scoped −2 armor `enemyStat` (min 0) from A3M5 on.
+- **Rewrite:** `lockedAbilities`, and QUILL absent with `system` intel.
+- **Keep:** Time Dilation joins the Technician pool from A3M5 on.
+
+*Jailbreak*
+- Stocked after A3M3 for 300 Stardust, or free under `convoy`; the player still takes it.
+- It moves the class from `revokedTowers` to `jailbroken`.
+
+*The crate*
+- It opens as A3M6's briefing closes. It installs every Vrell tune-up rank the player doesn't own, or, if they own them all, one Field Protocol unlock.
+- The harness profile includes it.
+
+*Act III maps* still carry no `dark` keys.
+
+Proposed numbers for the Gathering Maw, `takeoverJamSec` and the like stay open to the map tasks' balance runs. Where a map task must change one, it logs an addendum here.
+
+Carried tasks: T660b → T760, T609c → T709 (cut progression.md §7.3's companion-barks clause; Rapports are numbers only), T501c-M6 → T722, T564b → T764, T318-M6's QUILL `purge` and Kip `act3` → T741.
