@@ -1825,3 +1825,9 @@ Rulings:
 - Kip's pinholes are invisible at briefing size. That is accepted: his cap and the missing pin carry the beat.
 
 *D151 addendum (APP):* a replayed scene shows each speaker as it first played. Portrait variant and name plate are judged as if the scene were still unseen. This is a general rule, not a Kip special case, and it also keeps Pebble's A2M6 whistle scene right on replay. The loadout and `createSim` now judge story locks through one check, `flagConditionHolds` over the map's gated flag defaults (T774 closed).
+
+*D151 addenda (CONTENT, RENDER):*
+- Easing A3M5's W13 hunt moved no number. The bearers are lost to its two Silencers, not its Motes. The fix is Kip's W13 countdown line ("Save what you have. Freeze them at the old intake."). A human caster who heeds it ends at 75.0, 75.0 and 91.7 under Keep, Purge and Rewrite; a plain one at 58.3, 58.3 and 25.0, where Rewrite's player has no Reboot and spent their casts before the hunt. `a3m5Human.test.ts` pins these. The reviewer's probe had two bugs: it skipped countdowns and rounded its targets.
+- Pebble's Choir hint is a map-script cue on W9's countdown, gated on a Choir being built.
+- A jam ring fizzles only on its landing tick, and only if it jammed nothing. A Takeover laser fizzles once every tower it picked will stay immune past its landing. FIZZLED holds for 1.6 s.
+- The Auditor's mast has a white tip. The Gathering Maw's parts take lanes by their order along the road, at least 24 px apart on screen.
