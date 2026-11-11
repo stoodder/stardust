@@ -85,9 +85,9 @@ export const waves = defineWaves([
     ...NO_CALL,
     groups: [
       gunships(2, 'sky_w', 0, 4),
-      operatives(4, 4, 2.5),
-      gunships(2, 'sky_e', 8, 4),
-      drones(3, 10),
+      operatives(3, 4, 4),
+      gunships(1, 'sky_e', 10),
+      drones(3, 12),
     ],
   },
   // W10 · Hollow surge (Maws and Rift Moths)
@@ -96,8 +96,8 @@ export const waves = defineWaves([
     groups: [
       maws(3, 'road', BEHIND, 4),
       motes(5, 'road', BEHIND + 2),
-      moths(4, 'sky_w', 6),
-      moths(4, 'sky_e', 9),
+      moths(3, 'sky_w', 6),
+      moths(3, 'sky_e', 10),
     ],
   },
   // W11 · Expediters + drones (the "Accounting" column)
@@ -127,9 +127,9 @@ export const waves = defineWaves([
     ...CALL,
     groups: [
       gunships(2, 'sky_w', 0, 4),
-      gunships(2, 'sky_e', 2, 4),
-      moths(5, 'sky_w', 8),
-      moths(5, 'sky_e', 10),
+      gunships(1, 'sky_e', 6),
+      moths(3, 'sky_w', 10),
+      moths(3, 'sky_e', 14),
     ],
   },
   // W15 · Maws + Rift Moths

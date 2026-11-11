@@ -9,7 +9,7 @@
 //   the humming ring (warren). A Liability Enforcer walks the corridor to repossess the generator;
 //   a Silencer uncoils its tell on the tunnel.
 // - **Second Harvest at night** (A3M5): the vats at full blaze, the three feed lines burst on the
-//   north edge (Cut the Feed's wrecks), "Shareholder Value"'s hangar with its door rolled up, the
+//   north edge (Cut the Feed's wrecks), "Shareholder Value"'s hangar, its REC lamp blinking, the
 //   boss jettisoned on the road (`panic`) and its four plates dug in on the crash site, two bearers
 //   carrying the vats' dead along the road.
 // - **Dome Row at night** (A3M6): the 2-wide lane (`tile.path`'s `wide_*`) up to the gate, Dome 1
@@ -53,7 +53,7 @@ export const M7_CORNERS: readonly (readonly [M7Scene, string])[] = [
   ],
   [
     'harvest',
-    'M7 corner · act3 · Second Harvest at night: vats at full blaze, the feed lines burst, the hangar open, the jettison’s crash site',
+    'M7 corner · act3 · Second Harvest at night: vats at full blaze, the feed lines burst, the hangar, the jettison’s crash site',
   ],
   [
     'dome_row',
@@ -96,15 +96,15 @@ const CORNERS: Readonly<Record<M7Scene, Corner>> = {
   // hall below it: its door, the banner, and the two flags' memorials either side.
   shelters: {
     grid: strip(
-      ['.........', '#########', '.o..#..o.', '....#....', '....C....', '.........', '.........'],
+      ['..o...o..', '#########', '....#....', '....#....', '....C....', '.........', '.........'],
       {
         mail_chute: [0, 0],
         bay_1: [1, 3],
         bay_2: [7, 3],
         hall_door: [4, 5],
         banner_friday: [4, 6],
-        held_door: [1, 6],
-        humming_ring: [7, 6],
+        held_door: [2, 6],
+        humming_ring: [6, 6],
       },
       [along(1, 0, 8), [...down(4, 1, 4)]],
     ),
@@ -138,9 +138,9 @@ const CORNERS: Readonly<Record<M7Scene, Corner>> = {
       ['prop.crash_plate', 'v3', 6.5, 4.5],
     ],
     units: [
-      ['enemy.shareholder_value', 'panic_sw_1', 5.6, 2.5],
-      ['ally.bearer', 'walk_sw_0', 1.4, 2.4],
-      ['ally.bearer', 'walk_sw_1', 2.4, 2.65],
+      ['enemy.shareholder_value', 'panic_sw_1', 7.3, 2.5],
+      ['ally.bearer', 'walk_sw_0', 0.7, 2.4],
+      ['ally.bearer', 'walk_sw_1', 1.9, 2.65],
     ],
   },
   // The 2-wide lane along rows 2–3 to the gate (6), Dome 1 open beside it, the old road on east

@@ -12,9 +12,14 @@ import { grid, plot, rows, stamp, type CharGrid } from '../helpers.ts';
 
 const W = 68;
 const H = 30;
-/** The anchor: the banner's foot, between its poles. */
-const AX = 28;
+/** The poles' feet row (the floor). */
 const AY = 26;
+/**
+ * The anchor: on the floor just past the right pole, among the kids, and a little up the poles, so
+ * the banner hangs west of its tile and low: on A3M4 it never covers the hall door or the generator
+ * behind it (its marker is two tiles in front of the core, the door between them).
+ */
+const ANCHOR = { x: 56, y: 22 };
 /** The poles' columns and the banner's top row. */
 const POLE_L = 3;
 const POLE_R = 53;
@@ -85,7 +90,7 @@ function banner(): string[] {
 export const propBannerFriday = defineSprite({
   id: 'prop.banner_friday',
   size: { w: W, h: H },
-  anchor: { x: AX, y: AY },
+  anchor: ANCHOR,
   palette: 'everglow',
   outline: 'auto',
   legend: {
