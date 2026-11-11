@@ -88,12 +88,12 @@ function parSteps(): BuildStep[] {
     reboot(6, REBOOT_SEC),
     { wave: 6, upgrade: HALL_W },
     { wave: 7, upgrade: HALL_W }, // T3: jams in its aura cut by 75%
-    { wave: 8, upgrade: J_SE },
     { wave: 8, upgrade: SV_S },
     reboot(9, REBOOT_SEC),
     { wave: 9, upgrade: J_S },
     reboot(10, REBOOT_SEC),
     { wave: 10, build: 'mindspike', tile: J_SW },
+    { wave: 11, upgrade: J_SE },
     { wave: 11, upgrade: SKY },
     reboot(12, REBOOT_SEC),
     { wave: 12, upgrade: J_S },
