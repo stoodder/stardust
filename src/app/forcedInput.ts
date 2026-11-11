@@ -237,6 +237,18 @@ function onKeyDown(e: KeyboardEvent): void {
   if (action === 'press') seal.keyPress(e.repeat);
 }
 
+/** Takes the forced input off screen. */
+function hide(): void {
+  current?.stop();
+  current = null;
+  forcedInput.value = null;
+}
+
+/** A tab hidden or shown: the waiting line's clock stops or runs on. */
+function onVisibility(): void {
+  current?.clockChanged();
+}
+
 /** Keeps the HUD's `forcedInput` in sync with `host`'s sim; returns the unbind. */
 export function bindForcedInput(host: Host<IdSpace>, deps: SealDeps = defaultDeps): () => void {
   const map = host.sim.map.id;
@@ -248,11 +260,6 @@ export function bindForcedInput(host: Host<IdSpace>, deps: SealDeps = defaultDep
     current = startSeal(map, id, deps);
     forcedInput.value = id;
   };
-  const hide = (): void => {
-    current?.stop();
-    current = null;
-    forcedInput.value = null;
-  };
   if (host.sim.state.pendingInput !== null) show(host.sim.state.pendingInput);
   const offs = [
     host.bus.on('ForcedInputRequested', (e) => show(e.id)),
@@ -263,7 +270,6 @@ export function bindForcedInput(host: Host<IdSpace>, deps: SealDeps = defaultDep
       current?.clockChanged();
     }),
   ];
-  const onVisibility = (): void => current?.clockChanged();
   const win = typeof window === 'undefined' ? null : window;
   win?.addEventListener('keydown', onKeyDown, true);
   win?.document.addEventListener('visibilitychange', onVisibility);

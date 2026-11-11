@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { SCENES } from '../../content/dialogue/index.ts';
 import { SPRITES } from '../../content/sprites/index.ts';
 import type { SpriteDef } from '../../content/sprites/types.ts';
+import { DEV_SCENES } from './dev.ts';
 import { lineAnnouncement } from './SceneParts.tsx';
 import {
   BURST_BEATS,
@@ -52,9 +53,13 @@ function check(id: string, beats: readonly Beat[]): void {
 }
 
 describe('the staging table', () => {
-  it('stages registered scenes only, the stinger and the party', () => {
+  it('stages registered scenes only (or the dev Yield Log), the stinger, party, and Yield Log', () => {
+    const dev = new Set(DEV_SCENES.map((s) => s.id));
+    // A3M2's confession scene is staged before T621 writes its lines (T614); drop this then.
+    const awaiting = new Set(['a3_m02_scene_confession']);
     for (const id of Object.keys(SCENE_STAGING)) {
-      expect(Object.hasOwn(SCENES, id), id).toBe(true);
+      if (awaiting.has(id) && !Object.hasOwn(SCENES, id)) continue;
+      expect(Object.hasOwn(SCENES, id) || dev.has(id), id).toBe(true);
     }
     expect(stagingOf('a1_m05_scene_stinger')).toBe('rig9_feed');
     expect(stagingOf('a1_m05_scene_party')).toBe('party');

@@ -53,7 +53,8 @@ function fakeWorld() {
     const end = now + ms;
     for (;;) {
       let due: [number, { at: number; fn: () => void; every: number | null }] | null = null;
-      for (const entry of timers) if (entry[1].at <= end && (due === null || entry[1].at < due[1].at)) due = entry;
+      for (const entry of timers)
+        if (entry[1].at <= end && (due === null || entry[1].at < due[1].at)) due = entry;
       if (due === null) break;
       const [id, t] = due;
       now = t.at;
@@ -94,14 +95,15 @@ describe('pressAccepted: armed after 700 ms, then only a fresh down', () => {
   });
 });
 
+const key = (code: string, mods: Partial<KeyboardEvent> = {}) => ({
+  code,
+  ctrlKey: false,
+  metaKey: false,
+  altKey: false,
+  ...mods,
+});
+
 describe('sealKey: the lock on the keys', () => {
-  const key = (code: string, mods: Partial<KeyboardEvent> = {}) => ({
-    code,
-    ctrlKey: false,
-    metaKey: false,
-    altKey: false,
-    ...mods,
-  });
   const free = { menuOrScene: false, onOther: false };
   it('Enter and Space press; on the Menu or the speaker they are that button’s own', () => {
     for (const c of ['Enter', 'NumpadEnter', 'Space']) {
@@ -110,7 +112,8 @@ describe('sealKey: the lock on the keys', () => {
     }
   });
   it('Esc (the pause menu), M (mute), Tab, and browser keys pass', () => {
-    for (const c of ['Escape', 'KeyM', 'Tab', 'F5', 'F12']) expect(sealKey(key(c), free)).toBe('pass');
+    for (const c of ['Escape', 'KeyM', 'Tab', 'F5', 'F12'])
+      expect(sealKey(key(c), free)).toBe('pass');
     expect(sealKey(key('KeyR', { ctrlKey: true }), free)).toBe('pass');
   });
   it('every game key is held back', () => {

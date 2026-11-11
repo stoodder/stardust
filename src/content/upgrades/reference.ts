@@ -93,7 +93,8 @@ const A3M2: ProfileDef = {
  * After A3M2's Clean Exit: the class its par build loses (the Rivet, the most credits invested;
  * act3.md § A3M2) and Orbital Strike are gone (slot 1 holds Scanner Sweep only if bought, and the
  * reference never buys it); Seed Money 2. Holdout has no core to leak into, so Head Start is back
- * on. The harness's per-class variants (T606) swap which class is gone.
+ * on. Content validation's `[revocation]` rule (T606) checks this profile against every class
+ * A3M2's cue could take, not only the Rivet.
  */
 const A3M3: ProfileDef = {
   ...A3M2,

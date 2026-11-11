@@ -45,7 +45,9 @@ export function YieldLogStage({ from }: { from: number }) {
         {yieldLogHeader(yours)}
       </p>
       <div class="yl-window" aria-hidden="true" style={{ height: `${height}px` }}>
-        {!still && <div class="yl-read-line" style={{ top: `${Math.round(height * READ_LINE)}px` }} />}
+        {!still && (
+          <div class="yl-read-line" style={{ top: `${Math.round(height * READ_LINE)}px` }} />
+        )}
         <ol class="yl-rows" style={{ transform: `translateY(${-shift}px)` }}>
           {rows.map((r, i) => {
             const lit = r.yours && (still || litAt(i * YIELD_ROW_PX - shift, height));

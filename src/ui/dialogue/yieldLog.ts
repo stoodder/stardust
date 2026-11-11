@@ -21,8 +21,11 @@ export const PLAYER_TECH = '#ED-447';
 /** The other technicians whose entries come before yours (never #ED-447, never Bricks's #ED-112). */
 const OTHER_TECHS = ['#ED-203', '#ED-268', '#ED-309', '#ED-351', '#ED-388', '#ED-402', '#ED-431'];
 
-/** The others' entries the scroll shows before yours begin. */
-export const PRIOR_SHOWN = 16;
+/**
+ * The others' entries the scroll shows before yours begin: enough that yours start below the
+ * reading line (YieldLogStage's 34 rows × READ_LINE) and light as the scroll carries them up.
+ */
+export const PRIOR_SHOWN = 24;
 
 /** How long the scroll holds still before it starts (ms): the header lands first. */
 export const SCROLL_HOLD_MS = 1200;

@@ -1,8 +1,9 @@
-// An Evie billboard, `beaming` (art-direction §6; apron decor on Act I maps) and `peeling` (Act II's). The A1M1 board
+// An Evie billboard, `beaming` (art-direction §6; apron decor on Act I maps), `peeling` (Act II's),
+// and `dark` (Act III's and the finale's: unlit, the hum-glyph painted over Evie's smile). The A1M1 board
 // reads "PESTS PROCESSED THIS QUARTER: 38% MORE!"; at 1× only "38%" survives, so the rest is
 // drawn as symbols: the smiling Evie sun, a rising pink bar chart, and small-print lines.
 import { defineSprite } from '../defineSprite.ts';
-import { disc, fromRows, grid, plot, rows, stamp } from '../helpers.ts';
+import { at, disc, fromRows, grid, plot, recolor, rows, stamp } from '../helpers.ts';
 
 const W = 38;
 const H = 26;
@@ -105,6 +106,66 @@ function peeling(): string[] {
   return rows(g);
 }
 
+/**
+ * The panel unlit (Act III's `dark`): the peeling board with its power cut, every lit color one
+ * band or more down (paper to dull steel, the frame's teal to its deepest, Evie's sun and the bars
+ * to their darkest gold and pink, the backboard to near-black grime), its legs too.
+ */
+const UNLIT_PANEL: Readonly<Record<string, string>> = {
+  '4': '1',
+  '3': '0',
+  '2': '0',
+  '8': '6',
+  '6': '5',
+  G: 'M',
+  H: 'N',
+  I: 'N',
+  P: 'R',
+  Q: 'S',
+  J: 'K',
+  K: 'O',
+  L: 'J',
+};
+const UNLIT_LEGS: Readonly<Record<string, string>> = { '3': '1', '1': '0' };
+
+/** The smile's pixels in `beaming` (the stamp at (5, 9)), painted over in `dark`. */
+const SMILE: readonly (readonly [number, number])[] = [
+  [5, 9],
+  [10, 9],
+  [6, 10],
+  [7, 10],
+  [8, 10],
+  [9, 10],
+];
+
+/**
+ * The hum-glyph (art-direction §6; bible.md *Two suns*): the warrens' mark for the family hum,
+ * "Hm. Hm-hm. Hmmm." (the home motif's four notes, A · C–D · A), painted in sung stardust's warm
+ * pink-gold over the smile: four rising strokes, the last held long to the right, a drip of paint
+ * under the second. The only lit thing on the board.
+ */
+// prettier-ignore
+const HUM_GLYPH: readonly string[] = [
+  '....Z....',
+  '..Z.Y....',
+  'Z.Y.Y.Z..',
+  'Y.Y.Y.YYV',
+  '..Y......',
+];
+
+/** Act III's board (`dark`): the peeling board unlit, with the hum-glyph over Evie's smile. */
+function dark(): string[] {
+  const src = peeling();
+  const g = fromRows([
+    ...recolor(src.slice(0, BOTTOM + 1), UNLIT_PANEL),
+    ...recolor(src.slice(BOTTOM + 1), UNLIT_LEGS),
+  ]);
+  // The smile goes under the paint (the sun's own dull gold where the stroke doesn't reach).
+  for (const [x, y] of SMILE) if (at(g, x, y) === 'k') plot(g, x, y, 'N');
+  stamp(g, 4, 8, HUM_GLYPH);
+  return rows(g);
+}
+
 export const propBillboard = defineSprite({
   id: 'prop.billboard',
   size: { w: W, h: H },
@@ -122,7 +183,16 @@ export const propBillboard = defineSprite({
     J: 'grime.2',
     K: 'grime.1',
     L: 'grime.3',
+    // Unlit (`dark`): Evie's sun and the bars at their darkest, the backboard near black.
+    M: 'gold.1',
+    N: 'gold.0',
+    R: 'pink.1',
+    S: 'pink.0',
+    O: 'grime.0',
+    // The hum-glyph's paint: sung stardust (art-direction §2 `stardust.sung`, pink.3 to gold.4).
+    Y: 'pink.3',
+    Z: 'gold.3',
+    V: 'gold.4',
   },
-  // `dark` (Act III's dial) is the peeling board for now; T613 draws it unlit with the hum-glyph.
-  frames: { beaming: beaming(), peeling: peeling(), dark: peeling() },
+  frames: { beaming: beaming(), peeling: peeling(), dark: dark() },
 });

@@ -577,7 +577,9 @@ function settle(h: Holding): void {
   for (;;) {
     const step = h.cursor.step;
     if (step.kind !== 'line') break;
-    const view = lineView(step.node, ctx, textContext(), onRadio());
+    // A pausing panel's speakers are on the line (Sterling's held beat in A3M2's Clean Exit cue is
+    // hers, not an absent speaker's dark silence; T613): only one gone for good shows dark.
+    const view = lineView(step.node, ctx, textContext(), h.mode === 'panel' ? null : onRadio());
     if (!h.instant) {
       h.line = view;
       h.typedFrom = performance.now();
@@ -765,7 +767,10 @@ export function skipScene(): boolean {
   const ctx = storyContext(h.map);
   // Every skipped line joins the transcript (T327), not only the one on screen.
   while (h.cursor.step.kind === 'line') {
-    h.transcript.push(h.line ?? lineView(h.cursor.step.node, ctx, textContext(), onRadio()));
+    h.transcript.push(
+      h.line ??
+        lineView(h.cursor.step.node, ctx, textContext(), h.mode === 'panel' ? null : onRadio()),
+    );
     h.cursor = advance(h.scene, h.cursor, ctx);
     h.line = null;
   }

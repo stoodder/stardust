@@ -4,12 +4,7 @@
 // that lights yours, the still page under reduced motion, and the staging's lead-in and its
 // first-pass lock (stagingLockMs: Next and Esc wait for it; every other staging takes them at once).
 import { describe, expect, it } from 'vitest';
-import {
-  stagingLeadInMs,
-  stagingLockMs,
-  stagingOf,
-  type StagingKind,
-} from './staging.ts';
+import { stagingLeadInMs, stagingLockMs, stagingOf, type StagingKind } from './staging.ts';
 import {
   FIRST_SHOWN,
   PLAYER_TECH,
@@ -44,7 +39,8 @@ describe('the Asset Yield Log', () => {
     expect(yieldRow(PRIOR_ENTRIES + 50, 50).yours).toBe(true);
     expect(yieldRow(PRIOR_ENTRIES + 51, 50).yours).toBe(false);
     // Nobody's entries carry Bricks's number (#ED-112).
-    for (let n = FIRST_SHOWN; n <= PRIOR_ENTRIES; n++) expect(yieldRow(n, 0).tech).not.toBe('#ED-112');
+    for (let n = FIRST_SHOWN; n <= PRIOR_ENTRIES; n++)
+      expect(yieldRow(n, 0).tech).not.toBe('#ED-112');
   });
 
   it('each entry is a number, a timestamp, a tile, and a yield, the same on every viewing', () => {
@@ -56,8 +52,9 @@ describe('the Asset Yield Log', () => {
     expect(yieldRow(PRIOR_ENTRIES + 1, 10)).toEqual(r);
     expect(entryNumber(5)).toBe('000,005');
     // Time only moves forward down the log.
-    const t = (n: number) => yieldRow(n).time;
-    for (let n = FIRST_SHOWN; n < PRIOR_ENTRIES + 40; n++) expect(t(n + 1) >= t(n)).toBe(true);
+    for (let n = FIRST_SHOWN; n < PRIOR_ENTRIES + 40; n++) {
+      expect(yieldRow(n + 1).time >= yieldRow(n).time).toBe(true);
+    }
   });
 
   it('the scroll holds, gathers pace up to its cap, and stops where the log ends', () => {

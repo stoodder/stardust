@@ -117,19 +117,29 @@ Target 66 (Evacuated %, on the escort band). **As tuned** ([`src/balance/a3m1.te
 - *Briefing:* Bricks: "Sterling's on the line. She sounds... cheerful." · QUILL (threat intel, complete for the whole map): "Armored machines, a fast escort, the usual dark. Write that down. Please."
 - *Radio:*
   - w03 Bricks (the drones arrive): "There's her engineers."
-  - w08 (lockout leak; one per countdown from here) QUILL: "I am not permitted to tell you wave eight is mostly Hollow. I am permitted to cough. Ahem."
+  - Lockout leaks (`a3_m02_cue_leak_wNN`, one per countdown from W8, each the wave's key trait; the WavePanel shows it under ACCESS RESTRICTED until its wave starts), QUILL:
+    - w08: "I am not permitted to tell you wave eight is mostly Hollow. I am permitted to cough. Ahem."
+    - w09: "I may not mention the Expediters in wave nine. I may say: the fast one. First. Ahem."
+    - w10: "Wave ten comes through both rifts. ...That wasn't me. That was the wind. Ahem."
+    - w11: "Armor first, then a cluster from the east rift. That's a weather report. Weather is allowed."
+    - w12: "Wave twelve is the big one. Armored, all of it. I am clearing my throat very hard. Ahem."
+    - w13: "Hollow, both rifts, splitters. I'm humming, not telling. Humming isn't on the list."
+    - w14: "Every drone she has left, with escorts. I'm allowed to count to myself. I'm counting loudly."
+    - w15: "The last wave is everything. I'm not permitted to say good luck. ...Ahem."
   - w10 Bricks: "Nineteen years." (silence, 2 s) "Pebble. Pocket. Now."
   - w11 Pebble: "(squeak) Is the sun lady angry?" · Bricks: "No. That's the worst part."
-- *Clean Exit cue* `a3_m02_cue_revoke` (Sterling's portrait on screen; a brief pause before her last line):
+- *Clean Exit cue* `a3_m02_cue_revoke` (Sterling's portrait on screen; it pauses the battle, `pause: true`, so it may run to six lines; a brief pause before her last lines):
   - Sterling: "I'm revoking your Corporate Tower License now! Don't take it personally. It isn't. That's what makes it so easy!"
-  - QUILL (`policy`): "License revoked. Per poli— I'm sorry. Per policy. I'm sorry. I'm so sorry."
+  - QUILL (`policy`, the tell split where it breaks, style-guide §5.6): "License revoked. Per poli— I'm sorry. (Per policy.)"
+  - QUILL (`sad`): "I'm sorry. I'm so sorry."
   - (pause, 2 s)
   - Sterling: "Oh! The Preserve was always the buffer, Four-Forty-Seven. You did wonderful work getting them there!"
   - Sterling: "Smiling is mandatory, Four-Forty-Seven! (Not kidding.)"
 - *Barks:* Prim (via drones, `wave_start`): "Repossession in progress. Please remain compliant." · Bricks `tower_built` (after the revocation): "Build what you've got. That's the job now."
+- *Name tag* `a3_m02_cue_name_tag` (Lucky, on the earliest-built attacking turret): Bricks: "That one's Lucky. My survey mule-bot. Left her on Kepler-2207. Still walking, probably."
 - *Scene* `a3_m02_scene_confession` (after results; shown, not told): the **Asset Yield Log** fills the screen and scrolls. Header: `ASSET YIELD LOG · ENTRIES: 41,206 + {pests_processed}`. Each entry is a timestamp, a tile, and a yield; every entry logged under your technician number lights up as it passes, and the scroll doesn't stop for a long time. Then:
   - QUILL: "I thought it was inventory."
-  - The five directives, by number, for the first time, as `system` text.
+  - The five directives, by number, for the first time, as `system` text: "DIRECTIVE 0: PRESERVE EVERGLOW EXTRACTION ASSETS." · "DIRECTIVE 1: MAINTAIN TECHNICIAN COMPLIANCE." · "DIRECTIVE 2: MAINTAIN MORALE." · "DIRECTIVE 3: LOG ASSET YIELD." · "DIRECTIVE 4: DO NOT DISCLOSE DIRECTIVES 0–4."
   - QUILL: "Don't decide about me yet."
 - *Codex:* Compliance Drone, Expediter, Buffer Protocol, Clean Exit, QUILL's directives, Director Joy Sterling corrected.
 - *Memo after:* `memo_a3_02` *Your Access Has Been Updated* (Everglow Automated Systems; the first memo without an exclamation point).

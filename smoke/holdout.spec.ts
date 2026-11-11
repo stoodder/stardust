@@ -1,8 +1,8 @@
 // T605: the Holdout on its dev range (`?map=dev_holdout`, render/__fixtures__/devM6.ts): the
 // convoy (the first door with no save) walks to its door while Motes come down the choke past
 // Bricks, who holds two at a time under a health bar that drains on the wave timeline. As W3
-// starts the SEAL is forced: play freezes (the sim keeps ticking), the HUD goes inert, and one
-// button is live; pressing it ends the map won. Screenshots via shot() (smoke/out.ts).
+// starts the SEAL is forced: play freezes (the sim keeps ticking), the HUD's controls lock, and one
+// button is live once armed; pressing it ends the map won. Screenshots via shot() (smoke/out.ts).
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 import { nextFrames, shot, waitForReady } from './hooks.ts';
@@ -59,7 +59,10 @@ test('holdout: Bricks holds the choke on his timeline; the SEAL freezes play unt
   await expect(seal).toBeVisible();
   await expect(seal).toHaveText('SEAL');
   await expect(seal).toBeFocused();
-  await expect(page.locator('.hud-play')).toHaveAttribute('inert', '');
+  // Every HUD control but the Menu and the speaker is locked (T614; smoke/seal.spec.ts has the rest).
+  await expect(page.locator('.hud-lock').first()).toHaveAttribute('inert', '');
+  // It takes a press only once armed (700 ms; app/forcedInput.ts).
+  await expect(seal).toHaveAttribute('data-armed', 'true');
 
   // Frozen: the sim ticks on, and nothing moves or starts.
   const frozen = await page.evaluate(() => {
