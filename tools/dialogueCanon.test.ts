@@ -1,6 +1,6 @@
 // Dialogue is canon (D026, D048): every line, choice option, and bark in a map's dialogue must
 // appear word for word in its map's section of its act file (`a1_m02` → story/campaign/act1.md
-// § A1M2, `a2_m01` → act2.md § A2M1), and a shared bark in its act's file (by its id's act). The
+// § A1M2, `a2_m01` → act2.md § A2M1, `fin_m01` → finale.md § FIN), and a shared bark in its act's file (by its id's act). The
 // other way round, every quoted line in a migrated map's *Story delivery* (from *Briefing* to
 // *Codex*) must be in its dialogue, so none is dropped. Reads the docs from disk, so it lives with
 // the other node-side checks.
@@ -40,15 +40,28 @@ function actFile(act: string): string {
   return readFileSync(join(ROOT, `docs/story/campaign/${name}.md`), 'utf8');
 }
 
-/** Map `a<act>_m<NN>`'s section of its act file: from its `## A<act>M<n>` heading to the next. */
-function section(mapId: string): string {
+/** Maps whose section isn't `a<act>_m<NN>` → act<act>.md § A<act>M<n>: its file and heading label. */
+const SECTIONS: Readonly<Record<string, { readonly act: string; readonly label: string }>> = {
+  fin_m01: { act: 'fin', label: 'FIN' },
+};
+
+/** Map `mapId`'s act file and section label (`a2_m01` → act 2, `A2M1`; `fin_m01` → finale, `FIN`). */
+function sectionKey(mapId: string): { readonly act: string; readonly label: string } {
+  const own = SECTIONS[mapId];
+  if (own !== undefined) return own;
   const m = /^a(\d)_m(\d\d)$/.exec(mapId);
   if (m === null) throw new Error(`${mapId}: not a campaign map id`);
   const [, act = '', num = ''] = m;
+  return { act, label: `A${act}M${Number(num)}` };
+}
+
+/** Map `mapId`'s section of its act file: from its `## <label>` heading to the next. */
+function section(mapId: string): string {
+  const { act, label } = sectionKey(mapId);
   const doc = actFile(act);
-  const heading = `\n## A${act}M${Number(num)} `;
+  const heading = `\n## ${label} `;
   const start = doc.indexOf(heading);
-  if (start < 0) throw new Error(`${mapId}: no "${heading.trim()}" section in act${act}.md`);
+  if (start < 0) throw new Error(`${mapId}: no "${heading.trim()}" section in its act file`);
   const end = doc.indexOf('\n## ', start + heading.length);
   return doc.slice(start, end < 0 ? undefined : end);
 }
@@ -70,10 +83,14 @@ describe('dialogue is verbatim from its map section of the act file', () => {
   it('every registered map has its section, headed with its campaign name', () => {
     for (const { map } of MAP_DIALOGUE) {
       const name = CAMPAIGN_PLAN.find((m) => m.id === map)?.name ?? '';
-      expect(section(map).split('\n')[1], map).toBe(
-        `## ${map.slice(0, 2).toUpperCase()}M${Number(map.slice(-2))} · ${name}`,
-      );
+      expect(section(map).split('\n')[1], map).toBe(`## ${sectionKey(map).label} · ${name}`);
     }
+  });
+
+  it("finds each act's sections, the finale's included", () => {
+    expect(section('a2_m01').split('\n')[1]).toBe('## A2M1 · Rig Nine');
+    expect(section('fin_m01').split('\n')[1]).toBe('## FIN · Clearing the Way');
+    expect(section('fin_m01')).toContain('fin_m01_scene_dawn');
   });
 
   for (const { map, scenes, barks } of MAP_DIALOGUE) {

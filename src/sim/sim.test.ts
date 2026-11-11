@@ -89,7 +89,7 @@ describe('createSim', () => {
     ).toMatch(/limit is 4/);
     expect(bad({ companion: 'bricks' })).toMatch(/companion 'bricks' needs a slot/);
     expect(bad({ content: LAID_TO_REST })).toMatch(
-      /a boss ending 'layToRest' \(fx_walker\) is not simulated until M8/,
+      /a boss ending 'layToRest' \(fx_walker\) is not simulated until T808/,
     );
     // @ts-expect-error -- an unknown tower id is a type error too
     expect(bad({ specsUnlocked: ['nope'] })).toMatch(/specsUnlocked: unknown tower 'nope'/);
@@ -105,7 +105,7 @@ describe('createSim', () => {
     );
     const both = bad({ seed: -1, content: LAID_TO_REST });
     expect(both).toMatch(/seed/);
-    expect(both).toMatch(/until M8/);
+    expect(both).toMatch(/until T808/);
   });
 
   it('accepts a loadout of exactly 4 and an empty one', () => {

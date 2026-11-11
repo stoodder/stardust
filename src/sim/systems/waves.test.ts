@@ -298,7 +298,7 @@ describe('createSim and map scripts', () => {
                   on: { tick: 5 },
                   actions: [
                     {
-                      setClickable: { marker: 'rock', on: true, fallback: { restProgressPct: 50 } },
+                      setClickable: { marker: 'rock', on: true, fallback: { phase: 1 } },
                     },
                   ],
                 },
@@ -307,12 +307,12 @@ describe('createSim and map scripts', () => {
           },
         }),
       }),
-    ).toThrow(/'rock': setClickable fallback restProgressPct is not simulated until M8/);
+    ).toThrow(/'rock': setClickable fallback phase is not simulated until T806/);
     expect(() =>
       simWith({
-        events: [{ id: 'boss', on: { restProgressPct: 50 }, actions: [{ cue: 'fx_map_boss' }] }],
+        events: [{ id: 'boss', on: { phase: 1 }, actions: [{ cue: 'fx_map_boss' }] }],
       }),
-    ).toThrow(/'boss': trigger restProgressPct is not simulated until M8/);
+    ).toThrow(/'boss': trigger phase is not simulated until T806/);
     // `bossEnd: 'pivot'` runs since T506 (sim/penitent.test.ts).
     expect(() =>
       simWith({ events: [{ id: 'pivot', on: { tick: 5 }, actions: [{ bossEnd: 'pivot' }] }] }),

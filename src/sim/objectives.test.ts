@@ -197,10 +197,10 @@ describe('settling objectives', () => {
   });
 
   it('createSim refuses an onComplete action the sim cannot run', () => {
-    const map = contentWith([{ ...CLEAN_AUDIT, onComplete: [{ startTimer: 'song' }] }]).maps
+    const map = contentWith([{ ...CLEAN_AUDIT, onComplete: [{ setLighting: 'dawn' }] }]).maps
       .fx_map!;
     expect(unsupportedScript(map)).toEqual([
-      "objective 'clean_audit': action startTimer is not simulated until M8",
+      "objective 'clean_audit': action setLighting is not simulated until T806",
     ]);
   });
 });

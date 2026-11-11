@@ -111,17 +111,30 @@ export {
 export type {
   CodexId,
   CodexVersion,
+  EndlessScore,
   HintId,
   KnownIds,
   LoadoutPreset,
   MapRecord,
   MemoId,
+  PendingCheckpoint,
+  PendingRun,
   PlayerProfile,
   SaveData,
   SaveEnvelope,
   SceneId,
   StoryFlagId,
+  VeteranRecord,
 } from './saveData.ts';
+export {
+  VETERAN_BONUS_PCT,
+  VETERAN_MAX_PCT,
+  VETERAN_MEDAL_ID,
+  VETERAN_MEDAL_PCT,
+  VETERAN_MODIFIER_IDS,
+  veteranBonusPct,
+} from './veteran.ts';
+export type { VeteranModifierId } from './veteran.ts';
 export { DIFFICULTIES, LIVE_KNOWN_IDS, SAVE_VERSION, createNewSave } from './saveData.ts';
 export type { KeyValueStore, SlotId } from './store.ts';
 export type { StoryUnlocks } from './story.ts';

@@ -221,6 +221,15 @@ export const BOSS_SOUNDS: Readonly<Partial<Record<string, BossSounds>>> = {
     end: 'gmaw_strain',
     endCue: null,
   },
+  // The Unsung (T800a's stub): the Gathering Maw's voices until T850 gives it its own (`unsung_*`).
+  unsung: {
+    arrive: 'gmaw_arrive',
+    phase: 'gmaw_strain',
+    spawnTell: null,
+    spawn: null,
+    end: 'gmaw_strain',
+    endCue: null,
+  },
 };
 
 /** A boss's sounds by enemy id. */

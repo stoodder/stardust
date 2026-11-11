@@ -20,7 +20,9 @@
 // loadout and slots) and `setModifier` (QUILL's lockout, the hidden preview), and `spawnWave`
 // (T706: a script group walks in; sim/scriptGroups.ts, whose units spawn at the end of this
 // system, after the events), and `openTile` (T707: a decor marker's tile opens, to anything but a
-// buildable tile; sim/openTile.ts). A pivot's event runs the
+// buildable tile; sim/openTile.ts). The finale's parts (T800a) dispatch to their slots
+// (sim/choir.ts, song.ts, phases.ts, timers.ts, echo.ts, revoke.ts) and stay refused until the
+// task SCRIPT_GATES names fills each. A pivot's event runs the
 // objective switch and the refugees beside it, in its action order. Before the events,
 // each clickable marker's fallback trigger is checked: reached, the sim interacts with it itself
 // (`byFallback`), so its `interacted` events fire on this same pass; and on a map whose conditions

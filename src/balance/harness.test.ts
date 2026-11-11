@@ -205,7 +205,7 @@ describe('balance harness', () => {
     const r = runMap(refused, 'fx_map', { seeds: 1, build: 'par' });
     expect(r.ok).toBe(false);
     expect(r.checks.find((c) => c.id === '1')?.failures[0]).toMatch(
-      /seed 1: error: [^]*a boss ending 'layToRest' \([a-z_]+\) is not simulated until M8/,
+      /seed 1: error: [^]*a boss ending 'layToRest' \([a-z_]+\) is not simulated until T808/,
     );
   });
 

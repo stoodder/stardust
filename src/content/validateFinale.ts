@@ -196,6 +196,11 @@ function validateFinaleScripts(issues: Issues, def: MapDef<IdSpace>, where: stri
   for (const [i, l] of (def.lockedAbilities ?? []).entries()) {
     conditions.push([l.when, `${where}.lockedAbilities[${i}].when`]);
   }
+  // A clickable's fallback is a trigger like an event's.
+  for (const [a, w] of actions) {
+    const fallback = 'setClickable' in a ? a.setClickable.fallback : undefined;
+    if (fallback !== undefined) triggers.push([fallback, `${w}.setClickable.fallback`]);
+  }
   const started = new Set<string>();
   const phasesSet = new Set<number>([1]);
   const timer = (id: string, w: string): void => {
