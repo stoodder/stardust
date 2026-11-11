@@ -68,7 +68,8 @@ function swapped(
  * Each wave lists its cast ahead of its buys, so a cast never waits behind an upgrade.
  */
 const REBOOT_SEC = 27.5;
-/** W16's first pack comes up the west rift, so its first tell is sooner. */
+/** W14's and W16's first packs come up the rifts, so their first tells are sooner. */
+const W14_RIFT_REBOOT_SEC = 13.6;
 const W16_RIFT_REBOOT_SEC = 11.6;
 
 function parSteps(): BuildStep[] {
@@ -79,7 +80,6 @@ function parSteps(): BuildStep[] {
     { wave: 1, build: 'rivet', tile: J_NE },
     { wave: 1, upgrade: J_NE },
     { wave: 1, build: 'mindspike', tile: J_S },
-    { wave: 2, upgrade: J_NE }, // T3: pierce
     { wave: 3, build: 'harpoon', tile: SV_N },
     // The Choir on the hall side of the Mindspike (Harmony), out of the Silencers' reach until
     // they're in the corridor: its aura cuts their jams on the junction to a second.
@@ -90,20 +90,16 @@ function parSteps(): BuildStep[] {
     { wave: 7, upgrade: J_SE },
     { wave: 8, upgrade: SV_S },
     reboot(9, REBOOT_SEC),
-    { wave: 9, upgrade: HALL_W }, // T3: jams in its aura cut by 75%
+    { wave: 9, build: 'mindspike', tile: J_SW },
     reboot(10, REBOOT_SEC),
+    { wave: 10, upgrade: HALL_W }, // T3: jams in its aura cut by 75%
     { wave: 10, upgrade: J_S },
-    { wave: 10, build: 'mindspike', tile: J_SW },
-    { wave: 11, upgrade: SKY },
+    { wave: 11, upgrade: J_NE }, // T3: pierce
     reboot(12, REBOOT_SEC),
     { wave: 12, upgrade: J_S },
-    reboot(13, REBOOT_SEC),
-    { wave: 13, upgrade: J_SE },
-    { wave: 14, upgrade: J_SW },
-    { wave: 14, upgrade: SV_N },
+    { wave: 13, upgrade: J_SW },
+    reboot(14, W14_RIFT_REBOOT_SEC),
     reboot(16, W16_RIFT_REBOOT_SEC),
-    { wave: 16, upgrade: SKY },
-    { wave: 16, upgrade: SV_S },
   ];
 }
 
@@ -129,10 +125,10 @@ function warrenSteps(): BuildStep[] {
     { wave: 7, upgrade: HALL_W },
     { wave: 8, upgrade: SV_S },
     reboot(9, REBOOT_SEC),
-    { wave: 9, upgrade: J_S },
+    { wave: 9, upgrade: SKY },
     reboot(10, REBOOT_SEC),
     { wave: 10, upgrade: HALL_W },
-    { wave: 10, upgrade: SKY },
+    { wave: 10, upgrade: J_S },
     { wave: 11, build: 'mindspike', tile: J_SW },
     reboot(12, REBOOT_SEC),
     { wave: 12, upgrade: SV_N },
@@ -151,9 +147,16 @@ const PAR: ScriptedBuild = {
   steps: parSteps(),
 };
 
-/** Par's Thumpers (no-air's) specialized as Bunker Buster as each reaches tier 3. */
+/** `steps` then, at W16, each of `tiles` upgraded to tier 3 and specialized as Bunker Buster. */
 function withBunkerBusters(steps: readonly BuildStep[], tiles: readonly GridPos[]): BuildStep[] {
-  return [...steps, ...tiles.map((tile): BuildStep => ({ wave: 16, specialize: tile, spec: 'b' }))];
+  const same = (a: GridPos, b: GridPos): boolean => a[0] === b[0] && a[1] === b[1];
+  const tierOf = (tile: GridPos): number =>
+    steps.filter((st) => ('build' in st && same(st.tile, tile)) || ('upgrade' in st && same(st.upgrade, tile))).length;
+  const tail = tiles.flatMap((tile): BuildStep[] => [
+    ...Array.from({ length: Math.max(0, 3 - tierOf(tile)) }, (): BuildStep => ({ wave: 16, upgrade: tile })),
+    { wave: 16, specialize: tile, spec: 'b' },
+  ]);
+  return [...steps, ...tail];
 }
 
 export const builds = defineBuilds({

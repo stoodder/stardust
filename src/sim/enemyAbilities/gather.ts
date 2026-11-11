@@ -37,6 +37,11 @@
 //   sets the runners near it bolting (Skittish, as a hush does). A gathered refugee is lost, its
 //   group's loss (escort.ts `loseRefugee` with its group; RefugeeLost `hushed`), and counts in
 //   `stats.refugeesGathered` (Nothing Gathered).
+// - **A boss's phase gather** (T708; `gatherOf`): the Gathering Maw gathers in its phase 1 by these
+//   same rules at that phase's numbers (2 tiles, every 5 s, a 1.5 s tell: BOSS_MIN_TELL_SEC; its
+//   one Skitterkin; no leak or bounty per absorb, a boss's leak drains everything anyway). When
+//   the phase ends (the split's telegraph), a tell under way is let go and it gathers no more; it
+//   keeps the size it grew to. A boss is never gathered (who, above).
 // - **No balloon:** absorbs are capped at `maxAbsorbs` (5), and a unit gathered whole never splits,
 //   so a Maw among Fractures and their Shards tops out at 400 + five units' HP (a test).
 import type { CompiledGather } from '../../content/compiled.ts';
@@ -50,21 +55,34 @@ import { isHushable, isHushableAlly } from './hush.ts';
 import { outOfReach } from './layers.ts';
 import { boltNear } from './skittish.ts';
 
+/**
+ * The gather a unit runs now (T708): its def's (the Maw), else its boss phase's (the Gathering
+ * Maw's phase 1, at that phase's radius and period), else null. The phase's ends as the phase does.
+ */
+export function gatherOf(e: Pick<Enemy, 'def' | 'bossPhase'>): CompiledGather | null {
+  const def = e.def;
+  if (def === null) return null;
+  if (def.gather !== null) return def.gather;
+  const boss = def.boss;
+  return boss === null || e.bossPhase === 0 ? null : (boss.phases[e.bossPhase - 1]?.gather ?? null);
+}
+
 /** The leak a gatherer's absorbs add (+`leakPerAbsorb` each; enemies.md § 5.4's roster row). */
-export function gatherLeak(e: Pick<Enemy, 'def' | 'absorbs'>): number {
-  const g = e.def?.gather ?? null;
+export function gatherLeak(e: Pick<Enemy, 'def' | 'bossPhase' | 'absorbs'>): number {
+  const g = gatherOf(e);
   return g === null ? 0 : g.leakPerAbsorb * e.absorbs;
 }
 
 /** The bounty a gatherer's Hollow absorbs add (+`bountyPerHollowAbsorb` each; a Skitterkin none). */
-export function gatherBounty(e: Pick<Enemy, 'def' | 'hollowAbsorbs'>): number {
-  const g = e.def?.gather ?? null;
+export function gatherBounty(e: Pick<Enemy, 'def' | 'bossPhase' | 'hollowAbsorbs'>): number {
+  const g = gatherOf(e);
   return g === null ? 0 : g.bountyPerHollowAbsorb * e.hollowAbsorbs;
 }
 
 /** A gatherer's size now, as a scale on its body (1 + `growPct` per absorb; render reads it). */
-export function gatherScale(e: Pick<Enemy, 'def' | 'absorbs'>): number {
-  const g = e.def?.gather ?? null;
+export function gatherScale(e: Pick<Enemy, 'def' | 'bossPhase' | 'absorbs'>): number {
+  // A boss keeps the size it grew to after its gathering phase ends (the Gathering Maw splits).
+  const g = gatherOf(e) ?? bossGather(e.def);
   return g === null ? 1 : 1 + g.growPct * e.absorbs;
 }
 
@@ -74,8 +92,18 @@ export function gatherMaxHp(e: Pick<Enemy, 'def' | 'bonusMaxHp'>): number {
 }
 
 /** Whether `e` is a gatherer showing its tendril tell this tick (render reads it). */
-export function gatherTelling(e: Pick<Enemy, 'alive' | 'def' | 'gatherUid'>): boolean {
-  return e.alive && e.def !== null && e.def.gather !== null && e.gatherUid !== 0;
+export function gatherTelling(e: Pick<Enemy, 'alive' | 'def' | 'bossPhase' | 'gatherUid'>): boolean {
+  return e.alive && e.gatherUid !== 0 && gatherOf(e) !== null;
+}
+
+/** The first gather among a boss def's phases, or null (its size after the phase). */
+function bossGather(def: Enemy['def']): CompiledGather | null {
+  const phases = def?.boss?.phases ?? [];
+  for (let i = 0; i < phases.length; i++) {
+    const g = phases[i]!.gather; // i < length
+    if (g !== null) return g;
+  }
+  return null;
 }
 
 /** The tell's length in ticks (at least 1, so a ready gatherer never reads as unset). */
@@ -91,12 +119,12 @@ function everyTicksOf(g: CompiledGather): number {
 
 /** Whether `m` is a live gatherer on the field (not leaving or standing down, a def with gather). */
 function isGatherer(m: Enemy): boolean {
-  return m.alive && m.def !== null && m.def.gather !== null && !m.leaving && m.standDownTicks === 0;
+  return m.alive && gatherOf(m) !== null && !m.leaving && m.standDownTicks === 0;
 }
 
 /** A gatherer free to start a tell: ready, not full, in reach, not interrupted. */
 function isReady(m: Enemy): boolean {
-  const g = m.def?.gather ?? null;
+  const g = gatherOf(m);
   return (
     g !== null &&
     isGatherer(m) &&
@@ -204,7 +232,7 @@ function matchUnits(state: SimState, s: GatherScratch): void {
     for (let r = 0; r < ready.length; r++) {
       const m = pool.items[ready[r]!]!; // r < length; a ready gatherer's slot
       const d2 = distSq(m, v.route, v.dist, v.x, v.y);
-      if (d2 > m.def!.gather!.radiusSq || !better(d2, m.uid, bestD2, bestUid)) continue;
+      if (d2 > gatherOf(m)!.radiusSq || !better(d2, m.uid, bestD2, bestUid)) continue;
       if (!mayTake(m, v, held)) continue;
       best = r;
       bestUid = m.uid;
@@ -222,7 +250,7 @@ function matchUnits(state: SimState, s: GatherScratch): void {
     for (let r = 0; r < ready.length; r++) {
       const m = pool.items[ready[r]!]!; // r < length; a ready gatherer's slot
       const d2 = distSq(m, a.route, a.dist, a.x, a.y);
-      if (d2 > m.def!.gather!.radiusSq || !better(d2, m.uid, bestD2, bestUid)) continue;
+      if (d2 > gatherOf(m)!.radiusSq || !better(d2, m.uid, bestD2, bestUid)) continue;
       if (!mayTakeAlly(m, a)) continue;
       best = r;
       bestUid = m.uid;
@@ -248,8 +276,11 @@ function liveAlly(pool: Pool<Ally>, uid: number): Ally | null {
   return null;
 }
 
-/** Lets go of the tell's unit (its hush pair too) and restarts the period from zero. */
-function letGo(state: SimState, m: Enemy, g: CompiledGather): void {
+/**
+ * Lets go of the tell's unit (its hush pair too) and restarts the period from zero (`g` null: its
+ * gathering phase ended, T708).
+ */
+function letGo(state: SimState, m: Enemy, g: CompiledGather | null): void {
   const uid = m.gatherUid;
   if (uid !== 0) {
     const v = liveEnemy(state.enemies, uid);
@@ -259,7 +290,7 @@ function letGo(state: SimState, m: Enemy, g: CompiledGather): void {
   }
   m.gatherUid = 0;
   m.hushUid = 0;
-  m.gatherTicks = everyTicksOf(g);
+  m.gatherTicks = g === null ? 0 : everyTicksOf(g);
 }
 
 /** One tick of a gatherer's tell under way: hold, lose it, or gather. */
@@ -342,7 +373,7 @@ function absorb(m: Enemy, hp: number, hollow: boolean): void {
 
 /** Starts `m`'s tell on the unit `code` encodes (matchUnits's: an enemy's slot, or −(an ally's slot + 1)), holding both still. */
 function startTell(state: SimState, m: Enemy, code: number): void {
-  const g = m.def!.gather!; // isReady checked
+  const g = gatherOf(m)!; // isReady checked
   m.gatherTicks = tellTicksOf(g);
   m.paceMul = 0;
   if (code >= 0) {
@@ -383,8 +414,12 @@ export function gatherPass(state: SimState, ctx: TickContext): void {
   let anyReady = false;
   for (let i = 0; i < pool.used; i++) {
     const m = pool.items[i]!; // i < used ≤ items.length
-    const g = m.def?.gather ?? null;
-    if (!m.alive || g === null) continue;
+    if (!m.alive) continue;
+    const g = gatherOf(m);
+    if (g === null) {
+      if (m.gatherUid !== 0) letGo(state, m, null); // its gathering phase ended mid-tell (T708)
+      continue;
+    }
     if (!isGatherer(m)) {
       if (m.gatherUid !== 0) letGo(state, m, g); // it started leaving or standing down
       continue;

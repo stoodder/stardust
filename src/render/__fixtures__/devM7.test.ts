@@ -63,10 +63,9 @@ describe('the M7 dev maps', () => {
   });
 
   it('dev_gmaw: the Gathering Maw’s gather, split, and merge (T708)', () => {
-    expect(refused('dev_gmaw')).toEqual([
-      "a boss's gather (gathering_maw) is not simulated until T708",
-      'a boss split (gathering_maw) is not simulated until T708',
-    ]);
+    // T708 runs it (sim/gatheringMaw.test.ts, tools/devGmaw.test.ts, smoke/gmaw.spec.ts).
+    expect(refused('dev_gmaw')).toEqual([]);
+    expect(Object.hasOwn(DEV_CONTENT.maps, 'dev_gmaw')).toBe(true);
   });
 
   it('dev_bearers: bearers, Cut the Feed, the surge, convoy’s militia (T706)', () => {
@@ -95,6 +94,7 @@ describe('the M7 dev maps', () => {
       if (id === 'dev_bearers') continue; // T706
       if (id === 'dev_sproing') continue; // T704
       if (id === 'dev_jam' || id === 'dev_takeover') continue; // T707
+      if (id === 'dev_gmaw') continue; // T708
       expect(Object.hasOwn(DEV_CONTENT.maps, id), id).toBe(false);
     }
   });

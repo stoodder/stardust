@@ -434,6 +434,13 @@ export interface Enemy extends PoolEntity {
   jettisoned: boolean;
   /** A split boss's merge (T708): ticks until its parts merge; 0: not counting down. */
   mergeTicks: number;
+  /**
+   * A split boss's part (T708; enemyAbilities/bossSplit.ts): the boss def it split from, which the
+   * merge re-forms (its `ownerUid` is that boss's uid); null for any other unit.
+   */
+  splitFrom: CompiledEnemyDef | null;
+  /** A split boss's parts and its merged self (T708): the one boss bar's maximum (their HP summed at the split); 0 otherwise. */
+  splitMaxHp: number;
 }
 
 export const ENEMY_BLANK: Readonly<Enemy> = Object.freeze({
@@ -508,6 +515,8 @@ export const ENEMY_BLANK: Readonly<Enemy> = Object.freeze({
   takeoverHeldTicks: 0,
   jettisoned: false,
   mergeTicks: 0,
+  splitFrom: null,
+  splitMaxHp: 0,
 });
 
 /**

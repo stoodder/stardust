@@ -292,8 +292,8 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   'enemy.boss.hangar': null, // T707: enemyAbilities/hangar.ts
   'enemy.boss.takeover': null, // T707: enemyAbilities/takeover.ts
   'enemy.boss.jettison': null, // T707: enemyAbilities/jettison.ts
-  'enemy.boss.gather': 'T708',
-  'enemy.boss.split': 'T708',
+  'enemy.boss.gather': null, // T708: enemyAbilities/gather.ts (a boss phase's gather)
+  'enemy.boss.split': null, // T708: enemyAbilities/bossSplit.ts, bossMerge.ts
   'map.bearers': null,
   'ally.flagGated': null,
   'map.rift': null,

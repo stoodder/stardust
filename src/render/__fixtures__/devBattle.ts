@@ -73,6 +73,7 @@ import { sproingMap } from './devM7.ts'; // T704
 import { lookie_here } from '../../content/links/lookie_here.ts'; // T704
 import { bounce_chorus } from '../../content/links/bounce_chorus.ts'; // T704
 import { jamMap, takeoverMap } from './devM7.ts'; // T707
+import { gmawMap } from './devM7.ts'; // T708
 import { blackbudget } from '../../content/enemies/blackbudget.ts'; // T703
 import { choir } from '../../content/towers/choir.ts'; // T607
 import { harmony } from '../../content/links/harmony.ts'; // T607
@@ -1510,6 +1511,7 @@ export const DEV_CONTENT: RawContent<DevIds> = {
     dev_sproing: sproingMap, // T704 (devM7.ts: leapers, grounded flyers, Lookie Here, Bounce Chorus)
     dev_jam: jamMap, // T707 (devM7.ts: the tendril, the Auditors' rings among healed drones)
     dev_takeover: takeoverMap, // T707 (devM7.ts: Shareholder Value's hangar, Takeover, jettison)
+    dev_gmaw: gmawMap, // T708 (devM7.ts: the Gathering Maw's gather, split, and merge)
   }),
   links: {
     // Conductive is the live content's link (its partners are the real Zapcoil and Sprinkler).

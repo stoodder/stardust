@@ -9,8 +9,8 @@
 //   System Reboot.
 // - `dev_takeover` (T707): Auditors, then "Shareholder Value": its hangar's drones, Hostile
 //   Takeover at 66%, the jettison at 33% onto four `crash_*` decor markers off the road.
-// - `dev_gmaw` (T708): Motes catching up the Gathering Maw (its wide gather), its split at 50%
-//   and the merge 12 s later.
+// - `dev_gmaw` (T708): Fractures and Motes catching up the Gathering Maw (its wide gather), its
+//   split at 50%, and the merge 12 s later; its three phases cue.
 // - `dev_bearers` (T706): a Protect map whose asset is the bearers: as W2 starts a bearer group
 //   walks home to the west-edge door while Motes come down the road and three come out of the
 //   vats behind the bearers to hunt them (each hushed costs the asset 1); Cut the Feed (two `feed_*` wreckage markers
@@ -169,28 +169,61 @@ export const takeoverMap = dev.defineMap({
   },
 });
 
-/** dev_gmaw (T708): Motes ahead of the Gathering Maw: its gather, the split, the merge. */
+/**
+ * dev_gmaw (T708): the Gathering Maw walks in first; Fractures and Motes come on behind it,
+ * catch it up, and walk into its 2-tile gather (the first gather 5 s after it spawns). Par is
+ * Railspikes (armor-ignoring) and a Zapcoil for the small ones; it splits the Maw at 50% and
+ * lets the three parts merge 12 s later, then beats the merged Maw. The boss's three phases cue
+ * (`bossPhase` 1–3: the worked example for A3M6's, T722).
+ */
 export const gmawMap = dev.defineMap({
   ...ROAD,
   id: 'dev_gmaw',
-  threatIntel: ['clustered', 'armored', 'boss'],
+  startCredits: 5200,
+  threatIntel: ['clustered', 'armored', 'splitting', 'boss'],
   requiredCounters: ['splash', 'armor'],
   waves: dev.defineWaves([
+    { groups: [{ enemy: 'mote', count: 6, route: 'a', intervalSec: 0.6 }] },
     {
+      countdownSec: 10,
       groups: [
-        // Motes first, the Maw 3 s behind: its 2-tile reach catches the stragglers.
-        { enemy: 'mote', count: 8, route: 'a', intervalSec: 0.6 },
-        { enemy: 'gathering_maw', count: 1, route: 'a', delaySec: 3 },
+        { enemy: 'gathering_maw', count: 1, route: 'a' },
+        // Behind it and faster: they catch it up inside its reach.
+        { enemy: 'fracture', count: 3, route: 'a', delaySec: 3, intervalSec: 1.5 },
+        { enemy: 'mote', count: 4, route: 'a', delaySec: 6, intervalSec: 0.8 },
       ],
     },
   ]),
-  referenceProfile: { ...PROFILE, towers: ['rivet', 'zapcoil'] },
+  events: [
+    { id: 'gmaw_spawn', on: { bossPhase: 1 }, actions: [{ cue: 'dev_gmaw_cue_spawn' }] },
+    { id: 'gmaw_split', on: { bossPhase: 2 }, actions: [{ cue: 'dev_gmaw_cue_split' }] },
+    { id: 'gmaw_merge', on: { bossPhase: 3 }, actions: [{ cue: 'dev_gmaw_cue_merge' }] },
+  ],
+  referenceProfile: { ...PROFILE, towers: ['rivet', 'zapcoil'], specs: ['rivet'] },
   parBuild: {
     loadout: ['rivet', 'zapcoil'],
     steps: [
-      { wave: 1, build: 'zapcoil', tile: [7, 2] },
-      { wave: 1, build: 'rivet', tile: [12, 4] },
-      { wave: 1, build: 'zapcoil', tile: [7, 4] },
+      { wave: 1, build: 'zapcoil', tile: [12, 4] },
+      { wave: 1, build: 'rivet', tile: [7, 2] },
+      { wave: 1, build: 'rivet', tile: [7, 4] },
+      { wave: 1, build: 'rivet', tile: [12, 2] },
+      { wave: 1, build: 'rivet', tile: [5, 4] },
+      { wave: 1, build: 'rivet', tile: [5, 2] },
+      { wave: 1, build: 'rivet', tile: [3, 4] },
+      ...(
+        [
+          [7, 2],
+          [7, 4],
+          [12, 2],
+          [5, 4],
+          [5, 2],
+          [3, 4],
+        ] as const
+      ).flatMap((tile) => [
+        { wave: 1, upgrade: tile },
+        { wave: 1, upgrade: tile },
+        { wave: 1, specialize: tile, spec: 'b' as const }, // Railspike
+      ]),
     ],
   },
   noCounterBuilds: {

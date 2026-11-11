@@ -22,6 +22,7 @@ import { secToTicks } from '../../shared/time.ts';
 import { assertNever } from '../../shared/types.ts';
 import { burstSack } from '../carrier.ts';
 import { bossDamage } from '../enemyAbilities/bossPhases.ts';
+import { isSplitBorn } from '../enemyAbilities/bossSplit.ts'; // T708
 import { cloakedOut } from '../enemyAbilities/cloak.ts';
 import { gatherBounty } from '../enemyAbilities/gather.ts';
 import { immune, untargetable } from '../enemyAbilities/layers.ts';
@@ -123,7 +124,8 @@ export function applyDamage(
   const damage = through > floor ? through : floor;
 
   // A boss never dies here: its phases and its ending take the hit (enemyAbilities/bossPhases.ts).
-  if (def.boss !== null) return bossDamage(state, enemy, damage);
+  // A split boss's parts and its merged self die like units (T708; enemyAbilities/bossSplit.ts).
+  if (def.boss !== null && !isSplitBorn(enemy)) return bossDamage(state, enemy, damage);
   const before = enemy.hp;
   enemy.hp -= damage;
   if (enemy.hp <= DEAD_HP_EPS) {

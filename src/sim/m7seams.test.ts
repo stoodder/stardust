@@ -62,8 +62,8 @@ describe('FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES (T700a rows; D146)', ()
       'enemy.boss.hangar': null, // T707 (sim/takeover.test.ts)
       'enemy.boss.takeover': null, // T707
       'enemy.boss.jettison': null, // T707
-      'enemy.boss.gather': 'T708',
-      'enemy.boss.split': 'T708',
+      'enemy.boss.gather': null, // T708 lifted it (sim/gatheringMaw.test.ts)
+      'enemy.boss.split': null, // T708
     });
     // T706's run: objectiveCompleted, spawnWave, and the `cleared` atom; T707's openTile.
     for (const key of ['objectiveCompleted', 'spawnWave', 'cleared', 'openTile']) {

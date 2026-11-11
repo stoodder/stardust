@@ -23,6 +23,9 @@
 //   the invulnerability wait: the shedding is the phase's telegraph); a `hangar` phase launches
 //   drones on its own timer (hangar.ts, after the wait). Hostile Takeover runs in the jams slot
 //   (takeover.ts), so its jams land after the countdowns.
+// - M7 (T708): a `split` phase splits the boss into its parts as the phase's invulnerability ends
+//   (bossSplit.ts); a split-born unit (a part, or the boss merged again) runs bossMerge.ts instead
+//   of these steps. A phase's `gather` runs in the gathering pass (gather.ts).
 // Young are born in the boss's wave with its tags (brood.ts). A leaving boss is moved by leave.ts.
 // Chitterbloom: (1) 100–60% sneezes 2 Nibblers every 5 s; (2) 60–25% burrows twice for 3 s and
 // surfaces with a Bunchling each time; (3) 25–0% Haste 50% and a huddle on her young; `driveOff`
@@ -38,6 +41,8 @@ import { BOSS_BURROW_GAP_TICKS, enterBossPhase } from './bossPhases.ts';
 import { spawnBrood } from './brood.ts';
 import { hangarStep } from './hangar.ts'; // T707
 import { jettisonStep } from './jettison.ts'; // T707
+import { splitBornStep } from './bossMerge.ts'; // T708
+import { bossSplitStep, isSplitBorn } from './bossSplit.ts'; // T708
 import { shieldBrokenStep } from './shieldBroken.ts';
 
 export const BOSS_ABILITY_TELL_TICKS = secToTicks(BOSS_ABILITY_TELL_SEC);
@@ -88,6 +93,10 @@ function bossTellBlocked(boss: Readonly<Enemy>, next: BossAbility | null): boole
 
 /** One tick of a live boss that isn't leaving. */
 export function bossStep(state: SimState, ctx: TickContext, boss: Enemy, def: CompiledBoss): void {
+  if (isSplitBorn(boss)) {
+    splitBornStep(state, boss); // T708: a split boss's parts and its merge (bossMerge.ts)
+    return;
+  }
   if (boss.bossPhase === 0) enterBossPhase(state, boss, def, 1, false);
   shieldBrokenStep(state, ctx, boss, def);
   const p = def.phases[boss.bossPhase - 1]!; // 1 ≤ bossPhase ≤ phases.length
@@ -99,6 +108,10 @@ export function bossStep(state: SimState, ctx: TickContext, boss: Enemy, def: Co
   }
   if (p.hangar !== null) {
     hangarStep(state, ctx, boss, p.hangar); // T707: its own launch timer
+    return;
+  }
+  if (p.split !== null) {
+    bossSplitStep(state, ctx, boss, p.split); // T708: it splits as its telegraph ends
     return;
   }
   if (boss.abilityTicks <= 0) return;
