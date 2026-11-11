@@ -70,24 +70,19 @@ test("act II's close: A2M6's card → the PA's minor stinger → the base → th
   await expect(tabs.getByRole('tab', { name: 'Inbox' })).toBeVisible();
   await expect(tabs.getByRole('tab', { name: 'Bounty' })).toHaveCount(0);
 
-  // The Sector map at night: Act III's phase and theme, the teaser selected and focused.
+  // The Sector map at night: Act III's phase and theme, The Preserve next up, its Start focused.
   await page.getByRole('button', { name: 'Sector map' }).click();
   const map = page.getByTestId('star-map');
   await expect(map).toHaveAttribute('data-phase', 'act3');
   await expect(map).toHaveAttribute('data-act', '3');
   await expect(node(page, 'Sundown')).toHaveAttribute('aria-current', 'location');
   const teaser = node(page, 'The Preserve');
-  await expect(teaser).toHaveAccessibleName(
-    'Shift 12, The Preserve, The Preserve. Coming soon. The Hollow is inside the Preserve, ' +
-      'where you led them. Get them out.',
-  );
-  await expect(teaser).toBeFocused();
+  await expect(teaser).toHaveAccessibleName(/^Shift 12, The Preserve, The Preserve\. Next up\. /);
   const panel = page.getByRole('region', { name: 'The Preserve' });
-  await expect(panel).toContainText('Coming soon');
   await expect(panel).toContainText(
     'The Hollow is inside the Preserve, where you led them. Get them out.',
   );
-  await expect(panel.getByRole('button')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Start The Preserve' })).toBeFocused();
   await expect(page.getByText('The Long Walk', { exact: true })).toBeAttached();
   // Nothing past the teaser is named anywhere on the page.
   for (const later of ['License Revoked', 'The Gap', 'Empty Slot']) {

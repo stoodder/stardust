@@ -156,7 +156,9 @@ describe('revokeTowerClass: mostInvested (towers.md § 9)', () => {
     );
     const paid = [invested(sim, uids[0]!), invested(sim, uids[1]!)];
     const ledger = (): number =>
-      sim.state.stats.creditsEarned - sim.state.stats.creditsSpent + sim.state.stats.creditsRefunded;
+      sim.state.stats.creditsEarned -
+      sim.state.stats.creditsSpent +
+      sim.state.stats.creditsRefunded;
     const before = { credits: sim.state.credits, ledger: ledger() };
     const out = toCue(sim);
     const revoked = of(out, 'TowerRevoked');

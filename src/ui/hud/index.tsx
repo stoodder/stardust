@@ -29,6 +29,7 @@ import { StatusPanel } from './StatusPanel.tsx';
 import { TowerPanel } from './TowerPanel.tsx';
 import { SpeedControls, WavePanel } from './WavePanel.tsx';
 import './hud.css';
+import './revoked.css'; // T606
 
 /** The battle HUD. */
 export function Hud() {

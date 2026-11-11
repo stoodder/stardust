@@ -225,10 +225,7 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
     if (s.kind === 'build') return r.towers.includes(s.tower);
     if (s.kind === 'ability') return slotRevoked(state, sim.config, s.slot);
     const tile =
-      s.kind === 'upgrade' ||
-      s.kind === 'specialize' ||
-      s.kind === 'sell' ||
-      s.kind === 'targeting'
+      s.kind === 'upgrade' || s.kind === 'specialize' || s.kind === 'sell' || s.kind === 'targeting'
         ? s.tile
         : (s.kind === 'holdFire' || s.kind === 'spareRunners') && s.target !== 'all'
           ? s.target

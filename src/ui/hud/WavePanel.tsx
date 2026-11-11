@@ -113,40 +113,40 @@ export function WavePanel() {
           )}
           {!restricted &&
             next.groups.map((g) => {
-            const where = `${g.air ? ', air' : ''}${g.spawn === null ? '' : `, from ${g.spawn}${g.newSpawn ? ', a new spawn' : ''}`}`;
-            return (
-              <li
-                key={`${g.enemy}:${g.air ? 'air' : 'ground'}:${g.spawn ?? ''}`}
-                class={`hud-preview-group${g.isNew ? ' new' : ''}`}
-                data-enemy={g.enemy}
-                aria-label={`${g.count} ${g.label}${g.neutral ? ', the mail: hold fire' : ''}${g.isNew ? ', new' : ''}${g.fast ? ', fast' : ''}${where}`}
-                title={`${g.label}${g.neutral ? ' (the mail: hold fire)' : ''}${g.fast ? ' (fast)' : ''}${g.air ? ' (air)' : ''}${g.spawn === null ? '' : ` (${g.spawn})`}`}
-              >
-                <span class="hud-preview-icon">
-                  <Icon id={g.icon} />
-                  {g.isNew && (
-                    <span class="hud-new hud-preview-new" aria-hidden="true">
-                      New
+              const where = `${g.air ? ', air' : ''}${g.spawn === null ? '' : `, from ${g.spawn}${g.newSpawn ? ', a new spawn' : ''}`}`;
+              return (
+                <li
+                  key={`${g.enemy}:${g.air ? 'air' : 'ground'}:${g.spawn ?? ''}`}
+                  class={`hud-preview-group${g.isNew ? ' new' : ''}`}
+                  data-enemy={g.enemy}
+                  aria-label={`${g.count} ${g.label}${g.neutral ? ', the mail: hold fire' : ''}${g.isNew ? ', new' : ''}${g.fast ? ', fast' : ''}${where}`}
+                  title={`${g.label}${g.neutral ? ' (the mail: hold fire)' : ''}${g.fast ? ' (fast)' : ''}${g.air ? ' (air)' : ''}${g.spawn === null ? '' : ` (${g.spawn})`}`}
+                >
+                  <span class="hud-preview-icon">
+                    <Icon id={g.icon} />
+                    {g.isNew && (
+                      <span class="hud-new hud-preview-new" aria-hidden="true">
+                        New
+                      </span>
+                    )}
+                  </span>
+                  <span class="num">x{g.count}</span>
+                  {g.fast && <Icon id="icon.tell.fast" class="hud-fast" />}
+                  {g.air && <span class="hud-air">Air</span>}
+                  {g.neutral && (
+                    <span class="hud-mail">
+                      <Glyph rects={HOLD_GLYPH} />
+                      Mail
                     </span>
                   )}
-                </span>
-                <span class="num">x{g.count}</span>
-                {g.fast && <Icon id="icon.tell.fast" class="hud-fast" />}
-                {g.air && <span class="hud-air">Air</span>}
-                {g.neutral && (
-                  <span class="hud-mail">
-                    <Glyph rects={HOLD_GLYPH} />
-                    Mail
-                  </span>
-                )}
-                {g.spawn !== null && (
-                  <span class={`hud-spawn${g.newSpawn ? ' opens' : ''}`} aria-hidden="true">
-                    {spawnShort(g.spawn)}
-                  </span>
-                )}
-              </li>
-            );
-          })}
+                  {g.spawn !== null && (
+                    <span class={`hud-spawn${g.newSpawn ? ' opens' : ''}`} aria-hidden="true">
+                      {spawnShort(g.spawn)}
+                    </span>
+                  )}
+                </li>
+              );
+            })}
           {/* An Escort's next refugees (D138): a friendly chip, never a threat's. */}
           {walking > 0 && (
             <li

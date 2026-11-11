@@ -43,7 +43,9 @@ function BuildSlot({ index, slot }: { index: number; slot: BuildSlotView | undef
       aria-pressed={armed}
       aria-disabled={locked || poor}
       aria-label={`Build ${slot.label}, ${slot.cost} credits${status}`}
-      title={locked ? (revoked ? 'License revoked' : lockedText(slot)) : `${slot.label} (${index + 1})`}
+      title={
+        locked ? (revoked ? 'License revoked' : lockedText(slot)) : `${slot.label} (${index + 1})`
+      }
       onMouseDown={noFocusOnPress}
       onClick={() => pressBuildSlot(index)}
       onContextMenu={(e) => {

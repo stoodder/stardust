@@ -13,7 +13,12 @@
 // on the map (a hypothetical tower: counterAnswers.ts), plus the companion's ability. Builds are
 // judged by the usual [alt-builds] and [no-counter-build] rules, and the harness runs par against
 // each class the cue could take from it (balance/revokeChecks.ts).
-import { answerScope, answersCarried, type ReachedTower, type ScopeEnemy } from './counterAnswers.ts';
+import {
+  answerScope,
+  answersCarried,
+  type ReachedTower,
+  type ScopeEnemy,
+} from './counterAnswers.ts';
 import { MAX_TIER_BEFORE_SPEC } from './rules.ts';
 import type { IdSpace, MapDef, TowerFaction } from './types.ts';
 import type { ValidationRules } from './validate.ts';

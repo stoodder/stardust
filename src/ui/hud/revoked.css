@@ -1,0 +1,34 @@
+/* What the script revoked (T606's minimal hook; T631 restyles it, T640b draws the stamp icons):
+   a REVOKED stamp over a dead build slot or ability slot, and the hidden preview's ACCESS
+   RESTRICTED with QUILL's leak line under it. */
+.hud-revoked-stamp {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) rotate(-8deg);
+  padding: 0 1px;
+  font-size: 8px;
+  line-height: 8px;
+  letter-spacing: 0;
+  color: var(--sd-red-3);
+  background: var(--sd-ink-0);
+  border: 1px solid var(--sd-red-3);
+  pointer-events: none;
+}
+
+.hud-slot.revoked .slot-icon {
+  opacity: 0.2;
+}
+
+.hud-restricted {
+  font-size: 8px;
+  line-height: 8px;
+  color: var(--sd-red-3);
+}
+
+.hud-leak-line {
+  flex-basis: 100%;
+  font-size: 8px;
+  line-height: 9px;
+  color: var(--sd-white-1);
+}
