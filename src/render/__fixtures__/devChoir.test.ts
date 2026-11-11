@@ -80,6 +80,6 @@ describe('dev_choir (T607)', () => {
 
   it('lulls the units at the bend: the Maw, Motes, and Blinkstriders', () => {
     expect(run.lulledTicks).toBeGreaterThan(60);
-    expect([...run.lulledIds].sort()).toEqual(['blinkstrider', 'maw', 'mote']);
+    expect([...run.lulledIds].toSorted()).toEqual(['blinkstrider', 'maw', 'mote']);
   });
 });

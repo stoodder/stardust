@@ -90,12 +90,16 @@ const NOTE: readonly string[] = ['..NN.', '..N.N', '..N..', '..N..', 'NNN..', 'N
 export const NOTE_W = NOTE[0]!.length + 2; // with its rim
 export const NOTE_H = NOTE.length + 2;
 
+/** Whether the note (without its rim) lights pixel (x, y) of the rimmed image. */
+function lit(x: number, y: number): boolean {
+  return NOTE[y - 1]?.[x - 1] === 'N';
+}
+
 /** The note image in `color`, on a 1 px `NOTE_RIM` rim round every lit pixel (7×9). */
 export function noteImage(color: ColorName): RgbaImage {
   const w = NOTE_W;
   const h = NOTE_H;
   const data = new Uint8ClampedArray(w * h * 4);
-  const lit = (x: number, y: number): boolean => NOTE[y - 1]?.[x - 1] === 'N';
   const put = (x: number, y: number, c: ColorName): void => {
     const { r, g, b } = rgbOf(c);
     const i = (y * w + x) * 4;
@@ -107,7 +111,8 @@ export function noteImage(color: ColorName): RgbaImage {
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       if (lit(x, y)) put(x, y, color);
-      else if (lit(x - 1, y) || lit(x + 1, y) || lit(x, y - 1) || lit(x, y + 1)) put(x, y, NOTE_RIM);
+      else if (lit(x - 1, y) || lit(x + 1, y) || lit(x, y - 1) || lit(x, y + 1))
+        put(x, y, NOTE_RIM);
     }
   }
   return { w, h, data };

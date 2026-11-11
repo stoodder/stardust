@@ -201,7 +201,14 @@ export class ChoirView {
   }
 
   /** Shows ring `k` at screen (x, y): `radiusTiles` in `color`, its dashes at `shift`. */
-  #ring(k: number, radiusTiles: number, color: ColorName, shift: 0 | 1, x: number, y: number): void {
+  #ring(
+    k: number,
+    radiusTiles: number,
+    color: ColorName,
+    shift: 0 | 1,
+    x: number,
+    y: number,
+  ): void {
     const ring = this.#rings[k]!; // k < 2 × MAX_CHOIRS: two per Choir at most
     const radius = snapRingRadius(radiusTiles);
     if (ring.radius !== radius || ring.color !== color || ring.shift !== shift) {
