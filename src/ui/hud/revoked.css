@@ -1,48 +1,92 @@
-/* What the script revoked (T606's minimal hook; T631 restyles it, T640b draws the stamp icons):
-   a REVOKED tab on a dead build or ability slot's top edge (outside the chamfer's clip, like the
-   NEW tag) over its dimmed, struck-through icon, and the hidden preview's ACCESS RESTRICTED with
-   QUILL's leak line under it. */
-.hud-revoked-tab {
-  position: absolute;
-  left: 50%;
-  top: -7px;
-  transform: translateX(-50%);
-  padding: 1px 1px 0;
-  white-space: nowrap;
-  color: var(--sd-white-1);
-  background: var(--sd-red-2);
-  box-shadow: 0 0 0 1px var(--sd-ink-0);
-  pointer-events: none;
-}
-
-.hud-slot.revoked .slot-icon {
-  opacity: 0.2;
-}
-
-/* A red rim, and a red strike across the dead icon (::after is the chamfer's edge). */
+/* What the script revoked (T606's hook, T631's look; art-direction §9 *Act III HUD*):
+   - a revoked class's build slot: dimmed, red-edged, the LICENSE REVOKED stamp (34×18, the one
+     that folded its towers) lying across it and overhanging its edges by 2 px, outside the
+     chamfer's clip (in the holder, like the NEW tag);
+   - the uplink's ability slot: dark, red-edged, under the UPLINK REVOKED stamp;
+   - QUILL's slot under her lockout: dark like an absent companion's, "Locked out" in place of its
+     countdown, the padlock on its top edge (no stamp: nobody revoked her, she was told to stop);
+   - the hidden preview: ACCESS RESTRICTED in the act's alarm red beside the padlock, a dashed
+     `ink.4` blank where the icons were, and QUILL's leak line under it in her teal, on its
+     own rule, so it reads as her, not the system. */
 .hud-slot.revoked {
   --edge: var(--sd-red-3);
 }
 
-.hud-slot.revoked::before {
-  content: '';
+.hud-slot.revoked .slot-icon {
+  opacity: 0.25;
+}
+
+.hud-revoked-stamp {
   position: absolute;
-  left: 3px;
-  right: 3px;
-  top: 50%;
-  height: 2px;
-  background: var(--sd-red-3);
-  transform: rotate(-35deg);
-  z-index: 1;
+  left: 50%;
+  top: 5px;
+  display: block;
+  transform: translateX(-50%);
   pointer-events: none;
 }
 
+.hud-revoked-stamp .icon {
+  display: block;
+}
+
+/* The uplink's: over its icon row, inside the 36 px slot. */
+.hud-revoked-stamp.ability {
+  top: 3px;
+}
+
+.hud-ability.lockout {
+  --edge: var(--sd-steel-1);
+}
+
+.hud-ability.lockout .slot-icon {
+  opacity: 0.35;
+}
+
+.hud-ability.lockout .hud-cd {
+  color: var(--sd-steel-3);
+}
+
+.hud-lockout-lock {
+  position: absolute;
+  left: 50%;
+  top: -5px;
+  display: block;
+  padding: 1px;
+  transform: translateX(-50%);
+  background: var(--sd-ink-1);
+  box-shadow: 0 0 0 1px var(--sd-steel-1);
+  pointer-events: none;
+}
+
+.hud-lockout-lock .icon {
+  display: block;
+}
+
 .hud-restricted {
-  color: var(--sd-red-3);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--accent);
+}
+
+.hud-restricted .icon {
+  display: block;
+}
+
+.hud-restricted-blank {
+  flex-basis: 100%;
+  height: 2px;
+  background: repeating-linear-gradient(90deg, var(--sd-ink-4) 0 3px, transparent 3px 5px);
 }
 
 .hud-leak-line {
   flex-basis: 100%;
+  padding-top: 2px;
+  border-top: 1px solid var(--sd-ink-3);
   line-height: 9px;
   color: var(--sd-white-1);
+}
+
+.hud-leak-line .hud-leak-who {
+  color: var(--sd-teal-3);
 }

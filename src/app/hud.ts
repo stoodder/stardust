@@ -40,6 +40,8 @@ import {
   countdownSeconds,
   holdingCount,
   medalViews,
+  groupWalking,
+  objectiveGroups,
   objectiveViews,
   priceKey,
   priceOf,
@@ -383,13 +385,30 @@ export function bindHud(
     challenge: resumed ? ('forfeited' as const) : sim.state.medals.challenge,
   };
   hud.medals.value = medalViews(sim.map, medalState, saveInfo.heldMedals);
-  // Each objective's standing, redrawn whenever the sim settles one (T304f, D090).
+  // Each objective's standing, redrawn whenever the sim settles one (T304f, D090), and, for one
+  // that follows a refugee group (A3M1's Bramble's column; T631), whenever how many of it walk
+  // changes.
+  const objectiveGroupIds = objectiveGroups(sim.map);
+  const objectiveGroupList = Object.entries(objectiveGroupIds);
+  const walking: Record<string, number> = {};
   const syncObjectives = (): void => {
     hud.objectives.value = objectiveViews(
       sim.map,
       objectiveStatusById(sim.state, sim.map),
       saveInfo.heldObjectives,
+      walking,
     );
+  };
+  const syncWalking = (): void => {
+    let changed = false;
+    for (const [id, group] of objectiveGroupList) {
+      const n = groupWalking(sim.state.allies, group);
+      if ((walking[id] ?? 0) !== n) {
+        walking[id] = n;
+        changed = true;
+      }
+    }
+    if (changed) syncObjectives();
   };
   syncObjectives();
   hud.callsign.value = saveInfo.callsign();
@@ -500,6 +519,7 @@ export function bindHud(
       markHintsShown([UPGRADE_HINT]);
     }
     syncCooldowns();
+    if (objectiveGroupList.length > 0) syncWalking();
     const key = priceKey(s);
     if (key !== slotPrices) {
       slotPrices = key;

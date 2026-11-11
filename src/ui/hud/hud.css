@@ -1492,3 +1492,18 @@ section.chamfer,
 .hud-spawn.opens {
   color: var(--accent-2);
 }
+
+/* A group objective's walkers (T631; A3M1's The Matriarch's Young): the refugee glyph and how many
+   of Bramble's column are on the road, while they walk. */
+.hud-objective-walking {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  margin-left: auto;
+  color: var(--sd-green-4);
+}
+
+.hud-objective-walking .icon {
+  width: 8px;
+  height: 8px;
+}

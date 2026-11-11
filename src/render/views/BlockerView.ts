@@ -1,16 +1,17 @@
 // A blocker's view (design/maps.md § 5.4: Bricks at the Gap; T605, polished by T630a). For each
-// live blocker ally (`Ally.blockCapacity` > 0): a small health bar just over his head in `overlay`
-// (a 1 px `ink.0` frame round an `ink.2` track, the health in `green.3`, `gold.3` at or below half,
-// `red.3` at or below a quarter), easing towards `Ally.health` over BAR_EASE_MS (the sim already
-// eases him along the timeline; this smooths what a frame shows, and reduced motion snaps it):
-// as it falls, the part it is losing shows as a `white.0` chip that the fill drains into
-// (`barLayout`), so the loss reads without a number. His Tumble IV stone sits at the bar's left
-// end (`STONE_PIP`: a `pink.3` stone lit `gold.4`, in an `ink.0` rim), so the bar reads as his,
-// never as an enemy's. Under each unit he holds (`Enemy.blockerUid`) a pair of `white.1` corner
-// brackets close on its feet over an `ink.0` shadow, so the hold reads on Act III's dark road.
-// His health never moves with what he holds (D141), and the bar has no number on it. His stance
-// (`blockerPose`) is AllyView's: braced, straining, down on one knee.
-// Allocation-free per frame: one Graphics, redrawn each frame while something shows.
+// live blocker ally (`Ally.blockCapacity` > 0): a small health bar just under his post plate in
+// `overlay` (under him, so it never tangles with the bars over the units he holds, which stand at
+// his shoulder): a 1 px `ink.0` frame round an `ink.2` track, the health in `green.3`, `gold.3` at
+// or below half, `red.3` at or below a quarter, easing towards `Ally.health` over BAR_EASE_MS (the
+// sim already eases him along the timeline; this smooths what a frame shows, and reduced motion
+// snaps it): as it falls, the part it is losing shows as a `white.0` chip that the fill drains into
+// (`barLayout`), so the loss reads without a number. His Tumble IV stone sits at the bar's left end
+// (`STONE_PIP`: a `pink.3` stone lit `gold.4`, in an `ink.0` rim), so the bar reads as his, never
+// as an enemy's. Under each unit he holds (`Enemy.blockerUid`) a pair of `white.1` corner brackets
+// close on its feet over an `ink.0` shadow, so the hold reads on Act III's dark road. His health
+// never moves with what he holds (D141), and the bar has no number on it. His stance
+// (`blockerPose`) is AllyView's: braced, straining, down on one knee. Allocation-free per frame:
+// one Graphics, redrawn each frame while something shows.
 import type * as Phaser from 'phaser';
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
 import type { Ally, Enemy } from '../../sim/index.ts';
@@ -27,8 +28,8 @@ export interface BlockerPools {
 /** The bar's size and lift over his ground point, in game px. */
 export const BAR_W = 16;
 export const BAR_H = 2;
-/** The bar's top over his ground point: two pixels over his head as he stands braced (px). */
-export const BAR_LIFT = 29;
+/** The bar's top under his ground point: a pixel clear of his post plate's rim (px). */
+export const BAR_DROP = 6;
 /** A hold bracket's half-width round a held unit's ground point (px). */
 const HOLD_HALF_PX = 6;
 /** How long the shown health takes to catch up with the sim's (ms). */
@@ -180,7 +181,7 @@ export class BlockerView {
     const g = this.#g;
     gridToScreen(x, y, this.#ctx.origin, pos);
     const left = Math.round(pos.x - BAR_W / 2);
-    const top = Math.round(pos.y - BAR_LIFT);
+    const top = Math.round(pos.y + BAR_DROP);
     g.fillStyle(C.frame, 1);
     g.fillRect(left - 1, top - 1, BAR_W + 2, BAR_H + 2);
     g.fillStyle(C.track, 1);

@@ -126,6 +126,13 @@ export type Trait =
 export type ThreatIntelId = Trait | 'boss';
 /** Counter categories (design/enemies.md §3.1). */
 export type CounterId = 'armor' | 'shield' | 'detection' | 'air' | 'burrowed' | 'splash' | 'jam';
+
+/** A trait the soft-trait cap passes over on one map, and why (MapDef `softExempt`). */
+export interface SoftExemptDef {
+  readonly trait: Trait;
+  /** Why the map may carry this trait past the cap (never empty). */
+  readonly reason: string;
+}
 /** Art tell ids (art/art-direction.md §8). */
 export type TellId =
   | 'armored'
@@ -982,6 +989,12 @@ export interface MapLayoutDef<K extends IdSpace = LiveIds, Id extends string = s
   readonly threatIntel: readonly ThreatIntelId[];
   /** At most 3; each backed by a noCounterBuild that must lose. */
   readonly requiredCounters: readonly CounterId[];
+  /**
+   * Traits the 15% soft-trait cap passes over on this map (design/maps.md § 6.2): for a map that
+   * introduces a unit and scripts its doom, never to dodge a counter its play depends on. Each
+   * names its reason; a trait in a required counter's category is refused (validateThreats.ts).
+   */
+  readonly softExempt?: readonly SoftExemptDef[];
   /**
    * The map's Challenge medal (Victory and Perfect Core are every map's; design/progression.md
    * § 3). Required on campaign maps (validateMedals.ts).

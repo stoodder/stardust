@@ -101,13 +101,20 @@ export function WavePanel() {
       {next !== null && (
         <ul class="hud-preview" aria-label={`Next: wave ${next.number}`}>
           <li class="hud-label">Next</li>
+          {/* QUILL's lockout (T606, T631): the threats hidden behind ACCESS RESTRICTED and a
+              struck blank where the icons were; her leak line under it, in her color. */}
           {restricted && (
-            <li class="hud-restricted" data-testid="preview-restricted">
-              ACCESS RESTRICTED
+            <li class="hud-restricted-row" aria-label="Access restricted">
+              <span class="hud-restricted">
+                <Icon id="icon.lock" />
+                <span data-testid="preview-restricted">ACCESS RESTRICTED</span>
+              </span>
             </li>
           )}
+          {restricted && <li class="hud-restricted-blank" aria-hidden="true" />}
           {restricted && leak !== null && (
-            <li class="hud-leak-line" data-testid="preview-leak">
+            <li class="hud-leak-line" data-testid="preview-leak" aria-label={`QUILL: ${leak}`}>
+              <span class="hud-leak-who">QUILL </span>
               {leak}
             </li>
           )}

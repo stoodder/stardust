@@ -2,7 +2,7 @@
 // bonus lines, ability descriptions, the cursor's announcement, and the notices a rejected command
 // or a Hold fire change gives. Pure text from content and sim values; no signals.
 import type { CompiledAbilityDef, CompiledLinkDef, CompiledTier } from '../content/compiled.ts';
-import { STATUS_BITS } from '../content/rules.ts';
+import { DOT_TICK_SEC, STATUS_BITS } from '../content/rules.ts';
 import { TOWERS } from '../content/towers/index.ts';
 import { mapMilestone, SYSTEM_UNLOCKS } from '../meta/index.ts';
 import type { IdSpace, MeterLabel, TileChar } from '../content/types.ts';
@@ -25,6 +25,9 @@ import {
   type TowerStatLine,
 } from '../sim/index.ts';
 import type { BuildSlotView } from '../ui/state.ts';
+import { PRESENTATION } from '../content/presentation.ts';
+import type { StoryAct } from '../content/dialogue/types.ts';
+import { medalMarks } from '../ui/screens/presentationText.ts';
 
 const TOWER_NAMES: Readonly<Record<string, { readonly name: string } | undefined>> = TOWERS;
 
@@ -92,6 +95,17 @@ export function meterLabelText(label: MeterLabel | null): string {
   }
 }
 
+/**
+ * What a medal or objective the run can't earn any more says in the HUD tracker's tooltip, by the
+ * UI act theme (`hud.act`, a presentation dial): Results' mark (`medalMarks`, style-guide.md § 2),
+ * so Act III and the finale spend no "!" ("Next time."), Acts I–II keep theirs ("Next time!").
+ */
+export function nextTimeMark(theme: string): string {
+  const acts = Object.keys(PRESENTATION.byAct) as StoryAct[];
+  const act = acts.find((a) => String(a) === theme) ?? 1;
+  return medalMarks(PRESENTATION.byAct[act].counter).nextTime;
+}
+
 /** What a locked slot says (D026): "Thumper ships at wave 3", or "Thumper locked" with no wave. */
 export function lockedText(slot: BuildSlotView): string {
   return slot.unlockWave === null
@@ -114,16 +128,40 @@ export function beamDps(s: Pick<TowerStatLine, 'damage' | 'ratePerSec'>, tickSec
 }
 
 /**
+ * What a standing tower adds to its line beyond its tier's authored numbers (T631; the tower
+ * panel's live reach): a Den's family as it stands (`Tower.swarmAlive`, Finders Keepers' extra
+ * swarmling included) and its latch (Splash Zone's longer one), a Bloom's field reach and pulse
+ * period (`fieldReachTiles`, `fieldPulseTicks`) and chill after its tune-up, a Choir's aura and
+ * Lullaby reach (Harmony's wider ring, the radius tune-up). Each null reads the tier's own.
+ */
+export interface LiveTowerLine {
+  readonly family?: number | null;
+  readonly latchTicks?: number | null;
+  readonly fieldReach?: number | null;
+  readonly pulseTicks?: number | null;
+  readonly chillPct?: number | null;
+  readonly auraReach?: number | null;
+  readonly lullReach?: number | null;
+}
+
+const NO_LIVE: LiveTowerLine = Object.freeze({});
+
+/**
  * A tower's stats as the tower panel shows them (sim `towerStats`), e.g. "8 dmg · 2/s · range 3";
- * a beam's as its damage per second ("12 dmg/s · range 3 · ramp ×4 in 6 s").
+ * a beam's as its damage per second ("12 dmg/s · range 3 · ramp ×4 in 6 s"); a Scuttle Den's as
+ * its family and each one's DoT ("3 swarmlings · 5 dmg/s each · range 2.5 · latch 4 s"; T631); a
+ * tower without an attack as its support line (`supportText`). `live`: a standing tower's own
+ * reach (`LiveTowerLine`).
  */
 export function statLineText(
   s: TowerStatLine,
   tier: DeepReadonly<CompiledTier> | null = null,
   from: DeepReadonly<CompiledTier> | null = null,
+  live: LiveTowerLine = NO_LIVE,
 ): string {
-  if (s.kind === null) return supportText(tier);
+  if (s.kind === null) return supportText(tier, live);
   const a = tier?.attack ?? null;
+  if (a !== null && a.kind === 'spawner') return denText(s, a, live, tier?.targets.air === true);
   const parts =
     a !== null && a.kind === 'beam'
       ? [`${statNum(beamDps(s, a.beamTickSec))} dmg/s`]
@@ -134,6 +172,43 @@ export function statLineText(
   return parts.join(' · ');
 }
 
+/** A Scuttle Den's attack as the panel reads it (the spawner of CompiledTier's attack). */
+type DenAttack = Extract<NonNullable<CompiledTier['attack']>, { kind: 'spawner' }>;
+
+/**
+ * A Scuttle Den's line (towers.md § Scuttle Den; T604, T631): how many swarmlings (or Champions) it
+ * keeps, each one's damage per second as it lands (the tier's `damage` per second at the DoT tick,
+ * quickened by a rate bonus, like a beam's), its reach, how long each holds on, its chill each,
+ * the burrowed multiplier, and "air too" for Champions, e.g.
+ * "3 swarmlings · 5 dmg/s each · range 2.5 · latch 4 s · Chilled 10% · ×2.5 burrowed".
+ */
+export function denText(
+  s: Pick<TowerStatLine, 'damage' | 'ratePerSec' | 'rangeTiles'>,
+  a: DeepReadonly<DenAttack>,
+  live: LiveTowerLine = NO_LIVE,
+  air = false,
+): string {
+  const n = live.family ?? a.maxAlive;
+  const who =
+    a.ally === 'champion'
+      ? n === 1
+        ? 'Champion'
+        : 'Champions'
+      : n === 1
+        ? 'swarmling'
+        : 'swarmlings';
+  const latch = (live.latchTicks ?? a.latchTicks) / TICK_HZ;
+  const parts = [
+    `${n} ${who}`,
+    `${statNum(beamDps(s, DOT_TICK_SEC))} dmg/s each`,
+    `range ${statNum(s.rangeTiles)}`,
+    `latch ${statNum(Math.round(latch * 10) / 10)} s`,
+  ];
+  if (a.chillPct > 0) parts.push(`Chilled ${statNum(Math.round(a.chillPct * 100))}%`);
+  if (a.burrowedDotMul > 1) parts.push(`×${statNum(a.burrowedDotMul)} burrowed`);
+  if (air) parts.push('air too');
+  return parts.join(' · ');
+}
 /** The words for an aura's stat ("+20% range nearby"). */
 const AURA_STAT_TEXT: Readonly<Record<string, string>> = {
   damage: 'damage',
@@ -142,10 +217,14 @@ const AURA_STAT_TEXT: Readonly<Record<string, string>> = {
 };
 
 /**
- * A support tier's line (T406; T431 may reword it): its detection and its auras as authored, e.g.
- * "detect 3.5 · linger 2 s · +20% range nearby", or "Support" with neither.
+ * A support tier's line (T406, T631): its detection, its auras with their reach ("+10% damage in
+ * 1.5"), a Lullaby's reach, and a Stasis Bloom's field (`fieldText`), e.g. "detect 3.5 · linger
+ * 2 s · +20% range nearby", or "Support" with none. `live` gives a standing tower's own reach.
  */
-function supportText(tier: DeepReadonly<CompiledTier> | null): string {
+function supportText(
+  tier: DeepReadonly<CompiledTier> | null,
+  live: LiveTowerLine = NO_LIVE,
+): string {
   const parts: string[] = [];
   const d = tier?.detect ?? null;
   if (d !== null) {
@@ -154,9 +233,88 @@ function supportText(tier: DeepReadonly<CompiledTier> | null): string {
     if (d.revealedDamagePct > 0) parts.push(`revealed ${pctText(d.revealedDamagePct)} dmg`);
   }
   for (const a of tier?.auras ?? []) {
-    parts.push(`${pctText(a.pct)} ${AURA_STAT_TEXT[a.stat] ?? a.stat} nearby`);
+    const stat = AURA_STAT_TEXT[a.stat] ?? a.stat;
+    // A Choir's song carries a reach of its own (its ring); a Lookout's aura says "nearby".
+    if (a.kind === 'choir') {
+      const reach = live.auraReach ?? a.radiusTiles;
+      parts.push(`${pctText(a.pct)} ${stat} in ${statNum(round1(reach))}`);
+    } else parts.push(`${pctText(a.pct)} ${stat} nearby`);
   }
+  const lull = tier?.lull ?? null;
+  if (lull !== null) parts.push(`Lulls in ${statNum(round1(live.lullReach ?? lull.radiusTiles))}`);
+  const f = tier?.field ?? null;
+  if (f !== null) parts.push(...fieldParts(f, live));
   return parts.length === 0 ? 'Support' : parts.join(' · ');
+}
+
+/** Rounds to a tenth (a reach after a tune-up: 2.1, never 2.0999). */
+function round1(n: number): number {
+  return Math.round(n * 10) / 10;
+}
+
+/** A Stasis Bloom's field as it reads (the CompiledTier's `field`). */
+type FieldTier = NonNullable<CompiledTier['field']>;
+
+/**
+ * A Stasis Bloom's field (towers.md § Stasis Bloom; T608, T631): its reach, its chill, the pulse's
+ * Stasis and how often, and Gravity Well's pull, e.g. "field 2 · Chilled 30% · Stasis 1.5 s every
+ * 10 s · pulls 1.5 (20 s)".
+ */
+function fieldParts(f: DeepReadonly<FieldTier>, live: LiveTowerLine): string[] {
+  const reach = live.fieldReach ?? f.radiusTiles;
+  const chill = live.chillPct ?? f.chillPct;
+  const every = (live.pulseTicks ?? f.pulseEveryTicks) / TICK_HZ;
+  const parts = [
+    `field ${statNum(round1(reach))}`,
+    `Chilled ${statNum(Math.round(chill * 1000) / 10)}%`,
+    `Stasis ${statNum(f.stasisTicks / TICK_HZ)} s every ${statNum(round1(every))} s`,
+  ];
+  if (f.pullBackTiles > 0) {
+    parts.push(
+      `pulls ${statNum(f.pullBackTiles)} (${statNum(f.pullBackCooldownTicks / TICK_HZ)} s)`,
+    );
+  }
+  return parts;
+}
+
+/**
+ * What an upgrade changes that the stat delta doesn't carry (T631), for the "Next:" line: a Den's
+ * family and latch ("+1 swarmling", "latch +1 s"), a Choir's aura ("+5% damage", "+0.5 reach"), a
+ * Bloom's field ("pulse 2 s sooner", "+0.5 field", "Stasis +0.5 s").
+ */
+export function tierExtrasDelta(
+  now: DeepReadonly<CompiledTier>,
+  next: DeepReadonly<CompiledTier>,
+): string[] {
+  const out: string[] = [];
+  const a = now.attack;
+  const b = next.attack;
+  if (a !== null && b !== null && a.kind === 'spawner' && b.kind === 'spawner') {
+    const more = b.maxAlive - a.maxAlive;
+    if (more !== 0)
+      out.push(`${signed(more)} ${Math.abs(more) === 1 ? 'swarmling' : 'swarmlings'}`);
+    const latch = (b.latchTicks - a.latchTicks) / TICK_HZ;
+    if (latch !== 0) out.push(`latch ${signed(latch)} s`);
+  }
+  const auraA = now.auras.find((x) => x.kind === 'choir');
+  const auraB = next.auras.find((x) => x.kind === 'choir');
+  if (auraA !== undefined && auraB !== undefined) {
+    const pct = auraB.pct - auraA.pct;
+    if (pct !== 0) out.push(`${pctText(pct)} ${AURA_STAT_TEXT[auraB.stat] ?? auraB.stat}`);
+    const r = auraB.radiusTiles - auraA.radiusTiles;
+    if (r !== 0) out.push(`${signed(r)} reach`);
+  }
+  const fa = now.field;
+  const fb = next.field;
+  if (fa !== null && fb !== null) {
+    const r = fb.radiusTiles - fa.radiusTiles;
+    if (r !== 0) out.push(`${signed(r)} field`);
+    const sooner = (fa.pulseEveryTicks - fb.pulseEveryTicks) / TICK_HZ;
+    if (sooner !== 0) out.push(`pulse ${statNum(sooner)} s sooner`);
+    const stasis = (fb.stasisTicks - fa.stasisTicks) / TICK_HZ;
+    if (stasis !== 0) out.push(`Stasis ${signed(stasis)} s`);
+  }
+  return out;
 }
 
 /**

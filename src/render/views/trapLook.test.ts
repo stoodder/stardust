@@ -33,8 +33,10 @@ describe("Underfoot's snare (T630a)", () => {
     // The ring's own left point is unchanged; the jaws sit just inside it, either side of the axis.
     expect(px(trap.image, 0, trap.cy)).toEqual(rgba(TRAP_COLOR));
     expect(px(trap.image, 1, trap.cy - 1)).toEqual(rgba(TRAP_JAW));
+    expect(px(trap.image, 2, trap.cy)).toEqual(rgba(TRAP_JAW)); // the tooth's tip
     expect(px(trap.image, trap.image.w - 2, trap.cy + 1)).toEqual(rgba(TRAP_JAW));
     expect(px(trap.image, trap.cx - 1, 1)).toEqual(rgba(TRAP_JAW));
+    expect(px(trap.image, trap.cx, 2)).toEqual(rgba(TRAP_JAW));
     // The middle stays open: it's a ring, not a disc.
     expect(px(trap.image, trap.cx, trap.cy)[3]).toBe(0);
   });

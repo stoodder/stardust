@@ -1,6 +1,6 @@
 // Underfoot's trap (core-loop.md § 3.2; T604, polished by T630a; trapLook.ts has the rules; T631
 // draws the aim). While a `trap` zone lives, the snare lies on its path tile in `decal` (the moss
-// ring with its four pairs of inward jaws, over a 1 px `ink.0` under-stroke, so it reads on any
+// ring with its four inward teeth, over a 1 px `ink.0` under-stroke, so it reads on any
 // road), breathing 100% ↔ 60% while armed and blinking at 4 Hz in its last second (held lit under
 // reduced motion), so the end is no surprise. Each time it springs (a new pair in the sim's
 // `trapSprung`), a quick `green.4` ring bursts from the tile (FxView's effect ring). Read from the

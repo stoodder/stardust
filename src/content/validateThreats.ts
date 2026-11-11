@@ -59,10 +59,14 @@ export function threatOf(e: EnemyDef): number {
   );
 }
 
-/** Soft on this map (enemies.md § 3.1): a category trait, and none the map requires. */
-function isSoft(e: EnemyDef, required: readonly CounterId[]): boolean {
+/**
+ * Soft on this map (enemies.md § 3.1): a category trait the map doesn't exempt (`softExempt`), and
+ * no trait in a category the map requires.
+ */
+function isSoft(e: EnemyDef, required: readonly CounterId[], exempt: ReadonlySet<Trait>): boolean {
   const cats = e.traits.map((t) => TRAIT_COUNTER[t]).filter((c) => c !== null);
-  return cats.length > 0 && !cats.some((c) => required.includes(c));
+  if (cats.some((c) => required.includes(c))) return false;
+  return e.traits.some((t) => TRAIT_COUNTER[t] !== null && !exempt.has(t));
 }
 
 /**
@@ -145,6 +149,21 @@ export function validateThreats(
     }
   }
 
+  // Soft-trait exemptions (maps.md § 6.2): each with a reason, never a required category's trait.
+  const exempt = new Set<Trait>();
+  for (const [i, x] of (def.softExempt ?? []).entries()) {
+    const at = `${where}.softExempt[${i}]`;
+    if (x.reason.trim() === '') issues.add('soft-traits', at, `'${x.trait}' needs a reason`);
+    const cat = TRAIT_COUNTER[x.trait];
+    if (cat === null) {
+      issues.add('soft-traits', at, `'${x.trait}' is intel-only: it is never soft`);
+    } else if (required.includes(cat)) {
+      issues.add('soft-traits', at, `'${x.trait}' is in '${cat}', a counter the map requires`);
+    }
+    if (exempt.has(x.trait)) issues.add('soft-traits', at, `'${x.trait}' is listed twice`);
+    exempt.add(x.trait);
+  }
+
   // Soft-trait share, per wave (fleeing units count 0; teach waves and groups are exempt).
   for (const [w, wave] of def.waves.entries()) {
     if (wave.teach === true) continue;
@@ -155,7 +174,7 @@ export function validateThreats(
       if (e === undefined || e.neutral === true || (g.tags ?? []).includes('fleeing')) continue;
       const threat = threatOf(e) * g.count;
       total += threat;
-      if (g.teach !== true && isSoft(e, required)) soft += threat;
+      if (g.teach !== true && isSoft(e, required, exempt)) soft += threat;
     }
     if (total > 0 && soft / total > SOFT_THREAT_MAX_SHARE) {
       issues.add(

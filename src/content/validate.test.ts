@@ -639,6 +639,37 @@ describe('validate: maps', () => {
     expect(validate(withMap({ waves: taught }))).toEqual([]);
   });
 
+  it('[soft-traits] softExempt passes a trait over the cap, with a reason, never a required one', () => {
+    const waves = [
+      {
+        groups: [
+          { enemy: 'fx_walker', count: 3, route: 'a' },
+          { enemy: 'fx_runner', count: 1, route: 'a' }, // shielded, and shield isn't required
+        ],
+      },
+      fxMap.waves[1]!,
+    ];
+    const reason = 'introduced and doom-scripted here; examined later';
+    expect(validate(withMap({ waves, softExempt: [{ trait: 'shielded', reason }] }))).toEqual([]);
+    // Only the listed trait: exempting another leaves the runner soft.
+    rejects(withMap({ waves, softExempt: [{ trait: 'armored', reason }] }), 'soft-traits');
+    // A reason is required.
+    rejects(withMap({ waves, softExempt: [{ trait: 'shielded', reason: ' ' }] }), 'soft-traits');
+    // Never a trait in a category the map requires, nor an intel-only trait (never soft), nor one
+    // listed twice.
+    const required = {
+      requiredCounters: ['shield'],
+      noCounterBuilds: { shield: fxBuilds.parBuild },
+    } as const;
+    rejects(withMap({ ...required, softExempt: [{ trait: 'shielded', reason }] }), 'soft-traits');
+    rejects(withMap({ softExempt: [{ trait: 'fast', reason }] }), 'soft-traits');
+    const twice = [
+      { trait: 'shielded', reason },
+      { trait: 'shielded', reason },
+    ] as const;
+    rejects(withMap({ waves, softExempt: twice }), 'soft-traits');
+  });
+
   it('[teach] a teach wave must bring a new trait', () => {
     rejects(
       withMap({ waves: [{ teach: true, groups: fxMap.waves[0]!.groups }, fxMap.waves[1]!] }),

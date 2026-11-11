@@ -215,10 +215,24 @@ export const map = defineMapLayout({
   startCredits: 700,
   // Flat: it doesn't scale with Evacuated (the score is never a price; progression.md § 2).
   stardust: 320,
-  // Burrowed (the Undertows), air (the Rift Moths), and splash (the Mote clusters and Fractures)
-  // are the map's answers (campaign.md § 4.8). Armor, gathering, phasing, and the rifts are intel.
+  // Air (the Rift Moths) and splash (the Mote clusters and Fractures) are the map's answers
+  // (campaign.md § 4.8). Burrowing, armor, gathering, phasing, and the rifts are intel: the
+  // Undertows are the map's new unit and its scripted doom, and the burrowed exam is the finale's,
+  // so their traits pass the soft-trait cap (maps.md § 6.2; D141).
   threatIntel: ['clustered', 'splitting', 'burrowing', 'armored', 'gathering', 'flying', 'phasing'],
-  requiredCounters: ['burrowed', 'air', 'splash'],
+  requiredCounters: ['air', 'splash'],
+  softExempt: [
+    {
+      trait: 'burrowing',
+      reason:
+        'A3M3 introduces the Undertow and doom-scripts it behind Bricks; the burrowed exam is the finale’s (campaign.md §5).',
+    },
+    {
+      trait: 'armored',
+      reason:
+        'The Undertow’s armor rides with its scripted doom; A3M3 sets no armor exam (the Maw’s armor is under splash, which A3M3 requires).',
+    },
+  ],
   // Much Obliged (Challenge): Evacuated ≥ 60%. Held the Door, ≥ 85%, takes Perfect's slot
   // (sim/medals.ts).
   medals: {

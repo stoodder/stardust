@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   BAR_EASE_MS,
-  BAR_LIFT,
+  BAR_DROP,
   BAR_W,
   barLayout,
   blockerBarColor,
@@ -55,16 +55,19 @@ describe('the blocker bar, polished (T630a)', () => {
     expect(STONE_PIP.filter(([, , c]) => c === 'gold.4')).toHaveLength(1);
   });
 
-  it("sits just over his head as he stands braced (the sprite's top)", () => {
+  it('sits just under his post plate, clear of its rim', () => {
     const def = SPRITES.find((s) => s.id === 'ally.bricks')!;
     const frame = def.frames['block_se_0'];
     const rows: readonly string[] = Array.isArray(frame) ? frame : [];
-    const head = rows.findIndex((r) => /[^.]/.test(r));
-    expect(head).toBeGreaterThan(0);
-    // The frame's anchor is his ground point; the bar's bottom clears his head (plus outline).
-    const headPx = def.anchor.y - head + 1;
-    expect(BAR_LIFT - 2).toBeGreaterThan(headPx);
-    expect(BAR_LIFT - 2 - headPx).toBeLessThanOrEqual(4);
+    let foot = -1;
+    rows.forEach((r, y) => {
+      if (/[^.]/.test(r)) foot = y;
+    });
+    expect(foot).toBeGreaterThan(def.anchor.y);
+    // The plate's lowest row (plus its outline) is above the bar's frame.
+    const plateBelowPx = foot - def.anchor.y + 1;
+    expect(BAR_DROP - 1).toBeGreaterThan(plateBelowPx);
+    expect(BAR_DROP - 1 - plateBelowPx).toBeLessThanOrEqual(2);
   });
 });
 

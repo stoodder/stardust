@@ -1,9 +1,10 @@
 // Top-left: the name plate ("JPT-1 · SPROUT", core-loop §5), the meter (core integrity, or the
 // map's own meter), a Protect map's asset meter under it (T305a), credits, the medal tracker (T202d), and the map's optional objectives under it
 // (T312c).
+import { nextTimeMark } from '../../app/hudText.ts';
 import { hud, type MedalView, type ObjectiveView } from '../state.ts';
 import { AssetMeter } from './AssetMeter.tsx';
-import { EscortMeter } from './EscortMeter.tsx';
+import { EscortMeter, escortIcon } from './EscortMeter.tsx';
 import { Icon } from './Icon.tsx';
 import { useTicker } from './parts.tsx';
 
@@ -76,6 +77,11 @@ function NamePlate() {
   );
 }
 
+/** How many of the group an objective follows are on the road, for its row's label. */
+function walkingWords(o: ObjectiveView): string {
+  return o.walking != null && o.status === 'open' ? `, ${o.walking} on the road` : '';
+}
+
 /** An objective's standing in words (its row's label and tooltip). */
 function objectiveWord(o: ObjectiveView): string {
   return o.status === 'done' ? 'done' : o.status === 'failed' ? 'next time' : 'in reach';
@@ -84,11 +90,13 @@ function objectiveWord(o: ObjectiveView): string {
 /**
  * The objective tracker (T312c), under the medals: one row per optional objective (Objective
  * Intel; "Clean Audit"), a box that fills gold once done and dims quietly when this run can't do it
- * any more ("Next time!", like the medals), and the name; the tooltip says what completes it.
+ * any more ("Next time!", like the medals; "Next time." from Act III: `nextTimeMark`), and the
+ * name; the tooltip says what completes it.
  */
 function ObjectiveTracker() {
   const objectives = hud.objectives.value;
   if (objectives.length === 0) return null;
+  const nextTime = nextTimeMark(hud.act.value);
   return (
     <ul class="hud-objectives" aria-label="Objectives" data-testid="objective-tracker">
       {objectives.map((o) => (
@@ -97,11 +105,22 @@ function ObjectiveTracker() {
           class={`hud-objective ${o.status}`}
           data-objective={o.id}
           data-status={o.status}
-          aria-label={`${o.name}, ${objectiveWord(o)}: ${o.description} +${o.intel} Intel`}
-          title={`${o.name}: ${o.status === 'failed' ? 'Next time!' : o.description} (+${o.intel} Intel)`}
+          aria-label={`${o.name}, ${objectiveWord(o)}${walkingWords(o)}: ${o.description} +${o.intel} Intel`}
+          title={`${o.name}: ${o.status === 'failed' ? nextTime : o.description} (+${o.intel} Intel)`}
         >
           <span class="hud-objective-box" aria-hidden="true" />
           <span class="hud-objective-name">{o.name}</span>
+          {/* The group it follows on the road (A3M1: Bramble's column), while it walks. */}
+          {o.walking != null && o.status === 'open' && (
+            <span
+              class="hud-objective-walking num"
+              data-testid="objective-walking"
+              aria-hidden="true"
+            >
+              <Icon id={escortIcon()} />
+              {o.walking}
+            </span>
+          )}
         </li>
       ))}
     </ul>
@@ -116,11 +135,13 @@ function medalWord(m: MedalView): string {
 /**
  * The medal tracker (T202d), in the status panel: one diamond per medal, lit while still in
  * reach, gold once earned, and quietly dimmed when this run can't earn it any more (never a
- * scolding: the tooltip says "Next time!"). A medal already on file shows a small tick.
+ * scolding: the tooltip says "Next time!", or "Next time." from Act III: `nextTimeMark`). A medal
+ * already on file shows a small tick.
  */
 function MedalTracker() {
   const medals = hud.medals.value;
   if (medals.length === 0) return null;
+  const nextTime = nextTimeMark(hud.act.value);
   return (
     <ul
       class="hud-medals"
@@ -130,7 +151,7 @@ function MedalTracker() {
         <li
           key={m.id}
           class={`hud-medal ${m.status}${m.held ? ' held' : ''}`}
-          title={`${m.name}: ${m.status === 'forfeited' ? 'Next time!' : m.description}`}
+          title={`${m.name}: ${m.status === 'forfeited' ? nextTime : m.description}`}
           data-medal={m.kind}
           data-status={m.status}
         />

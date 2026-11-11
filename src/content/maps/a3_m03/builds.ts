@@ -86,13 +86,9 @@ export const builds = defineBuilds({
   // Rivet) and Orbital Strike, Seed Money 2, Head Start back on.
   referenceProfile: REFERENCE_PROFILES.a3_m03,
   parBuild: { loadout: ['burrow', 'mindspike', 'thumper', 'prism'], steps: parSteps() },
+  // Air and splash only: the Undertows are intel here (map.ts `softExempt`; the burrowed exam is
+  // the finale's), so there is no no-burrowed build.
   noCounterBuilds: {
-    // No burrowed answer: no Den, Underfoot, Bloom, Truthlight, or Dread (Mindspike, Thumper,
-    // Prism, Harpoon: a Harpoon where each of par's Dens stands).
-    burrowed: {
-      loadout: ['mindspike', 'thumper', 'prism', 'harpoon'],
-      steps: swapped({ burrow: 'harpoon' }),
-    },
     // No air: nothing in reach of the Moths' lanes (Scuttle Den, Thumper, Sprinkler, Lookout: a
     // Sprinkler where each of par's Prisms stands, a Lookout for its Mindspike).
     air: {

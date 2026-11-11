@@ -18,6 +18,9 @@ import { Key, noFocusOnPress } from './parts.tsx';
 import { revokedHud } from './revokedState.ts'; // T606
 import { alignPulse } from './pulse.ts';
 
+/** The stamp a revoked uplink's slot wears (art-direction §5 *REVOKED stamps*). */
+export const UPLINK_STAMP = 'icon.stamp.uplink_revoked';
+
 /** The icon's size in game px: the cooldown wipe steps one pixel per 1/16. */
 const ICON_PX = 16;
 
@@ -70,30 +73,48 @@ function AbilitySlot({ a, cd }: { a: AbilitySlotView; cd: AbilityCooldownView | 
   const cue = hud.countdownCue.value;
   // The Time Dilation teach (A1M3's flock, D098): the slot pulses at 1 Hz until it's first cast.
   const teach = ready && hud.timeDilationTeach.value === a.slot;
-  // T606: a revoked slot (the uplink; QUILL's under her lockout) is dark, under a REVOKED stamp.
+  // A revoked slot (T606, T631): the uplink's is dark under its UPLINK REVOKED stamp; QUILL's,
+  // under her lockout, goes dark like an absent companion's and reads "Locked out" (she is still
+  // there, locked out of the uplink: not a license, so no stamp).
   if (revokedHud.value.slots.includes(a.slot)) {
+    const uplink = a.slot === 1;
     return (
       <div class="hud-slot-holder">
         <button
           type="button"
-          class={`hud-btn hud-slot hud-ability chamfer absent revoked${a.companion === null ? '' : ' companion'}`}
+          class={`hud-btn hud-slot hud-ability chamfer absent revoked${uplink ? '' : ' lockout'}${a.companion === null ? '' : ' companion'}`}
           data-testid={`ability-${a.slot}`}
           aria-disabled="true"
-          aria-label={`${a.label}, ${a.slot === 1 ? 'uplink revoked' : 'locked out'}`}
-          title={a.slot === 1 ? 'Uplink revoked' : 'Locked out'}
+          aria-label={`${a.label}, ${uplink ? 'uplink revoked' : 'locked out'}`}
+          title={uplink ? 'Uplink revoked' : 'Locked out'}
           onMouseDown={noFocusOnPress}
           onClick={() => pressAbility(a.slot)}
         >
           <span class="ability-row">
-            <SlotFace a={a} />
+            {a.companion !== null && <CompanionFace c={a.companion} absent />}
             <span class="ability-icon">
               <Icon id={a.icon} class="slot-icon" />
             </span>
           </span>
+          <span class="hud-cd">{uplink ? '' : 'Locked out'}</span>
         </button>
-        <span class="hud-revoked-tab" data-testid={`ability-${a.slot}-revoked`} aria-hidden="true">
-          REVOKED
-        </span>
+        {uplink ? (
+          <span
+            class="hud-revoked-stamp ability"
+            data-testid={`ability-${a.slot}-revoked`}
+            aria-hidden="true"
+          >
+            <Icon id={UPLINK_STAMP} />
+          </span>
+        ) : (
+          <span
+            class="hud-lockout-lock"
+            data-testid={`ability-${a.slot}-revoked`}
+            aria-hidden="true"
+          >
+            <Icon id="icon.lock" />
+          </span>
+        )}
       </div>
     );
   }

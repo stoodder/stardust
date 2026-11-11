@@ -680,13 +680,56 @@ export function objectiveViews(
   map: Pick<CompiledMapDef<IdSpace>, 'objectives'>,
   status: Readonly<Record<string, ObjectiveStatusView>> = {},
   held: readonly string[] = [],
+  walking: Readonly<Record<string, number>> = {},
 ): ObjectiveView[] {
-  return map.objectives.map((o) => ({
-    id: o.id,
-    name: silkText(o.name),
-    description: silkText(o.description),
-    intel: o.intel,
-    status: Object.hasOwn(status, o.id) ? (status[o.id] ?? 'open') : 'open',
-    held: held.includes(o.id),
-  }));
+  return map.objectives.map((o) => {
+    const n = Object.hasOwn(walking, o.id) ? (walking[o.id] ?? 0) : 0;
+    return {
+      id: o.id,
+      name: silkText(o.name),
+      description: silkText(o.description),
+      intel: o.intel,
+      status: Object.hasOwn(status, o.id) ? (status[o.id] ?? 'open') : 'open',
+      held: held.includes(o.id),
+      ...(n > 0 ? { walking: n } : {}),
+    };
+  });
+}
+
+/**
+ * The refugee group each `groupLost` objective follows (A3M1's The Matriarch's Young: Bramble's
+ * column), as its index in `map.escort.groups`, by objective id; empty on a map with none.
+ */
+export function objectiveGroups(
+  map: Pick<CompiledMapDef<IdSpace>, 'objectives' | 'escort'>,
+): Readonly<Record<string, number>> {
+  const out: Record<string, number> = {};
+  const groups = map.escort?.groups ?? [];
+  for (const o of map.objectives) {
+    const c = o.condition;
+    if (!('groupLost' in c)) continue;
+    const i = groups.findIndex((g) => g.id === c.groupLost);
+    if (i >= 0) out[o.id] = i;
+  }
+  return out;
+}
+
+/** How many refugees of group `group` (Pebble not counted) are on the road now. */
+export function groupWalking(
+  allies: { readonly used: number; readonly items: readonly AllyLike[] },
+  group: number,
+): number {
+  let n = 0;
+  for (let i = 0; i < allies.used; i++) {
+    const a = allies.items[i]!; // i < used ≤ items.length
+    if (a.alive && a.group === group && !a.pebble) n++;
+  }
+  return n;
+}
+
+/** What `groupWalking` reads of an ally. */
+interface AllyLike {
+  readonly alive: boolean;
+  readonly group: number;
+  readonly pebble: boolean;
 }

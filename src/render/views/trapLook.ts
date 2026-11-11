@@ -1,7 +1,7 @@
 // Underfoot's trap as rules and pixels (T604, polished by T630a; TrapView applies them; core-loop.md
 // § 3.2): pure, so they're unit-tested.
 // - **The snare:** a `green.3` ring (moss) at half a tile over a 1 px `ink.0` under-stroke, with a
-//   pair of `green.4` jaws biting inward at each of its four points (`trapImage`), so it reads as a
+//   `green.4` tooth biting inward at each of its four points (`trapImage`), so it reads as a
 //   trap laid on the road, not a range ring or an aura.
 // - **Armed:** it breathes on sim time, a step dimmer every other half second (`trapAlpha`: 100% ↔
 //   60%, the stepped ladder), so a live trap reads as waiting; in its last second it blinks off and
@@ -30,7 +30,7 @@ export function trapAlpha(ticksLeft: number, reducedMotion: boolean): number {
   return Math.floor(ticksLeft / BREATH_TICKS) % 2 === 0 ? 1 : STEPPED_ALPHA[1];
 }
 
-/** The snare: the ring with its four pairs of inward jaws; (cx, cy) sits on the tile's centre. */
+/** The snare: the ring with its four inward teeth; (cx, cy) sits on the tile's centre. */
 export function trapImage(): RingImage {
   const ring = ringImage(TRAP_TILES, TRAP_COLOR, false, TRAP_UNDER);
   const { w, h, data } = ring.image;
@@ -45,21 +45,19 @@ export function trapImage(): RingImage {
     out[i + 3] = 255;
   };
   const { cx, cy } = ring;
-  // Left and right points: a jaw a pixel above and below the axis, biting in toward the centre.
-  for (let k = 1; k <= JAW_PX; k++) {
-    for (const side of [-1, 1] as const) {
-      const x = cx + side * (cx - k);
-      put(x, cy - 1);
-      put(x, cy + 1);
-    }
-    // Top and bottom points: a jaw a pixel either side of the axis (half as deep: the ring is 2:1).
-    if (k <= Math.ceil(JAW_PX / 2)) {
-      for (const side of [-1, 1] as const) {
-        const y = cy + side * (cy - k);
-        put(cx - 1, y);
-        put(cx + 1, y);
-      }
-    }
+  // Each jaw is a tooth biting in: two pixels astride the axis just inside the ring, and its tip a
+  // pixel further in on the axis (left and right; top and bottom the same, turned).
+  for (const side of [-1, 1] as const) {
+    const x1 = cx + side * (cx - 1);
+    const x2 = cx + side * (cx - JAW_PX);
+    put(x1, cy - 1);
+    put(x1, cy + 1);
+    put(x2, cy);
+    const y1 = cy + side * (cy - 1);
+    const y2 = cy + side * (cy - JAW_PX);
+    put(cx - 1, y1);
+    put(cx + 1, y1);
+    put(cx, y2);
   }
   return { image: { w, h, data: out }, cx, cy };
 }

@@ -233,6 +233,12 @@ export interface ObjectiveView {
   readonly status: ObjectiveStatusView;
   /** The save already holds it (done on an earlier win): the briefing says "On file". */
   readonly held: boolean;
+  /**
+   * A `groupLost` objective's refugees on the road now (T631; A3M1's The Matriarch's Young:
+   * Bramble's column), shown beside its name while they walk; null when none are (not yet
+   * released, or all off the road) or the objective follows no group.
+   */
+  readonly walking?: number | null;
 }
 
 /** Which of a map's three medals (design/progression.md § 3). */
@@ -336,9 +342,9 @@ export interface EscortMeterView {
   readonly low: boolean;
   /**
    * A Holdout's meter (T631; A3M3): Evacuated of the run's refugees, with no lost row (a Holdout
-   * has no defeat, so nothing counts down to one).
+   * has no defeat, so nothing counts down to one). Absent: false.
    */
-  readonly holdout: boolean;
+  readonly holdout?: boolean;
 }
 
 /** The meter's relabel moment (T531): the label it had before an objective change. */

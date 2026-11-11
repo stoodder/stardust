@@ -281,10 +281,10 @@ export class HollowView {
     const noose = nooseColor(progress) === 'white.1' ? SNAP : TENDRIL;
     const phase = still ? 0 : this.#clockMs * WAVE_SPEED;
     for (let pass = 0; pass < 2; pass++) {
-      if (pass === 0) g.lineStyle(4, INK, 0.7);
-      else g.lineStyle(2, noose, 1);
+      if (pass === 0) g.lineStyle(3, INK, 0.7);
+      else g.lineStyle(1, noose, 1);
       g.strokeEllipse(b.x, b.y, semi.x * 2, semi.y * 2);
-      if (pass === 1) g.lineStyle(2, TENDRIL, 1);
+      if (pass === 1) g.lineStyle(1, TENDRIL, 1);
       // The tendrils: from points on the noose (turning slowly) to the Maw's body, wavering.
       for (let t = 0; t < TENDRILS; t++) {
         const ang = phase * 0.25 + (t * Math.PI * 2) / TENDRILS;

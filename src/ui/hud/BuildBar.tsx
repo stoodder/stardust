@@ -1,6 +1,6 @@
 // Bottom-right: the four build slots (icon, cost, hotkey; locked, unaffordable, armed, NEW, sale,
-// and free states; the armed-slot rule is app/commands.ts's), and Clearance Sale's tag over them
-// while it has charges ("SALE -40% x3", D077).
+// and free states; the armed-slot rule is app/commands.ts's), Clearance Sale's tag over them
+// while it has charges ("SALE -40% x3", D077), and a revoked class's LICENSE REVOKED stamp (T631).
 import { cancel, pressBuildSlot } from '../../app/commands.ts';
 import { hud, type BuildSlotView, type PriceTag } from '../state.ts';
 import { lockedText } from '../../app/hudText.ts';
@@ -9,6 +9,9 @@ import { Icon } from './Icon.tsx';
 import { revokedHud } from './revokedState.ts'; // T606
 import { alignPulse } from './pulse.ts';
 import { Key, noFocusOnPress, Credits } from './parts.tsx';
+
+/** The stamp a revoked class's slot wears (art-direction §5 *REVOKED stamps*). */
+export const LICENSE_STAMP = 'icon.stamp.license_revoked';
 
 /** Build slots shown, whatever the loadout size (the loadout limit, CLAUDE.md). */
 const SLOT_COUNT = 4;
@@ -25,7 +28,7 @@ function BuildSlot({ index, slot }: { index: number; slot: BuildSlotView | undef
   if (slot === undefined) {
     return <div class="hud-slot empty chamfer" aria-hidden="true" />;
   }
-  // T606: a revoked class's slot is dead for the rest of the map, under a REVOKED stamp.
+  // T606: a revoked class's slot is dead for the rest of the map, under its stamp (T631).
   const revoked = revokedHud.value.towers.includes(slot.tower);
   const locked = revoked || hud.lockedTowers.value.includes(slot.tower);
   const poor = hud.credits.value < slot.cost;
@@ -66,13 +69,14 @@ function BuildSlot({ index, slot }: { index: number; slot: BuildSlotView | undef
       )}
     </button>
   );
-  // T606: a revoked class wears a REVOKED tab on the slot's top edge, outside the chamfer's clip.
+  // A revoked class (T606, T631): the LICENSE REVOKED stamp (the one that folded its towers) lies
+  // across the slot's dimmed icon, overhanging its edges, outside the chamfer's clip.
   if (revoked) {
     return (
       <div class="hud-slot-holder">
         {button}
-        <span class="hud-revoked-tab" data-testid="slot-revoked" aria-hidden="true">
-          REVOKED
+        <span class="hud-revoked-stamp" data-testid="slot-revoked" aria-hidden="true">
+          <Icon id={LICENSE_STAMP} />
         </span>
       </div>
     );

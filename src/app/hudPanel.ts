@@ -6,8 +6,13 @@ import { MAX_TIER_BEFORE_SPEC } from '../content/rules.ts';
 import type { IdSpace } from '../content/types.ts';
 import { gridToScreen, type IsoOrigin } from '../render/iso.ts';
 import type { DeepReadonly } from '../shared/types.ts';
+import { DOT_TICK_SEC } from '../content/rules.ts';
+import { choirReach, lullReach } from '../render/views/choirLook.ts';
 import {
   darkDims,
+  fieldPulseTicks,
+  fieldReachTiles,
+  supportPct,
   liveTileAt,
   sellValueInto,
   towerStats,
@@ -35,7 +40,40 @@ import {
   specDescription,
   specLockText,
   statLineText,
+  tierExtrasDelta,
+  type LiveTowerLine,
 } from './hudText.ts';
+
+/**
+ * A standing tower's own reach for its stat line (T631; hudText `LiveTowerLine`): a Den's family
+ * and latch, a Bloom's field (`fieldReachTiles`, `fieldPulseTicks`, its chill after the aura
+ * tune-up), a Choir's ring and Lullaby (`choirReach`, `lullReach`).
+ */
+export function liveLine(
+  t: DeepReadonly<Tower>,
+  mods: SimConfig<IdSpace>['modifiers'],
+): LiveTowerLine {
+  const tier = t.tierDef;
+  if (tier === null || t.def === null) return {};
+  const a = tier.attack;
+  if (a !== null && a.kind === 'spawner') {
+    return {
+      family: t.swarmAlive > 0 ? t.swarmAlive : a.maxAlive + t.linkSwarmlings,
+      latchTicks: a.latchTicks + t.linkLatchTicks,
+    };
+  }
+  const f = tier.field;
+  if (f !== null) {
+    return {
+      fieldReach: fieldReachTiles(f, t),
+      pulseTicks: fieldPulseTicks(f, t),
+      chillPct: f.chillPct * (1 + supportPct(mods, t.def.id, 'aura')),
+    };
+  }
+  const choir = choirReach(t);
+  const lull = lullReach(t);
+  return { auraReach: choir > 0 ? choir : null, lullReach: lull > 0 ? lull : null };
+}
 
 /** "Next: +0.5/s · +3 pierce" as wrappable parts, the label on the first. */
 function nextParts(delta: string): string[] {
@@ -175,6 +213,14 @@ function selectedKey(
   // the tower stands in the light while the map is dark.
   k[22] = t.darkRangePct;
   k[23] = dark > 0 && t.lit;
+  // The live reach the M6 towers' lines read (T631): a Den's family and latch, a Bloom's field,
+  // a Choir's ring (Harmony, Pinned Down, Stillmind, Splash Zone, Finders Keepers, tune-ups).
+  k[24] = t.swarmAlive;
+  k[25] = t.linkLatchTicks;
+  k[26] = t.linkFieldRadiusTiles;
+  k[27] = t.linkPulseSoonerTicks;
+  k[28] = t.linkAuraRadiusTiles;
+  k[29] = t.detectPct;
   let same = keyParts.length === k.length;
   for (let i = 0; same && i < k.length; i++) same = keyParts[i] === k[i];
   if (same) return keyText;
@@ -226,12 +272,21 @@ export function selectedView(
   const stats = towerStats(t.def, t.tier, t, mods, t.spec);
   const attack = t.tierDef?.attack ?? null;
   const beam = attack !== null && attack.kind === 'beam' ? attack : null;
+  // A Den's DoT reads per second like a beam's, at the DoT tick (T631).
+  const den = attack !== null && attack.kind === 'spawner' ? attack : null;
+  const perSecTick = beam !== null ? beam.beamTickSec : den !== null ? DOT_TICK_SEC : null;
+  const nextDef = t.def.tiers[t.tier];
   const upgradeDelta = deltaText(
     stats.next,
-    beam === null || stats.next === null ? null : beamDpsDelta(stats, stats.next, beam.beamTickSec),
-    beam === null ? [] : rampDelta(beam, t.def.tiers[t.tier]?.attack ?? null),
+    perSecTick === null || stats.next === null ? null : beamDpsDelta(stats, stats.next, perSecTick),
+    [
+      ...(beam === null ? [] : rampDelta(beam, nextDef?.attack ?? null)),
+      ...(t.tierDef === null || nextDef === undefined || stats.next === null
+        ? []
+        : tierExtrasDelta(t.tierDef, nextDef)),
+    ],
   );
-  const statLine = statLineText(stats, t.tierDef);
+  const statLine = statLineText(stats, t.tierDef, null, liveLine(t, mods));
   const dark = darkTexts(t.darkRangePct, t.lit, state.dark, darkDims(t.tierDef));
   const bonusList = bonusTexts(
     tile,

@@ -7,13 +7,9 @@
 // Undertows of W11–W12) it ends at 72.2. Both alts reach the floor through both doors (Den + Zapcoil
 // + Skyhook + Lookout 55.6 / 61.1; Den + Prism + Harpoon + Zapcoil 52.8 / 58.3). Without air the
 // Moths take the sheltered (30.6 / 30.6); without splash the Mote clusters of W2, W8, W11 and W13
-// flood the choke past Bricks (25.0 / 25.0); doing nothing loses.
-//
-// **The burrowed exam is red until T604c.** Without a burrowed answer (a Harpoon where par's Dens
-// stand) the build holds 77.8 / 83.3: a Harpoon out-damages a Scuttle Den on the Undertows even with
-// the Den's burrowed DoT (towers.md § 7, ×2.5), because Bricks holds a surfaced Undertow still in the
-// Harpoon's range. T604c (the Den's identity pass) owns the fix; these tests assert the check like
-// any other, so they fail until it lands (D141 addendum: no skip, no pending marker).
+// flood the choke past Bricks (25.0 / 25.0); doing nothing loses. Air and splash are the map's
+// required counters; burrowing is intel (map.ts `softExempt`): A3M3 introduces the Undertow and
+// doom-scripts it, and the burrowed exam is the finale's (D141, T604c).
 //
 // The revocation window (A3M2's Clean Exit could take the Rivet, the Thumper, the Sprinkler or the
 // Skyhook; content/validateRevocation.ts checks the counter guarantee statically): each build is run
@@ -247,13 +243,14 @@ describe('A3M3 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
   const run = (label: string) => report.runs.find((r) => r.build === label && !r.repeat)!;
   const failing = report.checks.filter((k) => !k.ok).map((k) => `#${k.id} ${k.title}`);
 
-  it('passes every harness check but the burrowed exam', () => {
-    expect(failing.filter((t) => !t.includes('noCounter:burrowed'))).toEqual([]);
+  it('passes every harness check', () => {
+    expect(failing).toEqual([]);
   });
 
-  // Red until T604c (the Den's identity pass): see the header.
-  it('loses below the floor without a burrowed answer (#5, #6: T604c)', () => {
-    expect(failing.filter((t) => t.includes('noCounter:burrowed'))).toEqual([]);
+  it('requires air and splash only: the Undertows are intel (softExempt)', () => {
+    const m = content.maps.a3_m03;
+    expect(m.requiredCounters).toEqual(['air', 'splash']);
+    expect(Object.keys(m.builds.noCounterBuilds).toSorted()).toEqual(['air', 'splash']);
   });
 
   it('holds par at 27/36 through the convoy and 29/36 through the warren', () => {
@@ -307,16 +304,6 @@ describe('A3M3 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
       }
     }
   });
-
-  // Red until T604c, like the harness check above.
-  it.each(REVOCABLE)(
-    'keeps no-burrowed under the floor with the Clean Exit having taken the %s (T604c)',
-    (taken) => {
-      for (const door of DOORS) {
-        expect(evacuatedPct('noCounter:burrowed', door, taken), door).toBeLessThan(50);
-      }
-    },
-  );
 
   it('lands the SEAL on W14’s first tick in every Standard reference run, both doors', () => {
     for (const door of DOORS) {
