@@ -325,6 +325,7 @@ To be split up when we reach it. Inherits: jamming (Auditor, Silencer, Hostile T
 
 ## M8 — Finale, post-game & polish
 To be split up when we reach it. The finale (the song, Deep Bore, the Unsung, Dawn's `setLighting`, `layToRest`, `restoreTowerClass`), C5 and the epilogue, post-game, polish.
+- [ ] **T802-bundle** M8: lazy-load per-act content (act3 sfx, portraits, codex, sprite grids) so initial JS stays under the gate's 1 MB check (844 kB at M6; warns at 900).
 - [ ] **T801-burrow** M8: the finale's burrowed exam (Undertows return; A3M3 exempts `burrowing` from the soft cap and requires no burrowed answer — main's ruling in M6). Make the Den (with `burrowedDotMul` ×2.5) or another burrowed answer load-bearing there, with an honest no-burrowed build that loses. Note: FIN already requires its maximum of three counters (Air, Jam, Splash) and finale.md keeps burrowing soft, so the finale's design must drop one or examine burrowed another way (Story/Design).
 - [ ] **T501** M8: C4 Keep edge cases: the Technician can't equip an ability the companion provides (no double Time Dilation in the finale), and the Phase 2 lock must be phase-scoped and non-persisting (not `revokeAbility`), per D006.
 - [ ] **T701** M8: finale.md's eastern horizon warms one step per Phase 1 wave, but art-direction says the light doesn't brighten per wave — reconcile with the finale's `setLighting` Dawn.
