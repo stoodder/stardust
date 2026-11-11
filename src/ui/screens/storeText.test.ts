@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ITEM_COPY } from '../../content/upgrades/copy.ts';
 import { PROTOCOLS, UPGRADES } from '../../content/upgrades/index.ts';
 import { DEV_SAVES } from '../../meta/__fixtures__/devSaves.ts';
-import { shelf, type Offer } from '../../meta/index.ts';
+import { STORY_TRANSACTION_RULES, resolveC4, shelf, type Offer } from '../../meta/index.ts';
 import {
   MISSING_COPY,
   PRESENTERS,
@@ -12,6 +12,7 @@ import {
   offerCopy,
   offerName,
   priceText,
+  retiredText,
 } from './storeText.ts';
 
 const byId = (offers: readonly Offer[], id: string): Offer => {
@@ -230,5 +231,91 @@ describe("Bramble's Rapport row (T609b)", () => {
     expect(ITEM_COPY.rapport_bramble).not.toMatch(/!/);
     const early = shelf(DEV_SAVES.after_a2m6.build(), 'rnd');
     expect(early.map(offerName)).not.toContain('Rapport: Bramble');
+  });
+});
+
+describe("Zibzab's Rapport row (T709)", () => {
+  it("reads 4 → 3 waves, 2 Intel, and QUILL's line once A1M4 is won; no row names him before", () => {
+    const row = byId(shelf(DEV_SAVES.after_a1m4.build(), 'rnd'), 'rapport_zibzab');
+    expect(row.refusal).toBe(null);
+    expect(offerName(row)).toBe('Rapport: Zibzab');
+    // A cooldown in waves reads in waves: −15% of 4 rounds to 3 (core-loop.md § 3.2).
+    expect(effectText(row)).toBe('Clearance Sale cooldown 4 → 3 waves');
+    expect(priceText(row)).toBe('2 Intel');
+    expect(offerCopy(row)).toBe(ITEM_COPY.rapport_zibzab);
+    expect(ITEM_COPY.rapport_zibzab).toMatch(/^Clearance Sale recharges in 3 waves, not 4\. /);
+    for (const id of ['after_a1m1', 'after_a1m3'] as const) {
+      expect(shelf(DEV_SAVES[id].build(), 'rnd').map(offerName), id).not.toContain(
+        'Rapport: Zibzab',
+      );
+    }
+  });
+
+  it('Ability Coolant alone leaves Clearance Sale at 4 waves; a seconds cooldown reads as a percent', () => {
+    expect(
+      grantText({ kind: 'abilityStat', ability: 'clearance_sale', stat: 'cooldown', pct: -0.05 }),
+    ).toBe('Clearance Sale cooldown 4 → 4 waves');
+    expect(grantText({ kind: 'abilityStat', ability: '*', stat: 'cooldown', pct: -0.05 })).toBe(
+      '−5% ability cooldowns',
+    );
+  });
+});
+
+describe("the jailbreak's row (T709)", () => {
+  const jailbreak = (save: ReturnType<(typeof DEV_SAVES)['fresh']['build']>): Offer => {
+    const o = shelf(save, 'shop').find((x) => x.item.kind === 'jailbreak');
+    if (o === undefined) throw new Error('no jailbreak row');
+    return o;
+  };
+
+  it("under the warren: Zibzab's A3M4 line, and the price he names is the price", () => {
+    const row = jailbreak(DEV_SAVES.after_a3m3_warren.build());
+    expect(row.price).toBe(STORY_TRANSACTION_RULES.jailbreakStardust);
+    expect(offerCopy(row)).toBe(ITEM_COPY.jailbreak);
+    expect(offerCopy(row)).toContain(`Price first: ${row.price} stardust.`);
+    expect(priceText(row)).toBe('300 Stardust');
+  });
+
+  it("under the convoy it costs nothing: his other line, price first, never 'free'", () => {
+    const row = jailbreak(DEV_SAVES.after_a3m3_convoy.build());
+    expect(row.price).toBe(0);
+    expect(offerCopy(row)).toBe(ITEM_COPY.jailbreak_convoy);
+    expect(offerCopy(row)).toMatch(/^Price first: already paid\. Goldie's engineers/);
+  });
+});
+
+describe('rows the story refunded (T709)', () => {
+  const rnd = (save: ReturnType<(typeof DEV_SAVES)['fresh']['build']>) => shelf(save, 'rnd');
+
+  it("Purge's QUILL Rapport reads Refunded: the rank stays on record, the Intel came back", () => {
+    const base = DEV_SAVES.after_a3m3_convoy.build();
+    const bought = { ...base, upgrades: { ...base.upgrades, rapport_quill: 1 } };
+    const r = resolveC4(bought, 'purge');
+    if (!r.ok) throw new Error(r.message);
+    expect(r.save.currencies.intel).toBe(bought.currencies.intel + 2);
+    const row = byId(rnd(r.save), 'rapport_quill');
+    expect(row.owned).toBe(1);
+    expect(retiredText(row, r.save)).toBe('Refunded');
+    // Never bought: it would tune an ability that's gone, so it's off the shelf.
+    const never = resolveC4(base, 'purge');
+    if (!never.ok) throw new Error(never.message);
+    expect(retiredText(byId(rnd(never.save), 'rapport_quill'), never.save)).toBe(
+      'No longer stocked',
+    );
+  });
+
+  it('Keep and Rewrite leave it on the shelf; Mk II after the uplink is revoked retires too', () => {
+    for (const c4 of ['keep', 'rewrite'] as const) {
+      const save = DEV_SAVES[`after_a3m4_${c4}`].build();
+      expect(retiredText(byId(rnd(save), 'rapport_quill'), save), c4).toBe(null);
+    }
+    const save = DEV_SAVES.after_a3m3_convoy.build();
+    expect(save.unlocks.revokedAbilities).toContain('orbital_strike');
+    expect(retiredText(byId(rnd(save), 'orbital_strike_mk2'), save)).toBe('No longer stocked');
+    const owned = { ...save, upgrades: { ...save.upgrades, orbital_strike_mk2: 1 } };
+    expect(retiredText(byId(rnd(owned), 'orbital_strike_mk2'), owned)).toBe('Refunded');
+    // Before A3M2 nothing is retired.
+    const early = DEV_SAVES.after_a2m3.build();
+    for (const o of rnd(early)) expect(retiredText(o, early), offerName(o)).toBe(null);
   });
 });

@@ -16,7 +16,7 @@ import {
   type UpgradeDef,
 } from '../../content/upgrades/index.ts';
 import type { Offer, SaveData, StorePane } from '../../meta/index.ts';
-import { mapMilestone } from '../../meta/index.ts';
+import { C4_EFFECTS, mapMilestone } from '../../meta/index.ts';
 import { assertNever } from '../../shared/types.ts';
 import { formatCount } from './format.ts';
 
@@ -228,6 +228,33 @@ export function offerCopy(o: Offer): string | null {
     default:
       return assertNever(o.item);
   }
+}
+
+/**
+ * Whether the story paid `id`'s price back: QUILL's Rapport under C4 Purge (`C4_EFFECTS`), or an
+ * upgrade whose every grant tunes an ability the save lost (the uplink's Mk II after A3M2's Clean
+ * Exit; meta's `REVOCATION_REFUNDS`). Its rank stays on record (meta-runtime.md § Story
+ * transactions); the ability it tuned is gone.
+ */
+function storyRefunded(id: string, save: SaveData): boolean {
+  const choice = save.story.flags.quill_choice;
+  if (choice !== undefined && C4_EFFECTS[choice].refund === id) return true;
+  const grants = lookup(UPGRADE_DEFS, id)?.ranks[0]?.grants ?? [];
+  const lost: readonly string[] = save.unlocks.revokedAbilities;
+  return (
+    grants.length > 0 &&
+    grants.every((g) => g.kind === 'abilityStat' && g.ability !== '*' && lost.includes(g.ability))
+  );
+}
+
+/**
+ * A row the story took off the shelf (T709): "Refunded" where its price came back (its rank stays
+ * on record, so it's never sold again), "No longer stocked" where it was never bought (it would
+ * tune an ability that's gone), else null.
+ */
+export function retiredText(o: Offer, save: SaveData | null): string | null {
+  if (save === null || o.item.kind !== 'upgrade' || !storyRefunded(o.item.id, save)) return null;
+  return o.owned > 0 ? 'Refunded' : 'No longer stocked';
 }
 
 /**

@@ -7,13 +7,18 @@
 // or, when the item is now owned in full and the button is gone, the row itself (U6). A button the
 // bank can't cover is aria-disabled and explains itself when pressed. While QUILL is offline (A3M5
 // under C4 Rewrite, from C4 until A3M5 is won: meta `quillOffline` on the frontier; T713), R&D
-// shows no QUILL text: no item copy, no intro, no thanks (a refusal still says why).
+// shows no QUILL text: no item copy, no intro, no thanks (a refusal still says why). The jailbreak's
+// row (T709) shows the classes it brings back, drawn jailbroken (T731's icon variant). An upgrade
+// whose price the story paid back (Purge's QUILL Rapport, the uplink's Mk II) reads "Refunded", and
+// one never bought then reads "No longer stocked", with no button (storeText `retiredText`).
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { playSfx } from '../../app/audio.ts';
 import { activeSave, purchase, storeShelf } from '../../app/save.ts';
 import { JailbreakConfirm } from './jailbreakConfirm.tsx'; // T714
-import { quillOffline, type Offer, type StorePane } from '../../meta/index.ts';
+import { TOWERS } from '../../content/towers/index.ts';
+import { quillOffline, type Offer, type SaveData, type StorePane } from '../../meta/index.ts';
+import { Icon, JAILBROKEN_ICON } from '../hud/Icon.tsx';
 import {
   PRESENTERS,
   arrivalText,
@@ -21,10 +26,15 @@ import {
   offerCopy,
   offerName,
   priceText,
+  retiredText,
   towerName,
 } from './storeText.ts';
 import type { CampaignView } from './state.ts';
 import './base.css';
+import './Shelf.css';
+
+const TOWER_ICONS: Readonly<Record<string, { readonly sprites: { readonly icon: string } }>> =
+  TOWERS;
 
 export interface ShelfGroup {
   readonly title: string;
@@ -72,6 +82,27 @@ function offerKey(o: Offer): string {
     : `${o.item.kind}:${o.item.id}`;
 }
 
+/**
+ * The jailbreak row's art (T709): each class it brings back (the revoked ones; once taken, the
+ * jailbroken ones), drawn jailbroken: the Everglow plate scratched out, the lights Vrell orange.
+ */
+function JailbreakArt({ save }: { save: SaveData | null }) {
+  const u = save?.unlocks;
+  const towers = (u?.revokedTowers.length ?? 0) > 0 ? u!.revokedTowers : (u?.jailbroken ?? []);
+  if (towers.length === 0) return null;
+  return (
+    <span class="sd-offer-art" aria-hidden="true" data-testid="jailbreak-art">
+      {towers.map((t) => (
+        <Icon
+          key={t}
+          id={TOWER_ICONS[t]?.sprites.icon ?? `icon.tower.${t}`}
+          variant={JAILBROKEN_ICON}
+        />
+      ))}
+    </span>
+  );
+}
+
 function OfferRow({
   offer,
   onBuy,
@@ -85,15 +116,23 @@ function OfferRow({
   const p = PRESENTERS[offer.pane];
   const name = offerName(offer);
   const copy = quiet ? null : offerCopy(offer);
+  const save = activeSave();
+  const retired = retiredText(offer, save);
   const r = offer.refusal;
-  const state = r === null ? 'buyable' : r;
+  const state = retired !== null ? 'retired' : r === null ? 'buyable' : r;
   const bank = offer.currency === 'intel' ? 'sd-intel' : 'sd-stardust';
   let side;
-  if (r === 'not_stocked' || r === 'pane_locked') {
+  if (retired !== null) {
+    side = (
+      <span class={offer.owned > 0 ? 'sd-offer-owned' : 'sd-offer-wait'} data-testid="retired">
+        {retired}
+      </span>
+    );
+  } else if (r === 'not_stocked' || r === 'pane_locked') {
     side = (
       <span class="sd-offer-wait">
         <span class="sd-lock" aria-hidden="true" />
-        {arrivalText(offer, activeSave())}
+        {arrivalText(offer, save)}
       </span>
     );
   } else if (r === 'not_owned' || r === 'no_specs') {
@@ -125,6 +164,7 @@ function OfferRow({
   }
   return (
     <li class={`sd-offer sd-offer-${state}`} data-offer={offerKey(offer)} tabIndex={-1}>
+      {offer.item.kind === 'jailbreak' && <JailbreakArt save={save} />}
       <div class="sd-offer-main">
         <p class="sd-offer-head">
           <span class="sd-offer-name">{name}</span>

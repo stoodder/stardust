@@ -245,11 +245,11 @@ describe('catalog: progression.md numbers', () => {
       'bramble',
       'zibzab',
     ]);
+    const owners: Readonly<Record<string, { readonly companion?: string }>> = ABILITIES;
     for (const u of rapports) {
       const grant = u.ranks[0]?.grants[0];
-      expect(grant?.kind === 'abilityStat' ? ABILITIES[grant.ability]?.companion : null, u.id).toBe(
-        u.companion,
-      );
+      const ability = grant?.kind === 'abilityStat' ? grant.ability : '';
+      expect(owners[ability]?.companion, u.id).toBe(u.companion);
     }
   });
 

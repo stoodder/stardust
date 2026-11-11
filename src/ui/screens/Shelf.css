@@ -1,0 +1,20 @@
+/* The shelf's story rows (Shelf.tsx; T709; art-direction.md § Menu screens). The jailbreak row
+   leads with the classes it brings back, drawn jailbroken (the Everglow plate scratched out, the
+   lights Vrell orange; T731's icon variant), on a dark well like the jailbreak confirm's icons. */
+.sd-offer-art {
+  display: inline-flex;
+  flex: none;
+  gap: 2px;
+  padding: 2px;
+  background: var(--sd-ink-2);
+}
+
+/* A row the story refunded or took off the shelf: no button, greyed like a row not stocked yet. */
+.sd-offer-retired {
+  border-left-color: var(--sd-ink-4);
+}
+
+.sd-offer-retired .sd-offer-name,
+.sd-offer-retired .sd-offer-effect {
+  color: var(--sd-steel-3);
+}

@@ -81,7 +81,7 @@ export const ITEM_COPY: Readonly<Record<string, string>> = {
   // The Gloop Spitter's (T705): listed once the Gloop is given (A3M4 warren, A3M6 convoy).
   tune_gloop:
     'Price first: 40 stardust, rising. Stickier spit, cheaper slop, a longer lob. It drools. Not on me.',
-  // The Sproing Pad's (T704; T709 reviews it): listed once the pad is given (A3M5's briefing).
+  // The Sproing Pad's (T704): listed once the pad is given (A3M5's briefing).
   tune_sproing:
     'Price first: 40 stardust, rising. Harder bonk, cheaper pad, a longer boing. It bonked me. Twice.',
   // Granted, never sold: C2 Sell's (progression.md § 2.1; T510).

@@ -183,9 +183,11 @@ export const builds = defineBuilds({
         { wave: 14, upgrade: GATE_W },
         { wave: 14, build: 'thumper', tile: EAST_N },
         sale(15),
-        { wave: 15, upgrade: GATE_W },
+        // The Bunker Buster first: under the warren the merged Maw needs it before the gate's
+        // Harpoon goes to T3 (T760).
         { wave: 15, upgrade: BEND_S },
         { wave: 15, specialize: BEND_S, spec: 'b' },
+        { wave: 15, upgrade: GATE_W },
         ...MAW_FIRE,
         { wave: 16, upgrade: DOME_W },
         { wave: 17, upgrade: EAST_N },
