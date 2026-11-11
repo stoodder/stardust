@@ -161,6 +161,11 @@ interface Storm {
   readonly hollow: boolean;
   /** Sundown's dark throughout (a ducked render holds DARK_SOUNDS' duck at it), if any. */
   readonly dark?: number;
+  /**
+   * The blips a ducked render measures against the mix (its line's first): every speaker's when
+   * absent; a newer storm names only its own speakers, since each blip is a render of its own.
+   */
+  readonly margins?: readonly SfxId[];
 }
 
 /** How long a storm's line shows (s): its blip, 1 s of typing, and a held beat after. */
@@ -207,6 +212,15 @@ const darkLevel = (dark: number): number => 1 - DARK_SOUNDS.duckDepth * dark;
  *   latching and coming home, Underfoot and its traps, Bloom chimes with Stasis and Gravity Well,
  *   Mindspikes and a Prism, three revocation stamps, Bricks bracing, the door hum and the SEAL,
  *   refugees safe and the meter's alarm, the Hollow's hum, and Sterling speaking over it.
+ * - **act3b**: A3M5's platform fight and A3M6's road at once (T750): the vats' bed with every
+ *   layer up under the PA's frantic stutter, the rattle and Everglow's shutdowns, Gloop spitting
+ *   and splatting, leapers boinging and a flyer grounded, puddles sizzling, Liabilities stomping, a
+ *   Gunship's rotor, an Associate's hum and a Black Budget's shimmer, Auditor rings and Silencer
+ *   tendrils, towers jamming, crackling and coming back, a Reboot, the platform's arrival, hangar,
+ *   Takeover and laser, the jettison and four plates crashing, the Gathering Maw straining,
+ *   splitting and merging, bearers humming home, Gerald's delivery, Pebble's knock-knock, the
+ *   Hollow's hum, and Kip speaking over it. Its ducked render measures Kip's, Pebble's and QUILL's
+ *   blips only (each blip is a render of its own; T766).
  */
 export const STORMS = {
   act1: {
@@ -435,6 +449,61 @@ export const STORMS = {
     line: { at: 7.6, blip: 'blip.sterling' },
     hollow: true,
   },
+  act3b: {
+    theme: 'act3_vats',
+    cue: 'pa_frantic',
+    sounds(at) {
+      for (let i = 1; i * 0.05 < STORM_SEC - 1; i++) {
+        const t = i * 0.05;
+        at(t, 'rivet_shot');
+        if (i % 2 === 0) at(t, 'everglow_shutdown', (i % 5) - 2);
+        if (i % 3 === 0) at(t, 'gloop_spit');
+        if (i % 3 === 2) at(t, 'gloop_splat');
+        if (i % 2 === 1) at(t, 'leaper_boing');
+        if (i % 5 === 0) at(t, 'thumper_launch');
+        if (i % 5 === 2) at(t, 'thumper_impact');
+        if (i % 30 === 15) at(t, 'skewer_shot');
+        if (i % 9 === 4) at(t, 'puddle_hiss');
+        if (i % 8 === 1) at(t, 'gunship_rotor');
+        if (i % 22 === 3) at(t, 'liability_stomp');
+        if (i % 32 === 5) at(t, 'associate_hum');
+        if (i % 11 === 0) at(t, 'bb_shimmer');
+        if (i % 20 === 7) at(t, 'jam_static');
+        if (i % 6 === 1) at(t, 'jammed');
+        if (i % 7 === 4) at(t, 'jam_clear');
+        if (i % 12 === 7) at(t, 'armor_plink');
+        if (i % 14 === 9) at(t, 'grounded_thud');
+      }
+      at(0.2, 'sv_arrive');
+      at(0.5, 'jam_ring');
+      at(0.6, 'jam_tendril');
+      at(1, 'wave_start');
+      at(1, 'hollow_hum');
+      at(1.2, 'sv_hangar');
+      at(2.7, 'sv_launch');
+      at(2.8, 'jam_ring');
+      at(3, 'sv_takeover');
+      at(3.2, 'takeover_laser');
+      at(3.4, 'gmaw_arrive');
+      at(4, 'tell_fizzle');
+      at(4.4, 'bearer_note', 0);
+      at(4.7, 'bearer_note', 5);
+      at(5, 'bearer_note', 9);
+      at(5.2, 'reboot');
+      at(5.5, 'gmaw_strain');
+      at(6, 'jettison');
+      for (let k = 0; k < 4; k++) at(6.3 + k * 0.12, 'plate_crash');
+      at(6.6, 'gmaw_split');
+      at(6.9, 'asset_hit');
+      at(7, 'mail_delivered');
+      at(7.2, 'knock_knock');
+      at(7.4, 'gmaw_merge');
+      at(8.4, 'sv_retreat');
+    },
+    line: { at: 7.6, blip: 'blip.kip' },
+    hollow: true,
+    margins: ['blip.kip', 'blip.pebble', 'blip.quill'],
+  },
 } as const satisfies Readonly<Record<string, Storm>>;
 export type StormId = keyof typeof STORMS;
 
@@ -561,7 +630,10 @@ export async function renderStorm(
     renderBuffer(STORM_SEC, music, { rawMaster: true }, full),
     renderBuffer(STORM_SEC, music, { rawMaster: true }, duckedTimeline(storm, false)),
   ]);
-  const blips = [storm.line.blip, ...BLIP_IDS.filter((b) => b !== storm.line.blip)];
+  const blips = [
+    storm.line.blip,
+    ...(storm.margins ?? BLIP_IDS).filter((b) => b !== storm.line.blip),
+  ];
   const speech = await Promise.all(blips.map((b) => speechMargin(b, rest, storm.line.at)));
   return { out: analyze([out], RATE), raw: analyze([raw], RATE), speech };
 }

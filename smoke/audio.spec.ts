@@ -208,6 +208,38 @@ test("audio: A3M1 plays Act III's quiet bed: the Maw and the Den sound, the Holl
   }
 });
 
+test("audio: A3M4 plays the shelters' bed, the Liability's stomp and the Silencer's tendril (T750)", async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  await page.goto('/?test=1&audio=1&seed=1&save=after_a3m3_convoy&map=a3_m04');
+  await waitForReady(page);
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId('hud')).toBeVisible();
+  await expect.poll(async () => (await status(page))?.state).toBe('running');
+  await expect.poll(async () => (await status(page))?.theme).toBe('act3_shelters');
+  // Par into W5: W2's Liability stomps up the service road, W4's Silencer creeps a tendril.
+  await page.evaluate(() => {
+    const sd = globalThis.__sd!;
+    sd.setSpeed(0);
+    sd.autoplay('par');
+    const st = sd.state()!;
+    for (let k = 0; k < 60 * 600 && !(st.wave >= 5 || st.outcome !== 'playing'); k++) {
+      sd.fastForward(1);
+    }
+  });
+  const played = (await status(page))?.played ?? {};
+  expect(played).toMatchObject({
+    wave_start: expect.any(Number),
+    liability_stomp: expect.any(Number),
+    jam_tendril: expect.any(Number),
+  });
+  // Still Act III: no wave-clear sting.
+  for (const id of ['cue:bright_sting', 'cue:bright_minor', 'cue:minor_sting']) {
+    expect(played, id).not.toHaveProperty(id);
+  }
+});
+
 /** Renders `names` offline in the page (`__sd.audio.render`), by name. */
 async function renderAll(
   page: Page,
@@ -285,6 +317,21 @@ test('audio: every sound, cue, and theme renders at a sane level', async ({ page
   }
   expect(peak('sfx:door_hum')).toBeLessThanOrEqual(-10);
   expect(peak('cue:lose_hush')).toBeLessThan(peak('cue:lose'));
+  // Act III, part two (T750): the map beds sit back like Act III's; the domes' cadence, the
+  // Waykeeper sting and the Maw at rest are voices, never louder than a sting; the knock-knock is
+  // heard like a line (a blip's ceiling); the Jammed static and the puddle's sizzle sit under a
+  // Rivet shot; the bearers' notes under the Escort's chirp's level plus a little.
+  for (const bed of ['theme:act3_shelters', 'theme:act3_vats']) {
+    expect(peak(bed), bed).toBeLessThanOrEqual(peak('theme:act2_battle') - 3);
+  }
+  for (const cue of ['cue:domes_open', 'cue:waykeeper', 'cue:gmaw_beaten', 'cue:pa_frantic']) {
+    expect(peak(cue), cue).toBeLessThanOrEqual(peak('cue:bright_sting') + 1);
+  }
+  expect(peak('sfx:knock_knock')).toBeLessThanOrEqual(-10);
+  for (const quiet of ['sfx:jam_static', 'sfx:puddle_hiss', 'sfx:bb_shimmer']) {
+    expect(peak(quiet), quiet).toBeLessThan(peak('sfx:rivet_shot'));
+  }
+  expect(peak('sfx:takeover_laser')).toBeLessThan(peak('sfx:strike_boom'));
   // Blips sit back (D135): a lone blip peaks at −10 dBFS or under, well under the strike's boom.
   const blips = Object.keys(report).filter((n) => n.startsWith('sfx:blip.'));
   expect(blips.length).toBeGreaterThanOrEqual(14);
@@ -293,9 +340,12 @@ test('audio: every sound, cue, and theme renders at a sane level', async ({ page
 
 /**
  * The storms (src/audio/offline.ts `STORMS`), one test each so they render in parallel: Act I's,
- * the Witch fight, A2M5–A2M6's dusk (T550), and Act III's rush, Maws, and door (T650).
+ * the Witch fight, A2M5–A2M6's dusk (T550), Act III's rush, Maws, and door (T650), and A3M5's
+ * platform with A3M6's road (T750).
  */
-const STORM_IDS = ['act1', 'act2', 'act2_dusk', 'act3'] as const;
+const STORM_IDS = ['act1', 'act2', 'act2_dusk', 'act3', 'act3b'] as const;
+/** A storm that measures only its own speakers' blips (offline.ts `margins`; T766: each is a render). */
+const FEW_MARGINS: Readonly<Partial<Record<(typeof STORM_IDS)[number], number>>> = { act3b: 3 };
 
 for (const storm of STORM_IDS) {
   test(`audio: the ${storm} storm keeps 3 dB of headroom, and speech stays on top of it`, async ({
@@ -338,7 +388,7 @@ for (const storm of STORM_IDS) {
     // under speech's −6 dB and the line-start dip's further −8 dB, the alarms at full level),
     // measured at the blip's loudest moment.
     const margins = speech(`storm:${storm}:ducked`);
-    expect(margins.length).toBeGreaterThanOrEqual(14);
+    expect(margins.length).toBeGreaterThanOrEqual(FEW_MARGINS[storm] ?? 14);
     for (const m of margins) expect(m.marginDb, m.blip).toBeGreaterThanOrEqual(6);
   });
 }
