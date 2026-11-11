@@ -248,15 +248,15 @@ describe("Zibzab's crate as A3M6's briefing closes", () => {
   });
 });
 
-describe('the jailbreak on the shop shelf (D146)', () => {
-  /** A save into A3M4 (`after_a3m3_<door>`), its bank set. */
-  function intoA3M4(door: 'convoy' | 'warren', stardust: number): SaveData {
-    initSaves(new MemoryStore());
-    loadDevSave(`after_a3m3_${door}`);
-    const save = activeSave()!;
-    return { ...save, currencies: { ...save.currencies, stardust } };
-  }
+/** A save into A3M4 (`after_a3m3_<door>`), its bank set. */
+function intoA3M4(door: 'convoy' | 'warren', stardust: number): SaveData {
+  initSaves(new MemoryStore());
+  loadDevSave(`after_a3m3_${door}`);
+  const save = activeSave()!;
+  return { ...save, currencies: { ...save.currencies, stardust } };
+}
 
+describe('the jailbreak on the shop shelf (D146)', () => {
   it('is listed once A3M3 is won with a class revoked, priced by the door', () => {
     for (const [door, price] of [
       ['convoy', 0],

@@ -76,7 +76,9 @@ for (const [quill, option] of ANSWERS) {
     );
     // Next reads it through (a silence moves on by itself).
     const next = page.getByRole('button', { name: /^(Skip|Next)$/ });
-    for (let i = 0; i < 20 && (await shown(page)) !== null; i++) {
+    for (let i = 0; i < 20; i++) {
+      // oxlint-disable-next-line no-await-in-loop -- one line at a time
+      if ((await shown(page)) === null) break;
       // oxlint-disable-next-line no-await-in-loop -- one line at a time
       if (await next.isVisible()) await next.click();
       // oxlint-disable-next-line no-await-in-loop -- let the panel move on

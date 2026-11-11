@@ -42,6 +42,19 @@ const RULES: PurchaseRules = {
   storyPricing: {},
 };
 
+/** RULES with fx_map's story pricing: the warren's jailbreak at `stardust`, `gifted` Seed Money. */
+function priced(stardust: number, gifted = 0): PurchaseRules {
+  return {
+    ...RULES,
+    storyPricing: {
+      fx_map: {
+        convoy: { stardust: 0 },
+        warren: { stardust, ...(gifted > 0 ? { giftedShop: { seed_money: gifted } } : {}) },
+      },
+    },
+  };
+}
+
 /** The fixture with fx_prior before fx_map, and fx_map's profile patched. */
 function withProfile(patch: Partial<ProfileDef<IdSpace>>): RawContent<IdSpace> {
   const map = { ...fxMap, referenceProfile: { ...fxMap.referenceProfile, ...patch } };
@@ -118,15 +131,6 @@ describe('[purchasable]', () => {
     // fx_prior pays 100 Stardust; Seed Money's first rank is 80.
     const seed = UPGRADES.seed_money.ranks[0]!.price;
     const paid = withProfile({ shop: { seed_money: 1 } });
-    const priced = (stardust: number, gifted = 0): PurchaseRules => ({
-      ...RULES,
-      storyPricing: {
-        fx_map: {
-          convoy: { stardust: 0 },
-          warren: { stardust, ...(gifted > 0 ? { giftedShop: { seed_money: gifted } } : {}) },
-        },
-      },
-    });
     expect(errorsOf(paid, priced(100 - seed))).toEqual([]);
     // The default row is priced under the dearest door: the warren's jailbreak overspends.
     rejects(paid, /fx_map\.referenceProfile: spends \d+ Stardust/, priced(100));
@@ -276,9 +280,14 @@ describe('[purchasable]', () => {
       // A row owning a tower still ahead of its task is refused for it, and only for it.
       const ahead = { ...LIVE_PURCHASE_RULES, aheadOfTask: ['lookout'] };
       const refused = errorsOf(withActTwoRows(), ahead);
-      // One per row from Act II on (A2M1–A2M3 stand in; A2M4 on is live once registered).
+      // One per row from Act II on (A2M1–A2M3 stand in; A2M4 on is live once registered), a
+      // map's flag-variant cells each a row of their own (T700a).
+      const raw = withActTwoRows();
       const fromActTwo = new Set([...CAMPAIGN, 'a2_m01', 'a2_m02', 'a2_m03']);
-      expect(refused).toHaveLength([...fromActTwo].filter((id) => !id.startsWith('a1_')).length);
+      const rows = [...fromActTwo]
+        .filter((id) => !id.startsWith('a1_'))
+        .reduce((n, id) => n + 1 + (raw.maps[id]?.referenceProfileByFlag?.length ?? 0), 0);
+      expect(refused).toHaveLength(rows);
       for (const e of refused) expect(e).toMatch(/towers: 'lookout' waits for its task/);
     });
 
