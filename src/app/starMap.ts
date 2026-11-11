@@ -217,7 +217,10 @@ export function starMapView(save: SaveData): StarMapView {
       accent: a.id === marker && b.state !== 'won',
     });
   }
-  const regions = STAR_MAP_REGIONS.map((r): StarRegionView => {
+  const named = STAR_MAP_REGIONS.filter(
+    (r) => r.shownAfter === undefined || isMapWon(save, r.shownAfter),
+  );
+  const regions = named.map((r): StarRegionView => {
     const fixed =
       r.corrected !== undefined && isMapWon(save, r.corrected.after) ? r.corrected : null;
     return {

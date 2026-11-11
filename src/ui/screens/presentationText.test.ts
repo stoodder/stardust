@@ -17,9 +17,20 @@ describe('resultsHeader', () => {
       kicker: 'Shift report · Filed',
       headline: 'PERIMETER SECURED!',
     });
-    for (const style of ['starred', 'plain', 'meter', 'remembered'] as const) {
+    for (const style of ['starred', 'plain'] as const) {
       expect(resultsHeader(style, 'lost')).toEqual({
         kicker: 'Shift report · Incident logged',
+        headline: 'MINOR OPERATIONAL HICCUP',
+      });
+    }
+  });
+
+  it("files Act III's report itself, a win's and a loss's alike (T612; the finale follows)", () => {
+    for (const act of [3, 'finale'] as const) {
+      const style = PRESENTATION.byAct[act].counter;
+      expect(resultsHeader(style, 'won').kicker).toBe('Shift report · Auto-filed');
+      expect(resultsHeader(style, 'lost')).toEqual({
+        kicker: 'Shift report · Auto-filed',
         headline: 'MINOR OPERATIONAL HICCUP',
       });
     }
@@ -34,7 +45,7 @@ describe('resultsHeader', () => {
   it("drops the headline's exclamation in Act III and the finale (style-guide § 2, T613)", () => {
     for (const act of [3, 'finale'] as const) {
       expect(resultsHeader(PRESENTATION.byAct[act].counter, 'won')).toEqual({
-        kicker: 'Shift report · Filed',
+        kicker: 'Shift report · Auto-filed',
         headline: 'PERIMETER SECURED.',
       });
     }

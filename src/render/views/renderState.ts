@@ -110,6 +110,8 @@ export interface RenderState {
     readonly notes: number;
     readonly lulled: number;
   };
+  /** BloomView (T608): Stasis Bloom fields drawn now, and those flashing for a pulse now. */
+  readonly bloom: { readonly fields: number; readonly flashing: number };
   /**
    * HollowView (T602): Maw tendril tells up now and seen since the battle began, Maws wearing a
    * growth ring, ripples drawn behind burrowed Hollow units, and each rift lane's status.

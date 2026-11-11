@@ -47,11 +47,11 @@ const WALK_MS = 600;
 const NOTICE_MS = 4000;
 const SWEEP_MS = 1200;
 
-/** The palette variant of `ui.star_node` for the act theme. */
-const NODE_VARIANT: Readonly<Record<StarMapView['act'], string>> = {
-  '2': 'default',
-  '3': 'act3',
-  finale: 'finale',
+/** The act accent's frame suffix on `ui.star_node` (`next_act3`, `ping_act3_0`; Act II's none). */
+const NODE_ACCENT: Readonly<Record<StarMapView['act'], string>> = {
+  '2': '',
+  '3': '_act3',
+  finale: '_finale',
 };
 
 /** The chart's pixels for the last phase and legs drawn (it repaints only when those change). */
@@ -72,18 +72,8 @@ function Chart({ view }: { view: StarMapView }) {
 }
 
 /** A sprite frame as a 1:1 <img>, centred on (0, 0) of its positioned parent. */
-function Glyph({
-  id,
-  frame,
-  variant = 'default',
-  class: cls,
-}: {
-  id: string;
-  frame: string;
-  variant?: string;
-  class?: string;
-}) {
-  const b = baked(id, frame, variant);
+function Glyph({ id, frame, class: cls }: { id: string; frame: string; class?: string }) {
+  const b = baked(id, frame);
   if (b === null) return null;
   return (
     <img
@@ -97,9 +87,9 @@ function Glyph({
   );
 }
 
-/** A node's glyph frame by state. */
-function nodeFrame(n: StarNodeView): string {
-  return n.state === 'won' ? 'cleared' : n.state === 'open' ? 'next' : 'soon';
+/** A node's glyph frame by state, the next one in the act's accent. */
+function nodeFrame(n: StarNodeView, accent: string): string {
+  return n.state === 'won' ? 'cleared' : n.state === 'open' ? `next${accent}` : 'soon';
 }
 
 /** One node: its glyph (and ping, pips, focus brackets) inside its button, and its name plate. */
@@ -122,7 +112,7 @@ function Node({
   onKey: (e: KeyboardEvent) => void;
   buttonRef: (el: HTMLButtonElement | null) => void;
 }) {
-  const variant = NODE_VARIANT[view.act];
+  const accent = NODE_ACCENT[view.act];
   const plate = selected || frontier;
   return (
     <li
@@ -141,14 +131,13 @@ function Node({
         onClick={onSelect}
         onKeyDown={onKey}
       >
-        <Glyph id="ui.star_node" frame={nodeFrame(node)} variant={variant} />
+        <Glyph id="ui.star_node" frame={nodeFrame(node, accent)} />
         {node.state === 'open' &&
           [0, 1, 2, 3].map((i) => (
             <Glyph
               key={i}
               id="ui.star_node"
-              frame={`ping_${i}`}
-              variant={variant}
+              frame={`ping${accent}_${i}`}
               class={`sd-star-ping sd-star-ping-${i}`}
             />
           ))}

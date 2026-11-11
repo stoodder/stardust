@@ -36,6 +36,7 @@ export const burrow = defineTower({
         latchSec: 4,
         restSec: 3,
         chillPct: 0.1,
+        burrowedDotMul: 2.5,
       },
     },
     { cost: 110, attack: { maxAlive: 4 } },

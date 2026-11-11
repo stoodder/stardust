@@ -67,6 +67,11 @@ import { holdoutMap } from './devM6.ts'; // T605
 import { choirMap } from './devChoir.ts'; // T607
 import { choir } from '../../content/towers/choir.ts'; // T607
 import { harmony } from '../../content/links/harmony.ts'; // T607
+import { bloomMap } from './devBloom.ts'; // T608
+import { bloom } from '../../content/towers/bloom.ts'; // T608
+import { harpoon } from '../../content/towers/harpoon.ts'; // T608
+import { pinned_down } from '../../content/links/pinned_down.ts'; // T608
+import { stillmind } from '../../content/links/stillmind.ts'; // T608
 import { lantern } from '../../content/towers/lantern.ts';
 import { lightsong } from '../../content/links/lightsong.ts';
 import { underfoot } from '../../content/abilities/underfoot.ts';
@@ -234,6 +239,9 @@ const DEV_ENTITIES = {
     burrow,
     // dev_choir's Hum Choir (devChoir.ts; T607).
     choir,
+    // dev_bloom's Stasis Bloom and its Pinned Down partner (devBloom.ts; T608).
+    bloom,
+    harpoon,
   }),
   enemies: defineRegistry({
     dev_nibbler: devNibbler,
@@ -1456,6 +1464,7 @@ export const DEV_CONTENT: RawContent<DevIds> = {
     dev_den: denMap, // T604 (devM6.ts: the Scuttle Den and Underfoot against Undertows)
     dev_holdout: holdoutMap, // T605 (devM6.ts: the Holdout, Bricks's block, the SEAL)
     dev_choir: choirMap, // T607 (devChoir.ts: the Hum Choir's rings, Harmony, Lulled)
+    dev_bloom: bloomMap, // T608 (devBloom.ts: the Stasis Bloom's field, pulse, pull, links)
   }),
   links: {
     // Conductive is the live content's link (its partners are the real Zapcoil and Sprinkler).
@@ -1470,6 +1479,11 @@ export const DEV_CONTENT: RawContent<DevIds> = {
     // Harmony (T607): the real Mindspike and Hum Choir, for dev_choir.
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the ids it names are DevIds too
     harmony: harmony as unknown as LinkDef<DevIds>,
+    // Pinned Down and Stillmind (T608): the real Harpoon, Mindspike, and Stasis Bloom, for dev_bloom.
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the ids it names are DevIds too
+    pinned_down: pinned_down as unknown as LinkDef<DevIds>,
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the ids it names are DevIds too
+    stillmind: stillmind as unknown as LinkDef<DevIds>,
   },
   campaign: ['dev_range'],
 };

@@ -54,17 +54,13 @@ export const waves = defineWaves([
   {
     countdownSec: COUNTDOWN,
     noCall: true,
-    groups: [
-      g('fracture', 1, 'cut_west', OPEN),
-      motes(8, 'cut_east', OPEN + 4),
-      g('fracture', 1, 'cut_east', OPEN + 8),
-    ],
+    groups: [g('fracture', 1, 'cut_west', OPEN), motes(8, 'cut_east', OPEN + 4), g('fracture', 1, 'cut_east', OPEN + 8)],
   },
   // W3 · one Undertow [T: burrowing in Act III; Scuttle Den]
   {
     countdownSec: COUNTDOWN,
     noCall: true,
-    groups: [g('undertow', 2, 'cut_east', OPEN), motes(8, 'cut_west', OPEN + 6)],
+    groups: [g('undertow', 1, 'cut_east', OPEN), motes(8, 'cut_west', OPEN + 6)],
   },
   // W4 · Motes + a rift (the east rift opens behind Bricks)
   {
@@ -82,95 +78,49 @@ export const waves = defineWaves([
   {
     countdownSec: COUNTDOWN,
     noCall: true,
-    groups: [
-      g('riftmoth', 2, 'sky_west', OPEN, 2),
-      motes(10, 'cut_east', OPEN + 2),
-      g('riftmoth', 2, 'sky_east', OPEN + 6, 2),
-    ],
+    groups: [g('riftmoth', 2, 'sky_west', OPEN, 2), motes(10, 'cut_east', OPEN + 2), g('riftmoth', 2, 'sky_east', OPEN + 6, 2)],
   },
   // W7 · Undertows ×3 [X]
   {
     countdownSec: COUNTDOWN,
     noCall: true,
-    groups: [
-      g('undertow', 4, 'cut_west', OPEN, 2),
-      motes(8, 'rift_east', OPEN + 4, 0.3),
-      g('undertow', 4, 'cut_east', OPEN + 8, 2),
-    ],
+    groups: [g('undertow', 3, 'cut_west', OPEN, 2.5), g('undertow', 3, 'cut_east', OPEN + 6, 2.5)],
   },
   // W8 · everything, larger
   {
     countdownSec: COUNTDOWN,
     noCall: true,
-    groups: [
-      motes(12, 'cut_west', OPEN),
-      g('fracture', 2, 'cut_east', OPEN + 3, 2),
-      g('undertow', 2, 'cut_west', OPEN + 6),
-      g('riftmoth', 3, 'sky_west', OPEN + 8, 2),
-      g('maw', 1, 'cut_east', OPEN + 12),
-      motes(8, 'cut_east', OPEN + 14, 0.3),
-    ],
+    groups: [g('undertow', 2, 'cut_west', OPEN, 2.5), motes(10, 'cut_east', OPEN + 3), g('riftmoth', 3, 'sky_west', OPEN + 8, 2), g('undertow', 2, 'cut_east', OPEN + 10, 2.5), g('maw', 1, 'cut_west', OPEN + 14)],
   },
   // W9 · held, while the fourth group crosses
   {
     countdownSec: COUNTDOWN,
     noCall: true,
-    groups: [
-      g('undertow', 6, 'cut_east', OPEN, 2),
-      motes(12, 'cut_west', OPEN + 3),
-      g('riftmoth', 3, 'sky_east', OPEN + 8, 2),
-      motes(8, 'rift_east', OPEN + 12),
-    ],
+    groups: [g('undertow', 3, 'cut_east', OPEN, 2.5), g('riftmoth', 2, 'sky_east', OPEN + 8, 2), g('undertow', 3, 'cut_west', OPEN + 10, 2.5)],
   },
   // W10 · the last holdable wave, the fifth group on the road
   {
     countdownSec: COUNTDOWN,
     noCall: true,
-    groups: [
-      g('maw', 1, 'cut_west', OPEN),
-      motes(12, 'cut_west', OPEN + 2, 0.3),
-      g('fracture', 2, 'cut_east', OPEN + 6, 2),
-      g('undertow', 6, 'cut_west', OPEN + 10, 2),
-      g('riftmoth', 3, 'sky_west', OPEN + 12, 2),
-    ],
+    groups: [g('maw', 1, 'cut_west', OPEN), motes(10, 'cut_west', OPEN + 2, 0.3), g('undertow', 3, 'cut_east', OPEN + 6, 2), g('riftmoth', 3, 'sky_west', OPEN + 12, 2)],
   },
   // W11 · the doomed escalation: the west rift opens too
   {
     countdownSec: COUNTDOWN,
     noCall: true,
-    groups: [
-      motes(10, 'rift_west', OPEN, 0.35),
-      g('undertow', 6, 'cut_east', OPEN + 2, 1.5),
-      motes(12, 'rift_east', OPEN + 6),
-      g('riftmoth', 3, 'sky_east', OPEN + 8, 1.5),
-      g('fracture', 2, 'cut_west', OPEN + 10, 2),
-    ],
+    groups: [g('undertow', 4, 'cut_west', OPEN, 2), motes(10, 'rift_east', OPEN + 4, 0.3), g('undertow', 2, 'rift_west', OPEN + 8, 2), g('riftmoth', 3, 'sky_east', OPEN + 10, 1.5)],
   },
   // W12 · past what any build holds
   {
     countdownSec: COUNTDOWN,
     noCall: true,
-    groups: [
-      g('maw', 2, 'cut_west', OPEN, 3),
-      motes(14, 'cut_east', OPEN + 2),
-      g('undertow', 6, 'cut_west', OPEN + 6, 1.5),
-      g('riftmoth', 3, 'sky_west', OPEN + 8, 1.5),
-      motes(10, 'rift_east', OPEN + 10),
-    ],
+    groups: [g('undertow', 4, 'cut_east', OPEN, 2), g('maw', 2, 'cut_west', OPEN + 4, 3), motes(10, 'rift_west', OPEN + 6, 0.3), g('undertow', 2, 'rift_east', OPEN + 10, 2), g('riftmoth', 3, 'sky_west', OPEN + 12, 1.5)],
   },
   // W13 · everything at once, Bricks at a quarter
   {
     countdownSec: COUNTDOWN,
     noCall: true,
-    groups: [
-      motes(12, 'rift_west', OPEN),
-      g('undertow', 6, 'cut_west', OPEN + 2, 1.5),
-      motes(12, 'rift_east', OPEN + 4),
-      g('fracture', 3, 'cut_east', OPEN + 6, 1.5),
-      g('riftmoth', 4, 'sky_east', OPEN + 8, 1.2),
-      g('maw', 1, 'cut_east', OPEN + 10),
-      g('undertow', 2, 'rift_west', OPEN + 12),
-    ],
+    groups: [g('undertow', 5, 'cut_west', OPEN, 2), motes(12, 'rift_east', OPEN + 2, 0.3), g('undertow', 2, 'rift_west', OPEN + 6, 2), g('fracture', 2, 'cut_east', OPEN + 8, 2), g('riftmoth', 4, 'sky_east', OPEN + 10, 1.2), g('undertow', 2, 'rift_east', OPEN + 12, 2)],
   },
   // W14 · never plays: the SEAL fires as it starts, before anything spawns
   {

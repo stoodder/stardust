@@ -82,7 +82,15 @@ describe('the loadout screen (app side)', () => {
       'Splash Zone', // the Sprinkler's and Scuttle Den's (T604)
       'Finders Keepers', // the Crane's and Scuttle Den's (T604)
       'Harmony', // the Mindspike's and Hum Choir's (T607)
+      'Pinned Down', // the Harpoon's and Stasis Bloom's (T608)
+      'Stillmind', // the Mindspike's and Stasis Bloom's (T608)
     ]);
+    expect(view.links[11]?.bonus).toBe(
+      'Grapple Harpoon +30% damage vs Chilled/Stasis · Stasis Bloom field +0.3 radius',
+    );
+    expect(view.links[12]?.bonus).toBe(
+      'Mindspike Obelisk +25% damage vs Chilled/Stasis · Stasis Bloom pulses 1 s sooner',
+    );
     expect(view.links[10]?.bonus).toBe(
       'Mindspike Obelisk hits 1 extra target · Hum Choir aura +0.5 radius',
     );

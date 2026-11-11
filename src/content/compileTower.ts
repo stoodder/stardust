@@ -304,6 +304,7 @@ function compileAttack(ctx: Ctx, a: AttackDef, where: string): CompiledAttack | 
         latchTicks: ticks(ctx, a.latchSec, `${where}.latchSec`),
         restTicks: ticks(ctx, a.restSec, `${where}.restSec`),
         chillPct: a.chillPct,
+        burrowedDotMul: a.burrowedDotMul ?? 1,
       };
     case 'charge':
       return {

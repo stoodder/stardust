@@ -186,9 +186,14 @@ export interface StarMapRegion {
    * through above them (the codex annotations' look).
    */
   readonly corrected?: { readonly after: CampaignMapId; readonly text: string };
+  /** A label the chart holds back until this map is won (the map that first names the place). */
+  readonly shownAfter?: CampaignMapId;
 }
 
-/** The labels; the Deep Halls join only once a map has named them (M6). */
+/**
+ * The labels. The Deep Halls join only once a map has named them: A3M4's mail, Bricks's pension
+ * to "Pebble, c/o the Deep Halls" (act3.md § A3M4), so from A3M4 won; no M6 map names them.
+ */
 export const STAR_MAP_REGIONS: readonly StarMapRegion[] = [
   { id: 'north', text: 'No survey data', x: 344, y: 10 },
   { id: 'spires', text: 'The Spires', x: 272, y: 64 },
@@ -200,6 +205,8 @@ export const STAR_MAP_REGIONS: readonly StarMapRegion[] = [
     y: 336,
     corrected: { after: 'a2_m05', text: 'The Long Walk' },
   },
+  // Over the Halls' mouth, in the north band, clear of the finale's node below it.
+  { id: 'deep_halls', text: 'The Deep Halls', x: 412, y: 42, shownAfter: 'a3_m04' },
 ];
 
 /**

@@ -41,6 +41,8 @@
 // cracks (closed, opening a wave ahead, open) (HollowView).
 // M6 (T607): the Hum Choir's dashed gold song ring and a Lullaby's blue ring, a note over each
 // Choir, and a blue note over each Lulled unit (ChoirView).
+// M6 (T608): the Stasis Bloom's field as a faint ground disc under a dashed ring, brightening as it
+// pulses (BloomView); the pulse's frost ring is PulseBurst's.
 // M6 (T605): a blocker's health bar over Bricks at the Gap, and a bracket under each unit he holds
 // (BlockerView).
 // M5 (T502): an Aegis Cantor's continuous shield aura shows as a crawling dashed blue ring
@@ -102,6 +104,7 @@ import { PhaseView } from '../views/PhaseView.ts';
 import { HollowView } from '../views/HollowView.ts'; // T602
 import { BlockerView } from '../views/BlockerView.ts'; // T605
 import { ChoirView } from '../views/ChoirView.ts'; // T607
+import { BloomView } from '../views/BloomView.ts'; // T608
 import { SwarmView } from '../views/SwarmView.ts'; // T604
 import { TrapView } from '../views/TrapView.ts'; // T604
 import { RevokedView } from '../views/RevokedView.ts'; // T606
@@ -263,6 +266,7 @@ export class BattleScene extends Phaser.Scene {
   #hollow!: HollowView; // T602
   #blocker!: BlockerView; // T605: Bricks's bar at the Gap, the units he holds
   #choir!: ChoirView; // T607: the Hum Choir's song and Lullaby rings, its notes, Lulled notes
+  #bloom!: BloomView; // T608: the Stasis Bloom's field disc and its pulse
   #swarm!: SwarmView; // T604: the Scuttle Den's swarmlings dashing and latched
   #traps!: TrapView; // T604: Underfoot's trap ring and its springs
   #revoked!: RevokedView; // T606: the LICENSE REVOKED stamp over a revoked class's towers
@@ -443,6 +447,7 @@ export class BattleScene extends Phaser.Scene {
     this.#hollow = new HollowView(ctx, map, prefersReducedMotion, pulseOn); // T602
     this.#blocker = new BlockerView(ctx, prefersReducedMotion); // T605
     this.#choir = new ChoirView(ctx, prefersReducedMotion, anchors); // T607
+    this.#bloom = new BloomView(ctx); // T608
     this.#swarm = new SwarmView(ctx, anchors, prefersReducedMotion); // T604
     this.#traps = new TrapView(ctx, this.#fx, prefersReducedMotion); // T604
     this.#revoked = new RevokedView(ctx, prefersReducedMotion); // T606
@@ -623,6 +628,7 @@ export class BattleScene extends Phaser.Scene {
       this.#hollow.reset(); // T602
       this.#blocker.reset(); // T605
       this.#choir.reset(); // T607
+      this.#bloom.reset(); // T608
       this.#swarm.reset(); // T604
       this.#traps.reset(); // T604
       this.#revoked.reset(); // T606
@@ -672,6 +678,7 @@ export class BattleScene extends Phaser.Scene {
     this.#hollow.update(dt, state.wave, state.enemies, state.allies); // T602
     this.#blocker.update(dt, state); // T605
     this.#choir.update(state, state.tick); // T607
+    this.#bloom.update(state); // T608
     this.#swarm.update(state.allies, state.enemies); // T604
     this.#traps.update(state.zones, state.trapSprung); // T604
     this.#revoked.update(dt); // T606
@@ -817,6 +824,7 @@ export class BattleScene extends Phaser.Scene {
         notes: this.#choir.notes,
         lulled: this.#choir.lulled,
       }, // T607
+      bloom: { fields: this.#bloom.fields, flashing: this.#bloom.flashing }, // T608
       revoked: { shown: this.#revoked.shown, played: this.#revoked.played }, // T606
       mind: { unnerved: this.#mind.unnerved, echoes: this.#mind.echoes, stills: this.#mind.stills },
       marks: this.#marks.shown,

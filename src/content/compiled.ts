@@ -224,6 +224,8 @@ export type CompiledAttack = CompiledAttackCommon &
         readonly latchTicks: number;
         readonly restTicks: number;
         readonly chillPct: number;
+        /** The DoT's multiplier on a burrowed target (1 when the def gives none). */
+        readonly burrowedDotMul: number;
       }
     | {
         readonly kind: 'pulse';

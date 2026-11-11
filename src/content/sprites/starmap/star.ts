@@ -1,8 +1,9 @@
 // The star map's glyphs (art-direction.md § 10 *Nodes, legs, and the marker*), shown 1:1 in the
 // Sector map's DOM node buttons: the node states, the medal pips under a cleared node, and the
-// "you are here" marker. Fixed colors go through the custom legend; the act accent (the next
-// glyph's core and its ping) is slot `e0`, so each act's palette variant carries its own
-// (`act2.gold` orange.3 by default; `act3` and `finale` baked as variants). Outlines are drawn
+// "you are here" marker. Fixed colors go through the custom legend, the act accent (the next
+// glyph's core and its ping) too: each act's accent is its own letter and its own frames
+// (`next`, `ping_0`–`ping_3` in Act II's orange; `_act3` in Act III's alarm red; `_finale` in the
+// dawn's gold), since no palette's flora slot carries the UI theme's accent. Outlines are drawn
 // in `ink.0` by hand, not by the outline pass (which takes the palette's shade).
 import { defineSprite } from '../defineSprite.ts';
 
@@ -35,18 +36,46 @@ const cleared = grid((dx, dy) => {
   return d === 5 ? 'K' : '.';
 });
 
+/**
+ * The act accents (art-direction § 10 *The north edge and the palette by phase*; the UI themes'
+ * accents, § 9): each act's letter in the legend, and the suffix its frames carry.
+ */
+const ACCENTS = [
+  { suffix: '', letter: 'O' },
+  { suffix: '_act3', letter: 'A' },
+  { suffix: '_finale', letter: 'G' },
+] as const;
+
 // `next`: a chamfered 11×11 white ring around a 5×5 core in the act accent.
-const next = grid((dx, dy) => {
-  if (chamfer(dx, dy, 2) !== 'out') return '+';
-  const ring = chamfer(dx, dy, 5);
-  if (ring === 'edge') return 'W';
-  if (ring === 'in') return 'K';
-  return chamfer(dx, dy, 6) === 'out' ? '.' : 'K';
-});
+const next = (accent: string): string[] =>
+  grid((dx, dy) => {
+    if (chamfer(dx, dy, 2) !== 'out') return accent;
+    const ring = chamfer(dx, dy, 5);
+    if (ring === 'edge') return 'W';
+    if (ring === 'in') return 'K';
+    return chamfer(dx, dy, 6) === 'out' ? '.' : 'K';
+  });
 
 // `ping_0`–`ping_3`: one accent ring growing from 11 to 15 px; the last one dithered out.
-const ping = (r: number, dither: boolean): string[] =>
-  grid((dx, dy) => (chamfer(dx, dy, r) === 'edge' && (!dither || (dx + dy) % 2 === 0) ? '+' : '.'));
+const ping = (accent: string, r: number, dither: boolean): string[] =>
+  grid((dx, dy) =>
+    chamfer(dx, dy, r) === 'edge' && (!dither || (dx + dy) % 2 === 0) ? accent : '.',
+  );
+
+/** Each act's `next` and `ping_0`–`ping_3` frames, and its ping animation. */
+const accentFrames: Record<string, string[]> = {};
+const accentAnims: Record<string, { frames: string[]; fps: number; loop: false }> = {};
+for (const { suffix, letter } of ACCENTS) {
+  accentFrames[`next${suffix}`] = next(letter);
+  const pings = [ping(letter, 5, false), ping(letter, 6, false), ping(letter, 7, false)];
+  pings.push(ping(letter, 7, true));
+  pings.forEach((f, i) => (accentFrames[`ping${suffix}_${i}`] = f));
+  accentAnims[`ping${suffix}`] = {
+    frames: pings.map((_, i) => `ping${suffix}_${i}`),
+    fps: 8,
+    loop: false,
+  };
+}
 
 // `soon`: a dashed steel ring around the menus' 7×8 padlock.
 const PADLOCK = [
@@ -83,24 +112,13 @@ export const uiStarNode = defineSprite({
   size: { w: N, h: N },
   anchor: { x: C, y: C },
   palette: 'act2.gold',
-  variants: ['act3', 'finale'],
   legend: {
     G: 'gold.3', H: 'gold.4', W: 'white.1', K: 'ink.0',
     S: 'steel.3', T: 'steel.2', R: 'steel.1',
+    O: 'orange.3', A: 'red.3',
   },
-  frames: {
-    cleared,
-    next,
-    ping_0: ping(5, false),
-    ping_1: ping(6, false),
-    ping_2: ping(7, false),
-    ping_3: ping(7, true),
-    soon,
-    focus,
-  },
-  anims: {
-    ping: { frames: ['ping_0', 'ping_1', 'ping_2', 'ping_3'], fps: 8, loop: false },
-  },
+  frames: { cleared, ...accentFrames, soon, focus },
+  anims: accentAnims,
 });
 
 // One 3×3 diamond per medal, 2 px apart: gold earned, steel not.

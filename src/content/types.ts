@@ -380,6 +380,11 @@ export type AttackDef = AttackCommon &
         readonly latchSec: number;
         readonly restSec: number;
         readonly chillPct: number;
+        /**
+         * The DoT's multiplier while the latched target is burrowed (default 1): the swarmlings
+         * ride a digger underground, in their element (towers.md § 7: the Den's ×2).
+         */
+        readonly burrowedDotMul?: number;
       }
     // Sprinkler: every period, hits every enemy within rangeTiles (no target, no priority)
     | {

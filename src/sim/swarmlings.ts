@@ -297,7 +297,9 @@ function hold(state: SimState, ctx: TickContext, a: Ally, den: Tower, attack: Sp
     // One scratch source for every DoT tick (applyDamage copies what an EnemyDied keeps).
     const source = ctx.scratch.towerSource;
     source.uid = den.uid;
-    const amount = damageOn(den, attack, target) * DOT_TICK_SEC;
+    // On a burrowed target the DoT is the Den's `burrowedDotMul` (towers.md § 7).
+    const mul = target.burrowed ? attack.burrowedDotMul : 1;
+    const amount = damageOn(den, attack, target) * DOT_TICK_SEC * mul;
     applyDamage(state, target, amount, attack.type, source, SWARM_HIT);
     a.cooldownTicks = bonusPeriodTicks(attack, den);
     if (den.firstFiredTick < 0) den.firstFiredTick = state.tick;

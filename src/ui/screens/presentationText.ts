@@ -34,14 +34,19 @@ function spent(style: CounterStyle, text: string): string {
 /**
  * The kicker above it, by the map's counter style (its presentation dial, core-loop.md § 6.7;
  * copy: style-guide.md § 2): Act I's report is "Exemplary!" (D026); from Act II the report is only
- * "Filed", the card's one cheer gone with the star. Act III's and the finale's cards (M6) read Act
- * II's until they're written.
+ * "Filed", the card's one cheer gone with the star; in Act III nobody files it any more: the report
+ * is "Auto-filed", a win's and a loss's alike (the headline still tells them apart). The finale's
+ * card follows Act III's until M8 writes its own.
  */
+const ACT_THREE_KICKER: Readonly<Record<RunOutcome, string>> = {
+  won: 'Shift report · Auto-filed',
+  lost: 'Shift report · Auto-filed',
+};
 const KICKER: Readonly<Record<CounterStyle, Readonly<Record<RunOutcome, string>>>> = {
   starred: { won: 'Shift report · Exemplary!', lost: 'Shift report · Incident logged' },
   plain: { won: 'Shift report · Filed', lost: 'Shift report · Incident logged' },
-  meter: { won: 'Shift report · Filed', lost: 'Shift report · Incident logged' },
-  remembered: { won: 'Shift report · Filed', lost: 'Shift report · Incident logged' },
+  meter: ACT_THREE_KICKER,
+  remembered: ACT_THREE_KICKER,
 };
 
 /** The card's kicker and headline for `outcome` in counter style `style`. */
