@@ -25,6 +25,9 @@ import {
 import { FrameGlow } from './frameGlow.ts';
 import type { ViewContext } from './ViewContext.ts';
 
+/** The last frame of `closing`, the first of `sealed`. */
+const SEALED_0 = ':sealed_0';
+
 interface Door {
   readonly marker: string;
   readonly index: number;
@@ -104,8 +107,10 @@ export class BlastDoorView {
     }
     // The leaves have run shut: the doors hold sealed under the alarm.
     if (this.#seal === 'closing') {
+      // `closing` ends on `sealed_0` (Phaser keeps a finished anim's `isPlaying` a while).
       let running = false;
-      for (const d of this.#doors) if (d.open && d.body.anims.isPlaying) running = true;
+      for (const d of this.#doors)
+        if (d.open && !d.body.frame.name.endsWith(SEALED_0)) running = true;
       if (!running) this.#setSeal('sealed');
     }
     for (const door of this.#doors) door.glow.update();

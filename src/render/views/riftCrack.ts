@@ -1,6 +1,6 @@
 // Which `tile.rift` halves a rift lane draws (T640c; the sprite is content/sprites/tiles/rift.ts,
-// its looks art-direction §8 *Rift cracks*). Pure, so the choice is unit-tested; the world view
-// that draws them (T630b) reads `riftStatus(lane, wave)` each frame and plays `riftCrackLook`.
+// its looks art-direction §8 *Rift cracks*). Pure, so the choice is unit-tested; RiftView draws
+// them, reading `riftStatus(lane, wave)` each frame and playing `riftCrackLook`.
 // A lane cracks only where it crosses ground that isn't road: from its first tile up to where it
 // joins a road (a `#`, `S`, or `C` tile; that edge's half still reaches into the join, so the
 // crack meets the road). Each crack tile draws two halves, toward the tile before it and the tile

@@ -177,16 +177,37 @@ function Form({ memo }: { memo: MemoView }) {
   );
 }
 
+/** The sender of Act III's automated memos (content/memos/act3.ts, from A3M2). */
+const AUTOMATED_SENDER = 'Everglow Automated Systems';
+
+/**
+ * Whether a memo is one of the automated ones (A3M2 on; T631): its letterhead is the worn one
+ * (art-direction § Menu screens: the color gone, `everglow.worn`'s dimmer teal, and no Evie sun
+ * or chevrons), branded with the sender's name, since nobody signs it.
+ */
+function isAutomated(memo: Pick<MemoView, 'from'>): boolean {
+  return memo.from === AUTOMATED_SENDER;
+}
+
 function Letter({ memo }: { memo: MemoView }) {
   if (memo.format === 'form') return <Form memo={memo} />;
+  const automated = isAutomated(memo);
   return (
-    <article class="sd-memo" aria-labelledby="sd-memo-subject">
+    <article
+      class={automated ? 'sd-memo automated' : 'sd-memo'}
+      aria-labelledby="sd-memo-subject"
+      data-automated={automated || undefined}
+    >
       <header class="sd-memo-head">
-        <span class="sd-memo-brand">
-          <span class="sd-memo-chevrons" aria-hidden="true" />
-          <span class="sd-glyph-sun sd-glyph-sun-big" aria-hidden="true" />
-          Everglow · Memo
-        </span>
+        {automated ? (
+          <span class="sd-memo-brand">{AUTOMATED_SENDER}</span>
+        ) : (
+          <span class="sd-memo-brand">
+            <span class="sd-memo-chevrons" aria-hidden="true" />
+            <span class="sd-glyph-sun sd-glyph-sun-big" aria-hidden="true" />
+            Everglow · Memo
+          </span>
+        )}
         <dl class="sd-memo-fields">
           <dt>From</dt>
           <dd>

@@ -160,3 +160,16 @@ describe('the star map chart', () => {
     expect(colorAt('next_act3', 7, 7)).toBe('red.3');
   });
 });
+
+describe("Act III's landmarks (T631)", () => {
+  it("cuts the Gap's notch with its two lit doors, and raises the shelters, from Act III on", () => {
+    // The doors at the notch's foot under A3M3's node (372,136); the shelters' warm lamps.
+    expect(is(night, 369, 107, 'gold.3')).toBe(true);
+    expect(is(night, 375, 107, 'green.3')).toBe(true);
+    expect(is(night, 372, 102, 'ink.0')).toBe(true);
+    expect([0, 1, 2].every((i) => is(night, 286 + i * 9, 230, 'gold.3'))).toBe(true);
+    // Not before the act that needs them.
+    expect(is(gold, 369, 107, 'gold.3')).toBe(false);
+    expect([0, 1, 2].some((i) => is(dusk, 286 + i * 9, 230, 'gold.3'))).toBe(false);
+  });
+});

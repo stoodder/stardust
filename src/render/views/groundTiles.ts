@@ -196,8 +196,8 @@ export const DECOR_MARKERS: Readonly<Record<MarkerId, SpriteId>> = {
   lamp: 'prop.wall',
   wall: 'prop.wall',
   // M6 (act3.md per map, T640c): A3M1's Preserve sign over the inner gate and its warren homes;
-  // A3M2's shuttle pad (Sterling's shuttle, parked until W12's cue: T630b lifts it) and your old
-  // turrets, dead in the dark band. A3M3's blast doors stand on its door cores (T630b draws them).
+  // A3M2's shuttle pad (Sterling's shuttle, parked until W12's cue: ShuttleView lifts it) and your
+  // old turrets, dead in the dark band. A3M3's blast doors stand on its door cores (BlastDoorView).
   sign: 'prop.preserve_sign',
   home: 'prop.warren_home',
   shuttle_pad: 'prop.shuttle',

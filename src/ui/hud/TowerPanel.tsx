@@ -22,6 +22,7 @@ import {
   towerPanelHeight,
 } from './layout.ts';
 import { alignPulse } from './pulse.ts';
+import { revokedHud } from './revokedState.ts';
 import { Key, Credits, Glyph, HOLD_GLYPH, SPARE_GLYPH } from './parts.tsx';
 
 /** Tier pips: filled up to the current tier (a specialized tower shows T4 with every pip lit). */
@@ -104,7 +105,8 @@ export function TowerPanel({ t }: { t: SelectedTowerView }) {
   const corners = hudCorners(
     objectiveRows(hud.objectives.value),
     hud.asset.value !== null,
-    hud.escort.value === null ? false : hud.escort.value.holdout ? 'holdout' : true,
+    hud.escort.value === null ? false : hud.escort.value.holdout === true ? 'holdout' : true,
+    revokedHud.value.previewHidden && revokedHud.value.leakLine !== null,
   );
   const { left, top } = placePanel(t.x, t.y, PANEL_W, h, others, corners);
   const credits = hud.credits.value;

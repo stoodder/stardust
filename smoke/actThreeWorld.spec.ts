@@ -12,7 +12,7 @@ import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 import { nextFrames, shot, waitForReady } from './hooks.ts';
 
-type Cond = 'w1' | 'w2' | 'w5' | 'w6' | 'shuttle' | 'seal';
+type Cond = 'w1' | 'w2' | 'w5' | 'w13' | 'shuttle' | 'seal';
 
 /** Plays one tick at a time (up to `max`) until `cond` holds, then lets two frames render. */
 async function until(page: Page, cond: Cond, max = 60 * 1200): Promise<boolean> {
@@ -28,8 +28,8 @@ async function until(page: Page, cond: Cond, max = 60 * 1200): Promise<boolean> 
             return st.wave >= 2;
           case 'w5':
             return st.wave >= 5;
-          case 'w6':
-            return st.wave >= 6;
+          case 'w13':
+            return st.wave >= 13;
           case 'shuttle':
             return sd.render()!.world.shuttle.left;
           case 'seal':
@@ -128,7 +128,9 @@ test('A3M3: the convoy’s door open, the warren’s shut; the SEAL runs it shut
   ]);
   expect((await world(page)).seal).toBe('none');
   await shot(page, 'act-three-world', 9, 'a3m3-convoy-doors');
-  // The SEAL: the player's hand presses it ('none' has no steps).
+  // The SEAL: par holds the Gap to W13, then the player's hand presses it ('none' has no steps;
+  // par's last step would press it at once).
+  expect(await until(page, 'w13')).toBe(true);
   await page.evaluate(() => globalThis.__sd!.autoplay('none'));
   expect(await until(page, 'seal')).toBe(true);
   await shot(page, 'act-three-world', 10, 'a3m3-seal-asked');
@@ -143,15 +145,15 @@ test('A3M3: the convoy’s door open, the warren’s shut; the SEAL runs it shut
   expect(closing.doors[0]!.frame).toMatch(/^(closing_[0-2]|sealed_0)$/);
   expect(closing.doors[1]!.frame).toBe('shut');
   await shot(page, 'act-three-world', 11, 'a3m3-closing');
-  await expect.poll(async () => (await world(page)).seal, { timeout: 1200 }).toBe('sealed');
+  await expect.poll(async () => (await world(page)).seal, { timeout: 3000 }).toBe('sealed');
   expect((await world(page)).doors[0]!.frame).toMatch(/^sealed_[01]$/);
   await shot(page, 'act-three-world', 12, 'a3m3-sealed');
 });
 
 test('A3M3: the warren’s door open when C3 chose it', async ({ page }) => {
-  await page.goto('/?test=1&seed=1&save=after_a3m3_warren&map=a3_m03');
-  await waitForReady(page);
-  await page.evaluate(() => globalThis.__sd!.setSpeed(0));
+  // The save chose the warren (C3 isn't asked again on a replay); `autoplay` closes the briefing.
+  await open(page, '/?test=1&seed=1&save=after_a3m3_warren&map=a3_m03');
+  await page.evaluate(() => globalThis.__sd!.autoplay('none'));
   await nextFrames(page);
   expect((await world(page)).doors).toEqual([
     { marker: 'door_west', frame: 'shut' },

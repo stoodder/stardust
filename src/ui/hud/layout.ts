@@ -57,26 +57,32 @@ const ASSET_ROW_H = 20;
 
 /** What an Escort's meter adds over the core's: its "of N" and lost rows (8 px and a 2 px gap each; T531). */
 export const ESCORT_EXTRA_H = 20;
+/** What QUILL's leak line adds to the wave panel under the lockout: up to five 9 px lines (T631). */
+export const LEAK_EXTRA_H = 56;
 /** What a Holdout's meter adds: its "of N" row only (no lost row; T631). */
 export const HOLDOUT_EXTRA_H = 10;
 
 /**
  * The corner blocks with the status panel grown by `objectives` tracker rows (T312c), on a
  * Protect map the asset meter's row (T431), and while the map is an Escort its meter's two extra
- * rows (T531), on a Holdout its one (`'holdout'`, T631).
+ * rows (T531), on a Holdout its one (`'holdout'`, T631), and the wave panel grown by QUILL's leak
+ * line while one shows (`leak`, T631).
  */
 export function hudCorners(
   objectives: number,
   asset = false,
   escort: boolean | 'holdout' = false,
+  leak = false,
 ): readonly Rect[] {
-  if (objectives <= 0 && !asset && escort === false) return HUD_CORNERS;
-  const [status, ...rest] = HUD_CORNERS;
-  if (status === undefined) return HUD_CORNERS;
+  if (objectives <= 0 && !asset && escort === false && !leak) return HUD_CORNERS;
+  const [status, waves, ...rest] = HUD_CORNERS;
+  if (status === undefined || waves === undefined) return HUD_CORNERS;
+  // QUILL's leak line (A3M2's lockout, T631) hangs up to five lines under ACCESS RESTRICTED.
+  const wavesNow = leak ? { ...waves, h: waves.h + LEAK_EXTRA_H } : waves;
   const rows = objectives > 0 ? objectives * OBJECTIVE_ROW_H + 2 : 0;
   const meter = escort === 'holdout' ? HOLDOUT_EXTRA_H : escort ? ESCORT_EXTRA_H : 0;
   const extra = (asset ? ASSET_ROW_H : 0) + meter;
-  return [{ ...status, h: status.h + rows + extra }, ...rest];
+  return [{ ...status, h: status.h + rows + extra }, wavesNow, ...rest];
 }
 /** What covering a HUD corner costs a candidate, against 1 per covered tower. */
 const CORNER_COST = 2;

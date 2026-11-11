@@ -68,6 +68,14 @@ export const PROP_GLOWS: Readonly<Record<string, PropGlow>> = {
     radius: 2,
     dusk: 0.3,
   },
+  // Act III's emergency lamps (the apron's): the caged red lamp and its light down the post
+  // (T630b; the Long Night lights them, vfx/nightGlow.ts).
+  'prop.emergency_lamp': {
+    colors: ['red.3', 'red.4'],
+    radius: 3,
+    halo: 'red.3',
+    dusk: 0,
+  },
 };
 
 /**

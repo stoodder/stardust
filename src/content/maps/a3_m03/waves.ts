@@ -92,7 +92,7 @@ export const waves = defineWaves([
   {
     countdownSec: COUNTDOWN,
     noCall: true,
-    groups: [g('undertow', 2, 'cut_west', OPEN, 2.5), g('undertow', 2, 'cut_east', OPEN + 8, 2.5)],
+    groups: [g('undertow', 2, 'cut_west', OPEN, 2.5), g('undertow', 1, 'cut_east', OPEN + 8)],
   },
   // W8 · everything, larger
   {
@@ -130,8 +130,8 @@ export const waves = defineWaves([
     countdownSec: COUNTDOWN,
     noCall: true,
     groups: [
-      g('undertow', 1, 'rift_west', OPEN),
-      motes(18, 'cut_west', OPEN + 4, 0.2),
+      g('undertow', 2, 'rift_west', OPEN, 2.5),
+      motes(20, 'cut_west', OPEN + 4, 0.12),
       g('undertow', 1, 'cut_east', OPEN + 8),
       g('riftmoth', 2, 'sky_east', OPEN + 10, 2),
     ],
@@ -142,6 +142,7 @@ export const waves = defineWaves([
     noCall: true,
     groups: [
       g('undertow', 2, 'rift_east', OPEN, 2.5),
+      g('undertow', 1, 'rift_west', OPEN + 2),
       g('maw', 1, 'cut_west', OPEN + 4),
       motes(12, 'cut_east', OPEN + 6, 0.2),
       g('riftmoth', 2, 'sky_west', OPEN + 12, 2),
@@ -153,7 +154,7 @@ export const waves = defineWaves([
     noCall: true,
     groups: [
       g('undertow', 1, 'rift_west', OPEN),
-      motes(18, 'cut_west', OPEN + 2, 0.2),
+      motes(20, 'cut_west', OPEN + 2, 0.12),
       g('undertow', 2, 'rift_east', OPEN + 4, 2.5),
       motes(12, 'cut_east', OPEN + 6, 0.2),
       g('fracture', 1, 'cut_west', OPEN + 8, 2),

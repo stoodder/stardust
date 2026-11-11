@@ -671,6 +671,46 @@ function paintRigs(c: Canvas, look: PhaseLook): void {
   }
 }
 
+/** Okonkwo's Gap (A3M3's node at 372,136): the notch it cuts in the ridge above its node. */
+const GAP = { x: 372, foot: 106 } as const;
+/** The Long Night's shelters (A3M4's node at 296,248): three bunker humps over the node. */
+const SHELTERS = { x: 283, y: 229 } as const;
+
+/**
+ * Act III's landmarks (T631; art-direction § 10): the Gap, a dark notch cut down into the ridge's
+ * lowest edge with its two doors as lit ticks at its foot (the convoy's `gold.3`, the warren's
+ * `green.3`), its walls catching the light; the shelters, three low flat steel bunkers, each with a
+ * dark doorway under a warm `gold.3` lamp (the domes round them burn emergency red). Both sit clear
+ * of their nodes' glyphs and name plates.
+ */
+function paintAct3Landmarks(c: Canvas, look: PhaseLook): void {
+  const notch = 14;
+  for (let dy = 0; dy < notch; dy++) {
+    const y = GAP.foot - dy;
+    const span = Math.max(1, Math.round(4 * (1 - dy / notch)) + 1);
+    for (let dx = -span; dx <= span; dx++) put(c, GAP.x + dx, y, 'ink.0');
+    // The cut's walls catch the moonlight: the west face lit, the east one a step down.
+    put(c, GAP.x - span - 1, y, look.clay[3]);
+    put(c, GAP.x + span + 1, y, look.clay[2]);
+  }
+  for (const dy of [0, 1]) {
+    put(c, GAP.x - 3, GAP.foot + 1 + dy, 'gold.3');
+    put(c, GAP.x + 3, GAP.foot + 1 + dy, 'green.3');
+  }
+  for (let i = 0; i < 3; i++) {
+    const bx = SHELTERS.x + i * 9;
+    const rows = ['.sssss.', 'sssssss', 'sss.sss'];
+    rows.forEach((row, dy) => {
+      row.split('').forEach((ch, dx) => {
+        if (ch !== 's') return;
+        put(c, bx + dx, SHELTERS.y + dy, dy === 0 ? 'steel.3' : dx < 3 ? 'steel.2' : 'steel.1');
+      });
+    });
+    put(c, bx + 3, SHELTERS.y + 2, 'ink.0');
+    put(c, bx + 3, SHELTERS.y + 1, 'gold.3');
+  }
+}
+
 function paintPlant(c: Canvas): void {
   // Gold seams in the cliff face above it.
   for (const [dx, dy, col] of [
@@ -804,6 +844,7 @@ export function starMapChart(phase: StarMapPhase, legs: readonly ChartLeg[] = []
   paintSpires(c, look, stream(4), stream(5));
   paintRigs(c, look);
   paintPlant(c);
+  if (phase === 'act3' || phase === 'dawn') paintAct3Landmarks(c, look);
   if (look.tint > 0) {
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) blend(c, x, y, look.shade, look.tint);
   }

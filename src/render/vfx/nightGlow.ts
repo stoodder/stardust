@@ -2,8 +2,8 @@
 // from emissives and the two moons; T630b). Act III's maps carry no lighting schedule and no
 // darkness (D141: the `act3` look is cosmetic), so the world's own glow (WorldGlowView) would never
 // light there; on an `act3` map it lights as in a full night instead: every piece of scenery with a
-// baked `@glow` wears it (the core's heart, the emergency lamps, the domes' one red slit, the
-// crystal's lit tips) and the moons hang over the map. The props whose frame changes on a cue wear
+// baked `@glow` wears it (the core's heart, the domes' one red slit, the crystal's lit tips), the
+// props in `PROP_GLOWS` shine (the emergency lamps), and the moons hang over the map. The props whose frame changes on a cue wear
 // a glow that follows their frame (`OWN_GLOW`; their views, frameGlow.ts). Every other env reads
 // exactly as before: its glow follows the sim's `dark`, its moons the lighting schedule. Pure, so
 // the rule is unit-tested.

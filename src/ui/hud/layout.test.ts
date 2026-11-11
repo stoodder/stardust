@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   EDGE,
+  ESCORT_EXTRA_H,
+  HOLDOUT_EXTRA_H,
   HUD_CORNERS,
+  LEAK_EXTRA_H,
   hudCorners,
   placePanel,
   tickToward,
@@ -176,5 +179,31 @@ describe('hudCorners (T431)', () => {
     expect(status(hudCorners(2, true))).toBe(base + 22 + 20);
     // The status panel's width (hud.css: four-digit credits fit).
     expect(HUD_CORNERS[0]?.w).toBe(112);
+  });
+});
+
+/** Whether a 120 px panel at `p` reaches the footer strip at y 330. */
+const overFooter = (p: { top: number }): boolean => p.top + 120 > 330;
+
+describe('hudCorners and placePanel in Act III (T631)', () => {
+  it("grows the status panel by a Holdout's one row, and the wave panel by QUILL's leak line", () => {
+    const base = status(HUD_CORNERS);
+    expect(status(hudCorners(0, false, true))).toBe(base + ESCORT_EXTRA_H);
+    expect(status(hudCorners(0, false, 'holdout'))).toBe(base + HOLDOUT_EXTRA_H);
+    const waves = HUD_CORNERS[1]?.h ?? 0;
+    expect(hudCorners(0, false, false, true)[1]?.h).toBe(waves + LEAK_EXTRA_H);
+    expect(hudCorners(0, false, false, false)).toBe(HUD_CORNERS);
+  });
+
+  it('weighs covering a blocked rectangle by `blockedCost` (the star map chrome)', () => {
+    // A tall panel by a node low on the screen, nodes all round above it: every spot clear of the
+    // footer strip lies over a node or two, so the footer's cost decides.
+    const footer = [{ x: 0, y: 330, w: 640, h: 30 }];
+    const node: Point[] = [];
+    for (let x = 120; x <= 480; x += 40) for (let y = 100; y <= 260; y += 40) node.push({ x, y });
+    const cheap = placePanel(300, 300, 96, 120, node, footer, undefined, undefined, 0.5);
+    const dear = placePanel(300, 300, 96, 120, node, footer, undefined, undefined, 6);
+    expect(overFooter(cheap)).toBe(true);
+    expect(overFooter(dear)).toBe(false);
   });
 });
