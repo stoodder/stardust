@@ -78,7 +78,7 @@ Every campaign map has **3 medals**. Each medal awards Intel **the first time** 
 | Medal | Condition | Intel |
 |---|---|---|
 | **Victory** | Win the map. | 1 |
-| **Perfect Core** | Win without losing any core integrity (no leaks). On Escort maps: every refugee saved. **Leaks from medal-exempt units (the Quiet Wave, younglings, fleeing Skitterkin) never count** ([core-loop.md §2.7](core-loop.md#27-hold-fire)). | 1 |
+| **Perfect Core** | Win without losing any core integrity (no leaks). On Escort maps: every refugee saved. On the Holdout (A3M3) the slot is **Held the Door**: Evacuated ≥ 85%. **Leaks from medal-exempt units (the Quiet Wave, younglings, fleeing Skitterkin) never count** ([core-loop.md §2.7](core-loop.md#27-hold-fire)). | 1 |
 | **Challenge** | A map-specific condition, written in the map data (`ConditionDef`) and shown in the briefing. | 1 |
 
 - Medals can be earned in separate runs (Kingdom Rush style). A single run can earn all three. A run resumed from a checkpoint can't earn Perfect Core or the Challenge medal ([core-loop.md §2.12](core-loop.md#212-checkpoints)).

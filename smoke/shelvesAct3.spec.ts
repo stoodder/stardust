@@ -83,10 +83,10 @@ test('shelves: after A3M1 (spared), the Hum Choir is on the shelves; none before
 
   // Before A3M1's briefing gives the Den, no shelf names it; the Bloom waits, greyed.
   await openBase(page, 'after_a2m6');
-  for (const tab of [/^Shop$/, /^Engineering$/]) {
-    await openTab(page, tab);
-    await expect(page.getByRole('tabpanel')).not.toContainText('Scuttle Den');
-  }
+  await openTab(page, /^Shop$/);
+  await expect(page.getByRole('tabpanel')).not.toContainText('Scuttle Den');
+  await openTab(page, /^Engineering$/);
+  await expect(page.getByRole('tabpanel')).not.toContainText('Scuttle Den');
   await openTab(page, /^Xenotech/);
   const bloom = offerRow(page, 'Stasis Bloom');
   await expect(bloom).toContainText('Arrives after');

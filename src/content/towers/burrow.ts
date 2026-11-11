@@ -2,7 +2,8 @@
 // briefing (upgrades/access.ts). Its young-adult swarmlings dash out to a ground enemy within 2.5
 // tiles (a burrowed one too: Skitterkin follow anything underground), latch on for 4 s dealing
 // 5 Kinetic/s as a DoT (armor bypassed) and Chilled 10% (swarmling chills stack to 30%), then run
-// home and rest 3 s. They can't be harmed and always come home. T1 (140) 3 swarmlings; T2 (110) 4;
+// home and rest 3 s. They can't be harmed and always come home. On a burrowed target the DoT is
+// ×2.5 (`burrowedDotMul`, every tier; T622: riding a digger down, they're in their element). T1 (140) 3 swarmlings; T2 (110) 4;
 // T3 (210) 8/s and a 5 s latch. Big Family (420): 7 swarmlings. Brave Hearts (420): 3 Champions,
 // 20/s and Chilled 15% each, and they leap onto flyers too (the tier targets air).
 //

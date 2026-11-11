@@ -313,6 +313,7 @@ Gifts from the warrens after the refugee reveal. **They are not purchased; they 
 #### Scuttle Den (`burrow`)
 A warren mound where refugee families shelter. The young-adult "swarmlings" dash out to defend it.
 - **T1 (140):** 3 swarmlings, range 2.5. Each swarmling runs out, **latches** onto a ground enemy (including **burrowed** enemies, since Skitterkin can follow anything underground) for 4 s, dealing 5 Kinetic/s (DoT; bypasses armor) and Chilled 10% (stacks to 30% from several swarmlings). Then it runs home and rests 3 s. Swarmlings can't be harmed; they always come home.
+- **Underground (every tier):** on a **burrowed** target the DoT is **×2.5** (`burrowedDotMul`): the swarmlings ride a digger down, in their element. A surfaced target takes the plain DoT.
 - **T2 (110):** 4 swarmlings.
 - **T3 (210):** 8 Kinetic/s, latch 5 s.
 - **A: Big Family (420):** 7 swarmlings.

@@ -86,6 +86,17 @@ function runUntil(state: SimState, ctx: TickContext, done: () => boolean, max = 
   throw new Error(`not done after ${max} ticks`);
 }
 
+/** The damage a T1 Den's three swarmlings deal over one whole latch on a unit, burrowed or not. */
+function wholeLatch(burrowed: boolean): number {
+  const { state, ctx } = setup();
+  const t = den(state);
+  const e = spawn(state, POST, { dist: 3 });
+  e.burrowed = burrowed;
+  runUntil(state, ctx, () => allIn(state, t, 'latched'));
+  runUntil(state, ctx, () => allIn(state, t, 'back'));
+  return 1000 - e.hp;
+}
+
 function den(state: SimState, col = 3, row = 1, tier: number | typeof T1 = 1): Tower {
   const t = placeTower(state, DEN, col, row, tier);
   state.linksDirty = true;
@@ -224,6 +235,15 @@ describe('the Scuttle Den (towers.md § 7; T604)', () => {
     e.phased = true;
     run(state, ctx, 1);
     expect(allIn(state, t, 'back')).toBe(true);
+  });
+
+  it('deals ×burrowedDotMul on a burrowed target, the plain DoT on a surfaced one (T622)', () => {
+    const attack = T1.attack;
+    const mul = attack.kind === 'spawner' ? attack.burrowedDotMul : 0;
+    expect(mul).toBe(2.5);
+    // The whole latch: 3 swarmlings × 16 DoT ticks × 1.25, then × 2.5 underground.
+    expect(wholeLatch(false)).toBeCloseTo(3 * 16 * 1.25, 9);
+    expect(wholeLatch(true)).toBeCloseTo(3 * 16 * 1.25 * mul, 9);
   });
 
   it('leaves flyers alone, but Brave Hearts’ Champions leap onto them', () => {
