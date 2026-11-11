@@ -17,11 +17,18 @@
 //   (T600a): `groupLost` counts one refugee group's losses on the road (`stats.lostByGroup`;
 //   The Matriarch's Young), `gte`/`lte` like `stat`.
 // - `objectiveDone`: another optional objective of the map is `done` (T400a; settled once that
-//   objective settles).
+//   objective settles). It reads the objective live (T706): one still `open` whose condition has
+//   settled true reads done, so a script `when` judged on the tick it settles (triggers run before
+//   cleanup settles it) agrees with the objective (A3M5's W10 surge on the tick the last feed line
+//   clears). One level deep: an objectiveDone inside that condition reads the stored standing.
 // - `flag`: a story flag from `SimConfig.scriptFlags` (fixed for the run; unset never matches).
-// - `cleared` (T700a seam): every listed wreckage marker cleared before wave `byWave` starts (Cut
-//   the Feed). Judged by T706; until then createSim refuses it (systems/triggers.ts SCRIPT_GATES),
-//   and here it reads false and never settles.
+// - `cleared` (T706): every listed wreckage marker cleared before wave `byWave` starts (Cut the
+//   Feed). Before that wave it is true once all are cleared (and settles true: clearing is never
+//   undone). From that wave on it reads the drone's work as the wave started: the triggers system
+//   records how many tiles were cleared as each wave started (`state.wreckageAtWave`, on a map that
+//   uses the atom), and a marker counts if its tile is among those. A tile the drone finishes on
+//   the tick the wave starts counts (the wreckage system runs before the waves). Settles false
+//   once the wave has started without them all.
 // - `all`, `any`, `not`.
 //
 // settledCondition() says whether the rest of the run can still change a condition's value: a
@@ -107,6 +114,10 @@ export function settledCondition(c: Condition, state: View, ctx: ConditionContex
     const status = objectiveStatus(state, ctx, c.objectiveDone);
     return status === 'open' ? null : status === 'done';
   }
+  if ('cleared' in c) {
+    if (clearedInTime(state, ctx.map, c.cleared, c.byWave)) return true;
+    return state.wave >= c.byWave ? false : null;
+  }
   return null; // towers, linkActive, tagRatio: judged when evaluated
 }
 
@@ -130,6 +141,7 @@ function atom(c: Condition, state: View, ctx: ConditionContext): boolean {
   if ('wreckageCleared' in c) return wreckageClearedAt(state, ctx.map, c.wreckageCleared);
   if ('objectiveDone' in c) return objectiveStatus(state, ctx, c.objectiveDone) === 'done';
   if ('groupLost' in c) return within(groupLostCount(state, ctx, c.groupLost), c.gte, c.lte);
+  if ('cleared' in c) return clearedInTime(state, ctx.map, c.cleared, c.byWave);
   return false; // combinators are handled by the callers
 }
 
@@ -177,11 +189,58 @@ export function wreckageClearedAt(
   return state.wreckage.cleared.includes(pos[1] * map.cols + pos[0]);
 }
 
-/** The standing of the map's objective `id` ('open' for an unknown id: validate rejects it). */
+/**
+ * Whether the drone cleared every one of `markers` before wave `byWave` started (the `cleared`
+ * atom; see the header): before that wave, all cleared now; from it on, all among the first
+ * `wreckageAtWave[byWave − 1]` tiles cleared.
+ */
+export function clearedInTime(
+  state: DeepReadonly<Pick<SimState, 'wave' | 'wreckage' | 'wreckageAtWave'>>,
+  map: Pick<CompiledMapDef<IdSpace>, 'markers' | 'cols'>,
+  markers: readonly string[],
+  byWave: number,
+): boolean {
+  const cleared = state.wreckage.cleared;
+  const n = state.wave < byWave ? cleared.length : (state.wreckageAtWave[byWave - 1] ?? 0);
+  for (let i = 0; i < markers.length; i++) {
+    const pos = map.markers[markers[i]!]; // i < length
+    if (pos === undefined) return false; // validateScripts rejects an unknown marker
+    const at = cleared.indexOf(pos[1] * map.cols + pos[0]);
+    if (at < 0 || at >= n) return false;
+  }
+  return true;
+}
+
+/** Whether `c` uses the `cleared` atom anywhere (triggers then record `wreckageAtWave`). */
+export function usesCleared(c: Condition): boolean {
+  if ('cleared' in c) return true;
+  if ('all' in c) return c.all.some(usesCleared);
+  if ('any' in c) return c.any.some(usesCleared);
+  if ('not' in c) return usesCleared(c.not);
+  return false;
+}
+
+/** Set while judging an objective's own condition for a live `objectiveDone` (one level deep). */
+let judgingObjective = false;
+
+/**
+ * The standing of the map's objective `id` ('open' for an unknown id: validate rejects it), read
+ * live (see the header): an open one whose condition has settled reads as it will settle.
+ */
 function objectiveStatus(state: View, ctx: ConditionContext, id: string): ObjectiveStatus {
   const objectives = ctx.map.objectives;
   for (let i = 0; i < objectives.length; i++) {
-    if (objectives[i]!.id === id) return state.objectives[i] ?? 'open'; // i < length
+    const o = objectives[i]!; // i < length
+    if (o.id !== id) continue;
+    const stored = state.objectives[i] ?? 'open';
+    if (stored !== 'open' || judgingObjective) return stored;
+    judgingObjective = true;
+    try {
+      const v = settledCondition(o.condition, state, ctx);
+      return v === null ? 'open' : v ? 'done' : 'failed';
+    } finally {
+      judgingObjective = false;
+    }
   }
   return 'open';
 }

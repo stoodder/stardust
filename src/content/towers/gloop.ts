@@ -5,11 +5,12 @@
 // 8. Big Glorp (360): each hit leaves a puddle for 3 s, Chilled 25% and 10/s Kinetic acid (a DoT;
 // armor bypassed). Corrosive Kiss (360): 3 stacks, max 12, and shields regenerate 50% slower.
 //
-// A stub registered ahead of its task (T700a; STUB_TOWER_TASKS): T705 confirms the numbers, the
-// spit's flight (a lobbed glob, 0.6 s: not in the docs) and the puddle's radius (the splash's,
-// 1.0), and runs Big Glorp's puddle (sim/puddles.ts). Links: Acid Rain (Thumper), Sticky Flak
-// (Skyhook), T705. Sprites: placeholders under their final ids (T740b); the glob borrows the
-// Thumper's shell.
+// As built (T705): the numbers are towers.md's. Chosen where it is silent: the spit is a lobbed
+// glob (0.6 s flight, led like the Thumper's shell, no minimum range), and Big Glorp's puddle has
+// the splash's radius (1.0) and lands where each glob does, hit or miss (sim/puddles.ts: one
+// puddle per unit at a time, its acid under the tower's damage percent). Links: Acid Rain
+// (Thumper: +0.5 range here) and Sticky Flak (Skyhook: +10% fire rate here). Sprites: the tower's
+// are placeholders under their final ids (T740b); the glob is `projectile.gloop_glob`.
 import { defineTower } from '../define.ts';
 
 export const gloop = defineTower({
@@ -29,7 +30,7 @@ export const gloop = defineTower({
         damage: 12,
         ratePerSec: 0.6,
         rangeTiles: 3.0,
-        projectile: 'projectile.thumper_shell',
+        projectile: 'projectile.gloop_glob',
         flightSec: 0.6,
         splashTiles: 1.0,
         lead: true,

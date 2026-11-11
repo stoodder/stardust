@@ -81,9 +81,9 @@ export type Modifier<K extends IdSpace = LiveIds> =
       readonly source: ModifierSource;
     }
   /**
-   * C4 Purge (core-loop.md § 6.11; T700a seam, T703 runs it): every unit of `faction` spawns with
-   * its armor + `flat` (−2: Everglow's open panels), never below 0. battleSetup adds it from A3M5
-   * on. Refused until T703 (`modifier.enemyStat.faction`).
+   * C4 Purge (core-loop.md § 6.11; T703, factionArmor.ts): every unit of `faction` spawns with
+   * its armor + `flat` (−2: Everglow's open panels), never below 0, its def's `openPanel` set.
+   * battleSetup adds it from A3M5 on (T710).
    */
   | {
       readonly kind: 'enemyStat';

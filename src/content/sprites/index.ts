@@ -106,6 +106,7 @@ import { iconAbilityClearanceSale } from './icons/clearance_sale.ts';
 import { iconAbilityTimeDilation } from './icons/time_dilation.ts';
 import { iconTowerZapcoil } from './icons/zapcoil.ts';
 import { iconEnemyZoomer } from './icons/zoomer.ts';
+import { projectileGloopGlob } from './projectiles/gloop_glob.ts';
 import { projectileRivetTracer } from './projectiles/rivet_tracer.ts';
 import { projectileThumperBomblet } from './projectiles/thumper_bomblet.ts';
 import { projectileThumperShell } from './projectiles/thumper_shell.ts';
@@ -372,6 +373,7 @@ export const SPRITES = [
   projectileThumperBomblet,
   projectileSkyhookFlak,
   projectileSkyhookSeeker,
+  projectileGloopGlob, // T705
   fxShadow,
   fxGroundShadow,
   fxExplosion,
