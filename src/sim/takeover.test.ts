@@ -121,7 +121,7 @@ describe('the phases’ data and gates (D146)', () => {
       hastePct: 0.4,
       plates: ['crash_1', 'crash_2', 'crash_3', 'crash_4'],
     });
-    expect([SV.hp, SV.armor, SV.boss!.ending]).toEqual([9000, 15, 'driveOff']);
+    expect([SV.hp, SV.armor, SV.boss!.ending]).toEqual([4500, 15, 'driveOff']);
     // Every boss ability tells for at least BOSS_MIN_TELL_SEC: the laser, and the hangar's door.
     expect(TAKEOVER.tellTicks).toBeGreaterThanOrEqual(secToTicks(BOSS_MIN_TELL_SEC));
     for (const key of ['hangar', 'takeover', 'jettison'] as const) {

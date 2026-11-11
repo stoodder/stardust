@@ -143,9 +143,11 @@ export const waves = defineWaves([
       associates(1, BOSS_SEC + 3),
     ],
   },
-  // W15 · the last bearers, and the Unsung swarm out of the opened vats behind them
+  // W15 · the last bearers, and the Unsung swarm out of the opened vats behind them (its countdown
+  // opens once the platform is driven off)
   {
     ...NO_CALL,
+    countdownAfter: 'bossEnded',
     groups: [
       motes(8, 'hunt', HUNT_SEC),
       fractures(2, 'hunt', HUNT_SEC + 4),

@@ -1,5 +1,5 @@
 // "Shareholder Value" Executive Assault Platform (design/enemies.md § 6): A3M5's boss, piloted by
-// Director Sterling by remote. HP 9000, armor 15, speed 0.3, Everglow, mechanical, bounty 0 (its
+// Director Sterling by remote. HP 4500, armor 15, speed 0.3, Everglow, mechanical, bounty 0 (its
 // wave's clear bonus is tripled). Phases (D146; T707):
 // (1) it advances and launches 2 Compliance Drones from its hangar every 8 s (enemyAbilities/
 //     hangar.ts: the sneeze's rules, a 1.5 s tell as the hangar door opens; the drones spawn from
@@ -23,7 +23,7 @@ export const shareholder_value = defineEnemy({
   faction: 'everglow',
   body: 'mechanical',
   layer: 'ground',
-  hp: 9000,
+  hp: 4500,
   armor: 15,
   speedTilesPerSec: 0.3,
   leak: 3,
