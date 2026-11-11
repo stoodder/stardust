@@ -119,14 +119,23 @@ export class GatheringMawView {
     this.#drawBursts(g, dtMs, enemies);
   }
 
-  #drawTether(g: Phaser.GameObjects.Graphics, p: DeepReadonly<Enemy>, q: DeepReadonly<Enemy>): void {
+  #drawTether(
+    g: Phaser.GameObjects.Graphics,
+    p: DeepReadonly<Enemy>,
+    q: DeepReadonly<Enemy>,
+  ): void {
     gridToScreen(p.x, p.y, this.#ctx.origin, a);
     gridToScreen(q.x, q.y, this.#ctx.origin, b);
     a.y -= BODY_LIFT_PX;
     b.y -= BODY_LIFT_PX;
     const st = tetherStroke(p.mergeTicks, MERGE_TELL_TICKS);
     g.lineStyle(st.px + 2, INK, 0.6).lineBetween(a.x, a.y, b.x, b.y);
-    g.lineStyle(st.px, st.color === TETHER ? SLACK_HEX : TAUT_HEX, 1).lineBetween(a.x, a.y, b.x, b.y);
+    g.lineStyle(st.px, st.color === TETHER ? SLACK_HEX : TAUT_HEX, 1).lineBetween(
+      a.x,
+      a.y,
+      b.x,
+      b.y,
+    );
     if (st.core) g.lineStyle(1, CORE, 1).lineBetween(a.x, a.y, b.x, b.y);
   }
 

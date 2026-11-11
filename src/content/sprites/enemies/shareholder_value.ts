@@ -13,8 +13,8 @@
 // - `tell_<facing>` (2 frames, 4 fps; phase 1's launch tell, `hangarTelling`): it stops, the
 //   hangar door slides open on a dark bay with a Compliance Drone's teal visor peering out, a
 //   launch lamp blinking (TakeoverView's orange door bar marks it too).
-// - `aim_<facing>` (2 frames, 4 fps; phase 2, Hostile Takeover): the dish raised on its mast,
-//   its red targeting lens lit and pulsing (TakeoverView draws the laser from it).
+// - `aim_<facing>` (4 frames, 4 fps; phase 2, Hostile Takeover, the walk's gait): the dish raised
+//   on its mast, its red targeting lens lit and pulsing (TakeoverView draws the laser).
 // - `panic_<facing>` (4 frames, 10 fps; phase 3 after the jettison, its haste): the plates gone,
 //   its bare frame showing (girders, orange wiring, sparks), the screen's chart crashing red, the
 //   legs scrambling.
@@ -104,7 +104,7 @@ function platform(facing: Facing, step: 0 | 1 | 2 | 3, look: PlatformLook): stri
   const g: CharGrid = grid(W, H);
   const se = facing === 'se';
   const bare = look === 'panic';
-  const still = look === 'tell' || look === 'aim' || look === 'puff';
+  const still = look === 'tell' || look === 'puff';
   const crouch = look === 'puff' ? 2 : 0;
   const bob = still ? 0 : step % 2;
   const dy = crouch + bob;
@@ -211,7 +211,7 @@ function platform(facing: Facing, step: 0 | 1 | 2 | 3, look: PlatformLook): stri
     // The dish up on its mast, turned to the field, its red lens pulsing (bright on frame 0).
     line(g, dx0 + 3, dtop + 2, dx0 + 3, 8, '1');
     line(g, dx0 + 4, dtop + 2, dx0 + 4, 8, '2');
-    const lens = step === 0 ? ['QQQ', 'QwQ', 'QQQ'] : ['RRR', 'RQR', 'RRR'];
+    const lens = step % 2 === 0 ? ['QQQ', 'QwQ', 'QQQ'] : ['RRR', 'RQR', 'RRR'];
     stamp(g, dx0 - 1, 0, ['..12221..', '.1233321.', '123333321', '123333321', '123333321', '.1233321.', '..12221..']);
     stamp(g, dx0 + 2, 2, lens);
   } else if (!bare) {
@@ -287,7 +287,7 @@ export const enemyShareholderValue = defineSprite({
   frames: {
     ...se('walk', 4),
     ...se('tell', 2),
-    ...se('aim', 2),
+    ...se('aim', 4),
     ...se('panic', 4),
     ...se('puff', 1),
     ...se('flee', 2),
@@ -295,7 +295,7 @@ export const enemyShareholderValue = defineSprite({
   anims: {
     ...anims('walk', 4, 4),
     ...anims('tell', 2, 4),
-    ...anims('aim', 2, 4),
+    ...anims('aim', 4, 4),
     ...anims('panic', 4, 10),
     ...anims('puff', 1, 2),
     ...anims('flee', 2, 3),

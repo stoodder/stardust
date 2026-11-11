@@ -101,7 +101,9 @@ function split(state: SimState, ctx: TickContext, b: Enemy) {
 
 describe('the Gathering Maw’s data and gates (D146)', () => {
   it('12000 HP, armor 4, speed 0.3; gathers 2 tiles every 5 s (1.5 s tell); 3 × 20%, merge 12 s, Haste 30%', () => {
-    expect([GMAW.hp, GMAW.armor, GMAW.speedTilesPerTick * 60, GMAW.bounty]).toEqual([12000, 4, 0.3, 0]);
+    expect([GMAW.hp, GMAW.armor, GMAW.speedTilesPerTick * 60, GMAW.bounty]).toEqual([
+      12000, 4, 0.3, 0,
+    ]);
     expect(GATHER).toMatchObject({ everyTicks: 300, tellTicks: 90, radiusSq: 4, maxAbsorbs: 5 });
     expect(GATHER.tellTicks).toBeGreaterThanOrEqual(secToTicks(BOSS_MIN_TELL_SEC));
     expect(P2!.fromPct).toBe(0.5);
@@ -112,7 +114,9 @@ describe('the Gathering Maw’s data and gates (D146)', () => {
       mergeAfterTicks: 720,
       mergeHastePct: 0.3,
     });
-    expect([PART.hp, PART.armor, PART.speedTilesPerTick * 60, PART.bounty]).toEqual([2400, 4, 0.3, 0]);
+    expect([PART.hp, PART.armor, PART.speedTilesPerTick * 60, PART.bounty]).toEqual([
+      2400, 4, 0.3, 0,
+    ]);
     expect(PART.boss).not.toBeNull(); // boss rules
     expect(MERGE_TELL_TICKS).toBe(secToTicks(BOSS_MIN_TELL_SEC));
     expect(FEATURE_GATES['enemy.boss.gather']).toBeNull();
@@ -197,13 +201,9 @@ describe('the split at 50% (bossSplit.ts)', () => {
     const parts = live(state);
     expect(parts.map((p) => p.uid)).toEqual(s!.parts);
     expect(parts.map((p) => [p.def!.id, p.hp, p.ownerUid, p.bossPhase, p.splitMaxHp])).toEqual(
-      Array(3).fill(['gathering_maw_part', 2400, uid, 2, 7200]),
+      Array.from({ length: 3 }, () => ['gathering_maw_part', 2400, uid, 2, 7200]),
     );
-    expect(parts.map((p) => p.dist)).toEqual([
-      4 - SPLIT_SPREAD_TILES,
-      4,
-      4 + SPLIT_SPREAD_TILES,
-    ]);
+    expect(parts.map((p) => p.dist)).toEqual([4 - SPLIT_SPREAD_TILES, 4, 4 + SPLIT_SPREAD_TILES]);
     expect(parts.every((p) => p.splitFrom === GMAW && p.mergeTicks === SPLIT.mergeAfterTicks)).toBe(
       true,
     );
@@ -223,7 +223,9 @@ describe('the split at 50% (bossSplit.ts)', () => {
     applyDamage(state, p, 1e6, 'psionic', SRC);
     events.push(...state.events);
     expect(p.alive).toBe(false);
-    expect(of(events, 'EnemyDied')).toMatchObject([{ uid: p.uid, enemy: 'gathering_maw_part', bounty: 0 }]);
+    expect(of(events, 'EnemyDied')).toMatchObject([
+      { uid: p.uid, enemy: 'gathering_maw_part', bounty: 0 },
+    ]);
     expect(of(events, 'BossEnded')).toEqual([]);
   });
 });
@@ -258,6 +260,7 @@ describe('the merge (bossMerge.ts)', () => {
     expect(parts.every((p) => !p.alive)).toBe(true);
     expect(of(merged, 'EnemyDied')).toEqual([]); // the parts are gone, not killed
     expect(one!.paceMul).toBeCloseTo(1.3);
+    expect(applyDamage(state, one!, 500, 'psionic', SRC)).toBe(0); // its 1.5 s: shots plink off
     run(state, ctx, 1);
     expect(one!.paceMul).toBeCloseTo(1 + Math.min(SPLIT.mergeHastePct, HASTE_CAP));
     expect(gatherOf(one!)).toBeNull(); // the merged Maw gathers no more

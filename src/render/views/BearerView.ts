@@ -1,8 +1,8 @@
-// Bearers and militia (design/maps.md § 5.4; T706's minimal readable views; T730a polishes them,
-// T740a draws `ally.bearer` and `ally.militia`):
+// Bearers and militia (design/maps.md § 5.4; T706's minimal readable views; T730a polishes them;
+// T740a drew `ally.bearer`, worn here, and `ally.militia`, which T730a swaps in for the pixels):
 // - **A bearer** (A3M5's Brood Haulers carrying the vats' dead home; sim/bearers.ts) walks its
-//   route as a Brood Hauler in the `skitterkin.ally` palette, its sack on its back, with its
-//   **burden** over the sack: a small cold-violet glow (`stardust.unsung`'s violet), breathing
+//   route in its own body (`ally.bearer`, T740a: a Hauler in the allies' palette, its sack glowing
+//   cold violet), with its **burden** over the sack: a small cold-violet glow (`stardust.unsung`'s violet), breathing
 //   slowly (still under reduced motion), so a bearer never reads as the Hauler enemy it was. One
 //   still filing in (`dist` < 0) isn't drawn; one a Hollow unit is hushing freezes on its frame,
 //   its burden dimmed. A hushed or home bearer's view goes with it (the sweep). Depth-sorted in
@@ -20,9 +20,9 @@ import { facingOf, type Facing } from './spriteInfo.ts';
 import type { ViewContext } from './ViewContext.ts';
 import { ViewPool, type PooledView } from './ViewPool.ts';
 
-/** A bearer's body (T740a replaces it with `ally.bearer`) and its palette. */
-export const BEARER_SPRITE: SpriteId = 'enemy.brood_hauler';
-export const BEARER_VARIANT = 'skitterkin.ally';
+/** A bearer's body (T740a's `ally.bearer`: a Hauler with its violet burden) and its palette. */
+export const BEARER_SPRITE: SpriteId = 'ally.bearer';
+export const BEARER_VARIANT = 'default';
 /** The burden's glow: where it sits over the sack (px from the ground point), its size, its cycle. */
 const BURDEN_DY = -13;
 const BURDEN_R = 2.5;

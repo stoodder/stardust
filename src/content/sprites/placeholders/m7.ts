@@ -3,15 +3,11 @@
 // sprite under the new id, without palette variants, so it keeps the sprite contract (enemy walks
 // in four facings, tower t1–t3 frames with a mount and a head, 14×14 icons, 8×8 glyphs). A
 // placeholder keeps its source's palette. The art tasks replace each behind the same id and delete
-// its line here: T740a the units (Silencer, Auditor, Maintenance Associate, Liability-Class
-// Enforcer, Asset Recovery Gunship, Black Budget Operative, "Shareholder Value", the Gathering Maw
-// and its parts), T740b the towers (Gloop Spitter, Sproing Pad), their icons, System Reboot's icon,
-// and the `disabler` and `healer` glyphs. This file goes away with the last of them.
-import { enemyCompliance } from '../enemies/compliance.ts';
-import { enemyMaw } from '../enemies/maw.ts';
+// its line here (T740a's units have landed: enemies/m7.ts): T740b the towers (Gloop Spitter, Sproing
+// Pad), their icons, System Reboot's icon, and the `disabler` and `healer` glyphs. This file goes
+// away with the last of them.
 import { iconTellHeavy } from '../icons/m5_glyphs.ts';
 import { iconTellRegen } from '../icons/glyphs.ts';
-import { iconEnemyCompliance, iconEnemyMaw } from '../icons/m6_enemies.ts';
 import { iconAbilityUnderfoot, iconTowerBurrow, iconTowerChoir } from '../icons/m6_towers.ts';
 import { towerBurrow, towerBurrowHead } from '../towers/den.ts';
 import { towerChoir, towerChoirHead } from '../towers/choir.ts';

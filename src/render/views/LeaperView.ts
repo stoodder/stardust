@@ -2,9 +2,9 @@
 // view, polished by T730a; leaperLook.ts has the rules). Read from the sim each frame, so it holds
 // while paused:
 // - each leaper in the air (out or back; at home it's in the pad, not drawn) boings along an arc
-//   (`leapLiftPx`) over a faint orange spot at its ground point, in the swarmlings' body and
-//   palette (a placeholder until T740b's `ally.leaper`), facing the way its leg runs, in the `air`
-//   layer (over the towers and walkers it boings past), sorted by its ground point like a flyer;
+//   (`leapLiftPx`) over a faint orange spot at its ground point, in its own body (`ally.leaper`,
+//   T740a: the tucked boing, its walk's frame 0), facing the way its leg runs, in the `air` layer
+//   (over the towers and walkers it boings past), sorted by its ground point like a flyer;
 // - each bonk (`LeaperBonk`) pops a small orange ring on its target;
 // - each flyer a leaper grounded (`FlyerGrounded`), while it stays Pinned, wears an orange ring on
 //   the ground under it and three gold dizzy stars over its head (one Graphics in `vfx`).
@@ -14,6 +14,7 @@
 // are out than it holds, each leaper's leg kept by uid (made once per leaper), scratch points
 // module-level, the Graphics redrawn in place.
 import type * as Phaser from 'phaser';
+import type { SpriteId } from '../../content/sprites/index.ts';
 import type { IdSpace } from '../../content/types.ts';
 import type { Bus } from '../../shared/bus.ts';
 import type { DeepReadonly } from '../../shared/types.ts';
@@ -36,7 +37,6 @@ import {
   STARS,
 } from './leaperLook.ts';
 import { facingOf, type Facing } from './spriteInfo.ts';
-import { SWARM_SPRITES, SWARM_VARIANT } from './SwarmView.ts';
 import { AIR_LIFT_PX, BODY_LIFT_PX, type TransientFx } from './TransientFx.ts';
 import { blankBox, NO_ANCHORS, type UnitAnchors } from './unitAnchor.ts';
 import type { ViewContext } from './ViewContext.ts';
@@ -53,8 +53,8 @@ export interface LeaperState {
   readonly towers: Pool<Tower>;
 }
 
-/** The body a leaper wears until T740b draws `ally.leaper`. */
-const BODY = SWARM_SPRITES.swarmling;
+/** The body a leaper wears (T740a's `ally.leaper`: frame 0 of its walk is the tucked boing). */
+const BODY: SpriteId = 'ally.leaper';
 const RING = hexOf(GROUND_RING_COLOR);
 const STAR = hexOf(STAR_COLOR);
 /** Sprites made up front: four Sky Bouncers. More are made as needed. */
@@ -291,7 +291,7 @@ export class LeaperView {
     const { sprites } = this.#ctx;
     const anim = `walk_${facing}`;
     const a = sprites.frameAnchor(BODY, `${anim}_0`);
-    slot.body.play(sprites.anim(BODY, anim, SWARM_VARIANT.get(BODY) ?? DEFAULT_VARIANT), true);
+    slot.body.play(sprites.anim(BODY, anim, DEFAULT_VARIANT), true);
     slot.body.setDisplayOrigin(a.x, a.y);
     slot.body.anims.pause();
   }

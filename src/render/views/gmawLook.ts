@@ -59,6 +59,10 @@ export function burstRing(ms: number, still: boolean): { tiles: number; alpha: n
  * split-born unit's is the boss it split from, `ownerUid`, so the bar never steps out between the
  * whole Maw, its parts, and the merged Maw), and its maximum (the parts' HP summed, `splitMaxHp`).
  */
-export function bossBarKey(e: { readonly uid: number; readonly ownerUid: number; readonly splitMaxHp: number }): number {
+export function bossBarKey(e: {
+  readonly uid: number;
+  readonly ownerUid: number;
+  readonly splitMaxHp: number;
+}): number {
   return e.splitMaxHp > 0 ? e.ownerUid : e.uid;
 }

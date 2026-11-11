@@ -97,7 +97,7 @@ describe('dev_gmaw (T708): the Gathering Maw', () => {
   });
 
   it('splits as phase 2’s 1.5 s telegraph ends and merges exactly 12 s after the split', () => {
-    const [p2] = of('BossPhase').filter((e) => e.phase === 2);
+    const p2 = of('BossPhase').find((e) => e.phase === 2);
     const [split] = of('BossSplit');
     const [merged] = of('BossMerged');
     expect(split!.parts).toHaveLength(3);
@@ -147,16 +147,16 @@ describe('dev_gmaw (T708): the Gathering Maw', () => {
           (e) => e.alive && e.def?.id === 'gathering_maw' && e.dist > 15,
         ) ?? null;
     }
-    expect(boss).not.toBeNull();
-    bossDamage(t.state, boss!, boss!.hp - 0.5 * boss!.def!.hp); // no towers: split it by hand
+    if (boss === null) throw new Error('the boss never came 15 tiles down the road');
+    bossDamage(t.state, boss, boss.hp - 0.5 * 12000); // no towers: split it by hand
     const out: SimEvent<IdSpace>[] = [];
     while (t.state.outcome === 'playing' && t.state.tick < 60 * 400) {
       t.step();
       t.drainEvents(out);
     }
     expect(out.some((e) => e.type === 'BossMerged')).toBe(false); // before the merge
-    const leaks = out.filter((e) => e.type === 'EnemyLeaked' && e.enemy.startsWith('gathering'));
-    expect(leaks[0]).toMatchObject({ enemy: 'gathering_maw_part' });
+    const leak = out.find((e) => e.type === 'EnemyLeaked' && e.enemy.startsWith('gathering'));
+    expect(leak).toMatchObject({ enemy: 'gathering_maw_part' });
     expect(t.state.outcome).toBe('lost');
   });
 });

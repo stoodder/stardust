@@ -53,7 +53,10 @@ export function isSplitBorn(e: Pick<Enemy, 'def' | 'splitMaxHp'>): boolean {
  * `ownerUid` (the parts, or the merged boss), summed: the one boss bar's fill against `splitMaxHp`.
  */
 export function splitHp(
-  pool: { readonly used: number; readonly items: readonly Pick<Enemy, 'alive' | 'ownerUid' | 'splitMaxHp' | 'hp'>[] },
+  pool: {
+    readonly used: number;
+    readonly items: readonly Pick<Enemy, 'alive' | 'ownerUid' | 'splitMaxHp' | 'hp'>[];
+  },
   ownerUid: number,
 ): number {
   let hp = 0;

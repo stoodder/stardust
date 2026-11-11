@@ -92,7 +92,9 @@ export function gatherMaxHp(e: Pick<Enemy, 'def' | 'bonusMaxHp'>): number {
 }
 
 /** Whether `e` is a gatherer showing its tendril tell this tick (render reads it). */
-export function gatherTelling(e: Pick<Enemy, 'alive' | 'def' | 'bossPhase' | 'gatherUid'>): boolean {
+export function gatherTelling(
+  e: Pick<Enemy, 'alive' | 'def' | 'bossPhase' | 'gatherUid'>,
+): boolean {
   return e.alive && e.gatherUid !== 0 && gatherOf(e) !== null;
 }
 

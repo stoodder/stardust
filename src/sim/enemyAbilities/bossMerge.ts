@@ -42,9 +42,15 @@ export function isMergedBoss(e: Pick<Enemy, 'alive' | 'splitFrom' | 'splitMaxHp'
 }
 
 /** Whether `e` is a part walking together in its merge's tell this tick (render's `tell`). */
-export function mergeTelling(e: Pick<Enemy, 'alive' | 'splitFrom' | 'mergeTicks' | 'leaving'>): boolean {
+export function mergeTelling(
+  e: Pick<Enemy, 'alive' | 'splitFrom' | 'mergeTicks' | 'leaving'>,
+): boolean {
   return (
-    e.alive && !e.leaving && e.splitFrom !== null && e.mergeTicks > 0 && e.mergeTicks <= MERGE_TELL_TICKS
+    e.alive &&
+    !e.leaving &&
+    e.splitFrom !== null &&
+    e.mergeTicks > 0 &&
+    e.mergeTicks <= MERGE_TELL_TICKS
   );
 }
 
@@ -86,7 +92,7 @@ export function splitBornStep(state: SimState, e: Enemy): void {
   }
   if (left > MERGE_TELL_TICKS) return;
   // The walk together: the lead holds, the others close on it hasted.
-  let lead = group[0]!; // length ≥ 2
+  let lead = e; // group[0]
   for (let i = 1; i < group.length; i++) {
     const p = group[i]!; // i < length
     if (p.dist > lead.dist || (p.dist === lead.dist && p.uid < lead.uid)) lead = p;
