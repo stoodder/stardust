@@ -173,6 +173,9 @@ function recompute(state: SimState, ctx: TickContext): void {
       // duration scaled like Splash Zone's latch (rounded to whole ticks).
       t.linkFieldRadiusTiles += p.fieldRadiusTiles * k;
       t.linkPulseSoonerTicks += Math.round(p.pulseSoonerTicks * k);
+      // Acid Rain, Sticky Flak (T705): whole Corroded stacks per hit, scaled like jumps and rounded
+      // down (Linked Up's ×1.5 leaves 1 at 1); sim/puddles.ts lands them.
+      if (p.corrodedStacks !== 0) t.linkCorrodedStacks += Math.floor(p.corrodedStacks * k + 1e-9);
     }
   }
 
@@ -206,6 +209,7 @@ function clearBonuses(t: Tower): void {
   t.linkExtraTargets = 0;
   t.linkFieldRadiusTiles = 0;
   t.linkPulseSoonerTicks = 0;
+  t.linkCorrodedStacks = 0;
 }
 
 function towerAt(state: SimState, map: TickContext['map'], col: number, row: number): Tower | null {

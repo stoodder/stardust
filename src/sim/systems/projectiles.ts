@@ -28,6 +28,8 @@
 // Each flies from the impact point to a point drawn uniformly in the scatter disc (rejection
 // sampling on the `projectiles` RNG stream, in slot order) and lands `flightTicks` ticks after its
 // shell, as its own splash on the shell's layers with the shell's effects. Bomblets don't scatter.
+// T705 (sim/puddles.ts): each victim also takes the shot's link Corroded (Acid Rain, Sticky Flak)
+// after its effects, and a shot armed with a puddle (Big Glorp) leaves it at its aim point.
 import { nextFloat } from '../../shared/rng.ts';
 import { secToTicks } from '../../shared/time.ts';
 import { hasStatusIn } from '../bonuses.ts';
@@ -37,6 +39,7 @@ import { onLayers, untargetable } from '../enemyAbilities/layers.ts';
 import { PROJECTILE_BLANK, type Enemy, type Projectile } from '../entities.ts';
 import { isSpared } from '../fireControl.ts';
 import { poolAlloc, poolKill } from '../pool.ts';
+import { applyLinkCorroded, spawnPuddle } from '../puddles.ts';
 import { emit, takeUid, type SimState } from '../state.ts';
 import type { TickContext } from '../tick.ts';
 
@@ -194,6 +197,7 @@ function scatterBomblets(state: SimState, shell: Projectile): void {
     p.hitsGround = shell.hitsGround;
     p.hitsAir = shell.hitsAir;
     p.effects = shell.effects;
+    p.corrodedStacks = shell.corrodedStacks; // T705: a link's Corroded rides the bomblets too
     emit(state, {
       type: 'ProjectileFired',
       uid: p.uid,
@@ -260,7 +264,9 @@ function land(state: SimState, ctx: TickContext, p: Projectile): void {
     // Summed into the emitted event as each victim takes its damage (events.ts, ProjectileHit).
     hit.damage += applyDamage(state, e, damage, p.damageType, source, p);
     applyEffects(e, p.effects);
+    applyLinkCorroded(e, p.corrodedStacks); // Acid Rain, Sticky Flak (T705; sim/puddles.ts)
   }
   victims.length = 0;
   if (plinked >= 0) hitNeutral(state, enemies.items[plinked]!, p.towerUid); // a slot < used
+  spawnPuddle(state, p); // Big Glorp's, hit or miss (T705; sim/puddles.ts)
 }

@@ -22,6 +22,7 @@ import type {
   CompiledBomblets,
   CompiledEffect,
   CompiledEnemyDef,
+  CompiledPuddle,
   CompiledRoute,
   CompiledTier,
   CompiledTowerDef,
@@ -545,6 +546,14 @@ export interface Projectile extends PoolEntity {
   speedTilesPerTick: number;
   targetSlot: number;
   spare: boolean;
+  /**
+   * T705 (sim/puddles.ts `armShot`, at fire time): the puddle its impact leaves (Big Glorp; null
+   * for none) with its acid per DoT tick under the tower's damage percent, and the Corroded stacks
+   * a link adds to each victim (Acid Rain, Sticky Flak; 0 for none). A bomblet carries its shell's.
+   */
+  puddle: CompiledPuddle | null;
+  puddleDamage: number;
+  corrodedStacks: number;
 }
 
 export const PROJECTILE_BLANK: Readonly<Projectile> = Object.freeze({
@@ -578,6 +587,9 @@ export const PROJECTILE_BLANK: Readonly<Projectile> = Object.freeze({
   speedTilesPerTick: 0,
   targetSlot: -1,
   spare: false,
+  puddle: null,
+  puddleDamage: 0,
+  corrodedStacks: 0,
 });
 
 /**

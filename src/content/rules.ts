@@ -83,6 +83,12 @@ export const LINE_HALF_WIDTH_TILES = 0.4;
 export const STASIS_IMMUNITY_MULT = 2;
 /** Each Corroded stack lasts 5 s and refreshes on a new hit. */
 export const CORRODED_STACK_SEC = 5;
+/**
+ * A link's Corroded (Acid Rain's Thumper, Sticky Flak's Skyhook; T705, chosen: towers.md is
+ * silent on its cap) adds its stacks up to this max, the Gloop Spitter's tier-1 max. A unit already
+ * past it (a Gloop's 8) keeps its stacks; the hit refreshes them.
+ */
+export const LINK_CORRODED_MAX_STACKS = 5;
 /** Marked: highest only. Every other status in M1 content is a fraction in (0, 1]. */
 export const MAX_STATUS_PCT: Readonly<Partial<Record<StatusId, number>>> = {
   chilled: CHILL_CAP,
