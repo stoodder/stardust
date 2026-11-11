@@ -9,8 +9,12 @@
 // - [ally]: ally posts have a positive attack rate and range, damage ≥ 0, and a layer to hit;
 //   no two share a post, and Bricks is on a map at most once. A blocker (`block`, T600a) holds a
 //   whole number ≥ 1 of units, and its health keys name the map's waves in rising order, each in
-//   [BLOCKER_HEALTH_FLOOR, 1]. (The post marker resolving is a
-//   compile error; [marker] puts it on decor.)
+//   [BLOCKER_HEALTH_FLOOR, 1], and its post lies within BLOCKER_REACH_TILES of a ground route (a
+//   path or rift lane's polyline through its tile centres; T605b), else it would block nothing.
+//   (The post marker resolving is a compile error; [marker] puts it on decor.)
+// - [holdout] (T605b): a Holdout has an event forcing an input (`forceInput`: the SEAL) and one
+//   ending the map (`endMap`), so it can end at all (it has no defeat). Every build on a map with a
+//   `forceInput` ends with a `scriptInput` step (validateBuilds.ts [build-step]).
 // - [map-range]: start credits, core integrity, and first-clear Stardust.
 // - [grid-span]: campaign maps fit on one screen, `cols + rows ≤ 36` (maps.md § 1).
 // - [core]: a Defend, Protect, or Escort map has exactly one core `C` (an Escort's is its safe exit);
@@ -67,7 +71,13 @@
 // (builds).
 //
 // Medals and conditions ([medals], [condition]) are validateMedals.ts's, run by validate.ts.
-import { BLOCKER_HEALTH_FLOOR, MAX_CAMPAIGN_GRID_SPAN, SALVAGE_MAX, SALVAGE_MIN } from './rules.ts';
+import {
+  BLOCKER_HEALTH_FLOOR,
+  BLOCKER_REACH_TILES,
+  MAX_CAMPAIGN_GRID_SPAN,
+  SALVAGE_MAX,
+  SALVAGE_MIN,
+} from './rules.ts';
 import type { EnemyDef, GridPos, IdSpace, MapDef, RawContent, TowerFaction } from './types.ts';
 import type { ValidationRules } from './validate.ts';
 import { validateBuilds } from './validateBuilds.ts';
@@ -218,6 +228,7 @@ function validateMap(
   validateDarkness(issues, def, where);
   validateCompanion(issues, ctx, def, where);
   validateAllies(issues, def, where);
+  validateHoldout(issues, def, where);
 
   if (!isNonNegativeInt(def.startCredits)) {
     issues.add('map-range', `${where}.startCredits`, 'must be a whole number ≥ 0');
@@ -494,6 +505,10 @@ function validateAllies(issues: Issues, def: MapDef<IdSpace>, where: string): vo
     if (!at.targets.ground && !at.targets.air) bad('attack.targets hits neither layer');
     const b = a.block;
     if (b === undefined) continue;
+    const post = def.markers?.[a.post];
+    if (post !== undefined && !nearGroundRoute(def, post)) {
+      bad(`post '${a.post}' is more than ${BLOCKER_REACH_TILES} tile from every ground route`);
+    }
     if (!isPositiveInt(b.capacity)) bad('block.capacity must be a whole number ≥ 1');
     let last = 0;
     for (const [k, key] of b.health.entries()) {
@@ -505,5 +520,43 @@ function validateAllies(issues: Issues, def: MapDef<IdSpace>, where: string): vo
         bad(`block.health[${k}].pct ${key.pct} must be in [${BLOCKER_HEALTH_FLOOR}, 1]`);
       }
     }
+  }
+}
+
+/** Whether a ground route (a path or rift lane) passes within BLOCKER_REACH_TILES of `pos`. */
+function nearGroundRoute(def: MapDef<IdSpace>, pos: GridPos): boolean {
+  const reachSq = BLOCKER_REACH_TILES * BLOCKER_REACH_TILES + 1e-9;
+  const routes = [...def.paths, ...(def.riftLanes ?? [])];
+  for (const r of routes) {
+    for (let i = 0; i < r.tiles.length; i++) {
+      const a = r.tiles[i]!; // i < length
+      const b = r.tiles[i + 1] ?? a;
+      if (segmentDistSq(pos, a, b) <= reachSq) return true;
+    }
+  }
+  return false;
+}
+
+/** Squared distance from tile `p`'s centre to the segment between tiles `a` and `b`'s centres. */
+function segmentDistSq(p: GridPos, a: GridPos, b: GridPos): number {
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  const len = dx * dx + dy * dy;
+  const t =
+    len === 0 ? 0 : Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / len));
+  const x = a[0] + t * dx - p[0];
+  const y = a[1] + t * dy - p[1];
+  return x * x + y * y;
+}
+
+/** [holdout] (T605b): a Holdout forces an input and ends the map by script (see the header). */
+function validateHoldout(issues: Issues, def: MapDef<IdSpace>, where: string): void {
+  if (def.objective !== 'holdout') return;
+  const actions = (def.events ?? []).flatMap((e) => e.actions);
+  if (!actions.some((a) => 'forceInput' in a)) {
+    issues.add('holdout', `${where}.events`, 'a Holdout needs an event with a `forceInput` action');
+  }
+  if (!actions.some((a) => 'endMap' in a)) {
+    issues.add('holdout', `${where}.events`, 'a Holdout needs an event with an `endMap` action');
   }
 }

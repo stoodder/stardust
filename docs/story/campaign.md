@@ -281,7 +281,7 @@ Per map: the **threat intel** (`threatIntel`: every trait present in the waves, 
 | A2M6 | Splitting, Hollow clusters, Flying + Phasing | Air, Splash | — | — | Skyhook, Rivet, Prism (gift); Thumper |
 | A3M1 | Gathering, Armored, Flying + Phasing, Splitting, Hollow clusters, Rift | Splash, Air | — | — | Thumper, Zapcoil; Skyhook; Scuttle Den (gift) |
 | A3M2 | Armored, Haste aura, Splitting, Hollow clusters, Rift | Armor, Splash | — | — | Harpoon (licensed before this map; 250 ≤ 280), Prism; Thumper or Zapcoil; survives either Everglow class revoked |
-| A3M3 | Burrowing, Gathering, Splitting, Hollow clusters, Flying + Phasing, Rift | Burrowed, Air, Splash | burrowed | — | Scuttle Den; non-Everglow air (Zapcoil, Prism, Harpoon); Thumper (the class not revoked) or Zapcoil |
+| A3M3 | Burrowing, Armored, Gathering, Splitting, Hollow clusters, Flying + Phasing, Rift | Burrowed, Air, Splash | burrowed | — | Scuttle Den; non-Everglow air (Zapcoil, Prism, Harpoon); Thumper (the class not revoked) or Zapcoil |
 | A3M4 | Jammer, Heavy armor, Armored, Haste aura, Flying + Phasing, Splitting (light), Hollow clusters (light), Rift | Jam, Armor, Air | jam | Mote and Fracture screens | System Reboot (free), Hum Choir (gift by now on both C1 paths); Harpoon, Prism, Gloop (warren), the jailbroken class; Rivet, Harpoon, Mindspike |
 | A3M5 | Jammer, Healer aura, Heavy armor, Armored, Haste aura, Splitting, Hollow clusters, Boss | Jam, Armor, Splash | — | — | System Reboot (not under Rewrite), Hum Choir; Harpoon, Prism, Gloop (warren); Thumper |
 | A3M6 | Flying + armored, Cloaked + armored, Armored, Flying + Phasing, Gathering, Haste aura, Hollow clusters (light), Rift, Boss | Air, Detection, Armor | — | Mote screens | Sproing (gift A3M5), Harpoon; Lookout or Lantern; Harpoon, Prism |
@@ -339,7 +339,7 @@ Flags are declared in `content/dialogue/flags.ts`. **§6.2 is the canonical flag
 |---|---|---|---|---|
 | **C1** The Quiet Wave | A1M5 W10. No UI, no prompt; Hold Fire is the only tool | (clear it, or hold fire) | `spared_quiet_wave` if Old Thrum leaks and ≥ 75% of the younglings do | None in A1M5 beyond Bricks's line, the memo paragraph, and the results stamp. Delayed echo in A3M1 if spared ("Old Thrum remembered."); none if cleared |
 | **C2** Zibzab's Price | A2M4 debrief, after the Q3 Bonus lands on the results screen. Two offers, price first, for the whole bank | "Sell it. Market price." / "Take it to them." | `stardust_choice` = `sold` / `returned` (`none` if the bank is 0) | None |
-| **C3** Which door | A3M3 briefing. Bricks: "Your call, Thorn. Which door do I hold?" | "The convoy. Goldie's people." / "The warren. Pebble's people." | `door_choice` = `convoy` / `warren` | "Goldie will remember that." / "The warren will remember that." |
+| **C3** Which door | A3M3 briefing. Bricks: "Your call, Thorn. Which door do I hold?" | "The convoy. Goldie's people." / "The warren. Pebble's people." | `door_choice` = `convoy` / `warren` | "Goldie will remember that." / "Bramble will remember that." (the warren's matriarch speaks for it) |
 | **C4** QUILL's directives | A3M4 debrief, after the mail scene | "Purge them. All of them." / "Keep them. Stay yourself." / "Write your own." | `quill_choice` = `purge` / `keep` / `rewrite` | "QUILL will remember that." |
 | **C5** Stay or Go | After Dawn, full-screen | "We stay. We keep the way open." / "We go. We give it back." | `ending_choice` = `stay` / `go` | None |
 

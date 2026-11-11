@@ -96,8 +96,8 @@ describe('the dialogue registries', () => {
 
   it('looks up scenes and maps safely', () => {
     expect(sceneById('__proto__')).toBeUndefined();
-    // A registered map whose dialogue is still a stub (T600b's folders): a3_m03 until T622 fills it.
-    expect(mapDialogue('a3_m03')).toEqual({ map: 'a3_m03', scenes: [], barks: [] });
+    // Every registered map's dialogue is filled (T622 filled the last stub, a3_m03).
+    expect(mapDialogue('a3_m03').scenes.map((s) => s.id)).toContain('a3_m03_cue_seal');
     expect(barksFor('a1_m03')).toEqual([...mapDialogue('a1_m03').barks, ...SHARED_BARKS]);
   });
 

@@ -32,7 +32,7 @@
 //   AllyHealthChanged fires each time his health crosses a whole percent (the HUD's bar and the
 //   vitals cue read `Ally.health` itself).
 import type { CompiledAllyPost, CompiledMapDef, CompiledRoute } from '../content/compiled.ts';
-import { BLOCKER_HEALTH_FLOOR } from '../content/rules.ts';
+import { BLOCKER_HEALTH_FLOOR, BLOCKER_REACH_TILES } from '../content/rules.ts';
 import type { DeepReadonly } from '../shared/types.ts';
 import type { IdSpace } from '../content/types.ts';
 import type { Ally, Enemy } from './entities.ts';
@@ -42,7 +42,7 @@ import { countdownTicksFor, runWaveModifiers } from './systems/waves.ts';
 import type { TickContext } from './tick.ts';
 
 /** How far from its post a route may pass and still be blocked: a path tile beside the post. */
-export const BLOCK_REACH_TILES = 1;
+export const BLOCK_REACH_TILES = BLOCKER_REACH_TILES;
 /** How far before the hold point a unit is taken (it stops there, in front of him). */
 export const BLOCK_FRONT_TILES = 0.5;
 /** Rounding slack for "past the hold point" (a held unit's `dist` never moves). */

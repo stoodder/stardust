@@ -20,8 +20,7 @@ const BEHIND_E: GridPos = [12, 7];
 /** Between each fork and the refugees' road: the fork, its rift's tail, and the road. */
 const FORK_W: GridPos = [6, 9];
 const FORK_E: GridPos = [14, 9];
-/** Beside each rift's long run down from the north edge. */
-const RIFT_W: GridPos = [4, 3];
+/** Beside the east rift's long run down from the north edge. */
 const RIFT_E: GridPos = [16, 3];
 /** Under the fork, over the refugees' road. */
 const MID: GridPos = [10, 10];

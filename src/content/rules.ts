@@ -612,3 +612,8 @@ export const LAMP_RADIUS_TILES = 1.5;
  * SEAL, whatever the player's DPS; AllyPostDef.block; T605). His timeline's keys stay at or above.
  */
 export const BLOCKER_HEALTH_FLOOR = 0.05;
+/**
+ * How far from its post a ground route may pass and still be blocked (sim/blocker.ts; T605): a path
+ * tile beside the post. Validation holds every blocker post within it of a ground route (T605b).
+ */
+export const BLOCKER_REACH_TILES = 1;

@@ -11,7 +11,9 @@
 //   upgrade and a spec needs tier 3 and an unlocked spec; ability steps have an ability to use
 //   (slot 2: a present companion or a pick);
 //   clear, interact, scriptInput, and holdFireWhile name things the map has (a tag a group
-//   carries, or 'neutral' on a map that spawns a neutral unit).
+//   carries, or 'neutral' on a map that spawns a neutral unit); on a map whose script forces an
+//   input (the Holdout's SEAL), the build's last step presses it (`scriptInput`; T605b), so every
+//   run can end.
 // - [no-counter-build]: `noCounterBuilds[c]` carries no answer to `c` (counterAnswers.ts: the
 //   tiers and specs its towers reach, from placements that reach its enemies' routes, on this
 //   map's act and enemies, and the abilities it casts).
@@ -421,6 +423,14 @@ function validateBuild(
   const cleared = new Set<string>();
   let lastWave = 1;
 
+  const last = b.steps.at(-1);
+  if (forced.size > 0 && (last === undefined || !('scriptInput' in last))) {
+    issues.add(
+      'build-step',
+      `${where}.steps`,
+      `the map forces an input ('${[...forced].join("', '")}'): the last step must press it (scriptInput)`,
+    );
+  }
   for (const [i, s] of b.steps.entries()) {
     const w = `${where}.steps[${i}]`;
     const bad = (msg: string): void => issues.add('build-step', w, msg);
