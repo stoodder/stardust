@@ -440,7 +440,9 @@ export function createEventSounds(
           const id = deathSound(e.enemy);
           if (id !== null) at(out, id, e.x, e.y, ENEMY_POP_PITCH[e.enemy] ?? 0);
           // A boss beaten with no BossEnded (the Gathering Maw's merged body): its sting.
-          const beaten = Object.hasOwn(BOSS_SOUNDS, e.enemy) ? BOSS_SOUNDS[e.enemy]?.beaten : undefined;
+          const beaten = Object.hasOwn(BOSS_SOUNDS, e.enemy)
+            ? BOSS_SOUNDS[e.enemy]?.beaten
+            : undefined;
           if (beaten !== undefined && !ended) out.push({ kind: 'cue', id: beaten });
           if (enemies.splits(e.enemy)) {
             const faction = enemies.faction(e.enemy);

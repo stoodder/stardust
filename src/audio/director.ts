@@ -49,7 +49,8 @@ const TITLE_LAYERS: LayerLevels = { base: 1, drums: 0, lead: 1, choir: 0 };
 
 /** The music for a battle in `mood`. A finished map is silent: its win or loss cue plays alone. */
 export function battleMusic(mood: BattleMood): MusicIntent {
-  const own = mood.map !== undefined && Object.hasOwn(MAP_THEME, mood.map) ? MAP_THEME[mood.map] : undefined;
+  const own =
+    mood.map !== undefined && Object.hasOwn(MAP_THEME, mood.map) ? MAP_THEME[mood.map] : undefined;
   const theme = own ?? BATTLE_THEME[mood.act] ?? BATTLE_THEME[1] ?? null;
   if (mood.outcome !== 'playing') return { theme, layers: SILENT, level: 0 };
   const finalWaves = mood.wave > 0 && mood.wave > mood.waveCount - LEAD_FINAL_WAVES;

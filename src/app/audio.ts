@@ -178,6 +178,20 @@ function bindSpeechAudio(ticker: TypeTicker): () => void {
   /** The scene on screen and how many transcript lines of it were seen (a pick joins it). */
   let sceneOf: string | null = null;
   let seen = 0;
+  /** Whether a silence's hush is held (SILENCE_HUSHES: Bricks's silences are truly silent). */
+  let hushBack: number | null = null;
+  const setSilenceHush = (h: ReturnType<typeof silenceHush>): void => {
+    if (h === null) {
+      if (hushBack === null) return;
+      engine.holdDuck(SILENCE_DUCK, null, hushBack);
+      engine.holdSfxDuck(SILENCE_DUCK, null);
+      hushBack = null;
+      return;
+    }
+    hushBack = h.backSec;
+    engine.holdDuck(SILENCE_DUCK, h.musicDuck, h.fadeSec);
+    engine.holdSfxDuck(SILENCE_DUCK, h.sfxDuck);
+  };
   const sing = (c: LineCue): void => {
     sung = true;
     engine.holdDuck(LINE_CUE_DUCK, c.musicDuck);
@@ -209,6 +223,7 @@ function bindSpeechAudio(ticker: TypeTicker): () => void {
     // further 8 dB for a moment as each spoken line starts, under its blip (D135).
     engine.holdSfxDuck('speech', l === null ? null : SPEECH_SFX_DUCK);
     if (l === null || l.id === lineId) {
+      if (l === null) setSilenceHush(null);
       if (l === null && sung) {
         sung = false;
         engine.holdDuck(LINE_CUE_DUCK, null);
@@ -216,6 +231,7 @@ function bindSpeechAudio(ticker: TypeTicker): () => void {
       return;
     }
     lineId = l.id;
+    setSilenceHush(l.silence ? silenceHush(l.speaker) : null);
     if (l.silence) return;
     const inScene = scene !== null && scene.line === l;
     const cue = lineCue(inScene ? scene.sceneId : null, l.speaker, l.text);
@@ -229,8 +245,62 @@ function bindSpeechAudio(ticker: TypeTicker): () => void {
     }
     engine.dipUnderSpeech();
     const blip = blipFor(l.speaker);
-    if (blip !== null && engine.play(blip)) ticker.blipped(performance.now());
+    // A line with its own sound (LINE_SFX: Pebble's knock-knock knocks first, then squeaks).
+    const own = lineSfx(l.speaker, l.text);
+    const delay = own?.blipDelaySec ?? 0;
+    if (own !== null) engine.play(own.sfx);
+    if (blip !== null && engine.play(blip, { delay }))
+      ticker.blipped(performance.now() + delay * 1000);
   });
+}
+
+/** The music and low sound effects a silence's hush holds (SILENCE_HUSHES). */
+const SILENCE_DUCK = 'silence';
+
+/**
+ * The Waykeeper sting (WAYKEEPER_STING): in A3M6's debrief, its cue plays as the callsign plate
+ * turns (T714's `plateTurned`: Pebble's naming line whole, then PLATE_TURN_HOLD_MS; at once under
+ * reduced motion, or when the line was passed before then). Once per showing. Returns the unwiring.
+ */
+function bindWaykeeperSting(): () => void {
+  let played = false;
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  const clear = (): void => {
+    if (timer !== null) clearTimeout(timer);
+    timer = null;
+  };
+  const sting = (): void => {
+    clear();
+    if (played) return;
+    played = true;
+    engine.cue(WAYKEEPER_STING.cue);
+  };
+  const off = effect(() => {
+    const view = dialogue.scene.value;
+    if (view === null || view.sceneId !== WAYKEEPER_STING.scene) {
+      clear();
+      played = false;
+      return;
+    }
+    if (played) return;
+    if (view.transcript.some(isNaming)) {
+      sting();
+      return;
+    }
+    const line = view.line;
+    clear();
+    if (line === null || !isNaming(line)) return;
+    const now = performance.now();
+    const { from, done } = view.typing;
+    const whole = done ? from : from + typeMs(line.text);
+    const due = prefersReducedMotion() ? now : Math.max(from, whole) + PLATE_TURN_HOLD_MS;
+    if (due <= now) sting();
+    else timer = setTimeout(sting, due - now);
+  });
+  return () => {
+    off();
+    clear();
+  };
 }
 
 /** The music duck a hushing cue holds (CUE_HUSHES) while it shows. */
@@ -346,6 +416,7 @@ export function installAudio(
     }),
     bindSpeechAudio(ticker),
     bindCueHushAudio(),
+    bindWaykeeperSting(),
     bindResultsAudio(),
     // Screens without a battle; a battle's frames drive its own music (bindBattleAudio).
     effect(() => {
@@ -394,6 +465,7 @@ export function bindBattleAudio(host: Host<IdSpace>): () => void {
     skitterkinDeath: dials.skitterkinDeath,
     winJingle: dials.winJingle,
     hollowDeath: dials.hollowDeath,
+    map: sim.map.id,
   };
   // What no event announces (digs, a sneeze's tell, a flock, the drone, a cloak's footsteps, a
   // charge's hum), from the state; and where the Hollow units stand, for their quiet.
@@ -533,6 +605,7 @@ export function bindBattleAudio(host: Host<IdSpace>): () => void {
           outcome: s.outcome,
           paused: host.speed === 0,
           choir: field.choirLive(),
+          map: sim.map.id,
         }),
       );
     }
