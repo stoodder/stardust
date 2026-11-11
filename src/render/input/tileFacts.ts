@@ -108,8 +108,9 @@ export function fillTileFacts(
 }
 
 /**
- * Whether the ability in slot `slot` targets the path (a segment: Suppressing Fire), so aiming it
- * only takes ground-route tiles; false for a strike (any tile) or an empty slot.
+ * Whether the ability in slot `slot` targets the path (a segment: Suppressing Fire; a path trap:
+ * Underfoot, T631), so aiming it only takes ground-route tiles (the sim's `onGroundRoute` rule);
+ * false for a strike (any tile) or an empty slot.
  */
 export function slotAimsAtPath(sim: Sim<IdSpace>, slot: 1 | 2 | null): boolean {
   if (slot === null) return false;
@@ -117,5 +118,6 @@ export function slotAimsAtPath(sim: Sim<IdSpace>, slot: 1 | 2 | null): boolean {
   const id = slot === 1 ? a.slot1 : a.slot2;
   const abilities = sim.config.content.abilities;
   if (id === null || !Object.hasOwn(abilities, id)) return false;
-  return abilities[id]?.effect.kind === 'segment';
+  const kind = abilities[id]?.effect.kind;
+  return kind === 'segment' || kind === 'pathTrap';
 }

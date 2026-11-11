@@ -43,23 +43,39 @@ export interface PreviewRing {
 
 /**
  * The placement preview's ring (scenes/BattleHover.ts): a tower without an attack (the Lookout)
- * shows its detection radius (T406); out of every light the ring shrinks with the dark and dims
- * (Sundown, T505), but only for a tower the dark shortens (`darkDims`: not the Lookout, not the
- * Lantern, whose beam reaches its detection radius; D138, D139 S2). `litAt` is asked only when it
- * matters. Writes into `out` (the hover runs every frame) and returns it.
+ * shows its detection radius (T406); a Hum Choir its song's reach (its widest `choir` aura) and a
+ * Stasis Bloom its field's, each × the radius tune-up `radiusPct` (T631: the aura preview,
+ * `choirReach`'s and `fieldReachTiles`'s rule before any link); out of every light the ring shrinks
+ * with the dark and dims (Sundown, T505), but only for a tower the dark shortens (`darkDims`: not
+ * the Lookout, not the Lantern, whose beam reaches its detection radius; D138, D139 S2). `litAt`
+ * is asked only when it matters. Writes into `out` (the hover runs every frame) and returns it.
  */
 export function previewRing(
   tier: {
     readonly attack: { readonly rangeTiles: number } | null;
     readonly detect: { readonly radiusTiles: number } | null;
+    readonly auras?: readonly { readonly kind: string; readonly radiusTiles: number }[];
+    readonly field?: { readonly radiusTiles: number } | null;
   },
   dark: number,
   litAt: () => boolean,
   out: PreviewRing,
+  radiusPct = 0,
 ): PreviewRing {
-  const range = tier.attack?.rangeTiles ?? tier.detect?.radiusTiles ?? 0;
+  const range =
+    tier.attack?.rangeTiles ?? tier.detect?.radiusTiles ?? supportReach(tier) * (1 + radiusPct);
   const lit = dark === 0 || !darkDims(tier) || litAt();
   out.rangeTiles = range * darkRangeMul(dark, lit);
   out.dimmed = !lit;
   return out;
+}
+
+/** A support tier's reach without its tune-up: its widest `choir` aura, else its field (T631). */
+function supportReach(tier: {
+  readonly auras?: readonly { readonly kind: string; readonly radiusTiles: number }[];
+  readonly field?: { readonly radiusTiles: number } | null;
+}): number {
+  let r = 0;
+  for (const a of tier.auras ?? []) if (a.kind === 'choir' && a.radiusTiles > r) r = a.radiusTiles;
+  return r > 0 ? r : (tier.field?.radiusTiles ?? 0);
 }

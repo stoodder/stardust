@@ -15,6 +15,7 @@ import {
   liveTileAt,
   salvageFor,
   segmentSpan,
+  supportPct,
   type SegmentSpan,
   type Sim,
 } from '../../sim/index.ts';
@@ -53,6 +54,10 @@ export interface BattleHoverDeps {
   readonly stillRadius?: readonly number[];
   /** Draws Stillness's aim (StillnessAimView). */
   readonly stills?: { setAim(col: number, row: number, radiusTiles: number): void };
+  /** Each slot aims a path trap (Underfoot; T631): its aim is a ghost snare on one path tile. */
+  readonly trapAim?: readonly boolean[];
+  /** Draws Underfoot's aim (TrapAimView). */
+  readonly trapAims?: { setAim(col: number, row: number): void };
   /** Draws the disc an armed light source (the Prism) would light, as a ghost (review R9). */
   readonly lightGhosts?: { setPreview(col: number, row: number, radiusSq: number): void };
 }
@@ -183,7 +188,13 @@ export class BattleHover {
       // dark shortens (input/ringRange.ts `previewRing`; T406, T505, D139).
       this.#litCol = tile.col;
       this.#litRow = tile.row;
-      const ring = previewRing(armed.tiers[0], sim.state.dark, this.#litAtHover, this.#ring);
+      const ring = previewRing(
+        armed.tiers[0],
+        sim.state.dark,
+        this.#litAtHover,
+        this.#ring,
+        supportPct(sim.config.modifiers, armed.id, 'radius'),
+      );
       placement.setRing(
         tile.col + 0.5,
         tile.row + 0.5,
@@ -260,8 +271,9 @@ export class BattleHover {
 
   /**
    * The aimed ability's feedback on the hovered tile: a strike's reticle at its real radius, a
-   * Scanner Sweep's own green circle at its radius (T431), Stillness's pale blue one (T531), or the stretch of path a segment would
-   * cover there (exactly the sim's `segmentSpan`, on every ground route through the tile).
+   * Scanner Sweep's own green circle at its radius (T431), Stillness's pale blue one (T531), the
+   * stretch of path a segment would cover there (exactly the sim's `segmentSpan`, on every ground
+   * route through the tile), or Underfoot's ghost snare on the one path tile (T631).
    */
   #syncAim(aim: boolean, tile: TileFacts, aiming: 1 | 2 | null): void {
     const { fx, strikeRadius, segmentReach, sweepRadius, sweeps, stillRadius, stills } = this.#deps;
@@ -270,6 +282,8 @@ export class BattleHover {
     const reach = segmentReach[slot] ?? 0;
     const sweep = sweepRadius?.[slot] ?? 0;
     const still = stillRadius?.[slot] ?? 0;
+    const trap = this.#deps.trapAim?.[slot] === true;
+    this.#deps.trapAims?.setAim(aim && trap ? tile.col : -1, tile.row);
     fx.setAim(aim && radius > 0 ? tile.col : -1, tile.row, radius);
     sweeps?.setAim(aim && sweep > 0 ? tile.col : -1, tile.row, sweep);
     stills?.setAim(aim && still > 0 ? tile.col : -1, tile.row, still);

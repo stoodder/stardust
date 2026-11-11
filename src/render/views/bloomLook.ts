@@ -6,9 +6,10 @@
 //   same reach, so the held ground reads at a glance without hiding the road. Cold `blue` for the
 //   tiers, `violet` for Gravity Well (the pull), `teal` for Timeless Garden (the stronger chill):
 //   the disc in the colour's `.3`, the ring in its `.4` (Act III's ground is a deep violet, so a
-//   `.2` disc vanished into it). The ring is whole while the pulse is **ready** (its timer run
-//   down: the next unit in pulses at once) and a step dimmer (60%) while it recharges
-//   (`ringAlpha`), so the player reads when it can fire again.
+//   `.2` disc vanished into it). The ring is the colour's `.4` while the pulse is **ready** (its
+//   timer run down: the next unit in pulses at once) and a step darker, its `.3`, while it
+//   recharges (`ringColor`), whole either way (night rings: partial alpha sinks into Act III's
+//   ground), so the player reads when it can fire again.
 // - **The pulse:** for PULSE_FLASH_TICKS after a pulse (the sim's pulse timer just reset:
 //   `pulseFlash`), the disc draws brighter (`.4`, more opaque), and the Bloom's own burst ring
 //   grows from the tower to the reach over PULSE_RING_TICKS in quarter-tile steps, stepping down
@@ -84,13 +85,9 @@ export function pulseFlash(t: BloomTower): boolean {
   return since >= 0 && since < PULSE_FLASH_TICKS;
 }
 
-/** The ring's alpha while the pulse is ready (its timer at 0), and while it recharges. */
-export const RING_READY_ALPHA = 1;
-export const RING_CHARGING_ALPHA = STEPPED_ALPHA[1];
-
-/** The edge ring's alpha: whole while the pulse is ready, a step dimmer while it recharges. */
-export function ringAlpha(t: Pick<BloomTower, 'cooldownTicks'>): number {
-  return t.cooldownTicks <= 0 ? RING_READY_ALPHA : RING_CHARGING_ALPHA;
+/** The edge ring's colour: the spec's `.4` while the pulse is ready, its `.3` while it recharges. */
+export function ringColor(t: Pick<BloomTower, 'cooldownTicks'>, colors: BloomColors): ColorName {
+  return t.cooldownTicks <= 0 ? colors.ring : colors.disc;
 }
 
 /** The burst ring grows to the reach over this many sim ticks (0.4 s), fading as it goes. */

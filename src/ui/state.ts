@@ -62,6 +62,11 @@ export interface AbilitySlotView {
    * for an untargeted ability (Time Dilation, Clearance Sale), which casts on the press.
    */
   readonly aim: 'area' | 'path' | 'none';
+  /**
+   * The aiming hint's words while it's aimed (`aimHintText`): "Pick a stretch of path", "Pick a path
+   * tile" (Underfoot, T631), "Pick a target". Absent: by `aim`.
+   */
+  readonly aimHint?: string;
   /** Its cooldown counts wave starts, not seconds (Clearance Sale: "Ready in 2 waves"). */
   readonly wavesCooldown: boolean;
   /**

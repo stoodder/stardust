@@ -26,7 +26,7 @@ import {
   pulseFlash,
   pulseRing,
   pulseRingImage,
-  ringAlpha,
+  ringColor,
   STREAK_MS,
   streakAlpha,
 } from './bloomLook.ts';
@@ -168,8 +168,7 @@ export class BloomView {
       const disc = this.#discs[n]!; // n < MAX_BLOOMS
       this.#show(disc, radius, flash ? colors.flash : colors.disc, flash, true, x, y);
       const ring = this.#rings[n]!; // n < MAX_BLOOMS
-      this.#show(ring, radius, colors.ring, false, false, x, y);
-      ring.img.setAlpha(ringAlpha(t));
+      this.#show(ring, radius, ringColor(t, colors), false, false, x, y);
       const burst = this.#bursts[n]!; // n < MAX_BLOOMS
       const b = pulseRing(t, reach, reduced);
       if (b.alpha > 0) {

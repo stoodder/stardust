@@ -5,7 +5,8 @@
 // - **The haste ring:** a solid `orange.3` ring over a 1 px `ink.0` under-stroke at the aura's
 //   radius round every unit projecting one (the sim's `projectedHaste`), beating like a metronome:
 //   bright for METRONOME_HIGH_TICKS of every METRONOME_TICKS (2 beats a second, on sim time, so it
-//   holds while paused and keeps pace at 2×), a step dimmer between. On each beat it **swells**: an
+//   holds while paused and keeps pace at 2×), a step dimmer between (at night, Act III and the
+//   finale, whole and a step brighter, `orange.4`, on the beat instead: `hasteRingLook`). On each beat it **swells**: an
 //   `orange.4` echo ring ticks out SWELL_PX beyond it, then a step further (`swellPx`), and is gone
 //   by the next beat, so the ring reads as keeping time. Solid, where the Cantor's shield ring is
 //   dashed and crawling, so the two auras read apart at a glance. Steady (bright, no swell) under
@@ -39,6 +40,24 @@ export const SWELL_PX = 2;
 /** The metronome: one beat every this many sim ticks (2 a second at 60 Hz), bright this long. */
 export const METRONOME_TICKS = 30;
 export const METRONOME_HIGH_TICKS = 6;
+
+/** The ring's colour on the beat on a night map (a step brighter than HASTE_COLOR). */
+export const HASTE_BEAT_COLOR: ColorName = 'orange.4';
+
+/**
+ * The haste ring's look at sim tick `tick`: by day (Acts I–II) `orange.3`, bright on the beat and a
+ * step dimmer between; at night (`night`: Act III and the finale, `nightRings`), where partial alpha
+ * sinks into the near-black ground, always whole, beating a step brighter (`orange.4`) instead.
+ */
+export function hasteRingLook(
+  tick: number,
+  reducedMotion: boolean,
+  night: boolean,
+): { readonly color: ColorName; readonly alpha: number } {
+  const high = metronomeHigh(tick, reducedMotion);
+  if (night) return { color: high ? HASTE_BEAT_COLOR : HASTE_COLOR, alpha: 1 };
+  return { color: HASTE_COLOR, alpha: high ? RING_ALPHA_HIGH : RING_ALPHA_LOW };
+}
 
 /** Whether the ring is on its beat at sim tick `tick` (always, under reduced motion). */
 export function metronomeHigh(tick: number, reducedMotion: boolean): boolean {

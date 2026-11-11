@@ -223,6 +223,8 @@ export interface RenderState {
   readonly sweepAim: boolean;
   /** Stillness's aim preview shows (T531: its own blue circle, not the strike's reticle). */
   readonly stillAim: boolean;
+  /** Underfoot's ghost snare: the path tile it lies on (column −1: none; T631). */
+  readonly trapAim?: { readonly col: number; readonly row: number };
   /**
    * SpecFx's (T407b): capacitor orbs and Flak Curtain puffs showing now, discharges and fizzles
    * since the battle began, and seekers in flight with their trails.

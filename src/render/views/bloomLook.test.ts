@@ -9,8 +9,7 @@ import {
   pulseFlash,
   pulseRing,
   pulseRingImage,
-  RING_CHARGING_ALPHA,
-  ringAlpha,
+  ringColor,
   STREAK_MS,
   streakAlpha,
   type BloomTower,
@@ -69,10 +68,10 @@ describe('the Bloom look (T608)', () => {
 });
 
 describe('the Bloom look, polished (T630a)', () => {
-  it('its ring is whole while the pulse is ready, a step dimmer while it recharges', () => {
-    expect(ringAlpha(tower({ cooldownTicks: 0 }))).toBe(1);
-    expect(ringAlpha(tower({ cooldownTicks: 40 }))).toBe(RING_CHARGING_ALPHA);
-    expect(STEPPED_ALPHA).toContain(RING_CHARGING_ALPHA);
+  it("its ring is the spec's .4 while the pulse is ready, a step darker while it recharges", () => {
+    const c = bloomColors({ spec: 'a' });
+    expect(ringColor(tower({ cooldownTicks: 0 }), c)).toBe('violet.4');
+    expect(ringColor(tower({ cooldownTicks: 40 }), c)).toBe('violet.3');
   });
 
   it('its burst ring grows to the reach in quarter tiles after a pulse, fading down the ladder', () => {

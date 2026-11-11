@@ -212,7 +212,7 @@ export function AbilityBar() {
       {/* Placed beside the whole bottom-left cluster (hud.css), after the fire control. */}
       {aimed !== undefined && (
         <div class="hud-aim-hint chamfer" role="status">
-          {aimed.aim === 'path' ? 'Pick a stretch of path' : 'Pick a target'}
+          {aimed.aimHint ?? (aimed.aim === 'path' ? 'Pick a stretch of path' : 'Pick a target')}
           {/* With the keyboard cursor up, Enter is how it fires (T213). */}
           {hud.cursorShown.value && (
             <span class="dim">

@@ -109,6 +109,7 @@ import { SwarmView } from '../views/SwarmView.ts'; // T604
 import { TrapView } from '../views/TrapView.ts'; // T604
 import { RevokedView } from '../views/RevokedView.ts'; // T606
 import { towerVoice } from '../views/towerLook.ts'; // T630a
+import { nightRings } from '../views/nightRings.ts'; // T630a
 import { MindView } from '../views/MindView.ts';
 import { MarkView } from '../views/MarkView.ts';
 import { BossBarView } from '../views/BossBarView.ts';
@@ -125,6 +126,7 @@ import { DarknessView } from '../views/DarknessView.ts';
 import { WorldGlowView } from '../views/WorldGlowView.ts';
 import { SweepView } from '../views/SweepView.ts';
 import { StillnessAimView } from '../views/StillnessAimView.ts';
+import { TrapAimView } from '../views/TrapAimView.ts'; // T631: Underfoot's aim
 import { LightGhostView } from '../views/LightGhostView.ts';
 import { FxView } from '../views/FxView.ts';
 import { HarpoonView } from '../views/HarpoonView.ts';
@@ -244,6 +246,7 @@ export class BattleScene extends Phaser.Scene {
   #sweeps!: SweepView;
   /** Stillness's aim preview (T531). */
   #stillAim!: StillnessAimView;
+  #trapAim!: TrapAimView; // T631
   /** A resting Prism's ghost light disc, and the armed Prism's preview (review R9). */
   #lightGhosts!: LightGhostView;
   #wreckage!: WreckageView;
@@ -328,6 +331,8 @@ export class BattleScene extends Phaser.Scene {
   readonly #sweepRadius: [number, number] = [0, 0];
   /** Each slot's Stillness radius: aiming it previews its own circle (T531). */
   readonly #stillRadius: [number, number] = [0, 0];
+  /** Each slot aims Underfoot's trap: its aim is a ghost snare on one path tile (T631). */
+  readonly #trapAimSlots: [boolean, boolean] = [false, false];
   readonly #segmentReach: [number, number] = [0, 0];
   readonly #muzzle: Vec2 = { x: 0, y: 0 };
   /** The pointer's spot (game px; scratch), and the enemy hovered there (0: none). */
@@ -420,6 +425,7 @@ export class BattleScene extends Phaser.Scene {
     );
     this.#sweeps = new SweepView(ctx, this.#fx);
     this.#stillAim = new StillnessAimView(ctx);
+    this.#trapAim = new TrapAimView(ctx); // T631
     this.#lightGhosts = new LightGhostView(ctx, hasDarkness(map));
     // A salvaged tile is drawn after the dusk grade: the grade goes back over it (D135).
     this.#wreckage = new WreckageView(ctx, map, wreckProps, this.#fx, () =>
@@ -439,7 +445,7 @@ export class BattleScene extends Phaser.Scene {
     // T530a: views that mark a unit find its body as EnemyView draws it (unitAnchor.ts).
     const anchors: UnitAnchors = { box: (uid, out) => this.#enemies.get(uid)?.box(out) ?? false };
     this.#auras = new ShieldAuraView(ctx, prefersReducedMotion, anchors);
-    this.#everglow = new EverglowView(ctx, prefersReducedMotion, anchors);
+    this.#everglow = new EverglowView(ctx, prefersReducedMotion, anchors, nightRings(map.env)); // T630a
     this.#wards = new WardView(
       ctx,
       (id) => this.#deps.sim.config.content.enemies[id]?.sprites.body ?? `enemy.${id}`,
@@ -515,6 +521,7 @@ export class BattleScene extends Phaser.Scene {
       this.#strikeRadius[slot - 1] = e?.kind === 'strike' ? radius : 0;
       this.#sweepRadius[slot - 1] = e?.kind === 'reveal' ? radius : 0;
       this.#stillRadius[slot - 1] = e?.kind === 'stasisArea' ? radius : 0;
+      this.#trapAimSlots[slot - 1] = e?.kind === 'pathTrap'; // T631
       this.#segmentReach[slot - 1] = e?.kind === 'segment' ? e.reachTiles : 0;
     }
     this.#built = false;
@@ -535,6 +542,8 @@ export class BattleScene extends Phaser.Scene {
       sweeps: this.#sweeps,
       stillRadius: this.#stillRadius,
       stills: this.#stillAim,
+      trapAim: this.#trapAimSlots, // T631
+      trapAims: this.#trapAim,
       lightGhosts: this.#lightGhosts,
     });
 
@@ -618,6 +627,7 @@ export class BattleScene extends Phaser.Scene {
       this.#glow.reset();
       this.#sweeps.reset();
       this.#stillAim.reset();
+      this.#trapAim.reset(); // T631
       this.#lightGhosts.reset();
       this.#wreckage.reset();
       this.#tidybots.reset();
@@ -869,6 +879,7 @@ export class BattleScene extends Phaser.Scene {
       floats: this.#fx.floatsUp,
       sweepAim: this.#sweeps.aiming,
       stillAim: this.#stillAim.aiming,
+      trapAim: this.#trapAim.at, // T631
       specs: {
         glows: this.#specs.glows,
         puffs: this.#specs.puffs,

@@ -537,6 +537,7 @@ export function abilitySlots(cfg: AbilityConfig): AbilitySlotView[] {
       key: ABILITY_KEYS[slot],
       description: silkText(abilityDescription(def, abilityStats(def, cfg.modifiers))),
       aim: aimOf(def.effect.kind),
+      aimHint: aimHintText(def.effect.kind),
       wavesCooldown: def.cooldownWaves > 0,
       absent,
       companion: slot === 2 ? companionView(cfg.companion) : null,
@@ -554,7 +555,7 @@ export function abilitySlots(cfg: AbilityConfig): AbilitySlotView[] {
 export function aimOf(kind: CompiledAbilityEffect['kind']): AbilitySlotView['aim'] {
   switch (kind) {
     case 'segment':
-    case 'pathTrap': // Underfoot: one path tile (T600a seam; T631 draws its aim)
+    case 'pathTrap': // Underfoot: one path tile (TrapAimView draws its ghost snare; T631)
       return 'path';
     case 'strike':
     case 'reveal':
@@ -566,6 +567,15 @@ export function aimOf(kind: CompiledAbilityEffect['kind']): AbilitySlotView['aim
     default:
       return assertNever(kind);
   }
+}
+
+/**
+ * The aiming hint's words for an ability (AbilityBar, while it's aimed): a segment picks a stretch
+ * of path, Underfoot's trap one path tile (T631), anything else a target.
+ */
+export function aimHintText(kind: CompiledAbilityEffect['kind']): string {
+  if (kind === 'pathTrap') return 'Pick a path tile';
+  return aimOf(kind) === 'path' ? 'Pick a stretch of path' : 'Pick a target';
 }
 
 /** The cooldown each ability slot starts when cast (`abilityStats`), by slot (0 when empty). */

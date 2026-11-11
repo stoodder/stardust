@@ -18,6 +18,7 @@
 // texture (bright and dim are one texture at two alphas) and its two swells are registered once.
 import type * as Phaser from 'phaser';
 import type { CompiledEnemyDef } from '../../content/compiled.ts';
+import type { ColorName } from '../../content/palettes/master.ts';
 import type { SkitterkinDeath } from '../../content/presentation.ts';
 import type { IdSpace } from '../../content/types.ts';
 import type { Bus } from '../../shared/bus.ts';
@@ -28,11 +29,8 @@ import { imageToCanvas } from '../sprites/canvas.ts';
 import type { SpriteSource } from '../sprites/SpriteSource.ts';
 import { ringImage, snapRingRadius } from '../vfx/overlayPixels.ts';
 import {
-  HASTE_COLOR,
   HASTE_UNDER,
-  metronomeHigh,
-  RING_ALPHA_HIGH,
-  RING_ALPHA_LOW,
+  hasteRingLook,
   screenHeading,
   SHUTDOWN_MS,
   shutdownLine,
@@ -99,6 +97,7 @@ interface Ring {
   /** The swell's echo ring, shown on the beat. */
   readonly swell: Phaser.GameObjects.Image;
   radius: number;
+  color: ColorName | null;
   /** The swell texture it shows now (px out, snapped radius), so a frame rebuilds no key. */
   swellPx: number;
   swellR: number;
@@ -135,7 +134,9 @@ export class EverglowView {
   readonly #reducedMotion: () => boolean;
   readonly #anchors: UnitAnchors;
   readonly #rings: Ring[] = [];
-  readonly #frames = new Map<number, { key: string; ox: number; oy: number }>();
+  readonly #frames = new Map<string, { key: string; ox: number; oy: number }>();
+  /** Night rings (Act III, the finale: nightRings.ts): whole, beating brighter. */
+  readonly #night: boolean;
   readonly #swells = new Map<string, { key: string; ox: number; oy: number }>();
   readonly #lines: Mark[] = [];
   readonly #shutdowns: Shutdown[] = [];
@@ -146,8 +147,14 @@ export class EverglowView {
   /** Shutdowns played since the battle began (the smoke flow's check). */
   shutdownsPlayed = 0;
 
-  constructor(ctx: ViewContext, reducedMotion: () => boolean, anchors: UnitAnchors = NO_ANCHORS) {
+  constructor(
+    ctx: ViewContext,
+    reducedMotion: () => boolean,
+    anchors: UnitAnchors = NO_ANCHORS,
+    night = false,
+  ) {
     this.#ctx = ctx;
+    this.#night = night;
     this.#reducedMotion = reducedMotion;
     this.#anchors = anchors;
     const textures = ctx.scene.textures;
@@ -166,7 +173,7 @@ export class EverglowView {
       const swell = ctx.scene.make.image({}, false).setVisible(false);
       ctx.layers.decal.add(swell);
       ctx.layers.decal.add(img);
-      this.#rings.push({ img, swell, radius: 0, swellPx: 0, swellR: 0 });
+      this.#rings.push({ img, swell, radius: 0, color: null, swellPx: 0, swellR: 0 });
     }
     for (let i = 0; i < MAX_LINES; i++) {
       const img = ctx.scene.make.image({}, false).setVisible(false);
@@ -251,7 +258,8 @@ export class EverglowView {
 
   update(enemies: HastePool, tick: number, dtMs: number): void {
     const reduced = this.#reducedMotion();
-    const alpha = metronomeHigh(tick, reduced) ? RING_ALPHA_HIGH : RING_ALPHA_LOW;
+    const look = hasteRingLook(tick, reduced, this.#night);
+    const alpha = look.alpha;
     const swell = swellPx(tick, reduced);
     let r = 0;
     let l = 0;
@@ -262,10 +270,11 @@ export class EverglowView {
       const placed = (aura !== null || e.auraHastePct > 0) && this.#anchors.box(e.uid, body);
       if (aura !== null && r < MAX_RINGS) {
         const ring = this.#rings[r++]!; // r < MAX_RINGS
-        if (ring.radius !== aura.radiusTiles) {
-          const f = this.#frameFor(aura.radiusTiles);
+        if (ring.radius !== aura.radiusTiles || ring.color !== look.color) {
+          const f = this.#frameFor(aura.radiusTiles, look.color);
           ring.img.setTexture(f.key).setDisplayOrigin(f.ox, f.oy);
           ring.radius = aura.radiusTiles;
+          ring.color = look.color;
         }
         if (placed) {
           pos.x = body.x;
@@ -419,18 +428,18 @@ export class EverglowView {
     ring.swell.setPosition(x, y).setAlpha(SWELL_ALPHA).setVisible(true);
   }
 
-  /** The ring texture for a radius, registered on first use. */
-  #frameFor(radiusTiles: number): { key: string; ox: number; oy: number } {
+  /** The ring texture for a radius and colour, registered on first use (on a change only). */
+  #frameFor(radiusTiles: number, color: ColorName): { key: string; ox: number; oy: number } {
     const r = snapRingRadius(radiusTiles);
-    const cached = this.#frames.get(r);
+    const key = `fx.haste_ring.${color}.${r}`;
+    const cached = this.#frames.get(key);
     if (cached !== undefined) return cached;
-    const key = `fx.haste_ring.${r}`;
-    const ring = ringImage(r, HASTE_COLOR, false, HASTE_UNDER);
+    const ring = ringImage(r, color, false, HASTE_UNDER);
     if (!this.#ctx.scene.textures.exists(key)) {
       this.#ctx.scene.textures.addCanvas(key, imageToCanvas(ring.image));
     }
     const f = { key, ox: ring.cx, oy: ring.cy };
-    this.#frames.set(r, f);
+    this.#frames.set(key, f);
     return f;
   }
 }
