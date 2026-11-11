@@ -7,11 +7,15 @@ import type { PurchasePrice } from './economy.ts';
 import type { Point } from './path.ts';
 import type { SimState } from './state.ts';
 import { traps } from './abilities/underfoot.ts';
+import { bearers } from './bearers.ts';
 import { blockers } from './blocker.ts';
 import { darkness } from './darkness.ts';
 import { createGatherScratch, type GatherScratch } from './enemyAbilities/gather.ts';
 import { enemyAbilities } from './enemyAbilities/index.ts';
 import { forcedInput } from './forcedInput.ts';
+import { jams } from './jam.ts';
+import { leapers } from './leapers.ts';
+import { puddles } from './puddles.ts';
 import { rifts } from './rifts.ts';
 import { swarmlings } from './swarmlings.ts';
 import { abilities } from './systems/abilities.ts';
@@ -84,15 +88,19 @@ export type SystemName =
   | 'fields'
   | 'links'
   | 'enemyAbilities'
+  | 'jams'
   | 'blockers'
   | 'abilities'
   | 'movement'
   | 'traps'
+  | 'puddles'
   | 'detection'
   | 'towers'
   | 'darkness'
   | 'swarmlings'
+  | 'leapers'
   | 'allies'
+  | 'bearers'
   | 'projectiles'
   | 'cleanup';
 
@@ -101,7 +109,10 @@ export type SystemName =
  * in their own file: rifts (sim/rifts.ts), forcedInput and blockers (sim/forcedInput.ts,
  * sim/blocker.ts), fields (systems/fields.ts), traps (abilities/underfoot.ts) and swarmlings
  * (sim/swarmlings.ts); gathering and haste auras run inside enemyAbilities, and the aura rule and
- * Lulled inside links and status (systems/auras.ts, systems/status.ts `lullPass`).
+ * Lulled inside links and status (systems/auras.ts, systems/status.ts `lullPass`). M7's slots
+ * (T700a): jams (sim/jam.ts, T702), puddles (sim/puddles.ts, T705), leapers (sim/leapers.ts,
+ * T704), and bearers (sim/bearers.ts, T706); the healer aura and the M7 boss phases run inside
+ * enemyAbilities.
  */
 export const SYSTEMS: readonly { readonly name: SystemName; readonly run: System }[] =
   Object.freeze([
@@ -115,15 +126,19 @@ export const SYSTEMS: readonly { readonly name: SystemName; readonly run: System
     { name: 'fields', run: fields }, // T608: the Bloom's chill and pulse, before the tells
     { name: 'links', run: links },
     { name: 'enemyAbilities', run: enemyAbilities },
+    { name: 'jams', run: jams }, // T702: after the jammers' tells, before the towers fire
     { name: 'blockers', run: blockers }, // T605: a held unit doesn't step this tick
     { name: 'abilities', run: abilities },
     { name: 'movement', run: movement },
     { name: 'traps', run: traps }, // T604: Underfoot judges this tick's crossings
+    { name: 'puddles', run: puddles }, // T705: Big Glorp's puddles, where units stand now
     { name: 'detection', run: detection },
     { name: 'towers', run: towers },
     { name: 'darkness', run: darkness }, // Sundown (T505): after the towers, as render draws it
     { name: 'swarmlings', run: swarmlings }, // T604: after the towers (a sold Den's call home)
+    { name: 'leapers', run: leapers }, // T704: the Sproing Pad's leapers, after the towers
     { name: 'allies', run: allies },
+    { name: 'bearers', run: bearers }, // T706: after the allies walk them
     { name: 'projectiles', run: projectiles },
     { name: 'cleanup', run: cleanup },
   ]);

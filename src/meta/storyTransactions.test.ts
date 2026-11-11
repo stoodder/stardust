@@ -271,7 +271,7 @@ function isMapId(id: string): id is MapId {
 
 describe('Act III part one (T600b): briefing gifts, revocation, C3', () => {
   it("gives A3M1's Scuttle Den in its briefing, once a save", () => {
-    expect(BRIEFING_GIFTS).toEqual({ a3_m01: ['burrow'] });
+    expect(BRIEFING_GIFTS.a3_m01).toEqual([{ tower: 'burrow' }]);
     const save = deepFreeze(createNewSave());
     const r = briefingGifts(save, 'a3_m01');
     expect(r.transactions).toEqual([{ kind: 'gift', tower: 'burrow' }]);

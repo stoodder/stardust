@@ -563,6 +563,7 @@ export function aimOf(kind: CompiledAbilityEffect['kind']): AbilitySlotView['aim
       return 'area';
     case 'slowAll':
     case 'discount':
+    case 'reboot': // System Reboot clears every jam on the press (T700a seam; T702 runs it)
       return 'none';
     default:
       return assertNever(kind);

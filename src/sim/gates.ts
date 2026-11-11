@@ -13,8 +13,10 @@
 // abilities, bosses, and optional objectives; T400a: the hush rule, Skittish, shield pulses, blinks,
 // cloaks, Protect, revisits, and clickable objects; T500a: phasing, shield auras, a boss's
 // shield-broken phase, Escort, and Sundown's darkness; T600a: gathering, haste auras, rift lanes,
-// the Holdout, and blockers). The loadout adds T600a's Lullaby and the Bloom's field, and slot 2
-// Underfoot's trap (`pathTrap`). Wreckage needs no gate: the `clear`
+// the Holdout, and blockers; T700a: jamming (the tendril, the ring), healer auras, the M7 boss
+// phases, bearers, and flag-gated ally posts). The loadout adds T600a's Lullaby and the Bloom's
+// field, and slot 2 Underfoot's trap (`pathTrap`); T700a the Sproing Pad's leapers, Big Glorp's
+// puddle, System Reboot (`reboot`), and C4 Purge's faction armor modifier. Wreckage needs no gate: the `clear`
 // command and the salvage drone run since T304b (systems/wreckage.ts).
 //
 // A tower registered ahead of its task (content/towers/index.ts STUB_TOWER_TASKS, which names
@@ -55,6 +57,8 @@ export type Feature =
   | 'attack.homing'
   | 'attack.charge'
   | 'attack.line'
+  /** The Sproing Pad's leapers (T704). */
+  | 'attack.leaper'
   /** An attack with a `targetFilter` (Magnet Crane; T408). */
   | 'attack.targetFilter'
   | 'status.pinned'
@@ -87,6 +91,10 @@ export type Feature =
   | 'status.lulled'
   /** A tier with `field` (the Stasis Bloom; T608). */
   | 'tower.field'
+  /** A tier with `puddle` (the Gloop Spitter's Big Glorp; T705). */
+  | 'tower.puddle'
+  /** System Reboot (`reboot`; T702). */
+  | 'ability.reboot'
   /** A wave group of flyers: an air-layer enemy or an air lane (air targeting; T304a). */
   | 'enemy.flying'
   /** A neutral unit in the waves (Gerald: targeted, never hurt, never leaks). */
@@ -121,6 +129,23 @@ export type Feature =
   | 'enemy.gather'
   /** A haste aura (the Expediter; T603). */
   | 'enemy.hasteAura'
+  /** Jamming (enemies.md § 4): the Jammed state and a `tendril` jammer (the Silencer; T702). */
+  | 'enemy.jam'
+  /** A `ring` jammer (the Auditor; T707). */
+  | 'enemy.jam.ring'
+  /** A healer aura (the Maintenance Associate; T703). */
+  | 'enemy.healAura'
+  /** M7's boss phase kinds: Shareholder Value's hangar, Hostile Takeover, and jettison (T707). */
+  | 'enemy.boss.hangar'
+  | 'enemy.boss.takeover'
+  | 'enemy.boss.jettison'
+  /** The Gathering Maw's phase gather (T708) and its split and merge (T708). */
+  | 'enemy.boss.gather'
+  | 'enemy.boss.split'
+  /** Bearer groups (`kind: 'bearer'`, A3M5's asset that walks; T706). */
+  | 'map.bearers'
+  /** An ally post gated on a story flag (`AllyPostDef.when`: A3M6's militia; T706). */
+  | 'ally.flagGated'
   /** Rift lanes: Hollow routes that open at a wave, telegraphed a wave ahead (T602). */
   | 'map.rift'
   /** The Holdout (A3M3; no defeat, an Evacuated score, ended by script; T605). */
@@ -146,6 +171,8 @@ export type Feature =
   | 'modifier.towerStat'
   | 'modifier.towerCost'
   | 'modifier.enemyStat'
+  /** A faction's armor (C4 Purge's −2 on Everglow, min 0; T703). */
+  | 'modifier.enemyStat.faction'
   | 'modifier.economy.startCredits'
   | 'modifier.economy.coreIntegrity'
   | 'modifier.economy.bounty'
@@ -211,6 +238,7 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   'modifier.towerStat': null,
   'modifier.towerCost': null,
   'modifier.enemyStat': null,
+  'modifier.enemyStat.faction': 'T703',
   'modifier.economy.startCredits': null,
   'modifier.economy.coreIntegrity': null,
   'modifier.economy.bounty': null,
@@ -252,6 +280,22 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   // Holdout and Bricks's block (T605).
   'enemy.gather': null,
   'enemy.hasteAura': null,
+  // M7 (D146; T700a rows): jamming and System Reboot (T702), Everglow's healer and C4 Purge's armor
+  // (T703), the Sproing Pad (T704), the Gloop Spitter's puddle (T705), bearers and flag-gated
+  // posts (T706), the Auditor and Shareholder Value (T707), the Gathering Maw (T708).
+  'attack.leaper': 'T704',
+  'tower.puddle': 'T705',
+  'ability.reboot': 'T702',
+  'enemy.jam': 'T702',
+  'enemy.jam.ring': 'T707',
+  'enemy.healAura': 'T703',
+  'enemy.boss.hangar': 'T707',
+  'enemy.boss.takeover': 'T707',
+  'enemy.boss.jettison': 'T707',
+  'enemy.boss.gather': 'T708',
+  'enemy.boss.split': 'T708',
+  'map.bearers': 'T706',
+  'ally.flagGated': 'T706',
   'map.rift': null,
   'map.holdout': null,
   'ally.blocker': null,
@@ -264,9 +308,9 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   'run.checkpoints': null,
 });
 
-type GatedKind = 'projectile' | 'beam' | 'chain' | 'spawner' | 'charge' | 'line';
+type GatedKind = 'projectile' | 'beam' | 'chain' | 'spawner' | 'charge' | 'line' | 'leaper';
 type GatedStatus = 'pinned' | 'stasis' | 'unnerved';
-type GatedEffect = 'slowAll' | 'discount' | 'reveal' | 'stasisArea' | 'pathTrap';
+type GatedEffect = 'slowAll' | 'discount' | 'reveal' | 'stasisArea' | 'pathTrap' | 'reboot';
 
 function isGatedKind(kind: AttackKind): kind is GatedKind {
   return (
@@ -275,7 +319,8 @@ function isGatedKind(kind: AttackKind): kind is GatedKind {
     kind === 'chain' ||
     kind === 'spawner' ||
     kind === 'charge' ||
-    kind === 'line'
+    kind === 'line' ||
+    kind === 'leaper'
   );
 }
 
@@ -289,12 +334,14 @@ function isGatedEffect(kind: AbilityEffect['kind']): kind is GatedEffect {
     kind === 'discount' ||
     kind === 'reveal' ||
     kind === 'stasisArea' ||
-    kind === 'pathTrap'
+    kind === 'pathTrap' ||
+    kind === 'reboot'
   );
 }
 
 /** The gate a modifier needs open. */
 export function modifierFeature(m: Modifier<IdSpace>): Feature {
+  if (m.kind === 'enemyStat' && m.stat === 'armor') return 'modifier.enemyStat.faction';
   return m.kind === 'economy' ? economyFeature(m.stat) : `modifier.${m.kind}`;
 }
 
@@ -327,6 +374,7 @@ interface GateTier {
   readonly markArea?: object | null;
   readonly lull?: object | null;
   readonly field?: object | null;
+  readonly puddle?: object | null;
 }
 
 /** The attack kinds, statuses, and tier abilities `tiers` use that have gates. */
@@ -353,6 +401,7 @@ function useTiers(tiers: readonly GateTier[], id: string, use: Use): void {
     }
     if (tier.lull !== undefined && tier.lull !== null) use('status.lulled', `Lullaby (${id})`);
     if (tier.field !== undefined && tier.field !== null) use('tower.field', `a field (${id})`);
+    if (tier.puddle !== undefined && tier.puddle !== null) use('tower.puddle', `a puddle (${id})`);
     for (const e of [...(tier.effects ?? []), ...(a?.burst?.effects ?? [])]) {
       const status = e.status;
       if (status !== undefined && isGatedStatus(status)) {
@@ -394,6 +443,19 @@ function useEnemy(def: CompiledEnemyDef, flyingRoute: boolean, use: Use): void {
   if (phases.some((p) => p.onShieldBroken || p.shards !== null)) {
     use('enemy.boss.shieldBroken', `a shield-broken phase (${id})`);
   }
+  // M7 (T700a).
+  if (def.jam !== null) {
+    use(def.jam.kind === 'ring' ? 'enemy.jam.ring' : 'enemy.jam', `a '${def.jam.kind}' jam (${id})`);
+  }
+  if (def.healAura !== null) use('enemy.healAura', `a healer aura (${id})`);
+  if (phases.some((p) => p.hangar !== null)) use('enemy.boss.hangar', `a hangar (${id})`);
+  if (phases.some((p) => p.takeover !== null)) {
+    use('enemy.jam', `Hostile Takeover's jam (${id})`);
+    use('enemy.boss.takeover', `Hostile Takeover (${id})`);
+  }
+  if (phases.some((p) => p.jettison !== null)) use('enemy.boss.jettison', `a jettison (${id})`);
+  if (phases.some((p) => p.gather !== null)) use('enemy.boss.gather', `a boss's gather (${id})`);
+  if (phases.some((p) => p.split !== null)) use('enemy.boss.split', `a boss split (${id})`);
 }
 
 /** The features a map needs from its waves and layout (T300a; T400a). */
@@ -422,6 +484,13 @@ function useMap(map: CompiledMapDef<IdSpace>, use: Use): void {
   if (map.objective === 'holdout') use('map.holdout', 'a Holdout');
   for (const a of map.allies) {
     if (a.block !== null) use('ally.blocker', `a blocker ('${a.kind}' at '${a.post}')`);
+    if (a.when !== null) use('ally.flagGated', `a flag-gated post ('${a.kind}' at '${a.post}')`);
+  }
+  const bearers = (map.escort?.groups ?? []).filter((g) => g.kind === 'bearer').map((g) => g.id);
+  if (bearers.length > 0) use('map.bearers', `bearers (${bearers.join(', ')})`);
+  // A script group walks in only by `spawnWave` (SCRIPT_GATES), but its units are the map's too.
+  for (const g of Object.values(map.scriptGroups)) {
+    useEnemy(g.enemy, g.route.kind === 'air', use);
   }
 }
 

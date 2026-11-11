@@ -19,6 +19,9 @@
 // - `objectiveDone`: another optional objective of the map is `done` (T400a; settled once that
 //   objective settles).
 // - `flag`: a story flag from `SimConfig.scriptFlags` (fixed for the run; unset never matches).
+// - `cleared` (T700a seam): every listed wreckage marker cleared before wave `byWave` starts (Cut
+//   the Feed). Judged by T706; until then createSim refuses it (systems/triggers.ts SCRIPT_GATES),
+//   and here it reads false and never settles.
 // - `all`, `any`, `not`.
 //
 // settledCondition() says whether the rest of the run can still change a condition's value: a

@@ -34,7 +34,7 @@ import type {
   CompiledScriptAction,
   CompiledScriptTrigger,
 } from '../../content/compiled.ts';
-import type { IdSpace } from '../../content/types.ts';
+import type { ConditionDef, IdSpace } from '../../content/types.ts';
 import { interact, setClickable } from '../clickables.ts';
 import { evaluateCondition, wreckageClearedAt } from '../conditions.ts';
 import { earn } from '../economy.ts';
@@ -167,13 +167,16 @@ export function runScriptAction(
  * own rows when it lands, and a part not listed here waits for a later milestone.
  */
 export const SCRIPT_GATES: Readonly<Record<string, string>> = Object.freeze({
-  // Triggers (D141). `objectiveCompleted` waits for A3M5 (M7); the finale's rest (M8).
-  objectiveCompleted: 'M7',
+  // Triggers (D141, D146). `objectiveCompleted` (A3M5's Cut the Feed) is T706's; the finale's
+  // rest (M8).
+  objectiveCompleted: 'T706',
   restProgressPct: 'M8',
-  // Actions (D141). M6's Clean Exit (revocations, QUILL's lockout) runs since T606.
-  // M7: A3M5's opened tile (Shareholder Value's jettison) and a scripted wave.
-  openTile: 'M7',
-  spawnWave: 'M7',
+  // Actions (D141, D146). M6's Clean Exit (revocations, QUILL's lockout) runs since T606.
+  // M7: A3M5's opened tiles (Shareholder Value's jettison; T707) and a script group (T706).
+  openTile: 'T707',
+  spawnWave: 'T706',
+  // Condition atoms (D146): `cleared` (Cut the Feed's markers before a wave; T706).
+  cleared: 'T706',
   // M8, the finale: a lighting change at a script moment (Dawn; wave-paced light is map data,
   // `MapDef.lighting`, T410a, Sundown's darkness included, T505), the Phase 2 checkpoint (T305b
   // runs the wave checkpoints, not this action), the restored class after "Who's there?", and the
@@ -195,14 +198,25 @@ function notYet(key: string): string {
 /**
  * The map-script parts the sim can't run yet. createSim refuses a map whose events use any other
  * trigger or action, listing each one with the task that lifts it (SCRIPT_GATES), until it lands.
- * Every condition atom (`when`, the Challenge medal, objectives) is simulated; an objective's
- * `onComplete` actions are held to the same list as an event's (sim/objectives.ts runs them).
+ * Every condition atom (`when`, the Challenge medal, objectives, ability locks) is simulated but
+ * M7's `cleared` (T706); an objective's `onComplete` actions are held to the same list as an
+ * event's (sim/objectives.ts runs them).
  */
 export function unsupportedScript(map: CompiledMapDef<IdSpace>): string[] {
   const out: string[] = [];
   for (const ev of map.events) {
     unsupportedTrigger(ev.on, `event '${ev.id}': trigger`, out);
     for (const a of ev.actions) unsupportedAction(a, `event '${ev.id}'`, out);
+    if (ev.when !== null) unsupportedCondition(ev.when, `event '${ev.id}': when`, out);
+  }
+  if (map.medals !== null) {
+    unsupportedCondition(map.medals.challenge.condition, 'the Challenge medal', out);
+  }
+  for (const l of map.lockedAbilities) {
+    unsupportedCondition(l.when, `the lock on '${l.ability}'`, out);
+  }
+  for (const o of map.objectives) {
+    unsupportedCondition(o.condition, `objective '${o.id}': condition`, out);
   }
   for (const o of map.objectives) {
     for (const a of o.onComplete) {
@@ -215,6 +229,19 @@ export function unsupportedScript(map: CompiledMapDef<IdSpace>): string[] {
     }
   }
   return out;
+}
+
+/** The condition atoms the sim can't judge yet (`cleared`; SCRIPT_GATES), once per condition. */
+function unsupportedCondition(c: ConditionDef<IdSpace>, where: string, out: string[]): void {
+  if (usesCleared(c)) out.push(`${where}: condition cleared ${notYet('cleared')}`);
+}
+
+function usesCleared(c: ConditionDef<IdSpace>): boolean {
+  if ('cleared' in c) return true;
+  if ('all' in c) return c.all.some(usesCleared);
+  if ('any' in c) return c.any.some(usesCleared);
+  if ('not' in c) return usesCleared(c.not);
+  return false;
 }
 
 /** Actions an objective's `onComplete` can't run: they need the tick's context (triggers()). */

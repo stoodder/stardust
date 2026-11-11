@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { TOWERS } from '../content/towers/index.ts';
 import { CAMPAIGN } from '../content/campaign.ts';
-import { DEV_SAVES, afterA2M4Results, afterA2M5Results } from './__fixtures__/devSaves.ts';
+import {
+  DEV_SAVES,
+  INTENDED,
+  afterA2M4Results,
+  afterA2M5Results,
+} from './__fixtures__/devSaves.ts';
+import { briefingGifts } from './storyTransactions.ts';
 import { exportCode, importCode } from './codec.ts';
 import { buy } from './purchase.ts';
 import { LIVE_KNOWN_IDS, createNewSave } from './saveData.ts';
@@ -259,8 +265,105 @@ describe('dev saves (the ?save= fixtures)', () => {
     });
 
     it("lets every save past A2M6 into the base: Act III's visit scenes count as seen once won", () => {
+      expect(build('all_unlocked').story.seen.includes('a3_m04_base_night_shift')).toBe(true);
       const all = build('all_unlocked');
       expect(all.story.seen.includes('a3_m01_base_survey')).toBe(true);
     });
   });
 });
+
+describe('Act III part two: a save for every door and C4 answer (T700b)', () => {
+  const A3M4 = [
+    ['after_a3m4_keep', 'convoy', 'keep'],
+    ['after_a3m4_purge', 'convoy', 'purge'],
+    ['after_a3m4_rewrite', 'convoy', 'rewrite'],
+    ['after_a3m4_keep_warren', 'warren', 'keep'],
+    ['after_a3m4_purge_warren', 'warren', 'purge'],
+    ['after_a3m4_rewrite_warren', 'warren', 'rewrite'],
+  ] as const;
+
+  it.runIf(!isRegistered('a3_m04'))('equal the save before A3M4 until it is registered', () => {
+    for (const [id, door] of A3M4) expect(build(id), id).toEqual(build(`after_a3m3_${door}`));
+    expect(build('after_a3m5_purge')).toEqual(build('after_a3m3_convoy'));
+    expect(build('after_a3m6')).toEqual(build('after_a3m3_convoy'));
+  });
+
+  it.runIf(isRegistered('a3_m04'))('A3M4: the jailbreak, the gifts, the mail, C4, Night Shift', () => {
+    for (const [id, door, c4] of A3M4) {
+      const save = build(id);
+      expect(save.unlocks.revokedTowers, id).toEqual([]);
+      expect(save.unlocks.jailbroken, id).toEqual(['rivet']);
+      expect(save.unlocks.abilities, id).toEqual(
+        expect.arrayContaining(['system_reboot', 'suppressing_fire']),
+      );
+      expect(save.unlocks.towers.includes('gloop'), id).toBe(door === 'warren');
+      expect(save.unlocks.towers, id).toContain('choir');
+      expect(save.story.flags.quill_choice, id).toBe(c4);
+      expect(save.unlocks.abilities.includes('time_dilation'), id).toBe(c4 === 'keep');
+      expect(save.story.seen, id).toContain('a3_m04_base_night_shift');
+    }
+    // The warren paid 300 for the jailbreak; the convoy's was free.
+    expect(build('after_a3m4_keep').currencies.stardust).toBe(
+      build('after_a3m4_keep_warren').currencies.stardust + 300,
+    );
+  });
+
+  it.runIf(isRegistered('a3_m05'))('A3M5: the Sproing Pad, the Bloom, Mindspike tune 1', () => {
+    for (const id of ['after_a3m5_keep', 'after_a3m5_purge', 'after_a3m5_rewrite'] as const) {
+      const save = build(id);
+      expect(save.unlocks.towers, id).toEqual(expect.arrayContaining(['sproing', 'bloom']));
+      expect(save.upgrades.tune_mindspike, id).toBe(1);
+    }
+  });
+
+  it.runIf(isRegistered('a3_m06'))("A3M6: the convoy's Gloop, the crate, Waykeeper", () => {
+    const save = build('after_a3m6');
+    expect(save.unlocks.towers).toContain('gloop');
+    expect(save.story.granted).toContain('crate');
+    expect(save.upgrades).toMatchObject({ tune_harpoon: 3, tune_zapcoil: 3, tune_lookout: 3 });
+    expect(save.profile?.callsign).toBe('waykeeper');
+  });
+
+  describe("the stand-ins for T710's transactions (applied by hand until it lands)", () => {
+    it.runIf(isRegistered('a3_m03'))(
+      'the jailbreak brings the revoked class back, free under the convoy',
+      () => {
+        for (const door of ['convoy', 'warren'] as const) {
+          const before = build(`after_a3m3_${door}`);
+          const after = INTENDED.jailbreak(before);
+          expect(after.unlocks.revokedTowers).toEqual([]);
+          expect(after.unlocks.jailbroken).toEqual(['rivet']);
+          expect(after.unlocks.towers).toEqual(before.unlocks.towers);
+          expect(before.currencies.stardust - after.currencies.stardust).toBe(
+            door === 'convoy' ? 0 : 300,
+          );
+          expect(validateSave(after).ok).toBe(true);
+        }
+      },
+    );
+
+    it('the mail, C4 and the crate make what their tables say, and validate', () => {
+      const base = build('after_a3m3_convoy');
+      const mailed = INTENDED.inherit('suppressing_fire')(base);
+      expect(mailed.unlocks.inheritedAbilities).toEqual(['suppressing_fire']);
+      expect(mailed.unlocks.abilities).toContain('suppressing_fire');
+      for (const c4 of ['keep', 'purge', 'rewrite'] as const) {
+        const answered = INTENDED.c4(c4)(mailed);
+        expect(answered.story.flags.quill_choice).toBe(c4);
+        expect(answered.unlocks.inheritedAbilities).toEqual(
+          c4 === 'keep' ? ['suppressing_fire', 'time_dilation'] : ['suppressing_fire'],
+        );
+        expect(validateSave(answered).ok).toBe(true);
+      }
+      // The crate over the reference into A3M6 (its Vrell towers' tune-ups to the top).
+      const briefed = briefingGifts(mailed, 'a3_m06').save;
+      const crated = INTENDED.crate(briefed);
+      expect(crated.story.granted).toContain('crate');
+      for (const t of ['zapcoil', 'lookout', 'harpoon'] as const) {
+        if (briefed.unlocks.towers.includes(t)) expect(crated.upgrades[`tune_${t}`]).toBe(3);
+      }
+      expect(validateSave(crated).ok).toBe(true);
+    });
+  });
+});
+

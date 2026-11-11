@@ -12,7 +12,7 @@ import { MAPS } from '../../content/maps/index.ts';
 import { MEMO_IDS } from '../../content/memos/index.ts';
 import { STAR_MAP_SEEN_ID } from '../../content/starMap.ts';
 import { PROTOCOLS, UPGRADES } from '../../content/upgrades/index.ts';
-import type { EnemyId, MapId, MedalId, ProtocolId, TowerId } from '../../content/types.ts';
+import type { AbilityId, EnemyId, MapId, MedalId, ProtocolId, TowerId } from '../../content/types.ts';
 import type { CallsignId } from '../../content/dialogue/profile.ts';
 import { tagIndexAfter } from '../../story/tags.ts';
 import { withIssuedTowers } from '../issued.ts';
@@ -25,14 +25,26 @@ import type { MapRecord, SaveData, SceneId } from '../saveData.ts';
 import { LIVE_KNOWN_IDS, createNewSave } from '../saveData.ts';
 import { withStoryUnlocks } from '../story.ts';
 import {
+  C4_CHOICES,
+  C4_EFFECTS,
   briefingGifts,
+  buyJailbreak,
+  crateContents,
   grantGift,
   grantQ3Bonus,
+  inheritAbility,
+  jailbreakPrice,
+  JAILBREAK,
+  CRATE,
+  openCrate,
   resolveC2,
+  resolveC4,
   runEndRevocations,
   runEndTransactions,
   setDoorChoice,
   type C3Choice,
+  type C4Choice,
+  type StoryOutcome,
 } from '../storyTransactions.ts';
 
 export type DevSaveId =
@@ -58,6 +70,16 @@ export type DevSaveId =
   | 'after_a3m2_thumper'
   | 'after_a3m3_convoy'
   | 'after_a3m3_warren'
+  | 'after_a3m4_keep'
+  | 'after_a3m4_purge'
+  | 'after_a3m4_rewrite'
+  | 'after_a3m4_keep_warren'
+  | 'after_a3m4_purge_warren'
+  | 'after_a3m4_rewrite_warren'
+  | 'after_a3m5_keep'
+  | 'after_a3m5_purge'
+  | 'after_a3m5_rewrite'
+  | 'after_a3m6'
   | 'all_unlocked';
 
 export interface DevSave {
@@ -337,14 +359,16 @@ function actTwoThrough(last: ActTwoMap | null, plan: ActTwoPlan = {}): SaveData 
   return caughtUp(save);
 }
 
-/** The Act III maps the dev saves cover (M6: A3M1–A3M3), in campaign order. */
-const ACT_THREE = ['a3_m01', 'a3_m02', 'a3_m03'] as const;
+/** The Act III maps the dev saves cover (A3M1–A3M6), in campaign order. */
+const ACT_THREE = ['a3_m01', 'a3_m02', 'a3_m03', 'a3_m04', 'a3_m05', 'a3_m06'] as const;
 type ActThreeMap = (typeof ACT_THREE)[number];
 
 /**
  * What the reference profile buys before each Act III map (campaign.md § 4.9): Ability Coolant 1
  * and Emergency Bulkhead into A3M1; the Harpoon's license and the Mindspike's attunement (3 Intel)
- * into A3M2; Seed Money 2 into A3M3 (its rank 1 came before A2M2).
+ * into A3M2; Seed Money 2 into A3M3 (its rank 1 came before A2M2); nothing on a shelf into A3M4
+ * (the jailbreak is a story transaction: `actThreeThrough`); the Stasis Bloom's attunement and
+ * Mindspike tune 1 into A3M5; Harpoon tune 1–2 into A3M6.
  */
 const ACT_THREE_PREP: Readonly<Record<ActThreeMap, readonly PurchaseItem[]>> = {
   a3_m01: [
@@ -356,16 +380,29 @@ const ACT_THREE_PREP: Readonly<Record<ActThreeMap, readonly PurchaseItem[]>> = {
     { kind: 'attune', tower: 'mindspike' },
   ],
   a3_m03: [{ kind: 'upgrade', id: 'seed_money' }],
+  a3_m04: [],
+  a3_m05: [
+    { kind: 'attune', tower: 'bloom' },
+    { kind: 'upgrade', id: 'tune_mindspike' },
+  ],
+  a3_m06: [
+    { kind: 'upgrade', id: 'tune_harpoon' },
+    { kind: 'upgrade', id: 'tune_harpoon' },
+  ],
 };
 
 /**
  * The protocol the reference equips on each Act III map (one slot; reference.ts): Head Start on
- * A3M1's Escort and A3M3's Holdout, the Bulkhead on A3M2's Defend.
+ * A3M1's Escort, A3M3's Holdout and A3M6's Escort, the Bulkhead where there is a core (A3M2's and
+ * A3M4's Defends, A3M5's Protect).
  */
 const ACT_THREE_PROTOCOL: Readonly<Record<ActThreeMap, ProtocolId>> = {
   a3_m01: 'head_start',
   a3_m02: 'emergency_bulkhead',
   a3_m03: 'head_start',
+  a3_m04: 'emergency_bulkhead',
+  a3_m05: 'emergency_bulkhead',
+  a3_m06: 'head_start',
 };
 
 /**
@@ -377,6 +414,11 @@ const ACT_THREE_SEEN: Readonly<Record<ActThreeMap, readonly SceneId[]>> = {
   a3_m01: ['a3_m01_scene_song', 'a3_m01_base_survey'],
   a3_m02: ['a3_m02_cue_revoke', 'a3_m02_scene_confession'],
   a3_m03: ['a3_m03_brief', 'a3_m03_cue_seal'],
+  // Gerald's mail, then Night Shift at the base (the visit scene, D146: mandatory once).
+  a3_m04: ['a3_m04_scene_mail', 'a3_m04_base_night_shift'],
+  a3_m05: [],
+  // The briefing (QUILL's list under Rewrite, the crate) has played.
+  a3_m06: ['a3_m06_brief'],
 };
 
 /** Act III's base visit scenes (`ACT_THREE_SEEN`'s `base_*`): seen by a save that has won every map. */
@@ -392,6 +434,74 @@ interface ActThreePlan {
   readonly revoked: 'rivet' | 'thumper';
   /** C3, the door Bricks held. */
   readonly door: C3Choice;
+  /** C4, QUILL's directives, answered on A3M4's card (needed once a plan reaches A3M4). */
+  readonly c4?: C4Choice;
+}
+
+/**
+ * `r`'s save; or, while its transaction refuses `'unbuilt'` (its body waits for T710), the save
+ * `intended` makes by hand: the effect meta/storyTransactions.ts documents for it as data. Any
+ * other refusal is a broken fixture and throws. Once T710 lands, the stand-ins are never reached.
+ */
+function made(save: SaveData, r: StoryOutcome, intended: (s: SaveData) => SaveData): SaveData {
+  if (r.ok) return r.save;
+  if (r.reason === 'unbuilt') return intended(save);
+  throw new Error(`dev save: ${r.reason}: ${r.message}`);
+}
+
+/** The jailbreak as `JAILBREAK` documents it: every revoked class back, drawn jailbroken. */
+function intendedJailbreak(save: SaveData): SaveData {
+  const price = jailbreakPrice(save);
+  if (save.currencies.stardust < price) throw new Error('dev save: short for the jailbreak');
+  const u = save.unlocks;
+  return {
+    ...save,
+    currencies: { ...save.currencies, stardust: save.currencies.stardust - price },
+    unlocks: { ...u, revokedTowers: [], jailbroken: [...u.jailbroken, ...u.revokedTowers] },
+    story: { ...save.story, granted: [...save.story.granted, JAILBREAK.grant] },
+  };
+}
+
+/** `inheritAbility` as documented: the ability owned, and recorded as inherited. */
+function intendedInherit(ability: AbilityId): (save: SaveData) => SaveData {
+  return (save) => {
+    const u = save.unlocks;
+    return {
+      ...save,
+      unlocks: {
+        ...u,
+        abilities: u.abilities.includes(ability) ? u.abilities : [...u.abilities, ability],
+        inheritedAbilities: [...(u.inheritedAbilities ?? []), ability],
+      },
+    };
+  };
+}
+
+/** C4 as `C4_EFFECTS` documents it: the flag, and Keep's inheritance (no save owns QUILL's Rapport). */
+function intendedC4(choice: C4Choice): (save: SaveData) => SaveData {
+  return (save) => {
+    const effects = C4_EFFECTS[choice];
+    if (effects.refund !== null && (save.upgrades[effects.refund] ?? 0) > 0) {
+      throw new Error("dev save: Purge's Rapport refund isn't modelled (no dev save owns it)");
+    }
+    const flagged = {
+      ...save,
+      story: { ...save.story, flags: { ...save.story.flags, quill_choice: choice } },
+    };
+    if (effects.inherit === null) return flagged;
+    return made(flagged, inheritAbility(flagged, effects.inherit), intendedInherit(effects.inherit));
+  };
+}
+
+/** Zibzab's crate as `CRATE` documents it (the reference owns tune-ups to install, so no pick). */
+function intendedCrate(save: SaveData): SaveData {
+  const contents = crateContents(save);
+  if (Object.keys(contents).length === 0) throw new Error('dev save: the crate would need a pick');
+  return {
+    ...save,
+    upgrades: { ...save.upgrades, ...contents },
+    story: { ...save.story, granted: [...save.story.granted, CRATE.grant] },
+  };
 }
 
 /**
@@ -409,11 +519,15 @@ function actThreeThrough(last: ActThreeMap, plan: ActThreePlan): SaveData {
   for (const step of ACT_THREE.slice(0, ACT_THREE.indexOf(last) + 1)) {
     const map: string = step;
     if (!isRegistered(map)) continue;
+    // The base before A3M4: the jailbreak (free under the convoy).
+    if (step === 'a3_m04') save = made(save, buyJailbreak(save), intendedJailbreak);
     save = bought(save, ACT_THREE_PREP[step]);
     save.loadouts.protocols = [ACT_THREE_PROTOCOL[step]];
-    // The briefing: its gifts as the loadout first opens; C3 committed as it closes.
+    // The briefing: its gifts as the loadout first opens; C3 committed as it closes; the crate
+    // opened as A3M6's closes.
     save = briefingGifts(save, step).save;
     if (step === 'a3_m03') save = setDoorChoice(save, plan.door).save;
+    if (step === 'a3_m06') save = made(save, openCrate(save), intendedCrate);
     save.campaign.maps[map] = won(map, medalIds(map).slice(0, 1));
     save.currencies.intel += 1;
     save.currencies.stardust += MAPS[map].stardust;
@@ -427,11 +541,24 @@ function actThreeThrough(last: ActThreeMap, plan: ActThreePlan): SaveData {
       save = runEndRevocations(save, { won: true, wonBefore: false, revoked }).save;
     }
     save = runEndTransactions(save, { mapId: map, won: true, wonBefore: false }).save;
+    // A3M4: Gerald's mail grants Suppressing Fire on the first win, then C4 on the card.
+    if (step === 'a3_m04') {
+      save = made(
+        save,
+        inheritAbility(save, 'suppressing_fire'),
+        intendedInherit('suppressing_fire'),
+      );
+      const c4 = plan.c4;
+      if (c4 === undefined) throw new Error('dev save: a plan through A3M4 needs its C4');
+      save = made(save, resolveC4(save, c4), intendedC4(c4));
+    }
     // The {name} turret (A3M3's last tag): the par build's Scuttle Den at the choke.
     if (step === 'a3_m03') save.story.memorialTower = knownTower('burrow') ?? null;
     save.story.seen.push(...ACT_THREE_SEEN[step].filter((id) => !save.story.seen.includes(id)));
   }
   save.story.bricksTagIndex = tagIndexFor(save);
+  // Waykeeper from A3M6's debrief (`callsignFor`); Thorn before it.
+  if (save.profile !== null) save.profile = { ...save.profile, callsign: callsignFor(save) };
   return caughtUp(save);
 }
 
@@ -454,6 +581,39 @@ function knownTower(id: string): TowerId | undefined {
 /** An upgrade's first-rank price (dev saves pay for what they own). */
 function price(id: keyof typeof UPGRADES): number {
   return UPGRADES[id].ranks[0]?.price ?? 0;
+}
+
+/**
+ * The stand-ins `made` applies while T710's bodies are unbuilt, for devSaves.test.ts to check
+ * against the documented data before A3M4–A3M6 are registered.
+ */
+export const INTENDED = {
+  jailbreak: intendedJailbreak,
+  inherit: intendedInherit,
+  c4: intendedC4,
+  crate: intendedCrate,
+} as const;
+
+/** The reference's Act III branches: C1 cleared, the Rivet revoked, the convoy. */
+const A3_REF = { c1: 'cleared', revoked: 'rivet', door: 'convoy' } as const;
+
+/** The three `after_a3m4_<c4><suffix>` saves for one door. */
+function a3m4Saves<S extends '' | '_warren'>(
+  door: C3Choice,
+  suffix: S,
+): Record<`after_a3m4_${C4Choice}${S}`, DevSave> {
+  const jailbreak = door === 'convoy' ? "free: Goldie's engineers" : '300 Stardust';
+  const gloop = door === 'warren' ? ", and the warren's Gloop Spitter" : '';
+  const save = (c4: C4Choice): DevSave => ({
+    description:
+      `after_a3m3_${door}, then the jailbreak (${jailbreak}) and A3M4 won (Victory): System ` +
+      `Reboot and the Hum Choir given in its briefing${gloop}; Gerald's mail (Suppressing Fire ` +
+      `inherited), C4 ${c4}, and Night Shift seen. Skipped while A3M4 is not registered.`,
+    build: () => actThreeThrough('a3_m04', { ...A3_REF, door, c4 }),
+  });
+  const out: Partial<Record<string, DevSave>> = {};
+  for (const c4 of C4_CHOICES) out[`after_a3m4_${c4}${suffix}`] = save(c4);
+  return out as Record<`after_a3m4_${C4Choice}${S}`, DevSave>;
 }
 
 export const DEV_SAVES: Readonly<Record<DevSaveId, DevSave>> = {
@@ -601,6 +761,31 @@ export const DEV_SAVES: Readonly<Record<DevSaveId, DevSave>> = {
       'after_a3m3_convoy, but C3 the warren (door_choice = warren). Skipped while A3M3 is not ' +
       'registered.',
     build: () => actThreeThrough('a3_m03', { c1: 'cleared', revoked: 'rivet', door: 'warren' }),
+  },
+  // A3M4–A3M6 (T700b): until each map is registered it is skipped with its prep, so these equal
+  // the save before it. Transactions whose bodies wait for T710 are applied by hand (`made`).
+  ...a3m4Saves('convoy', ''),
+  ...a3m4Saves('warren', '_warren'),
+  after_a3m5_keep: {
+    description:
+      'after_a3m4_keep, then the Stasis Bloom attuned and Mindspike tune 1 bought and A3M5 won ' +
+      '(Victory): the Sproing Pad given in its briefing. Skipped while A3M5 is not registered.',
+    build: () => actThreeThrough('a3_m05', { ...A3_REF, c4: 'keep' }),
+  },
+  after_a3m5_purge: {
+    description: 'after_a3m5_keep, but C4 Purge (no Time Dilation).',
+    build: () => actThreeThrough('a3_m05', { ...A3_REF, c4: 'purge' }),
+  },
+  after_a3m5_rewrite: {
+    description: 'after_a3m5_keep, but C4 Rewrite (QUILL was offline for A3M5).',
+    build: () => actThreeThrough('a3_m05', { ...A3_REF, c4: 'rewrite' }),
+  },
+  after_a3m6: {
+    description:
+      "after_a3m5_rewrite, then Harpoon tune 2 bought and A3M6 won (Victory): Goldie's Gloop " +
+      "Spitter given, Zibzab's crate opened (every owned Vrell tower's tune-ups at the top), the " +
+      'callsign Waykeeper. Skipped while A3M6 is not registered.',
+    build: () => actThreeThrough('a3_m06', { ...A3_REF, c4: 'rewrite' }),
   },
   all_unlocked: {
     description:

@@ -64,8 +64,8 @@ export const HARNESS_GATES: Readonly<Record<HarnessFeature, string | null>> = Ob
   flagVariants: null,
   companionPick: null,
   holdFireRuns: null,
-  // No M6 map has a jammer (D141: jamming is M7's).
-  jamLimit: 'M7',
+  // The jam-limit check (#10) lands with the jamming core (D146: T702).
+  jamLimit: 'T702',
 });
 
 /**

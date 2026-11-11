@@ -223,6 +223,7 @@ import {
   iconTowerChoir,
 } from './icons/m6_towers.ts';
 import { iconTellConsumer, iconTellHasteAura } from './icons/m6_glyphs.ts';
+import { M7_PLACEHOLDERS } from './placeholders/m7.ts';
 import { iconStampLicenseRevoked, iconStampUplinkRevoked } from './icons/revoked.ts';
 import { towerBloom, towerBloomHead } from './towers/bloom.ts';
 import { towerChoir, towerChoirHead } from './towers/choir.ts';
@@ -467,6 +468,8 @@ export const SPRITES = [
   // M6's tell glyphs (T640b).
   iconTellConsumer,
   iconTellHasteAura,
+  // M7's placeholders until T740a/T740b (placeholders/m7.ts).
+  ...M7_PLACEHOLDERS,
   sceneRig9Feed,
   // The star map's glyphs (T301b).
   uiStarNode,
