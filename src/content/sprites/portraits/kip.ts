@@ -7,6 +7,12 @@
 // Variant `act2` (Act II, Reclamation Lead at Second Harvest): a white reclamation-plant coat over
 // the jumpsuit (its teal collar still popped up out of the coat's), the trophy pin moved to the
 // coat's lapel, a pen in the breast pocket, and a faint pink-gold smear of stardust on the pocket.
+// Variant `act3` (Act III, A3M5's briefing on; characters.md § Kip, act3.md § A3M5): the cap and
+// sunglasses gone, his sandy hair flat and uncombed; the same coat, its collar lying down (nothing
+// popped), and the pin gone from his lapel, leaving its two pinholes; tired eyes (heavy lids, bags
+// under them), a day's stubble, a quieter face in every expression (no smirk, no toothy grin), and
+// the ledger held flat to his chest in both hands: a worn brass-brown binder, a white label, its
+// pages' edge showing.
 import { grid, line, plot, stamp, type CharGrid } from '../helpers.ts';
 import { definePortrait, outlineInPlace, PORTRAIT_SIZE, type PaintArgs } from './portrait.ts';
 
@@ -63,7 +69,7 @@ function jumpsuit(g: CharGrid): void {
  * teal jumpsuit and its zip, broad lapels, the trophy pin on his left lapel, a breast pocket with a
  * pen, and the faint pink-gold smear on it: the plant's product, which he hasn't looked at.
  */
-function coat(g: CharGrid): void {
+function coat(g: CharGrid, act3 = false): void {
   for (let y = 36; y < S; y++) {
     const t = y - 36;
     const half = Math.min(21, 8 + Math.round(Math.sqrt(t) * 4.6));
@@ -101,6 +107,14 @@ function coat(g: CharGrid): void {
     '..EF...',
     '...E...',
   ]);
+  if (act3) {
+    // The jumpsuit's collar lies down round his neck now, and the pin is gone: two pinholes in the
+    // lapel where it sat.
+    stamp(g, 18, 35, ['99888.7766', '.98....76.']);
+    plot(g, 29, 40, '1');
+    plot(g, 32, 40, '1');
+    return;
+  }
   // The popped jumpsuit collar still stands up out of the coat's.
   stamp(g, 15, 33, ['...99', '..998', '.9988', '99887', '.4887']);
   stamp(g, 28, 33, ['77...', '776..', '7766.', '77663', '7663.']);
@@ -270,6 +284,154 @@ const MOUTHS: Readonly<Record<string, { readonly closed: readonly string[]; read
   },
 };
 
+// `act3`: the same stamps' places, a quieter face. Lids heavy (`A`) over every eye, bags under
+// them (`B`), the cocked brow and the smirk gone.
+// prettier-ignore
+const EYES_ACT3: Readonly<Record<string, readonly string[]>> = {
+  // Level, low brows; lids half down; looking at you, tired.
+  neutral: [
+    '..................',
+    '..HHHH.....HHHH...',
+    '..................',
+    '..AAAA.....AAAA...',
+    '..kkwk.....kwkk...',
+    '...BBB......BBB...',
+  ],
+  // Not a grin any more: brows eased up, eyes softened half shut.
+  happy: [
+    '..................',
+    '..HHHH.....HHHH...',
+    '..................',
+    '..AAAA.....AAAA...',
+    '..AkkA.....AkkA...',
+    '..BBBB.....BBBB...',
+  ],
+  // Brows up in the middle, eyes wide over the bags.
+  worried: [
+    '.....HH...HH......',
+    '..HHH.......HHH...',
+    '..AAAA.....AAAA...',
+    '..WWkW.....WkWW...',
+    '..WWWW.....WWWW...',
+    '...BBB......BBB...',
+  ],
+  // Brows down, jaw set: angry at himself.
+  angry: [
+    '..................',
+    '..HHH.......HHH...',
+    '.....HH...HH......',
+    '..AAAAA...AAAAA...',
+    '...kwk.....kwk....',
+    '...BBB......BBB...',
+  ],
+  // Inner brows lifted, looking down at the ledger.
+  sad: [
+    '..................',
+    '.....HH...HH......',
+    '..HHH.......HHH...',
+    '..AAAA.....AAAA...',
+    '..AAAA.....AAAA...',
+    '..kkw......kkw....',
+  ],
+};
+
+// prettier-ignore
+const MOUTHS_ACT3: Readonly<Record<string, { readonly closed: readonly string[]; readonly talk: readonly string[] }>> = {
+  // A flat line: he speaks in complete sentences, quietly.
+  neutral: {
+    closed: ['..........', '..........', '..AAAAA...', '..........'],
+    talk: ['..........', '..AAAAA...', '..AkkkA...', '...AAA....'],
+  },
+  // A small closed smile.
+  happy: {
+    closed: ['..........', '..A....A..', '...AAAA...', '..........'],
+    talk: ['..........', '..AAAAAA..', '..AkkkkA..', '...AAAA...'],
+  },
+  // Lips pressed into a wobble.
+  worried: {
+    closed: ['..........', '...AA.AA..', '..A..A....', '..........'],
+    talk: ['..........', '...AAAA...', '..AkkkkA..', '...AAAA...'],
+  },
+  // Teeth set.
+  angry: {
+    closed: ['..........', '..AAAAAA..', '..........', '..........'],
+    talk: ['..........', '..AAAAAA..', '..AWWWWA..', '..AAAAAA..'],
+  },
+  sad: {
+    closed: ['..........', '...AAAA...', '..A....A..', '..........'],
+    talk: ['..........', '...AAAA...', '..AkkkkA..', '..A....A..'],
+  },
+};
+
+/** `act3`: bare-headed, his sandy hair flat and uncombed, a fringe over his brow. */
+function hair(g: CharGrid): void {
+  for (let y = 6; y <= 15; y++) {
+    for (let x = 0; x < S; x++) {
+      const nx = (x + 0.5 - CX) / 9.4;
+      const ny = (y + 0.5 - 14) / 7.8;
+      if (nx * nx + ny * ny > 1) continue;
+      // The fringe hangs in uneven locks below row 13.
+      if (y >= 14 && (x * 7 + 3) % 5 < 2) continue;
+      if (y === 15 && (x < 17 || x > 29 || x % 3 !== 0)) continue;
+      let ch = nx < -0.35 ? 'J' : nx < 0.35 ? 'I' : 'H';
+      // A few darker strands through it.
+      if ((x * 3 + y * 5) % 11 === 0) ch = 'H';
+      plot(g, x, y, ch);
+    }
+  }
+  // A cowlick that won't lie down, and hair over his ears at the back.
+  stamp(g, 25, 4, ['.I', 'IH', 'H.']);
+  stamp(g, 30, 13, ['IH', 'HH', '.H']);
+  stamp(g, 15, 13, ['JI', 'IH']);
+}
+
+/** `act3`: a day's stubble along his jaw. */
+function stubble(g: CharGrid): void {
+  for (const [x, y] of [
+    [18, 28],
+    [20, 30],
+    [22, 31],
+    [25, 31],
+    [27, 30],
+    [29, 28],
+    [21, 29],
+    [26, 29],
+  ] as const)
+    plot(g, x, y, 'B');
+}
+
+/** Where the `act3` ledger sits on his chest (for the sprite test). */
+export const KIP_LEDGER = { x0: 13, y0: 37, x1: 27, y1: 47 } as const;
+
+/**
+ * `act3`: the ledger, held flat to his chest: a worn brass-brown binder, spine on the left, the
+ * pages' edge showing on the right, a white label; a long hand round its spine and one over its
+ * edge.
+ */
+function ledger(g: CharGrid): void {
+  const { x0, y0, x1, y1 } = KIP_LEDGER;
+  for (let y = y0; y <= y1; y++) {
+    for (let x = x0 + 1; x <= x1 - 1; x++) {
+      let ch = x <= x0 + 2 ? 'Y' : 'X';
+      if (y === y0) ch = 'Z';
+      if (x === x1 - 1) ch = y % 2 === 0 ? 'W' : 'V';
+      plot(g, x, y, ch);
+    }
+  }
+  // The label: white, two ruled lines.
+  // prettier-ignore
+  stamp(g, 17, 40, [
+    'VVVVVVV',
+    'VWWWWWV',
+    'VWKKKWV',
+    'VWWWWWV',
+    'VVVVVVV',
+  ]);
+  // His right hand (screen left) round the spine; his left over the pages' edge.
+  stamp(g, 12, 41, ['CC.', 'CCC', 'BCC', 'BB.']);
+  stamp(g, 25, 43, ['.CC', 'CCC', 'CCB', '.BB']);
+}
+
 /** Worried: a bead of sweat by his temple. */
 function sweat(g: CharGrid): void {
   stamp(g, 12, 15, ['.w', 'wU', 'UU']);
@@ -277,14 +439,21 @@ function sweat(g: CharGrid): void {
 
 function paint({ expression, variant, mouth }: PaintArgs): CharGrid {
   const g = grid(S, S);
+  const act3 = variant === 'act3';
   jumpsuit(g);
-  if (variant === 'act2') coat(g);
+  if (variant === 'act2' || act3) coat(g, act3);
   head(g);
-  cap(g);
-  stamp(g, 15, EYE_Y - 4, EYES[expression] ?? EYES['neutral'] ?? []);
-  const m = MOUTHS[expression] ?? MOUTHS['neutral'];
+  if (act3) {
+    hair(g);
+    stubble(g);
+  } else cap(g);
+  const eyes = act3 ? EYES_ACT3 : EYES;
+  const mouths = act3 ? MOUTHS_ACT3 : MOUTHS;
+  stamp(g, 15, EYE_Y - 4, eyes[expression] ?? eyes['neutral'] ?? []);
+  const m = mouths[expression] ?? mouths['neutral'];
   if (m !== undefined) stamp(g, 19, 26, mouth === 'talk' ? m.talk : m.closed);
   if (expression === 'worried') sweat(g);
+  if (act3) ledger(g);
   outlineInPlace(g);
   return g;
 }
@@ -299,8 +468,9 @@ export const portraitKip = definePortrait({
     K: 'ink.3', P: 'pink.3', R: 'red.2', W: 'white.0', U: 'blue.4',
     G: 'gold.1', M: 'gold.3', N: 'gold.4', O: 'gold.0',
     E: 'pink.4', F: 'gold.4',
+    V: 'steel.3', X: 'brass.1', Y: 'brass.0', Z: 'brass.2',
   },
   expressions: ['neutral', 'happy', 'worried', 'angry', 'sad'],
-  variants: ['act2'],
+  variants: ['act2', 'act3'],
   paint,
 });

@@ -2,7 +2,11 @@
 // roster): a comms screen in an Everglow steel bezel, and on it a floating teal hexagon with one
 // round eye LED and a pixel smile, under a 2-frame scanline flicker. Extras: `policy` (the
 // fair-play tell: a flat-line mouth, plus `policy_flash`, one 125 ms frame of the whole screen in
-// corporate yellow, `gold.3`, never the Hollow's acid). Variant `party_hat` (A1M5).
+// corporate yellow, `gold.3`, never the Hollow's acid). Variant `party_hat` (A1M5). Variant `purge`
+// (C4 Purge, from A3M5; characters.md § QUILL): flattened. The hexagon loses its lit half (one
+// flat teal), and the smile is gone: in its place, in every expression, a plain status bar (a
+// teal frame, six of nine segments lit), whose next segment blinks on as it talks. The eye keeps
+// its shapes, so the expressions still read; `policy` is the neutral face (no directives, no tell).
 import { grid, line, plot, type CharGrid } from '../helpers.ts';
 import type { FrameDef } from '../types.ts';
 import { definePortrait, portraitFrame, PORTRAIT_SIZE, type PaintArgs } from './portrait.ts';
@@ -68,7 +72,7 @@ function inHex(x: number, y: number, cx: number, cy: number): boolean {
   return dy <= h && dx <= r - (dy / h) * (r / 2) * 0.9;
 }
 
-function hexagon(g: CharGrid, cx: number, cy: number, phase: number): void {
+function hexagon(g: CharGrid, cx: number, cy: number, phase: number, flat = false): void {
   for (let y = 0; y < S; y++) {
     for (let x = 0; x < S; x++) {
       if (!inHex(x, y, cx, cy)) continue;
@@ -77,8 +81,10 @@ function hexagon(g: CharGrid, cx: number, cy: number, phase: number): void {
         !inHex(x + 1, y, cx, cy) ||
         !inHex(x, y - 1, cx, cy) ||
         !inHex(x, y + 1, cx, cy);
-      const lit = x + 0.5 - cx + (y + 0.5 - cy) < 0;
-      let ch = edge ? (lit ? '9' : '8') : lit ? '7' : '6';
+      // Flattened (`purge`): one tone, no lit half, its edge still lit along the top left.
+      const lit = !flat && x + 0.5 - cx + (y + 0.5 - cy) < 0;
+      const edgeLit = x + 0.5 - cx + (y + 0.5 - cy) < 0;
+      let ch = edge ? (edgeLit ? '9' : '8') : lit ? '7' : '6';
       if (!edge && (y + phase) % 2 === 1) ch = lit ? '6' : 'D';
       plot(g, x, y, ch);
     }
@@ -179,6 +185,16 @@ const MOUTHS: Readonly<Record<string, { readonly closed: readonly string[]; read
   },
 };
 
+/**
+ * The `purge` status bar, a 13×4 stamp where the mouth was: a plain teal frame, six of nine
+ * segments lit white; talking lights the seventh (the bar's blink). No curve, in any expression.
+ */
+// prettier-ignore
+export const QUILL_STATUS_BAR = {
+  closed: ['.............', '.EEEEEEEEEEE.', '.EwwwwwwkkkE.', '.EEEEEEEEEEE.'],
+  talk: ['.............', '.EEEEEEEEEEE.', '.EwwwwwwwkkE.', '.EEEEEEEEEEE.'],
+} as const;
+
 /** A sweat bead on the hexagon's upper right edge (worried). */
 function bead(g: CharGrid): void {
   put(g, 34, 16, ['.E.', 'EwE', 'EEE']);
@@ -210,10 +226,11 @@ function paint({ expression, variant, mouth, scan }: PaintArgs): CharGrid {
   const phase = scan ? 1 : 0;
   bezel(g);
   screen(g, phase);
-  hexagon(g, HX, HY, phase);
+  const purge = variant === 'purge';
+  hexagon(g, HX, HY, phase, purge);
   // `policy` keeps the neutral eye: only the mouth goes flat.
   put(g, HX - 5, HY - 9, EYES[expression] ?? EYES['neutral'] ?? []);
-  const m = MOUTHS[expression] ?? MOUTHS['neutral'];
+  const m = purge ? QUILL_STATUS_BAR : (MOUTHS[expression] ?? MOUTHS['neutral']);
   if (m !== undefined) put(g, HX - 6, HY + 2, mouth === 'talk' ? m.talk : m.closed);
   if (expression === 'worried') bead(g);
   if (variant === 'party_hat') partyHat(g);
@@ -257,7 +274,7 @@ export const portraitQuill = definePortrait({
     P: 'pink.3', Q: 'pink.2',
   },
   expressions: ['neutral', 'happy', 'worried', 'angry', 'sad', 'policy'],
-  variants: ['party_hat'],
+  variants: ['party_hat', 'purge'],
   scanlines: true,
   paint,
   extra: (rowsOf) => {
