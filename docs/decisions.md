@@ -1781,3 +1781,23 @@ M7's build waves made these rulings. Each landed with its task's tests, and `tas
 **Curve.** As tuned, par is A3M4 68.2, A3M5 63.6 and A3M6 59.3. A3M5 ends below A3M4 but above campaign.md's ~57 target; the gameplay review weighs it. Cut lever 4 (2-wide lanes) was pulled by geometry, since no M7 map has a band road. No other lever was pulled.
 
 *D149 addendum (T761):* towers.md's open question on Gravity Well stacking is answered by `a3m5Jam.test.ts`: 32 units are each pulled once, so stacked wells aren't degenerate. The question is removed.
+
+### D150 — 2026-11-11 — M7 review round 1 rulings
+
+Three reviewers covered code and architecture, gameplay with UX and art, and story with emotional impact. They found three highs:
+- The jailbreak confirmation drew as a solid orange box at the base. Its chamfer needed a variable that only the HUD defines.
+- The Sproing Pad's loadout card couldn't be clicked by mouse at 1280×720.
+- Story difficulty didn't soften A3M5's bearers asset.
+
+All three are fixed. Smoke now checks pixels and mouse clicks where it only checked the DOM.
+
+Rulings:
+- **A3M5's balance must survive human timing.** Par's casts shifted ±2 s still clear the band minimum, a new harness row. A3M5 is eased through its waves, not through global abilities, and its W2 teach wave no longer drains a Head Start player.
+- **Teach the jam timing, not just the button.** QUILL's A3M4 line teaches Reboot as a counter to the tell. A cancelled tell shows a visible fizzle. A3M4's W16 Silencers are staggered so the wave is a test, not a cliff.
+- **Declined stays the Hum Choir's medal.** The song beats corporate control. A3M5 hints that the Choir shortens hostile jams, under every C4 outcome.
+- **Canon in the small words.** Under Keep, QUILL *lends* Time Dilation ("Lent by QUILL"); "Inherited" stays Bricks's. QUILL's own list carries no Everglow plate. Kip's pin is seen before his silence (a caption and his pinned portrait). Zibzab's "Price first: nothing." stays on the crate card. A3M5's asset meter is named for what it guards, not "Bearers", beside the carried count.
+- **The harness can't bless what a player can't play.** A build's slot-1 ability is checked against the map's story locks, and `createSim` refuses a locked one. A `counterExemptions` entry names the test that pins the counter instead. The jam limit has one definition.
+- Readability: the Gathering Maw's merged state and the Auditor stand out at 1×.
+- Initial JS: dev fixtures load only on demand.
+
+A3M4's loose economy is logged for the finale's economy pass (T773).

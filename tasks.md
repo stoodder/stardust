@@ -363,6 +363,7 @@ Plan: D146 (the cut, forks and rulings). Waves: W1 T700a·T700b·T764·T741 → 
 
 ## M8 — Finale, post-game & polish
 To be split up when we reach it. The finale (the song, Deep Bore, the Unsung, Dawn's `setLighting`, `layToRest`, `restoreTowerClass`), C5 and the epilogue, post-game, polish.
+- [ ] **T773** M8 (low): A3M4's economy is loose (par banks 1,213 credits; a live run had 905 unspent at W16). Take it into the finale's economy pass (M7 review, D150).
 - [ ] **T662** M8 (low): A3M3's Thumper exam rides a narrow credit window (start credits 770; 760 fails the Zapcoil swap, 780 lets no-splash hold). Re-run `a3m3Protocols.test.ts` after any change to costs, Seed Money or Head Start, and widen the window if the finale's tuning allows (D144).
 - [ ] **T664** M8 (low): x-ray textures are keyed globally, so one ally view freeing one could pull it from another showing the same frame (only Bricks has an x-ray today). SEAL edge cases from review round 3: derive `SEAL_TOP_BAND` from the comms panel's max height or pin it with a test (the band path is unreached on A3M3); start the fallback from the permission scene's start even when it began before the SEAL showed; clear `startedWaiters`/`lingering` on unbind.
 - [ ] **T663** M8 (low): fast-forward in test hooks replays queued shell bursts all at once at 1×; the `all_unlocked` dev loadout overflows the panel (no campaign save reaches it).
