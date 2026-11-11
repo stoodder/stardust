@@ -171,9 +171,11 @@ describe("Underfoot's aim", () => {
   });
 });
 
+const lit = (): boolean => true;
+const unlit = (): boolean => false;
+
 describe("the Choir's and the Bloom's placement rings (the aura preview)", () => {
   const ring = { rangeTiles: 0, dimmed: false };
-  const lit = () => true;
   it("previews the song's reach and the field's, with the radius tune-up", () => {
     const content = createSim(battleConfig('a3_m01', 1, null)).config.content;
     expect(previewRing(content.towers['choir']!.tiers[0], 0, lit, ring).rangeTiles).toBe(1.5);
@@ -182,21 +184,22 @@ describe("the Choir's and the Bloom's placement rings (the aura preview)", () =>
       previewRing(content.towers['bloom']!.tiers[0], 0, lit, ring, 0.1).rangeTiles,
     ).toBeCloseTo(2.2);
     // Never dimmed by the dark: neither has an attack.
-    expect(previewRing(content.towers['choir']!.tiers[0], 1, () => false, ring).dimmed).toBe(false);
+    expect(previewRing(content.towers['choir']!.tiers[0], 1, unlit, ring).dimmed).toBe(false);
   });
 });
 
+const ctx = (map: 'a3_m02' | 'a3_m03'): StoryContext => ({
+  flags: {},
+  map,
+  pestsProcessed: 0,
+  seen: [],
+  run: null,
+});
+const TEXT = { profile: null, pestsProcessed: 0, evacuated: null };
+const bricks = (c: StoryContext) =>
+  lineView({ speaker: 'bricks', text: 'Kid.' }, c, TEXT, null).portrait?.variant ?? null;
+
 describe("Bricks's pocket at the Gap (A3M3: Pebble walks with Goldie's convoy)", () => {
-  const ctx = (map: 'a3_m02' | 'a3_m03'): StoryContext => ({
-    flags: {},
-    map,
-    pestsProcessed: 0,
-    seen: [],
-    run: null,
-  });
-  const TEXT = { profile: null, pestsProcessed: 0, evacuated: null };
-  const bricks = (c: StoryContext) =>
-    lineView({ speaker: 'bricks', text: 'Kid.' }, c, TEXT, null).portrait?.variant ?? null;
   it('empties his pocket on A3M3 only', () => {
     expect(bricks(ctx('a3_m02'))).toBe('pebble');
     expect(bricks(ctx('a3_m03'))).toBeNull();

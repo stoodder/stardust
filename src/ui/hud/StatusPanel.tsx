@@ -79,7 +79,9 @@ function NamePlate() {
 
 /** How many of the group an objective follows are on the road, for its row's label. */
 function walkingWords(o: ObjectiveView): string {
-  return o.walking != null && o.status === 'open' ? `, ${o.walking} on the road` : '';
+  return o.walking !== undefined && o.walking !== null && o.status === 'open'
+    ? `, ${o.walking} on the road`
+    : '';
 }
 
 /** An objective's standing in words (its row's label and tooltip). */
@@ -111,7 +113,7 @@ function ObjectiveTracker() {
           <span class="hud-objective-box" aria-hidden="true" />
           <span class="hud-objective-name">{o.name}</span>
           {/* The group it follows on the road (A3M1: Bramble's column), while it walks. */}
-          {o.walking != null && o.status === 'open' && (
+          {o.walking !== undefined && o.walking !== null && o.status === 'open' && (
             <span
               class="hud-objective-walking num"
               data-testid="objective-walking"

@@ -95,14 +95,16 @@ export function meterLabelText(label: MeterLabel | null): string {
   }
 }
 
+/** The UI act themes, as `hud.act` names them (String of each). */
+const STORY_ACTS: readonly StoryAct[] = [1, 2, 3, 'finale'];
+
 /**
  * What a medal or objective the run can't earn any more says in the HUD tracker's tooltip, by the
  * UI act theme (`hud.act`, a presentation dial): Results' mark (`medalMarks`, style-guide.md § 2),
  * so Act III and the finale spend no "!" ("Next time."), Acts I–II keep theirs ("Next time!").
  */
 export function nextTimeMark(theme: string): string {
-  const acts = Object.keys(PRESENTATION.byAct) as StoryAct[];
-  const act = acts.find((a) => String(a) === theme) ?? 1;
+  const act = STORY_ACTS.find((a) => String(a) === theme) ?? 1;
   return medalMarks(PRESENTATION.byAct[act].counter).nextTime;
 }
 
