@@ -607,7 +607,7 @@ function open(scene: Scene, opts: PlayOptions, mode: SceneMode): void {
   const resume = mode !== 'briefing' && inBattle ? speed.value : null;
   if (resume !== null) setSpeed(0);
   holdComms(true);
-  if (endsBeat(scene) || mapOver) dropComms();
+  if (endsBeat(scene) || mapOver) dropComms(!mapOver);
   const h: Holding = {
     scene,
     mode,
@@ -761,6 +761,8 @@ export function chooseOption(index: number): void {
   h.cursor = advance(h.scene, h.cursor, ctx, index);
   h.remember =
     option.remember === undefined ? null : `${plateName(option.remember, ctx)} will remember that.`;
+  // A choice right after this one gets its own lock from when it shows (D144 S6).
+  // h.choiceAt = 0;
   settle(h);
   if (h.cursor.step.kind === 'end' && h.mode !== 'briefing') {
     // A choice that ends the scene still shows its "will remember" before it closes.
@@ -814,6 +816,8 @@ interface CommsPlay {
   cursor: DialogueCursor;
   prev: LineView | null;
   button: ReplyButton | null;
+  /** From a `keep` queue entry (D144 S2): cut by a pausing scene, it queues as one again. */
+  keep?: boolean;
   /** The line on screen: when it showed (performance.now), and what moves past it. */
   shownAt?: number;
   moveOn?: () => void;
@@ -830,6 +834,11 @@ interface QueuedComms {
   readonly wave: number;
   readonly cursor?: DialogueCursor;
   readonly prev?: LineView | null;
+  /**
+   * Never goes stale and outlives a beat's end (D144 S2): Bricks's line for the named turret the
+   * Clean Exit took, queued while its cue holds the panel, plays once the cue closes.
+   */
+  readonly keep?: boolean;
 }
 const commsQueue: QueuedComms[] = [];
 let commsNow: CommsPlay | null = null;
@@ -923,6 +932,7 @@ function holdComms(on: boolean): void {
         wave: 0,
         cursor: c.cursor,
         prev: c.prev,
+        ...(c.keep === true ? { keep: true } : {}),
       });
     }
     return;
@@ -932,7 +942,7 @@ function holdComms(on: boolean): void {
     const q = commsQueue[i];
     if (q === undefined) continue;
     // Stale before the hold began (a line cut by it was on screen then, so it's never stale).
-    if (commsHeldAt - q.at > COMMS_STALE_MS) {
+    if (q.keep !== true && commsHeldAt - q.at > COMMS_STALE_MS) {
       commsQueue.splice(i, 1);
       markTyped(q.scene.id);
     } else commsQueue[i] = { ...q, at: now };
@@ -953,19 +963,26 @@ export function endsBeat(scene: Scene): boolean {
 }
 
 /**
- * Drops the comms queue (`endsBeat`, or any scene once the map is over: `mapOver`): a scene cut mid-play saves what it set so far (its `set`
- * nodes, and that it was heard); one that never showed is dropped unheard.
+ * Drops the comms queue (`endsBeat`, or any scene once the map is over: `mapOver`): a scene cut
+ * mid-play saves what it set so far (its `set` nodes, and that it was heard); one that never
+ * showed is dropped unheard. At a beat's end (`keepKept`), a `keep` entry stays (D144 S2).
  */
-function dropComms(): void {
+function dropComms(keepKept = false): void {
+  const kept: QueuedComms[] = [];
   for (const q of commsQueue.splice(0)) {
+    if (keepKept && q.keep === true) {
+      kept.push(q);
+      continue;
+    }
     if (q.cursor !== undefined) commit(q.scene.id, q.cursor.effects);
     markTyped(q.scene.id);
   }
+  commsQueue.push(...kept);
 }
 
-function queueComms(scene: Scene, wave = 0): void {
+function queueComms(scene: Scene, wave = 0, keep = false): void {
   if (!enabled) return;
-  commsQueue.push({ scene, at: performance.now(), wave });
+  commsQueue.push({ scene, at: performance.now(), wave, ...(keep ? { keep } : {}) });
   pumpComms();
 }
 
@@ -985,7 +1002,7 @@ function pumpComms(): void {
   if (commsHeld || commsNow !== null) return;
   const now = performance.now();
   let next = commsQueue.shift();
-  while (next !== undefined && now - next.at > COMMS_STALE_MS) {
+  while (next !== undefined && next.keep !== true && now - next.at > COMMS_STALE_MS) {
     markTyped(next.scene.id);
     next = commsQueue.shift();
   }
@@ -1002,6 +1019,7 @@ function pumpComms(): void {
     cursor: next.cursor ?? start(next.scene, storyContext(map)),
     prev: next.prev ?? null,
     button: null,
+    ...(next.keep === true ? { keep: true } : {}),
   };
   showCommsLine();
 }
@@ -1134,7 +1152,7 @@ function endHoldMs(node: Pick<LineNode, 'text' | 'durationSec'>): number {
  */
 function finishComms(): number {
   const now = performance.now();
-  const queued = commsQueue.filter((q) => now - q.at <= COMMS_STALE_MS);
+  const queued = commsQueue.filter((q) => q.keep === true || now - q.at <= COMMS_STALE_MS);
   const c = commsNow;
   const lineOnScreen = c !== null && c.cursor.step.kind === 'line' ? c.cursor.step.node : null;
   if (queued.length === 0 && (c === null || lineOnScreen === null || barkScenes.has(c.scene))) {
@@ -1252,7 +1270,9 @@ function queueBark(trigger: BarkTrigger): void {
   const free = { ...s.barks, lastAtSec: null };
   const pick = pickBark(s.pool, event, free, storyContext(s.map));
   s.barks = pick.bark === null ? { ...pick.state, lastAtSec: s.barks.lastAtSec } : pick.state;
-  if (pick.bark !== null && !s.replaying()) queueComms(barkScene(pick.bark));
+  // The named turret's revocation (D144 S2) waits out the Clean Exit's cue, however long it's read.
+  const keep = trigger.on === 'tower_revoked';
+  if (pick.bark !== null && !s.replaying()) queueComms(barkScene(pick.bark), 0, keep);
 }
 
 /** A bark a map script names: it plays whatever the spacing says, after the line on screen. */

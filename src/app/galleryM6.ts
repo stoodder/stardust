@@ -5,10 +5,12 @@
 //   a Scuttle Den whose swarmlings have latched onto a Fracture on the road, a grown Maw mid-gulp
 //   (its tell: a `violet.4` noose round the Mote it holds, three white-cored tendrils from it to the
 //   mouth, a bead riding each), and a rift torn open below the road, a Mote climbing out.
-// - **The Gap at the SEAL** (A3M3): the Hollow piled at Bricks's post, Bricks in his `last` stance
-//   firing up the cut, the blast door at the road's foot running shut (`closing`), a Lullaby Choir's
-//   dashed gold song ring and blue Lullaby ring over the road (a Mote in them Lulled), and a revoked Rivet
-//   folding away under its LICENSE REVOKED stamp, dark (`POWER_DOWN_COLOR`) and half sunk.
+// - **The Gap at the SEAL** (A3M3): the Hollow piled up the cut against Bricks's block, Bricks on
+//   his post low down the cut (clear of the song's rings) in his `last` stance firing up it, the
+//   blast door at the road's foot running shut behind him (`closing_2`: the leaves nearly met, the
+//   warm light a slit, the beacon red), a Lullaby Choir's dashed gold song ring and blue Lullaby
+//   ring over the head of the cut (a Mote in them Lulled), and a revoked Rivet folding away under
+//   its LICENSE REVOKED stamp, dark (`POWER_DOWN_COLOR`) and half sunk.
 // Act III has no darkness (D141): scenery wears its baked glow at NIGHT_GLOW, the emergency lamps
 // burn red, and the two moons hang in the sky (galleryKit `backdrop`).
 import { rgbOf, type ColorName } from '../content/palettes/master.ts';
@@ -100,14 +102,19 @@ const RIFT: readonly (readonly [number, number, string])[] = [
 const MAW = [4.1, 2.45] as const;
 const HELD = [6.2, 2.6] as const;
 
-/** The Gap: the cut down column 3 to the blast door at its foot, Bricks's post on the rock east. */
+/** The Gap: the cut down column 3 to the blast door at its foot, Bricks's post on the rock east,
+ * two tiles up the cut from the door (out of the Choir's rings). */
 const GAP = strip(
   ['...#...', '.o.#.o.', '...#...', '...#...', '...#...', '.o.#...', '...#...', '...#...'],
-  { bricks_post: [4, 3] },
+  { bricks_post: [4, 5] },
   [...Array(8).keys()].map((r) => [3, r] as const),
 );
 const DOOR = [3, 7] as const;
-const POST = [4.5, 3.5] as const;
+const POST = [4.5, 5.5] as const;
+/** The Lulled Mote, inside the Choir's Lullaby ring. */
+const LULLED = [3.35, 2.6] as const;
+/** The door's frame: the leaves nearly met, the warm light a slit (BlastDoorView's `closing`). */
+const DOOR_FRAME = 'closing_2';
 const CHOIR_PAD = [1, 1] as const;
 const REVOKED_PAD = [5, 1] as const;
 /** How far the revoked Rivet has folded (towerLook `foldSinkPx`): its head half into its base. */
@@ -251,10 +258,10 @@ export function m6Corner(
         ]
       : [
           // The Hollow piled up the cut against Bricks's block, one of them Lulled by the song.
-          ['enemy.fracture', 'walk_sw_1', 3.5, 1.2],
-          ['enemy.mote', 'walk_sw_0', 3.35, 2.1],
-          ['enemy.mote', 'walk_sw_2', 3.7, 2.55],
-          ['enemy.fracture_shard', 'walk_sw_0', 3.45, 0.35],
+          ['enemy.fracture', 'walk_sw_1', 3.5, 4.35],
+          ['enemy.mote', 'walk_sw_2', 3.7, 3.55],
+          ['enemy.mote', 'walk_sw_0', LULLED[0], LULLED[1]],
+          ['enemy.fracture_shard', 'walk_sw_0', 3.45, 1.5],
           ['ally.bricks', 'last_fire_ne_0', POST[0], POST[1]],
         ];
   const all: Stand[] = [...props, ...towers, ...units];
@@ -364,10 +371,10 @@ export function m6Corner(
     // The blast door at the cut's foot, running shut (BlastDoorView's `closing`), its glow whole.
     const [dx, dy] = screen(DOOR[0] + 0.5, DOOR[1] + 0.5);
     draw(
-      frameOf('prop.blast_door', 'closing_1'),
+      frameOf('prop.blast_door', DOOR_FRAME),
       dx,
       dy,
-      glowOf(baked, 'prop.blast_door', 'closing_1'),
+      glowOf(baked, 'prop.blast_door', DOOR_FRAME),
     );
     // A Lullaby Choir's rings (ChoirView): its own dashed blue reach under the song's dashed gold
     // (T3's aura, which a spec keeps), a step off; its note; the Lulled notes on the Mote in it.
@@ -384,7 +391,7 @@ export function m6Corner(
     const note = noteImage('gold.4');
     image(note, cx + NOTE_SIDE_PX - Math.floor(note.w / 2), cy - NOTE_LIFT_PX - note.h);
     const lulled = lulledImage('blue.4');
-    const [lx, ly] = screen(3.35, 2.1);
+    const [lx, ly] = screen(...LULLED);
     image(lulled, lx + 2, ly - 16 - lulled.h);
     // The LICENSE REVOKED stamp over the folding Rivet.
     const stamp = frameOf('icon.stamp.license_revoked', 'icon');

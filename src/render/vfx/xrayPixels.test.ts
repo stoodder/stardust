@@ -122,18 +122,18 @@ describe("Bricks's x-ray (review R3, R2-S3)", () => {
   });
 
   it('shows only for a frame drawn in front that covers enough of him', () => {
-    const him = { x: 0, y: 0, w: 20, h: 30 };
+    const box = { x: 0, y: 0, w: 20, h: 30 };
     const tower = { x: 4, y: 10, w: 30, h: 40 };
-    expect(occludes(tower, 2, him, 1)).toBe(true);
+    expect(occludes(tower, 2, box, 1)).toBe(true);
     // Behind him: he covers it, not the other way round.
-    expect(occludes(tower, 1, him, 2)).toBe(false);
+    expect(occludes(tower, 1, box, 2)).toBe(false);
     // Beside him, its box only grazing his.
     const beside = { x: 18, y: 0, w: 30, h: 40 };
     expect(2 * 30).toBeLessThan(OCCLUDE_MIN_FRAC * 20 * 30);
-    expect(occludes(beside, 2, him, 1)).toBe(false);
-    expect(occludes({ x: 40, y: 0, w: 10, h: 10 }, 2, him, 1)).toBe(false);
+    expect(occludes(beside, 2, box, 1)).toBe(false);
+    expect(occludes({ x: 40, y: 0, w: 10, h: 10 }, 2, box, 1)).toBe(false);
     // minFrac 0: any overlap in front counts (the towers he shows through).
-    expect(occludes(beside, 2, him, 1, 0)).toBe(true);
-    expect(occludes(beside, 1, him, 2, 0)).toBe(false);
+    expect(occludes(beside, 2, box, 1, 0)).toBe(true);
+    expect(occludes(beside, 1, box, 2, 0)).toBe(false);
   });
 });

@@ -398,7 +398,8 @@ export class AllyView implements PooledView {
   #dropXray(): void {
     const { scene } = this.#ctx;
     this.#xray.setTexture('__DEFAULT');
-    for (const key of this.#xrayFor.values()) if (scene.textures.exists(key)) scene.textures.remove(key);
+    for (const key of this.#xrayFor.values())
+      if (scene.textures.exists(key)) scene.textures.remove(key);
     this.#xrayFor.clear();
     this.#lookLen = 0;
   }

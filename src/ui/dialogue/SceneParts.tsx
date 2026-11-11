@@ -4,8 +4,13 @@
 // instead, D143 R1), the Tab trap a modal keeps, and the line announcer screen readers hear each
 // line from.
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
-import { advancesItself, chooseOption, nextScene } from '../../app/dialogue.ts';
-import { choicePressAccepted, isPressKey } from './choiceLock.ts';
+import {
+  advancesItself,
+  chooseOption,
+  nextScene,
+  STORY_CHOICE_LOCK_MS,
+} from '../../app/dialogue.ts';
+import { choicePressAccepted, isPressKey, restartChoiceLock } from './choiceLock.ts';
 import { useTypewriter, type Typewriter } from './LineText.tsx';
 import { plainText } from './text.ts';
 import type { ChoiceView, LineView, SceneView } from './state.ts';
@@ -88,28 +93,53 @@ function moveChoiceFocus(e: KeyboardEvent & { currentTarget: HTMLElement }): voi
 }
 
 /**
- * Whether a locked choice (C3 and its scene's questions, D141/D143: `ChoiceView.lockedUntil`)
- * still waits; it re-renders as the lock passes. The press itself is refused until then by
- * app/dialogue.ts `chooseOption`, and after it by `choicePressAccepted` unless it's fresh.
+ * A locked choice's lock (C3 and its scene's questions, D141/D143/D144: `ChoiceView.lockedUntil`),
+ * debounced: any key-down or pointer-down on the page while it holds restarts its window
+ * (`restartChoiceLock`; listened for in the capture phase, so it's counted before the option's own
+ * handler reads it). Returns whether it still holds (it re-renders as it passes) and where it ends
+ * now. The press is refused until then by app/dialogue.ts `chooseOption` (from the choice's show)
+ * and by `choicePressAccepted` (from the last down).
  */
-function useChoiceLock(until: number): boolean {
+function useChoiceLock(until: number): { locked: boolean; end: { current: number } } {
+  const end = useRef(until);
   const [locked, setLocked] = useState(() => performance.now() < until);
-  useEffect(() => {
-    const left = until - performance.now();
-    setLocked(left > 0);
-    if (left <= 0) return undefined;
-    const t = setTimeout(() => setLocked(false), left);
-    return () => clearTimeout(t);
+  useLayoutEffect(() => {
+    end.current = until;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const arm = (): void => {
+      if (timer !== null) clearTimeout(timer);
+      timer = null;
+      const left = end.current - performance.now();
+      setLocked(left > 0);
+      if (left > 0) timer = setTimeout(arm, left);
+    };
+    arm();
+    if (until <= 0) return undefined;
+    const onDown = (): void => {
+      const now = performance.now();
+      const next = restartChoiceLock(end.current, now, STORY_CHOICE_LOCK_MS);
+      if (next === end.current) return;
+      end.current = next;
+      arm();
+    };
+    document.addEventListener('pointerdown', onDown, true);
+    document.addEventListener('keydown', onDown, true);
+    return () => {
+      if (timer !== null) clearTimeout(timer);
+      document.removeEventListener('pointerdown', onDown, true);
+      document.removeEventListener('keydown', onDown, true);
+    };
   }, [until]);
-  return locked;
+  return { locked, end };
 }
 
 /**
  * A choice's options as buttons (role group, "Your answer"); Up and Down move between them; Enter,
  * Space, or a click picks one. An open choice's first option takes the focus. A locked one's
  * group takes it instead (as C2's heading does, ui/screens/StoryChoice.tsx), so Enter mashed
- * through the lines before it lands nowhere; its options wait out the lock, then take only a
- * fresh key-down or pointer-down (`choicePressAccepted`).
+ * through the lines before it lands nowhere; its options wait out the lock (restarted by every
+ * down while it holds), then take only a fresh key-down, or a fresh pointer-down on an option the
+ * pointer has moved over since it appeared (`choicePressAccepted`; D144 S4).
  */
 export function ChoiceList({ choices }: { choices: readonly ChoiceView[] }) {
   const until = choices[0]?.lockedUntil ?? 0;
@@ -119,24 +149,29 @@ export function ChoiceList({ choices }: { choices: readonly ChoiceView[] }) {
   useLayoutEffect(() => {
     if (lockedChoice) group.current?.focus();
   }, [choices, lockedChoice]);
-  const locked = useChoiceLock(until);
+  const { locked, end } = useChoiceLock(until);
   // The down behind the next click (pointer or key), and whether Space's down was refused.
-  const downAt = useRef<number | null>(null);
+  const down = useRef<{ at: number; pointer: boolean } | null>(null);
   const spaceRefused = useRef(false);
+  // The options a pointer has moved over since they appeared (by index; reset with each choice).
+  const moved = useRef(new Set<number>());
+  useLayoutEffect(() => {
+    moved.current = new Set();
+  }, [choices]);
   const onKeyDown = (e: KeyboardEvent & { currentTarget: HTMLElement }): void => {
     moveChoiceFocus(e);
     if (!lockedChoice || !isPressKey(e.code)) return;
     // On the group itself, Enter and Space do nothing (no game key, no pause, no answer).
     const onOption = e.target instanceof HTMLButtonElement;
     const now = performance.now();
-    const fresh = choicePressAccepted({ until, downAt: now, now, repeat: e.repeat });
+    const fresh = choicePressAccepted({ until: end.current, downAt: now, now, repeat: e.repeat });
     if (!onOption || !fresh) {
       e.preventDefault();
       e.stopPropagation();
       if (e.code === 'Space') spaceRefused.current = true;
       return;
     }
-    downAt.current = now;
+    down.current = { at: now, pointer: false };
     if (e.code === 'Space') spaceRefused.current = false;
   };
   const onKeyUp = (e: KeyboardEvent): void => {
@@ -147,9 +182,16 @@ export function ChoiceList({ choices }: { choices: readonly ChoiceView[] }) {
     }
   };
   const pick = (i: number): void => {
-    const down = downAt.current;
-    downAt.current = null;
-    if (choicePressAccepted({ until, downAt: down, now: performance.now() })) chooseOption(i);
+    const d = down.current;
+    down.current = null;
+    const ok = choicePressAccepted({
+      until: lockedChoice ? end.current : 0,
+      downAt: d?.at ?? null,
+      now: performance.now(),
+      pointer: d?.pointer ?? false,
+      moved: moved.current.has(i),
+    });
+    if (ok) chooseOption(i);
   };
   return (
     <div
@@ -170,8 +212,13 @@ export function ChoiceList({ choices }: { choices: readonly ChoiceView[] }) {
           class="hud-btn chamfer dlg-choice"
           data-tone={c.tone}
           aria-disabled={locked ? 'true' : undefined}
-          onPointerDown={() => {
-            downAt.current = performance.now();
+          onPointerMove={(e) => {
+            // A real move (a layout shift under a still cursor has none).
+            if (e.movementX !== 0 || e.movementY !== 0) moved.current.add(i);
+          }}
+          onPointerDown={(e) => {
+            // Only a mouse has a cursor an option can slide in under; a tap is a pick by itself.
+            down.current = { at: performance.now(), pointer: e.pointerType === 'mouse' };
           }}
           onClick={() => pick(i)}
         >

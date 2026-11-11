@@ -60,6 +60,10 @@ test('xray: Bricks shows through the tower in front of his post at W13, his bar 
     return st.pendingInput;
   });
   expect(sealed).toBe('seal');
+  // A moment at 1× (the fast-forward's shell bursts burnt out), then still for the shots.
+  await page.evaluate(() => globalThis.__sd!.setSpeed(1));
+  await page.waitForTimeout(1200);
+  await page.evaluate(() => globalThis.__sd!.setSpeed(0));
   await nextFrames(page);
   expect(await page.evaluate(() => globalThis.__sd!.render()!.blocker.xray)).toBe(true);
   await page.screenshot({ path: outPath('screens/xray/03-seal-post.png') });
