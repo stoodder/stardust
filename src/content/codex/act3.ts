@@ -17,10 +17,17 @@
 //   the Expediter, the Buffer Protocol and Clean Exit (Everglow's record beside the Journal's
 //   correction), QUILL's directives, and Director Joy Sterling (her staff profile beside its
 //   correction: the Pest Field Guide never had an entry for her, so her original arrives with the
-//   correction). A3M3: the Undertow, Okonkwo's Gap, the Amended Survey.
+//   correction). A3M3: the Undertow, Okonkwo's Gap, the Amended Survey. A3M4: the Silencer, the
+//   Liability-Class Enforcer, System Reboot, the Gloop Spitter, and Bricks's pension form
+//   (Form P-19). A3M5: the Auditor, the Maintenance Associate, "Shareholder Value", the Sproing
+//   Pad, and Kip's ledger. A3M6: the Asset Recovery Gunship, the Black Budget Operative, and the
+//   Gathering Maw. The two Skitterkin gifts unlock when owned, whichever door brought the Gloop.
 // - **Corrections of earlier entries** (`ACT3_CODEX_VERSIONS`, their `corrected` version): A3M1's
 //   Brood Hauler, Elder, and Bramble (the Act I *Matriarch Chitterbloom*, whose title keeps
-//   Everglow's codename: campaign.md § 7).
+//   Everglow's codename: campaign.md § 7); A3M4's Gerald; A3M6's Everglow Gardens (Dome Row) and
+//   Zibzab.
+//
+// No entry differs by C4: what QUILL became shows in play and in its lines, not in the Journal.
 //
 // **The Elder's citation** reads "(Survey 2346, Okonkwo.)" from A3M1 and the Amended Survey from
 // A3M3 (act3.md § A3M1 and § A3M3): one version, two wordings, so its correction carries a
@@ -34,6 +41,9 @@ import type { CodexEntryDef, CodexLaterVersions } from './types.ts';
 const FROM_A3M1 = { mapAtLeast: 'a3_m01' } as const;
 const FROM_A3M2 = { mapAtLeast: 'a3_m02' } as const;
 const FROM_A3M3 = { mapAtLeast: 'a3_m03' } as const;
+const FROM_A3M4 = { mapAtLeast: 'a3_m04' } as const;
+const FROM_A3M5 = { mapAtLeast: 'a3_m05' } as const;
+const FROM_A3M6 = { mapAtLeast: 'a3_m06' } as const;
 
 /** Act III's own entries, in map order. */
 export const ACT3_CODEX: readonly CodexEntryDef[] = [
@@ -291,6 +301,235 @@ export const ACT3_CODEX: readonly CodexEntryDef[] = [
       },
     },
   },
+  // ── A3M4 · Empty Slot ─────────────────────────────────────────────────────────────────────
+  {
+    // Dialogue and the Journal call its jam "hushing" (enemies.md § 4); its pick is the Choir's.
+    id: 'codex_silencer',
+    title: 'Silencer',
+    kind: 'enemy',
+    subject: { enemy: 'silencer' },
+    versions: {
+      original: {
+        text:
+          'A Hollow shape that hushes. It stops, and a black tendril creeps from it to one ' +
+          'tower. If a Hum Choir is near, it picks the Choir. It goes for the song first. When ' +
+          'the tendril arrives, the tower goes quiet for a few seconds: it does not fire, and it ' +
+          'does not sing. The tendril takes two seconds to cross, and Stasis or a scare breaks ' +
+          "it. System Reboot wakes every quiet tower at once. A Choir's song shortens the quiet " +
+          'for the towers around it.',
+      },
+    },
+  },
+  {
+    // Prim's PA line (act3.md § Act III barks: "All liability now transfers to you.").
+    id: 'codex_liability',
+    title: 'Liability-Class Enforcer',
+    kind: 'enemy',
+    subject: { enemy: 'liability' },
+    versions: {
+      original: {
+        text:
+          "Everglow Security's heaviest walker, sent to repossess the shelter generator. It is " +
+          'plated front and back, and most shots glance off. Bring what pierces or eats ' +
+          "through: a Harpoon, a Prism's beam, the Gloop's acid, a Railspike. It is slow, and it " +
+          "does not stop. Prim's announcement says all liability now transfers to you. The " +
+          'generator it came for keeps the shelters warm.',
+      },
+    },
+  },
+  {
+    // QUILL's briefing line (act3.md § A3M4): "It was in a folder marked 'Do Not.' I did."
+    id: 'codex_system_reboot',
+    title: 'System Reboot',
+    kind: 'ability',
+    subject: { ability: 'system_reboot' },
+    versions: {
+      original: {
+        text:
+          "A Technician ability. QUILL patched it in before the shelters, from a folder marked " +
+          "'Do Not.' It wakes every jammed tower at once, and for six seconds nothing can jam " +
+          'them again. It recharges in forty. QUILL runs it, so it works only while QUILL is ' +
+          'there to run it.',
+      },
+    },
+  },
+  {
+    // A gift, whichever door: the warren's in A3M4's briefing, or A3M6's under the convoy.
+    id: 'codex_gloop',
+    title: 'Gloop Spitter',
+    kind: 'tower',
+    subject: { tower: 'gloop' },
+    versions: {
+      original: {
+        text:
+          'A big, round, happy Skitterkin who spits sticky acid. The Pest Field Guide filed this ' +
+          'shape as a Chonk. Each glob splashes and eats a little of the armor off whatever it ' +
+          'lands on, so everything else hits harder after it. It cannot reach the sky. The ' +
+          'warrens lend their spitters to people they trust.',
+      },
+    },
+  },
+  {
+    // Gerald's envelope (act3.md § A3M4's mail scene); A2M3's memo named the form ("To name a
+    // beneficiary, file Form P-19 in person.") and A1M3's radio the pen ("I signed it. Twice.").
+    // The answer to memo_a3_03's small print: it was filed before his departure.
+    id: 'codex_pension_form',
+    title: 'Form P-19',
+    kind: 'thing',
+    photo: 'Form P-19',
+    versions: {
+      original: {
+        text:
+          'Form P-19, Nomination of Beneficiary, filed by Sergeant I. Okonkwo after nineteen ' +
+          "years of service. Signed twice, in pen. Beneficiary: 'Pebble, c/o the Deep Halls.' " +
+          'He posted it days before the Gap, so it was filed before his departure, and it ' +
+          'stands. The form asks to be filed in person. Gerald delivered it.',
+        when: FROM_A3M4,
+      },
+    },
+  },
+
+  // ── A3M5 · Unsung ─────────────────────────────────────────────────────────────────────────
+  {
+    // QUILL's briefing line (act3.md § A3M5): "Prim's model. I'm sorry it's her face."
+    id: 'codex_auditor',
+    title: 'Auditor',
+    kind: 'enemy',
+    subject: { enemy: 'auditor' },
+    versions: {
+      original: {
+        text:
+          "Everglow Security's jammer, built on Compliance Officer Prim's model: her face, her " +
+          'clipboard, her voice. Every ten seconds it stops and an orange ring spreads out from ' +
+          'it, and every tower inside the ring when it closes goes quiet for a few seconds. The ' +
+          'ring takes two seconds. Stillness or Stasis stops it, and a Hum Choir nearby ' +
+          'shortens the quiet. Prim measured things. The Auditor counts them.',
+      },
+    },
+  },
+  {
+    // Prim's PA line (act3.md § Act III barks: "Repairs: 12 per second. Please hold.").
+    id: 'codex_associate',
+    title: 'Maintenance Associate',
+    kind: 'enemy',
+    subject: { enemy: 'associate' },
+    versions: {
+      original: {
+        text:
+          'A small Everglow repair unit that walks with the machines and mends them as they ' +
+          'walk: twelve points a second to every machine near it, never itself, and never ' +
+          'anything alive. Break it first, or hit the column harder than it can mend. Everglow ' +
+          'lists it as staff. It is not paid.',
+      },
+    },
+  },
+  {
+    // Sterling's remote boss cues (act3.md § A3M5): "It's just a name! Mostly!"
+    id: 'codex_shareholder_value',
+    title: '"Shareholder Value"',
+    kind: 'enemy',
+    subject: { enemy: 'shareholder_value' },
+    versions: {
+      original: {
+        text:
+          "Everglow's Executive Assault Platform, driven by Director Sterling by remote. It " +
+          'walks the plant yard and launches drones from a hangar in its side. At two-thirds it ' +
+          'starts Hostile Takeover: a thin laser holds on the strongest towers for three ' +
+          'seconds, then jams them. System Reboot answers it. At one-third it drops its plating ' +
+          'and runs, with no armor and much faster. The name on the hull is in quotation marks. ' +
+          'Director Sterling says it is just a name.',
+      },
+    },
+  },
+  {
+    // Pebble's briefing gift (act3.md § A3M5): "My friend Boing wants to help. He jumps very high!"
+    id: 'codex_sproing',
+    title: 'Sproing Pad',
+    kind: 'tower',
+    subject: { tower: 'sproing' },
+    versions: {
+      original: {
+        text:
+          'A springy mushroom pad and the leaper who lives on it. Pebble says his name is Boing. ' +
+          'When something flies over, he jumps very high and bonks it out of the sky for a ' +
+          'moment, where everything on the ground can reach it. When nothing is flying, he bonks ' +
+          'walkers. When he was small he chased Puffwings. He still does.',
+      },
+    },
+  },
+  {
+    // Kip's briefing (act3.md § A3M5): "Every batch, every date." Its first line is the batch on
+    // his slip in Gerald's sack; memo_a3_04's small print says Everglow keeps no copy.
+    id: 'codex_kips_ledger',
+    title: "Kip's Ledger",
+    kind: 'thing',
+    photo: 'R2-0001',
+    versions: {
+      original: {
+        text:
+          "Kip Vandermeer's ledger from Second Harvest, Reclamation Facility 2. Every batch, " +
+          'every date, every weight, from the first, R2-0001, to the night the plant ran at full ' +
+          "throughput. He copied the early ones out of the plant's own records by hand. Everglow " +
+          'keeps no other copy. It has no column for names. He gave it away before he could get ' +
+          'scared again.',
+        when: FROM_A3M5,
+      },
+    },
+  },
+
+  // ── A3M6 · Let Them In ────────────────────────────────────────────────────────────────────
+  {
+    // Prim's PA line (act3.md § Act III barks: "Please remain on the ground.").
+    id: 'codex_gunship',
+    title: 'Asset Recovery Gunship',
+    kind: 'enemy',
+    subject: { enemy: 'gunship' },
+    versions: {
+      original: {
+        text:
+          "Everglow's Asset Recovery Gunship, an armored flyer sent to take the domes back. It " +
+          'crosses the sky on its own lanes, out of reach of anything that only hits the ' +
+          "ground, and its plate turns light shots. A Sproing Pad's leaper can knock it down for " +
+          'a moment, where everything can reach it. A Harpoon or a Seeker Swarm gets through ' +
+          'the plate. Prim asks everyone to remain on the ground.',
+      },
+    },
+  },
+  {
+    // Prim's PA line (act3.md § Act III barks: "Please disregard the footsteps.").
+    id: 'codex_blackbudget',
+    title: 'Black Budget Operative',
+    kind: 'enemy',
+    subject: { enemy: 'blackbudget' },
+    versions: {
+      original: {
+        text:
+          'An Everglow unit with no budget line, no serial number, and no file. It walks ' +
+          "cloaked: turrets cannot see it until something shows it, a Lookout's sweep or a " +
+          "Seer's Lantern. Under the cloak it is armored, so it still takes a Harpoon or " +
+          "another piercing shot. Prim's announcement asks everyone to disregard the " +
+          'footsteps. It has a file now. This is it.',
+      },
+    },
+  },
+  {
+    // Zibzab's w12 line (act3.md § A3M6): "It doesn't want anything. It only wants."
+    id: 'codex_gathering_maw',
+    title: 'The Gathering Maw',
+    kind: 'enemy',
+    subject: { enemy: 'gathering_maw' },
+    versions: {
+      original: {
+        text:
+          'The largest Maw anyone has seen. It came up the road behind the last of the ' +
+          "valley's families. Every few seconds it reaches out, pulls in what stands near it, " +
+          'and grows. Hurt it badly and it breaks into three. Twelve seconds later the three ' +
+          'walk back together and become one again, faster, unless all three are broken first. ' +
+          'Zibzab calls the Hollow the worst customer he ever had. It does not want anything. It ' +
+          'only wants.',
+      },
+    },
+  },
 ];
 
 /** The `corrected` versions Act III writes on earlier acts' entries, by entry id. */
@@ -326,6 +565,41 @@ export const ACT3_CODEX_VERSIONS: CodexLaterVersions = {
     corrected: {
       text: "Not 'Chitterbloom.' A mother who walks at the back so no one is left.",
       when: FROM_A3M1,
+    },
+  },
+  // A3M4: Gerald corrected (act3.md § A3M4's *Codex*, verbatim), after the mail he carried.
+  codex_gerald: {
+    corrected: {
+      text:
+        'Everglow Postal Drone G-1. Route older than the perimeter. Delivered everything he was ' +
+        "given. In the Long Night he flew the shelters' old mail chute with an envelope posted " +
+        'days before the Gap. Its sender was gone when it arrived. Gerald does not know what was ' +
+        'in it. He knows it arrived.',
+      when: FROM_A3M4,
+    },
+  },
+  // A3M6: Dome Row, the Act I entry's Everglow Gardens (its "Lettuce losses" answered with
+  // Goldie's w08 line).
+  codex_everglow_gardens: {
+    corrected: {
+      text:
+        'Dome Row. The domes were built to keep the valley out. In the Long Night Goldie opened ' +
+        "them. The valley's Skitterkin walked the same road they always had, north to south, and " +
+        "at the gate they turned in. Dome 1's doors stand open, so it is cold inside now. " +
+        'Lettuce crates hold the old road shut. Lettuce losses: none. They never ate a single ' +
+        'leaf.',
+      when: FROM_A3M6,
+    },
+  },
+  // A3M6: Zibzab corrected, after his crate (act3.md § A3M6: "Price first: nothing.").
+  codex_zibzab: {
+    corrected: {
+      text:
+        'A Vrell trader. He states the price first, and he has never lied about one. He told ' +
+        'anyone who asked where stardust comes from. In the Long Night he brought a crate to ' +
+        'Dome Row with every tune-up he had left in it, and he named the price: nothing. He said ' +
+        'it was a terrible deal. He had peeled the NO REFUNDS sticker off first.',
+      when: FROM_A3M6,
     },
   },
 };
