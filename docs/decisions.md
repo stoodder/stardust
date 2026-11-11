@@ -1616,3 +1616,15 @@ Low fixes:
 Deferred: A3M2's par-specific difficulty (T660b).
 
 **Owner asks (listen):** the Leaving Song's harmony and Thrum's timbre; Pebble's late hum in the SEAL's `door_hum`; Sterling's 2 s silence with the stamps; whether `lose_hush` reads as a hum; whether the Choir layer sits under speech.
+
+### D144 — 2026-11-11 — M6 review round 2 rulings (fixed in round 3, the last)
+
+Round 2 verified round 1 as landed and found one high: the Thumper exam on A3M3 failed for a player who carried Emergency Bulkhead (A3M2's reference protocol) into a map with no core. The protocol row clipped the "No core on this shift" note, so the player silently lost Head Start, and the Zapcoil swap Bricks recommends then lost as many refugees in W10 as ignoring him.
+
+Rulings:
+- **The exam holds whatever protocol the player brings.** The loadout shows the full protocol description and the no-core note without clipping. On a map with no core, a carried core-only protocol is benched in favour of the player's most recent non-inert one (or the first owned one); the player can still choose it. W10 is retuned so the Zapcoil swap loses none there with Head Start off, while no-splash builds still lose.
+- **A tagged revocation bark waits for the cue.** Barks queued from `tower_revoked` while a cue's scenes are up are held until they close, exempt from staleness and the beat-end drop (Lucky's line never played before).
+- **Bricks's x-ray draws his silhouette through the occluder** (a dithered ink.0 fill with a white.1 rim), not only an outline outside his frame.
+- **The story-choice lock debounces:** any input while locked restarts the 700 ms, and a pointer answer needs a pointer move over the option after it appears.
+- **The SEAL's fallback counts from the permission scene starting**, not from the button showing. "Do it, {name}." stays up until the press or the wait line. The SEAL clears both doors.
+- Small: back-to-back locked choices each lock; the Gap corner's door reads as closing; the gather equivalence test is broadened.
