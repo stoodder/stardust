@@ -80,16 +80,17 @@ export const waves = defineWaves([
   // W6 · Liability + one Associate [X]
   { ...CALL, groups: [drones(4, 0), liabilities(1, 3), associates(1, 5), drones(4, 8)] },
   // W7 · Auditors ×2 + drones [X]
-  { ...NO_CALL, groups: [drones(4, 0), auditors(2, 3), drones(3, 12)] },
+  { ...NO_CALL, groups: [drones(4, 0), auditors(2, 3), liabilities(1, 6), drones(3, 12)] },
   // W8 · Fractures + Compliance drones
   { ...CALL, groups: [fractures(3, 'road', 0), drones(6, 4), motes(6, 'road', 10)] },
   // W9 · Silencers + Auditors [X, jam limit]; the second bearers walk
   {
     ...NO_CALL,
     groups: [
-      silencers(2, 0),
-      auditors(2, 4),
-      drones(4, 8),
+      auditors(2, 0),
+      silencers(2, 3),
+      liabilities(2, 6),
+      drones(4, 10),
       motes(6, 'hunt', HUNT_SEC, 0.5),
     ],
   },

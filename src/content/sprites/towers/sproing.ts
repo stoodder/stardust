@@ -45,7 +45,7 @@ const SEED = 73;
  */
 function mushroom(g: CharGrid, x: number, capY: number, rx: number, foot: number): void {
   for (let y = Math.round(capY); y <= foot; y++) {
-    const w = Math.max(1, Math.round(rx * 0.45));
+    const w = Math.max(1, Math.round(rx * 0.3));
     for (let dx = -w; dx < w; dx++) plot(g, Math.round(x) + dx, y, dx < 0 ? 'W' : 'V');
   }
   const ry = rx * 0.6;
@@ -72,13 +72,13 @@ function sprouts(g: CharGrid, cx: number, cy: number): void {
 
 /** T3: a tall mushroom on the left corner, its cap a pad of its own. */
 function tallLeft(g: CharGrid, cx: number, cy: number): void {
-  mushroom(g, cx - 12, cy - 14, 4, cy - 1);
+  mushroom(g, cx - 12, cy - 13, 5, cy - 1);
 }
 
 /** Sky Bouncers' base: a tall mushroom at each corner, the right one shorter. */
 function skyBouncersKit(g: CharGrid, cx: number, cy: number): void {
-  mushroom(g, cx - 11, cy - 13, 4, cy);
-  mushroom(g, cx + 11, cy - 9, 4, cy + 1);
+  mushroom(g, cx - 11, cy - 13, 5, cy);
+  mushroom(g, cx + 11, cy - 9, 5, cy + 1);
 }
 
 /** A flattened boulder at (x, foot), cracked in a star where something heavy landed on it. */
