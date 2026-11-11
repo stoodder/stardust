@@ -114,10 +114,14 @@ function inputOf(f: ResultsFixture, save: SaveData | null): RunEndInput {
   const won = f.outcome === 'won';
   const map = isMapId(f.map) ? MAPS[f.map] : undefined;
   const waveCount = map?.waves.length ?? 10;
-  // The map's objective names Perfect Core plain "Perfect" on an Escort, as the battle does.
+  // The map's objective names Perfect Core plain "Perfect" on an Escort, as the battle does, and
+  // on a Protect map whose bearers walk (A3M5; its compiled escort).
+  const bearers =
+    map?.objective === 'protect' ? battleConfig(f.map, 0, save).content.maps[f.map] : undefined;
   const medals = offeredMedals({
     medals: map?.medals ?? null,
     ...(map === undefined ? {} : { objective: map.objective }),
+    ...(bearers === undefined ? {} : { escort: bearers.escort }),
   });
   return {
     mapId: f.map,

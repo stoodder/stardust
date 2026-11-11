@@ -6,8 +6,11 @@ import { describe, expect, it } from 'vitest';
 import { CAMPAIGN_PLAN } from '../content/campaign.ts';
 import { DEV_SAVES } from '../meta/__fixtures__/devSaves.ts';
 import { meterCounter, resultsCounter } from '../story/counter.ts';
+import { medalViews, perfectMedalName } from './hudViews.ts';
 import { presentationFor } from '../story/presentation.ts';
 import { medalMarks, resultsHeader, spokenCounter } from '../ui/screens/presentationText.ts';
+import { bearerTotal } from '../sim/index.ts';
+import { battleConfig } from './battleSetup.ts';
 import { fixtureResult } from './resultsFixture.ts';
 import { bearersAtEnd } from './resultsStory.ts';
 import {
@@ -95,22 +98,27 @@ describe("A3M5's Carried line", () => {
 
   it('the results fixture walks every bearer home on a win, half on a loss', () => {
     const save = DEV_SAVES.after_a3m4_keep.build();
+    const config = battleConfig('a3_m05', 0, save);
+    const total = bearerTotal(config.content.maps.a3_m05!, config.scriptFlags);
+    expect(total).toBeGreaterThan(0);
     const won = fixtureResult({ map: 'a3_m05', outcome: 'won' }, save);
     expect(won.asset).toEqual({ name: 'Bearers', value: 12, max: 12 });
-    expect(won.meter).toEqual({ kind: 'carried', n: 26, total: 26 });
-    expect(resultsCounter(won.counter, 0, 0, won.meter)?.line).toBe('Carried: 26 of 26.');
+    expect(won.meter).toEqual({ kind: 'carried', n: total, total });
+    expect(resultsCounter(won.counter, 0, 0, won.meter)?.line).toBe(
+      `Carried: ${total} of ${total}.`,
+    );
+    // Its Perfect is plain "Perfect" (core and bearers undamaged, act3.md § A3M5), not Perfect Core.
+    expect(won.rewards?.medals.map((m) => m.name)).toEqual(['Victory', 'Perfect', 'Declined']);
     const lost = fixtureResult({ map: 'a3_m05', outcome: 'lost' }, save);
-    expect(lost.meter).toEqual({ kind: 'carried', n: 13, total: 26 });
+    expect(lost.meter).toEqual({ kind: 'carried', n: Math.floor(total / 2), total });
     expect(lost.asset?.value).toBe(6);
     const told = fixtureResult({ map: 'a3_m05', outcome: 'won', bearers: { home: 20 } }, save);
-    expect(resultsCounter(told.counter, 0, 0, told.meter)?.line).toBe('Carried: 20 of 26.');
+    expect(resultsCounter(told.counter, 0, 0, told.meter)?.line).toBe(`Carried: 20 of ${total}.`);
     // A Protect map with no bearers (A2M2's rigs) has its asset row and no meter.
-    const rigs = fixtureResult(
-      { map: 'a2_m02', outcome: 'won' },
-      DEV_SAVES.after_a2m1.build(),
-    );
+    const rigs = fixtureResult({ map: 'a2_m02', outcome: 'won' }, DEV_SAVES.after_a2m1.build());
     expect(rigs.asset).not.toBeNull();
     expect(rigs.meter).toBeNull();
+    expect(rigs.rewards?.medals.map((m) => m.name)).toContain('Perfect Core');
   });
 });
 
@@ -150,5 +158,19 @@ describe("Act III part two's kickers", () => {
       }
       expect(medalMarks(style)).toEqual({ new: 'New', nextTime: 'Next time.' });
     }
+  });
+});
+
+describe("A3M5's Perfect", () => {
+  it('is plain "Perfect" on a Protect map whose bearers walk; Perfect Core on the rigs', () => {
+    const save = DEV_SAVES.after_a3m4_keep.build();
+    const map = battleConfig('a3_m05', 0, save).content.maps.a3_m05!;
+    expect(perfectMedalName(map)).toBe('Perfect');
+    const open = { victory: 'open', perfectCore: 'open', challenge: 'open' } as const;
+    expect(medalViews(map, open, [])[1]).toMatchObject({
+      name: 'Perfect',
+      description: 'Win with the core and the bearers unhurt.',
+    });
+    expect(perfectMedalName({ objective: 'protect', escort: null })).toBe('Perfect Core');
   });
 });
