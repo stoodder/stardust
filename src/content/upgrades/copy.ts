@@ -70,6 +70,8 @@ export const ITEM_COPY: Readonly<Record<string, string>> = {
   // The Skitterkin tune-ups (T604): Zibzab's too. Shown once the Den is given.
   tune_burrow:
     'Price first: 40 stardust, rising. Sharper little teeth, a wider yard. They paid in moss. I took it.',
+  tune_choir:
+    'Price first: 40 stardust, rising. Louder, cheaper, wider. I tried tuning the song. They let me.',
   // Granted, never sold: C2 Sell's (progression.md § 2.1; T510).
   tune_zibzab: 'Ten percent. Honestly, eight.',
 

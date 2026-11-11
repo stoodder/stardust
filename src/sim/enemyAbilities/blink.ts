@@ -31,7 +31,7 @@ import type { CompiledBlink } from '../../content/compiled.ts';
 import type { Enemy } from '../entities.ts';
 import { pointAt, type Point } from '../path.ts';
 import { emit, type SimState } from '../state.ts';
-import { evadeBlocked } from '../systems/status.ts';
+import { cooldownHeld, evadeBlocked } from '../systems/status.ts';
 import type { TickContext } from '../tick.ts';
 
 /** The blink `e` runs now (its boss phase's, else its own), or null. */
@@ -79,6 +79,7 @@ export function blinkStep(state: SimState, ctx: TickContext, e: Enemy, blink: Co
     e.blinkTicks = e.def!.boss !== null ? blink.tellTicks + 1 : blink.everyTicks;
     return;
   }
+  if (e.blinkTicks > blink.tellTicks && cooldownHeld(e)) return; // Lulled (T607): its beat
   const wasTelling = e.blinkTicks <= blink.tellTicks;
   const left = --e.blinkTicks;
   if (left <= blink.tellTicks && evadeBlocked(e)) {

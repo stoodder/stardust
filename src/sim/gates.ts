@@ -189,7 +189,7 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   // live), detection with the Lookout (T406, live). M5 (D137): beams with the Prism (T504, live), Unnerved
   // and echoes with the Mindspike and Stillness's Stasis area (T507, live), area Marks and Truthlight
   // with the Lantern (T508, live). M6 (D141): spawners with the Scuttle Den (T604, live), Lulled with the
-  // Hum Choir's Lullaby (T607), the Stasis Bloom's field (T608).
+  // Hum Choir's Lullaby (T607, live), the Stasis Bloom's field (T608).
   'attack.projectile': null,
   'attack.beam': null,
   'attack.chain': null,
@@ -206,7 +206,7 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   'attack.echo': null,
   'tower.markArea': null,
   'status.noEvade': null,
-  'status.lulled': 'T607',
+  'status.lulled': null,
   'tower.field': 'T608',
   'modifier.towerStat': null,
   'modifier.towerCost': null,

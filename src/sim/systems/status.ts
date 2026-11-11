@@ -52,14 +52,34 @@
 //   (systems/detection.ts). Its other abilities (a shield pulse, a hush, a sneeze) go on.
 // - **Lightsong** (`Tower.linkMarkPct`, systems/links.ts): each of the tower's own Marks lands
 //   again at + linkMarkPct (`applyLinkStatuses`), so the stronger one wins.
+//
+// Lulled (enemies.md § 2.4; T607, the Hum Choir [Lullaby]): `lullPass`, at the end of this pass,
+// sets `Enemy.lulled` on every unit inside a Lullaby's radius this tick (a tier's `lull`, centre
+// to centre, × its `supportStat` radius tune-up; both layers: a song reaches flyers). Never on a neutral unit, nor on one nothing the
+// player sends reaches (layers.ts `untargetable`: burrowed, Phased, leaving, or cloaked and
+// unrevealed, the cloak's "no auras"). It doesn't stack: one Lullaby or three, the same.
+// - **The beat:** a Lulled unit's ability cooldowns run LULLED_COOLDOWN_MULT (×1.5) longer, a boss's
+//   LULLED_COOLDOWN_MULT_BOSS (×1.25), in whole ticks: `lullBeat` counts the Lulled ticks round
+//   `lullPeriod` (3; a boss's 5) and `cooldownHeld` holds every cooldown still on the tick it comes
+//   back to 0, so a cooldown advances on 2 ticks of 3 (a boss's 4 of 5). Leaving the radius
+//   resets the beat.
+// - **What it stretches:** the wait before a tell, never the tell itself or a duration: the
+//   Digger's surface stretch (burrow.ts), a shield pulse (pulse.ts), a blink (blink.ts), a phase's
+//   solid stretch (phase.ts), a boss's sneezes and digs (boss.ts), and a Maw's gather (gather.ts).
+//   Auras (a haste ring, a shield aura, a huddle) have no cooldown, so it doesn't touch them; nor a
+//   hush (contact, no timer) or a shield's own regeneration (a status, not an ability).
+// - It interrupts nothing (the interrupt hook is Stasis's and Unnerved's).
 import {
   BOSS_CONVERTED_CHILL,
+  LULLED_COOLDOWN_MULT,
+  LULLED_COOLDOWN_MULT_BOSS,
   PIN_IMMUNITY_SEC,
   STASIS_IMMUNITY_MULT,
   UNNERVED_SLOW,
 } from '../../content/rules.ts';
 import { secToTicks } from '../../shared/time.ts';
 import { applyChill, applyMark } from '../combat/damage.ts';
+import { distSqTo } from '../combat/targeting.ts';
 import { untargetable } from '../enemyAbilities/layers.ts';
 import type { Enemy, Tower } from '../entities.ts';
 import type { SimState } from '../state.ts';
@@ -186,6 +206,71 @@ export function applyLinkStatuses(t: Tower, e: Enemy): void {
   }
 }
 
+/**
+ * Lulled's beat period in ticks for a cooldown run `mult` times longer: a cooldown holds still on
+ * one tick of each period, so it advances on (period − 1) of them (×1.5: 3; ×1.25: 5).
+ */
+export function lullPeriod(mult: number): number {
+  return Math.round(mult / (mult - 1));
+}
+
+const LULL_PERIOD = lullPeriod(LULLED_COOLDOWN_MULT);
+const LULL_PERIOD_BOSS = lullPeriod(LULLED_COOLDOWN_MULT_BOSS);
+
+/** Whether `e` is Lulled this tick (render's marker reads it). */
+export function isLulled(e: Readonly<Enemy>): boolean {
+  return e.lulled;
+}
+
+/**
+ * **The Lulled hook** (see the header): whether `e`'s ability cooldowns hold still this tick. Every
+ * enemy ability with a cooldown asks it while its timer is still above its tell.
+ */
+export function cooldownHeld(e: Readonly<Enemy>): boolean {
+  return e.lulled && e.lullBeat === 0;
+}
+
+/**
+ * A Lullaby's reach, squared, in tiles²: its radius × its tower's `supportStat` radius tune-up
+ * (`Tower.detectPct`, which systems/links.ts sets to it for every tower; the Choir's rank 3).
+ */
+export function lullReachSq(
+  lull: { readonly radiusTiles: number; readonly radiusSq: number },
+  radiusPct: number,
+): number {
+  if (radiusPct === 0) return lull.radiusSq;
+  const r = lull.radiusTiles * (1 + radiusPct);
+  return r * r;
+}
+
+/** Sets `lulled` and steps `lullBeat` for every live unit (see the header). */
+export function lullPass(state: SimState): void {
+  const towers = state.towers;
+  let any = false;
+  for (let j = 0; j < towers.used; j++) {
+    const t = towers.items[j]!; // j < used ≤ items.length
+    if (t.alive && t.tierDef !== null && t.tierDef.lull !== null) any = true;
+  }
+  const enemies = state.enemies;
+  for (let i = 0; i < enemies.used; i++) {
+    const e = enemies.items[i]!; // i < used ≤ items.length
+    let lulled = false;
+    if (any && e.alive && e.def !== null && !e.def.neutral && !untargetable(e)) {
+      for (let j = 0; j < towers.used && !lulled; j++) {
+        const t = towers.items[j]!; // j < used ≤ items.length
+        const lull = t.alive && t.tierDef !== null ? t.tierDef.lull : null;
+        if (lull !== null && distSqTo(t.x, t.y, e) <= lullReachSq(lull, t.detectPct)) lulled = true;
+      }
+    }
+    e.lulled = lulled;
+    if (!lulled) e.lullBeat = 0;
+    else {
+      const period = e.def!.boss !== null ? LULL_PERIOD_BOSS : LULL_PERIOD; // lulled: has a def
+      e.lullBeat = (e.lullBeat + 1) % period;
+    }
+  }
+}
+
 export function status(state: SimState): void {
   const enemies = state.enemies;
   for (let i = 0; i < enemies.used; i++) {
@@ -227,4 +312,5 @@ export function status(state: SimState): void {
       }
     }
   }
+  lullPass(state);
 }

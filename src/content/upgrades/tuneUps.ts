@@ -48,6 +48,7 @@ function supportTuneUp<const Id extends string>(
   id: Id,
   tower: TowerId,
   name: string,
+  availableAfter: CampaignMapId = 'a1_m03',
 ): UpgradeDef<Id> {
   return defineUpgrade({
     id,
@@ -55,7 +56,7 @@ function supportTuneUp<const Id extends string>(
     copy: itemCopy(id),
     kind: 'shop',
     currency: 'stardust',
-    availableAfter: 'a1_m03',
+    availableAfter,
     tower,
     ranks: [
       { price: PRICES[0], grants: [{ kind: 'supportStat', tower, stat: 'aura', pct: 0.05 }] },
@@ -140,6 +141,14 @@ export const tune_lantern = defineUpgrade({
  * the Den is given (meta/purchase.ts `shelf`), so the shop never names it early.
  */
 export const tune_burrow = tuneUp('tune_burrow', 'burrow', 'Scuttle Den Tune-up', 'a2_m06');
+
+/**
+ * The Hum Choir's tune-up (T607): a support tower's three ranks (+5% aura strength, −5% cost, +5%
+ * radius: its auras' and its Lullaby's). Zibzab's; stocked after A3M1 with the earliest gift, and
+ * off the shelf until the Choir is given (meta/purchase.ts `shelf`), so the shop never names it
+ * early (when the Quiet Wave wasn't spared, it waits for A3M4's gift).
+ */
+export const tune_choir = supportTuneUp('tune_choir', 'choir', 'Hum Choir Tune-up', 'a3_m01');
 
 /**
  * The Zibzab Tune-up (design/progression.md § 2.1, C2 Sell; "Ten percent. Honestly, eight."): +8%

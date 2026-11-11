@@ -267,15 +267,16 @@ describe('links: tile bonuses (maps.md § 3)', () => {
 });
 
 describe('links: auras (towers.md § 4)', () => {
-  it('takes the strongest same-kind aura, never the sum, and never covers its own tower', () => {
+  it('takes the strongest same-kind aura, never the sum, and no Choir aura covers a Choir', () => {
     const { state } = placed([
       [CHOIR, 3, 1, 1],
       [CHOIR, 4, 2, 2],
       [GUN, 3, 2],
     ]);
     expect(tower(state, 2).pctDamage).toBeCloseTo(0.3, 12); // not 0.5
-    expect(tower(state, 1).pctDamage).toBeCloseTo(0.2, 12); // the other choir's, not its own
-    expect(tower(state, 0).pctDamage).toBeCloseTo(0.3, 12);
+    // A Choir takes no `choir` aura, its own or another's (T607; systems/auras.test.ts).
+    expect(tower(state, 1).pctDamage).toBe(0);
+    expect(tower(state, 0).pctDamage).toBe(0);
   });
 
   it('reaches only within its radius', () => {

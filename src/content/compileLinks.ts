@@ -7,7 +7,9 @@
 // and (T500a) a damage bonus against a raised shield (`vsShielded`: Resonance, one per partner), a
 // faster beam ramp (`rampPct`), and a stronger Mark (`markPct`: Lightsong), each a fraction > 0;
 // and (T604) a Scuttle Den's extras: `swarmlings` a whole number > 0 (Finders Keepers), and
-// `swarmSpeedPct` a fraction > 0 with `latchSec` a duration > 0 (Splash Zone).
+// `swarmSpeedPct` a fraction > 0 with `latchSec` a duration > 0 (Splash Zone); and (T607) a Hum
+// Choir's `auraRadiusTiles` > 0 (Harmony) and `auraPct` a fraction > 0 (Bounce Chorus), and a
+// hitscan partner's `extraTargets` a whole number > 0 (Harmony's Mindspike).
 import type { CompiledLinkDef, CompiledLinkPartner } from './compiled.ts';
 import { entriesOf, checkKey, ticks, type Ctx } from './compileHelpers.ts';
 import { MAX_LINKS, statusMask } from './rules.ts';
@@ -88,6 +90,9 @@ function partner<K extends IdSpace>(
     swarmlings: 0,
     swarmSpeedPct: 0,
     latchTicks: 0,
+    auraRadiusTiles: 0,
+    auraPct: 0,
+    extraTargets: 0,
   };
   if (def.chainJumps !== undefined) {
     if (Number.isInteger(def.chainJumps) && def.chainJumps > 0) out.chainJumps = def.chainJumps;
@@ -117,7 +122,19 @@ function partner<K extends IdSpace>(
       out.latchTicks = ticks(ctx, def.latchSec, `${where}.latchSec`);
     } else ctx.errors.push(`${where}.latchSec: needs a duration > 0`);
   }
-  for (const f of ['rampPct', 'markPct', 'swarmSpeedPct'] as const) {
+  // A Hum Choir's (T607): its auras wider (Harmony) and stronger (Bounce Chorus); a hitscan
+  // partner's extra targets (Harmony's Mindspike).
+  if (def.auraRadiusTiles !== undefined) {
+    if (Number.isFinite(def.auraRadiusTiles) && def.auraRadiusTiles > 0) {
+      out.auraRadiusTiles = def.auraRadiusTiles;
+    } else ctx.errors.push(`${where}.auraRadiusTiles: needs a radius > 0`);
+  }
+  if (def.extraTargets !== undefined) {
+    if (Number.isInteger(def.extraTargets) && def.extraTargets > 0) {
+      out.extraTargets = def.extraTargets;
+    } else ctx.errors.push(`${where}.extraTargets: needs a whole number > 0`);
+  }
+  for (const f of ['rampPct', 'markPct', 'swarmSpeedPct', 'auraPct'] as const) {
     const v = def[f];
     if (v === undefined) continue;
     if (Number.isFinite(v) && v > 0) out[f] = v;

@@ -512,6 +512,14 @@ export interface LinkPartnerDef<K extends IdSpace = LiveIds> {
   readonly swarmlings?: number;
   readonly swarmSpeedPct?: number;
   readonly latchSec?: number;
+  /**
+   * A Hum Choir partner (T607): `auraRadiusTiles` added to its auras' radius (Harmony: +0.5), and
+   * `auraPct` added to its damage auras' pct, a fraction (Bounce Chorus: +5% damage). A hitscan
+   * partner: `extraTargets` whole extra targets per shot (Harmony: the Mindspike hits 1 more).
+   */
+  readonly auraRadiusTiles?: number;
+  readonly auraPct?: number;
+  readonly extraTargets?: number;
 }
 /**
  * A stat bonus under the stacking formula (towers.md § 4): `flat` adds to the stat, `pct` (a

@@ -28,7 +28,7 @@ import { BOSS_ABILITY_TELL_SEC, HASTE_CAP } from '../../content/rules.ts';
 import { secToTicks } from '../../shared/time.ts';
 import type { Enemy } from '../entities.ts';
 import type { SimState } from '../state.ts';
-import { evadeBlocked, isInterrupted } from '../systems/status.ts';
+import { cooldownHeld, evadeBlocked, isInterrupted } from '../systems/status.ts';
 import type { TickContext } from '../tick.ts';
 import { BOSS_BURROW_GAP_TICKS, enterBossPhase } from './bossPhases.ts';
 import { spawnBrood } from './brood.ts';
@@ -91,6 +91,8 @@ export function bossStep(state: SimState, ctx: TickContext, boss: Enemy, def: Co
     return;
   }
   if (boss.abilityTicks <= 0) return;
+  // Lulled (T607): a sneeze's or a dig's wait holds still on its beat (never underground).
+  if (!boss.burrowed && boss.abilityTicks > BOSS_ABILITY_TELL_TICKS && cooldownHeld(boss)) return;
   const next = bossNextAbility(boss);
   const left = --boss.abilityTicks;
   if (left <= BOSS_ABILITY_TELL_TICKS && bossTellBlocked(boss, next)) {

@@ -328,6 +328,13 @@ export interface CompiledLinkPartner<K extends IdSpace = LiveIds> {
   readonly swarmlings: number;
   readonly swarmSpeedPct: number;
   readonly latchTicks: number;
+  /**
+   * A Hum Choir partner (T607): added to its auras' radius (Harmony) and to its damage auras' pct,
+   * a fraction (Bounce Chorus); a hitscan partner's whole extra targets per shot (Harmony). 0: none.
+   */
+  readonly auraRadiusTiles: number;
+  readonly auraPct: number;
+  readonly extraTargets: number;
 }
 
 // ── Enemies and abilities ────────────────────────────────────────────────────────────────────

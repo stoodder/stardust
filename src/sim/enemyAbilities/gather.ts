@@ -44,7 +44,7 @@ import type { Ally, Enemy } from '../entities.ts';
 import { loseRefugee } from '../escort.ts';
 import { poolKill, type Pool } from '../pool.ts';
 import { emit, type SimState } from '../state.ts';
-import { isInterrupted } from '../systems/status.ts';
+import { cooldownHeld, isInterrupted } from '../systems/status.ts';
 import type { TickContext } from '../tick.ts';
 import { isHushable, isHushableAlly } from './hush.ts';
 import { outOfReach } from './layers.ts';
@@ -376,7 +376,7 @@ export function gatherPass(state: SimState, ctx: TickContext): void {
       m.gatherTicks = everyTicksOf(g); // first tick alive
       continue;
     }
-    if (m.gatherTicks > tell) m.gatherTicks--;
+    if (m.gatherTicks > tell && !cooldownHeld(m)) m.gatherTicks--; // Lulled (T607): its beat
     if (m.gatherTicks > tell) continue;
     if (outOfReach(m) || isInterrupted(m)) {
       m.gatherTicks = everyTicksOf(g); // a tell can't start: the cooldown restarts from zero

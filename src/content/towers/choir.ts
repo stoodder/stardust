@@ -1,22 +1,24 @@
 // Hum Choir (design/towers.md § 7): a ring of elder Skitterkin humming in harmony, a gift after
 // A3M1 if the Quiet Wave was spared (Old Thrum's ring), else in A3M4's briefing (upgrades/
-// access.ts). Support, no attack: towers inside its aura (the `choir` kind: two Choirs don't stack,
-// and no Choir aura covers any Choir) get +damage, and Jammed durations on them are multiplied by
-// `jamMul`. T1 (130): radius 1.5, +10%, jams halved. T2 (100): radius 2.0, +15%. T3 (195): +20%,
-// jams cut by 75%. Lullaby (390): enemies within 2.5 are Lulled (enemies.md § 2.4). Rally Chorus
-// (390): +30% damage and +10% fire rate, and towers inside are immune to Jammed.
+// access.ts). Support, no attack: towers inside its aura (the `choir` kind) get +damage, and
+// Jammed durations on them are multiplied by `jamMul`. T1 (130): radius 1.5, +10%, jams halved.
+// T2 (100): radius 2.0, +15%. T3 (195): +20%, jams cut by 75%. Lullaby (390): T3's aura, and
+// enemies within 2.5 are Lulled (enemies.md § 2.4). Rally Chorus (390): +30% damage and +10% fire
+// rate (two `choir` auras, one per stat: a tower takes both from the strongest Choir covering it),
+// and towers inside are immune to Jammed (`jamMul` 0).
 //
-// A stub registered ahead of its task (T600a): T607 confirms the numbers, runs the aura rule and
-// Lulled, and lifts it from towers/index.ts STUB_TOWER_TASKS. The jam rules are inert data until
-// M7's jammers (D141). Aura arrays replace whole, so each tier restates its aura. Sprites:
-// placeholders under their final ids (T640b).
+// Live since T607: the aura rule (two Choirs don't stack; no Choir aura covers any Choir; the jam
+// rule) is sim/systems/auras.ts, Lulled systems/status.ts `lullPass`. The jam rules are inert data
+// until M7's jammers (D141). Aura arrays replace whole, so each tier restates its aura. Links:
+// Harmony (Mindspike) and Bounce Chorus (Sproing, M7). Sprites: placeholders under their final ids
+// (T640b).
 import { defineTower } from '../define.ts';
 
 export const choir = defineTower({
   id: 'choir',
   name: 'Hum Choir',
   faction: 'skitterkin',
-  role: 'Support (damage aura)',
+  role: 'Support (damage aura, jam protection)',
   sprites: { base: 'tower.choir', head: 'tower.choir_head', icon: 'icon.tower.choir' },
   tiers: [
     {

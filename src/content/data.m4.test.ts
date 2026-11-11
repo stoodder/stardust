@@ -121,6 +121,8 @@ describe('M4 towers, ability, links, and catalog rows', () => {
       // M6's: the Scuttle Den's (T604; sim/swarmlings.test.ts).
       'splash_zone',
       'finders_keepers',
+      // The Hum Choir's (T607; sim/systems/auras.test.ts).
+      'harmony',
     ]);
     expect(TOWER_ACCESS.lookout).toMatchObject({ price: 150, availableAfter: 'a1_m05' });
     expect(TOWER_ACCESS.harpoon).toMatchObject({ price: 250, availableAfter: 'a2_m01' });

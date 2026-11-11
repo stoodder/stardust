@@ -4,6 +4,7 @@ import { defineRegistry } from '../define.ts';
 import { conductive } from './conductive.ts';
 import { crossfire } from './crossfire.ts';
 import { finders_keepers } from './finders_keepers.ts';
+import { harmony } from './harmony.ts';
 import { lightsong } from './lightsong.ts';
 import { overwatch } from './overwatch.ts';
 import { reel_it_in } from './reel_it_in.ts';
@@ -26,4 +27,6 @@ export const LINKS = defineRegistry({
   // M6: the Scuttle Den's (T604).
   splash_zone,
   finders_keepers,
+  // M6: the Hum Choir's (T607). Bounce Chorus (Sproing + Choir) joins with the Sproing Pad (M7).
+  harmony,
 });

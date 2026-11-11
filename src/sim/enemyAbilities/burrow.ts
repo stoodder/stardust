@@ -14,7 +14,7 @@
 //   is systems/status.ts `evadeBlocked` (the interrupt or the Mark), with the interrupt's outcome.
 import type { CompiledBurrow } from '../../content/compiled.ts';
 import type { Enemy } from '../entities.ts';
-import { evadeBlocked } from '../systems/status.ts';
+import { cooldownHeld, evadeBlocked } from '../systems/status.ts';
 
 /** Ticks a burrower spends on the surface between digs (at least its tell, and 1). */
 export function surfaceTicks(burrow: CompiledBurrow): number {
@@ -32,6 +32,8 @@ export function burrowStep(e: Enemy, burrow: CompiledBurrow): void {
     }
   } else if (e.abilityTicks <= 0) {
     e.abilityTicks = surfaceTicks(burrow); // first tick alive
+  } else if (e.abilityTicks > burrow.tellTicks && cooldownHeld(e)) {
+    // Lulled (T607): the surface stretch holds still on its beat; the tell runs at full speed.
   } else {
     const left = --e.abilityTicks;
     if (left <= burrow.tellTicks && evadeBlocked(e)) {

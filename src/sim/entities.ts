@@ -157,6 +157,15 @@ export interface Tower extends PoolEntity {
   linkSwarmlings: number;
   linkSwarmSpeedPct: number;
   linkLatchTicks: number;
+  /**
+   * The Hum Choir's link extras (T607; systems/links.ts, read by systems/auras.ts and the towers
+   * system): `linkAuraRadiusTiles` added to its auras' radius (Harmony's Choir +0.5),
+   * `linkAuraPct` added to its damage auras' pct, a fraction (Bounce Chorus's Choir +5%), and
+   * `linkExtraTargets` whole extra targets per hitscan shot (Harmony's Mindspike +1). 0 for none.
+   */
+  linkAuraRadiusTiles: number;
+  linkAuraPct: number;
+  linkExtraTargets: number;
 }
 
 export const TOWER_BLANK: Readonly<Tower> = Object.freeze({
@@ -213,6 +222,9 @@ export const TOWER_BLANK: Readonly<Tower> = Object.freeze({
   linkSwarmlings: 0,
   linkSwarmSpeedPct: 0,
   linkLatchTicks: 0,
+  linkAuraRadiusTiles: 0,
+  linkAuraPct: 0,
+  linkExtraTargets: 0,
 });
 
 export interface Enemy extends PoolEntity {
@@ -352,6 +364,11 @@ export interface Enemy extends PoolEntity {
   blockerUid: number;
   /** Lulled (T607): inside a Lullaby's radius this tick (ability cooldowns ×1.5, a boss's ×1.25). */
   lulled: boolean;
+  /**
+   * Lulled's beat (T607; sim/lull.ts): counts the Lulled ticks round its period (3, a boss's 5),
+   * and an ability cooldown holds still on the tick it comes back to 0. 0 while not Lulled.
+   */
+  lullBeat: number;
   /** Gravity Well (T608): ticks before a Bloom's pulse may pull it back again; 0: it may. */
   pullImmuneTicks: number;
 }
@@ -419,6 +436,7 @@ export const ENEMY_BLANK: Readonly<Enemy> = Object.freeze({
   latchCount: 0,
   blockerUid: 0,
   lulled: false,
+  lullBeat: 0,
   pullImmuneTicks: 0,
 });
 

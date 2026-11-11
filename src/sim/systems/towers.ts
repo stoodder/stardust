@@ -63,6 +63,7 @@ import { beamAttack, beamOff } from '../attacks/beam.ts';
 import { chainAttack } from '../attacks/chain.ts';
 import { chargeAttack } from '../attacks/charge.ts';
 import { echoHit } from '../attacks/echo.ts';
+import { pickExtraTargets } from '../attacks/extraTargets.ts';
 import { lineAttack } from '../attacks/line.ts';
 import { applyDamage, applyEffects, armorReduces } from '../combat/damage.ts';
 import { hitNeutral, isNeutral } from '../combat/neutral.ts';
@@ -206,8 +207,16 @@ function aimAndFire(
 
   // Read before firing: a hitscan kill frees the target's slot.
   const atSkitterkin = target.def?.faction === 'skitterkin';
-  if (attack.kind === 'hitscan') fireHitscan(state, ctx, t, tier, attack, target);
-  else if (attack.kind === 'lobbed') fireShell(state, ctx, t, tier, attack, target);
+  if (attack.kind === 'hitscan') {
+    // Harmony (T607; attacks/extraTargets.ts): the extras, picked before the hit, then hit after it.
+    const extra = pickExtraTargets(state, ctx.scratch, t, layers, range, filter, target);
+    fireHitscan(state, ctx, t, tier, attack, target);
+    for (let k = 0; k < extra.length; k += 2) {
+      const e = enemies.items[extra[k]!]!; // picked from live slots
+      if (e.alive && e.uid === extra[k + 1]) fireHitscan(state, ctx, t, tier, attack, e);
+    }
+    extra.length = 0;
+  } else if (attack.kind === 'lobbed') fireShell(state, ctx, t, tier, attack, target);
   else fireShots(state, ctx, t, tier, attack, target);
   t.cooldownTicks = bonusPeriodTicks(attack, t);
   if (t.firstFiredTick < 0) t.firstFiredTick = state.tick;

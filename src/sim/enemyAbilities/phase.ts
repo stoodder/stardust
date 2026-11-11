@@ -23,7 +23,7 @@
 import type { CompiledPhase } from '../../content/compiled.ts';
 import type { Enemy } from '../entities.ts';
 import { emit, type SimState } from '../state.ts';
-import { evadeBlocked } from '../systems/status.ts';
+import { cooldownHeld, evadeBlocked } from '../systems/status.ts';
 
 /** Ticks a phaser stays solid between phases (at least its tell, and 1). */
 export function solidTicks(phase: CompiledPhase): number {
@@ -55,6 +55,7 @@ export function phaseStep(state: SimState, e: Enemy, phase: CompiledPhase): void
     e.phaseTicks = solidTicks(phase); // first tick alive
     return;
   }
+  if (e.phaseTicks > phase.tellTicks && cooldownHeld(e)) return; // Lulled (T607): its beat
   const wasTelling = e.phaseTicks <= phase.tellTicks;
   const left = --e.phaseTicks;
   if (left <= phase.tellTicks && phaseBlocked(e)) {

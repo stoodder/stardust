@@ -160,7 +160,7 @@ describe('FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES (T600a rows; D141)', ()
       'ability.pathTrap': null, // T604
       'map.holdout': null, // T605
       'ally.blocker': null, // T605
-      'status.lulled': 'T607',
+      'status.lulled': null, // T607
       'tower.field': 'T608',
       'enemy.boss.layToRest': 'M8',
     });
@@ -183,13 +183,13 @@ describe('FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES (T600a rows; D141)', ()
   });
 
   it('refuse the Act III towers whole, naming their task (the Den and Underfoot run)', () => {
-    // The Scuttle Den and Underfoot run since T604 (sim/swarmlings.test.ts).
-    expect(STUB_TOWER_TASKS).toEqual({ choir: 'T607', bloom: 'T608' });
+    // The Scuttle Den and Underfoot run since T604 (sim/swarmlings.test.ts), the Hum Choir since
+    // T607 (sim/systems/auras.test.ts, sim/lull.test.ts).
+    expect(STUB_TOWER_TASKS).toEqual({ bloom: 'T608' });
     expect(towerRefusal(TOWERS.burrow)).toBeNull();
-    expect(towerRefusal(TOWERS.choir)).toBe("the 'choir' tower is not simulated until T607");
+    expect(towerRefusal(TOWERS.choir)).toBeNull();
     expect(towerRefusal(TOWERS.bloom)).toBe("the 'bloom' tower is not simulated until T608");
     // Lifted, each is refused by what its tiers use until its own row opens.
-    expect(towerRefusal(TOWERS.choir, FEATURE_GATES, {})).toBeNull(); // Lullaby is a spec
     expect(towerRefusal(TOWERS.bloom, FEATURE_GATES, {})).toBe(
       'a field (bloom) is not simulated until T608',
     );

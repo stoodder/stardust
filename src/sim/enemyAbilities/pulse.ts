@@ -24,7 +24,7 @@ import type { CompiledPulse } from '../../content/compiled.ts';
 import type { Enemy } from '../entities.ts';
 import { outOfReach } from './layers.ts';
 import { emit, type SimState } from '../state.ts';
-import { isInterrupted } from '../systems/status.ts';
+import { cooldownHeld, isInterrupted } from '../systems/status.ts';
 import type { TickContext } from '../tick.ts';
 
 /** The pulse `e` runs now (its boss phase's, else its own), or null. */
@@ -58,6 +58,7 @@ export function pulseStep(
     e.pulseTicks = pulse.everyTicks; // first tick alive
     return;
   }
+  if (e.pulseTicks > pulse.tellTicks && cooldownHeld(e)) return; // Lulled (T607): its beat
   const wasTelling = e.pulseTicks <= pulse.tellTicks;
   const left = --e.pulseTicks;
   if (left <= pulse.tellTicks && isInterrupted(e)) {

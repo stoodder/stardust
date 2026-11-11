@@ -42,6 +42,8 @@ export interface Scratch {
   readonly price: PurchasePrice;
   /** The best Crane salvage bonus over the drone's tile (towerEconomy.ts `craneSalvageAt`). */
   readonly crane: { speedPct: number; salvagePct: number };
+  /** A shot's extra targets, slot and uid pairs (Harmony; attacks/extraTargets.ts, T607). */
+  readonly extraTargets: number[];
 }
 
 /** Fresh scratch space for one sim. */
@@ -53,6 +55,7 @@ export function createScratch(): Scratch {
     range: { rangeSq: 0, minRangeSq: 0 },
     price: { cost: 0, discounted: false },
     crane: { speedPct: 0, salvagePct: 0 },
+    extraTargets: [],
   };
 }
 
