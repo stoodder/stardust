@@ -154,7 +154,8 @@ export const tune_choir = supportTuneUp('tune_choir', 'choir', 'Hum Choir Tune-u
  * The Stasis Bloom's tune-up (T608): a support tower's three ranks, read by its field
  * (sim/systems/fields.ts): +5% field strength (its chill, the `supportStat` aura grant), −5% cost,
  * +5% field radius (the `supportStat` radius grant). Zibzab's; stocked after A3M1 with the
- * attunement, and off the shelf until the Bloom is attuned (meta/purchase.ts `shelf`).
+ * attunement, and off the shelf until then (meta/purchase.ts `shelf`: an attuned tower's rows list
+ * once its attunement is stocked, owned or not).
  */
 export const tune_bloom = supportTuneUp('tune_bloom', 'bloom', 'Stasis Bloom Tune-up', 'a3_m01');
 

@@ -44,12 +44,12 @@ export const TOWER_ACCESS: Readonly<Record<TowerId, Access>> = {
     availableAfter: 'a2_m05',
     requires: 'prism',
   },
-  // M6 (campaign.md § 4.1; stubs on no shelf until their tasks lift them, towers/index.ts
-  // STUB_TOWER_TASKS). The Scuttle Den is Bramble's warren's gift in A3M1's briefing, so it is
+  // M6 (campaign.md § 4.1). The Scuttle Den is Bramble's warren's gift in A3M1's briefing, so it is
   // available for A3M1 (granted as A3M1's loadout first opens; T610). The Hum Choir is the A3M1
   // debrief's gift if `spared_quiet_wave` (Thrum's ring), else A3M4's briefing (the story
-  // transaction picks; T610). The Stasis Bloom is attuned in Xenotech after A3M1 for 3 Intel once
-  // the Prism is owned (progression.md § 7.2).
+  // transaction picks; T610). A gift's tune-up and spec rows wait until it is owned (meta/
+  // purchase.ts `shelf`), since a gift can come later than its `availableAfter`. The Stasis Bloom
+  // is attuned in Xenotech after A3M1 for 3 Intel once the Prism is owned (progression.md § 7.2).
   burrow: { how: 'gift', availableAfter: 'a2_m06' },
   choir: { how: 'gift', availableAfter: 'a3_m01' },
   bloom: {

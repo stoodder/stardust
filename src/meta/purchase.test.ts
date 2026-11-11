@@ -13,6 +13,7 @@ import {
   type PurchaseItem,
 } from './purchase.ts';
 import { createNewSave, type SaveData } from './saveData.ts';
+import { briefingGifts } from './storyTransactions.ts';
 import { validateSave } from './validate.ts';
 
 const MK2: PurchaseItem = { kind: 'upgrade', id: 'orbital_strike_mk2' };
@@ -329,10 +330,12 @@ describe("Xenotech (progression.md § 7.2: Ves'thara's attunements, T509)", () =
   });
 });
 
-describe("a gift tower's rows wait for the gift (progression.md § 4.2's listing rule, T609)", () => {
-  const towersOf = (save: SaveData, pane: 'shop' | 'engineering'): string[] =>
-    shelf(save, pane).flatMap((o) => (o.tower === null ? [] : [o.tower]));
+/** The towers a shop or Engineering shelf names (its tune-ups' and spec unlocks'). */
+function towersOf(save: SaveData, pane: 'shop' | 'engineering'): string[] {
+  return shelf(save, pane).flatMap((o) => (o.tower === null ? [] : [o.tower]));
+}
 
+describe("a gift tower's rows wait for the gift (progression.md § 4.2's listing rule, T609)", () => {
   it("the Scuttle Den's rows are off the shelves until A3M1's briefing gives it", () => {
     const before = DEV_SAVES.after_a2m6.build();
     expect(towersOf(before, 'shop')).not.toContain('burrow');
@@ -340,11 +343,8 @@ describe("a gift tower's rows wait for the gift (progression.md § 4.2's listing
     // Still a real offer, needing its tower; just not listed.
     expect(offerFor(before, { kind: 'upgrade', id: 'tune_burrow' })?.refusal).toBe('not_owned');
     // The briefing's gift, as the app makes it when A3M1's loadout first opens.
-    const given = (save: SaveData) => ({
-      ...save,
-      unlocks: { ...save.unlocks, towers: [...save.unlocks.towers, 'burrow' as const] },
-    });
-    const briefed = given(before);
+    const briefed = briefingGifts(before, 'a3_m01').save;
+    expect(briefed.unlocks.towers).toContain('burrow');
     expect(shelf(briefed, 'shop').find((o) => o.tower === 'burrow')).toMatchObject({
       refusal: null,
       price: 40,

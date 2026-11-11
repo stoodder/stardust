@@ -321,7 +321,7 @@ QUILL writes one line per R&D item, ≤ 100 characters, in [`src/content/upgrade
 
 ### 6.5 Xenotech copy (Ves'thara)
 
-Ves'thara writes the Xenotech shelf's lines (her gift's row and each attunement), ≤ 100 characters, in [`src/content/upgrades/copy.ts`](../../src/content/upgrades/copy.ts) with the others (`copy.test.ts` checks these rules). Her voice is [characters.md](characters.md)'s: spare and grave, formal, **no contractions**, images of light, glass, and memory. She **never names a price** (the shelf does) and **never says "stardust"**: she takes none (it is the dead), which is why the Aelari tune-ups stay on Zibzab's shelf for Stardust and their specializations in Engineering. No exclamation points, as for every catalog line.
+Ves'thara writes the Xenotech shelf's lines (her gift's row and each attunement), ≤ 100 characters, in [`src/content/upgrades/copy.ts`](../../src/content/upgrades/copy.ts) with the others (`copy.test.ts` checks these rules). Her voice is [characters.md](characters.md)'s: spare and grave, formal, **no contractions**, images of light, glass, and memory. She **never names a price** (the shelf does) and **never says "stardust"**: she takes none (it is the dead), which is why the Aelari tune-ups stay on Zibzab's shelf for Stardust and their specializations in Engineering. No exclamation points, as for every catalog line. A line may say what a tower is for, in words that hold in every act: the Seer's Lantern's ends "Bring it when they do" (what hides, and what digs), since its role starts with Act III's burrowers and cloaks.
 
 ---
 
