@@ -196,7 +196,9 @@ export const REFERENCE_VARIANTS = {
       when: { door_choice: 'warren', quill_choice: 'rewrite' },
       profile: { ...A3M5_WARREN, ...REWRITE },
     },
-    { when: { door_choice: 'convoy', quill_choice: 'rewrite' }, profile: { ...A3M5, ...REWRITE } },
+    // Rewrite on any other door (the convoy's, or a run that sets only C4: harness #14's
+    // 'flag:quill_choice=rewrite') plays Rewrite's slot 1, never a locked System Reboot (D150).
+    { when: { quill_choice: 'rewrite' }, profile: { ...A3M5, ...REWRITE } },
     { when: { door_choice: 'warren' }, profile: A3M5_WARREN },
   ],
   a3_m06: [],

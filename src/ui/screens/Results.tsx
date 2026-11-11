@@ -94,10 +94,15 @@ function Counter({ counter, shown }: { counter: ResultsCounter; shown: number })
   const done = n === null || shown >= n;
   return (
     // The live text updates every frame while counting, so screen readers get the final line
-    // only, as hidden text (an `aria-label` on a <p> isn't announced; T329).
+    // only, as hidden text (an `aria-label` on a <p> isn't announced; T329). Once counted, the
+    // shown line is the final one, so the hidden copy goes and the card says it once (D150).
     <p class={`sd-results-counter sd-results-counter-${counter.stars ? 'starred' : 'plain'}`}>
-      <span class="sd-visually-hidden">{spokenCounter(counter)}</span>
-      <span class="sd-results-counter-shown" aria-hidden="true" data-testid="results-counter">
+      {!done && <span class="sd-visually-hidden">{spokenCounter(counter)}</span>}
+      <span
+        class="sd-results-counter-shown"
+        aria-hidden={done ? undefined : 'true'}
+        data-testid="results-counter"
+      >
         <span class="sd-results-counter-label">{counter.label}</span>
         {n !== null && (
           <>
@@ -115,7 +120,9 @@ function Counter({ counter, shown }: { counter: ResultsCounter; shown: number })
         {counter.brag !== null && (
           <>
             {' '}
-            <span class="sd-results-star">★</span>{' '}
+            <span class="sd-results-star" aria-hidden="true">
+              ★
+            </span>{' '}
             <span class="sd-results-brag">{counter.brag}</span>
           </>
         )}
