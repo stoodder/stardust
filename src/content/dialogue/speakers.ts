@@ -24,6 +24,14 @@ export type SpeakerFrame = 'portrait' | 'icon' | 'pa' | 'form' | 'distorted' | '
 export interface PortraitVariantRule {
   readonly variant: string;
   readonly when: Condition;
+  /**
+   * The speaker's silence (a `text: ''` line while on the radio or in a scene) in this variant:
+   * `blink` flaps the talk frame slowly, so the face says something with no words (QUILL's Purge
+   * status bar blinks its seventh segment; Night Shift). None: the resting frame.
+   */
+  readonly silence?: 'blink';
+  /** The variant has no `policy` tell (QUILL's `purge`: no directives, no gold flash). */
+  readonly noPolicy?: true;
 }
 
 /** A name plate other than the speaker's own, and when it shows. The first rule that holds wins. */
@@ -106,8 +114,15 @@ export const SPEAKERS = {
     color: 'teal.4',
     frame: 'portrait',
     portrait: 'portrait.quill',
+    // Purge's status bar (C4, from A3M4's debrief on): no smile, no directives, so no `policy`
+    // flash; its silences blink the bar (Night Shift's "no line; its status bar blinks").
     variants: [
-      { variant: 'purge', when: { flag: 'quill_choice', eq: 'purge' } },
+      {
+        variant: 'purge',
+        when: { flag: 'quill_choice', eq: 'purge' },
+        silence: 'blink',
+        noPolicy: true,
+      },
       { variant: 'party_hat', when: { mapIs: 'a1_m05' } },
     ],
     blip: 'blip.quill',
@@ -117,7 +132,9 @@ export const SPEAKERS = {
     color: 'pink.4',
     frame: 'portrait',
     portrait: 'portrait.sterling',
-    variants: [],
+    // A3M5's boss cues: she flies "Shareholder Value" from her office, on a live feed (REC lamp,
+    // viewfinder brackets). Every line of hers on that map is by remote.
+    variants: [{ variant: 'remote', when: { mapIs: 'a3_m05' } }],
     blip: 'blip.sterling',
   },
   zibzab: {
@@ -184,9 +201,11 @@ export const SPEAKERS = {
     color: 'gold.3',
     frame: 'portrait',
     portrait: 'portrait.kip',
+    // The Reclamation Lead's coat from Act II; from A3M5, where he hands over the ledger and leaves
+    // the #1 pin on the console, `act3` (pinholes, no cap, the ledger), on every map after.
     variants: [
-      { variant: 'act3', when: { act: 3 } },
-      { variant: 'act2', when: { act: 2 } },
+      { variant: 'act3', when: { mapAtLeast: 'a3_m05' } },
+      { variant: 'act2', when: { any: [{ act: 2 }, { act: 3 }] } },
     ],
     blip: 'blip.kip',
   },

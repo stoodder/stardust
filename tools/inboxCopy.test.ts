@@ -211,6 +211,49 @@ describe("the Field Journal's lines the docs quote (Act III, T611)", () => {
     for (const d of directives) expectQuoted(ACT3, `"${d}"`);
   });
 
+  // Part two (T711): A3M4–A3M6's entries and corrections, as act3.md quotes them.
+  it.each([
+    ['codex_silencer', 'original', 'It goes for the song first.'],
+    ['codex_system_reboot', 'original', "from a folder marked 'Do Not.'"],
+    ['codex_gloop', 'original', 'The Pest Field Guide filed this shape as a Chonk.'],
+    [
+      'codex_gerald',
+      'corrected',
+      'Route older than the perimeter. Delivered everything he was given.',
+    ],
+    ['codex_gerald', 'corrected', 'Gerald does not know what was in it. He knows it arrived.'],
+    ['codex_pension_form', 'original', "Beneficiary: 'Pebble, c/o the Deep Halls.'"],
+    ['codex_pension_form', 'original', 'The form asks to be filed in person. Gerald delivered it.'],
+    ['codex_auditor', 'original', 'Prim measured things. The Auditor counts them.'],
+    ['codex_shareholder_value', 'original', 'Director Sterling says it is just a name.'],
+    ['codex_sproing', 'original', 'Pebble says his name is Boing.'],
+    [
+      'codex_kips_ledger',
+      'original',
+      "He copied the early ones out of the plant's own records by hand.",
+    ],
+    ['codex_kips_ledger', 'original', 'He gave it away before he could get scared again.'],
+    ['codex_blackbudget', 'original', 'It has a file now. This is it.'],
+    ['codex_gathering_maw', 'original', 'It does not want anything. It only wants.'],
+    ['codex_everglow_gardens', 'corrected', 'The domes were built to keep the valley out.'],
+    ['codex_everglow_gardens', 'corrected', 'Lettuce losses: none. They never ate a single leaf.'],
+    ['codex_zibzab', 'corrected', 'He had peeled the NO REFUNDS sticker off first.'],
+  ] as const)('%s (%s) holds act3.md\'s "%s"', (id, version, line) => {
+    expectQuoted(ACT3, `"${line}`);
+    expect(journalText(id, version)).toContain(line);
+  });
+
+  it("quotes part two's memo lines (T711): the Ascendant, Dome Row's notice, the window", () => {
+    for (const [id, line] of [
+      ['memo_a3_04', 'Output is allocated to the Everglow Ascendant.'],
+      ['memo_a3_05', 'Occupants must vacate before recovery begins.'],
+      ['memo_a3_06', 'The final extraction window is open.'],
+    ] as const) {
+      expectQuoted(ACT3, `"${line}"`);
+      expect(MEMOS[id]?.body, id).toContain(line);
+    }
+  });
+
   it("memo_a3_02's closing line is act3.md's", () => {
     expectQuoted(ACT3, '"Replies to this address are not monitored."');
     expect(MEMOS.memo_a3_02?.body).toContain('Replies to this address are not monitored.');

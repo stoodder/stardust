@@ -109,9 +109,9 @@ export const ACT3_MEMOS: readonly MemoDef[] = [
     subject: 'Deep Bore: Final Extraction Window Open',
     body:
       'This is an automated message.\n\n' +
-      'The Deep Bore has reached the final deposit. The extraction window is open. Drilling ' +
-      'continues until the deposit is exhausted or the window closes. Output is allocated to ' +
-      'the Everglow Ascendant.\n\n' +
+      'The final extraction window is open. The Deep Bore is drilling into the last deposit ' +
+      'and continues until it is exhausted or the window closes. Output is allocated to the ' +
+      'Everglow Ascendant.\n\n' +
       `No action is required. ${NOT_MONITORED}`,
     smallPrint: 'The window closes when the Ascendant departs. Departure is not subject to delay.',
     afterMap: 'a3_m06',

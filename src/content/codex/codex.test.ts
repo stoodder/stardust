@@ -95,6 +95,22 @@ const ACT3_LISTS = {
     'codex_sterling',
   ],
   a3_m03: ['codex_undertow', 'codex_okonkwos_gap', 'codex_amended_survey'],
+  // Part two (T711); the Gloop and the Sproing Pad unlock when owned, whichever map gives them.
+  a3_m04: [
+    'codex_silencer',
+    'codex_liability',
+    'codex_system_reboot',
+    'codex_gloop',
+    'codex_pension_form',
+  ],
+  a3_m05: [
+    'codex_auditor',
+    'codex_associate',
+    'codex_shareholder_value',
+    'codex_sproing',
+    'codex_kips_ledger',
+  ],
+  a3_m06: ['codex_gunship', 'codex_blackbudget', 'codex_gathering_maw'],
 } as const;
 
 /**
@@ -134,6 +150,11 @@ const LATER_VERSIONS: Readonly<Record<string, Partial<Record<CodexVersion, Campa
   codex_buffer_protocol: { corrected: 'a3_m02' },
   codex_clean_exit: { corrected: 'a3_m02' },
   codex_sterling: { corrected: 'a3_m02' },
+  // Part two's corrections of earlier entries (T711): Gerald after his last delivery; Dome Row
+  // (Everglow Gardens) and Zibzab once the domes are open.
+  codex_gerald: { corrected: 'a3_m04' },
+  codex_everglow_gardens: { corrected: 'a3_m06' },
+  codex_zibzab: { corrected: 'a3_m06' },
 };
 
 const sprites = SPRITES as readonly SpriteDef[];

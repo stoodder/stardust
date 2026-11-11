@@ -78,11 +78,11 @@ export const waves = defineWaves([
     groups: [motes(5, 'hunt', HUNT_SEC, 0.5), motes(6, 'road', 2), fractures(1, 'road', 6)],
   },
   // W6 · Liability + one Associate [X]
-  { ...CALL, groups: [drones(3, 0), liabilities(1, 3), associates(1, 5), drones(3, 8)] },
+  { ...CALL, groups: [drones(4, 0), liabilities(1, 3), associates(1, 5), drones(4, 8)] },
   // W7 · Auditors ×2 + drones [X]
   { ...NO_CALL, groups: [drones(4, 0), auditors(2, 3), drones(3, 12)] },
   // W8 · Fractures + Compliance drones
-  { ...CALL, groups: [fractures(3, 'road', 0), drones(5, 4), motes(6, 'road', 10)] },
+  { ...CALL, groups: [fractures(3, 'road', 0), drones(6, 4), motes(6, 'road', 10)] },
   // W9 · Silencers + Auditors [X, jam limit]; the second bearers walk
   {
     ...NO_CALL,
@@ -106,7 +106,7 @@ export const waves = defineWaves([
   // W11 · Expediters + Liability
   {
     ...CALL,
-    groups: [expediters(2, 0), liabilities(2, 2), drones(5, 6), associates(1, 9)],
+    groups: [expediters(2, 0), liabilities(2, 2), drones(6, 6), associates(1, 9), drones(4, 16)],
   },
   // W12 · mixed
   {

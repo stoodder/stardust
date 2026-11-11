@@ -26,6 +26,9 @@ describe('the memo content', () => {
       'memo_a3_01',
       'memo_a3_02',
       'memo_a3_03',
+      'memo_a3_04',
+      'memo_a3_05',
+      'memo_a3_06',
     ]);
     expect(MEMO_LIST.map((m) => m.afterMap)).toEqual([
       null,
@@ -44,6 +47,9 @@ describe('the memo content', () => {
       'a3_m01',
       'a3_m02',
       'a3_m03',
+      'a3_m04',
+      'a3_m05',
+      'a3_m06',
     ]);
     for (const id of MEMO_IDS) expect(id).toMatch(MEMO_ID);
   });
@@ -85,6 +91,8 @@ describe('the memo content', () => {
       expect(m.body).not.toContain('{glyph:sun}');
       expect(m.signOff).toBeUndefined();
       expect(m.stamp).toBeUndefined();
+      // Their letterhead is the worn, sunless one, branded with the sender (art-direction).
+      expect(m.letterhead).toBe('automated');
     } else {
       // Subject lines are cheerful in every act (§ 6.1): every other Everglow memo exclaims.
       expect(m.subject).toContain('!');
@@ -129,6 +137,22 @@ describe('the memo content', () => {
     expect(MEMOS.memo_a1_05?.extra?.[0]?.text).toMatch(/^Performance Note: Containment Lapse\./);
   });
 
+  it("sets each letterhead by act: full until Act III, then worn while Sterling signs, then the machine's", () => {
+    const act3 = MEMO_LIST.filter((m) => m.afterMap?.startsWith('a3_') === true);
+    expect(act3.map((m) => m.letterhead)).toEqual([
+      'worn',
+      ...Array.from({ length: act3.length - 1 }, () => 'automated'),
+    ]);
+    for (const m of MEMO_LIST.filter((x) => !act3.includes(x))) {
+      expect(m.letterhead ?? 'full', m.id).toBe('full');
+    }
+    // `automated` belongs to the automated sender alone, and a form takes none.
+    for (const m of MEMO_LIST) {
+      expect(m.letterhead === 'automated', m.id).toBe(m.from === 'Everglow Automated Systems');
+      if (m.format === 'form') expect(m.letterhead, m.id).toBeUndefined();
+    }
+  });
+
   it('files Act III part one as the act file quotes it (T600b): Sterling once more, then the machine', () => {
     expect(MEMOS.memo_a3_01).toMatchObject({
       from: 'Director Joy Sterling, Frontier Operations',
@@ -163,5 +187,24 @@ describe('the memo content', () => {
       body: 'Employee #ED-112 (Okonkwo, I.): Unscheduled Departure. Pension: Restructured.',
       smallPrint: 'Beneficiary changes are not accepted after departure.',
     });
+  });
+
+  it('files Act III part two as the machine would (T711): the plant, Dome Row, the Deep Bore', () => {
+    for (const id of ['memo_a3_04', 'memo_a3_05', 'memo_a3_06']) {
+      const m = MEMOS[id];
+      expect(m?.from, id).toBe('Everglow Automated Systems');
+      expect(m?.body.startsWith('This is an automated message.\n\n'), id).toBe(true);
+      expect(m?.body.endsWith('Replies to this address are not monitored.'), id).toBe(true);
+      expect(m?.gift, id).toBeUndefined();
+    }
+    // The plant at 140%, its records kept nowhere else (Kip's ledger is the copy, A3M5).
+    expect(MEMOS.memo_a3_04?.smallPrint).toBe(
+      'Batch records are held at the facility only. No copies are made.',
+    );
+    expect(MEMOS.memo_a3_05?.body).toContain('Occupants must vacate before recovery begins.');
+    expect(MEMOS.memo_a3_05?.smallPrint).toContain('Reclamation Lead: position vacant.');
+    // The finale's timer, seeded: the window and the ship it fills.
+    expect(MEMOS.memo_a3_06?.body).toContain('The final extraction window is open.');
+    expect(MEMOS.memo_a3_06?.smallPrint).toContain('when the Ascendant departs');
   });
 });

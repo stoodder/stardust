@@ -125,7 +125,9 @@ function HollowText({ text, shown }: { text: string; shown: number }) {
 export function LineText({ line, typed }: { line: LineView; typed: Typewriter }) {
   if (line.silence) return <span class="dlg-text dlg-silence" />;
   return (
-    <span class={`dlg-text${line.frame === 'distorted' ? ' dlg-hollow' : ''}`}>
+    <span
+      class={`dlg-text${line.frame === 'distorted' ? ' dlg-hollow' : ''}${line.frame === 'icon' ? ' dlg-status' : ''}`}
+    >
       <span class="dlg-sr">{plainText(line.text)}</span>
       <span aria-hidden="true">
         {line.frame === 'distorted' ? (

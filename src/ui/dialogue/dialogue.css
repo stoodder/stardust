@@ -95,6 +95,16 @@
   background: var(--sd-white-0);
 }
 
+/* Gerald's status text (art-direction.md § Dialogue presentation): a drone's readout, not speech,
+   in the teal of his "RECIPIENT: ARMED." float, set off by a status bar down its left edge. */
+.dlg-status {
+  display: inline-block;
+  padding-left: 4px;
+  border-left: 2px solid var(--sd-teal-2);
+  color: var(--sd-teal-4);
+  letter-spacing: 1px;
+}
+
 /* ── Portraits ────────────────────────────────────────────────────────────────────────────── */
 
 .dlg-portrait {

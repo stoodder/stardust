@@ -34,7 +34,7 @@ export const shareholder_value = defineEnemy({
   boss: {
     phases: [
       { fromPct: 1, hangar: { enemy: 'compliance', count: 2, everySec: 8 } },
-      { fromPct: 0.66, takeover: { tellSec: 3, durationSec: 4, everySec: 15 } },
+      { fromPct: 0.66, takeover: { tellSec: 3, durationSec: 4, everySec: 20 } },
       {
         fromPct: 0.33,
         jettison: { hastePct: 0.4, plates: ['crash_1', 'crash_2', 'crash_3', 'crash_4'] },

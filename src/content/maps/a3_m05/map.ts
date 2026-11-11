@@ -72,7 +72,7 @@ export const map = defineMapLayout({
     '.............o........',
   ],
   underWreckage: { '8,0': '.', '10,0': '.', '12,0': '.' },
-  salvage: { '8,0': 40, '10,0': 40, '12,0': 40 },
+  salvage: { '8,0': 80, '10,0': 80, '12,0': 80 },
   // A2M4's `road` and `vats` come with its layout; the band adds the bearers' route and the hunt.
   paths: [
     { id: 'home', tiles: [...BACK, [0, 12]] },

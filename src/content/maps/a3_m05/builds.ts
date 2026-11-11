@@ -82,6 +82,7 @@ export function swapped(
 function parSteps(): BuildStep[] {
   return [
     ...CUT_FEED,
+    ...CLEAR_HOPPERS,
     { wave: 1, build: 'thumper', tile: YARD_S },
     { wave: 1, build: 'harpoon', tile: YARD_N },
     { wave: 1, build: 'thumper', tile: SLUICE_S },
@@ -91,26 +92,33 @@ function parSteps(): BuildStep[] {
     { wave: 5, build: 'choir', tile: BEND },
     { wave: 5, upgrade: SLUICE_S },
     { wave: 6, build: 'thumper', tile: CONDUIT },
-    { wave: 7, build: 'thumper', tile: CATWALK_E },
+    { wave: 7, build: 'harpoon', tile: CATWALK_E },
     { wave: 7, upgrade: BEND },
     { wave: 8, upgrade: CONDUIT },
-    { wave: 8, upgrade: YARD_N },
-    { wave: 9, upgrade: CATWALK_E },
-    { wave: 9, upgrade: SLUICE_N },
-    { wave: 10, upgrade: BEND },
+    { wave: 8, build: 'harpoon', tile: CATWALK_W },
+    { wave: 9, upgrade: YARD_N },
     { wave: 10, upgrade: CONDUIT },
     { wave: 11, upgrade: CATWALK_E },
-    { wave: 11, build: 'harpoon', tile: VAT_E },
-    { wave: 12, upgrade: INTAKE_W },
-    { wave: 12, upgrade: VAT_E },
-    { wave: 13, upgrade: YARD_N },
-    { wave: 13, upgrade: SLUICE_N },
-    { wave: 14, upgrade: VAT_E },
-    { wave: 14, upgrade: INTAKE_W },
+    { wave: 11, upgrade: CATWALK_W },
+    { wave: 12, upgrade: YARD_N },
+    { wave: 13, upgrade: CATWALK_E },
+    { wave: 13, upgrade: BEND },
+    slot1(14, TAKEOVER_SEC),
+    still(14, BOSS_STILL_SEC, [14, 10]),
+    slot1(14, TAKEOVER_SEC + 45),
+    { wave: 14, upgrade: CATWALK_W },
+    { wave: 15, build: 'thumper', tile: VAT_E },
+    { wave: 15, upgrade: INTAKE_W },
     { wave: 15, specialize: CONDUIT, spec: 'a' },
-    { wave: 16, specialize: CATWALK_E, spec: 'a' },
+    { wave: 16, upgrade: VAT_E },
+    { wave: 16, upgrade: SLUICE_N },
   ];
 }
+
+/** W14: System Reboot as Hostile Takeover's first jams land (phase 2's laser ends). */
+const TAKEOVER_SEC = 91;
+/** W14: Stillness on the platform as it turns into the vats' row (a boss takes Chilled 50%). */
+const BOSS_STILL_SEC = 116;
 
 const PAR: ScriptedBuild = {
   loadout: ['choir', 'harpoon', 'bloom', 'thumper'],

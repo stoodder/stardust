@@ -47,7 +47,7 @@ import {
   type SpeakerId,
 } from '../content/dialogue/types.ts';
 import type { AllyKind, EnemyId, IdSpace, MapDef, TowerId } from '../content/types.ts';
-import { resolveC4, setDoorChoice, type SaveData } from '../meta/index.ts';
+import { quillOffline, resolveC4, setDoorChoice, type SaveData } from '../meta/index.ts';
 import { baseStoryContext } from '../meta/story.ts';
 import { escortMaxLost, isBossWave } from '../sim/index.ts';
 import { TICK_HZ } from '../shared/time.ts';
@@ -72,7 +72,6 @@ import {
   linesUntilChoice,
   NO_EFFECTS,
   pressButton,
-  readThrough,
   scenePlays,
   sceneSlot,
   start,
@@ -263,8 +262,10 @@ export function lineView(
   const silence = s.text === '';
   const absent = present === null ? speakerGone(s.speaker, ctx) : !present.includes(s.speaker);
   const expression = s.expression ?? 'neutral';
-  const variant = def.variants.find((r) => evaluateCondition(r.when, ctx))?.variant ?? null;
+  const rule = def.variants.find((r) => evaluateCondition(r.when, ctx));
+  const variant = rule?.variant ?? null;
   const name = s.plateAs ?? plateName(s.speaker, ctx);
+  const dark = silence && absent;
   return {
     id: ++lineSerial,
     speaker: s.speaker,
@@ -278,9 +279,12 @@ export function lineView(
             sprite: def.portrait,
             variant,
             expression,
-            dark: silence && absent,
+            dark,
             icon: def.frame === 'icon',
-            policy: expression === 'policy',
+            // A variant with no directives has no tell (QUILL's `purge`: `policy` is its neutral).
+            policy: expression === 'policy' && rule?.noPolicy !== true,
+            // A present speaker's silence in a variant that blinks (Purge's status bar; T713).
+            blink: silence && !dark && rule?.silence === 'blink',
           },
     text: silence ? '' : silkText(resolveText(s.text, text)),
     silence,
@@ -295,6 +299,11 @@ interface Session {
   readonly map: CampaignMapId | null;
   /** Speakers on the radio: QUILL and the companion when present (style-guide § 5.5). */
   readonly present: readonly SpeakerId[];
+  /**
+   * Speakers offline this battle (`offlineSpeakers`: QUILL on A3M5 under C4 Rewrite): their lines
+   * are skipped wherever they come (`liveStart`/`liveAdvance`) and their barks are out of the pool.
+   */
+  readonly offline: readonly SpeakerId[];
   /** Sim seconds now. */
   simSec(): number;
   /** Skitterkin killed this run (for `{pests_processed}`): this attempt's (`attemptKills`). */
@@ -371,6 +380,52 @@ function textContext(): TextContext {
     // The current map's meter count; outside a battle, null (it reads 0).
     evacuated: session?.evacuated() ?? null,
   };
+}
+
+// ─── Speakers offline (T713) ────────────────────────────────────────────────────────────────
+
+const NO_SPEAKERS: readonly SpeakerId[] = [];
+
+/**
+ * The speakers offline on `map` for `save` (core-loop.md § 2.11; meta `quillOffline`, whose rule is
+ * C4_IN_PLAY's): QUILL on A3M5 under C4 Rewrite, dark while he writes his own directives. Off the
+ * campaign, or with no save, nobody.
+ */
+export function offlineSpeakers(map: CampaignMapId | null, save: SaveData | null): SpeakerId[] {
+  return map !== null && quillOffline(map, save) ? ['quill'] : [];
+}
+
+/** Whether the node a cursor rests on is a line by a speaker offline this battle. */
+function offlineLine(cursor: DialogueCursor): boolean {
+  const off = session?.offline ?? NO_SPEAKERS;
+  return off.length > 0 && cursor.step.kind === 'line' && off.includes(cursor.step.node.speaker);
+}
+
+/**
+ * Moves `cursor` past lines by speakers offline this battle (`Session.offline`): an offline QUILL's
+ * lines never show, in the briefing, the radio, a cue, or a reply; a scene of nothing else plays
+ * nothing. Their `set` nodes, and the rest of the scene, run as written.
+ */
+function pastOffline(scene: Scene, cursor: DialogueCursor, ctx: StoryContext): DialogueCursor {
+  let c = cursor;
+  // Bounded: a scene's lines can't outnumber its nodes, laps included (a loop of lines only).
+  for (let i = 0; i <= scene.nodes.length && offlineLine(c); i++) c = advance(scene, c, ctx);
+  return offlineLine(c) ? { ...c, index: scene.nodes.length, step: { kind: 'end' } } : c;
+}
+
+/** `start`, past any opening lines by offline speakers (`pastOffline`). */
+function liveStart(scene: Scene, ctx: StoryContext): DialogueCursor {
+  return pastOffline(scene, start(scene, ctx), ctx);
+}
+
+/** `advance`, then past any lines by offline speakers (`pastOffline`). */
+function liveAdvance(
+  scene: Scene,
+  cursor: DialogueCursor,
+  ctx: StoryContext,
+  choice?: number,
+): DialogueCursor {
+  return pastOffline(scene, advance(scene, cursor, ctx, choice), ctx);
 }
 
 /** Writes what a scene changed into the save in play (none: nothing to write). */
@@ -609,7 +664,7 @@ function settle(h: Holding): void {
       break;
     }
     h.transcript.push(view);
-    h.cursor = advance(h.scene, h.cursor, ctx);
+    h.cursor = liveAdvance(h.scene, h.cursor, ctx);
   }
 }
 
@@ -628,7 +683,7 @@ function open(scene: Scene, opts: PlayOptions, mode: SceneMode): void {
     resume,
     onEnd: opts.onEnd ?? null,
     record: opts.record ?? true,
-    cursor: start(scene, storyContext(map)),
+    cursor: liveStart(scene, storyContext(map)),
     transcript: [],
     line: null,
     typedFrom: 0,
@@ -719,7 +774,7 @@ export function advanceScene(): void {
   if (h === null || h.cursor.step.kind !== 'line') return;
   if (h.line !== null) h.transcript.push(h.line);
   h.remember = null;
-  h.cursor = advance(h.scene, h.cursor, storyContext(h.map));
+  h.cursor = liveAdvance(h.scene, h.cursor, storyContext(h.map));
   settle(h);
   if (h.cursor.step.kind === 'end' && h.mode !== 'briefing') {
     finish();
@@ -772,7 +827,7 @@ export function chooseOption(index: number): void {
   const ctx = storyContext(h.map);
   // The pick joins the transcript as the player's own line.
   h.transcript.push(lineView({ speaker: 'player', text: option.text }, ctx, textContext(), null));
-  h.cursor = advance(h.scene, h.cursor, ctx, index);
+  h.cursor = liveAdvance(h.scene, h.cursor, ctx, index);
   h.remember =
     option.remember === undefined ? null : `${plateName(option.remember, ctx)} will remember that.`;
   // A choice right after this one gets its own lock from when it shows (D144 S6).
@@ -804,7 +859,7 @@ export function skipScene(): boolean {
       h.line ??
         lineView(h.cursor.step.node, ctx, textContext(), h.mode === 'panel' ? null : onRadio()),
     );
-    h.cursor = advance(h.scene, h.cursor, ctx);
+    h.cursor = liveAdvance(h.scene, h.cursor, ctx);
     h.line = null;
   }
   if (h.cursor.step.kind === 'end') {
@@ -1098,7 +1153,7 @@ function pumpComms(): void {
   const map = session?.map ?? mapOfScene(next.scene.id);
   commsNow = {
     scene: next.scene,
-    cursor: next.cursor ?? start(next.scene, storyContext(map)),
+    cursor: next.cursor ?? liveStart(next.scene, storyContext(map)),
     prev: next.prev ?? null,
     button: null,
     ...(next.keep === true ? { keep: true } : {}),
@@ -1129,7 +1184,7 @@ function showCommsLine(): void {
     cue,
     button: c.button === null ? null : silkText(c.button.label),
   };
-  const next = advance(c.scene, c.cursor, ctx);
+  const next = liveAdvance(c.scene, c.cursor, ctx);
   const reply = next.step.kind === 'line' && next.step.node.speaker !== node.speaker;
   const moveOn = (): void => {
     commsTimer = null;
@@ -1182,7 +1237,7 @@ function showBark(b: Bark): void {
   const scene = barkScene(b);
   commsNow = {
     scene,
-    cursor: start(scene, storyContext(session?.map ?? null)),
+    cursor: liveStart(scene, storyContext(session?.map ?? null)),
     prev: null,
     button: null,
   };
@@ -1207,7 +1262,7 @@ export function pressCommsButton(): void {
   clearCommsTimer();
   commsNow = {
     scene,
-    cursor: start(scene, storyContext(session?.map ?? null)),
+    cursor: liveStart(scene, storyContext(session?.map ?? null)),
     prev: null,
     button: null,
   };
@@ -1256,22 +1311,18 @@ function finishComms(): number {
     clearCommsTimer();
     commsTimer = setTimeout(c.moveOn, left);
     ms += left;
-    let cursor = advance(c.scene, c.cursor, ctx);
+    let cursor = liveAdvance(c.scene, c.cursor, ctx);
     while (cursor.step.kind === 'line') {
       ms += endHoldMs(cursor.step.node);
-      cursor = advance(c.scene, cursor, ctx);
+      cursor = liveAdvance(c.scene, cursor, ctx);
     }
   }
   for (const q of queued) {
-    if (q.cursor === undefined) {
-      for (const l of readThrough(q.scene, ctx).lines) ms += endHoldMs(l);
-      continue;
-    }
-    // A scene a pausing panel cut: from the line it was showing.
-    let cursor = q.cursor;
+    // A scene a pausing panel cut goes on from the line it was showing; the rest from the start.
+    let cursor = q.cursor ?? liveStart(q.scene, ctx);
     while (cursor.step.kind === 'line') {
       ms += endHoldMs(cursor.step.node);
-      cursor = advance(q.scene, cursor, ctx);
+      cursor = liveAdvance(q.scene, cursor, ctx);
     }
   }
   return ms;
@@ -1300,7 +1351,7 @@ export function playMapEndLines(
   lingerOn = null;
   commsNow = {
     scene,
-    cursor: start(scene, storyContext(session.map)),
+    cursor: liveStart(scene, storyContext(session.map)),
     prev: null,
     button: null,
   };
@@ -1368,7 +1419,7 @@ function queueBark(trigger: BarkTrigger): void {
 /** A bark a map script names: it plays whatever the spacing says, after the line on screen. */
 function playCueBark(b: Bark): void {
   const s = session;
-  if (s === null || !enabled) return;
+  if (s === null || !enabled || s.offline.includes(b.speaker)) return;
   s.barks = cueBark(b, s.simSec(), s.barks);
   if (!s.replaying()) queueComms(barkScene(b));
 }
@@ -1436,15 +1487,18 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
   }
   // Per wave: Everglow Security walks it (its PA is Prim's voice; T603).
   const everglow = everglowWaves(sim.map.waves);
+  // QUILL offline (A3M5 under C4 Rewrite; T713): off the radio, out of the pool, his lines skipped.
+  const offline = offlineSpeakers(map, activeSave());
   const s: Session = {
     map,
-    present: presentSpeakers(mapDef, everglow.includes(true)),
+    present: presentSpeakers(mapDef, everglow.includes(true)).filter((id) => !offline.includes(id)),
+    offline,
     simSec: () => sim.state.tick / TICK_HZ,
     runKills: () => attemptKills(host),
     evacuated: () => sim.state.stats.evacuated,
     live: () => runStoryStats(sim.state.stats),
     replaying: () => host.replaying,
-    pool: map === null ? [] : barksFor(map),
+    pool: map === null ? [] : barksFor(map).filter((b) => !offline.includes(b.speaker)),
     barks: newBarkState(sim.config.seed),
     silent: false,
   };

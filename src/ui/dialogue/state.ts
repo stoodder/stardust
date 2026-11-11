@@ -25,6 +25,12 @@ export interface PortraitView {
   readonly icon: boolean;
   /** QUILL's `policy` tell: one 125 ms gold frame as the line starts (`policy_in`). */
   readonly policy: boolean;
+  /**
+   * A silence that blinks (the variant's `silence: 'blink'`, speakers.ts): the talk frame flaps at
+   * BLINK_FPS while it shows, with no words (QUILL's Purge status bar; T713). Still under reduced
+   * motion.
+   */
+  readonly blink: boolean;
 }
 
 /** One spoken line, ready to draw. `id` changes with every line shown. */

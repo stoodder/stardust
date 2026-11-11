@@ -346,7 +346,7 @@ export const ACT3_CODEX: readonly CodexEntryDef[] = [
     versions: {
       original: {
         text:
-          "A Technician ability. QUILL patched it in before the shelters, from a folder marked " +
+          'A Technician ability. QUILL patched it in before the shelters, from a folder marked ' +
           "'Do Not.' It wakes every jammed tower at once, and for six seconds nothing can jam " +
           'them again. It recharges in forty. QUILL runs it, so it works only while QUILL is ' +
           'there to run it.',

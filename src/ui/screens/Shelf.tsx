@@ -5,12 +5,14 @@
 // save at once (app/save.ts `purchase`), plays the upgrade sound, and the presenter says thanks in
 // a polite live region. After a purchase the focus stays on that row: its button (the next rank)
 // or, when the item is now owned in full and the button is gone, the row itself (U6). A button the
-// bank can't cover is aria-disabled and explains itself when pressed.
+// bank can't cover is aria-disabled and explains itself when pressed. While QUILL is offline (A3M5
+// under C4 Rewrite, from C4 until A3M5 is won: meta `quillOffline` on the frontier; T713), R&D
+// shows no QUILL text: no item copy, no intro, no thanks (a refusal still says why).
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { playSfx } from '../../app/audio.ts';
 import { activeSave, purchase, storeShelf } from '../../app/save.ts';
-import type { Offer, StorePane } from '../../meta/index.ts';
+import { quillOffline, type Offer, type StorePane } from '../../meta/index.ts';
 import {
   PRESENTERS,
   arrivalText,
@@ -69,10 +71,19 @@ function offerKey(o: Offer): string {
     : `${o.item.kind}:${o.item.id}`;
 }
 
-function OfferRow({ offer, onBuy }: { offer: Offer; onBuy: (o: Offer) => void }) {
+function OfferRow({
+  offer,
+  onBuy,
+  quiet,
+}: {
+  offer: Offer;
+  onBuy: (o: Offer) => void;
+  /** The presenter is offline: no seller's copy (QUILL under Rewrite). */
+  quiet: boolean;
+}) {
   const p = PRESENTERS[offer.pane];
   const name = offerName(offer);
-  const copy = offerCopy(offer);
+  const copy = quiet ? null : offerCopy(offer);
   const r = offer.refusal;
   const state = r === null ? 'buyable' : r;
   const bank = offer.currency === 'intel' ? 'sd-intel' : 'sd-stardust';
@@ -141,6 +152,8 @@ export function Shelf({ pane, view, group, lead }: ShelfProps) {
   });
   const p = PRESENTERS[pane];
   const offers = storeShelf(pane);
+  // QUILL offline (A3M5 under Rewrite): R&D runs without a word from him.
+  const quiet = pane === 'rnd' && quillOffline(view.frontier ?? '', activeSave());
   const groups = group?.(offers) ?? [{ title: '', offers }];
   const bank = pane === 'shop' ? view.stardust : view.intel;
 
@@ -172,6 +185,7 @@ export function Shelf({ pane, view, group, lead }: ShelfProps) {
       o.item.kind === 'jailbreak';
     playSfx(unlock ? 'unlock' : 'upgrade');
     const line = p.thanks[thanked[pane]++ % p.thanks.length] ?? '';
+    if (r.writeFailed === null && quiet) return;
     setSaid(
       r.writeFailed === null
         ? { tone: 'thanks', text: line }
@@ -189,7 +203,7 @@ export function Shelf({ pane, view, group, lead }: ShelfProps) {
           data-testid="store-line"
         >
           {said === null ? (
-            p.intro
+            quiet ? null : p.intro
           ) : (
             <>
               {said.tone !== 'warn' && <span class="sd-store-speaker">{p.speaker}: </span>}
@@ -205,7 +219,7 @@ export function Shelf({ pane, view, group, lead }: ShelfProps) {
             {g.title !== '' && <h2 class="sd-store-group-title">{g.title}</h2>}
             <ul class="sd-offers">
               {g.offers.map((o) => (
-                <OfferRow key={offerKey(o)} offer={o} onBuy={onBuy} />
+                <OfferRow key={offerKey(o)} offer={o} onBuy={onBuy} quiet={quiet} />
               ))}
             </ul>
           </section>

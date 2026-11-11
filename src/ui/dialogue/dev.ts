@@ -1,6 +1,7 @@
 // Dev dialogue for the smoke flows and agents (`__sd.dialogue`, only with `?test=1`): a cue scene
 // with a choice (it pauses play), C3's door choice, a full-screen scene, the Asset Yield Log's
-// staging (T614), and a bark with a reply button. Never in the registries, so the game never plays
+// staging (T614), a bark with a reply button, and Act III part two's shapes (T713: A3M5's intel
+// under Rewrite, a QUILL bark, Purge's blinking silence). Never in the registries, so the game never plays
 // them; dev.test.ts validates them like real dialogue.
 import { defineBarks, defineScene, defineScenes } from '../../content/dialogue/define.ts';
 
@@ -90,6 +91,20 @@ export const DEV_SCENES = defineScenes([
     { kind: 'line', speaker: 'system', text: 'DIRECTIVE 3: LOG ASSET YIELD.' },
     { kind: 'line', speaker: 'quill', text: "Don't decide about me yet." },
   ]),
+  // A3M5's shape under C4 Rewrite (T713; the real lines are T721's): QUILL's intel, then
+  // `system`'s. With QUILL offline only `system` speaks; with him online both do.
+  defineScene('a1_m01_cue_dev_intel', [
+    { kind: 'line', speaker: 'quill', text: "Jammers inbound. Prim's model. I'm sorry it's her face." },
+    {
+      kind: 'line',
+      speaker: 'system',
+      text: 'Threat Advisory: Auditor units inbound. Jamming expected.',
+    },
+  ]),
+  // Purge's QUILL in a panel (T713; Night Shift's "no line; its status bar blinks"): a silence.
+  defineScene('a1_m01_base_dev_status', [
+    { kind: 'line', speaker: 'quill', text: '', durationSec: 4 },
+  ]),
 ]);
 
 export const DEV_BARKS = defineBarks([
@@ -100,5 +115,12 @@ export const DEV_BARKS = defineBarks([
     text: 'Knock knock!',
     trigger: { on: 'map_start' },
     button: { label: "Who's there?", reply: 'a1_m01_cue_dev_knock' },
+  },
+  // A QUILL bark to cue on A3M5 (T713): silent while he is offline.
+  {
+    id: 'quill_boss_phase_a1_98',
+    speaker: 'quill',
+    text: "Directive conflict. I'm— helping you anyway.",
+    trigger: { on: 'boss_phase' },
   },
 ]);

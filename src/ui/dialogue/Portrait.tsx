@@ -1,8 +1,8 @@
 // A speaker's portrait in the DOM (art-direction.md § Portraits and icons, § Dialogue presentation):
 // the 48×48 bust (Gerald: his 16×16 icon) shown 1:1 in game pixels, its mouth flapping between the
 // expression and its `_talk` frame while the line types, a comms screen's scanline flicker at rest,
-// QUILL's one gold `policy_flash` frame as a policy line starts, and the derived `dark` bake for an
-// absent speaker. Frames are baked from the same sprite definitions as the canvas art, once per
+// QUILL's one gold `policy_flash` frame as a policy line starts, a blinking silence (Purge's status
+// bar, `blink`), and the derived `dark` bake for an absent speaker. Frames are baked from the same sprite definitions as the canvas art, once per
 // sprite, and each frame becomes a data URL the first time it's drawn.
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { PALETTES } from '../../content/palettes/index.ts';
@@ -23,6 +23,8 @@ import type { LineView, PortraitView } from './state.ts';
 
 /** QUILL's policy flash lasts one frame of its 8 fps `policy_in` (125 ms). */
 const FLASH_MS = 125;
+/** A blinking silence (`PortraitView.blink`: Purge's status bar) changes frame twice a second. */
+export const BLINK_FPS = 2;
 const DARK = `${DEFAULT_VARIANT}+dark`;
 
 interface SpriteFrames {
@@ -72,6 +74,7 @@ function frameUrl(
 function phaseAt(p: PortraitView, ms: number, talking: boolean, still: boolean): FramePhase {
   if (p.policy && ms < FLASH_MS) return 'flash';
   if (still) return 'rest';
+  if (p.blink) return Math.floor((ms * BLINK_FPS) / 1000) % 2 === 1 ? 'talk' : 'rest';
   if (talking) return Math.floor((ms * TALK_FPS) / 1000) % 2 === 1 ? 'talk' : 'rest';
   return Math.floor((ms * SCAN_FPS) / 1000) % 2 === 1 ? 'scan' : 'rest';
 }
