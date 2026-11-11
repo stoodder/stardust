@@ -296,10 +296,10 @@ Every map task: par in Act III's band on its reference profile, robustness shift
 - [~] **T622** A3M3 *The Gap*: 14 waves, 700 credits, both doors, every wave `noCall`; the last group through = W14 starts = the SEAL on one tick (a test in every reference run); Bricks's curve at 25% by W13 (`cue_vitals`); the W10 `{name}` tag; par ~70, alts ≥ 50%, the no-counter builds < 50% for each revoked class and both doors; C3 + the arrival echo; `memo_a3_03`.
 - [x] **T608** The Stasis Bloom (the cut lever): field Chill, a Stasis pulse, Gravity Well, Timeless Garden; links Pinned Down, Stillmind.
 - [x] **T611** Codex and Inbox: Act III's Field Journal entries (original + corrected) and memos `a3_01`–`a3_03`.
-- [~] **T640b** Sprites: the Scuttle Den (a home), the Hum Choir (a ring; Thrum's variant), the Stasis Bloom + spec frames; icons (Underfoot, REVOKED stamps); glyphs (`consumer`, haste, Act III's `burrow`).
+- [x] **T640b** Sprites: the Scuttle Den (a home), the Hum Choir (a ring; Thrum's variant), the Stasis Bloom + spec frames; icons (Underfoot, REVOKED stamps); glyphs (`consumer`, haste, Act III's `burrow`).
 - [x] **T612** Star map and kickers: T601b's Act III nodes and accent (the finale's nodes and `dawn` → M8), T601c's Act III kickers and `RunResult.meter`, A3M4 teased.
 - [ ] **T630a** Unit render: tendrils and growth, swarmling dash/latch, the Underfoot trap, the haste ring, the Undertow ripple, the blocker's bar, fold-away; T567's view headers and MarkView's anchor.
-- [ ] **T640c** Props and tiles: the Preserve, A1M4 at night, the Gap; the `act3` ground; rift cracks (closed/opening/open).
+- [~] **T640c** Props and tiles: the Preserve, A1M4 at night, the Gap; the `act3` ground; rift cracks (closed/opening/open).
 - [~] **T609** Shelves: Skitterkin specs in Engineering (3 Intel), the Bloom's Xenotech row ("still growing it" if the lever is pulled), T568's card copy, T567's `copy.ts` header.
 - [ ] **T630b** World render: rift telegraphs a wave ahead, the shuttle lift-off, blast doors, billboards, Act III's tint; T567's Tidybot items (`tidyDock`, duplicate stops).
 - [ ] **T631** HUD: the Holdout meter (no Lost pips), the hidden preview + QUILL's leak line, REVOKED slots, Underfoot aim, the Choir aura preview, the Den's swarmling count, Bramble's objective tracker.

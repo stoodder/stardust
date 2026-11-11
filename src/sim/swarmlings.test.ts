@@ -239,7 +239,7 @@ describe('the Scuttle Den (towers.md § 7; T604)', () => {
 
   it('deals ×burrowedDotMul on a burrowed target, the plain DoT on a surfaced one (T622)', () => {
     const attack = T1.attack;
-    const mul = attack.kind === 'spawner' ? attack.burrowedDotMul : 0;
+    const mul = attack?.kind === 'spawner' ? attack.burrowedDotMul : 0;
     expect(mul).toBe(2.5);
     // The whole latch: 3 swarmlings × 16 DoT ticks × 1.25, then × 2.5 underground.
     expect(wholeLatch(false)).toBeCloseTo(3 * 16 * 1.25, 9);

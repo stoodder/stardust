@@ -367,7 +367,7 @@ describe('validate: maps', () => {
       noCounterBuilds: Object.fromEntries(
         Object.entries(fxBuilds.noCounterBuilds).map(([c, b]) => [
           c,
-          { ...b, steps: [...b!.steps, { wave: 2, scriptInput: 'seal' }] },
+          { ...b, steps: [...b.steps, { wave: 2, scriptInput: 'seal' }] },
         ]),
       ),
       altBuilds: {},
