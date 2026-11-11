@@ -120,6 +120,7 @@ import {
 import { bubbleAlpha } from './shieldLook.ts';
 import { isFrozen, STASIS_TINT } from './stasisLook.ts';
 import { PHASED_RIM_ALPHA, phaseAlpha, phaseDithered, phaseState } from './phaseLook.ts';
+import { partLanePx } from './gmawLook.ts';
 import type { LeaveFx } from './LeaveFx.ts';
 import { facingOf, hasAnim, isRunner, spriteId, unitGlyph, type Facing } from './spriteInfo.ts';
 import { walkTempo } from './walkTempo.ts';
@@ -355,11 +356,13 @@ export class EnemyView implements PooledView {
   /** Sideways offset (px), and the screen unit vector it runs along (the ground perpendicular to travel). */
   #lane = 0;
   /**
-   * A split part's extra spread along its travel (tiles) and a merged boss's sort lift (px):
-   * gmawLook.ts `gmawSpread` (D150), 0 for any other unit.
+   * A split part's extra spread along its travel (tiles), its sort lift or a merged boss's (px),
+   * and whether it walks its own lane by its rank in place of its uid's: gmawLook.ts `gmawSpread`
+   * and `partLanePx` (D150, D151), 0 and false for any other unit.
    */
   #along = 0;
   #depthLift = 0;
+  #partLane = false;
   #sideX = SIDE_DEFAULT_X;
   #sideY = SIDE_DEFAULT_Y;
   /** The last move's grid direction (a leaver carries on along it past the edge). */
@@ -585,6 +588,7 @@ export class EnemyView implements PooledView {
     this.#lane = laneOffsetPx(uid);
     this.#along = 0;
     this.#depthLift = 0;
+    this.#partLane = false;
     this.#statePose = 'walk';
     this.#oneShot = null;
     this.#shimmerOn = false;
@@ -722,9 +726,15 @@ export class EnemyView implements PooledView {
       this.#sideX = side.x;
       this.#sideY = side.y;
     }
-    let fx = this.#sideX * this.#lane;
-    let fy = this.#sideY * this.#lane;
     const dl = this.#along === 0 ? 0 : Math.hypot(this.#dirX, this.#dirY);
+    // A split part's lane follows its rank along the road (one tile of travel: its screen x).
+    const lane = !this.#partLane
+      ? this.#lane
+      : dl > 0
+        ? partLanePx(this.#along, ((this.#dirX - this.#dirY) / dl) * HALF_W, this.#sideX)
+        : 0;
+    let fx = this.#sideX * lane;
+    let fy = this.#sideY * lane;
     if (dl > 0) {
       // Along its travel on the ground: the grid step's screen offset (iso.ts's projection).
       const ax = (this.#dirX / dl) * this.#along;
@@ -1134,20 +1144,14 @@ export class EnemyView implements PooledView {
   }
 
   /**
-   * Sets its sideways offset from its route's line (px), in place of its uid's (T730a: a split
-   * boss's parts walk side by side, gmawLook.ts `partLanePx`). Takes hold on its next move.
+   * Sets a split part's extra spread along its travel (tiles), its sort lift or a merged boss's
+   * (px), and whether it walks its own lane by its rank (`partLane`: T730a, D151, a split boss's
+   * parts side by side; gmawLook.ts `gmawSpread`, `partLanePx`). Takes hold on its next move.
    */
-  setLane(px: number): void {
-    this.#lane = px;
-  }
-
-  /**
-   * Sets a split part's extra spread along its travel (tiles) and a merged boss's sort lift (px)
-   * (D150; gmawLook.ts `gmawSpread`). Takes hold on its next move.
-   */
-  setSpread(alongTiles: number, depthLiftPx: number): void {
+  setSpread(alongTiles: number, depthLiftPx: number, partLane = false): void {
     this.#along = alongTiles;
     this.#depthLift = depthLiftPx;
+    this.#partLane = partLane;
   }
 
   /** Whether it draws faint over a spot kept clear (a flyer over the armed rock; T501i). */

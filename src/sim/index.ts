@@ -49,7 +49,7 @@ export {
   mergeTelling,
   MERGE_TELL_TICKS,
 } from './enemyAbilities/bossMerge.ts'; // T708
-export { splitHp } from './enemyAbilities/bossSplit.ts'; // T708
+export { SPLIT_SPREAD_TILES, splitHp } from './enemyAbilities/bossSplit.ts'; // T708; D151 (render's gmawLook)
 export { riftStatus, type RiftStatus } from './rifts.ts';
 export {
   escortMaxLost,

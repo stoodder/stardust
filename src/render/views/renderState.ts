@@ -144,13 +144,17 @@ export interface RenderState {
     readonly tellsSeen: number;
     readonly jamsSeen: number;
     readonly reboots: number;
-    /** Tells cancelled (interrupted, or doomed by a System Reboot) and shown fizzling (D150). */
+    /**
+     * Tells shown fizzling (D150, D151): interrupted, doomed by a System Reboot (a tendril, a
+     * Takeover laser), or a ring landed on nothing.
+     */
     readonly fizzles: number;
   };
   /**
    * JamRingView and TakeoverView (T707): Auditor rings drawn now and seen since the battle began;
-   * Hostile Takeover lasers and hangar doors drawn now, lasers seen, and jettisons played; the
-   * jettison's plates on their opened tiles, in the air or down (PlatformSiteView, T730b).
+   * Hostile Takeover lasers (but those to towers a Reboot spent) and hangar doors drawn now, lasers
+   * seen, and jettisons played; the jettison's plates on their opened tiles, in the air or down
+   * (PlatformSiteView, T730b).
    */
   readonly everglowJams: {
     readonly rings: number;

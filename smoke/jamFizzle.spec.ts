@@ -86,7 +86,7 @@ test('jam fizzle: a Reboot in the tendril’s tell snaps it off with FIZZLED', a
   expect(await look(page)).toMatchObject({ jamsSeen: 0, jammed: 0, fizzles: 1 });
 });
 
-test('jam fizzle: a Reboot in the Auditor’s ring stops the ring with FIZZLED', async ({ page }) => {
+test('jam fizzle: an Auditor’s ring a Reboot emptied fizzles as it lands', async ({ page }) => {
   await setUp(page, 'dev_takeover', [
     ['choir', 7, 2],
     ['rivet', 5, 2],

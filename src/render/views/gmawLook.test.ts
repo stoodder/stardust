@@ -1,7 +1,9 @@
 // The Gathering Maw's split and merge look (T708; gmawLook.ts).
 import { describe, expect, it } from 'vitest';
 import { compileContent } from '../../content/compile.ts';
+import { SPLIT_SPREAD_TILES } from '../../sim/index.ts';
 import { DEV_CONTENT } from '../__fixtures__/devBattle.ts';
+import { HALF_H, HALF_W } from '../iso.ts';
 import {
   BURST_FROM_TILES,
   BURST_MS,
@@ -10,11 +12,13 @@ import {
   burstRing,
   gmawSpread,
   MERGED_DEPTH_LIFT_PX,
+  PART_DEPTH_LIFT_PX,
+  PART_GAP_PX,
+  PART_LANE_MAX_PX,
   PART_LANE_PX,
   partLanePx,
   TETHER,
   TETHER_TAUT,
-  SIM_SPREAD_TILES,
   SPREAD_TO_TILES,
   tetherStroke,
 } from './gmawLook.ts';
@@ -53,9 +57,53 @@ describe('the one boss bar across a split', () => {
     expect(bossBarKey({ uid: 14, ownerUid: 9, splitMaxHp: 0 })).toBe(14);
   });
 
-  it('T730a: three consecutive parts walk three lanes across the road', () => {
-    const lanes = [30, 31, 32].map(partLanePx).toSorted((x, y) => x - y);
-    expect(lanes).toEqual([-PART_LANE_PX, 0, PART_LANE_PX]);
+  it('D151: the parts walk lanes by rank, standing PART_GAP_PX apart across any road', () => {
+    const rank = SPREAD_TO_TILES - SPLIT_SPREAD_TILES; // one rank's along spread (tiles)
+    // EnemyView's `sideOf`: the ground's sideways unit on screen (it imports Phaser).
+    const side = { x: 0, y: 0 };
+    const sideOf = (dx: number, dy: number, out: typeof side): void => {
+      const sx = (-dy - dx) * 2;
+      const sy = -dy + dx;
+      const len = Math.hypot(sx, sy);
+      out.x = sx / len;
+      out.y = sy / len;
+    };
+    // Grid-axis roads (diagonal on screen), the grid's diagonals (straight down or across).
+    for (const [dx, dy] of [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1],
+      [1, 1],
+      [-1, -1],
+      [1, -1],
+      [-1, 1],
+    ] as const) {
+      sideOf(dx, dy, side);
+      const len = Math.hypot(dx, dy);
+      const tileX = ((dx - dy) / len) * HALF_W;
+      const tileY = ((dx + dy) / len) * HALF_H;
+      // A rank-one part's screen offset from the middle one: the road's whole spacing and its lane.
+      const at = (r: number) => {
+        const lane = partLanePx(r * rank, tileX, side.x);
+        return {
+          x: r * tileX * SPREAD_TO_TILES + side.x * lane,
+          y: r * tileY * SPREAD_TO_TILES + side.y * lane,
+        };
+      };
+      const ahead = at(1);
+      const behind = at(-1);
+      expect(Math.hypot(ahead.x, ahead.y), `${dx},${dy}`).toBeGreaterThanOrEqual(PART_GAP_PX);
+      // Across the screen most of all: never the lane undoing the road's spacing.
+      expect(Math.abs(ahead.x), `${dx},${dy}`).toBeGreaterThanOrEqual(Math.abs(tileX));
+      expect(ahead.x, `${dx},${dy}`).toBeCloseTo(-behind.x);
+      const lane = Math.abs(partLanePx(rank, tileX, side.x));
+      expect(lane).toBeGreaterThanOrEqual(PART_LANE_PX);
+      expect(lane).toBeLessThanOrEqual(PART_LANE_MAX_PX);
+    }
+    // The middle part walks the road's line, and the lanes close with the merge.
+    expect(partLanePx(0, HALF_W, -0.9)).toBeCloseTo(0);
+    expect(Math.abs(partLanePx(rank / 2, HALF_W, -0.9))).toBeCloseTo(PART_LANE_PX / 2);
   });
 
   it('D150: the parts drawn SPREAD_TO_TILES apart along the road; the merged Maw sorts on top', () => {
@@ -74,19 +122,29 @@ describe('the one boss bar across a split', () => {
     const parts = [unit(30, 4.4), unit(31, 5), unit(32, 5.6)];
     const pool = { used: 3, items: parts };
     const drawn = parts.map(
-      (p) => p.dist + gmawSpread(p, pool, { alongTiles: 0, depthLiftPx: 0 }).alongTiles,
+      (p) =>
+        p.dist + gmawSpread(p, pool, { alongTiles: 0, depthLiftPx: 0, partLane: false }).alongTiles,
     );
     expect(drawn[1]! - drawn[0]!).toBeCloseTo(SPREAD_TO_TILES);
     expect(drawn[2]! - drawn[1]!).toBeCloseTo(SPREAD_TO_TILES);
-    expect(SIM_SPREAD_TILES).toBe(0.6);
+    expect(SPLIT_SPREAD_TILES).toBe(0.6);
     // Walking together in the merge, the spread closes with them.
     const close = [unit(30, 5), unit(31, 5), unit(32, 5)];
     expect(gmawSpread(close[0]!, { used: 3, items: close }).alongTiles).toBe(0);
     // A part alone (the others killed) isn't moved; nor is any other unit.
     expect(gmawSpread(parts[0]!, { used: 1, items: [parts[0]!] }).alongTiles).toBe(0);
     const plain = unit(40, 3, { splitFrom: null, splitMaxHp: 0 });
-    expect(gmawSpread(plain, pool)).toEqual({ alongTiles: 0, depthLiftPx: 0 });
+    expect(gmawSpread(plain, pool)).toEqual({ alongTiles: 0, depthLiftPx: 0, partLane: false });
     const merged = unit(41, 3, { splitFrom: null });
-    expect(gmawSpread(merged, pool)).toEqual({ alongTiles: 0, depthLiftPx: MERGED_DEPTH_LIFT_PX });
+    expect(gmawSpread(merged, pool)).toEqual({
+      alongTiles: 0,
+      depthLiftPx: MERGED_DEPTH_LIFT_PX,
+      partLane: false,
+    });
+    // A part walks its lane by rank and sorts over the tower base it stands in front of.
+    expect(gmawSpread(parts[0]!, pool)).toMatchObject({
+      depthLiftPx: PART_DEPTH_LIFT_PX,
+      partLane: true,
+    });
   });
 });

@@ -1,5 +1,5 @@
 // The Gathering Maw's split and merge (T708's view, polished by T730a; gmawLook.ts has the rules,
-// T740a draws the bodies, each part in its own lane: EnemyView `setLane`): the burst as it splits
+// T740a draws the bodies, each part in its own lane: EnemyView `setSpread`): the burst as it splits
 // (two violet rings and a spray of motes), the tether running body to body between its parts as
 // drawn (UnitAnchors; slack with a bead, then pulled taut through the merge's tell as they walk
 // together), and the gulp as they merge. One Graphics on the vfx layer, redrawn each frame;
