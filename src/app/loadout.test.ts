@@ -86,6 +86,8 @@ describe('the loadout screen (app side)', () => {
       'Harmony', // the Mindspike's and Hum Choir's (T607)
       'Pinned Down', // the Harpoon's and Stasis Bloom's (T608)
       'Stillmind', // the Mindspike's and Stasis Bloom's (T608)
+      'Acid Rain', // the Thumper's and Gloop's (T705)
+      'Sticky Flak', // the Skyhook's and Gloop's (T705)
     ]);
     expect(view.links[11]?.bonus).toBe(
       'Grapple Harpoon +30% damage vs Chilled/Stasis · Stasis Bloom field +0.3 radius',

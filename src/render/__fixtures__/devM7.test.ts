@@ -49,7 +49,7 @@ describe('the M7 dev maps', () => {
   it('dev_jam: the tendril, the rings, the healer, System Reboot (T702, T703, T707)', () => {
     expect(maps.dev_jam?.builds.referenceProfile.technicianAbility).toBe('system_reboot');
     expect(refused('dev_jam')).toEqual([
-      // System Reboot and the tendril run since T702 (dev_silence: devJam.test.ts), the healer
+      // System Reboot and the tendril run since T702 (dev_silence: tools/devJam.test.ts), the healer
       // aura since T703.
       "a 'ring' jam (auditor) is not simulated until T707",
     ]);

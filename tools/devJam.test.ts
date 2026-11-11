@@ -3,18 +3,18 @@
 // System Reboot cast with the `ability` command, a jam surviving an upgrade, and a Jammed tower
 // still retargeted and sold. smoke/jam.spec.ts counts on the same map.
 import { describe, expect, it } from 'vitest';
-import { battleConfig } from '../../app/battleSetup.ts';
-import { jamLimitChecks } from '../../balance/jamLimit.ts';
-import { runMap } from '../../balance/harness.ts';
-import type { RunRecord } from '../../balance/checks.ts';
-import { compileContent } from '../../content/compile.ts';
-import type { CompiledContent } from '../../content/compiled.ts';
-import type { IdSpace } from '../../content/types.ts';
-import { createSim, type Sim } from '../../sim/index.ts';
-import type { SimEvent } from '../../sim/events.ts';
-import { jamTower } from '../../sim/jam.ts';
-import type { SimState } from '../../sim/state.ts';
-import { DEV_CONTENT } from './devBattle.ts';
+import { battleConfig } from '../src/app/battleSetup.ts';
+import { jamLimitChecks } from '../src/balance/jamLimit.ts';
+import { runMap } from '../src/balance/harness.ts';
+import type { RunRecord } from '../src/balance/checks.ts';
+import { compileContent } from '../src/content/compile.ts';
+import type { CompiledContent } from '../src/content/compiled.ts';
+import type { IdSpace } from '../src/content/types.ts';
+import { createSim, type Sim } from '../src/sim/index.ts';
+import type { SimEvent } from '../src/sim/events.ts';
+import { jamTower } from '../src/sim/jam.ts';
+import type { SimState } from '../src/sim/state.ts';
+import { DEV_CONTENT } from '../src/render/__fixtures__/devBattle.ts';
 
 // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the dev ids are an IdSpace
 const CONTENT = compileContent(DEV_CONTENT) as unknown as CompiledContent<IdSpace>;

@@ -4,7 +4,7 @@
 // directly; reach is centre to centre). fx_map's road runs (0.5, 0.5) → (2.5, 0.5) → (2.5, 3.5) →
 // …; a Silencer at dist 2 stands at (2.5, 0.5), where (1,1), (3,1), and (3,2) are in its 2.5-tile
 // reach and (4,2) and (1,3) aren't. The whole map (dev_silence), System Reboot cast through a
-// command, upgrades and sells, and harness #10: render/__fixtures__/devJam.test.ts.
+// command, upgrades and sells, and harness #10: tools/devJam.test.ts.
 import { describe, expect, it } from 'vitest';
 import { compileContent } from '../content/compile.ts';
 import type { CompiledContent, CompiledTier } from '../content/compiled.ts';
