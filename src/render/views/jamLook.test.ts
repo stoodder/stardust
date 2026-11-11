@@ -1,10 +1,13 @@
 // The jams' look (T702; T730a's polish; jamLook.ts): the tendril's creep and bead, the countdown
-// ring's share and its path round the base, and System Reboot's column (held whole when still).
+// ring's share and its path round the base, System Reboot's column (held whole when still), and
+// how long FIZZLED holds (D151).
 import { describe, expect, it } from 'vitest';
 import { JAM_MAX_SEC } from '../../content/rules.ts';
 import { secToTicks } from '../../shared/time.ts';
-import { STEPPED_ALPHA } from '../vfx/fxTiming.ts';
+import { fadeAlpha, STEPPED_ALPHA } from '../vfx/fxTiming.ts';
 import {
+  FIZZLE_HOLD_MS,
+  FIZZLE_TEXT_MS,
   jamArc,
   REBOOT_COLUMN_PX,
   REBOOT_MS,
@@ -54,5 +57,11 @@ describe('jamLook (T702, T730a)', () => {
     expect(STEPPED_ALPHA).toContain(rebootColumn(REBOOT_MS * 0.7, false).alpha);
     expect(rebootColumn(REBOOT_MS, false).alpha).toBe(0);
     expect(rebootColumn(0, true)).toEqual({ height: REBOOT_COLUMN_PX, alpha: 1 });
+  });
+
+  it('D151: FIZZLED holds whole at least 0.8 s at 1×, then fades', () => {
+    expect(FIZZLE_HOLD_MS).toBeGreaterThanOrEqual(800);
+    expect(fadeAlpha((FIZZLE_HOLD_MS - 1) / FIZZLE_TEXT_MS)).toBe(1);
+    expect(fadeAlpha(FIZZLE_HOLD_MS / FIZZLE_TEXT_MS)).toBeLessThan(1);
   });
 });

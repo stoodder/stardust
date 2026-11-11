@@ -1,7 +1,8 @@
 // A3M5's tuning (T721, retuned by T760 and the M7 review, D150; act3.md § A3M5, As tuned). Par wins
 // at 15/22 (68.2%, the lower of the core and the bearers' 9/12), level with A3M4's 68.2: W2's teach
 // wave no longer drains a player without the Bulkhead, and the map stays the act's hardest in what a
-// player sees (without its casts par ends at 25; a3m5Shifts.test.ts holds its casts ±2 s). The core
+// player sees (without its casts par ends at 25; a3m5Shifts.test.ts holds its casts ±2 s, and
+// a3m5Human.test.ts a human caster in their place, D151). The core
 // pays for the vats' surges, the asset for the hunts out of the sluice (W13's biggest group and
 // W15's last, each with Silencers at the bearers' hub).
 // "Shareholder Value" (3800 HP, D146 addendum) is driven off a few tiles short of the core after
@@ -166,5 +167,16 @@ describe('A3M5 Cut the Feed', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
     expect(map.scriptGroups.feed_surge!.count).toBe(10);
     expect(open.spawnedByWave[10]! - cut.spawnedByWave[10]!).toBeGreaterThanOrEqual(8);
     expect(open.outcome).toBe('won');
+  });
+});
+
+describe("A3M5 Pebble's Choir hint (D151)", { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
+  it("plays as W9's countdown begins with a Hum Choir built, and never without one", () => {
+    // Par builds its Choir at W5: the hint plays with W9's countdown, before the layout is set.
+    const par = runA3m5(content, 'par');
+    expect(one(par, 'ScriptCue a3_m05_cue_choir')).toBe(one(par, 'CountdownStarted 9'));
+    // The reference no-jam build brings no Choir: no hint.
+    const noJam = runA3m5(content, 'noCounter:jam');
+    expect(noJam.cues).not.toContain('a3_m05_cue_choir');
   });
 });

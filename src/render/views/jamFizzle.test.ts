@@ -1,7 +1,10 @@
-// The fizzle's prediction against the sim (D150; jamLook.ts `tellDoomed`, `ringDoomed`): a System
-// Reboot cast in a Silencer's or an Auditor's tell dooms it the same tick (the view snaps it off
-// and shows FIZZLED), and a doomed tell never lands; with no Reboot the same tell is never doomed
-// and lands. On the dev ranges: dev_silence's Silencer, dev_takeover's W1 Auditors.
+// The fizzle's prediction against the sim (D150, D151; jamLook.ts `tellDoomed`, `lasersDoomed`,
+// `ringLanded`): a System Reboot cast in a Silencer's tendril dooms it the same tick, and a doomed
+// tell never lands; with no Reboot the same tell is never doomed and lands. An Auditor's ring has
+// no fixed targets, so it is never called early: it ends exactly on the tick `ringLanded` reads,
+// landing nothing after a Reboot, but still jamming a tower built in its reach after the Reboot.
+// Hostile Takeover's laser after a Reboot is doomed (`lasersDoomed`) and lands nothing. On the dev
+// ranges: dev_silence's Silencer, dev_takeover's W1 Auditors and W2's "Shareholder Value".
 import { describe, expect, it } from 'vitest';
 import { compileContent } from '../../content/compile.ts';
 import type { IdSpace } from '../../content/types.ts';
@@ -13,7 +16,7 @@ import {
   type SimEvent,
 } from '../../sim/index.ts';
 import { DEV_CONTENT } from '../__fixtures__/devBattle.ts';
-import { ringDoomed, tellDoomed } from './jamLook.ts';
+import { lasersDoomed, ringLanded, tellDoomed } from './jamLook.ts';
 
 const dev = compileContent(DEV_CONTENT);
 const maps: Readonly<Record<string, (typeof dev.maps)[keyof typeof dev.maps]>> = dev.maps;
@@ -33,7 +36,7 @@ function sim(mapId: string): Sim<IdSpace> {
       slot2: null,
       slot2State: 'none',
     },
-    specsUnlocked: [],
+    specsUnlocked: map.builds.referenceProfile.specs,
     scriptFlags: {},
   };
   return createSim(config);
@@ -41,9 +44,9 @@ function sim(mapId: string): Sim<IdSpace> {
 
 type Kind = 'tendril' | 'ring';
 
-/** A tower pool as `ringDoomed` reads it. */
-function towers(list: { x: number; y: number; jamImmuneTicks: number }[]) {
-  return { used: list.length, items: list.map((t) => ({ alive: true, def: {}, ...t })) };
+/** A tower pool as `lasersDoomed` reads it. */
+function towers(list: { uid: number; jamImmuneTicks: number; alive?: boolean }[]) {
+  return { used: list.length, items: list.map((t) => ({ alive: true, ...t })) };
 }
 
 /** Builds `build`, calls wave 1, and steps until a `kind` tell is under way; its jammer's uid. */
@@ -63,31 +66,43 @@ function untilTell(s: Sim<IdSpace>, kind: Kind, build: readonly [string, number,
   throw new Error(`no ${kind} tell`);
 }
 
-/** Whether `uid`'s tell under way is doomed now, as JamView reads it. */
-function doomed(s: Sim<IdSpace>, uid: number, kind: Kind): boolean {
+/** Whether `uid`'s tendril under way is doomed now, as JamView reads it. */
+function doomed(s: Sim<IdSpace>, uid: number): boolean {
   const e = s.state.enemies.items.find((x) => x.alive && x.uid === uid)!;
-  if (kind === 'ring') {
-    return ringDoomed(e.x, e.y, e.def!.jam!.radiusTiles, e.jamTellTicks, s.state.towers);
-  }
   const t = s.state.towers.items.find((x) => x.alive && x.uid === e.jamTarget)!;
   return tellDoomed(t.jamImmuneTicks, e.jamTellTicks);
 }
 
-/** Steps until `uid`'s tell is over; the jams it landed, and whether it was doomed each tick. */
-function playOut(s: Sim<IdSpace>, uid: number, kind: Kind) {
+/** Whether `uid`'s tell (a tendril, a ring, or a Takeover laser) is under way. */
+function telling(s: Sim<IdSpace>, uid: number): boolean {
+  const e = s.state.enemies.items.find((x) => x.alive && x.uid === uid);
+  return (
+    e !== undefined &&
+    e.jamTellTicks > 0 &&
+    (e.jamTarget !== 0 || ringTelling(e) || e.takeoverTowers.length > 0)
+  );
+}
+
+/**
+ * Steps until `uid`'s tell is over (calling `each` on every tick of it first); the jams it landed,
+ * and the ticks it took from the first step.
+ */
+function playOut(s: Sim<IdSpace>, uid: number, each: () => void = () => {}) {
   const events: SimEvent<IdSpace>[] = [];
-  const marks: boolean[] = [];
-  const telling = (): boolean => {
-    const e = s.state.enemies.items.find((x) => x.alive && x.uid === uid);
-    return e !== undefined && e.jamTellTicks > 0 && (kind === 'ring' || e.jamTarget !== 0);
-  };
-  while (telling()) {
-    marks.push(doomed(s, uid, kind));
+  let ticks = 0;
+  while (telling(s, uid)) {
+    each();
     s.step();
+    ticks++;
     s.drainEvents(events);
   }
   const landed = events.filter((ev) => ev.type === 'TowerJammed' && ev.source === uid).length;
-  return { landed, marks };
+  return { landed, ticks };
+}
+
+/** The ticks left of `uid`'s tell now. */
+function left(s: Sim<IdSpace>, uid: number): number {
+  return s.state.enemies.items.find((x) => x.alive && x.uid === uid)!.jamTellTicks;
 }
 
 const SILENCE: [string, number, number][] = [
@@ -101,49 +116,176 @@ const AUDIT: [string, number, number][] = [
   ['rivet', 7, 4],
 ];
 
-describe('the fizzle (D150): a Reboot in the tell dooms it, and a doomed tell never lands', () => {
-  for (const [kind, mapId, build] of [
-    ['tendril', 'dev_silence', SILENCE],
-    ['ring', 'dev_takeover', AUDIT],
-  ] as const) {
-    it(`${kind}: no Reboot, never doomed, and it lands`, () => {
-      const s = sim(mapId);
-      const uid = untilTell(s, kind, build);
-      const { landed, marks } = playOut(s, uid, kind);
-      expect(marks.length).toBeGreaterThan(1);
-      expect(marks.every((m) => !m)).toBe(true);
-      expect(landed).toBeGreaterThan(0);
-    });
+/** Casts System Reboot (slot 1) and steps a tick. */
+function reboot(s: Sim<IdSpace>): void {
+  s.enqueue({ type: 'ability', slot: 1 });
+  s.step();
+}
 
-    it(`${kind}: a Reboot mid-tell dooms it that tick, it stays doomed, and lands nothing`, () => {
-      const s = sim(mapId);
-      const uid = untilTell(s, kind, build);
+describe('the fizzle (D150, D151): a tendril doomed by a Reboot never lands', () => {
+  it('no Reboot: never doomed, and it lands', () => {
+    const s = sim('dev_silence');
+    const uid = untilTell(s, 'tendril', SILENCE);
+    const marks: boolean[] = [];
+    const { landed } = playOut(s, uid, () => marks.push(doomed(s, uid)));
+    expect(marks.length).toBeGreaterThan(1);
+    expect(marks.every((m) => !m)).toBe(true);
+    expect(landed).toBeGreaterThan(0);
+  });
+
+  it('a Reboot mid-tell dooms it that tick, it stays doomed, and lands nothing', () => {
+    const s = sim('dev_silence');
+    const uid = untilTell(s, 'tendril', SILENCE);
+    s.step();
+    expect(doomed(s, uid)).toBe(false);
+    reboot(s);
+    const marks: boolean[] = [];
+    const { landed } = playOut(s, uid, () => marks.push(doomed(s, uid)));
+    expect(marks.length).toBeGreaterThan(0);
+    expect(marks.every((m) => m)).toBe(true);
+    expect(landed).toBe(0);
+  });
+});
+
+describe('the fizzle (D151): a ring is judged only on its landing tick', () => {
+  it('no Reboot: it ends on the tick ringLanded reads, and lands', () => {
+    const s = sim('dev_takeover');
+    const uid = untilTell(s, 'ring', AUDIT);
+    const was = left(s, uid);
+    const { landed, ticks } = playOut(s, uid);
+    expect(ringLanded(was, ticks)).toBe(true);
+    expect(ringLanded(was, ticks - 1)).toBe(false);
+    expect(landed).toBeGreaterThan(0);
+  });
+
+  it('a Reboot mid-ring: it still ends on its landing tick, landing nothing (FIZZLED then)', () => {
+    const s = sim('dev_takeover');
+    const uid = untilTell(s, 'ring', AUDIT);
+    s.step();
+    reboot(s);
+    const was = left(s, uid);
+    const { landed, ticks } = playOut(s, uid);
+    expect(ringLanded(was, ticks)).toBe(true);
+    expect(landed).toBe(0);
+  });
+
+  it('a tower built in its reach after the Reboot is still jammed: no early fizzle', () => {
+    const s = sim('dev_takeover');
+    const uid = untilTell(s, 'ring', AUDIT);
+    s.step();
+    reboot(s);
+    // Every Rivet the ring reached is immune now; a new one built in its reach isn't.
+    const e = s.state.enemies.items.find((x) => x.alive && x.uid === uid)!;
+    const before = s.state.towers.items.filter((t) => t.alive).length;
+    for (const [dc, r] of [
+      [0, 0],
+      [1, 0],
+      [-1, 0],
+      [0, 2],
+      [1, 2],
+      [-1, 2],
+    ] as const) {
+      s.enqueue({ type: 'build', tower: 'rivet', tile: [Math.round(e.x) + dc, r] });
       s.step();
-      expect(doomed(s, uid, kind)).toBe(false);
-      s.enqueue({ type: 'ability', slot: 1 });
-      s.step();
-      const { landed, marks } = playOut(s, uid, kind);
-      expect(marks.length).toBeGreaterThan(0);
-      expect(marks.every((m) => m)).toBe(true);
-      expect(landed).toBe(0);
-    });
+      if (s.state.towers.items.filter((t) => t.alive).length > before) break;
+    }
+    const built = s.state.towers.items.filter((t) => t.alive && t.jamImmuneTicks === 0);
+    expect(built.some((t) => Math.hypot(t.x - e.x, t.y - e.y) <= 2)).toBe(true);
+    const { landed } = playOut(s, uid);
+    expect(landed).toBeGreaterThan(0);
+  });
+});
+
+/** dev_takeover under takeover.spec's build, stepped to "Shareholder Value"'s first laser. */
+function untilLaser(): { s: Sim<IdSpace>; uid: number } {
+  const s = sim('dev_takeover');
+  const at = (c: number, r: number) =>
+    s.state.towers.items.find((t) => t.alive && t.col === c && t.row === r)!.uid;
+  const rivets = [
+    [5, 2],
+    [7, 4],
+    [3, 2],
+    [12, 4],
+    [12, 2],
+  ] as const;
+  for (const [c, r] of rivets) s.enqueue({ type: 'build', tower: 'rivet', tile: [c, r] });
+  s.enqueue({ type: 'build', tower: 'choir', tile: [7, 2] });
+  s.step();
+  for (const [c, r] of rivets.filter(([x, y]) => !(x === 12 && y === 4))) {
+    s.enqueue({ type: 'upgrade', towerUid: at(c, r) });
+    s.step();
+    s.enqueue({ type: 'upgrade', towerUid: at(c, r) });
+    s.step();
+    s.enqueue({ type: 'specialize', towerUid: at(c, r), spec: 'b' });
+    s.step();
   }
+  s.enqueue({ type: 'callWave' });
+  for (let k = 0; k < 60 * 600; k++) {
+    if (s.state.wave < 2 && s.state.schedule.phase === 'countdown') {
+      s.enqueue({ type: 'callWave' });
+    }
+    s.step();
+    const e = s.state.enemies.items.find(
+      (x) => x.alive && x.jamTellTicks > 0 && x.takeoverTowers.length > 0,
+    );
+    if (e !== undefined) return { s, uid: e.uid };
+  }
+  throw new Error('no laser');
+}
 
-  it('the rule: doomed exactly while the immunity outlasts the tell', () => {
+/** Whether `uid`'s laser is doomed now, as JamView reads it. */
+function laserDoomed(s: Sim<IdSpace>, uid: number): boolean {
+  const e = s.state.enemies.items.find((x) => x.alive && x.uid === uid)!;
+  return lasersDoomed(e.takeoverTowers, e.jamTellTicks, s.state.towers);
+}
+
+describe('the fizzle (D151): a Takeover laser spent by a Reboot', () => {
+  it('no Reboot: never doomed, and it lands', () => {
+    const { s, uid } = untilLaser();
+    const marks: boolean[] = [];
+    const { landed } = playOut(s, uid, () => marks.push(laserDoomed(s, uid)));
+    expect(marks.length).toBeGreaterThan(1);
+    expect(marks.every((m) => !m)).toBe(true);
+    expect(landed).toBeGreaterThan(0);
+  });
+
+  it('a Reboot mid-laser dooms it that tick, it stays doomed, and lands nothing', () => {
+    const { s, uid } = untilLaser();
+    s.step();
+    expect(laserDoomed(s, uid)).toBe(false);
+    reboot(s);
+    const marks: boolean[] = [];
+    const { landed } = playOut(s, uid, () => marks.push(laserDoomed(s, uid)));
+    expect(marks.length).toBeGreaterThan(0);
+    expect(marks.every((m) => m)).toBe(true);
+    expect(landed).toBe(0);
+  });
+
+  it('lasersDoomed: every standing pick immune past the landing, at least one standing', () => {
+    expect(lasersDoomed([1, 2], 30, towers([{ uid: 1, jamImmuneTicks: 360 }]))).toBe(true);
+    const both = [
+      { uid: 1, jamImmuneTicks: 360 },
+      { uid: 2, jamImmuneTicks: 0 },
+    ];
+    expect(lasersDoomed([1, 2], 30, towers(both))).toBe(false);
+    expect(lasersDoomed([1], 30, towers([{ uid: 1, jamImmuneTicks: 30 }]))).toBe(false);
+    expect(lasersDoomed([3], 30, towers(both))).toBe(false); // sold: not a fizzle
+    expect(lasersDoomed([1], 30, towers([{ uid: 1, jamImmuneTicks: 360, alive: false }]))).toBe(
+      false,
+    );
+    expect(lasersDoomed([1], 0, towers([{ uid: 1, jamImmuneTicks: 360 }]))).toBe(false);
+  });
+});
+
+describe('the rules', () => {
+  it('doomed exactly while the immunity outlasts the tell; a ring lands when its ticks run out', () => {
     expect(tellDoomed(0, 30)).toBe(false);
     expect(tellDoomed(30, 30)).toBe(false); // it runs out the tick the tell lands
     expect(tellDoomed(31, 30)).toBe(true);
     expect(tellDoomed(360, 0)).toBe(false); // no tell under way
-    expect(ringDoomed(0, 0, 2, 30, towers([]))).toBe(false); // nothing in reach: not a fizzle
-    expect(ringDoomed(0, 0, 2, 30, towers([{ x: 1, y: 0, jamImmuneTicks: 360 }]))).toBe(true);
-    const mixed = [
-      { x: 1, y: 0, jamImmuneTicks: 360 },
-      { x: 0, y: 1, jamImmuneTicks: 0 },
-    ];
-    expect(ringDoomed(0, 0, 2, 30, towers(mixed))).toBe(false);
-    // A tower out of reach doesn't count either way.
-    expect(ringDoomed(0, 0, 2, 30, towers([mixed[0]!, { x: 5, y: 0, jamImmuneTicks: 0 }]))).toBe(
-      true,
-    );
+    expect(ringLanded(30, 29)).toBe(false);
+    expect(ringLanded(30, 30)).toBe(true);
+    expect(ringLanded(3, 12)).toBe(true); // several ticks a frame
+    expect(ringLanded(0, 5)).toBe(false); // none under way
   });
 });

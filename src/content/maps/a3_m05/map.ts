@@ -165,6 +165,14 @@ export const map = defineMapLayout({
       when: { not: { objectiveDone: 'cut_the_feed' } },
       actions: [{ spawnWave: 'feed_surge' }],
     },
+    // Pebble's hint for Declined (D151), as W9's countdown begins, with a Hum Choir on the field:
+    // the layout is still being set, and the Choir has been brought.
+    {
+      id: 'choir_hint',
+      on: { wave: 9, phase: 'countdown' },
+      when: { towers: { tower: 'choir' }, gte: 1 },
+      actions: [{ cue: 'a3_m05_cue_choir' }],
+    },
     {
       id: 'feed_cut',
       on: { objectiveCompleted: 'cut_the_feed' },

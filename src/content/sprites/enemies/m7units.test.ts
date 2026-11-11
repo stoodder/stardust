@@ -162,22 +162,25 @@ describe('Everglow Security, part two (enemies.md § 5.3)', () => {
     expect(b('enemy.blackbudget').h).toBeGreaterThan(b('enemy.blackbudget').w + 4);
   });
 
-  it('the Auditor wears Prim’s orange LED eyes, and its ring tell raises an orange emitter', () => {
+  it('the Auditor wears Prim’s orange LED eyes; its ring tell raises a white emitter', () => {
     hasAnims('enemy.auditor', ['walk', 'tell']);
     expect(count(grid('enemy.auditor', 'walk_se_0'), 'k')).toBeGreaterThanOrEqual(12); // visor
     expect(count(grid('enemy.auditor', 'walk_se_0'), 'd')).toBeGreaterThanOrEqual(2); // eyes
     for (const f of ['tell_se_0', 'tell_se_1', 'tell_ne_0']) {
       const top = grid('enemy.auditor', f).slice(0, 3);
-      expect(count(top, 'de'), f).toBeGreaterThanOrEqual(5);
+      expect(count(top, 'w'), f).toBeGreaterThanOrEqual(6);
+      // D151: never the Compliance Drone's orange antenna.
+      expect(count(top, 'abcde'), f).toBe(0);
     }
   });
 
-  it('D150: a tall mast with a violet jammer bulb sets the Auditor apart from the drone at 1×', () => {
+  it('D150, D151: a tall mast with a white, violet-hearted beacon sets the Auditor apart', () => {
     expect(sprite('enemy.auditor').legend).toMatchObject({ V: 'violet.3', U: 'violet.4' });
     for (const f of ['walk_se_0', 'walk_se_1', 'walk_ne_0', 'walk_ne_3']) {
-      const rows = grid('enemy.auditor', f);
-      expect(count(rows, 'VU'), f).toBeGreaterThanOrEqual(4); // the bulb
-      expect(count(rows.slice(0, 6), 'VU'), f).toBeGreaterThanOrEqual(4); // high over the box
+      const top = grid('enemy.auditor', f).slice(0, 7); // over the box, nodding or not
+      expect(count(top, 'w'), f).toBeGreaterThanOrEqual(4); // the white beacon, high over the box
+      expect(count(top, 'VU'), f).toBeGreaterThanOrEqual(2); // its violet heart and collar
+      expect(count(top, 'abcde'), f).toBe(0); // no orange up there
     }
     for (const f of ['tell_se_0', 'tell_se_1']) {
       expect(count(grid('enemy.auditor', f).slice(0, 3), 'U'), f).toBe(1); // the emitter's core

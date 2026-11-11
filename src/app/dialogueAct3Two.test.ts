@@ -253,6 +253,26 @@ describe("A3M4's silences (Bricks absent)", () => {
   });
 });
 
+/** Plays A3M5's briefing through; Kip's lines as drawn. */
+const kipInBriefing = (): { variant: string | null; dark: boolean; silence: boolean }[] => {
+  playScene(SCENES.a3_m05_brief!, { mode: 'briefing' });
+  const kip: { variant: string | null; dark: boolean; silence: boolean }[] = [];
+  for (let i = 0; i < 12 && dialogue.scene.value !== null; i++) {
+    const l = dialogue.scene.value.line;
+    if (l?.speaker === 'kip') {
+      const p = l.portrait!;
+      kip.push({ variant: p.variant, dark: p.dark, silence: l.silence });
+    }
+    nextScene();
+    nextScene();
+  }
+  return kip;
+};
+const KIP_IN_BRIEFING = [
+  { variant: 'act2', dark: false, silence: false },
+  { variant: 'act3', dark: false, silence: true },
+];
+
 describe('in a battle', () => {
   let unbind: () => void = noop;
   let host: Host<IdSpace>;
@@ -319,26 +339,6 @@ describe('in a battle', () => {
     expect(dialogue.scene.value).toBeNull();
   });
 
-  /** Plays A3M5's briefing through; Kip's lines as drawn. */
-  const kipInBriefing = (): { variant: string | null; dark: boolean; silence: boolean }[] => {
-    playScene(SCENES.a3_m05_brief!, { mode: 'briefing' });
-    const kip: { variant: string | null; dark: boolean; silence: boolean }[] = [];
-    for (let i = 0; i < 12 && dialogue.scene.value !== null; i++) {
-      const l = dialogue.scene.value.line;
-      if (l?.speaker === 'kip') {
-        const p = l.portrait!;
-        kip.push({ variant: p.variant, dark: p.dark, silence: l.silence });
-      }
-      nextScene();
-      nextScene();
-    }
-    return kip;
-  };
-  const KIP_IN_BRIEFING = [
-    { variant: 'act2', dark: false, silence: false },
-    { variant: 'act3', dark: false, silence: true },
-  ];
-
   it("A3M5's briefing: Kip's silence is lit, in the frame without the pin (D150)", () => {
     bind('a3_m05', 'after_a3m4_keep');
     expect(kipInBriefing()).toEqual(KIP_IN_BRIEFING);
@@ -347,11 +347,11 @@ describe('in a battle', () => {
   it("A3M5's briefing replays as it first played: the pin on Kip's ledger line (D151)", () => {
     bind('a3_m05', 'after_a3m4_keep');
     // Played once before (the save has it seen) and relaunched from the star map.
-    const seen = (sv: SaveData): SaveData => ({
+    const seen = updateActiveSave((sv) => ({
       ...sv,
       story: { ...sv.story, seen: [...sv.story.seen, 'a3_m05_brief'] },
-    });
-    expect(updateActiveSave(seen).ok).toBe(true);
+    }));
+    expect(seen.ok).toBe(true);
     expect(activeSave()!.story.seen).toContain('a3_m05_brief');
     // The briefing from the star map: the briefing runs again, the pin still on the ledger line.
     expect(kipInBriefing()).toEqual(KIP_IN_BRIEFING);

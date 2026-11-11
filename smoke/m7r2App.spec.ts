@@ -46,8 +46,10 @@ test('E2: More is a button under the grid; it scrolls and never picks a card', a
   expect(await pressed(page)).toEqual(before);
   // The keyboard: Enter on More reads on to the bottom, where it says Top; Top goes back up.
   await more.focus();
-  for (let i = 0; i < 6 && (await more.textContent())?.includes('More') === true; i++) {
+  for (let i = 0; i < 6; i++) {
     // oxlint-disable-next-line no-await-in-loop -- one press at a time, the scroll settling
+    if ((await more.textContent())?.includes('Top') === true) break;
+    // oxlint-disable-next-line no-await-in-loop -- one press at a time
     await page.keyboard.press('Enter');
     // oxlint-disable-next-line no-await-in-loop -- the smooth scroll lands
     await page.waitForTimeout(400);
@@ -66,23 +68,21 @@ test('E2: a pick half under the fold scrolls into view with its slot number', as
   const grid = page.locator('.sd-lo-towers');
   // Make room: drop a pick.
   await grid.locator('[aria-pressed="true"]').first().click();
-  // The first card cut off by the grid's bottom edge.
+  // The first unpicked card cut off by the grid's bottom edge.
   const gridBox = (await grid.boundingBox())!;
   const bottom = gridBox.y + gridBox.height;
   const cards = grid.locator('.sd-lo-tower');
-  let cut = -1;
-  for (let i = 0; i < (await cards.count()); i++) {
-    // oxlint-disable-next-line no-await-in-loop -- reading each card's box in turn
-    const b = (await cards.nth(i).boundingBox())!;
-    if (b.y < bottom - 4 && b.y + b.height > bottom + 1) {
-      cut = i;
-      break;
-    }
-  }
+  const boxes = await cards.evaluateAll((els) =>
+    els.map((e) => {
+      const r = e.getBoundingClientRect();
+      return { y: r.y, h: r.height, free: e.getAttribute('aria-pressed') === 'false' };
+    }),
+  );
+  const cut = boxes.findIndex((b) => b.free && b.y < bottom - 8 && b.y + b.h > bottom + 1);
   test.skip(cut < 0, 'no card straddles the fold at this layout');
   const card = cards.nth(cut);
   const b = (await card.boundingBox())!;
-  await page.mouse.click(b.x + b.width / 2, b.y + 4);
+  await page.mouse.click(b.x + b.width / 2, b.y + 3);
   await expect(card).toHaveAttribute('aria-pressed', 'true');
   await expect
     .poll(async () => {

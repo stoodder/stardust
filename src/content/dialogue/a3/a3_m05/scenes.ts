@@ -7,7 +7,9 @@
 //   line (Purge), or `system`'s advisory (Rewrite: QUILL is offline here, and app/dialogue.ts skips
 //   its lines wherever it is; T713).
 // - The radio: w05 Ves'thara, w06 Kip, w09 Pebble (Grandmother if Old Thrum was spared, else
-//   Bramble), w14 Pebble's hint for Declined (the Choir; every C4 answer).
+//   Bramble), w13 Kip on the hunt (save the casts for the old intake; every C4 answer; D151).
+// - The Choir's hint (`a3_m05_cue_choir`, map.ts's `choir_hint`: W9's countdown, with a Hum Choir
+//   on the field): Pebble's hint for Declined, every C4 answer (D151).
 // - Cut the Feed (`a3_m05_cue_feed_cut`, the objective's `objectiveCompleted`): QUILL's line, or
 //   `system`'s under Rewrite.
 // - Sterling's remote boss cues: the platform's three phases (map.ts `bossPhase` events).
@@ -95,13 +97,35 @@ export const scenes = defineScenes([
       text: "The big ones carry the morning. That's what Bramble says.",
     },
   ]),
-  // The countdown before "Shareholder Value": the hint for Declined, under every C4 answer (the
-  // Hum Choir shortens a hostile jam on the towers in its aura; D150).
-  defineScene('a3_m05_w14', [
+  // The countdown before the bearers' biggest group: where to answer the hunt (D151: the
+  // Silencers that come up the sluice behind it hush the hub's guns).
+  defineScene('a3_m05_w13', [
+    {
+      kind: 'line',
+      speaker: 'kip',
+      expression: 'worried',
+      text: 'This is the biggest group. They will come up the sluice behind it.',
+    },
+    {
+      kind: 'line',
+      speaker: 'kip',
+      expression: 'worried',
+      text: 'Save what you have. Freeze them at the old intake.',
+    },
+  ]),
+  // The hint for Declined, before the layout is set (D151): the Hum Choir shortens a hostile jam
+  // on the towers in its aura, to 1 s at T3 ("our loudest"). It plays only with a Choir built.
+  defineScene('a3_m05_cue_choir', [
     {
       kind: 'line',
       speaker: 'pebble',
-      text: 'If the big machine grabs your towers, keep them near the Choir. Nothing stays quiet long when we sing. (squeak)',
+      text: 'The big machine is coming. If it grabs your towers, keep them near the Choir.',
+    },
+    {
+      kind: 'line',
+      speaker: 'pebble',
+      expression: 'singing',
+      text: 'When we sing our loudest, nothing stays quiet long! (squeak)',
     },
   ]),
   // Cut the Feed: the three vat-feed lines cleared before W10.

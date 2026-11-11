@@ -1,45 +1,65 @@
 // A cluster-aware human caster for the map balance tests (D151: "A3M5 must reach a human, not just
-// a timer"). Par's builds with their scripted casts taken out, and each tick of the run this
-// policy casts instead, reading only what a player sees on screen:
-// - **System Reboot** the moment any jammer is telling (a Silencer's tendril or an Auditor's ring
-//   reaching for a tower: the tell a player is taught to watch for; A3M4's QUILL line).
-// - **Every targeted ability** (Stillness, Suppressing Fire, …) on a boss while one is on the map,
-//   else on the biggest knot of enemies, when at least `CLUSTER_MIN` stand within `CLUSTER_TILES`
-//   of one of them, aimed at that one's tile.
-// - Nothing else: no Time Dilation, no Clearance Sale (no live map with jam carries them in par).
+// a timer"). It plays par's builds with their scripted casts taken out (`castsStripped`). Each tick
+// it casts instead, reading only what a player sees on screen:
+// - **System Reboot** the moment any jammer is telling: a Silencer's tendril or an Auditor's ring
+//   reaching for a tower. That is the tell a player is taught to watch for (A3M4's QUILL line).
+// - **Every targeted ability** (Stillness, Suppressing Fire) goes on a boss while one is on the
+//   map. Otherwise it goes on the biggest knot of enemies: `CLUSTER_MIN` or more within
+//   `CLUSTER_TILES` of one of them, aimed at that one's tile.
+// - With `heed` (a player who listens to the radio: A3M5's w13 line, "Save what you have. Freeze
+//   them at the old intake."), every targeted ability is held from each of `heed.waves`'
+//   countdowns until that wave resolves. It is cast at `heed.at` once a unit of `heed.enemy` on
+//   `heed.route` comes within `heed.radius` tiles of it.
+// - Nothing else. No live jam map's par carries Time Dilation or Clearance Sale in a slot.
 //
-// It casts whenever an enemy is on the map, whatever the wave's phase: a player casts on the last
-// units of a wave while the next countdown runs (round 2's probe waited out each countdown, so it
-// never answered a hunt's Silencers once their wave had finished spawning).
+// Round 2's probe (the reviewer's react.ts, BIG=1 TELL=1) had two faults this caster fixes:
+// - It cast only outside countdowns. A wave's countdown opens once the wave finishes spawning, so
+//   it never answered the units still on the map, such as W13's hunt and its Silencers.
+// - It rounded targets (`Math.round(x)`). A unit at a tile's centre (x.5) was aimed at the next
+//   tile, so every Suppressing Fire was refused as `invalidTarget`. A unit's tile is its floor.
 import type { CompiledBuild, CompiledContent } from '../../content/compiled.ts';
-import type { Sim } from '../../sim/index.ts';
+import type { GridPos } from '../../content/types.ts';
 import { ringTelling } from '../../sim/enemyAbilities/jamRing.ts';
 import { tendrilTelling } from '../../sim/enemyAbilities/jamTendril.ts';
+import type { Sim } from '../../sim/index.ts';
 
 /** How many enemies make a knot worth a cast… */
 export const CLUSTER_MIN = 6;
 /** …standing within this many tiles of one of them. */
 export const CLUSTER_TILES = 2;
 
-/** `build` with every ability cast taken out (the caster below casts instead). */
+/** What a player who heeds the radio saves their targeted casts for (see the header). */
+export interface Heed {
+  readonly waves: readonly number[];
+  readonly route: string;
+  readonly enemy: string;
+  readonly at: GridPos;
+  readonly radius: number;
+}
+
+/** `build` with every ability cast taken out (the caster casts instead). */
 export function castsStripped(build: CompiledBuild): CompiledBuild {
   return { ...build, steps: build.steps.filter((s) => s.kind !== 'ability') };
 }
 
 /** A per-tick caster for `sim`: call it after the build executor, before each `step()`. */
-export function clusterCaster(sim: Sim, content: CompiledContent, heed?: { waves: readonly number[]; route: string; at: readonly [number, number] }): () => void {
+export function clusterCaster(sim: Sim, content: CompiledContent, heed?: Heed): () => void {
   const st = sim.state;
   const { slot1, slot2 } = sim.config.abilities;
-  const kindOf = (id: string | null): string | null =>
-    id === null ? null : (content.abilities[id]?.effect.kind ?? null);
+  const kindOf = (id: typeof slot1 | null): string | null =>
+    id === null ? null : content.abilities[id].effect.kind;
   const slots = [
     { slot: 1 as const, kind: kindOf(slot1) },
     { slot: 2 as const, kind: kindOf(slot2) },
   ];
+  /** Whether a heeded wave is between its countdown and its resolution. */
+  const holding = (): boolean =>
+    heed !== undefined &&
+    heed.waves.some((w) => st.schedule.countdownWave >= w && !st.schedule.resolved[w - 1]);
   return () => {
     let alive = 0;
     let telling = 0;
-    let boss: (typeof st.enemies.items)[number] | null = null;
+    let boss: { readonly x: number; readonly y: number; readonly dist: number } | null = null;
     for (let i = 0; i < st.enemies.used; i++) {
       const e = st.enemies.items[i]!;
       if (!e.alive) continue;
@@ -58,44 +78,42 @@ export function clusterCaster(sim: Sim, content: CompiledContent, heed?: { waves
         continue;
       }
       if (kind !== 'stasisArea' && kind !== 'segment') continue;
-      const MODE = process.env.HEEDMODE ?? 'sil';
-      const SLOTS = (process.env.HEEDSLOTS ?? '2').split(',').map(Number);
-      if (heed !== undefined && SLOTS.includes(slot) && heed.waves.some((w) => st.schedule.countdownWave >= w && !st.schedule.resolved[w - 1])) {
-        let tgt: { x: number; y: number } | null = null;
-        let n = 0;
-        let sil = false;
-        const R = Number(process.env.HEEDR ?? 1.5);
-        for (let i = 0; i < st.enemies.used; i++) {
-          const e = st.enemies.items[i]!;
-          if (!e.alive || e.route?.id !== heed.route) continue;
-          const cx = heed.at[0] + 0.5, cy = heed.at[1] + 0.5;
-          if ((e.x - cx) ** 2 + (e.y - cy) ** 2 < R * R) { n++; if (e.def?.id === 'silencer' || (e as any).enemy === 'silencer') sil = true; tgt ??= e; }
+      if (heed !== undefined && holding()) {
+        if (heedArrived(sim, heed)) {
+          sim.enqueue({ type: 'ability', slot, target: [heed.at[0], heed.at[1]] });
         }
-        const go = MODE === 'sil' ? sil : n >= Number(process.env.HEEDN ?? 4);
-        if (go && tgt !== null) sim.enqueue({ type: 'ability', slot, target: [heed.at[0], heed.at[1]] });
         continue;
       }
-      let teller: { x: number; y: number } | null = null;
-      const rebootReady = slots.some((o) => o.kind === 'reboot' && st.abilityCooldownTicks[o.slot - 1]! <= 0);
-      if (process.env.TELLSTILL && kind === 'stasisArea' && !rebootReady) {
-        for (let i = 0; i < st.enemies.used; i++) {
-          const e = st.enemies.items[i]!;
-          if (tendrilTelling(e) || ringTelling(e)) { teller = e; break; }
-        }
-      }
-      const target = boss ?? teller ?? biggestKnot(sim);
+      const target = boss ?? biggestKnot(sim);
       if (target !== null) {
-        sim.enqueue({ type: 'ability', slot, target: [Math.floor(target.x), Math.floor(target.y)] });
+        sim.enqueue({
+          type: 'ability',
+          slot,
+          target: [Math.floor(target.x), Math.floor(target.y)],
+        });
       }
     }
   };
+}
+
+/** Whether a unit of `heed.enemy` on `heed.route` is within `heed.radius` of `heed.at`'s centre. */
+function heedArrived(sim: Sim, heed: Heed): boolean {
+  const st = sim.state;
+  const cx = heed.at[0] + 0.5;
+  const cy = heed.at[1] + 0.5;
+  for (let i = 0; i < st.enemies.used; i++) {
+    const e = st.enemies.items[i]!;
+    if (!e.alive || e.def?.id !== heed.enemy || e.route?.id !== heed.route) continue;
+    if ((e.x - cx) ** 2 + (e.y - cy) ** 2 < heed.radius ** 2) return true;
+  }
+  return false;
 }
 
 /** The live enemy with the most others within CLUSTER_TILES (CLUSTER_MIN at least), or null. */
 function biggestKnot(sim: Sim): { readonly x: number; readonly y: number } | null {
   const st = sim.state;
   const r2 = CLUSTER_TILES * CLUSTER_TILES;
-  let best: { x: number; y: number } | null = null;
+  let best: { readonly x: number; readonly y: number } | null = null;
   let most = CLUSTER_MIN - 1;
   for (let i = 0; i < st.enemies.used; i++) {
     const a = st.enemies.items[i]!;

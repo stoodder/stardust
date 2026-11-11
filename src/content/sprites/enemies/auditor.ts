@@ -2,21 +2,24 @@
 // Compliance Officer Prim's chassis (story/characters.md: "Auditor units carry its chassis";
 // art-direction §5's `prim` portrait): a boxy white head-box with one wide dark visor whose two
 // orange LED eyes are the Auditor colour (§8, never QUILL's teal), a tall steel mast topped with a
-// violet jammer bulb (the jam's violet, the Silencer's tendril's: what sets it apart from the
-// Compliance Drone at 1×, D150), pulsing a step each stride, an orange audit lamp on its crown, a hazard-striped collar, and her clipboard held out on a thin
-// arm. A walker of a kind: the box rides a little tracked base, its tread lugs rolling. Squat on
+// white jammer beacon (D151: a `white.1` cross in the outline's 1 px of ink, so it reads against
+// Act III's violet crystals) round a violet heart that pulses a step each stride, over a violet
+// collar (the jam's violet, the Silencer's tendril's: with the mast, what sets it apart from the
+// Compliance Drone at 1×, D150), an orange audit lamp on its crown, a hazard-striped collar, and
+// her clipboard held out on a thin arm. A walker of a kind: the box rides a little tracked base, its tread lugs rolling. Squat on
 // treads where the Compliance Drone struts on legs and the Expediter balances on a wheel.
 // - `walk_<facing>` (4 frames, 8 fps): the treads roll (the lugs step along), the box nods.
 // - `tell_<facing>` (2 frames, 4 fps; its ring tell, enemyPose `tell`): it stops and audits: the
-//   mast telescopes up and the bulb opens into an orange emitter ring round a violet core that
-//   flares on the second frame, the LED eyes
-//   go wide and bright, the clipboard comes up (render's JamRingView grows the ring itself).
+//   mast telescopes up and the beacon opens into a white emitter ring round its violet core that
+//   flares wider on the second frame, throwing violet sparks (never orange: the Compliance Drone's
+//   antenna is), the LED eyes go wide and bright, the clipboard comes up (render's JamRingView
+//   grows the ring itself).
 // No death frames: Everglow Security shuts down (render's `shutdown`).
 import { defineSprite } from '../defineSprite.ts';
 import { grid, line, plot, rows, stamp, type CharGrid } from '../helpers.ts';
 
 const W = 16;
-/** Rows above the box for the mast and its bulb (and the tell's emitter over them). */
+/** Rows above the box for the mast and its beacon (and the tell's emitter over them). */
 const Y = 5;
 const H = 20 + Y;
 const AX = 7;
@@ -57,23 +60,26 @@ function auditor(facing: 'se' | 'ne', step: 0 | 1 | 2 | 3, look: Look): string[]
   }
   // The hazard-striped collar along its bottom edge.
   for (let x = 3; x < 12; x++) plot(g, x, top + 8, (x + 1) % 4 < 2 ? 'c' : 'x');
-  // The mast (telescoped up in the tell, an emitter ring round its bulb) and the audit lamp.
+  // The mast (telescoped up in the tell, an emitter ring round its beacon) and the audit lamp.
   const ax = se ? 9 : 5;
   if (tell) {
     line(g, ax, top - 1, ax, 2, '3');
-    // The emitter: an orange ring round the violet core, flaring wider on the second frame.
+    plot(g, ax, 3, 'V');
+    // The emitter: a white ring round the violet core, flaring wider on the second frame.
     if (step === 0) {
-      stamp(g, ax - 1, 0, ['ded', 'eUe', 'ded']);
+      stamp(g, ax - 1, 0, ['www', 'wUw', 'www']);
     } else {
-      stamp(g, ax - 2, 0, ['.ded.', 'deUed', '.ded.']);
-      plot(g, ax - 3, 1, 'c');
-      plot(g, ax + 3, 1, 'c');
+      stamp(g, ax - 2, 0, ['.www.', 'wwUww', '.www.']);
+      plot(g, ax - 3, 1, 'V');
+      plot(g, ax + 3, 1, 'V');
     }
   } else {
-    // A tall steel mast, lit on its near side, and the violet bulb pulsing a step each stride.
+    // A tall steel mast, lit on its near side, its violet collar, and the white beacon over it,
+    // its violet heart pulsing a step each stride.
     line(g, ax, top - 1, ax, top - 5, '2');
     plot(g, ax, top - 2, '3');
-    stamp(g, ax - 1, top - 8, step % 2 === 0 ? ['.V.', 'VUV', '.V.'] : ['.U.', 'UwU', '.U.']);
+    plot(g, ax, top - 5, 'V');
+    stamp(g, ax - 1, top - 8, ['.w.', step % 2 === 0 ? 'wVw' : 'wUw', '.w.']);
   }
   plot(g, se ? 5 : 9, top - 1, tell || step === 0 ? 'e' : 'd');
   if (se) {
