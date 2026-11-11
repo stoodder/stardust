@@ -10,7 +10,7 @@ import { mapOrigin } from '../render/iso.ts';
 import { previewRing } from '../render/input/ringRange.ts';
 import { slotAimsAtPath } from '../render/input/tileFacts.ts';
 import { VIEW_H, VIEW_W } from '../render/scale.ts';
-import { createSim, type Sim, type SimState } from '../sim/index.ts';
+import { createSim, towerStats, type Sim, type SimState } from '../sim/index.ts';
 import { hud } from '../ui/state.ts';
 import { objectiveRows } from '../ui/hud/layout.ts';
 import type { StoryContext } from '../story/conditions.ts';
@@ -117,10 +117,10 @@ function selectAt(sim: Sim<IdSpace>, col: number, row: number) {
 describe('the M6 towers in the tower panel', () => {
   it("reads the Den as its family and each one's DoT, with the latch, and +1 swarmling next", () => {
     const sim = m6Towers();
-    sim.enqueue({ type: 'build', tile: [7, 2], tower: 'burrow' });
+    sim.enqueue({ type: 'build', tile: [6, 1], tower: 'burrow' });
     sim.step();
     sim.step();
-    const v = selectAt(sim, 7, 2);
+    const v = selectAt(sim, 6, 1);
     expect(v.stats).toBe(
       '3 swarmlings · 5 dmg/s each · range 2.5 · latch 4 s · Chilled 10% · ×2.5 burrowed',
     );
@@ -129,11 +129,11 @@ describe('the M6 towers in the tower panel', () => {
 
   it("reads the Choir's damage aura with its reach, and the Bloom's field", () => {
     const sim = m6Towers();
-    sim.enqueue({ type: 'build', tile: [7, 2], tower: 'choir' });
+    sim.enqueue({ type: 'build', tile: [6, 2], tower: 'choir' });
     sim.enqueue({ type: 'build', tile: [6, 1], tower: 'bloom' });
     sim.step();
-    expect(selectAt(sim, 7, 2).stats).toBe('+10% damage in 1.5');
-    expect(selectAt(sim, 7, 2).upgradeDelta).toBe('+5% damage · +0.5 reach');
+    expect(selectAt(sim, 6, 2).stats).toBe('+10% damage in 1.5');
+    expect(selectAt(sim, 6, 2).upgradeDelta).toBe('+5% damage · +0.5 reach');
     expect(selectAt(sim, 6, 1).stats).toBe('field 2 · Chilled 30% · Stasis 1.5 s every 10 s');
     expect(selectAt(sim, 6, 1).upgradeDelta).toBe('pulse 2 s sooner');
   });
@@ -143,29 +143,13 @@ describe('the M6 towers in the tower panel', () => {
     const burrow = content.towers['burrow']!;
     const choir = content.towers['choir']!;
     const bloom = content.towers['bloom']!;
-    const line = (tier: (typeof burrow.tiers)[number]) =>
-      statLineText(
-        {
-          tier: 4,
-          next: null,
-          kind: tier.attack?.kind ?? null,
-          damageType: null,
-          damage: tier.attack?.damage ?? 0,
-          ratePerSec: tier.attack?.ratePerSec ?? 0,
-          rangeTiles: tier.attack?.rangeTiles ?? 0,
-          minRangeTiles: 0,
-          splashTiles: 0,
-          armorPierce: 0,
-          vsStatuses: [],
-          vsStatusDamage: 0,
-        },
-        tier,
-      );
-    expect(line(burrow.specs!.b)).toBe(
+    const line = (def: typeof burrow, spec: 'a' | 'b') =>
+      statLineText(towerStats(def, 4, undefined, [], spec), def.specs![spec]);
+    expect(line(burrow, 'b')).toBe(
       '3 Champions · 20 dmg/s each · range 2.5 · latch 5 s · Chilled 15% · ×2.5 burrowed · air too',
     );
-    expect(line(choir.specs!.a)).toBe('+20% damage in 2 · Lulls in 2.5');
-    expect(line(bloom.specs!.a)).toBe(
+    expect(line(choir, 'a')).toBe('+20% damage in 2 · Lulls in 2.5');
+    expect(line(bloom, 'a')).toBe(
       'field 2.5 · Chilled 30% · Stasis 2 s every 8 s · pulls 1.5 (20 s)',
     );
     expect(tierExtrasDelta(bloom.tiers[1], bloom.tiers[2])).toEqual([

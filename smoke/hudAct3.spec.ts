@@ -90,7 +90,7 @@ test("hudAct3: A3M1's tracker walks Bramble's column; the Den's panel; Underfoot
   const den = await page.evaluate(() => {
     const st = globalThis.__sd!.state()!;
     const t = st.towers.items.find((x) => x.alive && x.def?.id === 'burrow');
-    return t === undefined ? null : [t.col, t.row];
+    return t === undefined ? null : ([t.col, t.row] as const);
   });
   expect(den).not.toBeNull();
   const at = await page.evaluate(([c, r]) => globalThis.__sd!.tileToClient(c, r), den!);
@@ -108,7 +108,8 @@ test("hudAct3: A3M1's tracker walks Bramble's column; the Den's panel; Underfoot
     for (let i = 0; i < st.allies.used; i++) {
       const a = st.allies.items[i]!;
       const tiles = a.alive && a.group >= 0 ? a.route?.tiles : undefined;
-      if (tiles !== undefined && tiles.length > 44) return [tiles[44]![0], tiles[44]![1]];
+      const t = tiles?.[44];
+      if (t !== undefined) return [t[0], t[1]] as const;
     }
     return null;
   });
