@@ -12,6 +12,7 @@ import { issue, setCommandTarget } from './commands.ts';
 import { createHost, type Host } from './host.ts';
 import { bindHud, hudSaveInfo, showNotice, type HudOptions } from './hud.ts';
 import { rejectText } from './hudText.ts';
+import { activeSave } from './save.ts';
 import { bindBattleAudio } from './audio.ts';
 import { bindDialogue } from './dialogue.ts';
 import { bindClickables, bindPeeker } from './peeker.ts';
@@ -88,6 +89,8 @@ export function startBattle(
       },
       // Bricks's name tag (T431): the turret carrying it, set by app/dialogue.ts's tagging.
       nameTag: () => hud.nameTag.value,
+      // T740b: the classes the save holds jailbroken draw jailbroken (towers.md § 9).
+      jailbroken: activeSave()?.unlocks.jailbroken ?? [],
     },
     key,
   );

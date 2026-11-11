@@ -20,6 +20,7 @@
 //   sprite without the twin or the variant draws as it always did.
 import type { ColorName } from '../../content/palettes/master.ts';
 import type { SpriteId } from '../../content/sprites/index.ts';
+import { DEFAULT_VARIANT } from '../sprites/bake.ts';
 import { STEPPED_ALPHA } from '../vfx/fxTiming.ts';
 import {
   hasAnim,
@@ -112,7 +113,7 @@ export interface TowerPalette {
   readonly frameSuffix: string;
 }
 
-const PLAIN: TowerPalette = { base: 'default', head: 'default', frameSuffix: '' };
+const PLAIN: TowerPalette = { base: DEFAULT_VARIANT, head: DEFAULT_VARIANT, frameSuffix: '' };
 
 /**
  * A tower's look for a base sprite `baseId` (and head `headId`) when the run's jailbroken classes
@@ -132,7 +133,7 @@ export function jailbreakLook(
     return PLAIN;
   }
   const head =
-    headId !== null && hasPaletteVariant(headId, JAILBROKEN_PALETTE) ? JAILBROKEN_PALETTE : 'default';
+    headId !== null && hasPaletteVariant(headId, JAILBROKEN_PALETTE) ? JAILBROKEN_PALETTE : DEFAULT_VARIANT;
   return { base: JAILBROKEN_PALETTE, head, frameSuffix: JAILBROKEN_FRAME_SUFFIX };
 }
 

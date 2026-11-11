@@ -118,7 +118,7 @@ import { LeaperView } from '../views/LeaperView.ts'; // T704
 import { TrapView } from '../views/TrapView.ts'; // T604
 import { PuddleView } from '../views/PuddleView.ts'; // T705
 import { RevokedView } from '../views/RevokedView.ts'; // T606
-import { towerVoice } from '../views/towerLook.ts'; // T630a
+import { jailbrokenBaseIds, towerVoice } from '../views/towerLook.ts'; // T630a, T740b
 import { nightRings } from '../views/nightRings.ts'; // T630a
 import { MindView } from '../views/MindView.ts';
 import { MarkView } from '../views/MarkView.ts';
@@ -212,6 +212,8 @@ export interface BattleSceneDeps {
    * Optional: without it no plate is drawn.
    */
   nameTag?(): { readonly uid: number; readonly text: string } | null;
+  /** The classes the save holds jailbroken (`unlocks.jailbroken`; T740b): drawn jailbroken. */
+  readonly jailbroken?: readonly string[];
 }
 
 /** The Denise pointer's ring (D059), and the arrow's spot over the turret head (scratch). */
@@ -427,7 +429,9 @@ export class BattleScene extends Phaser.Scene {
     this.#airLanes = new AirLaneView(ctx, map, prefersReducedMotion);
     // T630a: every Choir sings Thrum's ring once she was spared (towerLook.ts `towerVoice`).
     const voice = towerVoice(sim.config.scriptFlags);
-    this.#towers = new ViewPool(() => new TowerView(ctx, voice));
+    // T740b: a jailbroken class draws jailbroken (towerLook.ts `jailbreakLook`).
+    const jailbroken = jailbrokenBaseIds(sim.config.content.towers, this.#deps.jailbroken ?? []);
+    this.#towers = new ViewPool(() => new TowerView(ctx, voice, jailbroken));
     this.#leaves = new LeaveFx(ctx);
     this.#enemies = new ViewPool(() => new EnemyView(ctx, this.#leaves, this.#keepClear));
     this.#projectiles = new ViewPool(() => new ProjectileView(ctx));
@@ -946,6 +950,7 @@ export class BattleScene extends Phaser.Scene {
         groundings: this.#leapers.groundings,
       }, // T704
       revoked: { shown: this.#revoked.shown, played: this.#revoked.played }, // T606
+      jailbroken: [...this.#towers.live.values()].filter((v) => v.jailbroken).length, // T740b
       mind: { unnerved: this.#mind.unnerved, echoes: this.#mind.echoes, stills: this.#mind.stills },
       marks: this.#marks.shown,
       harpoon: { pins: this.#harpoon.pins, skewered: this.#harpoon.skewered },

@@ -74,7 +74,9 @@ describe('sprite registry', () => {
       const tiers = frames.includes('spec_a')
         ? ['t1', 't2', 't3', 'spec_a', 'spec_b']
         : ['t1', 't2', 't3'];
-      expect(frames, def.id).toEqual(tiers);
+      // An Everglow base also has each frame's jailbroken twin (`_jb`, towers/base.ts; T740b).
+      const jb = def.variants?.includes('everglow.jailbroken') === true;
+      expect(frames, def.id).toEqual(jb ? [...tiers, ...tiers.map((t) => `${t}_jb`)] : tiers);
       expect(def.mount, def.id).toBeDefined();
       expect(
         SPRITES.some((s) => s.id === `${def.id}_head`),

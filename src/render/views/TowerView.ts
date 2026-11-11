@@ -15,6 +15,8 @@
 // again; and a revoked tower powers down under its stamp (`powerDown`, RevokedView): dark, glows
 // out, its anim held, then folding into its base and the ground (a stepped fade under reduced
 // motion).
+// T740b: a class the save holds jailbroken (towers.md § 9) draws its base's `_jb` twin (the logo
+// plate scratched out) and its base and head in `everglow.jailbroken` (towerLook.ts `jailbreakLook`).
 import * as Phaser from 'phaser';
 import type { SpriteId } from '../../content/sprites/index.ts';
 import type { SpriteSource } from '../sprites/SpriteSource.ts';
@@ -37,7 +39,15 @@ import {
 import { HOLD_TINT_COLOR, holdMarkerImage, tintOf } from './holdMarker.ts';
 import { variantName, type ViewContext } from './ViewContext.ts';
 import { hasAnim } from './spriteInfo.ts';
-import { foldSinkPx, idleFire, POWER_DOWN_COLOR, powerDownLook, voicedIdle } from './towerLook.ts';
+import {
+  foldSinkPx,
+  idleFire,
+  jailbreakLook,
+  POWER_DOWN_COLOR,
+  powerDownLook,
+  voicedIdle,
+  type TowerPalette,
+} from './towerLook.ts';
 import type { PooledView } from './ViewPool.ts';
 
 /** The tower fields a view reads (a live sim Tower satisfies it). */
@@ -76,6 +86,14 @@ const HOLD_MARKER_KEY = 'overlay.hold_fire';
 const HOLD_MARKER_GAP = 1;
 
 const FACINGS: readonly Facing[] = ['se', 'sw', 'ne', 'nw'];
+/** No class drawn jailbroken (a battle without a save). */
+const NONE_JAILBROKEN: ReadonlySet<string> = new Set();
+/** The plain look (default palette, no base-frame suffix). */
+const PLAIN_LOOK: TowerPalette = {
+  base: DEFAULT_VARIANT,
+  head: DEFAULT_VARIANT,
+  frameSuffix: '',
+};
 const FACING_INDEX: Readonly<Record<Facing, number>> = { se: 0, sw: 1, ne: 2, nw: 3 };
 
 /** Each frame's first opaque row (px from its top), by texture and frame: read once per frame. */
@@ -167,6 +185,10 @@ export class TowerView implements PooledView {
   #still: { readonly texture: string; readonly frame: string } | null = null;
   /** The voice its idle head sings in (towerLook.ts `voicedIdle`), or null. */
   readonly #voice: string | null;
+  /** The base sprite ids of the run's jailbroken classes (towerLook.ts `jailbreakLook`; T740b). */
+  readonly #jailbroken: ReadonlySet<string>;
+  /** This tower's palettes and base-frame suffix (plain, or jailbroken). */
+  #look: TowerPalette = PLAIN_LOOK;
   /** An idle head's shot anim key ('' none), and whether it is playing (it idles again after). */
   #idleFireAnim = '';
   #idleFiring = false;
@@ -175,10 +197,18 @@ export class TowerView implements PooledView {
   #sinkHead = 0;
   #sinkBase = 0;
 
-  /** `voice`: the voice an idle head sings in where its sprite has one (null: its own idle). */
-  constructor(ctx: ViewContext, voice: string | null = null) {
+  /**
+   * `voice`: the voice an idle head sings in where its sprite has one (null: its own idle);
+   * `jailbroken`: the base sprite ids drawn jailbroken (T740b; none by default).
+   */
+  constructor(
+    ctx: ViewContext,
+    voice: string | null = null,
+    jailbroken: ReadonlySet<string> = NONE_JAILBROKEN,
+  ) {
     this.#ctx = ctx;
     this.#voice = voice;
+    this.#jailbroken = jailbroken;
     const { scene, layers } = ctx;
     this.#base = scene.make.image({}, false);
     this.#head = scene.make.sprite({}, false);
@@ -273,6 +303,7 @@ export class TowerView implements PooledView {
     this.#baseId = spriteId(sprites.base);
     this.#headId = sprites.head === null ? null : spriteId(sprites.head);
     this.#headStyle = this.#headId === null ? { kind: 'aim' } : headStyle(this.#headId);
+    this.#look = jailbreakLook(this.#baseId, this.#headId, this.#jailbroken);
     this.#tier = tier;
     this.#spec = spec;
     this.#liftPx = liftPx;
@@ -414,6 +445,11 @@ export class TowerView implements PooledView {
     cropFoot(this.#head, sink.head + sink.base);
   }
 
+  /** Whether it draws jailbroken (its class in the save's `unlocks.jailbroken`; T740b). */
+  get jailbroken(): boolean {
+    return this.#look.frameSuffix !== '';
+  }
+
   /** Whether it is powered down (revoked, under its stamp). */
   get poweredDown(): boolean {
     return !this.#powered;
@@ -438,6 +474,7 @@ export class TowerView implements PooledView {
     this.#still = null;
     this.#baseId = null;
     this.#headId = null;
+    this.#look = PLAIN_LOOK;
     this.#head.stop();
     this.#base.setVisible(false);
     this.#head.setVisible(false);
@@ -448,12 +485,15 @@ export class TowerView implements PooledView {
   #refreshFrames(restartIdle: boolean): void {
     const { sprites } = this.#ctx;
     if (this.#baseId === null) return;
-    const variant = variantName(DEFAULT_VARIANT, this.#selected);
-    const tierFrame = baseFrame(this.#baseId, this.#tier, this.#spec);
-    const b = sprites.frame(this.#baseId, tierFrame, variant);
+    // A jailbroken class (T740b) draws its base's `_jb` twin, base and head in its palette.
+    const pal = this.#look;
+    const baseVariant = variantName(pal.base, this.#selected);
+    const variant = variantName(pal.head, this.#selected);
+    const tierFrame = baseFrame(this.#baseId, this.#tier, this.#spec) + pal.frameSuffix;
+    const b = sprites.frame(this.#baseId, tierFrame, baseVariant);
     const ba = sprites.frameAnchor(this.#baseId, tierFrame);
     this.#base.setTexture(b.texture, b.frame).setDisplayOrigin(ba.x, ba.y);
-    setGlow(this.#baseGlow, sprites, this.#baseId, tierFrame);
+    setGlow(this.#baseGlow, sprites, this.#baseId, tierFrame, pal.base);
     if (this.#headId !== null) {
       if (this.#headStyle.kind === 'aim') {
         const suffix = headSuffix(this.#headId, this.#tier, this.#spec);
@@ -475,7 +515,7 @@ export class TowerView implements PooledView {
         const ha = sprites.frameAnchor(this.#headId, look);
         this.#still = h;
         this.#head.setTexture(h.texture, h.frame).setDisplayOrigin(ha.x, ha.y);
-        setGlow(this.#headGlow, sprites, this.#headId, look);
+        setGlow(this.#headGlow, sprites, this.#headId, look, pal.head);
       } else {
         // An idle head plays its spec's own anim once specialized (T430b), in its view's voice
         // (T630a): a change restarts it. Its shot, if it has one, follows the spec.
@@ -539,8 +579,9 @@ function setGlow(
   sprites: SpriteSource,
   id: SpriteId,
   frame: string,
+  palette: string = DEFAULT_VARIANT,
 ): void {
-  const ref = sprites.glowFrame(id, frame);
+  const ref = sprites.glowFrame(id, frame, palette);
   if (ref === null) {
     glow.setVisible(false);
     return;

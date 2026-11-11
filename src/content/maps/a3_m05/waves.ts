@@ -153,8 +153,7 @@ export const waves = defineWaves([
     ...NO_CALL,
     countdownAfter: 'bossEnded',
     groups: [
-      motes(6, 'hunt', HUNT_SEC, 0.5),
-      fractures(1, 'hunt', HUNT_SEC + 4),
+      motes(5, 'hunt', HUNT_SEC, 0.5),
       motes(8, 'vats', 2),
       fractures(2, 'vats', 6),
       g('maw', 1, 'vats', 10),
@@ -166,8 +165,8 @@ export const waves = defineWaves([
     groups: [
       motes(12, 'vats', 0),
       fractures(3, 'vats', 4),
-      g('maw', 2, 'vats', 8, 3),
-      motes(10, 'road', 2),
+      g('maw', 1, 'vats', 8),
+      motes(8, 'road', 2),
       silencers(2, 6),
     ],
   },
@@ -176,7 +175,7 @@ export const waves = defineWaves([
     ...NO_CALL,
     groups: [
       motes(14, 'vats', 0),
-      fractures(4, 'vats', 3),
+      fractures(3, 'vats', 3),
       g('maw', 2, 'vats', 6, 3),
       motes(12, 'road', 2),
       fractures(2, 'road', 6),

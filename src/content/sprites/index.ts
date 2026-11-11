@@ -224,7 +224,11 @@ import {
   iconTowerChoir,
 } from './icons/m6_towers.ts';
 import { iconTellConsumer, iconTellHasteAura } from './icons/m6_glyphs.ts';
-import { M7_PLACEHOLDERS } from './placeholders/m7.ts';
+import { M7_TOWER_ICONS } from './icons/m7_towers.ts';
+import { M7_GLYPHS } from './icons/m7_glyphs.ts';
+import { towerGloop, towerGloopHead } from './towers/gloop.ts';
+import { towerSproing, towerSproingHead } from './towers/sproing.ts';
+import { fxPuddle } from './fx/puddle.ts';
 import { M7_ALLIES, M7_UNIT_FX, M7_UNITS } from './enemies/m7.ts';
 import { M7_UNIT_ICONS } from './icons/m7_enemies.ts';
 import { iconStampLicenseRevoked, iconStampUplinkRevoked } from './icons/revoked.ts';
@@ -317,6 +321,11 @@ export const SPRITES = [
   towerChoirHead,
   towerBloom,
   towerBloomHead,
+  // M7's towers (T740b): the Gloop Spitter, the Sproing Pad.
+  towerGloop,
+  towerGloopHead,
+  towerSproing,
+  towerSproingHead,
   enemyNibbler,
   enemyZoomer,
   enemyChonk,
@@ -396,6 +405,8 @@ export const SPRITES = [
   fxUnravelMote,
   // M7's overlays (T740a): the Jammed static, C4 Purge's open panel.
   ...M7_UNIT_FX,
+  // M7's Big Glorp puddle (T740b).
+  fxPuddle,
   iconTowerRivet,
   iconTowerThumper,
   iconTowerSprinkler,
@@ -447,8 +458,9 @@ export const SPRITES = [
   iconEnemyUndertow,
   iconEnemyCompliance,
   iconEnemyExpediter,
-  // M7's unit icons (T740a).
+  // M7's unit icons (T740a), the towers' and System Reboot's (T740b).
   ...M7_UNIT_ICONS,
+  ...M7_TOWER_ICONS,
   iconAbilityUnderfoot,
   iconStampLicenseRevoked,
   iconStampUplinkRevoked,
@@ -480,8 +492,8 @@ export const SPRITES = [
   // M6's tell glyphs (T640b).
   iconTellConsumer,
   iconTellHasteAura,
-  // M7's placeholders until T740a/T740b (placeholders/m7.ts).
-  ...M7_PLACEHOLDERS,
+  // M7's tell glyphs and the Jammed HUD glyph (T740b).
+  ...M7_GLYPHS,
   sceneRig9Feed,
   // The star map's glyphs (T301b).
   uiStarNode,

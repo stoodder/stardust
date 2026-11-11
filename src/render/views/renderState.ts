@@ -116,6 +116,8 @@ export interface RenderState {
   };
   /** T606: LICENSE REVOKED stamps up now, and played this battle (RevokedView). */
   readonly revoked: { readonly shown: number; readonly played: number };
+  /** Towers drawn jailbroken (T740b: their class in the save's `unlocks.jailbroken`). */
+  readonly jailbroken: number;
   /**
    * ChoirView (T607): Hum Choir song rings and Lullaby rings drawn now, notes over Choirs, and
    * Lulled units wearing their note.
