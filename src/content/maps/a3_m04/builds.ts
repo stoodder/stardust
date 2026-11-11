@@ -107,6 +107,45 @@ function parSteps(): BuildStep[] {
   ];
 }
 
+/**
+ * The warren's par (its reference owns the Gloop Spitter; act3.md § A3M4): the Gloop where par's
+ * junction Rivet stands (its Corroded lets the Harpoons through the plate), a third Harpoon for
+ * the drones the Rivet would have pierced, and a Mindspike under the Moths' lane where par's
+ * second Rivet stands (the Gloop can't hit air).
+ */
+function warrenSteps(): BuildStep[] {
+  return [
+    HOLD_FOR_GERALD,
+    { wave: 1, build: 'harpoon', tile: SV_S },
+    { wave: 1, build: 'harpoon', tile: J_SE },
+    { wave: 1, build: 'gloop', tile: J_NE },
+    { wave: 1, build: 'mindspike', tile: J_S },
+    { wave: 2, build: 'mindspike', tile: SKY },
+    { wave: 3, upgrade: J_SE },
+    { wave: 4, build: 'harpoon', tile: SV_N },
+    { wave: 5, build: 'choir', tile: HALL_W },
+    reboot(6, REBOOT_SEC),
+    { wave: 6, upgrade: J_NE },
+    { wave: 7, upgrade: HALL_W },
+    { wave: 8, upgrade: SV_S },
+    reboot(9, REBOOT_SEC),
+    { wave: 9, upgrade: J_S },
+    reboot(10, REBOOT_SEC),
+    { wave: 10, upgrade: HALL_W },
+    { wave: 10, upgrade: SKY },
+    { wave: 11, build: 'mindspike', tile: J_SW },
+    reboot(12, REBOOT_SEC),
+    { wave: 12, upgrade: SV_N },
+    reboot(13, REBOOT_SEC),
+    { wave: 13, upgrade: J_S },
+    { wave: 14, upgrade: J_SE },
+    { wave: 15, upgrade: J_SW },
+    reboot(16, W16_RIFT_REBOOT_SEC),
+    { wave: 16, upgrade: SKY },
+    { wave: 16, upgrade: SV_S },
+  ];
+}
+
 const PAR: ScriptedBuild = {
   loadout: ['choir', 'harpoon', 'mindspike', 'rivet'],
   steps: parSteps(),
@@ -124,10 +163,7 @@ export const builds = defineBuilds({
   referenceProfile: REFERENCE_PROFILES.a3_m04,
   referenceProfileByFlag: REFERENCE_VARIANTS.a3_m04.map((cell) => ({
     ...cell,
-    parBuild: {
-      loadout: ['choir', 'harpoon', 'mindspike', 'gloop'],
-      steps: swapped(PAR.steps, { rivet: 'gloop' }),
-    },
+    parBuild: { loadout: ['choir', 'harpoon', 'mindspike', 'gloop'], steps: warrenSteps() },
   })),
   parBuild: PAR,
   flagVariants: { door_choice: ['convoy', 'warren'], spared_quiet_wave: [false, true] },

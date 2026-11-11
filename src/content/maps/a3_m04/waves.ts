@@ -59,13 +59,13 @@ export const W7_DRONES_SEC = 14;
 
 export const waves = defineWaves([
   // W1 · Compliance drones behind a thin Mote screen
-  { groups: [motes(4, 'tunnel', 0), drones(6, 6, 1.5)] },
+  { groups: [motes(4, 'tunnel', 0), drones(5, 6, 1.5)] },
   // W2 · one Liability-Class Enforcer [T: heavy armor]
-  { countdownSec: COUNTDOWN, groups: [drones(4, 0, 1.5), liabilities(1, 8)] },
+  { countdownSec: COUNTDOWN, groups: [drones(3, 0, 1.5), liabilities(1, 8)] },
   // W3 · Compliance + Expediter
   {
     countdownSec: COUNTDOWN,
-    groups: [motes(4, 'tunnel', 0), drones(3, 2), g('expediter', 1, 'service', 6), drones(3, 8)],
+    groups: [motes(4, 'tunnel', 0), drones(2, 2), g('expediter', 1, 'service', 6), drones(3, 8)],
   },
   // W4 · one Silencer [T: hushing; tendril tell]
   { countdownSec: COUNTDOWN, groups: [silencers(1, 'tunnel', 0), drones(5, 10, 1.5)] },
@@ -83,7 +83,7 @@ export const waves = defineWaves([
     groups: [g('gerald', 1, 'chute', GERALD_SEC), drones(6, W7_DRONES_SEC, 1.2)],
   },
   // W8 · Liability ×2 + drones [X]
-  { countdownSec: COUNTDOWN, groups: [drones(4, 0), liabilities(2, 4), drones(4, 14)] },
+  { countdownSec: COUNTDOWN, groups: [drones(3, 0), liabilities(2, 4), drones(3, 14)] },
   // W9 · Rift Moths + a Silencer [X]
   {
     countdownSec: COUNTDOWN,
@@ -95,7 +95,7 @@ export const waves = defineWaves([
     groups: [
       silencers(3, 'tunnel', 0, SIL_GAP),
       g('fracture', 1, 'tunnel', 6),
-      moths(6, 14, 0.6),
+      moths(5, 14, 0.6),
       motes(5, 'tunnel', 10),
     ],
   },
@@ -103,7 +103,7 @@ export const waves = defineWaves([
   {
     countdownSec: COUNTDOWN,
     groups: [
-      drones(5, 0, 1.0),
+      drones(4, 0, 1.0),
       g('expediter', 2, 'service', 4, 6),
       liabilities(2, 8),
       drones(4, 20, 1.0),
