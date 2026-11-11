@@ -97,7 +97,7 @@ export function TowerPanel({ t }: { t: SelectedTowerView }) {
   const corners = hudCorners(
     hud.objectives.value.length,
     hud.asset.value !== null,
-    hud.escort.value !== null,
+    hud.escort.value === null ? false : hud.escort.value.holdout ? 'holdout' : true,
   );
   const { left, top } = placePanel(t.x, t.y, PANEL_W, h, others, corners);
   const credits = hud.credits.value;

@@ -329,8 +329,16 @@ export interface EscortMeterView {
    * when there's no `maxLost` or too many to draw (the row then reads "3/20" in words).
    */
   readonly pips: readonly boolean[] | null;
-  /** Few losses left before defeat (story/meters.ts `escortLow`): the lost row's alarm. */
+  /**
+   * Few losses left before defeat (story/meters.ts `escortLow`): the lost row's alarm; on a
+   * Holdout, its losses past the low mark (`holdoutLow`): the alarm beside the label.
+   */
   readonly low: boolean;
+  /**
+   * A Holdout's meter (T631; A3M3): Evacuated of the run's refugees, with no lost row (a Holdout
+   * has no defeat, so nothing counts down to one).
+   */
+  readonly holdout: boolean;
 }
 
 /** The meter's relabel moment (T531): the label it had before an objective change. */

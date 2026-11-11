@@ -441,7 +441,7 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
     // Flash Freeze's burst (T407a; stasisLook.ts): a pale ice ring over the pulse's reach.
     bus.on('PulseBurst', (e) => {
       // A Stasis Bloom's pulse rings its own six-petalled burst (BloomView, T630a).
-      if (findLiveTower(sim.state.towers, e.towerUid)?.tierDef?.field != null) return;
+      if ((findLiveTower(sim.state.towers, e.towerUid)?.tierDef?.field ?? null) !== null) return;
       fx.ring(e.x, e.y, e.radiusTiles, FREEZE_RING_COLOR, FREEZE_RING_MS, true);
     }),
     bus.on('ProjectileFired', (e) => {

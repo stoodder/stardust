@@ -11,6 +11,9 @@
 // wait while a scene or the pause menu holds the HUD (A2M5's pivot cue plays over the old meter).
 // Under reduced motion nothing blinks: the old meter holds 2 s, then the new label shows in a
 // steady accent for 2 s before it settles.
+// On a Holdout (A3M3; T631) the meter is Evacuated "of 36" with no lost row: a Holdout has no
+// defeat, so nothing counts down to one. Once its losses pass the low mark (`holdoutLow`) the
+// blinking alarm box sits beside the label instead, and each refugee lost still flashes it.
 import { lostWords, relabelShown } from '../../app/hudEscort.ts';
 import { hud, type MeterRelabel } from '../state.ts';
 import { baked, Icon } from './Icon.tsx';
@@ -52,13 +55,17 @@ export function EscortMeter() {
   const lost = lostWords(m.lost, m.maxLost);
   const last = m.maxLost !== null && m.lost >= m.maxLost;
   const held = relabel !== null && relabel.held;
+  const name = m.holdout
+    ? `${label} ${m.evacuated} of ${m.total}${m.low ? ', many lost' : ''}`
+    : `${label} ${m.evacuated} of ${m.total}, lost ${lost}${m.low ? ', few left' : ''}`;
   return (
     <div
-      class="hud-escort"
+      class={m.holdout ? 'hud-escort holdout' : 'hud-escort'}
       role="status"
       data-testid="escort-meter"
       data-low={m.low}
-      aria-label={`${label} ${m.evacuated} of ${m.total}, lost ${lost}${m.low ? ', few left' : ''}`}
+      data-holdout={m.holdout || undefined}
+      aria-label={name}
     >
       {flash !== null && <span key={flash.id} class="hud-asset-flash" aria-hidden="true" />}
       {held ? (
@@ -68,7 +75,15 @@ export function EscortMeter() {
           <div class="hud-meter">
             <Icon id={escortIcon()} />
             {relabel === null ? (
-              <span class="hud-label">{label}</span>
+              <span class={m.holdout && m.low ? 'hud-label danger' : 'hud-label'}>
+                {label}
+                {/* A Holdout's alarm sits by its label: it has no lost row (T631). */}
+                {m.holdout && m.low && (
+                  <span class="hud-alarm" aria-hidden="true">
+                    !
+                  </span>
+                )}
+              </span>
             ) : (
               <span key={relabel.id} class="hud-label hud-relabel" data-testid="meter-relabel">
                 {label}
@@ -79,25 +94,27 @@ export function EscortMeter() {
           <span class="hud-escort-of num" data-testid="escort-total">
             of {m.total}
           </span>
-          <div class="hud-escort-lost" data-testid="escort-lost">
-            <span class={m.low ? 'hud-label danger' : 'hud-label'}>
-              Lost
-              {m.low && (
-                <span class="hud-alarm" aria-hidden="true">
-                  !
+          {!m.holdout && (
+            <div class="hud-escort-lost" data-testid="escort-lost">
+              <span class={m.low ? 'hud-label danger' : 'hud-label'}>
+                Lost
+                {m.low && (
+                  <span class="hud-alarm" aria-hidden="true">
+                    !
+                  </span>
+                )}
+              </span>
+              {m.pips === null ? (
+                <span class={last ? 'num danger' : 'num'}>{lost}</span>
+              ) : (
+                <span class={m.pips.length <= 10 ? 'hud-pips wide' : 'hud-pips'} aria-hidden="true">
+                  {m.pips.map((on, i) => (
+                    <span key={i} class={on ? 'hud-pip on' : 'hud-pip'} />
+                  ))}
                 </span>
               )}
-            </span>
-            {m.pips === null ? (
-              <span class={last ? 'num danger' : 'num'}>{lost}</span>
-            ) : (
-              <span class={m.pips.length <= 10 ? 'hud-pips wide' : 'hud-pips'} aria-hidden="true">
-                {m.pips.map((on, i) => (
-                  <span key={i} class={on ? 'hud-pip on' : 'hud-pip'} />
-                ))}
-              </span>
-            )}
-          </div>
+            </div>
+          )}
         </>
       )}
     </div>

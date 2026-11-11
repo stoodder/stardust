@@ -3,7 +3,7 @@
 // warm. Three looks of one mote twinkling as it goes (`drift`, 6 fps): `m0` a small cross, a
 // `white.1` core in `violet.4` arms; `m1` a `violet.4` pixel over a `violet.3` one; `m2` a lone
 // `violet.3` speck. No outline: it's light, not a body. Centred on its middle pixel.
-// TransientFx draws the unravel as debris pixels today; T630a may draw these instead.
+// TransientFx `unravel` draws them (T630a): a pooled cloud, each mote its own frame apart.
 import { defineSprite } from '../defineSprite.ts';
 
 const LEGEND = { V: 'violet.3', U: 'violet.4', W: 'white.1' } as const;

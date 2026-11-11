@@ -6,11 +6,15 @@
 // RefugeeLost, and `hud.relabel` carries the old label and number for the relabel moment when a
 // map turns Escort mid-map (A2M5's pivot): the old meter held whole until the meter has shown it
 // (`relabelShown`, D139), then the new label's blink. A resumed run's replay shows neither (app/checkpoints.ts).
+// On a Holdout (A3M3; T631) the same meter shows Evacuated of the run's refugees with no lost row:
+// a Holdout has no defeat, so nothing counts down to one; its alarm is `holdoutLow`'s mark.
+// The total is the run's (`state.refugeeTotal`: a gated group left out, A3M1's Thrum unspared, and
+// on A3M3 only the chosen door's), never the map's every group.
 // Otherwise `hud.escort` is null and the core's meter shows.
 import type { IdSpace } from '../content/types.ts';
 import { evaluateCondition, type Sim } from '../sim/index.ts';
 import { hud, type EscortMeterView } from '../ui/state.ts';
-import { escortLow } from '../story/meters.ts';
+import { escortLow, holdoutLow } from '../story/meters.ts';
 import { meterLabelText } from './hudText.ts';
 import type { Host } from './host.ts';
 
@@ -48,22 +52,34 @@ export function lostPips(lost: number, maxLost: number | null): boolean[] | null
   return Array.from({ length: maxLost }, (_, i) => i < lost);
 }
 
-/** The meter's view from the sim's numbers, or null while the map isn't an Escort. */
+/** Whether the map's objective shows the Evacuated meter: an Escort's, or a Holdout's. */
+export function showsEscortMeter(objective: string): boolean {
+  return objective === 'escort' || objective === 'holdout';
+}
+
+/**
+ * The meter's view from the sim's numbers, or null while the map is neither an Escort nor a
+ * Holdout. A Holdout's has no pips and no lost row; its alarm is `holdoutLow` against its
+ * `evacuatedFloor`.
+ */
 export function escortMeterView(
   objective: string,
   evacuated: number,
   lost: number,
   total: number,
   maxLost: number | null,
+  evacuatedFloor: number | null = null,
 ): EscortMeterView | null {
-  if (objective !== 'escort') return null;
+  if (!showsEscortMeter(objective)) return null;
+  const holdout = objective === 'holdout';
   return {
     evacuated,
     total,
     lost,
-    maxLost,
-    pips: lostPips(lost, maxLost),
-    low: escortLow(lost, maxLost),
+    maxLost: holdout ? null : maxLost,
+    pips: holdout ? null : lostPips(lost, maxLost),
+    low: holdout ? holdoutLow(lost, total, evacuatedFloor) : escortLow(lost, maxLost),
+    holdout,
   };
 }
 
@@ -84,16 +100,24 @@ export function relabelShown(id: number): void {
 /** Wires the Escort's meter to a battle. Returns the unwiring (which also clears it). */
 export function bindEscortMeter(host: Host<IdSpace>): () => void {
   const { sim } = host;
-  const total = sim.map.escort?.total ?? 0;
   // Replaced only when a number moves, so a steady frame re-renders nothing (app/hud.ts).
   const sync = (): void => {
     const s = sim.state;
     const was = hud.escort.value;
     const { evacuated, refugeesLost: lost } = s.stats;
-    const on = s.objective === 'escort';
-    if (was !== null && on && was.evacuated === evacuated && was.lost === lost) return;
+    const on = showsEscortMeter(s.objective);
+    const total = s.refugeeTotal;
+    const same = was !== null && was.evacuated === evacuated && was.lost === lost;
+    if (on && same && was.total === total) return;
     if (was === null && !on) return;
-    hud.escort.value = escortMeterView(s.objective, evacuated, lost, total, sim.map.maxLost);
+    hud.escort.value = escortMeterView(
+      s.objective,
+      evacuated,
+      lost,
+      total,
+      sim.map.maxLost,
+      sim.map.evacuatedFloor,
+    );
     hud.meterLabel.value = meterLabelText(s.meterLabel);
   };
   hud.escort.value = null;

@@ -77,7 +77,8 @@ export const SPEAKERS = {
         variant: 'pebble',
         when: {
           any: [
-            { mapAtLeast: 'a3_m01' },
+            // Not at the Gap (A3M3): Pebble walks with Goldie's convoy and hums over the radio.
+            { all: [{ mapAtLeast: 'a3_m01' }, { not: { mapIs: 'a3_m03' } }] },
             { all: [{ mapAtLeast: 'a2_m04' }, { not: { mapIs: 'a2_m06' } }] },
             { all: [{ mapIs: 'a2_m03' }, { seen: 'a2_m03_cue_pebble' }] },
             {

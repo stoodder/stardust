@@ -323,6 +323,7 @@ To be split up when we reach it. Inherits: jamming (Auditor, Silencer, Hostile T
 
 ## M8 — Finale, post-game & polish
 To be split up when we reach it. The finale (the song, Deep Bore, the Unsung, Dawn's `setLighting`, `layToRest`, `restoreTowerClass`), C5 and the epilogue, post-game, polish.
+- [ ] **T801-burrow** M8: the finale's burrowed exam (Undertows return; A3M3 exempts `burrowing` from the soft cap and requires no burrowed answer — main's ruling in M6). Make the Den (with `burrowedDotMul` ×2.5) or another burrowed answer load-bearing there, with an honest no-burrowed build that loses.
 - [ ] **T501** M8: C4 Keep edge cases: the Technician can't equip an ability the companion provides (no double Time Dilation in the finale), and the Phase 2 lock must be phase-scoped and non-persisting (not `revokeAbility`), per D006.
 - [ ] **T701** M8: finale.md's eastern horizon warms one step per Phase 1 wave, but art-direction says the light doesn't brighten per wave — reconcile with the finale's `setLighting` Dawn.
 - [ ] **T318-M6** M7/M8: T318's Act III portrait variants (QUILL `purge`, player `reflect_*`, Goldie `act3`, Kip `act3`; Ves'thara's `dawn` speaker rule for the finale) and T335's party hats. Party hats on every portrait; Ves'thara's `dawn` rule.

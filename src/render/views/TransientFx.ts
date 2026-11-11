@@ -13,8 +13,11 @@
 //   the camera shake (a strike's 2 px, a leak's 1 px; skipped under reduced motion).
 // - Debris (T430a): pooled 1 and 2 px palette pixels with a velocity, gravity, and a stepped fade
 //   (art-direction § Particles: at most 0.8 s each, far under the 512 cap): an Aelari unit's
-//   shatter and a broken shield's shards, the Hollow's unravelling violet motes, the stardust
+//   shatter and a broken shield's shards, the stardust
 //   fleck an Act II Skitterkin leaves (deathLook.ts), and a boss's shed spark to each shard (D139). Cosmetic RNG of its own, never the sim's.
+// - Unravel motes (T630a): a Hollow unit comes apart into `fx.unravel_mote` sprites (a pool of
+//   MAX_MOTES, its `drift` twinkle started a frame apart per mote; held on its `m0` cross under
+//   reduced motion), drifting up and away, stepping down the alpha ladder over their life.
 // FxView adds the abilities' effects on top (the Orbital Strike, Suppressing Fire).
 import type * as Phaser from 'phaser';
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
@@ -54,6 +57,11 @@ const MAX_FLOATS = 16;
 const FLOAT_DEPTH = 1;
 const MAX_BURSTS = 40;
 const MAX_DEBRIS = 128;
+/** Unravel motes in flight at once (a crowd of deaths reuses the oldest). */
+const MAX_MOTES = 48;
+const MOTE_SPRITE = 'fx.unravel_mote';
+/** The drift anim's frames (a mote starts on frame `i % MOTE_FRAMES`). */
+const MOTE_FRAMES = 4;
 
 /** Suppressing Fire's streaks are 3 px thick and twice a Rivet's length (D059): heavy fire. */
 const SUPPRESS_STREAK_SCALE = { x: 2, y: 3 } as const;
@@ -140,10 +148,21 @@ interface Debris {
   img: Phaser.GameObjects.Image;
 }
 
+/** An unravel mote: an `fx.unravel_mote` sprite drifting in screen px (px/ms). */
+interface Mote {
+  active: boolean;
+  ms: number;
+  lifeMs: number;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  sprite: Phaser.GameObjects.Sprite;
+}
+
 /** Shard and mote colours (art-direction §4): the Aelari's jewel tones, the unsung's cold violet. */
 const SHATTER_COLORS: readonly ColorName[] = ['blue.4', 'teal.4', 'white.1', 'pink.4', 'blue.3'];
 const SHIELD_SHARD_COLORS: readonly ColorName[] = ['blue.4', 'white.1', 'blue.3'];
-const UNSUNG_COLORS: readonly ColorName[] = ['violet.3', 'violet.4', 'white.1'];
 /** A shed spark (D139 S4): its flight (ms), its lob's gravity (px/ms²: a 40 px arc, cresting over a
  * Penitent's hood against the dark before it falls to the shard), its pixels. */
 export const SHED_MS = 400;
@@ -205,6 +224,8 @@ export class TransientFx {
   readonly #bursts: Burst[] = [];
   readonly #debris: Debris[] = [];
   #nextDebris = 0;
+  readonly #motes: Mote[] = [];
+  #nextMote = 0;
   /** The debris's cosmetic RNG state (xorshift32): its own, so the sim's never moves. */
   #rng = 0x9e3779b9;
   #nextTracer = 0;
@@ -280,6 +301,15 @@ export class TransientFx {
       layers.vfx.add(sprite);
       this.#bursts.push({ active: false, ms: 0, small: false, sprite });
     }
+    const moteAnchor = sprites.meta(MOTE_SPRITE).anchor;
+    const moteFrame = sprites.frame(MOTE_SPRITE, 'm0');
+    for (let i = 0; i < MAX_MOTES; i++) {
+      const sprite = scene.make.sprite({}, false);
+      sprite.setTexture(moteFrame.texture, moteFrame.frame);
+      sprite.setDisplayOrigin(moteAnchor.x, moteAnchor.y).setVisible(false);
+      layers.vfx.add(sprite);
+      this.#motes.push({ active: false, ms: 0, lifeMs: 0, x: 0, y: 0, vx: 0, vy: 0, sprite });
+    }
     const px1 = debrisTexture(scene, 1);
     for (let i = 0; i < MAX_DEBRIS; i++) {
       const img = scene.make.image({}, false).setTexture(px1).setOrigin(0, 0).setVisible(false);
@@ -304,6 +334,7 @@ export class TransientFx {
   get debrisLive(): number {
     let n = 0;
     for (const d of this.#debris) if (d.active) n++;
+    for (const m of this.#motes) if (m.active) n++;
     return n;
   }
 
@@ -328,14 +359,35 @@ export class TransientFx {
     gridToScreen(x, y, this.ctx.origin, pos);
     const sx = pos.x;
     const sy = pos.y - liftPx;
+    const still = this.reducedMotion();
+    const anim = this.ctx.sprites.anim(MOTE_SPRITE, 'drift');
     for (let i = 0; i < UNRAVEL.count; i++) {
-      const color = UNSUNG_COLORS[i % UNSUNG_COLORS.length]!; // index < length
       const rise = UNRAVEL.rise[0] + this.#rand() * (UNRAVEL.rise[1] - UNRAVEL.rise[0]);
       const drift = (this.#rand() * 2 - 1) * UNRAVEL.drift;
       const ox = Math.round((this.#rand() * 2 - 1) * 5);
       const oy = -Math.round(this.#rand() * 9);
-      this.#spawn(sx + ox, sy + oy, drift, -rise, 0, UNRAVEL.ms, i % 3 === 0 ? 2 : 1, color);
+      const m = this.#motes[this.#nextMote]!; // index < MAX_MOTES
+      this.#nextMote = (this.#nextMote + 1) % MAX_MOTES;
+      m.active = true;
+      m.ms = 0;
+      m.lifeMs = UNRAVEL.ms;
+      m.x = sx + ox;
+      m.y = sy + oy;
+      m.vx = drift;
+      m.vy = -rise;
+      m.sprite.setPosition(Math.round(m.x), Math.round(m.y)).setAlpha(1).setVisible(true);
+      // Each twinkles a frame apart, so a cloud of them never blinks in unison; held still under
+      // reduced motion on the brightest look.
+      m.sprite.play({ key: anim, startFrame: i % MOTE_FRAMES });
+      if (still) m.sprite.anims.pause(m.sprite.anims.currentAnim?.frames[0]);
     }
+  }
+
+  /** Unravel motes in flight (the render-state hook and the smoke flow's check). */
+  get motesLive(): number {
+    let n = 0;
+    for (const m of this.#motes) if (m.active) n++;
+    return n;
   }
 
   /** The small stardust fleck an Act II Skitterkin leaves where it fell, lingering on the ground. */
@@ -686,6 +738,18 @@ export class TransientFx {
         .setPosition(Math.round(d.x), Math.round(d.y))
         .setAlpha(d.steady ? 1 : fadeAlpha(d.ms / d.lifeMs));
     }
+    for (const m of this.#motes) {
+      if (!m.active) continue;
+      m.ms += dt;
+      if (m.ms >= m.lifeMs) {
+        m.active = false;
+        m.sprite.stop().setVisible(false);
+        continue;
+      }
+      m.x += m.vx * dt;
+      m.y += m.vy * dt;
+      m.sprite.setPosition(Math.round(m.x), Math.round(m.y)).setAlpha(fadeAlpha(m.ms / m.lifeMs));
+    }
   }
 
   /** Starts the strike's 2 px camera shake (skipped under reduced motion). */
@@ -720,6 +784,10 @@ export class TransientFx {
     for (const d of this.#debris) {
       d.active = false;
       d.img.setVisible(false);
+    }
+    for (const m of this.#motes) {
+      m.active = false;
+      m.sprite.stop().setVisible(false);
     }
     this.gfx.clear();
     this.#shakeMs = -1;
