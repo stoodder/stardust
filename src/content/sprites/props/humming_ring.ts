@@ -48,7 +48,8 @@ function little(front: boolean): string[] {
   const g = src.map((r) => r.split(''));
   // Shut the big eyes into lines, and round the mouth between them.
   for (const x of [5, 6, 8, 9]) {
-    for (let y = 3; y <= 5; y++) if ((g[y]?.[x] ?? '.') === 'k' || g[y]?.[x] === 'w') plot(g, x, y, '3');
+    for (let y = 3; y <= 5; y++)
+      if ((g[y]?.[x] ?? '.') === 'k' || g[y]?.[x] === 'w') plot(g, x, y, '3');
     plot(g, x, 4, 'k');
   }
   plot(g, 7, 6, 'k');

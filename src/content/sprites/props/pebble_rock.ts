@@ -34,7 +34,16 @@ type Pose = 'look' | 'blink' | 'bounce';
 
 /** Pebble sitting up (the youngling's body, her cap and seedling), as custom legend chars. */
 function pebble(pose: Pose): string[] {
-  const g = skitterBody({ w: 11, h: 13, cx: 5.5, cy: 8, rx: 4.6, ry: 3.6, facing: 'se', belly: 0.35 });
+  const g = skitterBody({
+    w: 11,
+    h: 13,
+    cx: 5.5,
+    cy: 8,
+    rx: 4.6,
+    ry: 3.6,
+    facing: 'se',
+    belly: 0.35,
+  });
   const body = finish(g, [
     // Her legs over the rock's front, dangling.
     [2, 11, ['1.1..1.1']],
@@ -66,7 +75,8 @@ function perch(pose: Pose): string[] {
   for (let y = py - 1; y <= py + pb.length; y++) {
     for (let x = px - 1; x <= px + 11; x++) {
       if (solid(x, y)) continue;
-      if (solid(x - 1, y) || solid(x + 1, y) || solid(x, y - 1) || solid(x, y + 1)) plot(g, x, y, 'x');
+      if (solid(x - 1, y) || solid(x + 1, y) || solid(x, y - 1) || solid(x, y + 1))
+        plot(g, x, y, 'x');
     }
   }
   stamp(g, px, py, pb);
@@ -100,6 +110,9 @@ export const propPebbleRock = defineSprite({
   },
   frames: { perch_0: perch('look'), perch_1: perch('blink'), perch_2: perch('bounce') },
   anims: {
-    perch: { frames: ['perch_0', 'perch_0', 'perch_0', 'perch_1', 'perch_0', 'perch_0', 'perch_2'], fps: 4 },
+    perch: {
+      frames: ['perch_0', 'perch_0', 'perch_0', 'perch_1', 'perch_0', 'perch_0', 'perch_2'],
+      fps: 4,
+    },
   },
 });

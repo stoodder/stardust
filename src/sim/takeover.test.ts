@@ -189,6 +189,36 @@ describe('Hostile Takeover (takeover.ts)', () => {
     expect(state.stats.takeoverJamTicks).toBe(240); // Declined missed: 4 s
   });
 
+  it('never lands past the jam limit, counting the jams standing at the landing (T721)', () => {
+    // Eight towers: the limit is 2. One is already Jammed by another jammer (a ring's), so the
+    // laser's two picks land only one.
+    const { state, ctx } = world();
+    const ts = TILES.slice(0, 8).map(([c, r]) => placeTower(state, RIVET, c, r));
+    ts[7]!.jamTicks = 600;
+    ts[7]!.jammedBy = 999;
+    const boss = bossIn(state, 2);
+    const tell = run(state, ctx, 1);
+    expect(tell[0]).toMatchObject({ type: 'TakeoverTell' });
+    const picks = boss.takeoverTowers;
+    expect(picks).toHaveLength(2);
+    const landed = run(state, ctx, TAKEOVER.tellTicks).filter((e) => e.type === 'TowerJammed');
+    expect(landed).toEqual([
+      { type: 'TowerJammed', uid: picks[0], ticks: TAKEOVER.durationTicks, source: boss.uid },
+    ]);
+    // A second tower jammed during the next laser (a ring landing under it) leaves it no room.
+    const { state: s2, ctx: c2 } = world();
+    const t2 = TILES.slice(0, 8).map(([c, r]) => placeTower(s2, RIVET, c, r));
+    const b2 = bossIn(s2, 2);
+    run(s2, c2, 1);
+    const free = t2.filter((t) => !b2.takeoverTowers.includes(t.uid));
+    for (const t of free.slice(0, 2)) {
+      t.jamTicks = 600;
+      t.jammedBy = 999;
+    }
+    const none = run(s2, c2, TAKEOVER.tellTicks).filter((e) => e.type === 'TowerJammed');
+    expect(none).toEqual([]);
+  });
+
   it('Declined: a Choir at T3 holds a jam to 1 s (60 ticks); so does a Reboot on the laser', () => {
     // Eight towers: the tier-3 Choir and the tier-3 Rivet beside it are both taken. No Choir aura
     // covers a Choir, so its own jam is 4 s; the Rivet's is 1 s.

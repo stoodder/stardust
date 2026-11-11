@@ -58,12 +58,24 @@ function plate(v: 0 | 1 | 2 | 3): string[] {
   gouge(g, v + 11);
   if (v === 0) {
     // A flank plate dug in on its edge: white worn to steel, the teal band, four bolts, a dent.
-    slab(g, [[6, TOP + 2], [22, TOP - 6], [27, TOP + 3], [11, TOP + 11]], (x, y) =>
-      x + y < 20 + TOP ? '4' : (x * 2 + y) % 13 === 0 ? '2' : '3',
+    slab(
+      g,
+      [
+        [6, TOP + 2],
+        [22, TOP - 6],
+        [27, TOP + 3],
+        [11, TOP + 11],
+      ],
+      (x, y) => (x + y < 20 + TOP ? '4' : (x * 2 + y) % 13 === 0 ? '2' : '3'),
     );
     line(g, 8, TOP + 3, 23, TOP - 4, '8');
     line(g, 9, TOP + 4, 24, TOP - 3, '7');
-    for (const [x, y] of [[12, TOP + 4], [20, TOP], [15, TOP + 7], [23, TOP + 3]] as const) {
+    for (const [x, y] of [
+      [12, TOP + 4],
+      [20, TOP],
+      [15, TOP + 7],
+      [23, TOP + 3],
+    ] as const) {
       plot(g, x, y, '1');
     }
     plot(g, 17, TOP + 4, '2');
@@ -79,17 +91,48 @@ function plate(v: 0 | 1 | 2 | 3): string[] {
     line(g, 10, TOP + 1, 14, TOP - 2, '7');
   } else if (v === 2) {
     // A section of the hazard skirt, orange and ink stripes, its torn mounting lip steel.
-    slab(g, [[5, TOP + 1], [20, TOP - 5], [27, TOP + 1], [12, TOP + 8]], (x, y) =>
-      Math.floor((x + y * 2) / 3) % 2 === 0 ? 'c' : 'k',
+    slab(
+      g,
+      [
+        [5, TOP + 1],
+        [20, TOP - 5],
+        [27, TOP + 1],
+        [12, TOP + 8],
+      ],
+      (x, y) => (Math.floor((x + y * 2) / 3) % 2 === 0 ? 'c' : 'k'),
     );
     line(g, 5, TOP + 1, 20, TOP - 5, '3');
     line(g, 6, TOP + 2, 20, TOP - 4, '2');
     plot(g, 13, TOP - 2, '1');
   } else {
     // The bridge's screen plate: a steel frame round the cracked glass, the chart still rising.
-    slab(g, [[7, TOP], [21, TOP - 6], [26, TOP + 1], [12, TOP + 8]], () => '2');
-    slab(g, [[9, TOP], [21, TOP - 4], [24, TOP + 1], [12, TOP + 6]], () => 'K');
-    for (const [x, h, c] of [[13, 1, 'P'], [15, 2, 'Y'], [17, 2, 'P'], [19, 3, 'Y'], [21, 4, 'P']] as const) {
+    slab(
+      g,
+      [
+        [7, TOP],
+        [21, TOP - 6],
+        [26, TOP + 1],
+        [12, TOP + 8],
+      ],
+      () => '2',
+    );
+    slab(
+      g,
+      [
+        [9, TOP],
+        [21, TOP - 4],
+        [24, TOP + 1],
+        [12, TOP + 6],
+      ],
+      () => 'K',
+    );
+    for (const [x, h, c] of [
+      [13, 1, 'P'],
+      [15, 2, 'Y'],
+      [17, 2, 'P'],
+      [19, 3, 'Y'],
+      [21, 4, 'P'],
+    ] as const) {
       const base = TOP + 3 - Math.round((x - 12) / 2.5);
       for (let y = base - h + 1; y <= base; y++) plot(g, x, y, c);
     }
@@ -99,7 +142,12 @@ function plate(v: 0 | 1 | 2 | 3): string[] {
     plot(g, 22, TOP - 3, 'Q');
   }
   // A wisp of smoke off it.
-  for (const [x, y] of [[18, 3], [19, 2], [18, 1], [17, 0]] as const) {
+  for (const [x, y] of [
+    [18, 3],
+    [19, 2],
+    [18, 1],
+    [17, 0],
+  ] as const) {
     if ((x + y + v) % 2 === 0) plot(g, x, y + (v % 2), 'M');
   }
   return rows(g);
