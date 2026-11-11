@@ -195,6 +195,8 @@ function Protocols(props: {
         const on = pick.protocols.includes(p.id);
         const blocked = !on && full;
         const tower = pick.protocolPicks[p.id];
+        // Benched on arrival (D144 S1b), its note says so until the player equips it again.
+        const note = on ? p.inert : (p.benched ?? p.inert);
         return (
           <li key={p.id} class="sd-lo-protocol-row">
             <button
@@ -203,7 +205,7 @@ function Protocols(props: {
               data-protocol={p.id}
               aria-pressed={on}
               aria-disabled={blocked}
-              aria-label={`${p.name}: ${p.effect}${p.inert === null ? '' : `. ${p.inert}`}${on ? ', equipped' : ''}`}
+              aria-label={`${p.name}: ${p.effect}${note === null ? '' : `. ${note}`}${on ? ', equipped' : ''}`}
               onClick={() => {
                 const next = togglePickProtocol(pick, p.id);
                 if (next === pick) props.onFull();
@@ -216,10 +218,10 @@ function Protocols(props: {
               <span class="sd-lo-protocol-effect" aria-hidden="true">
                 {p.effect}
               </span>
-              {p.inert !== null && (
+              {note !== null && (
                 // Still equips (the player's call); it just has nothing to do here (D143 R9).
                 <span class="sd-lo-protocol-inert" aria-hidden="true" data-testid="protocol-inert">
-                  {p.inert}
+                  {note}
                 </span>
               )}
             </button>
@@ -383,9 +385,6 @@ export function Loadout() {
                 </li>
               ))}
             </ul>
-            <p class="sd-lo-hint" role="status">
-              {notice ?? 'Pick order is build-slot order (keys 1–4 in the shift).'}
-            </p>
             {view.protocolSlots > 0 && (
               <>
                 <h2 class="sd-panel-heading sd-lo-heading">
@@ -453,6 +452,10 @@ export function Loadout() {
           </aside>
         </div>
         <footer class="sd-row sd-menu-footer">
+          {/* Left of the buttons, so the column above keeps its height for the protocols (D144). */}
+          <p class="sd-lo-hint" role="status">
+            {notice ?? 'Pick order is build-slot order (keys 1–4 in the shift).'}
+          </p>
           <button type="button" class="sd-button" onClick={toCampaign}>
             {campaignScreenName()}
           </button>

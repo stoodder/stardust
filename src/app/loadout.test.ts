@@ -124,6 +124,7 @@ describe('the loadout screen (app side)', () => {
       effect: '+10% starting credits',
       takesTower: false,
       inert: null,
+      benched: null,
     });
   });
 

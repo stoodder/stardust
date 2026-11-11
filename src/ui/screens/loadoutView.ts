@@ -82,6 +82,11 @@ export interface LoadoutProtocolView {
    * on a map with no core reads "No core on this shift"). It still equips: the player's choice.
    */
   readonly inert: string | null;
+  /**
+   * What it reads while it's off, once the screen benched it on arrival for one that acts here
+   * (D144 S1b: "Benched: no core on this shift"), or null. Equipped again, it reads `inert`.
+   */
+  readonly benched: string | null;
 }
 
 export interface LoadoutPickView {

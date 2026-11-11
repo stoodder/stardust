@@ -10,9 +10,10 @@
 // A blocker (Bricks at the Gap, T605) braces, strains, and goes down on one knee as his health
 // falls (BlockerView `blockerPose`, T640a): `<stance>_<facing>` idles and `<stance>_fire_<facing>`
 // shots, where the sprite draws them. While a tower stands in front of him (BattleScene asks
-// `setXray`; vfx/xrayPixels.ts `occludes`), his silhouette shows through it as an x-ray outline in
-// `overlay` (review R3), baked once per frame he shows and following his anim; it breathes slowly,
-// still under reduced motion.
+// `setXray`; vfx/xrayPixels.ts `occludes`), his silhouette shows through it, x-ray style, in
+// `overlay` (review R3, R2-S3): drawn over the tower's own pixels only (`xrayImage`), baked per
+// (his frame, the frames in front, their offset) and following his anim and theirs; it breathes
+// slowly, still under reduced motion.
 import * as Phaser from 'phaser';
 import { STANCE_DROP } from '../../content/sprites/allies/bricks.ts';
 import type { SpriteId } from '../../content/sprites/index.ts';
@@ -22,7 +23,8 @@ import { gridToScreen, type Vec2 } from '../iso.ts';
 import { DEFAULT_VARIANT } from '../sprites/bake.ts';
 import { blockerPose, type BlockerStance } from './BlockerView.ts';
 import { imageToCanvas } from '../sprites/canvas.ts';
-import { xrayAlpha, xrayImage, XRAY_PAD, type Rect } from '../vfx/xrayPixels.ts';
+import { xrayAlpha, xrayImage, type Cover, type Rect } from '../vfx/xrayPixels.ts';
+import type { Covering, XrayPart } from './xrayWatch.ts';
 import { frameAlpha } from './ClickableView.ts';
 import { hasAnim, type Facing } from './spriteInfo.ts';
 import type { ViewContext } from './ViewContext.ts';
@@ -82,6 +84,29 @@ interface GlowLook {
 const GLOW_SUFFIX = '@glow';
 const FACING_INDEX: Readonly<Record<Facing, number>> = { se: 0, sw: 1, ne: 2, nw: 3 };
 const pos: Vec2 = { x: 0, y: 0 };
+/** A frame's pixels (RGBA, row-major), read from its baked atlas page. */
+function frameRgba(
+  scene: Phaser.Scene,
+  texture: string,
+  frame: string,
+): { data: Uint8ClampedArray; w: number; h: number } {
+  const f = scene.textures.getFrame(texture, frame);
+  const w = f.cutWidth;
+  const h = f.cutHeight;
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, w);
+  canvas.height = Math.max(1, h);
+  const ctx2d = canvas.getContext('2d');
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the baked atlas pages are canvases
+  const source = f.source.image as CanvasImageSource;
+  if (ctx2d === null || w <= 0 || h <= 0) return { data: new Uint8ClampedArray(w * h * 4), w, h };
+  ctx2d.drawImage(source, f.cutX, f.cutY, w, h, 0, 0, w, h);
+  return { data: ctx2d.getImageData(0, 0, w, h).data, w, h };
+}
+
+/** Baked x-ray textures one view keeps (a tower dropping in or folding away bakes a few); past it,
+ * they're all freed and rebaked as needed. */
+const XRAY_CACHE_MAX = 48;
 
 export class AllyView implements PooledView {
   stamp = 0;
@@ -109,10 +134,20 @@ export class AllyView implements PooledView {
   #isLowered = false;
   /** A blocker's stance (BlockerView `blockerPose`, T640a), where the sprite draws it. */
   #stance: BlockerStance | null = null;
-  /** His x-ray outline over a tower in front of him (review R3), in `overlay`. */
+  /** His x-ray over a tower in front of him (review R3, R2-S3), in `overlay`. */
   readonly #xray: Phaser.GameObjects.Image;
-  /** The x-ray texture of each baked frame key, made the first time it shows. */
+  /** The baked x-ray texture key of each look (his frame, the frames in front, their offsets). */
   readonly #xrayFor = new Map<string, string>();
+  /** Each frame's alpha mask (by `texture:frame`), read once. */
+  readonly #alphaOf = new Map<string, { alpha: Uint8Array; w: number; h: number }>();
+  /** The frames in front of him this frame (slots reused), and how many. */
+  readonly #parts: XrayPart[] = [];
+  #partCount = 0;
+  /** The look last shown (flat, compared in place so an unchanged frame allocates nothing). */
+  readonly #look: (string | number)[] = [];
+  #lookLen = 0;
+  #lookAt = 0;
+  #lookChanged = false;
   #xrayOn = false;
   /** Real ms since the x-ray came on (its breath steps from it). */
   #xrayMs = 0;
@@ -217,7 +252,7 @@ export class AllyView implements PooledView {
     return this.#body.depth;
   }
 
-  /** Whether its x-ray outline shows (the render-state hook's view of it). */
+  /** Whether its x-ray shows (the render-state hook's view of it). */
   get xrayShown(): boolean {
     return this.#xray.visible;
   }
@@ -237,17 +272,21 @@ export class AllyView implements PooledView {
   }
 
   /**
-   * One frame of the x-ray (review R3): `on` while a tower stands in front of him (BattleScene's
-   * call, vfx/xrayPixels.ts `occludes`), `realMs` of wall time for its breath.
+   * One frame of the x-ray (review R3, R2-S3): `on` while a tower stands in front of him
+   * (BattleScene's call, views/xrayWatch.ts), `front` the towers drawn in front of him (their
+   * pixels are where he shows through), `realMs` of wall time for its breath.
    */
-  setXray(on: boolean, realMs: number): void {
+  setXray(on: boolean, realMs: number, front: readonly Covering[] = []): void {
+    let n = 0;
+    if (on) for (let i = 0; i < front.length; i++) n += front[i]!.xrayParts(this.#parts, n); // i < length
+    this.#partCount = n;
     if (on !== this.#xrayOn) {
       this.#xrayOn = on;
       this.#xrayMs = 0;
-      this.#syncXray();
     } else if (on) {
       this.#xrayMs += Number.isFinite(realMs) && realMs > 0 ? realMs : 0;
     }
+    this.#syncXray();
     if (this.#xray.visible) this.#xray.setAlpha(xrayAlpha(this.#xrayMs, this.#reducedMotion()));
   }
 
@@ -286,35 +325,82 @@ export class AllyView implements PooledView {
   }
 
   /**
-   * Points the x-ray at the shown frame's outline (baked the first time that frame shows with the
-   * x-ray on), over the body; hidden while it's off or the body is.
+   * Points the x-ray at the look now (his frame behind the frames in front, at their offsets),
+   * baking it the first time it shows; hidden while it's off, the body is, or nothing is in front.
    */
   #syncXray(): void {
     const b = this.#body;
-    if (!this.#xrayOn || !b.visible || this.#id === null) {
+    if (!this.#xrayOn || !b.visible || this.#id === null || this.#partCount === 0) {
       this.#xray.setVisible(false);
       return;
     }
-    const frameKey = `${b.texture.key}:${b.frame.name}`;
-    let key = this.#xrayFor.get(frameKey);
-    if (key === undefined) {
-      key = `overlay.xray.${frameKey}`;
-      const { scene } = this.#ctx;
-      if (!scene.textures.exists(key)) {
-        const m = frameAlpha(scene, {
-          texture: b.texture.key,
-          frame: b.frame.name,
-          left: 0,
-          top: 0,
-        });
-        scene.textures.addCanvas(key, imageToCanvas(xrayImage(m.alpha, m.w, m.h)));
-      }
-      this.#xrayFor.set(frameKey, key);
+    const left = Math.round(b.x - b.displayOriginX);
+    const top = Math.round(b.y - b.displayOriginY);
+    this.#lookAt = 0;
+    this.#lookChanged = false;
+    this.#lookPut(b.texture.key);
+    this.#lookPut(b.frame.name);
+    this.#lookPut((left + top) & 1);
+    for (let i = 0; i < this.#partCount; i++) {
+      const p = this.#parts[i]!; // i < partCount
+      this.#lookPut(p.texture);
+      this.#lookPut(p.frame);
+      this.#lookPut(p.x - left);
+      this.#lookPut(p.y - top);
     }
-    if (this.#xray.texture.key !== key) this.#xray.setTexture(key);
-    this.#xray
-      .setPosition(b.x - b.displayOriginX - XRAY_PAD, b.y - b.displayOriginY - XRAY_PAD)
-      .setVisible(true);
+    if (this.#lookAt !== this.#lookLen) this.#lookChanged = true;
+    this.#lookLen = this.#lookAt;
+    if (this.#lookChanged || this.#xray.texture.key === '__DEFAULT') {
+      const look = this.#look.slice(0, this.#lookLen).join('|');
+      let key = this.#xrayFor.get(look);
+      if (key === undefined) {
+        if (this.#xrayFor.size >= XRAY_CACHE_MAX) this.#dropXray();
+        key = `overlay.xray.${look}`;
+        const { scene } = this.#ctx;
+        if (!scene.textures.exists(key)) {
+          const m = frameRgba(scene, b.texture.key, b.frame.name);
+          const covers: Cover[] = [];
+          for (let i = 0; i < this.#partCount; i++) {
+            const p = this.#parts[i]!; // i < partCount
+            covers.push({ ...this.#alpha(p.texture, p.frame), dx: p.x - left, dy: p.y - top });
+          }
+          const img = xrayImage(m.data, m.w, m.h, covers, (left + top) & 1);
+          scene.textures.addCanvas(key, imageToCanvas(img));
+        }
+        this.#xrayFor.set(look, key);
+      }
+      if (this.#xray.texture.key !== key) this.#xray.setTexture(key);
+    }
+    this.#xray.setPosition(b.x - b.displayOriginX, b.y - b.displayOriginY).setVisible(true);
+  }
+
+  /** Writes the next field of the look, noting a change. */
+  #lookPut(v: string | number): void {
+    if (this.#look[this.#lookAt] !== v) {
+      this.#look[this.#lookAt] = v;
+      this.#lookChanged = true;
+    }
+    this.#lookAt++;
+  }
+
+  /** A frame's alpha mask, read from its texture once. */
+  #alpha(texture: string, frame: string): { alpha: Uint8Array; w: number; h: number } {
+    const k = `${texture}:${frame}`;
+    let m = this.#alphaOf.get(k);
+    if (m === undefined) {
+      m = frameAlpha(this.#ctx.scene, { texture, frame, left: 0, top: 0 });
+      this.#alphaOf.set(k, m);
+    }
+    return m;
+  }
+
+  /** Frees the baked x-ray textures (past the cap, or the view released). */
+  #dropXray(): void {
+    const { scene } = this.#ctx;
+    this.#xray.setTexture('__DEFAULT');
+    for (const key of this.#xrayFor.values()) if (scene.textures.exists(key)) scene.textures.remove(key);
+    this.#xrayFor.clear();
+    this.#lookLen = 0;
   }
 
   /**
@@ -358,7 +444,10 @@ export class AllyView implements PooledView {
     this.#body.setVisible(false);
     this.#glow.setVisible(false);
     this.#xrayOn = false;
+    this.#partCount = 0;
     this.#xray.setVisible(false);
+    this.#dropXray();
+    this.#alphaOf.clear();
   }
 
   #play(fire: boolean): void {

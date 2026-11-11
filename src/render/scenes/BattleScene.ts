@@ -349,7 +349,7 @@ export class BattleScene extends Phaser.Scene {
   #quietWaves: readonly boolean[] = [];
   /** The ally Suppressing Fire's streaks come from (Bricks), and his post (grid), or null. */
   #shooter: AllyView | null = null;
-  readonly #xrayWatch = new XrayWatch(); // review R3: Bricks's x-ray over a tower in front of him
+  readonly #xrayWatch = new XrayWatch<TowerView>(); // review R3: Bricks's x-ray over a tower in front of him
   #shooterX = 0;
   #shooterY = 0;
 
@@ -1185,6 +1185,7 @@ export class BattleScene extends Phaser.Scene {
       v.setXray(
         a.blockCapacity > 0 && this.#xrayWatch.hidden(v, this.#towers.live),
         this.game.loop.delta,
+        this.#xrayWatch.front, // R2-S3: the towers he shows through
       );
       const target = a.targetUid === 0 ? undefined : this.#enemies.get(a.targetUid);
       if (target !== undefined) v.setFacing(facingOf(target.x - a.x, target.y - a.y));

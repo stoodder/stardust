@@ -48,7 +48,7 @@
   display: flex;
   flex: none;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
   width: 356px;
   min-height: 0;
 }
@@ -78,7 +78,7 @@
   display: grid;
   flex: none;
   grid-template-columns: repeat(2, 1fr);
-  gap: 4px;
+  gap: 3px 4px;
   margin: 0;
   padding: 0;
   overflow-y: auto;
@@ -212,7 +212,7 @@
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
   min-width: 0;
 }
 
@@ -247,7 +247,7 @@
 
 /* A counter the tower (or ability) answers on this map; a required one is gold. */
 .sd-lo-chip {
-  padding: 1px 2px;
+  padding: 0 2px;
   border: 1px solid var(--sd-teal-3);
   color: var(--sd-teal-4);
 }
@@ -257,8 +257,11 @@
   color: var(--sd-gold-4);
 }
 
+/* The hint (or a notice) sits in the footer, left of the buttons. */
 .sd-lo-hint {
-  margin-top: auto;
+  flex: 1;
+  align-self: center;
+  margin: 0;
   color: var(--sd-steel-3);
   font-family: var(--font-heading);
   line-height: 10px;
@@ -358,7 +361,7 @@
    scrolls when a save owns more than fit; the tower grid above never shrinks for it). */
 .sd-lo-protocols {
   display: grid;
-  flex: 1 1 0;
+  flex: 0 1 auto;
   grid-template-columns: repeat(2, 1fr);
   align-content: start;
   gap: 2px 4px;
@@ -380,10 +383,10 @@
 .sd-lo-protocol {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
   width: 100%;
-  min-height: 22px;
-  padding: 3px 4px 3px 2px;
+  min-height: 20px;
+  padding: 2px 4px 2px 2px;
   border: 0;
   border-left: 2px solid var(--sd-ink-4);
   background: var(--sd-ink-2);

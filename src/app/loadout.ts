@@ -177,6 +177,9 @@ const CORELESS: ReadonlySet<ObjectiveKind> = new Set(['escort', 'holdout']);
 /** What a core-only protocol reads on a map with no core. */
 export const NO_CORE_TEXT = 'No core on this shift';
 
+/** What it reads there once the screen has benched it for another (D144 S1b). */
+export const BENCHED_TEXT = 'Benched: no core on this shift';
+
 /** Whether a protocol only ever acts on the core (Emergency Bulkhead's `leakAbsorb`). */
 export function coreOnly(id: ProtocolId): boolean {
   const grants = PROTOCOLS[id].grants;
@@ -187,7 +190,11 @@ export function coreOnly(id: ProtocolId): boolean {
  * An owned Field Protocol as the picker shows it: its name and its grants in words, and why it's
  * inert on a map of `objective` (a core-only one on a map with no core).
  */
-function protocolView(id: ProtocolId, objective: ObjectiveKind): LoadoutProtocolView {
+function protocolView(
+  id: ProtocolId,
+  objective: ObjectiveKind,
+  benched = false,
+): LoadoutProtocolView {
   const def = PROTOCOLS[id];
   return {
     id,
@@ -195,7 +202,45 @@ function protocolView(id: ProtocolId, objective: ObjectiveKind): LoadoutProtocol
     effect: silkText(def.grants.map(grantText).join(' · ')),
     takesTower: takesTowerPick(id),
     inert: CORELESS.has(objective) && coreOnly(id) ? NO_CORE_TEXT : null,
+    benched: benched ? BENCHED_TEXT : null,
   };
+}
+
+/**
+ * The equipped protocols the screen starts from on this map (D144 S1b): each inert one (a
+ * core-only protocol on a map with no core) benched for a protocol that acts here, the first
+ * owned one the picker lists that isn't already equipped (the save keeps no history of what was
+ * equipped before, so there is no "most recent" to prefer). With nothing to swap in, it stays:
+ * benching it for an empty slot gains nothing. The player can still pick it back. Returns the
+ * pick's protocols and the ids benched.
+ */
+export function benchInert(
+  start: Pick<LoadoutPickView, 'towers' | 'protocols' | 'protocolPicks'>,
+  offered: readonly LoadoutProtocolView[],
+  firstTower: string | undefined,
+): { pick: Pick<LoadoutPickView, 'protocols' | 'protocolPicks'>; benched: string[] } {
+  const isInert = (id: string): boolean =>
+    (offered.find((p) => p.id === id)?.inert ?? null) !== null;
+  if (!start.protocols.some(isInert)) {
+    return {
+      pick: { protocols: start.protocols, protocolPicks: start.protocolPicks },
+      benched: [],
+    };
+  }
+  const protocols = [...start.protocols];
+  const protocolPicks: Record<string, string> = { ...start.protocolPicks };
+  const benched: string[] = [];
+  for (const [slot, id] of protocols.entries()) {
+    if (!isInert(id)) continue;
+    const swap = offered.find((p) => p.inert === null && !protocols.includes(p.id));
+    if (swap === undefined) continue;
+    protocols[slot] = swap.id;
+    benched.push(id);
+    delete protocolPicks[id];
+    const tower = start.towers[0] ?? firstTower;
+    if (swap.takesTower && tower !== undefined) protocolPicks[swap.id] = tower;
+  }
+  return { pick: { protocols, protocolPicks }, benched };
 }
 
 function linkView(l: (typeof LINKS)[keyof typeof LINKS]): LoadoutLinkView {
@@ -248,6 +293,17 @@ export function openLoadout(mapId: string): boolean {
   const required: readonly string[] = map.requiredCounters;
   const shift = CAMPAIGN_PLAN.findIndex((m) => m.id === mapId);
   const slot2 = cfg.abilities.slot2;
+  const owned = (pools.protocols ?? []).flatMap((p) =>
+    save.unlocks.protocols.filter((o) => o === p),
+  );
+  const offered = owned.map((o) => protocolView(o, map.objective));
+  const start = {
+    ...initialPick(save, mapId, defaultPick(save, map.builds.parBuild)),
+    ...equippedView(save),
+  };
+  // A core-only protocol carried onto a map with no core is benched for one that acts (D144 S1b).
+  const bench = benchInert(start, offered, pools.towers[0]);
+  const protocols = owned.map((o) => protocolView(o, map.objective, bench.benched.includes(o)));
   const view: LoadoutView = {
     mapId,
     mapName: silkText(mapName(mapId)),
@@ -280,14 +336,9 @@ export function openLoadout(mapId: string): boolean {
         : silkText(
             `${displayName(cfg.companion)} · ${content.abilities[slot2]?.name ?? displayName(slot2)}`,
           ),
-    protocols: (pools.protocols ?? []).flatMap((p) =>
-      save.unlocks.protocols.filter((o) => o === p).map((o) => protocolView(o, map.objective)),
-    ),
+    protocols,
     protocolSlots: pools.protocolSlots ?? 0,
-    initial: {
-      ...initialPick(save, mapId, defaultPick(save, map.builds.parBuild)),
-      ...equippedView(save),
-    },
+    initial: { ...start, ...bench.pick },
     max: MAX_LOADOUT,
   };
   loadout.value = view;

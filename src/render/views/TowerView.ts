@@ -24,6 +24,7 @@ import { DEFAULT_VARIANT } from '../sprites/bake.ts';
 import { imageToCanvas } from '../sprites/canvas.ts';
 import { BUILD_DROP_PX, BUILD_DROP_STEP_FRAMES, UPGRADE_FLASH_FRAMES } from '../vfx/fxTiming.ts';
 import type { Rect } from '../vfx/xrayPixels.ts';
+import type { XrayPart } from './xrayWatch.ts';
 import {
   baseFrame,
   headStyle,
@@ -107,6 +108,17 @@ function opaqueTop(f: Phaser.Textures.Frame): number {
   }
   opaqueTops.set(key, top);
   return top;
+}
+
+/** Writes a shown image's frame and screen top-left into `out[at]` (its slot reused); 1, or 0 hidden. */
+function partOf(img: Phaser.GameObjects.Image, out: XrayPart[], at: number): number {
+  if (!img.visible) return 0;
+  const p = (out[at] ??= { texture: '', frame: '', x: 0, y: 0 });
+  p.texture = img.texture.key;
+  p.frame = img.frame.name;
+  p.x = Math.round(img.x - img.displayOriginX);
+  p.y = Math.round(img.y - img.displayOriginY);
+  return 1;
 }
 
 /** The pause plate's texture, registering it on first use. */
@@ -231,6 +243,16 @@ export class TowerView implements PooledView {
     out.w = x1 - x0;
     out.h = y1 - y0;
     return out;
+  }
+
+  /**
+   * The frames it draws now (base, then head when shown), with their screen top-left, into `out`
+   * (its slots reused); returns how many: the pixels Bricks's x-ray shows through (R2-S3).
+   */
+  xrayParts(out: XrayPart[], from: number): number {
+    let n = partOf(this.#base, out, from);
+    n += partOf(this.#head, out, from + n);
+    return n;
   }
 
   /**
