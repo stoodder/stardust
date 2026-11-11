@@ -165,7 +165,9 @@ export function slotRevoked(
   if (id === null) return false;
   if (state.revoked.abilities.includes(id)) return true;
   if (slot !== 2) return false;
-  const def = Object.hasOwn(config.content.abilities, id) ? config.content.abilities[id] : undefined;
+  const def = Object.hasOwn(config.content.abilities, id)
+    ? config.content.abilities[id]
+    : undefined;
   if (def === undefined || def.lockedOutBy === null) return false;
   return def.companion === config.companion && state.scriptModifiers[def.lockedOutBy];
 }

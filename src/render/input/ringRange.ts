@@ -70,6 +70,27 @@ export function previewRing(
   return out;
 }
 
+/**
+ * Whether the preview ring is a Hum Choir's song (T631, review R14): a tier with no attack and no
+ * detection whose reach is its `choir` aura. Its valid ring takes the song's gold (choirLook.ts
+ * `SONG_COLOR`), so the preview reads as the ring the placed Choir sings.
+ */
+export function songRing(tier: {
+  readonly attack: unknown;
+  readonly detect: unknown;
+  readonly auras?: readonly { readonly kind: string; readonly radiusTiles: number }[];
+}): boolean {
+  if (tier.attack !== null || tier.detect !== null) return false;
+  for (const a of tier.auras ?? []) if (a.kind === 'choir' && a.radiusTiles > 0) return true;
+  return false;
+}
+
+/** A range ring's colour: red when the placement is invalid, else the song's gold or white. */
+export function ringKind(valid: boolean, song: boolean): 'valid' | 'invalid' | 'song' {
+  if (!valid) return 'invalid';
+  return song ? 'song' : 'valid';
+}
+
 /** A support tier's reach without its tune-up: its widest `choir` aura, else its field (T631). */
 function supportReach(tier: {
   readonly auras?: readonly { readonly kind: string; readonly radiusTiles: number }[];

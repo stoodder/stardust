@@ -21,6 +21,7 @@ import {
   rippleAt,
   RIPPLES,
   showsRipples,
+  TENDRIL_STROKES,
   tendrilProgress,
   type Ripple,
 } from './gatherLook.ts';
@@ -37,6 +38,8 @@ function hex(name: ColorName): number {
 }
 const INK = hex('ink.0');
 const TENDRIL = hex('violet.4');
+/** Each tendril stroke's fill number (gatherLook.ts TENDRIL_STROKES). */
+const STROKE_HEX: readonly number[] = TENDRIL_STROKES.map((st) => hex(st.color));
 const SNAP = hex('white.1');
 const BEAD = hex('white.1');
 const GROWTH = hex('violet.3');
@@ -78,6 +81,10 @@ export class HollowView {
   #ripples = 0;
   /** Each live Maw's absorbs last frame, by uid (a rise pulses its gulp ring). */
   readonly #absorbs = new Map<number, { n: number; frame: number }>();
+  /** Drops a Maw not seen this frame (Map.forEach's callback, made once). */
+  readonly #forget = (seen: { frame: number }, uid: number): void => {
+    if (seen.frame !== this.#frame) this.#absorbs.delete(uid);
+  };
   readonly #gulps: Gulp[] = [];
   #nextGulp = 0;
   #frame = 0;
@@ -118,8 +125,8 @@ export class HollowView {
       if (e.gatherUid !== 0 && this.#drawTendrils(this.#tendrils, e, enemies, allies, still))
         tells++;
     }
-    // Forget the Maws gone (dead, leaked).
-    for (const [uid, seen] of this.#absorbs) if (seen.frame !== frame) this.#absorbs.delete(uid);
+    // Forget the Maws gone (dead, leaked); a bound callback, so no iterator or entry arrays.
+    this.#absorbs.forEach(this.#forget);
     this.#drawGulps(g, dtMs, still);
     if (tells > this.#tells) this.tellsSeen += tells - this.#tells;
     this.#tells = tells;
@@ -218,12 +225,17 @@ export class HollowView {
     rangeEllipsePx(nooseTiles(progress), semi);
     const noose = nooseColor(progress) === 'white.1' ? SNAP : TENDRIL;
     const phase = still ? 0 : this.#clockMs * WAVE_SPEED;
-    for (let pass = 0; pass < 2; pass++) {
-      if (pass === 0) g.lineStyle(3, INK, 0.7);
-      else g.lineStyle(1, noose, 1);
-      g.strokeEllipse(b.x, b.y, semi.x * 2, semi.y * 2);
-      if (pass === 1) g.lineStyle(1, TENDRIL, 1);
-      // The tendrils: from points on the noose (turning slowly) to the Maw's body, wavering.
+    // The tendrils, a stroke at a time (ink, violet rope, white core): from points on the noose
+    // (turning slowly) to the Maw's body, wavering. The noose (a 3 px ink under-stroke, then its
+    // 1 px line) goes on after the tendrils' ink, so their under-strokes never cut it.
+    const steps = 5;
+    for (let pass = 0; pass < TENDRIL_STROKES.length; pass++) {
+      const st = TENDRIL_STROKES[pass]!; // pass < length
+      if (pass === 1) {
+        g.lineStyle(3, INK, 0.7).strokeEllipse(b.x, b.y, semi.x * 2, semi.y * 2);
+        g.lineStyle(1, noose, 1).strokeEllipse(b.x, b.y, semi.x * 2, semi.y * 2);
+      }
+      g.lineStyle(st.px, STROKE_HEX[pass]!, st.alpha);
       for (let t = 0; t < TENDRILS; t++) {
         const ang = phase * 0.25 + (t * Math.PI * 2) / TENDRILS;
         let px = b.x + Math.cos(ang) * semi.x;
@@ -235,7 +247,6 @@ export class HollowView {
         const ny = dx / len;
         const sx = px;
         const sy = py;
-        const steps = 5;
         for (let k = 1; k <= steps; k++) {
           const f = k / steps;
           const w = k < steps ? Math.sin(phase + k * 1.3 + t * 2) * WAVE_PX : 0;
@@ -245,8 +256,8 @@ export class HollowView {
           px = qx;
           py = qy;
         }
-        // Its bead, riding in to the Maw as the tell runs (over the line, on the last pass).
-        if (pass === 1) {
+        // Its bead, riding in to the Maw as the tell runs (over the rope, on the last stroke).
+        if (pass === TENDRIL_STROKES.length - 1) {
           const f = beadAt(progress, t);
           const w = f > 0 && f < 1 ? Math.sin(phase + f * steps * 1.3 + t * 2) * WAVE_PX : 0;
           const bx = Math.round(sx + dx * f + nx * w);

@@ -6,9 +6,13 @@
 import { describe, expect, it } from 'vitest';
 import { compileContent } from '../content/compile.ts';
 import type { MapDef } from '../content/types.ts';
+import type { CompiledAllyPost } from '../content/compiled.ts';
+import { setup, spawn, WALKER } from './__fixtures__/combat.ts';
 import { SIM_FIXTURE, fixtureConfig, type FixtureIds } from './__fixtures__/sim.ts';
-import { blockable, blockerLevel, holdDistOn, ticksToNextWave } from './blocker.ts';
-import { ENEMY_BLANK, type Enemy } from './entities.ts';
+import { blockable, blockerLevel, blockers, holdDistOn, ticksToNextWave } from './blocker.ts';
+import { ALLY_BLANK, ENEMY_BLANK, type Enemy } from './entities.ts';
+import { poolAlloc, poolKill } from './pool.ts';
+import { takeUid } from './state.ts';
 import { FEATURE_GATES } from './gates.ts';
 import { createSim } from './sim.ts';
 import type { SimEvent } from './events.ts';
@@ -222,5 +226,52 @@ describe('the blocker rules (T605)', () => {
     expect(sim.state.schedule.startTick[1]! - (startedAt - 1)).toBe(left);
     // In the last wave, nothing is scheduled.
     expect(ticksToNextWave(sim.state, ctx)).toBe(-1);
+  });
+
+  it('holds up to its capacity, and lets go of every unit once its blocker is gone (R15)', () => {
+    // A post at (3,1), beside the road just past its turn: the hold point is 3 tiles along.
+    const post: CompiledAllyPost = {
+      kind: 'bricks',
+      post: 'gap',
+      tile: [3, 1],
+      attack: {
+        type: 'kinetic',
+        damage: 0,
+        periodTicks: 60,
+        rangeTiles: 1,
+        rangeSq: 1,
+        hitsGround: true,
+        hitsAir: false,
+      },
+      block: { capacity: 2, health: [] },
+    };
+    const { state, ctx: base } = setup();
+    const ctx = { ...base, map: { ...base.map, allies: [post] } };
+    const bricks = poolAlloc(state.allies, ALLY_BLANK, takeUid(state));
+    bricks.mode = 'post';
+    bricks.x = 3.5;
+    bricks.y = 1.5;
+    bricks.blockCapacity = 2;
+    const units = [2.6, 2.7, 2.8].map((dist) => spawn(state, WALKER, { dist }));
+    blockers(state, ctx);
+    expect(units.map((u) => u.blockerUid)).toEqual([bricks.uid, bricks.uid, 0]);
+    expect(bricks.blocking).toBe(2);
+    state.events.length = 0;
+    // He's gone (a script removed him): nothing stays frozen for nobody.
+    poolKill(state.allies, bricks);
+    blockers(state, ctx);
+    expect(units.map((u) => u.blockerUid)).toEqual([0, 0, 0]);
+    expect(state.events).toEqual([
+      { type: 'Blocked', allyUid: bricks.uid, enemyUid: units[0]!.uid, on: false },
+      { type: 'Blocked', allyUid: bricks.uid, enemyUid: units[1]!.uid, on: false },
+    ]);
+    // Likewise a live ally that no longer blocks (no capacity), or a blocker uid no ally has.
+    const other = poolAlloc(state.allies, ALLY_BLANK, takeUid(state));
+    other.x = 3.5;
+    other.y = 1.5;
+    units[0]!.blockerUid = other.uid;
+    units[1]!.blockerUid = 9999;
+    blockers(state, ctx);
+    expect(units.map((u) => u.blockerUid)).toEqual([0, 0, 0]);
   });
 });

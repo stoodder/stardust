@@ -858,6 +858,46 @@ let mapOver = false;
 function clearCommsTimer(): void {
   if (commsTimer !== null) clearTimeout(commsTimer);
   commsTimer = null;
+  if (typedTimer !== null) clearTimeout(typedTimer);
+  typedTimer = null;
+}
+
+// ─── A comms scene's last line, typed (D143 R2) ──────────────────────────────────────────────
+
+/** The comms scenes whose last line has typed on the panel this battle (or that were dropped). */
+const typedScenes = new Set<string>();
+/** Who waits for a scene's last line to type (`whenSceneTyped`). */
+const typedWaiters = new Map<string, (() => void)[]>();
+/** Times the last line on the panel typing out. */
+let typedTimer: ReturnType<typeof setTimeout> | null = null;
+
+/** Scene `id`'s last line has typed (or the scene went unplayed): its waiters go on. */
+function markTyped(id: string): void {
+  typedScenes.add(id);
+  const waiters = typedWaiters.get(id);
+  typedWaiters.delete(id);
+  for (const w of waiters ?? []) w();
+}
+
+/**
+ * Runs `then` once comms scene `id`'s last line has finished typing on the panel this battle
+ * (under fast text or reduced motion, once it shows), or at once when it already has, or when
+ * dialogue is off (nothing will type). A scene dropped unplayed (stale, or a beat's end) counts as
+ * typed, so nothing waits on a line that won't come. A3M3's SEAL arms from Bricks's "Do it,
+ * {name}." (`a3_m03_cue_seal`'s last line; app/forcedInput.ts). Returns the cancel.
+ */
+export function whenSceneTyped(id: string, then: () => void): () => void {
+  if (!enabled || typedScenes.has(id)) {
+    then();
+    return () => {};
+  }
+  const list = typedWaiters.get(id) ?? [];
+  list.push(then);
+  typedWaiters.set(id, list);
+  return () => {
+    const now = typedWaiters.get(id);
+    if (now !== undefined) typedWaiters.set(id, now.filter((w) => w !== then));
+  };
 }
 
 function holdComms(on: boolean): void {
@@ -887,8 +927,10 @@ function holdComms(on: boolean): void {
     const q = commsQueue[i];
     if (q === undefined) continue;
     // Stale before the hold began (a line cut by it was on screen then, so it's never stale).
-    if (commsHeldAt - q.at > COMMS_STALE_MS) commsQueue.splice(i, 1);
-    else commsQueue[i] = { ...q, at: now };
+    if (commsHeldAt - q.at > COMMS_STALE_MS) {
+      commsQueue.splice(i, 1);
+      markTyped(q.scene.id);
+    } else commsQueue[i] = { ...q, at: now };
   }
   pumpComms();
 }
@@ -912,6 +954,7 @@ export function endsBeat(scene: Scene): boolean {
 function dropComms(): void {
   for (const q of commsQueue.splice(0)) {
     if (q.cursor !== undefined) commit(q.scene.id, q.cursor.effects);
+    markTyped(q.scene.id);
   }
 }
 
@@ -937,7 +980,10 @@ function pumpComms(): void {
   if (commsHeld || commsNow !== null) return;
   const now = performance.now();
   let next = commsQueue.shift();
-  while (next !== undefined && now - next.at > COMMS_STALE_MS) next = commsQueue.shift();
+  while (next !== undefined && now - next.at > COMMS_STALE_MS) {
+    markTyped(next.scene.id);
+    next = commsQueue.shift();
+  }
   if (next === undefined) {
     dialogue.comms.value = null;
     const idle = onIdle;
@@ -990,6 +1036,15 @@ function showCommsLine(): void {
   c.shownAt = performance.now();
   c.moveOn = moveOn;
   clearCommsTimer();
+  // The scene's last line: once it has typed, its waiters go on (`whenSceneTyped`).
+  if (next.step.kind !== 'line' && !barkScenes.has(c.scene)) {
+    const id = c.scene.id;
+    const typing = fastText() || reducedMotion() ? 0 : typeMs(view.text);
+    typedTimer = setTimeout(() => {
+      typedTimer = null;
+      markTyped(id);
+    }, typing);
+  }
   commsTimer = setTimeout(
     moveOn,
     commsEnding
@@ -1295,6 +1350,8 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
   session = s;
   storyRun = null;
   dialogue.comms.value = null;
+  typedScenes.clear();
+  typedWaiters.clear();
   commsQueue.length = 0;
   commsNow = null;
   commsEnding = false;
@@ -1526,7 +1583,9 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
     bus.on('TowerRevoked', (e) => {
       towerOf.delete(e.uid);
       const tagged = stepTags(e) ? { tagged: true } : {};
-      offerBarks([{ on: 'tower_revoked', ...(isTower(e.tower) ? { tower: e.tower } : {}), ...tagged }]);
+      offerBarks([
+        { on: 'tower_revoked', ...(isTower(e.tower) ? { tower: e.tower } : {}), ...tagged },
+      ]);
     }),
     bus.on('HoldFireChanged', (e) => {
       if (e.on) offerBarks([{ on: 'hold_fire_used' }]);

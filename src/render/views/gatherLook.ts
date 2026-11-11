@@ -4,7 +4,8 @@
 //   a Maw holds a unit (`Enemy.gatherUid`), a cold `violet.4` noose over an `ink.0` under-stroke
 //   rings the unit, closing from 0.5 to 0.2 tiles as the tell runs (the unit drawn in), and three
 //   wavy tendrils run from it to the Maw's body, over the units (a held unit stands close, so they'd
-//   hide under the sprites). Along each tendril a `white.1` bead rides from the noose to the Maw
+//   hide under the sprites), each a `violet.4` rope with a `white.1` core over an `ink.0` under-
+//   stroke (TENDRIL_STROKES; review R14: a 1 px tendril read too thin). Along each tendril a `white.1` bead rides from the noose to the Maw
 //   as the tell runs (`beadAt`: the tell's progress, so it reads how long is left), and for the
 //   last NOOSE_SNAP of the tell the noose flashes `white.1` (`nooseColor`): the gulp is coming.
 //   Under reduced motion the tendrils hold still (no waver, no turn); the bead and the snap are
@@ -26,6 +27,17 @@ import type { DeepReadonly } from '../../shared/types.ts';
 import { gatherScale, type Enemy } from '../../sim/index.ts';
 import { STEPPED_ALPHA } from '../vfx/fxTiming.ts';
 import { enemyBody } from './spriteInfo.ts';
+
+/** A tendril's strokes, drawn in order: width (px), colour, alpha. */
+export const TENDRIL_STROKES: readonly {
+  readonly px: number;
+  readonly color: 'ink.0' | 'violet.4' | 'white.1';
+  readonly alpha: number;
+}[] = [
+  { px: 5, color: 'ink.0', alpha: 0.7 },
+  { px: 3, color: 'violet.4', alpha: 1 },
+  { px: 1, color: 'white.1', alpha: 1 },
+];
 
 /** The growth steps a gatherer's body is drawn in (the Maw's `maxAbsorbs`): one sprite each. */
 export const GROWTH_STEPS = 5;

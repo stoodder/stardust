@@ -356,6 +356,20 @@ describe('Gravity Well (spec A): the pull', () => {
     enemyAbilities(state, ctx);
     expect(gatherTelling(maw)).toBe(false);
     expect(maw.gatherTicks).toBe(g.everyTicks);
+    expect([mote.alive, mote.hushUid]).toEqual([true, 0]); // let go, not gathered
+    expect(state.events.some((v) => v.type === 'Gathered')).toBe(false);
+    // The cooldown restarted from zero: with the Mote back in reach at once, the next tell waits a
+    // whole period less the tell (R15).
+    mote.dist = 5.1; // (2.6, 3.5): 0.5 tiles behind the Maw
+    mote.x = 2.6;
+    mote.y = 3.5;
+    let ticks = 0;
+    while (!gatherTelling(maw) && ticks < 2 * g.everyTicks) {
+      enemyAbilities(state, ctx);
+      ticks++;
+    }
+    expect(ticks).toBe(g.everyTicks - g.tellTicks);
+    expect(maw.gatherUid).toBe(mote.uid);
   });
 });
 

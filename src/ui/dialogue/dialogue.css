@@ -285,6 +285,16 @@
   background: var(--sd-ink-3);
 }
 
+/* A locked choice's group holds the focus as it shows (D143 R1; C2's heading's dotted ring). */
+.dlg-choices:focus {
+  outline: none;
+}
+
+.dlg-choices:focus-visible {
+  outline: 1px dotted var(--sd-steel-3);
+  outline-offset: 2px;
+}
+
 /* C3's options in their first 700 ms (D141; T610): dimmed, then they take a press. */
 .dlg-choice[aria-disabled='true'] {
   color: var(--sd-steel-3);

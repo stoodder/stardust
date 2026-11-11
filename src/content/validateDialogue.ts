@@ -190,7 +190,10 @@ function validateNode(
     case 'line': {
       const p = { ...place, speaker: n.speaker };
       validateSpoken(issues, p, n.speaker, n.expression, n.text, n.durationSec, TEXT_LIMITS.line);
-      if (n.plateAs !== undefined && (n.plateAs.length === 0 || n.plateAs.length > TEXT_LIMITS.tag)) {
+      if (
+        n.plateAs !== undefined &&
+        (n.plateAs.length === 0 || n.plateAs.length > TEXT_LIMITS.tag)
+      ) {
         issues.add('dialogue-plate', p.where, `plateAs must be 1–${TEXT_LIMITS.tag} characters`);
       }
       if (n.button !== undefined) {

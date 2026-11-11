@@ -37,6 +37,17 @@ export interface LoadoutAbilityView {
   readonly answers: readonly string[];
 }
 
+/**
+ * A class or ability revoked from the save (A3M2's Clean Exit, until the jailbreak; towers.md § 9):
+ * shown on the screen under its stamp, never pickable, so the player sees why it's gone.
+ */
+export interface LoadoutRevokedView {
+  readonly id: string;
+  readonly name: string;
+  /** The icon's sprite id. */
+  readonly icon: string;
+}
+
 /** A synergy link two towers in the pool can form. */
 export interface LoadoutLinkView {
   readonly id: string;
@@ -90,7 +101,11 @@ export interface LoadoutView {
   readonly threats: readonly { readonly label: string; readonly tip: string | null }[];
   readonly counters: readonly LoadoutCounterView[];
   readonly towers: readonly LoadoutTowerView[];
+  /** Revoked classes (after the pickable towers, stamped "License revoked"; D143 R4). */
+  readonly revoked: readonly LoadoutRevokedView[];
   readonly abilities: readonly LoadoutAbilityView[];
+  /** Revoked Technician abilities (Orbital Strike: "Uplink revoked" under its stamp). */
+  readonly revokedAbilities: readonly LoadoutRevokedView[];
   /** Links among the pool's towers, in registry order. */
   readonly links: readonly LoadoutLinkView[];
   /** Slot 2 is the map's companion's ("Bricks · Suppressing Fire"), or null for none. */

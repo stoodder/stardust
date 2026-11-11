@@ -15,7 +15,9 @@ const FLAG_DEFS: Readonly<Record<string, FlagDef>> = FLAGS;
  * two blast doors), `count` refugees (a whole number ≥ 1), Pebble with at most one group; a group's
  * `when` names a script flag and one of its values (T600a); an Escort map (from the start, or by
  * `setObjective`) and a Holdout map have refugees; every `spawnAllies` names a group; `maxLost`
- * (losing that many loses the map) is a whole number ≥ 1, and a Holdout has none (no defeat).
+ * (losing that many loses the map) is a whole number ≥ 1, `maxLostPct` (the same as a share of the
+ * run's refugees) is in (0, 1], a map gives at most one of the two, and a Holdout neither (no
+ * defeat).
  */
 export function validateEscort(issues: Issues, def: MapDef<IdSpace>, where: string): void {
   const bad = (w: string, msg: string): void => issues.add('escort', w, msg);
@@ -93,9 +95,18 @@ export function validateEscort(issues: Issues, def: MapDef<IdSpace>, where: stri
   if (def.objective === 'holdout' && def.maxLost !== undefined) {
     bad(`${where}.maxLost`, 'a Holdout has no defeat (maps.md § 5.2), so no maxLost');
   }
+  if (def.objective === 'holdout' && def.maxLostPct !== undefined) {
+    bad(`${where}.maxLostPct`, 'a Holdout has no defeat (maps.md § 5.2), so no maxLostPct');
+  }
   // Losing `maxLost` refugees loses the map (D138), so 0 would lose it before the first refugee.
   if (def.maxLost !== undefined && !(Number.isInteger(def.maxLost) && def.maxLost >= 1)) {
     bad(`${where}.maxLost`, 'must be a whole number ≥ 1 (losing that many loses the map)');
+  }
+  if (def.maxLostPct !== undefined && !(def.maxLostPct > 0 && def.maxLostPct <= 1)) {
+    bad(`${where}.maxLostPct`, "must be in (0, 1] (a share of the run's refugees)");
+  }
+  if (def.maxLost !== undefined && def.maxLostPct !== undefined) {
+    bad(`${where}.maxLostPct`, 'give maxLost or maxLostPct, not both');
   }
 }
 

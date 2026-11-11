@@ -20,6 +20,7 @@ import { enemyAbilities } from './enemyAbilities/index.ts';
 import type { Ally } from './entities.ts';
 import {
   escortLost,
+  escortMaxLost,
   refugeesOnRoad,
   refugeesRemaining,
   setObjective,
@@ -314,7 +315,28 @@ describe('defeat and victory', () => {
     expect(state.outcome).toBe('lost');
     // Not while the map isn't an Escort (yet), and never without a maxLost.
     expect(escortLost({ ...state, objective: 'defend' }, MAP)).toBe(false);
-    expect(escortLost(state, { maxLost: null })).toBe(false);
+    expect(escortLost(state, { maxLost: null, maxLostPct: null })).toBe(false);
+  });
+
+  it("maxLostPct: the limit is the share of the run's refugees, rounded up (D143 R7)", () => {
+    const pct = (maxLostPct: number, refugeeTotal: number) =>
+      escortMaxLost({ refugeeTotal }, { maxLost: null, maxLostPct });
+    // A3M1's 0.53: 13 of 24, 16 of 30 (lost ≥ ⌈pct × total⌉ ⇔ lost ≥ pct × total).
+    expect([pct(0.53, 24), pct(0.53, 30)]).toEqual([13, 16]);
+    expect(pct(0.5, 24)).toBe(12); // exact: no rounding up past it
+    expect(pct(0.55, 20)).toBe(11); // 11.000000000000002 in floats
+    expect(pct(1, 7)).toBe(7);
+    expect([pct(0.01, 6), pct(0.5, 0)]).toEqual([1, 1]); // never 0: never lost before a loss
+    expect(escortMaxLost({ refugeeTotal: 30 }, { maxLost: 4, maxLostPct: null })).toBe(4);
+    expect(escortMaxLost({ refugeeTotal: 30 }, { maxLost: null, maxLostPct: null })).toBeNull();
+    // Defeat at the limit, on the map's run total (fx_map's escort walks 6 + 2 refugees: ⌈0.3 × 8⌉ = 3).
+    const map = content({ maxLost: undefined, maxLostPct: 0.3 }).maps.fx_map;
+    const { state } = setup();
+    expect(state.refugeeTotal).toBe(8);
+    state.stats.refugeesLost = 2;
+    expect(escortLost(state, map)).toBe(false);
+    state.stats.refugeesLost = 3;
+    expect(escortLost(state, map)).toBe(true);
   });
 
   it('victory waits for the road to empty', () => {

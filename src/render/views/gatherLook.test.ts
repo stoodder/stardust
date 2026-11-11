@@ -8,6 +8,7 @@ import type { Enemy } from '../../sim/index.ts';
 import { SPRITES } from '../../content/sprites/index.ts';
 import { STEPPED_ALPHA } from '../vfx/fxTiming.ts';
 import {
+  TENDRIL_STROKES,
   beadAt,
   drawnBody,
   GROWTH_RING_BASE_TILES,
@@ -160,5 +161,17 @@ describe('the Hollow looks, polished (T630a)', () => {
     expect(drawnBody(maw)).toBe('enemy.maw_g2');
     expect(drawnBody({ def: E.mote, absorbs: 0, tags: [] })).toBe(E.mote.sprites.body);
     expect(drawnBody({ def: null, absorbs: 0, tags: [] })).toBe('');
+  });
+});
+
+describe("the Maw's tendril, review R14", () => {
+  it('is a violet rope with a white.1 core over an ink under-stroke, each stroke narrower', () => {
+    expect(TENDRIL_STROKES.map((st) => st.color)).toEqual(['ink.0', 'violet.4', 'white.1']);
+    for (let i = 1; i < TENDRIL_STROKES.length; i++) {
+      expect(TENDRIL_STROKES[i]!.px).toBeLessThan(TENDRIL_STROKES[i - 1]!.px);
+    }
+    // Odd widths, so each stroke centres on the same pixel row and the core sits mid-rope.
+    for (const st of TENDRIL_STROKES) expect(st.px % 2).toBe(1);
+    expect(TENDRIL_STROKES.at(-1)).toMatchObject({ px: 1, color: 'white.1', alpha: 1 });
   });
 });

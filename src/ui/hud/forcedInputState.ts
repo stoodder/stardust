@@ -6,7 +6,8 @@ import { signal } from '@preact/signals';
 export const forcedInput = signal<string | null>(null);
 
 /**
- * Whether its button takes a press yet: ARM_DELAY_MS after it shows (app/forcedInput.ts), and then
- * only from a key-down or pointer-down that started after that.
+ * Whether its button takes a press yet: ARM_DELAY_MS after its permission line has typed (A3M3:
+ * "Do it, {name}."; app/forcedInput.ts), and then only from a key-down or pointer-down that
+ * started after that.
  */
 export const forcedInputArmed = signal(false);

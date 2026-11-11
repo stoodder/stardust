@@ -11,7 +11,7 @@ import {
   sprite,
 } from '../__fixtures__/valueBands.ts';
 import { contrastRatio, hsv, isHollowReserved, luminance } from './color.ts';
-import { ENV_PALETTE_IDS, ENV_PALETTES } from './env.ts';
+import { ENV_PALETTE_IDS, ENV_PALETTES, ENV_SKY } from './env.ts';
 import { PALETTE_IDS, PALETTES } from './index.ts';
 import { COLOR_NAMES, MASTER, rgbOf, type ColorName } from './master.ts';
 
@@ -250,4 +250,83 @@ describe('Act II value bands (art-direction §1 and §3, T440a, T440c)', () => {
       }
     });
   }
+});
+
+describe('coloured darks (art-direction §1 principle 4, review R11)', () => {
+  it('never paints a sky band or an env shade pure black: every dark keeps a hue', () => {
+    for (const env of ENV_PALETTE_IDS) {
+      for (const name of [...ENV_SKY[env], ENV_PALETTES[env].outline]) {
+        expect(MASTER[name], `${env}: ${name}`).not.toBe('#000000');
+        // A dark (value under a quarter) is a coloured near-black, never a grey one.
+        const { s, v } = hsv(rgbOf(name));
+        if (v < 0.25) expect(s, `${env}: ${name} saturation`).toBeGreaterThanOrEqual(0.3);
+      }
+    }
+  });
+});
+
+describe('Act III value bands (art-direction §3, review R11)', () => {
+  // The Long Night: near-black ground < the road < every unit, ally, and tower body by a wide
+  // band, and the Hollow, dark on dark, read by its pale rim.
+  const env = ENV_PALETTES.act3;
+  const ground = bodyLuminance(sprite('tile.grass'), 'v0', env);
+  const path = bodyLuminance(sprite('tile.path'), 'tread_x', env);
+
+  it('keeps the ground a band below the road', () => {
+    expect(path).toBeGreaterThan(ground);
+    expect(contrastRatio(path, ground)).toBeGreaterThanOrEqual(1.3);
+  });
+
+  it('puts every Act III unit, ally, and tower body well above the road', () => {
+    const actors: readonly [string, string][] = [
+      ['ally.bricks', 'idle_se_0'],
+      ['ally.bricks', 'block_se_0'],
+      ['ally.bricks', 'last_se_0'],
+      ['ally.swarmling', 'walk_se_0'],
+      ['ally.swarmling', 'latch_se_0'],
+      ['ally.champion', 'walk_se_0'],
+      ['ally.refugee', 'walk_se_0'],
+      ['ally.refugee', 'carry_se_0'],
+      ['ally.pebble', 'walk_se_0'],
+      ['enemy.compliance', 'walk_se_0'],
+      ['enemy.expediter', 'walk_se_0'],
+      ['tower.burrow', 't1'],
+      ['tower.burrow', 'spec_a'],
+      ['tower.choir', 't1'],
+      ['tower.choir', 'spec_b'],
+      ['tower.rivet', 't1'],
+      ['tower.thumper', 't1'],
+      ['tower.zapcoil', 't1'],
+      ['tower.sprinkler', 't1'],
+      ['tower.skyhook', 't1'],
+      ['tower.lookout', 't1'],
+      ['tower.prism', 't1'],
+      ['tower.mindspike', 't1'],
+      ['tower.bloom', 't1'],
+      ['tower.lantern', 't1'],
+    ];
+    for (const [id, frame] of actors) {
+      const d = sprite(id);
+      const l = bodyLuminance(d, frame, PALETTES[d.palette]);
+      expect(contrastRatio(l, path), `${id}:${frame}`).toBeGreaterThanOrEqual(2);
+      expect(l, `${id}:${frame}`).toBeGreaterThan(path);
+    }
+  });
+
+  it("reads the Hollow by its pale rim over the road, its bodies dark under the units' band", () => {
+    const rim = luminance(rgbOf(PALETTES.hollow.outline));
+    expect(contrastRatio(rim, path)).toBeGreaterThanOrEqual(3);
+    for (const [id, frame] of [
+      ['enemy.mote', 'walk_se_0'],
+      ['enemy.maw', 'walk_se_0'],
+      ['enemy.maw', 'tell_se_0'],
+      ['enemy.undertow', 'walk_se_0'],
+      ['enemy.riftmoth', 'walk_se_0'],
+      ['enemy.fracture', 'walk_se_0'],
+    ] as const) {
+      const l = bodyLuminance(sprite(id), frame, PALETTES.hollow);
+      expect(contrastRatio(rim, l), `${id}:${frame} rim`).toBeGreaterThanOrEqual(3);
+      expect(l, `${id}:${frame}`).toBeLessThan(0.15);
+    }
+  });
 });

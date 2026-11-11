@@ -10,6 +10,7 @@ import type { SpriteId } from '../../content/sprites/index.ts';
 import { KIND_BIAS, worldDepth } from '../depth.ts';
 import { ELEV_H, gridToScreen, HALF_H, tileImageTopLeft, type Vec2 } from '../iso.ts';
 import { DEFAULT_VARIANT } from '../sprites/bake.ts';
+import { ringKind } from '../input/ringRange.ts';
 import {
   floatTextTexture,
   highlightTexture,
@@ -135,16 +136,24 @@ export class PlacementView {
 
   /**
    * One range ring centered on grid point (gx, gy), or none (radius ≤ 0); `dim` draws it at
-   * RING_DIM_ALPHA (a tower the darkness reaches, Sundown; T505).
+   * RING_DIM_ALPHA (a tower the darkness reaches, Sundown; T505); `song` draws a valid one in the
+   * Hum Choir's gold (input/ringRange.ts `songRing`; review R14).
    */
-  setRing(gx: number, gy: number, radiusTiles: number, valid: boolean, dim = false): void {
+  setRing(
+    gx: number,
+    gy: number,
+    radiusTiles: number,
+    valid: boolean,
+    dim = false,
+    song = false,
+  ): void {
     this.#ringDim = dim && radiusTiles > 0;
     this.#ring.setAlpha(this.#ringDim ? RING_DIM_ALPHA : 1);
     if (radiusTiles <= 0) {
       this.#ring.setVisible(false);
       return;
     }
-    const tex = ringTexture(this.#ctx.scene, radiusTiles, valid);
+    const tex = ringTexture(this.#ctx.scene, radiusTiles, ringKind(valid, song));
     if (tex.key !== this.#ringKey) {
       this.#ring.setTexture(tex.key).setDisplayOrigin(tex.ox, tex.oy);
       this.#ringKey = tex.key;

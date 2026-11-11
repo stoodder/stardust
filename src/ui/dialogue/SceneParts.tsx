@@ -1,9 +1,11 @@
 // Pieces every scene staging shares (the briefing, the bottom panel, full-screen): the Next control
 // (a click or Enter finishes the typing, then moves on), the choice buttons (keyboard first: the
-// first option takes the focus, the arrows move between them), the Tab trap a modal keeps, and the
-// line announcer screen readers hear each line from.
+// first option takes the focus, the arrows move between them; a locked choice's group takes it
+// instead, D143 R1), the Tab trap a modal keeps, and the line announcer screen readers hear each
+// line from.
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { advancesItself, chooseOption, nextScene } from '../../app/dialogue.ts';
+import { choicePressAccepted, isPressKey } from './choiceLock.ts';
 import { useTypewriter, type Typewriter } from './LineText.tsx';
 import { plainText } from './text.ts';
 import type { ChoiceView, LineView, SceneView } from './state.ts';
@@ -72,28 +74,25 @@ export function NextButton({ step, lineKey }: { step: SceneStep; lineKey: unknow
   );
 }
 
-/**
- * A choice's options as buttons (role group, "Your answer"). The first takes the focus; Up and
- * Down move between them; Enter, Space, or a click picks one.
- */
-/** Up and Down move the focus between a choice's options (wrapping). */
+/** Up and Down move the focus between a choice's options (wrapping; from the group, to an end). */
 function moveChoiceFocus(e: KeyboardEvent & { currentTarget: HTMLElement }): void {
   if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
   const items = [...e.currentTarget.querySelectorAll<HTMLButtonElement>('button')];
   const i = items.findIndex((b) => b === document.activeElement);
   const step = e.key === 'ArrowDown' ? 1 : -1;
-  const next = items[(i + step + items.length) % items.length];
+  const next =
+    i < 0 ? items.at(step > 0 ? 0 : -1) : items[(i + step + items.length) % items.length];
   e.preventDefault();
   e.stopPropagation();
   next?.focus();
 }
 
 /**
- * Whether a locked story choice (C3, D141: `ChoiceView.lockedUntil`) still waits; it re-renders
- * as the lock passes. The press itself is refused until then by app/dialogue.ts `chooseOption`.
+ * Whether a locked choice (C3 and its scene's questions, D141/D143: `ChoiceView.lockedUntil`)
+ * still waits; it re-renders as the lock passes. The press itself is refused until then by
+ * app/dialogue.ts `chooseOption`, and after it by `choicePressAccepted` unless it's fresh.
  */
-function useChoiceLock(choices: readonly ChoiceView[]): boolean {
-  const until = choices[0]?.lockedUntil ?? 0;
+function useChoiceLock(until: number): boolean {
   const [locked, setLocked] = useState(() => performance.now() < until);
   useEffect(() => {
     const left = until - performance.now();
@@ -105,11 +104,64 @@ function useChoiceLock(choices: readonly ChoiceView[]): boolean {
   return locked;
 }
 
+/**
+ * A choice's options as buttons (role group, "Your answer"); Up and Down move between them; Enter,
+ * Space, or a click picks one. An open choice's first option takes the focus. A locked one's
+ * group takes it instead (as C2's heading does, ui/screens/StoryChoice.tsx), so Enter mashed
+ * through the lines before it lands nowhere; its options wait out the lock, then take only a
+ * fresh key-down or pointer-down (`choicePressAccepted`).
+ */
 export function ChoiceList({ choices }: { choices: readonly ChoiceView[] }) {
-  const first = useFocusOn(choices);
-  const locked = useChoiceLock(choices);
+  const until = choices[0]?.lockedUntil ?? 0;
+  const lockedChoice = until > 0;
+  const first = useFocusOn(choices, !lockedChoice);
+  const group = useRef<HTMLDivElement | null>(null);
+  useLayoutEffect(() => {
+    if (lockedChoice) group.current?.focus();
+  }, [choices, lockedChoice]);
+  const locked = useChoiceLock(until);
+  // The down behind the next click (pointer or key), and whether Space's down was refused.
+  const downAt = useRef<number | null>(null);
+  const spaceRefused = useRef(false);
+  const onKeyDown = (e: KeyboardEvent & { currentTarget: HTMLElement }): void => {
+    moveChoiceFocus(e);
+    if (!lockedChoice || !isPressKey(e.code)) return;
+    // On the group itself, Enter and Space do nothing (no game key, no pause, no answer).
+    const onOption = e.target instanceof HTMLButtonElement;
+    const now = performance.now();
+    const fresh = choicePressAccepted({ until, downAt: now, now, repeat: e.repeat });
+    if (!onOption || !fresh) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.code === 'Space') spaceRefused.current = true;
+      return;
+    }
+    downAt.current = now;
+    if (e.code === 'Space') spaceRefused.current = false;
+  };
+  const onKeyUp = (e: KeyboardEvent): void => {
+    // Space presses on its up: one whose down was refused doesn't.
+    if (lockedChoice && e.code === 'Space' && spaceRefused.current) {
+      e.preventDefault();
+      spaceRefused.current = false;
+    }
+  };
+  const pick = (i: number): void => {
+    const down = downAt.current;
+    downAt.current = null;
+    if (choicePressAccepted({ until, downAt: down, now: performance.now() })) chooseOption(i);
+  };
   return (
-    <div class="dlg-choices" role="group" aria-label="Your answer" onKeyDown={moveChoiceFocus}>
+    <div
+      ref={group}
+      class="dlg-choices"
+      role="group"
+      aria-label="Your answer"
+      tabIndex={lockedChoice ? -1 : undefined}
+      data-testid="choice-group"
+      onKeyDown={onKeyDown}
+      onKeyUp={onKeyUp}
+    >
       {choices.map((c, i) => (
         <button
           key={i}
@@ -118,7 +170,10 @@ export function ChoiceList({ choices }: { choices: readonly ChoiceView[] }) {
           class="hud-btn chamfer dlg-choice"
           data-tone={c.tone}
           aria-disabled={locked ? 'true' : undefined}
-          onClick={() => chooseOption(i)}
+          onPointerDown={() => {
+            downAt.current = performance.now();
+          }}
+          onClick={() => pick(i)}
         >
           <span class="dlg-choice-n" aria-hidden="true">
             {i + 1}

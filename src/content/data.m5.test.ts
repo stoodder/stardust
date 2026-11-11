@@ -328,6 +328,21 @@ describe('M5 map rules', () => {
     ]);
   });
 
+  it('[escort] maxLostPct is a share in (0, 1], never with maxLost, never on a Holdout (R7)', () => {
+    expect(errors(withMap({ ...escort, maxLostPct: 0.53 }), 'escort')).toEqual([]);
+    expect(errors(withMap({ ...escort, maxLostPct: 1 }), 'escort')).toEqual([]);
+    expect(errors(withMap({ ...escort, maxLostPct: 0 }), 'escort')).toHaveLength(1);
+    expect(errors(withMap({ ...escort, maxLostPct: 1.2 }), 'escort')).toHaveLength(1);
+    expect(errors(withMap({ ...escort, maxLost: 6, maxLostPct: 0.5 }), 'escort')).toEqual([
+      '[escort] maps.fx_map.maxLostPct: give maxLost or maxLostPct, not both',
+    ]);
+    expect(
+      errors(withMap({ ...escort, objective: 'holdout', maxLostPct: 0.5 }), 'escort'),
+    ).toContain(
+      '[escort] maps.fx_map.maxLostPct: a Holdout has no defeat (maps.md § 5.2), so no maxLostPct',
+    );
+  });
+
   it('[escort] spawnAllies names a refugee group; setObjective escort needs refugees', () => {
     const spawn = (group: string): Partial<MapDef<IdSpace>> => ({
       ...escort,

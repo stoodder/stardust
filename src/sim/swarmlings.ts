@@ -35,8 +35,10 @@
 //   pinned flyer freed under a ground Den), or the Den holds fire: SwarmLatch `on: false`, `back`.
 // - **The chill** (enemies.md § 2.4): every latched unit adds its tier's `chillPct` to its
 //   target's `swarmChillPct`, capped at SWARMLING_CHILL_CAP; that sum is one Chilled source
-//   (`applyChill` for this movement tick, like a segment: the strongest source wins, a boss takes
-//   half), so it holds exactly while they're on. `latchCount` counts the latched units.
+//   (`applyChill` for one tick, like a segment: the strongest source wins, a boss takes half).
+//   This pass runs after movement, so the chill slows the **next** tick's step: from the tick after
+//   the first latch through the tick the last one lets go (that tick's step comes first), a tick
+//   late but exactly as long as they're on. `latchCount` counts the latched units.
 // - **Back** (`back`): the same speed home; on arrival SwarmHome (the head-count chirp) and a rest.
 import { DOT_TICK_SEC, SWARMLING_CHILL_CAP } from '../content/rules.ts';
 import type { CompiledAttack } from '../content/compiled.ts';

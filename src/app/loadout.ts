@@ -44,6 +44,7 @@ import {
   type LoadoutLinkView,
   type LoadoutPickView,
   type LoadoutProtocolView,
+  type LoadoutRevokedView,
   type LoadoutTowerView,
   type LoadoutView,
 } from '../ui/screens/loadoutView.ts';
@@ -241,12 +242,20 @@ export function openLoadout(mapId: string): boolean {
       required: required.includes(id),
     })),
     towers: pools.towers.map((id) => towerView(content, c, cfg.modifiers, id)),
+    revoked: save.unlocks.revokedTowers.flatMap((id): LoadoutRevokedView[] => {
+      const def = content.towers[id];
+      return def === undefined ? [] : [{ id, name: silkText(def.name), icon: def.sprites.icon }];
+    }),
     abilities: pools.abilities.map((id): LoadoutAbilityView => ({
       id,
       name: silkText(content.abilities[id]!.name), // pool abilities are registered (validateSave)
       icon: content.abilities[id]!.sprites.icon,
       answers: abilityAnswers(id, c.map).map((k) => COUNTER_LABELS[k]),
     })),
+    revokedAbilities: save.unlocks.revokedAbilities.flatMap((id): LoadoutRevokedView[] => {
+      const def = content.abilities[id];
+      return def === undefined ? [] : [{ id, name: silkText(def.name), icon: def.sprites.icon }];
+    }),
     links: linksAmong(pools.towers, Object.values(LINKS)).map(linkView),
     companion:
       slot2 === null || cfg.companion === null

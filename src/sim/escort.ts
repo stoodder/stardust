@@ -16,8 +16,10 @@
 //   youngling) takes no one, and with nobody sheltered yet it takes no one. It costs no integrity
 //   (EnemyLeaked with leak 0, so the leak barks still see it). **A boss at the exit loses an
 //   Escort** (cleanup; enemies.md § 6); a Holdout has no defeat.
-// - **Defeat** also comes when the lost count reaches the map's `maxLost` (`escortLost`): every pip
-//   of the HUD's lost row full is the map lost (D138).
+// - **Defeat** also comes when the lost count reaches the run's limit (`escortLost`): every pip of
+//   the HUD's lost row full is the map lost (D138). The limit (`escortMaxLost`) is the map's
+//   `maxLost`, or its `maxLostPct` of the run's refugees rounded up (⌈pct × total⌉, at least 1:
+//   lost ≥ it exactly when lost ≥ pct × total), so a gated group scales it (D143 R7).
 // - **Perfect** on an Escort is "no refugee lost": a lost refugee forfeits Perfect Core, and a leak
 //   while the map is an Escort doesn't by itself (sim/medals.ts). Pebble never counts.
 // - **Victory** waits for the road to empty: every wave resolved and no refugee still walking
@@ -190,14 +192,31 @@ export function bossAtExit(
   return state.objective === 'escort' && e.def !== null && e.def.boss !== null;
 }
 
-/** Whether an Escort has lost its `maxLost` refugees (cleanup: defeat; D138). */
+/** Rounding slack for `maxLostPct × total` (0.55 × 20 is 11.000000000000002 in floats). */
+const PCT_EPS = 1e-9;
+
+/**
+ * The run's loss limit (the header's "Defeat"; the HUD's pips read it): the map's `maxLost`, else
+ * ⌈`maxLostPct` × `state.refugeeTotal`⌉ (at least 1), else null (no limit).
+ */
+export function escortMaxLost(
+  state: DeepReadonly<Pick<SimState, 'refugeeTotal'>>,
+  map: Pick<CompiledMapDef<IdSpace>, 'maxLost' | 'maxLostPct'>,
+): number | null {
+  if (map.maxLost !== null) return map.maxLost;
+  if (map.maxLostPct === null) return null;
+  const n = Math.ceil(map.maxLostPct * state.refugeeTotal - PCT_EPS);
+  return n > 1 ? n : 1;
+}
+
+/** Whether an Escort has lost its limit of refugees (cleanup: defeat; D138). */
 export function escortLost(
-  state: DeepReadonly<Pick<SimState, 'objective' | 'stats'>>,
-  map: Pick<CompiledMapDef<IdSpace>, 'maxLost'>,
+  state: DeepReadonly<Pick<SimState, 'objective' | 'stats' | 'refugeeTotal'>>,
+  map: Pick<CompiledMapDef<IdSpace>, 'maxLost' | 'maxLostPct'>,
 ): boolean {
-  return (
-    state.objective === 'escort' && map.maxLost !== null && state.stats.refugeesLost >= map.maxLost
-  );
+  if (state.objective !== 'escort') return false;
+  const max = escortMaxLost(state, map);
+  return max !== null && state.stats.refugeesLost >= max;
 }
 
 /** Refugees (Pebble included) still walking or filing in: victory waits for none (cleanup). */

@@ -11,7 +11,16 @@ import {
   detectRadiusTiles,
   type Tower,
 } from '../../sim/index.ts';
-import { previewRing, ringDimmed, ringRangeTiles, type PreviewRing } from './ringRange.ts';
+import { SONG_COLOR } from '../views/choirLook.ts';
+import { RING_COLOR } from '../vfx/overlayTextures.ts';
+import {
+  previewRing,
+  ringDimmed,
+  ringKind,
+  ringRangeTiles,
+  songRing,
+  type PreviewRing,
+} from './ringRange.ts';
 
 const LIVE = compileContent(RAW_CONTENT);
 const RIVET = LIVE.towers.rivet;
@@ -103,5 +112,18 @@ describe('the placement preview ring (D139 S2)', () => {
       rangeTiles: t1.detect!.radiusTiles,
       dimmed: false,
     });
+  });
+});
+
+describe("the Hum Choir's preview ring (review R14)", () => {
+  it("is the song's gold when valid, red when not; every other tower's stays white", () => {
+    expect(songRing(LIVE.towers['choir']!.tiers[0])).toBe(true);
+    for (const id of ['rivet', 'lookout', 'lantern', 'bloom'] as const) {
+      expect(songRing(LIVE.towers[id]!.tiers[0]), id).toBe(false);
+    }
+    expect(ringKind(true, true)).toBe('song');
+    expect(ringKind(false, true)).toBe('invalid');
+    expect(ringKind(true, false)).toBe('valid');
+    expect(RING_COLOR.song).toBe(SONG_COLOR);
   });
 });

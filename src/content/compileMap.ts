@@ -132,6 +132,7 @@ export function compileMap<K extends IdSpace>(
     objective: def.objective,
     meterLabel: def.meterLabel ?? null,
     maxLost: def.maxLost ?? null,
+    maxLostPct: def.maxLostPct ?? null,
     minVoices: def.minVoices ?? null,
     evacuatedFloor: def.evacuatedFloor ?? null,
     cols: def.size.cols,

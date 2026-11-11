@@ -2,7 +2,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   BAR_EASE_MS,
-  BAR_DROP,
+  BAR_H,
+  BAR_LIFT,
   BAR_W,
   barLayout,
   blockerBarColor,
@@ -12,6 +13,7 @@ import {
   type BarLayout,
 } from './BlockerView.ts';
 import { SPRITES } from '../../content/sprites/index.ts';
+import { HEALTH_BAR_GAP_PX } from '../vfx/healthBar.ts';
 
 describe('the blocker bar (T605)', () => {
   it('is green above half, gold to a quarter, red below', () => {
@@ -55,19 +57,22 @@ describe('the blocker bar, polished (T630a)', () => {
     expect(STONE_PIP.filter(([, , c]) => c === 'gold.4')).toHaveLength(1);
   });
 
-  it('sits just under his post plate, clear of its rim', () => {
+  it('sits over his head as a unit bar does, a pixel clear of his standing frame (review R3)', () => {
     const def = SPRITES.find((s) => s.id === 'ally.bricks')!;
-    const frame = def.frames['block_se_0'];
-    const rows: readonly string[] = Array.isArray(frame) ? frame : [];
-    let foot = -1;
-    rows.forEach((r, y) => {
-      if (/[^.]/.test(r)) foot = y;
-    });
-    expect(foot).toBeGreaterThan(def.anchor.y);
-    // The plate's lowest row (plus its outline) is above the bar's frame.
-    const plateBelowPx = foot - def.anchor.y + 1;
-    expect(BAR_DROP - 1).toBeGreaterThan(plateBelowPx);
-    expect(BAR_DROP - 1 - plateBelowPx).toBeLessThanOrEqual(2);
+    // His frame's top above his ground point, the baked 1 px outline included, standing and
+    // straining; kneeling only drops it, so the bar holds where it is.
+    const headPx = (frame: string): number => {
+      const f = def.frames[frame];
+      const rows: readonly string[] = Array.isArray(f) ? f : [];
+      return def.anchor.y - rows.findIndex((r) => /[^.]/.test(r)) + 1;
+    };
+    const head = headPx('block_se_0');
+    // The bar's frame's bottom row is BAR_LIFT − BAR_H px up and his top row `head` px up: one
+    // clear row between (HEALTH_BAR_GAP_PX), as over a unit.
+    expect(BAR_LIFT - BAR_H - head - 1).toBe(HEALTH_BAR_GAP_PX);
+    for (const st of ['strain', 'last']) {
+      expect(headPx(`${st}_se_0`), st).toBeLessThanOrEqual(head);
+    }
   });
 });
 

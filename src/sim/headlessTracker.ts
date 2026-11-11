@@ -3,6 +3,7 @@
 // (conventions.md § Balance sims, #12). Reads the public sim API only.
 import type { IdSpace, ObjectiveKind } from '../content/types.ts';
 import { MAX_LOADOUT } from './config.ts';
+import { escortMaxLost } from './escort.ts';
 import type { SimEvent } from './events.ts';
 import { isBuildableTile, tileIndex } from './grid.ts';
 import { liveTileAt } from './systems/wreckage.ts';
@@ -65,7 +66,8 @@ export interface RunSummary {
   readonly maxAsset: number;
   /**
    * The map's objective at the end (an Escort from the start or by a pivot measures Evacuated;
-   * T305c), its refugees (`escort.total`; 0 without escort data), and its `maxLost` (null: none).
+   * T305c), its refugees (`escort.total`; 0 without escort data), and its loss limit (`escortMaxLost`:
+   * `maxLost`, or `maxLostPct` of the run's refugees; null: none).
    */
   readonly objective: ObjectiveKind;
   readonly escortTotal: number;
@@ -473,7 +475,7 @@ export function createRunTracker<K extends IdSpace>(
         maxAsset: state.maxAsset,
         objective: state.objective,
         escortTotal: state.refugeeTotal,
-        maxLost: map.maxLost,
+        maxLost: escortMaxLost(state, map),
         credits: state.credits,
         lostAtWave,
         stats: {

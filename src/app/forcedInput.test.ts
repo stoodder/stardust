@@ -1,5 +1,6 @@
-// The SEAL's rules in the app (app/forcedInput.ts; T614): the button arms after 700 ms and then
-// only takes a fresh key-down or pointer-down; the keys go through the lock (Enter/Space press,
+// The SEAL's rules in the app (app/forcedInput.ts; T614, D143 R2): the button arms 700 ms after its
+// permission line has typed (Bricks's "Do it, {name}."; at once without one, after
+// PERMISSION_FALLBACK_MS at the latest) and then only takes a fresh key-down or pointer-down; the keys go through the lock (Enter/Space press,
 // Esc/M/Tab pass, game keys are held back, a menu or scene takes everything); the waiting line's
 // clock runs on real time only while the screen shows, plays its scene once after 20 s, and stops
 // under the pause menu; the hum strikes as it shows and every HUM_EVERY_MS; and on the Holdout dev
@@ -12,6 +13,7 @@ import { createHost } from './host.ts';
 import {
   ARM_DELAY_MS,
   HUM_EVERY_MS,
+  PERMISSION_FALLBACK_MS,
   WAIT_LINE_MS,
   bindForcedInput,
   currentSeal,
@@ -19,12 +21,17 @@ import {
   pressForcedInput,
   sealKey,
   startSeal,
+  permissionSceneId,
   waitSceneId,
   type SealDeps,
 } from './forcedInput.ts';
 
-/** A hand-cranked clock and the deps over it (timers fire as `advance` passes them). */
-function fakeWorld() {
+/**
+ * A hand-cranked clock and the deps over it (timers fire as `advance` passes them). `held`: the
+ * permission line hasn't typed yet (`permit` gives it); else permission comes as it shows.
+ */
+function fakeWorld(held = false) {
+  let pending: (() => void) | null = null;
   let now = 1000;
   let nextId = 1;
   const timers = new Map<number, { at: number; fn: () => void; every: number | null }>();
@@ -45,6 +52,14 @@ function fakeWorld() {
     },
     clearInterval: (id) => void timers.delete(id),
     playWaitLine: (map, input) => log.push(`line ${map} ${input}`),
+    awaitPermission(map, input, then) {
+      log.push(`await ${map} ${input}`);
+      if (!held) then();
+      else pending = then;
+      return () => {
+        pending = null;
+      };
+    },
     hum: () => log.push('hum'),
     press: (input) => log.push(`press ${input}`),
     clockRuns: () => runs,
@@ -72,6 +87,11 @@ function fakeWorld() {
       runs = r;
     },
     timers: () => timers.size,
+    permit: () => {
+      const p = pending;
+      pending = null;
+      p?.();
+    },
   };
 }
 
@@ -80,18 +100,22 @@ afterEach(() => {
   forcedInputArmed.value = false;
 });
 
-describe('pressAccepted: armed after 700 ms, then only a fresh down', () => {
-  const shownAt = 0;
+describe('pressAccepted: armed 700 ms after permission, then only a fresh down', () => {
+  const permittedAt = 0;
   it('a down before the button armed never presses, even released after', () => {
-    expect(pressAccepted({ shownAt, downAt: ARM_DELAY_MS - 1, now: 5000 })).toBe(false);
-    expect(pressAccepted({ shownAt, downAt: ARM_DELAY_MS, now: ARM_DELAY_MS })).toBe(true);
+    expect(pressAccepted({ permittedAt, downAt: ARM_DELAY_MS - 1, now: 5000 })).toBe(false);
+    expect(pressAccepted({ permittedAt, downAt: ARM_DELAY_MS, now: ARM_DELAY_MS })).toBe(true);
   });
   it("a key's auto-repeat never presses", () => {
-    expect(pressAccepted({ shownAt, downAt: 3000, now: 3000, repeat: true })).toBe(false);
+    expect(pressAccepted({ permittedAt, downAt: 3000, now: 3000, repeat: true })).toBe(false);
   });
   it("a click with no down behind it (a screen reader's) presses once armed", () => {
-    expect(pressAccepted({ shownAt, downAt: null, now: ARM_DELAY_MS - 1 })).toBe(false);
-    expect(pressAccepted({ shownAt, downAt: null, now: ARM_DELAY_MS })).toBe(true);
+    expect(pressAccepted({ permittedAt, downAt: null, now: ARM_DELAY_MS - 1 })).toBe(false);
+    expect(pressAccepted({ permittedAt, downAt: null, now: ARM_DELAY_MS })).toBe(true);
+  });
+  it('nothing presses before permission, however late', () => {
+    expect(pressAccepted({ permittedAt: null, downAt: 60_000, now: 60_000 })).toBe(false);
+    expect(pressAccepted({ permittedAt: null, downAt: null, now: 60_000 })).toBe(false);
   });
 });
 
@@ -214,6 +238,70 @@ describe('startSeal: arming, the waiting line, and the hum', () => {
 
   it("the waiting line's scene is the map's `<map>_cue_<input>_wait`", () => {
     expect(waitSceneId('a3_m03', 'seal')).toBe('a3_m03_cue_seal_wait');
+    expect(permissionSceneId('a3_m03', 'seal')).toBe('a3_m03_cue_seal');
+  });
+});
+
+describe('startSeal: permission first (D143 R2: "Do it, {name}." before the press)', () => {
+  it('waits for the permission line, then arms ARM_DELAY_MS after it, from a fresh down', () => {
+    const w = fakeWorld(true);
+    const seal = startSeal('a3_m03', 'seal', w.deps);
+    expect(w.log).toContain('await a3_m03 seal');
+    // Bricks's lines take ten seconds: shown all that time, never armed, no press counts.
+    w.advance(10_000);
+    expect(seal.permittedAt).toBeNull();
+    expect(forcedInputArmed.value).toBe(false);
+    expect(seal.keyPress(false)).toBe(false);
+    seal.pointerDown();
+    expect(seal.click()).toBe(false);
+    w.permit();
+    expect(seal.permittedAt).toBe(11_000);
+    w.advance(ARM_DELAY_MS - 1);
+    expect(forcedInputArmed.value).toBe(false);
+    expect(seal.keyPress(false)).toBe(false);
+    w.advance(1);
+    expect(forcedInputArmed.value).toBe(true);
+    expect(seal.keyPress(true)).toBe(false);
+    expect(seal.keyPress(false)).toBe(true);
+    seal.stop();
+  });
+
+  it('the waiting line counts its 20 s from permission, not from the button showing', () => {
+    const w = fakeWorld(true);
+    const seal = startSeal('a3_m03', 'seal', w.deps);
+    w.advance(10_000);
+    expect(seal.waitedMs()).toBe(0);
+    w.permit();
+    w.advance(WAIT_LINE_MS - 1);
+    expect(w.log).not.toContain('line a3_m03 seal');
+    w.advance(1);
+    expect(w.log).toContain('line a3_m03 seal');
+    seal.stop();
+  });
+
+  it('a permission line that never comes arms it after PERMISSION_FALLBACK_MS', () => {
+    const w = fakeWorld(true);
+    const seal = startSeal('a3_m03', 'seal', w.deps);
+    w.advance(PERMISSION_FALLBACK_MS - 1);
+    expect(seal.permittedAt).toBeNull();
+    w.advance(1);
+    expect(seal.permittedAt).toBe(1000 + PERMISSION_FALLBACK_MS);
+    w.advance(ARM_DELAY_MS);
+    expect(forcedInputArmed.value).toBe(true);
+    // A late permission changes nothing.
+    w.permit();
+    expect(seal.permittedAt).toBe(1000 + PERMISSION_FALLBACK_MS);
+    seal.stop();
+    expect(w.timers()).toBe(0);
+  });
+
+  it('stopped before permission: nothing left running', () => {
+    const w = fakeWorld(true);
+    const seal = startSeal('a3_m03', 'seal', w.deps);
+    seal.stop();
+    expect(w.timers()).toBe(0);
+    w.permit();
+    expect(forcedInputArmed.value).toBe(false);
   });
 });
 

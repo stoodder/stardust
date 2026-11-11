@@ -767,7 +767,9 @@ export interface CompiledMapDef<K extends IdSpace = LiveIds> {
   readonly env: string;
   readonly objective: ObjectiveKind;
   readonly meterLabel: MeterLabel | null;
+  /** As authored; read the run's limit with sim/escort.ts `escortMaxLost` (it resolves `maxLostPct`). */
   readonly maxLost: number | null;
+  readonly maxLostPct: number | null;
   readonly minVoices: number | null;
   readonly evacuatedFloor: number | null;
   readonly cols: number;

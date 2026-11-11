@@ -26,11 +26,18 @@ const HIGHLIGHT_COLOR: Readonly<Record<HighlightKind, ColorName>> = {
   salvage: 'gold.4',
 };
 
-/** Ring colors (art-direction §7): `white.0` when valid, `red.3` when the placement is invalid. */
-const RING_COLOR = { valid: 'white.0', invalid: 'red.3' } as const satisfies Record<
-  string,
-  ColorName
->;
+/**
+ * Ring colors (art-direction §7): `white.0` when valid, `red.3` when the placement is invalid, and
+ * a Hum Choir's valid preview in its song's `gold.3` (choirLook.ts `SONG_COLOR`; review R14).
+ */
+export const RING_COLOR = {
+  valid: 'white.0',
+  invalid: 'red.3',
+  song: 'gold.3',
+} as const satisfies Record<string, ColorName>;
+
+/** Which of RING_COLOR a range ring takes. */
+export type RingKind = keyof typeof RING_COLOR;
 
 export interface RingTexture {
   readonly key: string;
@@ -50,14 +57,17 @@ export function highlightTexture(scene: Phaser.Scene, kind: HighlightKind): stri
 
 const ringOrigins = new Map<string, RingTexture>();
 
-/** A range ring texture for `radiusTiles` (snapped to quarter tiles), registering it on first use. */
-export function ringTexture(scene: Phaser.Scene, radiusTiles: number, valid: boolean): RingTexture {
+/**
+ * A range ring texture for `radiusTiles` (snapped to quarter tiles) in `kind`'s color, registering
+ * it on first use.
+ */
+export function ringTexture(scene: Phaser.Scene, radiusTiles: number, kind: RingKind): RingTexture {
   const r = snapRingRadius(radiusTiles);
-  const key = `overlay.ring.${valid ? 'valid' : 'invalid'}.${r}`;
+  const key = `overlay.ring.${kind}.${r}`;
   const cached = ringOrigins.get(key);
   if (cached !== undefined && scene.textures.exists(key)) return cached;
   // An ink.0 under-stroke keeps the ring readable on light ground (D026).
-  const ring = ringImage(r, valid ? RING_COLOR.valid : RING_COLOR.invalid, true, 'ink.0');
+  const ring = ringImage(r, RING_COLOR[kind], true, 'ink.0');
   if (!scene.textures.exists(key)) scene.textures.addCanvas(key, imageToCanvas(ring.image));
   const tex: RingTexture = { key, ox: ring.cx, oy: ring.cy };
   ringOrigins.set(key, tex);

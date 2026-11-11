@@ -256,7 +256,7 @@ export const ACT3_SFX = {
   swarm_latch: {
     gain: 0.2,
     priority: 0,
-    minGapMs: 50,
+    minGapMs: 120, // D143 R17: a family latching is a patter, not a buzz
     maxVoices: 2,
     jitter: 2,
     layers: [
@@ -604,7 +604,7 @@ export const ACT3_SFX = {
    * long metal clang, and the seal hisses shut. The hum stops under it; what follows is silence.
    */
   door_seal: {
-    gain: 0.5,
+    gain: 0.79, // +4 dB over 0.5 (D143 R17: it has to land over the battle)
     priority: 2,
     maxVoices: 1,
     duck: 0.3,

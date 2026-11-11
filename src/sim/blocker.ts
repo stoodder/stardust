@@ -157,7 +157,8 @@ function isLiveBlocker(state: SimState, ctx: TickContext, uid: number): boolean 
   for (let i = 0; i < pool.used; i++) {
     const a = pool.items[i]!; // i < used ≤ items.length
     if (!a.alive || a.uid !== uid) continue;
-    return a.blockCapacity > 0 && blockerPost(ctx.map, a)?.block != null;
+    const post = a.blockCapacity > 0 ? blockerPost(ctx.map, a) : null;
+    return post !== null && post.block !== null;
   }
   return false;
 }

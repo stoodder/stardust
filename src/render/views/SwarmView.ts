@@ -9,8 +9,9 @@
 //   the target's health bar sits (`clingFeetY`), spread a few px by uid so a pile reads as a pile,
 //   nibbling in its `latch` anim (squashed flat, legs splayed), sorted just in front of the body.
 //   On a burrowed unit it rides the mound.
-// Allocation-free per frame: a fixed pool of sprites, set up once; an anim restarts only when the
-// slot's look changes.
+// Allocation-free per frame: a pool of sprites that grows the first time more are out than it holds
+// (the sim's ally pool grows too; uncapped Dens can send more than any fixed count, review B3); an
+// anim restarts only when the slot's look changes (compared field by field, no key string).
 import type * as Phaser from 'phaser';
 import { SPRITES, type SpriteId } from '../../content/sprites/index.ts';
 import type { DeepReadonly } from '../../shared/types.ts';
@@ -53,13 +54,23 @@ export const SWARM_VARIANT: ReadonlyMap<string, string> = new Map(
   }),
 );
 
-/** Enough for four Big Families and a Finders Keepers each (more go unshown). */
-const MAX_SWARM = 40;
+/** Slots made up front: four Big Families and a Finders Keepers each. More are made as needed. */
+export const SWARM_SLOTS = 40;
 
 interface Slot {
   readonly body: Phaser.GameObjects.Sprite;
-  /** Its look now: `<sprite>:<facing>:<held>` ('' while hidden). */
-  look: string;
+  /** Its look now: the sprite (null while hidden), facing, and whether it's latched. */
+  sprite: SpriteId | null;
+  facing: Facing;
+  held: boolean;
+}
+
+/** A swarmling's last grid point and facing (the way it moves), and the frame it was last seen. */
+interface Last {
+  x: number;
+  y: number;
+  facing: Facing;
+  frame: number;
 }
 
 const pos: Vec2 = { x: 0, y: 0 };
@@ -71,7 +82,11 @@ export class SwarmView {
   readonly #reducedMotion: () => boolean;
   readonly #slots: Slot[] = [];
   /** Each ally's last grid point and facing, by uid (the way it moves). */
-  readonly #last = new Map<number, { x: number; y: number; facing: Facing; frame: number }>();
+  readonly #last = new Map<number, Last>();
+  /** Drops a swarmling not seen this frame (Map.forEach's callback, made once). */
+  readonly #forget = (last: Last, uid: number): void => {
+    if (last.frame !== this.#frame) this.#last.delete(uid);
+  };
   #frame = 0;
   #out = 0;
   #latched = 0;
@@ -84,11 +99,12 @@ export class SwarmView {
     this.#ctx = ctx;
     this.#anchors = anchors;
     this.#reducedMotion = reducedMotion;
-    for (let i = 0; i < MAX_SWARM; i++) {
-      const body = ctx.scene.make.sprite({}, false).setVisible(false);
-      ctx.layers.world.add(body);
-      this.#slots.push({ body, look: '' });
-    }
+    for (let i = 0; i < SWARM_SLOTS; i++) this.#grow();
+  }
+
+  /** Sprites made so far (the pool grows when more are out than it holds). */
+  get slots(): number {
+    return this.#slots.length;
   }
 
   /** Swarmlings drawn dashing or running home now, and latched now (the smoke flow's checks). */
@@ -102,12 +118,13 @@ export class SwarmView {
     let n = 0;
     let out = 0;
     let latched = 0;
-    for (let i = 0; i < allies.used && n < MAX_SWARM; i++) {
+    for (let i = 0; i < allies.used; i++) {
       const a = allies.items[i]!; // i < used ≤ items.length
       if (!a.alive || a.mode !== 'owner' || a.kind === null) continue;
       if (a.swarmState === 'home') continue;
       const sprite = a.kind === 'champion' ? SWARM_SPRITES.champion : SWARM_SPRITES.swarmling;
-      const slot = this.#slots[n++]!; // n < MAX_SWARM
+      if (n === this.#slots.length) this.#grow();
+      const slot = this.#slots[n++]!; // n < length: grown above
       const facing = this.#facing(a, frame);
       const held = a.swarmState === 'latched';
       if (held) latched++;
@@ -140,10 +157,10 @@ export class SwarmView {
     this.#out = out;
     this.#latched = latched;
     // Forget the ones gone (went in for good, or their Den sold).
-    for (const [uid, last] of this.#last) if (last.frame !== frame) this.#last.delete(uid);
-    for (; n < MAX_SWARM; n++) {
-      const slot = this.#slots[n]!; // n < MAX_SWARM
-      if (slot.look !== '') this.#hide(slot);
+    this.#last.forEach(this.#forget);
+    for (; n < this.#slots.length; n++) {
+      const slot = this.#slots[n]!; // n < length
+      if (slot.sprite !== null) this.#hide(slot);
     }
   }
 
@@ -176,9 +193,10 @@ export class SwarmView {
    * motion.
    */
   #look(slot: Slot, sprite: SpriteId, facing: Facing, held: boolean): void {
-    const look = `${sprite}:${facing}:${held ? 1 : 0}`;
-    if (slot.look === look) return;
-    slot.look = look;
+    if (slot.sprite === sprite && slot.facing === facing && slot.held === held) return;
+    slot.sprite = sprite;
+    slot.facing = facing;
+    slot.held = held;
     const { sprites } = this.#ctx;
     const latch = held && hasAnim(sprite, `latch_${facing}`);
     const anim = latch ? `latch_${facing}` : `walk_${facing}`;
@@ -188,8 +206,15 @@ export class SwarmView {
     if ((held && !latch) || this.#reducedMotion()) slot.body.anims.pause();
   }
 
+  /** One more pooled sprite, hidden. */
+  #grow(): void {
+    const body = this.#ctx.scene.make.sprite({}, false).setVisible(false);
+    this.#ctx.layers.world.add(body);
+    this.#slots.push({ body, sprite: null, facing: 'se', held: false });
+  }
+
   #hide(slot: Slot): void {
-    slot.look = '';
+    slot.sprite = null;
     slot.body.stop();
     slot.body.setVisible(false);
   }

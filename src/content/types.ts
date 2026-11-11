@@ -953,7 +953,14 @@ export interface MapLayoutDef<K extends IdSpace = LiveIds, Id extends string = s
   /** A script may pivot it (setObjective). */
   readonly objective: ObjectiveKind;
   readonly meterLabel?: MeterLabel;
+  /** An Escort's defeat: losing this many refugees loses the map (D138). At most one of the two. */
   readonly maxLost?: number;
+  /**
+   * An Escort's defeat as a share of the run's refugees (`state.refugeeTotal`, which a gated group
+   * changes): lost ≥ ⌈maxLostPct × total⌉ loses the map (sim/escort.ts `escortMaxLost`; D143 R7).
+   * In (0, 1]; never with `maxLost`.
+   */
+  readonly maxLostPct?: number;
   readonly minVoices?: number;
   readonly evacuatedFloor?: number;
   readonly size: { readonly cols: number; readonly rows: number };

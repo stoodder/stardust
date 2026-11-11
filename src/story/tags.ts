@@ -35,7 +35,11 @@ export interface TagState {
  */
 export type TagEffect =
   | { readonly kind: 'tagged'; readonly uid: number; readonly tower: string; readonly name: string }
-  | { readonly kind: 'untagged'; readonly uid: number; readonly reason: 'sold' | 'revoked' | 'moved' };
+  | {
+      readonly kind: 'untagged';
+      readonly uid: number;
+      readonly reason: 'sold' | 'revoked' | 'moved';
+    };
 
 export interface TagStep {
   readonly state: TagState;

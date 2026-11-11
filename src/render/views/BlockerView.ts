@@ -1,7 +1,10 @@
-// A blocker's view (design/maps.md § 5.4: Bricks at the Gap; T605, polished by T630a). For each
-// live blocker ally (`Ally.blockCapacity` > 0): a small health bar just under his post plate in
-// `overlay` (under him, so it never tangles with the bars over the units he holds, which stand at
-// his shoulder): a 1 px `ink.0` frame round an `ink.2` track, the health in `green.3`, `gold.3` at
+// A blocker's view (design/maps.md § 5.4: Bricks at the Gap; T605, polished by T630a and review R3).
+// For each live blocker ally (`Ally.blockCapacity` > 0): a small health bar over his head in
+// `overlay`, where a unit's bar lives (BAR_LIFT: a pixel clear of his standing frame's top, his
+// cannon included, and held there as he strains and kneels; never on the base of a tower in front
+// of him, where it read as the tower's damage), sorted with the units' bars by his body's screen y
+// (overheadDepth.ts), so a unit he holds in front of him draws its bar over his: a 1 px `ink.0`
+// frame round an `ink.2` track, the health in `green.3`, `gold.3` at
 // or below half, `red.3` at or below a quarter, easing towards `Ally.health` over BAR_EASE_MS (the
 // sim already eases him along the timeline; this smooths what a frame shows, and reduced motion
 // snaps it): as it falls, the part it is losing shows as a `white.0` chip that the fill drains into
@@ -11,12 +14,14 @@
 // close on its feet over an `ink.0` shadow, so the hold reads on Act III's dark road. His health
 // never moves with what he holds (D141), and the bar has no number on it. His stance
 // (`blockerPose`) is AllyView's: braced, straining, down on one knee. Allocation-free per frame:
-// one Graphics, redrawn each frame while something shows.
+// one Graphics, redrawn each frame while something shows. His x-ray outline when a tower stands in
+// front of him is AllyView's (xrayOutline.ts).
 import type * as Phaser from 'phaser';
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
 import type { Ally, Enemy } from '../../sim/index.ts';
 import type { DeepReadonly } from '../../shared/types.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
+import { overheadDepth } from './overheadDepth.ts';
 import type { ViewContext } from './ViewContext.ts';
 
 /** The pools as the view reads them. */
@@ -28,8 +33,11 @@ export interface BlockerPools {
 /** The bar's size and lift over his ground point, in game px. */
 export const BAR_W = 16;
 export const BAR_H = 2;
-/** The bar's top under his ground point: a pixel clear of his post plate's rim (px). */
-export const BAR_DROP = 6;
+/**
+ * The bar's top over his ground point (px): his standing frame reaches 24 px up (23 of sprite and
+ * its outline), then a 1 px gap and the bar's 1 px frame, as a unit's bar sits (vfx/healthBar.ts).
+ */
+export const BAR_LIFT = 28;
 /** A hold bracket's half-width round a held unit's ground point (px). */
 const HOLD_HALF_PX = 6;
 /** How long the shown health takes to catch up with the sim's (ms). */
@@ -124,6 +132,9 @@ const C = {
   'gold.3': hex('gold.3'),
   'red.3': hex('red.3'),
 } as const;
+/** The hold brackets' two passes: the `ink.0` shadow a pixel down, then the `white.1` brackets. */
+const BRACKET_COLOR: readonly number[] = [C.frame, C.held];
+const BRACKET_DROP: readonly number[] = [1, 0];
 
 export class BlockerView {
   readonly #ctx: ViewContext;
@@ -171,6 +182,7 @@ export class BlockerView {
       }
       this.#shownHealth = easeBar(this.#shownHealth, a.health, dtMs, this.#reducedMotion());
       this.#bar(a.x, a.y, a.health, this.#shownHealth);
+      g.setDepth(overheadDepth(pos.y, a.uid));
       this.shown++;
       this.#held(a.uid, pools.enemies);
       break; // one blocker a map (Bricks)
@@ -181,7 +193,7 @@ export class BlockerView {
     const g = this.#g;
     gridToScreen(x, y, this.#ctx.origin, pos);
     const left = Math.round(pos.x - BAR_W / 2);
-    const top = Math.round(pos.y + BAR_DROP);
+    const top = Math.round(pos.y - BAR_LIFT);
     g.fillStyle(C.frame, 1);
     g.fillRect(left - 1, top - 1, BAR_W + 2, BAR_H + 2);
     g.fillStyle(C.track, 1);
@@ -208,11 +220,9 @@ export class BlockerView {
       const x = Math.round(pos.x);
       const y = Math.round(pos.y) + 1;
       // Corner brackets closing on its feet: [ ], each over its `ink.0` shadow a pixel down.
-      for (const [c, oy] of [
-        [C.frame, 1],
-        [C.held, 0],
-      ] as const) {
-        g.fillStyle(c, 1);
+      for (let k = 0; k < BRACKET_COLOR.length; k++) {
+        const oy = BRACKET_DROP[k]!; // k < length (the two are paired)
+        g.fillStyle(BRACKET_COLOR[k]!, 1);
         g.fillRect(x - HOLD_HALF_PX, y + oy - 2, 1, 3);
         g.fillRect(x - HOLD_HALF_PX, y + oy, 2, 1);
         g.fillRect(x + HOLD_HALF_PX, y + oy - 2, 1, 3);

@@ -38,7 +38,7 @@ export { projectedAura } from './enemyAbilities/shieldAura.ts';
 export { projectedHaste } from './enemyAbilities/hasteAura.ts';
 export { gatherMaxHp, gatherScale, gatherTelling } from './enemyAbilities/gather.ts';
 export { riftStatus, type RiftStatus } from './rifts.ts';
-export { escortTotal, gatedFlagDefaults } from './escort.ts'; // T605, T612
+export { escortMaxLost, escortTotal, gatedFlagDefaults } from './escort.ts'; // T605, T612; R7
 export { blockable, blockerLevel, BLOCK_FRONT_TILES } from './blocker.ts'; // T605
 export { previewHidden, selectRevokedClass, slotRevoked, type ScriptModifier } from './revoke.ts'; // T606
 // Detection (T406): whether a cloaked unit is hidden now (render's shimmer), and a detector's ring.

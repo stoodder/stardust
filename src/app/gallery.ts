@@ -8,8 +8,7 @@
 // Ward kneeling over the road as refugees file past and a Prism beaming; at full dark, a lamp's
 // pool, a beaming Prism's lit disc and a resting one's ghost, composited with the game's own
 // night (vfx/darknessPixels.ts, vfx/glowPixels.ts) so the trail shows the night as play draws it.
-import { ENV_PALETTE_IDS, ENV_PALETTES, ENV_SKY } from '../content/palettes/env.ts';
-import { rgbOf } from '../content/palettes/master.ts';
+import { ENV_PALETTE_IDS } from '../content/palettes/env.ts';
 import { PALETTES } from '../content/palettes/index.ts';
 import { SPRITES, type SpriteId } from '../content/sprites/index.ts';
 import { tetherDir } from '../content/sprites/fx/link_tether.ts';
@@ -27,7 +26,6 @@ import {
 import { imageToCanvas } from '../render/sprites/canvas.ts';
 import type { RgbaImage } from '../render/sprites/rasterize.ts';
 import { APRON_RINGS } from '../content/sprites/tiles/apron.ts';
-import type { TileChar } from '../content/types.ts';
 import {
   apronCells,
   dressTile,
@@ -57,18 +55,9 @@ import {
   PROP_GLOWS,
 } from '../render/vfx/glowPixels.ts';
 import { GHOST_REST_ALPHA } from '../render/views/LightGhostView.ts';
+import { backdrop, cssOf, el, FLY_LIFT_PX, glowOf, isTileChar, type Placed } from './galleryKit.ts';
+import { m6Corner, M6_CORNERS } from './galleryM6.ts';
 import { logError } from './log.ts';
-
-function el<K extends keyof HTMLElementTagNameMap>(
-  tag: K,
-  cls?: string,
-  text?: string,
-): HTMLElementTagNameMap[K] {
-  const e = document.createElement(tag);
-  if (cls !== undefined) e.className = cls;
-  if (text !== undefined) e.textContent = text;
-  return e;
-}
 
 function hasOpaque(img: RgbaImage): boolean {
   for (let i = 3; i < img.data.length; i += 4) if ((img.data[i] ?? 0) > 0) return true;
@@ -441,8 +430,6 @@ const DIORAMA_MAP = [
   '..o.C....',
 ];
 
-const isTileChar = (c: string): c is TileChar => '#o^+x.SC'.includes(c);
-
 /** The diorama as a map grid, so groundTiles dresses it exactly as GroundView dresses a map. */
 const DIORAMA_GRID: GroundGrid = {
   cols: DIORAMA_MAP[0]?.length ?? 0,
@@ -512,17 +499,6 @@ function headFrame(
   const named = [facing, look.startsWith('spec') ? look : 't2', ...rest].join('_');
   return baked.get(id)?.frameNames.includes(named) === true ? named : frame;
 }
-
-/** Flyers draw this far above their ground point (render/views/EnemyView.ts). */
-const FLY_LIFT_PX = 12;
-
-type Placed = readonly [
-  spriteId: SpriteId,
-  frame: string,
-  gx: number,
-  gy: number,
-  variant?: string,
-];
 
 /**
  * The diorama's wreckage (T311b): the drone is half way through the tile at (0, 5); the one at
@@ -823,12 +799,6 @@ const CORNER_TARGET = [8.1, 2.55] as const;
 /** The beam leaves the crystal this high over its tile (render/views/BeamView.ts MUZZLE_PX). */
 const CORNER_MUZZLE_PX = 14;
 
-/** A master colour as a CSS colour. */
-function cssOf(name: Parameters<typeof rgbOf>[0]): string {
-  const k = rgbOf(name);
-  return `#${((k.r << 16) | (k.g << 8) | k.b).toString(16).padStart(6, '0')}`;
-}
-
 /**
  * A canvas the size of the corner that is `on` where `mask` is opaque (MASK_DARK) and `off`
  * elsewhere (null: clear), for compositing one of the night's images over the picture.
@@ -1071,55 +1041,6 @@ function m5Corner(
     octx.drawImage(c, 0, 0, out.width, out.height);
   }
   return out;
-}
-
-// prettier-ignore
-const BAYER4 = [
-  [0, 8, 2, 10],
-  [12, 4, 14, 6],
-  [3, 11, 1, 9],
-  [15, 7, 13, 5],
-] as const;
-
-/**
- * The diorama's backdrop: the env's sky gradient as stepped bands across the top (4×4 ordered
- * dither at each seam), over its `shade` below, so palettes that share ground ramps
- * (act2.gold, act2.dusk) still read apart.
- */
-function backdrop(ctx: CanvasRenderingContext2D, env: EnvPaletteId, w: number, h: number): void {
-  const sky = ENV_SKY[env];
-  const bands = [...sky, ENV_PALETTES[env].outline];
-  const bandH = Math.round((h * 0.6) / sky.length);
-  // Written as pixels in one ImageData (a fillRect per pixel is slow at the dioramas' size).
-  const img = ctx.createImageData(w, h);
-  const data = img.data;
-  for (let y = 0; y < h; y++) {
-    const band = Math.min(Math.floor(y / bandH), bands.length - 1);
-    const next = Math.min(band + 1, bands.length - 1);
-    // Over a band's last 4 rows, the ordered dither steps 0 → 75% into the next band.
-    const threshold = Math.max(0, y - band * bandH - (bandH - 4)) * 4;
-    const row = BAYER4[y % 4] ?? BAYER4[0];
-    const on = rgbOf(bands[band] ?? 'ink.0');
-    const off = rgbOf(bands[next] ?? 'ink.0');
-    for (let x = 0; x < w; x++) {
-      const c = (row[x % 4] ?? 0) < threshold ? off : on;
-      const i = (y * w + x) * 4;
-      data[i] = c.r;
-      data[i + 1] = c.g;
-      data[i + 2] = c.b;
-      data[i + 3] = 255;
-    }
-  }
-  ctx.putImageData(img, 0, 0);
-}
-
-function glowOf(
-  baked: ReadonlyMap<string, BakedSprite>,
-  id: SpriteId,
-  frame: string,
-): BakedFrame | undefined {
-  const key = glowKey(frameKey(id, DEFAULT_VARIANT, frame));
-  return baked.get(id)?.frames.find((f) => f.key === key);
 }
 
 /**

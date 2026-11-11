@@ -1,16 +1,20 @@
 // The forced single input in the app (design/core-loop.md § 2.11: A3M3's SEAL; T605's hook, T614's
 // screen). The HUD's `forcedInput` follows the sim's pending input (ForcedInputRequested /
 // ForcedInputResolved, and the state as the battle binds). While it waits:
-// - **Armed late.** Its one button takes no press for ARM_DELAY_MS, and after that only from a
-//   key-down or pointer-down that began after it armed (`pressAccepted`), so a key held or mashed
-//   through the cue, or a click already on its way, can't seal the door.
+// - **Armed after permission.** The button shows as the input is requested, but it waits for the
+//   map's permission line: the last line of its `<map>_cue_<id>` scene (A3M3: Bricks's "Do it,
+//   {name}.") typed out on the comms panel (shown, under fast text; `whenSceneTyped`; D143 R2). With
+//   no such scene, or dialogue off, permission is given as it shows; a line that never comes gives
+//   it after PERMISSION_FALLBACK_MS. Then it takes no press for ARM_DELAY_MS more, and after that
+//   only from a key-down or pointer-down that began after it armed (`pressAccepted`), so a key held
+//   or mashed through the cue, or a click already on its way, can't seal the door.
 // - **Every control locked.** The HUD is inert but for the Menu and the speaker (ui/hud/index.tsx),
 //   a veil takes clicks off the playfield, and the keys go through `sealKey` first (a capture
 //   listener ahead of app/keys.ts): Enter or Space press the button (it has the focus), Esc opens
 //   the pause menu, M mutes, Tab moves between the three, and every other game key is held back.
 //   With the pause menu or a scene open, keys go to them.
 // - **The line after 20 s.** A story timer on real time (never sim ticks), started as the input is
-//   requested and running only while it shows (not under the pause menu, not in a hidden tab), plays
+//   permitted (the same moment the arming counts from) and running only while it shows (not under the pause menu, not in a hidden tab), plays
 //   the map's `<map>_cue_<id>_wait` scene once after WAIT_LINE_MS (A3M3: Bricks's "Kid. It's okay.").
 // - **The hum.** HUM_SFX (`door_hum`: Bricks low, Pebble above; T650) re-struck every
 //   HUM_EVERY_MS of real time while it waits; the audio side holds the music under it and cuts it
@@ -27,16 +31,26 @@ import { forcedInput, forcedInputArmed } from '../ui/hud/forcedInputState.ts';
 import { pauseMenu } from '../ui/pause/state.ts';
 import { playSfx } from './audio.ts';
 import { cancel, issue } from './commands.ts';
-import { dialogueEnabled, playScene } from './dialogue.ts';
+import { dialogueEnabled, playScene, whenSceneTyped } from './dialogue.ts';
 import type { Host } from './host.ts';
 
 /** How long the button waits before it takes a press (ms; D141's 700 ms, as C3's options). */
 export const ARM_DELAY_MS = 700;
-/** Real time before the waiting line plays (ms; act3.md § A3M3: "After 20 s, once"). */
+/**
+ * The most real time the button waits for its permission line (ms): a cue that never typed (cut,
+ * or its `when` failing) can't leave it unarmed. The comms panel's stale time (COMMS_STALE_MS).
+ */
+export const PERMISSION_FALLBACK_MS = 15_000;
+/** Real time before the waiting line plays (ms; act3.md § A3M3: "After 20 s, once"), from permission. */
 export const WAIT_LINE_MS = 20_000;
 /** The hum's sound and how often it is struck again while the input waits (ms). */
 export const HUM_SFX = 'door_hum';
 export const HUM_EVERY_MS = 3000;
+
+/** The scene whose last line permits the press: `<map>_cue_<input>` (A3M3: `a3_m03_cue_seal`). */
+export function permissionSceneId(map: string, input: string): string {
+  return `${map}_cue_${input}`;
+}
 
 /** The scene the waiting line plays: `<map>_cue_<input>_wait` (A3M3: `a3_m03_cue_seal_wait`). */
 export function waitSceneId(map: string, input: string): string {
@@ -45,17 +59,17 @@ export function waitSceneId(map: string, input: string): string {
 
 /**
  * Whether a press counts: from a down (key or pointer) at `downAt` that began once the button armed
- * (`shownAt + ARM_DELAY_MS`) and isn't a key's auto-repeat; a click with no down behind it (a
- * screen reader's) counts once the button is armed `now`.
+ * (`permittedAt + ARM_DELAY_MS`) and isn't a key's auto-repeat; a click with no down behind it (a
+ * screen reader's) counts once the button is armed `now`. Never before permission (null).
  */
 export function pressAccepted(p: {
-  readonly shownAt: number;
+  readonly permittedAt: number | null;
   readonly downAt: number | null;
   readonly now: number;
   readonly repeat?: boolean;
 }): boolean {
-  const armedAt = p.shownAt + ARM_DELAY_MS;
-  if (p.repeat === true) return false;
+  if (p.permittedAt === null || p.repeat === true) return false;
+  const armedAt = p.permittedAt + ARM_DELAY_MS;
   return p.downAt === null ? p.now >= armedAt : p.downAt >= armedAt;
 }
 
@@ -96,6 +110,11 @@ export interface SealDeps {
   clearInterval(id: TimerId): void;
   /** Plays the waiting line's scene, if the map has one (once). */
   playWaitLine(map: string, input: string): void;
+  /**
+   * Calls `then` once the press is permitted (the permission line typed; at once without one).
+   * Returns the cancel.
+   */
+  awaitPermission(map: string, input: string, then: () => void): () => void;
   /** Strikes the hum once. */
   hum(): void;
   /** Issues the press. */
@@ -114,6 +133,14 @@ const defaultDeps: SealDeps = {
     const scene = SCENES[waitSceneId(map, input)];
     if (scene !== undefined && dialogueEnabled()) playScene(scene);
   },
+  awaitPermission(map, input, then) {
+    const id = permissionSceneId(map, input);
+    if (SCENES[id] === undefined || !dialogueEnabled()) {
+      then();
+      return () => {};
+    }
+    return whenSceneTyped(id, then);
+  },
   hum() {
     if (isSfxId(HUM_SFX)) playSfx(HUM_SFX);
   },
@@ -128,6 +155,8 @@ const defaultDeps: SealDeps = {
 export interface Seal {
   readonly input: string;
   readonly shownAt: number;
+  /** When the press was permitted (its arming and the waiting line count from it), else null. */
+  readonly permittedAt: number | null;
   /** Whether the waiting line has played. */
   readonly waited: boolean;
   /** Real time the waiting line's clock has run (ms). */
@@ -147,16 +176,15 @@ export interface Seal {
 /** Shows forced input `input` on map `map` (app state is left to the caller). */
 export function startSeal(map: string, input: string, deps: SealDeps = defaultDeps): Seal {
   const shownAt = deps.now();
+  let permittedAt: number | null = null;
   let downAt: number | null = null;
   let pressed = false;
   let waited = false;
   let ranMs = 0;
   let runningSince: number | null = null;
   let waitTimer: TimerId | null = null;
+  let armTimer: TimerId | null = null;
   forcedInputArmed.value = false;
-  const armTimer = deps.setTimeout(() => {
-    forcedInputArmed.value = true;
-  }, ARM_DELAY_MS);
   deps.hum();
   const humTimer = deps.setInterval(() => deps.hum(), HUM_EVERY_MS);
 
@@ -167,7 +195,7 @@ export function startSeal(map: string, input: string, deps: SealDeps = defaultDe
     waitTimer = null;
   };
   const runClock = (): void => {
-    if (waited || runningSince !== null) return;
+    if (permittedAt === null || waited || runningSince !== null) return;
     runningSince = deps.now();
     waitTimer = deps.setTimeout(
       () => {
@@ -185,11 +213,32 @@ export function startSeal(map: string, input: string, deps: SealDeps = defaultDe
     deps.press(input);
     return true;
   };
-  if (deps.clockRuns()) runClock();
+  // Permission: the arming's delay and the waiting line's clock both start from it.
+  let fallback: TimerId | null = null;
+  let cancelPermission = (): void => {};
+  const permit = (): void => {
+    if (permittedAt !== null) return;
+    permittedAt = deps.now();
+    if (fallback !== null) deps.clearTimeout(fallback);
+    fallback = null;
+    armTimer = deps.setTimeout(() => {
+      armTimer = null;
+      forcedInputArmed.value = true;
+    }, ARM_DELAY_MS);
+    if (deps.clockRuns()) runClock();
+  };
+  fallback = deps.setTimeout(() => {
+    fallback = null;
+    permit();
+  }, PERMISSION_FALLBACK_MS);
+  cancelPermission = deps.awaitPermission(map, input, permit);
 
   return {
     input,
     shownAt,
+    get permittedAt() {
+      return permittedAt;
+    },
     get waited() {
       return waited;
     },
@@ -200,18 +249,20 @@ export function startSeal(map: string, input: string, deps: SealDeps = defaultDe
     click() {
       const down = downAt;
       downAt = null;
-      return tryPress(pressAccepted({ shownAt, downAt: down, now: deps.now() }));
+      return tryPress(pressAccepted({ permittedAt, downAt: down, now: deps.now() }));
     },
     keyPress(repeat) {
       const now = deps.now();
-      return tryPress(pressAccepted({ shownAt, downAt: now, now, repeat }));
+      return tryPress(pressAccepted({ permittedAt, downAt: now, now, repeat }));
     },
     clockChanged() {
       if (deps.clockRuns()) runClock();
       else pauseClock();
     },
     stop() {
-      deps.clearTimeout(armTimer);
+      cancelPermission();
+      if (fallback !== null) deps.clearTimeout(fallback);
+      if (armTimer !== null) deps.clearTimeout(armTimer);
       deps.clearInterval(humTimer);
       pauseClock();
       forcedInputArmed.value = false;
