@@ -94,6 +94,17 @@ export function idleAnim(id: SpriteId, idle: string, spec: SpecLetter | null): s
   return hasAnim(id, name) ? name : idle;
 }
 
+/** Whether a sprite authors a frame named `frame` (mirrored frames from anims aren't counted). */
+export function hasFrame(id: SpriteId, frame: string): boolean {
+  const def = BY_ID.get(id);
+  return def !== undefined && Object.hasOwn(def.frames, frame);
+}
+
+/** Whether a sprite bakes the palette variant `palette` (its `variants`). */
+export function hasPaletteVariant(id: SpriteId, palette: string): boolean {
+  return BY_ID.get(id)?.variants?.some((v) => v === palette) === true;
+}
+
 /** Whether a sprite authors (or mirrors) an anim named `anim`. */
 export function hasAnim(id: SpriteId, anim: string): boolean {
   const def = BY_ID.get(id);

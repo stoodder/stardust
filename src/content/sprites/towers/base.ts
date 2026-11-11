@@ -99,3 +99,52 @@ export function everglowSpecBase(
   plot(g, cx - 1, cy + 4, '+');
   return rows(g);
 }
+
+/**
+ * The jailbreak's scratched-out logo plate (art-direction § Faction rules; towers.md § 9): a
+ * `grime.3` cross scratched over the chevron (`X`), and beside it one bolted `brass` Vrell patch
+ * (`Y`, its rivet `Z`). Merge into an Everglow base's legend.
+ */
+export const JAILBREAK_LEGEND = { X: 'grime.3', Y: 'brass.3', Z: 'brass.1' } as const;
+
+/** The patch's pixels round the logo plate: [x, y, char], in the base's authored pixels. */
+const JAILBREAK_PATCH: readonly (readonly [number, number, string])[] = [
+  // The cross scratched over the chevron, the chevron's own pixels painted over.
+  [5 + OX, 12 + OY, 'X'],
+  [6 + OX, 12 + OY, '2'],
+  [7 + OX, 12 + OY, 'X'],
+  [5 + OX, 13 + OY, '2'],
+  [6 + OX, 13 + OY, 'X'],
+  [7 + OX, 13 + OY, '2'],
+  [5 + OX, 14 + OY, 'X'],
+  [6 + OX, 14 + OY, '2'],
+  [7 + OX, 14 + OY, 'X'],
+  // The brass patch bolted on beside it.
+  [9 + OX, 12 + OY, 'Y'],
+  [10 + OX, 12 + OY, 'Y'],
+  [9 + OX, 13 + OY, 'Y'],
+  [10 + OX, 13 + OY, 'Z'],
+  [9 + OX, 14 + OY, 'Y'],
+];
+
+/**
+ * An Everglow base's frames plus each one's jailbroken twin (`t1_jb`, …, `spec_b_jb`): the same
+ * frame with the plate patched over (JAILBREAK_PATCH), only where the plate or the bare left face
+ * shows (a spec kit standing over the face keeps its pixels). Render draws the twins in the
+ * `everglow.jailbroken` palette for a class in the save's `unlocks.jailbroken`.
+ */
+export function withJailbreak<const F extends Readonly<Record<string, readonly string[]>>>(
+  frames: F,
+): F & Readonly<Record<`${string & keyof F}_jb`, string[]>> {
+  const out: Record<string, readonly string[]> = { ...frames };
+  for (const [name, src] of Object.entries(frames)) {
+    const g = src.map((r) => r.split(''));
+    for (const [x, y, ch] of JAILBREAK_PATCH) {
+      const here = g[y]?.[x];
+      if (here === '2' || here === '7' || here === '8') g[y]![x] = ch; // y in range: `here` is set
+    }
+    out[`${name}_jb`] = g.map((r) => r.join(''));
+  }
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- every key of F plus its `_jb` twin was set above
+  return out as F & Readonly<Record<`${string & keyof F}_jb`, string[]>>;
+}

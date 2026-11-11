@@ -7,7 +7,16 @@
 // (`spin_spec_a`/`_b`).
 import { defineSprite } from '../defineSprite.ts';
 import { disc, grid, isoBox, line, plot, rows, type CharGrid } from '../helpers.ts';
-import { BASE_ANCHOR, BASE_H, BASE_MOUNT, BASE_W, everglowBase, everglowSpecBase } from './base.ts';
+import {
+  BASE_ANCHOR,
+  BASE_H,
+  BASE_MOUNT,
+  BASE_W,
+  everglowBase,
+  everglowSpecBase,
+  JAILBREAK_LEGEND,
+  withJailbreak,
+} from './base.ts';
 
 const W = 24;
 const H = 24;
@@ -125,17 +134,17 @@ export const towerSprinkler = defineSprite({
   anchor: BASE_ANCHOR,
   mount: BASE_MOUNT,
   palette: 'everglow',
-  variants: ['everglow.worn'],
+  variants: ['everglow.worn', 'everglow.jailbroken'],
   outline: 'auto',
   glow: { slots: ['e0', 'e1'], radius: 1 },
-  legend: { B: 'blue.4', C: 'white.1' },
-  frames: {
+  legend: { B: 'blue.4', C: 'white.1', ...JAILBREAK_LEGEND },
+  frames: withJailbreak({
     t1: everglowBase(1, '8'),
     t2: everglowBase(2, '8'),
     t3: everglowBase(3, '8'),
     spec_a: everglowSpecBase('8', freezeKit),
     spec_b: everglowSpecBase('8', cloudKit),
-  },
+  }),
 });
 
 export const towerSprinklerHead = defineSprite({
@@ -143,7 +152,7 @@ export const towerSprinklerHead = defineSprite({
   size: { w: W, h: H },
   anchor: { x: CX, y: CY },
   palette: 'everglow',
-  variants: ['everglow.worn'],
+  variants: ['everglow.worn', 'everglow.jailbroken'],
   outline: 'auto',
   // Frost: the one non-Everglow hue on it, fixed across palettes.
   legend: { B: 'blue.4', C: 'white.1' },

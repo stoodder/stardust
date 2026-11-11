@@ -13,10 +13,21 @@
 //   for its last FOLD_MS it folds away: its head sinks into its base, then its base into the ground,
 //   each cropped at its own foot as it goes (`powerDownLook`, `foldSinkPx`), whole pixels only.
 //   Under reduced motion nothing sinks: it fades down the stepped-alpha ladder instead.
+// - **Jailbroken** (towers.md § 9; T740b): a class in the save's `unlocks.jailbroken` (the revoked
+//   Everglow class Zibzab's firmware brought back) draws its base's `_jb` twin (the logo plate
+//   scratched out, a brass patch bolted on) and its base and head in the `everglow.jailbroken`
+//   palette (worn paint, Vrell-orange status lights), selected and glow alike (`jailbreakLook`). A
+//   sprite without the twin or the variant draws as it always did.
 import type { ColorName } from '../../content/palettes/master.ts';
 import type { SpriteId } from '../../content/sprites/index.ts';
 import { STEPPED_ALPHA } from '../vfx/fxTiming.ts';
-import { hasAnim, idleAnim, type SpecLetter } from './spriteInfo.ts';
+import {
+  hasAnim,
+  hasFrame,
+  hasPaletteVariant,
+  idleAnim,
+  type SpecLetter,
+} from './spriteInfo.ts';
 
 /**
  * The voice the battle's towers sing in, from the run's story flags (`SimConfig.scriptFlags`):
@@ -84,4 +95,59 @@ export function foldSinkPx(
     head: Math.round(Math.min(1, 2 * f) * headH),
     base: Math.round(Math.max(0, 2 * f - 1) * baseH),
   };
+}
+
+/** The jailbroken palette (content/palettes/factions.ts). */
+export const JAILBROKEN_PALETTE = 'everglow.jailbroken';
+/** The suffix of a base frame's jailbroken twin (content/sprites/towers/base.ts `withJailbreak`). */
+export const JAILBROKEN_FRAME_SUFFIX = '_jb';
+
+/** How a tower draws: its palette variant, and the suffix its base frames take. */
+export interface TowerPalette {
+  /** The base's palette variant (`default`, or `everglow.jailbroken`). */
+  readonly base: string;
+  /** The head's (`default` where the head doesn't bake the jailbroken palette). */
+  readonly head: string;
+  /** Appended to the base's tier frame (`_jb`, or ''). */
+  readonly frameSuffix: string;
+}
+
+const PLAIN: TowerPalette = { base: 'default', head: 'default', frameSuffix: '' };
+
+/**
+ * A tower's look for a base sprite `baseId` (and head `headId`) when the run's jailbroken classes
+ * draw from `jailbrokenBases` (their base sprite ids): jailbroken where the base is among them and
+ * authors the `_jb` twins and bakes the palette, else plain.
+ */
+export function jailbreakLook(
+  baseId: SpriteId,
+  headId: SpriteId | null,
+  jailbrokenBases: ReadonlySet<string>,
+): TowerPalette {
+  if (
+    !jailbrokenBases.has(baseId) ||
+    !hasFrame(baseId, `t1${JAILBROKEN_FRAME_SUFFIX}`) ||
+    !hasPaletteVariant(baseId, JAILBROKEN_PALETTE)
+  ) {
+    return PLAIN;
+  }
+  const head =
+    headId !== null && hasPaletteVariant(headId, JAILBROKEN_PALETTE) ? JAILBROKEN_PALETTE : 'default';
+  return { base: JAILBROKEN_PALETTE, head, frameSuffix: JAILBROKEN_FRAME_SUFFIX };
+}
+
+/**
+ * The base sprite ids of the classes a save holds jailbroken (`unlocks.jailbroken`), from the
+ * content's towers: the set `jailbreakLook` reads. Unknown ids are skipped.
+ */
+export function jailbrokenBaseIds(
+  towers: Readonly<Record<string, { readonly sprites: { readonly base: string } } | undefined>>,
+  jailbroken: readonly string[],
+): ReadonlySet<string> {
+  const out = new Set<string>();
+  for (const id of jailbroken) {
+    const t = Object.hasOwn(towers, id) ? towers[id] : undefined;
+    if (t !== undefined) out.add(t.sprites.base);
+  }
+  return out;
 }

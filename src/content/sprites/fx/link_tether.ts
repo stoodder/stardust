@@ -6,6 +6,10 @@
 //   - Sitting Ducks (Thumper + Sprinkler): a dashed `blue` line, the chill, with white beads.
 //   - Conductive (Zapcoil + Sprinkler): a zigzag `teal.3` line, water carrying a spark, kinked
 //     1 px every 2 pixels so it reads electric, with white beads (T312a).
+//   - Acid Rain (Thumper + Gloop): a solid `green.3` line that drips, a `green.4` drop hanging
+//     under it every 4 pixels, with `orange.4` beads (the Thumper's shells) (T740b).
+//   - Sticky Flak (Skyhook + Gloop): a thick, gooey `green.3` line, 2 px, its lower strand
+//     `green.2`, with `violet.4` beads (the Skyhook's flak) (T740b).
 // One frame set per link and direction. All frames share one canvas; the anchor is tower A's
 // ground point (its tile center), so the view places every frame at A and never measures it.
 import { defineSprite } from '../defineSprite.ts';
@@ -33,7 +37,19 @@ const STYLE = {
   crossfire: { body: 'd', bead: 'e', dashed: false, zigzag: false },
   sitting_ducks: { body: 'B', bead: 'w', dashed: true, zigzag: false },
   conductive: { body: 'T', bead: 'w', dashed: false, zigzag: true },
-} as const;
+  acid_rain: { body: 'G', bead: 'e', dashed: false, zigzag: false, drip: true },
+  sticky_flak: { body: 'G', bead: 'V', dashed: false, zigzag: false, thick: true },
+} as const satisfies Record<
+  string,
+  {
+    body: string;
+    bead: string;
+    dashed: boolean;
+    zigzag: boolean;
+    drip?: boolean;
+    thick?: boolean;
+  }
+>;
 export type TetherLink = keyof typeof STYLE;
 
 /**
@@ -89,7 +105,7 @@ function arc(dir: TetherDir): (readonly [number, number])[] {
 }
 
 function tether(link: TetherLink, dir: TetherDir, phase: number): string[] {
-  const s = STYLE[link];
+  const s: (typeof STYLE)[TetherLink] & { drip?: boolean; thick?: boolean } = STYLE[link];
   const g: CharGrid = grid(W, H);
   const pts = arc(dir);
   // The under-stroke first, so the line overwrites it wherever the arc doubles back.
@@ -103,7 +119,18 @@ function tether(link: TetherLink, dir: TetherDir, phase: number): string[] {
   const ky = (i: number): number => (dir === 's' ? 0 : -kink(i));
   pts.forEach(([x, y], i) => {
     if (!gap(i)) plot(g, x + kx(i), y + ky(i) + 1, 'x');
+    if (s.thick === true) plot(g, x, y + 2, 'x');
   });
+  // A thick line's lower strand, under the line itself.
+  if (s.thick === true) for (const [x, y] of pts) plot(g, x, y + 1, 'H');
+  // A dripping line's drops: one hanging a pixel under it every PERIOD pixels, rimmed in ink.
+  if (s.drip === true) {
+    pts.forEach(([x, y], i) => {
+      if (i === 0 || i === pts.length - 1 || (i + phase) % PERIOD !== 2) return;
+      plot(g, x, y + 1, 'A');
+      plot(g, x, y + 2, 'x');
+    });
+  }
   pts.forEach(([x, y], i) => {
     const bead = (i - phase + PERIOD * 64) % PERIOD === 0;
     if (gap(i) && !bead) return;
@@ -114,7 +141,13 @@ function tether(link: TetherLink, dir: TetherDir, phase: number): string[] {
   return rows(g);
 }
 
-const LINKS: readonly TetherLink[] = ['crossfire', 'sitting_ducks', 'conductive'];
+const LINKS: readonly TetherLink[] = [
+  'crossfire',
+  'sitting_ducks',
+  'conductive',
+  'acid_rain',
+  'sticky_flak',
+];
 const DIRS: readonly TetherDir[] = ['e', 'se', 'ne', 's'];
 
 const frames: Record<string, string[]> = {};
@@ -136,7 +169,7 @@ export const fxLinkTether = defineSprite({
   size: { w: W, h: H },
   anchor: { x: OX, y: OY },
   palette: 'everglow',
-  legend: { B: 'blue.3', T: 'teal.3' },
+  legend: { B: 'blue.3', T: 'teal.3', G: 'green.3', A: 'green.4', H: 'green.2', V: 'violet.4' },
   frames,
   anims,
 });

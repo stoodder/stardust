@@ -136,6 +136,10 @@ export function noCounterChecks<K extends IdSpace>(
       : "by the map's override";
   for (const counter of Object.keys(b.noCounterBuilds)) {
     const label = `noCounter:${counter}`;
+    // A counter the map exempts (BuildsDef.counterExemptions; A3M5's jam, D146 addendum) isn't
+    // held to #5's loss or #6: the map's own tests pin its cost. #5's premise (no answer carried)
+    // still holds (noCounterAnswerChecks).
+    if (b.counterExemptions.some((x) => x.counter === counter)) continue;
     checks.push(
       perRun(
         '5',

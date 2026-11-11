@@ -61,6 +61,7 @@ export function compileBuilds<K extends IdSpace>(
     rndPickChanges: def.rndPickChanges ?? [],
     noCounterLoseByWave: def.noCounterLoseByWave ?? null,
     teachMap: def.teachMap === true,
+    counterExemptions: def.counterExemptions ?? [],
     referenceProfileByFlag,
   };
 }

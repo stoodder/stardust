@@ -31,7 +31,8 @@
 //   0–100, and an `outcome` (an under-built build) comes without a win floor or belowPar; a
 //   `noCounterLoseByWave` override is a whole wave from 1 to waves − 1 (never the final wave) on a
 //   map with no-counter builds, or up to the final wave on a `teachMap` (a campaign map that
-//   introduces a required-counter category).
+//   introduces a required-counter category); each `counterExemptions` entry names one of the map's
+//   required counters, once, with a reason.
 // - [flag-profile] (T700a): each `referenceProfileByFlag` cell names at least one flag, each with a
 //   `flagVariants` entry listing its value; no two cells name the same values; its profile follows
 //   [profile], and its par build (if any) [loadout] and [build-step] against that profile.
@@ -203,6 +204,18 @@ export function validateBuilds(
         'the map has no no-counter builds',
       );
     }
+  }
+
+  // [builds-range]: each counter exemption names a required counter, once, with its reason.
+  const exempt = new Set<string>();
+  for (const [i, x] of (def.counterExemptions ?? []).entries()) {
+    const w = `${where}.counterExemptions[${i}]`;
+    if (!def.requiredCounters.includes(x.counter)) {
+      issues.add('builds-range', w, `'${x.counter}' is not one of the map's required counters`);
+    }
+    if (exempt.has(x.counter)) issues.add('builds-range', w, `'${x.counter}' is listed twice`);
+    exempt.add(x.counter);
+    if (x.reason.trim() === '') issues.add('builds-range', w, 'needs a reason');
   }
 
   if (def.teachMap === true && !introducesCounter) {

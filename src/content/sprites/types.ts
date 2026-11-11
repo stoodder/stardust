@@ -117,6 +117,13 @@ export type SpriteCategory = (typeof SPRITE_CATEGORIES)[number];
 // The palette registry's ids. Declared here (not derived from the registry) so palette files can
 // import these types without a cycle; palettes/index.ts checks the registry against it.
 export type FactionPaletteId =
-  'everglow' | 'everglow.worn' | 'skitterkin' | 'skitterkin.ally' | 'aelari' | 'vrell' | 'hollow';
+  | 'everglow'
+  | 'everglow.worn'
+  | 'everglow.jailbroken'
+  | 'skitterkin'
+  | 'skitterkin.ally'
+  | 'aelari'
+  | 'vrell'
+  | 'hollow';
 export type EnvPaletteId = 'act1' | 'act2.gold' | 'act2.dusk' | 'act3' | 'finale';
 export type PaletteId = FactionPaletteId | EnvPaletteId;

@@ -72,6 +72,7 @@ const skitterkin = slotPalette(ramp('coral'), ramp('gold'), ramp('green'), {
 export const FACTION_PALETTE_IDS: readonly FactionPaletteId[] = [
   'everglow',
   'everglow.worn',
+  'everglow.jailbroken',
   'skitterkin',
   'skitterkin.ally',
   'aelari',
@@ -84,6 +85,9 @@ export const FACTION_PALETTES: Readonly<Record<FactionPaletteId, SlotPalette>> =
   everglow,
   // Later-act faded paint: white.0 → grime.4, teal.3 → teal.2 (art-direction §4 Faction rules).
   'everglow.worn': { ...everglow, p4: 'grime.4', s3: 'teal.2', e0: 'teal.2' },
+  // Jailbroken (A3M4 on, towers.md § 9): worn paint, its status lights burning the Vrell's welding
+  // orange (Zibzab's firmware); the scratched-out logo plate is each base's `_jb` frames.
+  'everglow.jailbroken': { ...everglow, p4: 'grime.4', s3: 'teal.2', e0: 'orange.3', e1: 'orange.4' },
   skitterkin,
   // Allied Skitterkin: same p/s, accent swapped to teal (the alliance nod).
   'skitterkin.ally': { ...skitterkin, a0: 'teal.0', a1: 'teal.1', a2: 'teal.2', a3: 'teal.3', a4: 'teal.4' },

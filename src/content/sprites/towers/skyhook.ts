@@ -11,7 +11,16 @@
 // colour, art-direction §7), on a base with a missile cradle and a big radar mast.
 import { defineSprite } from '../defineSprite.ts';
 import { disc, grid, isoBox, line, plot, rows, type CharGrid } from '../helpers.ts';
-import { BASE_ANCHOR, BASE_H, BASE_MOUNT, BASE_W, everglowBase, everglowSpecBase } from './base.ts';
+import {
+  BASE_ANCHOR,
+  BASE_H,
+  BASE_MOUNT,
+  BASE_W,
+  everglowBase,
+  everglowSpecBase,
+  JAILBREAK_LEGEND,
+  withJailbreak,
+} from './base.ts';
 
 const W = 28;
 const H = 28;
@@ -199,18 +208,18 @@ export const towerSkyhook = defineSprite({
   anchor: BASE_ANCHOR,
   mount: BASE_MOUNT,
   palette: 'everglow',
-  variants: ['everglow.worn'],
+  variants: ['everglow.worn', 'everglow.jailbroken'],
   outline: 'auto',
   glow: { slots: ['e0', 'e1'], radius: 1 },
   // The sky-blue trim ring: the one tower that looks up.
-  legend: { B: 'blue.3' },
-  frames: {
+  legend: { B: 'blue.3', ...JAILBREAK_LEGEND },
+  frames: withJailbreak({
     t1: everglowBase(1, 'B'),
     t2: everglowBase(2, 'B'),
     t3: everglowBase(3, 'B'),
     spec_a: everglowSpecBase('B', curtainKit),
     spec_b: everglowSpecBase('B', seekerKit),
-  },
+  }),
 });
 
 export const towerSkyhookHead = defineSprite({
@@ -218,7 +227,7 @@ export const towerSkyhookHead = defineSprite({
   size: { w: W, h: H },
   anchor: { x: CX, y: CY },
   palette: 'everglow',
-  variants: ['everglow.worn'],
+  variants: ['everglow.worn', 'everglow.jailbroken'],
   outline: 'auto',
   glow: { slots: ['e0', 'e1'], radius: 1 },
   frames: {

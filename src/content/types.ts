@@ -1551,6 +1551,19 @@ export interface BuildsDef<K extends IdSpace = LiveIds> {
    * its final wave (the validator checks it introduces one). Say why in a one-line comment.
    */
   readonly teachMap?: boolean;
+  /**
+   * Required counters the harness doesn't hold to #5's loss or #6's full-catalog loss (balance/
+   * counterChecks.ts), each with its reason: the category is still required (its no-counter build
+   * carries no answer) and the map's own tests pin what it costs instead. Only `jam`, whose jams
+   * are too short to decide a map on their own (D146 addendum; T760 retunes them to retire these).
+   */
+  readonly counterExemptions?: readonly CounterExemption[];
+}
+
+/** A required counter the harness exempts from #5 and #6 (BuildsDef.counterExemptions). */
+export interface CounterExemption {
+  readonly counter: 'jam';
+  readonly reason: string;
 }
 
 export interface MapDef<K extends IdSpace = LiveIds, Id extends string = string>

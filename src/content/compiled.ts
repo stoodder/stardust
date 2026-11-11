@@ -4,6 +4,7 @@
 // value or null (monomorphic shapes), ids that hot loops follow are resolved to references, and
 // the whole tree is deep-frozen.
 import type {
+  CounterExemption,
   Act,
   AllyKind,
   AltBuildExpectation,
@@ -778,6 +779,8 @@ export interface CompiledBuilds<K extends IdSpace = LiveIds> {
   readonly noCounterLoseByWave: number | null;
   /** The map introduces a required-counter category (BuildsDef.teachMap). */
   readonly teachMap: boolean;
+  /** BuildsDef.counterExemptions (default none). */
+  readonly counterExemptions: readonly CounterExemption[];
   /** BuildsDef.referenceProfileByFlag, each cell's par build compiled (null: the map's). */
   readonly referenceProfileByFlag: readonly CompiledFlagProfile<K>[];
 }

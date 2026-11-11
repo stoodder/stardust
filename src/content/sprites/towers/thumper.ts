@@ -9,7 +9,16 @@
 // and a big orange round showing in the bore, on a base behind slab blast shields.
 import { defineSprite } from '../defineSprite.ts';
 import { disc, grid, isoBox, plot, rows, type CharGrid } from '../helpers.ts';
-import { BASE_ANCHOR, BASE_H, BASE_MOUNT, BASE_W, everglowBase, everglowSpecBase } from './base.ts';
+import {
+  BASE_ANCHOR,
+  BASE_H,
+  BASE_MOUNT,
+  BASE_W,
+  everglowBase,
+  everglowSpecBase,
+  JAILBREAK_LEGEND,
+  withJailbreak,
+} from './base.ts';
 
 const W = 24;
 const H = 23;
@@ -217,16 +226,17 @@ export const towerThumper = defineSprite({
   anchor: BASE_ANCHOR,
   mount: BASE_MOUNT,
   palette: 'everglow',
-  variants: ['everglow.worn'],
+  variants: ['everglow.worn', 'everglow.jailbroken'],
   outline: 'auto',
   glow: { slots: ['e0', 'e1'], radius: 1 },
-  frames: {
+  legend: JAILBREAK_LEGEND,
+  frames: withJailbreak({
     t1: everglowBase(1, 'c'),
     t2: everglowBase(2, 'c'),
     t3: everglowBase(3, 'c'),
     spec_a: everglowSpecBase('c', clusterKit),
     spec_b: everglowSpecBase('c', busterKit),
-  },
+  }),
 });
 
 export const towerThumperHead = defineSprite({
@@ -234,7 +244,7 @@ export const towerThumperHead = defineSprite({
   size: { w: W, h: H },
   anchor: { x: CX, y: CY },
   palette: 'everglow',
-  variants: ['everglow.worn'],
+  variants: ['everglow.worn', 'everglow.jailbroken'],
   outline: 'auto',
   frames: {
     se: thumperHead('se', false),
