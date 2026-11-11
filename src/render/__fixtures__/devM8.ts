@@ -22,8 +22,7 @@ import type { DevIds } from './devBattle.ts';
 const dev = mapDefinersFor<DevIds>();
 
 const PROFILE = {
-  // The Sprinkler is a second splash answer, so Directive 0's revocation leaves one (dev_phases).
-  towers: ['rivet', 'zapcoil', 'sprinkler'],
+  towers: ['rivet', 'zapcoil'],
   specs: [],
   shop: {},
   protocols: [],
@@ -178,7 +177,11 @@ export const phasesMap = dev.defineMap({
       when: { flag: 'quill_choice', eq: 'purge' },
       actions: [{ setTimerRate: { timer: 'deep_bore', pct: 0.75 } }],
     },
-    { id: 'breakthrough', on: { timerFull: 'deep_bore' }, actions: [{ spawnWave: 'breakthrough' }] },
+    {
+      id: 'breakthrough',
+      on: { timerFull: 'deep_bore' },
+      actions: [{ spawnWave: 'breakthrough' }],
+    },
     // Phase 2 as the choir reaches the Halls: the checkpoint, the Bore stopped.
     {
       id: 'halls',
@@ -196,7 +199,8 @@ export const phasesMap = dev.defineMap({
       on: { phase: 2, afterSec: 20 },
       when: { flag: 'quill_choice', eq: 'keep' },
       actions: [
-        { revokeTowerClass: { select: 'mostInvested' }, refundPct: 100 },
+        // An Everglow class (the Rivet here), so the Zapcoil's splash stays.
+        { revokeTowerClass: { select: 'mostInvested', faction: 'everglow' }, refundPct: 100 },
         { lockAbility: 'time_dilation', on: true },
         { forceInput: { id: 'whos_there' } },
       ],

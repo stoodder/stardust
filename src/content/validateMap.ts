@@ -356,7 +356,10 @@ function validateGeometry(
   // A bearer group's exit is a door home of its own, on a core tile beside the map's core (A3M5's
   // west edge; T700a), so it isn't counted.
   const homes = bearerHomes(def);
-  if ((cored || def.objective === 'escort' || def.objective === 'choir') && grid.count('C') - homes !== 1) {
+  if (
+    (cored || def.objective === 'escort' || def.objective === 'choir') &&
+    grid.count('C') - homes !== 1
+  ) {
     issues.add(
       'core',
       `${where}.tiles`,

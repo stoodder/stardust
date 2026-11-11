@@ -18,6 +18,11 @@ export const EPILOGUE_FLAGS = [
 ] as const;
 export type EpilogueFlag = (typeof EPILOGUE_FLAGS)[number];
 
+/** Whether `id` names a flag an epilogue card may read. */
+export function isEpilogueFlag(id: string): id is EpilogueFlag {
+  return EPILOGUE_FLAGS.some((f) => f === id);
+}
+
 /** A card's condition: every flag it names holds that value (an unset flag reads its default). */
 export type EpilogueWhen = { readonly [F in EpilogueFlag]?: FlagValueOf<F> };
 
@@ -99,7 +104,7 @@ export function epilogueMatches(
   card: Pick<EpilogueCardDef, 'when'>,
   flags: Readonly<Partial<Record<EpilogueFlag, unknown>>>,
 ): boolean {
-  return Object.entries(card.when).every(([f, v]) => readFlag(flags, f as EpilogueFlag) === v);
+  return Object.entries(card.when).every(([f, v]) => isEpilogueFlag(f) && readFlag(flags, f) === v);
 }
 
 /**

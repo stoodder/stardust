@@ -949,7 +949,7 @@ export const C5 = { map: 'fin_m01', task: 'T810' } as const satisfies {
  */
 export function resolveC5(save: SaveData, choice: C5Choice): StoryOutcome {
   if (!C5_CHOICES.includes(choice)) {
-    return refuse('invalid', `story: '${String(choice)}' isn't an ending_choice value`);
+    return refuse('invalid', `story: '${choice}' isn't an ending_choice value`);
   }
   if (save.story.flags.ending_choice !== undefined) return { ok: true, save, applied: null };
   if (!isMapWon(save, C5.map)) return refuse('invalid', `story: C5 waits for ${C5.map}'s win`);

@@ -9,6 +9,11 @@ import type { FlagGateDef, IdSpace, MapDef } from './types.ts';
 /** The song's default floor: the share of its radius left with no singer singing (D154). */
 export const SONG_SILENT_PCT = 0.6;
 
+/** A flag gate, copied. */
+function gate(g: FlagGateDef): FlagGateDef {
+  return { flag: g.flag, eq: g.eq };
+}
+
 /** MapDef.choir with its route and stop resolved (T804 walks it), or null. */
 export function compileChoir(
   ctx: Ctx,
@@ -28,7 +33,6 @@ export function compileChoir(
     ctx.errors.push(`${where}.choir.stopAt: unknown marker '${c.stopAt}'`);
     return null;
   }
-  const gate = (g: FlagGateDef): FlagGateDef => ({ flag: g.flag, eq: g.eq });
   return {
     leader: c.leader,
     route,
@@ -38,11 +42,16 @@ export function compileChoir(
     paceTilesPerTick: perSecToPerTick(c.pace),
     haltTiles: c.haltTiles,
     groups: (c.groups ?? []).map((g) => ({ when: gate(g.when), singers: g.singers })),
-    thrum: c.thrum === undefined ? null : { when: gate(c.thrum.when), radiusBonus: c.thrum.radiusBonus },
+    thrum:
+      c.thrum === undefined ? null : { when: gate(c.thrum.when), radiusBonus: c.thrum.radiusBonus },
     returned:
       c.returned === undefined
         ? null
-        : { when: gate(c.returned.when), count: c.returned.count, auraRadius: c.returned.auraRadius },
+        : {
+            when: gate(c.returned.when),
+            count: c.returned.count,
+            auraRadius: c.returned.auraRadius,
+          },
   };
 }
 

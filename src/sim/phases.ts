@@ -14,7 +14,9 @@ export function phases(_state: SimState, _ctx: TickContext): void {
 
 /** Whether the script phase is `phase` or later, `afterTicks` after it began (T806). */
 export function phaseReached(state: SimState, phase: number, afterTicks: number): boolean {
-  return state.phase > phase || (state.phase === phase && state.tick - state.phaseTick >= afterTicks);
+  return (
+    state.phase > phase || (state.phase === phase && state.tick - state.phaseTick >= afterTicks)
+  );
 }
 
 /** The `setPhase` action (T806). */

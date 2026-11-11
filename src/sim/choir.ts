@@ -16,10 +16,6 @@ export function choir(_state: SimState, _ctx: TickContext): void {
 }
 
 /** Whether the choir's leader has reached `marker` (the `{ choirAt }` trigger; T806 with T804). */
-export function choirAt(
-  _state: SimState,
-  _map: CompiledMapDef<IdSpace>,
-  _marker: string,
-): boolean {
+export function choirAt(_state: SimState, _map: CompiledMapDef<IdSpace>, _marker: string): boolean {
   return false; // T806
 }

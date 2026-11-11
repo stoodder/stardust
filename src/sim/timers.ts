@@ -29,11 +29,6 @@ export function startTimer(_state: SimState, _map: TimerMap, _id: string): void 
 }
 
 /** The `setTimerRate` action (T806): `pct` of full speed, 0 to stop it. */
-export function setTimerRate(
-  _state: SimState,
-  _map: TimerMap,
-  _id: string,
-  _pct: number,
-): void {
+export function setTimerRate(_state: SimState, _map: TimerMap, _id: string, _pct: number): void {
   // T806.
 }

@@ -37,17 +37,30 @@ function pending(): PendingRun {
   };
 }
 
-/** `save` as an import would deliver it (plain JSON), with `patch` applied. */
-function raw(save: SaveData, patch: (x: Record<string, unknown>) => void): unknown {
-  const x = JSON.parse(JSON.stringify(save)) as Record<string, unknown>;
-  patch(x);
-  return x;
-}
-
 function errors(x: unknown): string {
   const r = validateSave(x);
   return r.ok ? '' : r.errors.join('\n');
 }
+
+/** The errors of a save carrying `run` (any shape) as its pending run. */
+const withRun = (run: unknown): string => errors({ ...base(), pendingRun: run });
+
+/** `pending()` with log entry `i`'s command replaced by `cmd` (any shape). */
+function cmdAt(i: number, cmd: unknown): unknown {
+  const run = pending();
+  return { ...run, log: run.log.map((e, j) => (j === i ? { ...e, cmd } : e)) };
+}
+
+/** `pending()` with log entry `i`'s tick replaced by `tick`. */
+function tickAt(i: number, tick: number): unknown {
+  const run = pending();
+  return { ...run, log: run.log.map((e, j) => (j === i ? { ...e, tick } : e)) };
+}
+
+/** The errors of a save carrying `veteran` (any shape). */
+const vet = (veteran: unknown): string => errors({ ...base(), veteran });
+/** The errors of a save carrying `endless` (any shape). */
+const end = (endless: unknown): string => errors({ ...base(), endless });
 
 describe('the endgame save fields (optional, no SaveData bump)', () => {
   it('are absent from a new save and stay absent through validation', () => {
@@ -79,93 +92,69 @@ describe('the endgame save fields (optional, no SaveData bump)', () => {
   });
 
   describe('pendingRun', () => {
-    const withRun = (patch: (r: Record<string, unknown>) => void): string =>
-      errors(
-        raw({ ...base(), pendingRun: pending() }, (x) => {
-          patch(x['pendingRun'] as Record<string, unknown>);
-        }),
-      );
-    const cmd = (i: number, c: unknown) => (r: Record<string, unknown>) => {
-      (r['log'] as { cmd: unknown }[])[i]!.cmd = c;
-    };
-
+    const run = pending();
     it.each([
-      ['an unknown map', (r: Record<string, unknown>) => (r['map'] = 'nowhere'), 'pendingRun.map'],
-      ['a seed past 32 bits', (r: Record<string, unknown>) => (r['seed'] = 2 ** 32), 'seed'],
+      ['an unknown map', { ...run, map: 'nowhere' }, 'pendingRun.map'],
+      ['a seed past 32 bits', { ...run, seed: 2 ** 32 }, 'seed'],
       [
         'an unowned tower',
-        (r: Record<string, unknown>) => (r['loadout'] = { towers: ['harpoon'], ability: null }),
+        { ...run, loadout: { towers: ['harpoon'], ability: null } },
         'loadout.towers',
       ],
-      [
-        'an unknown companion',
-        (r: Record<string, unknown>) => (r['companion'] = 'gerald'),
-        'companion',
-      ],
-      ['a bad hash', (r: Record<string, unknown>) => (r['configHash'] = 'XYZ'), 'configHash'],
+      ['an unknown companion', { ...run, companion: 'gerald' }, 'companion'],
+      ['a bad hash', { ...run, configHash: 'XYZ' }, 'configHash'],
       [
         'a count off the log',
-        (r: Record<string, unknown>) =>
-          ((r['checkpoint'] as Record<string, unknown>)['commandCount'] = 5),
+        { ...run, checkpoint: { ...run.checkpoint, commandCount: 5 } },
         'commandCount',
       ],
-      ['an unknown field', (r: Record<string, unknown>) => (r['extra'] = 1), 'unknown field'],
-      [
-        'a command at the checkpoint',
-        (r: Record<string, unknown>) => ((r['log'] as { tick: number }[])[5]!.tick = 900),
-        'log[5].tick',
-      ],
-      [
-        'a log out of order',
-        (r: Record<string, unknown>) => ((r['log'] as { tick: number }[])[2]!.tick = 5),
-        'log[2].tick',
-      ],
-      ['an unknown command', cmd(1, { type: 'nuke' }), 'log[1].cmd.type'],
+      ['an unknown field', { ...run, extra: 1 }, 'unknown field'],
+      ['a command at the checkpoint', tickAt(5, 900), 'log[5].tick'],
+      ['a log out of order', tickAt(2, 5), 'log[2].tick'],
+      ['an unknown command', cmdAt(1, { type: 'nuke' }), 'log[1].cmd.type'],
       [
         'an unknown tower built',
-        cmd(0, { type: 'build', tile: [3, 4], tower: 'deathray' }),
+        cmdAt(0, { type: 'build', tile: [3, 4], tower: 'deathray' }),
         'log[0].cmd.tower',
       ],
       [
         'a tile off any grid',
-        cmd(0, { type: 'build', tile: [3, -1], tower: 'rivet' }),
+        cmdAt(0, { type: 'build', tile: [3, -1], tower: 'rivet' }),
         'log[0].cmd.tile[1]',
       ],
       [
         'a command with a stray field',
-        cmd(1, { type: 'callWave', now: true }),
+        cmdAt(1, { type: 'callWave', now: true }),
         'log[1].cmd: unknown field',
       ],
       [
         'a bad targeting mode',
-        cmd(2, { type: 'targeting', towerUid: 1, mode: 'nearest' }),
+        cmdAt(2, { type: 'targeting', towerUid: 1, mode: 'nearest' }),
         'log[2].cmd.mode',
       ],
-      ['ability slot 3', cmd(4, { type: 'ability', slot: 3 }), 'log[4].cmd.slot'],
+      ['ability slot 3', cmdAt(4, { type: 'ability', slot: 3 }), 'log[4].cmd.slot'],
       [
         'a non-boolean hold',
-        cmd(3, { type: 'holdFire', target: 'all', on: 'yes' }),
+        cmdAt(3, { type: 'holdFire', target: 'all', on: 'yes' }),
         'log[3].cmd.on',
       ],
-    ])('refuses %s', (_, patch, path) => {
-      expect(withRun(patch)).toContain(path);
+    ])('refuses %s', (_, bad, path) => {
+      expect(withRun(bad)).toContain(path);
     });
 
     it('caps the log', () => {
-      expect(
-        withRun((r) => {
-          r['log'] = Array.from({ length: ENDGAME_LIMITS.pendingLog + 1 }, () => ({
-            tick: 0,
-            cmd: { type: 'callWave' },
-          }));
-        }),
-      ).toContain(`expected at most ${ENDGAME_LIMITS.pendingLog} entries`);
+      const log = Array.from({ length: ENDGAME_LIMITS.pendingLog + 1 }, () => ({
+        tick: 0,
+        cmd: { type: 'callWave' },
+      }));
+      expect(withRun({ ...run, log })).toContain(
+        `expected at most ${ENDGAME_LIMITS.pendingLog} entries`,
+      );
     });
   });
 
   describe('veteran', () => {
     it('needs the map won, known modifiers, and a bonus the table can reach', () => {
-      const vet = (v: unknown): string => errors(raw(base(), (x) => (x['veteran'] = v)));
       expect(vet({ a1_m02: { mods: [], best: 0 } })).toContain('needs the map won');
       expect(vet({ a1_m01: { mods: ['god_mode'], best: 0 } })).toContain('veteran.a1_m01.mods[0]');
       expect(vet({ a1_m01: { mods: [], best: VETERAN_MAX_PCT + 1 } })).toContain('best');
@@ -191,7 +180,6 @@ describe('the endgame save fields (optional, no SaveData bump)', () => {
   });
 
   describe('endless', () => {
-    const end = (v: unknown): string => errors(raw(base(), (x) => (x['endless'] = v)));
     it('holds at most ten scores, one per seed', () => {
       expect(
         end([

@@ -59,7 +59,8 @@ const COMMAND_FIELDS: Readonly<
   callWave: { keys: [] },
   scriptInput: { keys: ['id'] },
 };
-const COMMAND_TYPES = Object.keys(COMMAND_FIELDS) as CommandType[];
+const isCommandType = (k: string): k is CommandType => Object.hasOwn(COMMAND_FIELDS, k);
+const COMMAND_TYPES: readonly CommandType[] = Object.keys(COMMAND_FIELDS).filter(isCommandType);
 
 /** How validate.ts checks a loadout preset (passed in, so the two files don't import each other). */
 export type PresetCheck = (x: unknown, path: string) => LoadoutPreset | null;

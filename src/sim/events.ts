@@ -790,7 +790,11 @@ export type SimEvent<K extends IdSpace = LiveIds> =
       readonly points: number;
     }
   /** A Hollow unit fell outside the song and scattered (T805; Phase 2), from `at`. */
-  | { readonly type: 'Scattered'; readonly uid: number; readonly at: readonly [x: number, y: number] }
+  | {
+      readonly type: 'Scattered';
+      readonly uid: number;
+      readonly at: readonly [x: number, y: number];
+    }
   /** A scattered unit re-formed (T805). */
   | { readonly type: 'Reformed'; readonly uid: number }
   /** A secondary timer filled (T806): the Deep Bore's breakthrough. */

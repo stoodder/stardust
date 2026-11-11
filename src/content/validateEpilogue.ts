@@ -10,6 +10,7 @@ import {
   EPILOGUE_SLOTS,
   EPILOGUE_SLOT_IDS,
   epilogueMatches,
+  isEpilogueFlag,
   type EpilogueCardDef,
   type EpilogueFlag,
   type EpilogueSlotDef,
@@ -61,15 +62,15 @@ export function validateEpilogue(
     const where = `cards[${i}] (${card.slot})`;
     const slot = slots.find((s) => s.id === card.slot);
     if (slot === undefined) {
-      issues.add('epilogue', where, `no slot '${String(card.slot)}'`);
+      issues.add('epilogue', where, `no slot '${card.slot}'`);
       return;
     }
     for (const [f, v] of Object.entries(card.when)) {
-      if (!slot.flags.some((own) => own === f)) {
+      if (!isEpilogueFlag(f) || !slot.flags.includes(f)) {
         issues.add('epilogue', where, `reads '${f}', which slot ${slot.id} doesn't list`);
         continue;
       }
-      const values: readonly unknown[] = FLAGS[f as EpilogueFlag].values;
+      const values: readonly unknown[] = FLAGS[f].values;
       if (!values.includes(v)) issues.add('epilogue', where, `${f} never holds ${String(v)}`);
     }
     if (card.text.trim() === '') issues.add('epilogue', where, 'empty text');

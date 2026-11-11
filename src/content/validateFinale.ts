@@ -32,13 +32,7 @@ import type {
   ScriptFlagId,
   ScriptTrigger,
 } from './types.ts';
-import {
-  Issues,
-  duplicates,
-  isNonNegative,
-  isPositive,
-  isPositiveInt,
-} from './validateHelpers.ts';
+import { Issues, duplicates, isNonNegative, isPositive, isPositiveInt } from './validateHelpers.ts';
 
 const SNAKE = /^[a-z][a-z0-9_]*$/;
 
@@ -142,7 +136,8 @@ function validateSong(
   const s = def.song;
   if (s === undefined) return;
   const w = `${where}.song`;
-  if (def.choir === undefined) issues.add('song', w, "a song needs a choir (it's round the leader)");
+  if (def.choir === undefined)
+    issues.add('song', w, "a song needs a choir (it's round the leader)");
   if (!isPositive(s.baseRadius)) issues.add('song', `${w}.baseRadius`, 'must be > 0');
   if (s.silentPct !== undefined && !(s.silentPct >= 0 && s.silentPct <= 1)) {
     issues.add('song', `${w}.silentPct`, `${s.silentPct} must be in [0, 1]`);
@@ -315,7 +310,7 @@ export function validateFinalePhases(
     }
   }
   if (layToRest) {
-    if (def.faction !== 'hollow') bad('boss.ending', "only the Hollow is laid to rest");
+    if (def.faction !== 'hollow') bad('boss.ending', 'only the Hollow is laid to rest');
     if (phases.at(-1)?.floorPct === undefined) {
       bad('boss.ending', "a 'layToRest' boss's last phase has a floorPct (the song ends it)");
     }

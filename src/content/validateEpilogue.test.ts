@@ -125,6 +125,7 @@ describe('the epilogue (bible.md § 10)', () => {
     expect(validateEpilogue([foreign, ...CARDS]).join('\n')).toMatch(
       /reads 'door_choice', which slot zibzab doesn't list/,
     );
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- a value the flag never holds
     const value = {
       slot: 'kip',
       when: { ending_choice: 'maybe' },

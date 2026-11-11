@@ -618,9 +618,12 @@ export function createState(map: CompiledMapDef<IdSpace>, seed: number): SimStat
     wreckageAtWave: [],
     phase: 1,
     phaseTick: 0,
-    timers: map.timers.map(
-      (): TimerState => ({ filled: 0, ratePct: 0, running: false, full: false }),
-    ),
+    timers: map.timers.map((): TimerState => ({
+      filled: 0,
+      ratePct: 0,
+      running: false,
+      full: false,
+    })),
     restPoints: 0,
     restTarget: map.song?.restTarget ?? 0,
     choir: { singers: 0, voices: 0, dist: 0, x: 0, y: 0, halted: false, arrived: false },
