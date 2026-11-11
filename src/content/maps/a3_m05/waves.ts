@@ -114,8 +114,7 @@ export const waves = defineWaves([
   {
     ...NO_CALL,
     groups: [
-      motes(6, 'hunt', HUNT_SEC, 0.5),
-      fractures(1, 'hunt', HUNT_SEC + 4),
+      motes(9, 'hunt', HUNT_SEC, 0.4),
       motes(6, 'vats', 4),
       liabilities(1, 0),
       drones(4, 4),

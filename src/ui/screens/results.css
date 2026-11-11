@@ -394,6 +394,14 @@
   cursor: default;
 }
 
+/* C4's "QUILL will remember that." once answered (T714; as C3's in the briefing): teal, quiet,
+   never a warning. */
+.sd-choice-remember {
+  margin: 6px 0 0;
+  text-align: center;
+  color: var(--sd-teal-4);
+}
+
 /* C2 offered at the base (BaseChoice.tsx; D138): the card's choice as a panel over the base, its
    scrim the results card's. */
 .sd-base-choice {

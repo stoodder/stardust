@@ -179,7 +179,7 @@ export const takeoverMap = dev.defineMap({
 export const gmawMap = dev.defineMap({
   ...ROAD,
   id: 'dev_gmaw',
-  startCredits: 5200,
+  startCredits: 2600,
   threatIntel: ['clustered', 'armored', 'splitting', 'boss'],
   requiredCounters: ['splash', 'armor'],
   waves: dev.defineWaves([
@@ -205,18 +205,12 @@ export const gmawMap = dev.defineMap({
     steps: [
       { wave: 1, build: 'zapcoil', tile: [12, 4] },
       { wave: 1, build: 'rivet', tile: [7, 2] },
-      { wave: 1, build: 'rivet', tile: [7, 4] },
       { wave: 1, build: 'rivet', tile: [12, 2] },
-      { wave: 1, build: 'rivet', tile: [5, 4] },
-      { wave: 1, build: 'rivet', tile: [5, 2] },
       { wave: 1, build: 'rivet', tile: [3, 4] },
       ...(
         [
           [7, 2],
-          [7, 4],
           [12, 2],
-          [5, 4],
-          [5, 2],
           [3, 4],
         ] as const
       ).flatMap((tile) => [

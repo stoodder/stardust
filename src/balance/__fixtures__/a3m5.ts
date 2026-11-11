@@ -41,6 +41,10 @@ export interface A3m5Run {
   readonly jammedTicksByWave: Readonly<Record<number, number>>;
   /** The most towers jammed at once by the platform's Takeover, and the towers placed then. */
   readonly takeoverPeak: { readonly jammed: number; readonly placed: number };
+  /** Ticks on which a Takeover jam landed with the map past the jam limit (#10's 25%). */
+  readonly takeoverOverLimit: number;
+  /** Gravity Well pulls by unit uid (their ticks), for the stacking test. */
+  readonly pulls: ReadonlyMap<number, readonly number[]>;
   /** The markers the jettison's plates opened. */
   readonly plates: readonly string[];
   /** The platform's route distance when it was driven off (null: never). */
@@ -79,6 +83,8 @@ export function runA3m5(
   const cues: string[] = [];
   const takeoverPeak = { jammed: 0, placed: 0 };
   let bossUid = 0;
+  let takeoverOverLimit = 0;
+  const pulls = new Map<number, number[]>();
   let droveOffAt: number | null = null;
   const push = (key: string): void => {
     (at[key] ??= []).push(st.tick);
@@ -88,6 +94,7 @@ export function runA3m5(
     sim.step();
     out.length = 0;
     sim.drainEvents(out);
+    let tookOver = false;
     for (const e of out) {
       switch (e.type) {
         case 'WaveStarted':
@@ -120,6 +127,7 @@ export function runA3m5(
           jamsByWave[st.wave] = (jamsByWave[st.wave] ?? 0) + 1;
           if (e.source === bossUid && bossUid !== 0) {
             takeoverJams.push({ tick: st.tick, ticks: e.ticks });
+            tookOver = true;
           }
           break;
         case 'TileOpened':
@@ -135,6 +143,12 @@ export function runA3m5(
         case 'ScriptGroupSpawned':
           push(`ScriptGroupSpawned ${e.id}`);
           break;
+        case 'PulledBack': {
+          const list = pulls.get(e.uid) ?? [];
+          list.push(st.tick);
+          pulls.set(e.uid, list);
+          break;
+        }
         case 'ObjectiveProgress':
           push(`Objective ${e.id} ${e.status}`);
           break;
@@ -155,6 +169,7 @@ export function runA3m5(
       }
     }
     jammedTicksByWave[st.wave] = (jammedTicksByWave[st.wave] ?? 0) + jammed;
+    if (tookOver && jammed > Math.floor(0.25 * placed)) takeoverOverLimit++;
     if (byBoss > takeoverPeak.jammed) {
       takeoverPeak.jammed = byBoss;
       takeoverPeak.placed = placed;
@@ -175,6 +190,8 @@ export function runA3m5(
     takeoverJams,
     jammedTicksByWave,
     takeoverPeak,
+    takeoverOverLimit,
+    pulls,
     plates,
     droveOffAt,
     cues,

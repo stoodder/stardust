@@ -1,5 +1,5 @@
 // The Gathering Maw (design/enemies.md § 6): A3M6's boss, coming up the road behind the sheltering
-// Skitterkin. HP 12000, armor 4, speed 0.3, Hollow, void, bounty 0. Phases (D146): (1) it gathers
+// Skitterkin. HP 4400, armor 4, speed 0.3, Hollow, void, bounty 0. Phases (D146): (1) it gathers
 // eligible units (enemies.md § 5.4) within 2 tiles every 5 s, after a tendril tell, and grows;
 // (2, 50%) it splits into 3 parts (`gathering_maw_part`, each 20% of its max HP; boss rules, one
 // boss bar sums them); 12 s after the split (or as the last but one part dies) the survivors merge
@@ -23,7 +23,7 @@ export const gathering_maw = defineEnemy({
   faction: 'hollow',
   body: 'void',
   layer: 'ground',
-  hp: 12000,
+  hp: 4400,
   armor: 4,
   speedTilesPerSec: 0.3,
   leak: 3,

@@ -34,7 +34,7 @@ import { countUpDuration, countUpValue } from './countUp.ts';
 import { formatCount } from './format.ts';
 import { focusOnce } from './focus.ts';
 import { heldCard, type HeldCard } from './heldCard.ts';
-import { StoryChoice } from './StoryChoice.tsx';
+import { Remembered, StoryChoice } from './StoryChoice.tsx';
 import {
   campaign,
   runResult,
@@ -588,6 +588,7 @@ function Body({ result }: { result: RunResult }) {
       {asking && result.choice !== null && (
         <StoryChoice choice={result.choice} onPick={pickResultsChoice} />
       )}
+      {!asking && result.choice !== null && <Remembered choice={result.choice} />}
       {!asking && <WayOn result={result} won={won} checkpoint={checkpoint} />}
     </section>
   );

@@ -10,7 +10,7 @@ import { trapTab } from '../dialogue/SceneParts.tsx';
 import { useEscape } from './escape.ts';
 import { focusOnce } from './focus.ts';
 import { formatCount } from './format.ts';
-import { choiceName, StoryChoice } from './StoryChoice.tsx';
+import { choiceName, Remembered, StoryChoice } from './StoryChoice.tsx';
 import { baseChoice, type BaseChoiceView, type ResultsTransaction } from './state.ts';
 import './results.css';
 
@@ -74,6 +74,7 @@ function Panel({ view }: { view: BaseChoiceView }) {
         </ul>
         {!answered && <StoryChoice choice={view.choice} onPick={pickBaseChoice} />}
         {view.made !== null && <Made t={view.made} />}
+        {answered && <Remembered choice={view.choice} />}
         {view.notice !== null && (
           <p class="sd-results-save-notice" role="alert">
             {silkText(view.notice)}

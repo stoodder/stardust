@@ -106,6 +106,11 @@ export interface ResultsChoice {
    * D138): Sell's Intel windfall and the Zibzab Tune-up; Return's "Fee: an IOU".
    */
   readonly pays: readonly ResultsPay[];
+  /**
+   * Each option's "{Speaker} will remember that." (C4's, as C3's; T714), or null; shown under the
+   * card once that option is taken. Absent for a choice with none (C2).
+   */
+  readonly remember?: readonly (string | null)[];
   /** The option taken, or null while the card waits. */
   readonly picked: number | null;
 }

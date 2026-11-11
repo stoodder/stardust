@@ -88,3 +88,23 @@ export function StoryChoice({
     </div>
   );
 }
+
+/** What the taken option's speaker will remember, or null (none taken, or nobody remembers). */
+export function rememberedText(choice: ResultsChoice): string | null {
+  if (choice.picked === null) return null;
+  return choice.remember?.[choice.picked] ?? null;
+}
+
+/**
+ * Once a C4 answer is taken (T714): "QUILL will remember that." under the card, in `teal.4`, as
+ * C3's shows in the briefing (art-direction.md § Dialogue presentation): never a warning.
+ */
+export function Remembered({ choice }: { choice: ResultsChoice }) {
+  const text = rememberedText(choice);
+  if (text === null) return null;
+  return (
+    <p class="sd-choice-remember" role="status" data-testid="choice-remember">
+      {text}
+    </p>
+  );
+}

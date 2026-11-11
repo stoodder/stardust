@@ -170,6 +170,9 @@ const CORNERS: Readonly<Record<M7Scene, Corner>> = {
   },
 };
 
+/** A placed sprite's depth: its ground point, scenery a hair behind a unit on the same spot. */
+const foot = (o: Placed): number => (o[2] + o[3]) * 8 + (o[0].startsWith('prop.') ? 0.1 : 0.2);
+
 /** One M7 corner at `zoom`. */
 export function m7Corner(
   baked: ReadonlyMap<string, BakedSprite>,
@@ -241,7 +244,6 @@ export function m7Corner(
   // Everything standing, back to front: scenery (its glow at NIGHT_GLOW, a lamp's light whole),
   // then the units.
   const all: Placed[] = [...props, ...corner.units];
-  const foot = (o: Placed): number => (o[2] + o[3]) * 8 + (o[0].startsWith('prop.') ? 0.1 : 0.2);
   for (const o of all.toSorted((a, b) => foot(a) - foot(b))) {
     const [id, frame, gx, gy, variant] = o;
     const [sx, sy] = screen(gx, gy);

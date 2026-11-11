@@ -7,9 +7,11 @@ import { RAW_CONTENT } from '../../content/registry.ts';
 import { dressTile, wreckageFrame } from './groundTiles.ts';
 import { flagGatedGround } from './flagDressing.ts';
 
-const maps = compileContent(RAW_CONTENT).maps;
+const all = compileContent(RAW_CONTENT).maps;
+type Compiled = (typeof all)[keyof typeof all];
+const maps: Readonly<Partial<Record<string, Compiled>>> = all;
 
-function map(id: string): NonNullable<(typeof maps)[string]> {
+function map(id: string): Compiled {
   const m = maps[id];
   if (m === undefined) throw new Error(`no ${id}`);
   return m;

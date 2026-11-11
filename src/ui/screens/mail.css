@@ -1,0 +1,264 @@
+/* Gerald's mail (mailStage.tsx; T714; art-direction.md § Dialogue presentation): a desk lamp's warm
+   pool on a deep violet-black stage; the envelope at the left, the papers coming out to its right,
+   the newest lit on warm paper, the ones before it dimmed. The captions sit at the bottom on a dark
+   panel. Whole pixels; no rotation (no mixels). */
+.dlg-stage[data-staging='mail'] {
+  box-sizing: border-box;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding-bottom: 8px;
+  background:
+    radial-gradient(ellipse 300px 150px at 50% 32%, rgb(120 78 30 / 34%), transparent 100%),
+    radial-gradient(ellipse at 50% 70%, rgb(42 20 64 / 50%), transparent 75%), var(--sd-ink-0);
+}
+
+.dlg-stage[data-staging='mail'] .dlg-fullscreen {
+  position: relative;
+  background: var(--panel-fill);
+  box-shadow: 0 0 0 1px var(--sd-ink-4);
+}
+
+.ml {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ml-desk {
+  position: relative;
+  width: 560px;
+  height: 216px;
+  margin: 10px auto 0;
+}
+
+/* The papers: warm paper, ink text, a 1 px shadow edge. Dimmed once the next one is out. */
+.ml-paper {
+  position: absolute;
+  box-sizing: border-box;
+  padding: 6px;
+  color: var(--sd-ink-1);
+  background: var(--sd-white-0);
+  box-shadow:
+    0 0 0 1px var(--sd-steel-1),
+    2px 2px 0 0 var(--sd-ink-0);
+  filter: brightness(0.55) saturate(0.6);
+  text-transform: none;
+  animation: ml-out 300ms steps(6) both;
+}
+
+.ml-paper.lit {
+  filter: none;
+}
+
+@keyframes ml-out {
+  from {
+    transform: translate(-60px, 40px);
+    opacity: 0;
+  }
+
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+.ml-hand {
+  margin: 0;
+  font-family: var(--font-dialogue);
+  font-size: 8px;
+  line-height: 10px;
+  color: var(--sd-blue-1);
+}
+
+/* Form P-19: an Everglow form, its header bar worn teal. */
+.ml-pension {
+  left: 150px;
+  top: 0;
+  width: 150px;
+  height: 200px;
+}
+
+.ml-form-head {
+  display: grid;
+  gap: 2px;
+  margin: -6px -6px 6px;
+  padding: 4px 6px;
+  font-family: var(--font-heading);
+  text-transform: uppercase;
+  color: var(--sd-white-1);
+  background: var(--sd-teal-1);
+}
+
+.ml-form-sub {
+  color: var(--sd-teal-4);
+}
+
+.ml-form-fields {
+  display: grid;
+  gap: 3px;
+  margin: 0 0 6px;
+}
+
+.ml-form-fields div {
+  display: flex;
+  gap: 4px;
+}
+
+.ml-form-fields dt,
+.ml-form-label {
+  margin: 0;
+  font-family: var(--font-heading);
+  text-transform: uppercase;
+  color: var(--sd-steel-1);
+}
+
+.ml-form-fields dd {
+  margin: 0;
+  font-family: var(--font-heading);
+  text-transform: uppercase;
+}
+
+.ml-form-label {
+  margin-top: 6px;
+  padding-top: 3px;
+  border-top: 1px solid var(--sd-steel-3);
+}
+
+.ml-beneficiary {
+  margin-top: 3px;
+  font-size: 9px;
+}
+
+.ml-signature {
+  display: block;
+  margin-top: 3px;
+}
+
+.ml-stamp {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  padding: 1px 3px;
+  font-family: var(--font-heading);
+  text-transform: uppercase;
+  color: var(--sd-red-3);
+  box-shadow: 0 0 0 1px var(--sd-red-3);
+}
+
+/* The slips: torn-off notepaper. */
+.ml-slip {
+  background: var(--sd-white-1);
+}
+
+.ml-key {
+  left: 318px;
+  top: 20px;
+  width: 112px;
+  min-height: 66px;
+}
+
+.ml-key-art {
+  display: block;
+  margin-bottom: 4px;
+}
+
+/* Kip's: nothing but the batch number, small, in the corner. */
+.ml-kip {
+  left: 448px;
+  top: 40px;
+  width: 92px;
+  height: 58px;
+}
+
+.ml-batch {
+  position: absolute;
+  right: 5px;
+  bottom: 4px;
+  font-family: var(--font-heading);
+  color: var(--sd-steel-1);
+}
+
+/* The envelope: Everglow inter-office manila, a red mark from Gerald's route. */
+.ml-envelope {
+  position: absolute;
+  left: 0;
+  top: 88px;
+  box-sizing: border-box;
+  width: 136px;
+  height: 84px;
+  padding: 34px 8px 6px;
+  font-family: var(--font-heading);
+  text-transform: uppercase;
+  color: var(--sd-orange-0);
+  background: var(--sd-gold-2);
+  box-shadow:
+    0 0 0 1px var(--sd-orange-1),
+    2px 2px 0 0 var(--sd-ink-0);
+  animation: ml-land 400ms steps(4) both;
+}
+
+@keyframes ml-land {
+  from {
+    transform: translateY(-24px);
+    opacity: 0;
+  }
+
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+.ml-envelope p {
+  margin: 0 0 3px;
+}
+
+.ml-env-to {
+  font-family: var(--font-dialogue);
+  font-size: 9px;
+  text-transform: none;
+  color: var(--sd-blue-1);
+}
+
+.ml-env-mark {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  padding: 1px 2px;
+  color: var(--sd-red-2);
+  box-shadow: 0 0 0 1px var(--sd-red-2);
+}
+
+/* The flap: a band across the top, darker; it lifts (opening), then folds back (open). */
+.ml-flap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 26px;
+  background: var(--sd-gold-1);
+  box-shadow: 0 1px 0 var(--sd-orange-1);
+  transform-origin: top;
+}
+
+.ml-envelope.opening .ml-flap {
+  transform: scaleY(0.5);
+}
+
+.ml-envelope.open .ml-flap {
+  top: -14px;
+  height: 14px;
+  background: var(--sd-gold-1);
+}
+
+.ml.still .ml-paper,
+.ml.still .ml-envelope {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ml-paper,
+  .ml-envelope {
+    animation: none;
+  }
+}

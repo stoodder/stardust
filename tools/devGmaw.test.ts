@@ -151,7 +151,7 @@ describe('dev_gmaw (T708): the Gathering Maw', () => {
         null;
     }
     if (boss === null) throw new Error('the boss never came 15 tiles down the road');
-    bossDamage(state, boss, boss.hp - 0.5 * 12000); // no towers: split it by hand
+    bossDamage(state, boss, boss.hp - 0.5 * 4400); // no towers: split it by hand
     const out: SimEvent<IdSpace>[] = [];
     while (t.state.outcome === 'playing' && t.state.tick < 60 * 400) {
       t.step();

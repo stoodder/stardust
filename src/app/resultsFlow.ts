@@ -183,6 +183,10 @@ export function openChoice(
       title: rule.title ?? null,
       options: options.map((o) => resolveText(o.text, story.text)),
       pays: options.map((o) => rule.pays(save, valueOf(rule, o.set) ?? '')),
+      // As C3's in the briefing (T714): "QUILL will remember that." once picked.
+      remember: options.map((o) =>
+        o.remember === undefined ? null : `${spoken(o.remember, '', story).name} will remember that.`,
+      ),
       picked: null,
     };
     return {

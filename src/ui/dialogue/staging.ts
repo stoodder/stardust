@@ -7,9 +7,19 @@
 // A3M2's Asset Yield Log (T614) is a third: its scroll is yieldLog.ts's.
 
 import { yieldLogLeadInMs, yieldLogLockMs } from './yieldLog.ts';
+// Act III part two's bespoke stages (T714; their rules live beside their screens).
+import { mailLeadInMs } from '../screens/mail.ts';
+import { nightShiftLeadInMs } from '../screens/nightShift.ts';
+import { waykeeperLeadInMs } from '../screens/waykeeper.ts';
 
 /** A scene's staging, by kind. */
-export type StagingKind = 'rig9_feed' | 'party' | 'yield_log';
+export type StagingKind =
+  | 'rig9_feed'
+  | 'party'
+  | 'yield_log'
+  | 'mail'
+  | 'night_shift'
+  | 'waykeeper';
 
 /** Which scenes are staged (a UI-owned table, keyed by scene id; K6). */
 export const SCENE_STAGING: Readonly<Record<string, StagingKind>> = {
@@ -18,6 +28,11 @@ export const SCENE_STAGING: Readonly<Record<string, StagingKind>> = {
   // The Asset Yield Log (act3.md § A3M2, T614), and its dev twin (dev.ts) for the smoke flow.
   a3_m02_scene_confession: 'yield_log',
   a1_m01_scene_dev_yield_log: 'yield_log',
+  // T714: Gerald's mail (act3.md § A3M4), Night Shift at the base, and the Waykeeper beat
+  // (A3M6's debrief, played full-screen before the card).
+  a3_m04_scene_mail: 'mail',
+  a3_m04_base_night_shift: 'night_shift',
+  a3_m06_debrief: 'waykeeper',
 };
 
 /** The staging for `sceneId`, or null for a plain scene. */
@@ -95,6 +110,9 @@ export function leadInMs(beats: readonly Beat[]): number {
 export function stagingLeadInMs(kind: StagingKind, still: boolean): number {
   if (kind === 'rig9_feed') return leadInMs(still ? FEED_BEATS_STILL : FEED_BEATS);
   if (kind === 'yield_log') return yieldLogLeadInMs(still);
+  if (kind === 'mail') return mailLeadInMs(still);
+  if (kind === 'night_shift') return nightShiftLeadInMs(still);
+  if (kind === 'waykeeper') return waykeeperLeadInMs(still);
   return 0;
 }
 

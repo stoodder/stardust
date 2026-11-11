@@ -137,10 +137,33 @@ describe("A3M5's Second Harvest at night", () => {
   });
 });
 
+/** Dome 1's warm inside, and its frost. */
+const warm = (f: string): number => count(grid('prop.dome', f), 'HY');
+const frost = (f: string): number => count(grid('prop.dome', f), 'FI');
+
+type Edge = 'nw' | 'ne' | 'se' | 'sw';
+
+/** A path frame's worn rim on one edge: '7' or '9' on that edge's mask-boundary pixels. */
+function rim(frame: string, edge: Edge): number {
+  const g = grid('tile.path', frame);
+  let n = 0;
+  for (let y = 0; y < 16; y++) {
+    for (let x = 0; x < 32; x++) {
+      if (!inTileMask(x, y)) continue;
+      const onEdge =
+        !inTileMask(x - 1, y) ||
+        !inTileMask(x + 1, y) ||
+        !inTileMask(x, y - 1) ||
+        !inTileMask(x, y + 1);
+      const e = y < 8 ? (x < 16 ? 'nw' : 'ne') : x < 16 ? 'sw' : 'se';
+      if (onEdge && e === edge && '79'.includes(g[y]?.[x] ?? '.')) n++;
+    }
+  }
+  return n;
+}
+
 describe("A3M6's Dome Row at night", () => {
   it('opens Dome 1 warm, then frosts it in two steps', () => {
-    const warm = (f: string): number => count(grid('prop.dome', f), 'HY');
-    const frost = (f: string): number => count(grid('prop.dome', f), 'FI');
     expect(warm('open')).toBeGreaterThan(20);
     expect(warm('dark')).toBe(0);
     expect(frost('open')).toBe(0);
@@ -170,24 +193,6 @@ describe("A3M6's Dome Row at night", () => {
   });
 
   it('runs the 2-wide lane with no worn rim on the edge its two tiles share', () => {
-    // The rim on an edge: '7' or '9' on that edge's mask-boundary pixels.
-    const rim = (frame: string, edge: 'nw' | 'ne' | 'se' | 'sw'): number => {
-      const g = grid('tile.path', frame);
-      let n = 0;
-      for (let y = 0; y < 16; y++) {
-        for (let x = 0; x < 32; x++) {
-          if (!inTileMask(x, y)) continue;
-          const onEdge =
-            !inTileMask(x - 1, y) ||
-            !inTileMask(x + 1, y) ||
-            !inTileMask(x, y - 1) ||
-            !inTileMask(x, y + 1);
-          const e = y < 8 ? (x < 16 ? 'nw' : 'ne') : x < 16 ? 'sw' : 'se';
-          if (onEdge && e === edge && '79'.includes(g[y]?.[x] ?? '.')) n++;
-        }
-      }
-      return n;
-    };
     const shared = [
       ['wide_x_ne', 'sw'],
       ['wide_x_sw', 'ne'],

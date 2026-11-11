@@ -34,6 +34,9 @@ import {
 } from './staging.ts';
 import type { StagingView } from './state.ts';
 import { YieldLogStage } from './YieldLogStage.tsx'; // T614
+import { MailStage } from '../screens/mailStage.tsx'; // T714
+import { NightShiftStage } from '../screens/nightShiftStage.tsx'; // T714
+import { WaykeeperStage } from '../screens/waykeeperStage.tsx'; // T714
 
 /** How often a moving stage redraws (ms): faster than the quickest anim (12 fps). */
 const STAGE_TICK_MS = 40;
@@ -220,8 +223,9 @@ function Cannon({
 
 /** Every timeline a staging runs, to know when it has settled. */
 function beatsOf(kind: StagingKind, still: boolean): [string, readonly Beat[]][] {
-  // The Yield Log has no sprite beats: its stage runs its own clock (YieldLogStage.tsx).
-  if (kind === 'yield_log') return [];
+  // The Yield Log has no sprite beats: its stage runs its own clock (YieldLogStage.tsx); so do
+  // T714's (mail, Night Shift, Waykeeper).
+  if (kind !== 'rig9_feed' && kind !== 'party') return [];
   if (kind === 'rig9_feed') return [[FEED_SPRITE, still ? FEED_BEATS_STILL : FEED_BEATS]];
   return still
     ? [[CONFETTI_SPRITE, FALL_BEATS_STILL]]
@@ -243,6 +247,9 @@ export function Staging({ staging }: { staging: StagingView }) {
       beatsOf(kind, still).some(([id, beats]) => stillMoving(beats, animsOf(id), t)),
   );
   if (kind === 'yield_log') return <YieldLogStage from={staging.from} />;
+  if (kind === 'mail') return <MailStage from={staging.from} />;
+  if (kind === 'night_shift') return <NightShiftStage from={staging.from} />;
+  if (kind === 'waykeeper') return <WaykeeperStage from={staging.from} />;
   return kind === 'rig9_feed' ? (
     <FeedStage ms={ms} still={still} />
   ) : (

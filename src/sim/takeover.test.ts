@@ -279,7 +279,11 @@ describe('Hostile Takeover (takeover.ts)', () => {
     boss.stasisTicks = 0;
     boss.unnervedTicks = 5;
     expect(run(state, ctx, 1)).toEqual([{ type: 'JamInterrupted', uid: boss.uid }]);
-    expect([boss.jamTellTicks, boss.jamTicks, boss.takeoverTowers]).toEqual([0, TAKEOVER.everyTicks, []]);
+    expect([boss.jamTellTicks, boss.jamTicks, boss.takeoverTowers]).toEqual([
+      0,
+      TAKEOVER.everyTicks,
+      [],
+    ]);
     boss.unnervedTicks = 0;
     const after = run(state, ctx, TAKEOVER.everyTicks - TAKEOVER.tellTicks);
     expect(after).toEqual([{ type: 'TakeoverTell', uid: boss.uid, towers: expect.any(Array) }]);
