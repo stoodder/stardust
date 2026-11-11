@@ -69,7 +69,12 @@ function parSteps(): BuildStep[] {
     { wave: 11, upgrade: BEND },
     { wave: 11, upgrade: SOUTH_W },
     { wave: 12, upgrade: NW },
+    { wave: 12, build: 'harpoon', tile: EDGE_S },
     { wave: 13, upgrade: WEST_S },
+    { wave: 13, upgrade: EDGE_S },
+    { wave: 14, upgrade: EDGE_S },
+    { wave: 14, build: 'harpoon', tile: EDGE_N },
+    { wave: 15, upgrade: EDGE_N },
   ];
 }
 
