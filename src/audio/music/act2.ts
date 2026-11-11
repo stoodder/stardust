@@ -5,6 +5,7 @@
 // home, so every pass leans forward into the next. Eight bars over
 // C | F | Fm | G | C | Ab | Fm | G, driving eighths in the bass where Act I bounced octaves.
 import type { Song } from '../types.ts';
+import { CHOIR_LINE_BRIGHT } from './act3.ts';
 import { KIT } from './instruments.ts';
 
 /** The couplet with minor bridges (the lead): bars 1–2 and 5 as Act I sang them. */
@@ -46,5 +47,7 @@ export const ACT2_BATTLE: Song = {
       pattern: [BEAT, BEAT, BEAT, FILL, BEAT, BEAT, BEAT, FILL].join(' | '),
     },
     { layer: 'lead', instrument: 'lead', stepsPerToken: 2, gain: 0.55, pattern: COUPLET_MINOR },
+    // The Hum Choir's harmony line, while a Choir stands (T650).
+    ...CHOIR_LINE_BRIGHT,
   ],
 };

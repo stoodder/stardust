@@ -103,6 +103,18 @@ interface Voice {
   stop(at: number): void;
 }
 
+/** A music cue playing: its id, its sequencer, and the gain its notes play through. */
+interface PlayingCue {
+  readonly id: CueId;
+  readonly seq: Sequencer;
+  readonly out: GainNode;
+}
+
+/** How long a finished or stopped cue's gain is kept for its last notes to ring out (s). */
+const CUE_TAIL_SEC = 4;
+/** A stopped cue fades out over about this long (s; a time constant of a third of it). */
+export const CUE_STOP_SEC = 0.15;
+
 interface PlayingTheme {
   readonly id: ThemeId;
   readonly seq: Sequencer;
@@ -185,7 +197,10 @@ export class Synth {
   readonly #book: VoiceBook<Voice> = createVoiceBook<Voice>(MAX_SFX_VOICES);
   readonly #compiled = new Map<string, CompiledSong>();
   #themes: PlayingTheme[] = [];
-  #cueSeqs: Sequencer[] = [];
+  /** The cues playing, each through its own gain (so one can be faded out, `stopCue`). */
+  #cueSeqs: PlayingCue[] = [];
+  /** Cues done or stopped, their gains kept until their last notes ring out (then disconnected). */
+  #cueTails: { readonly out: GainNode; readonly until: number }[] = [];
   /** Timed ducks (big sounds) and held ones (the radio, the Hollow), by key. */
   #ducks: { level: number; until: number }[] = [];
   readonly #held = new Map<string, { level: number; fadeSec: number | null }>();
@@ -293,9 +308,41 @@ export class Synth {
 
   /** Plays a one-shot music cue now (it isn't ducked; it's the point of the moment). */
   cue(id: CueId): void {
-    this.#cueSeqs.push(createSequencer(this.#compile(CUES[id]), this.ctx.currentTime + 0.02));
+    const out = this.ctx.createGain();
+    out.connect(this.cues);
+    const seq = createSequencer(this.#compile(CUES[id]), this.ctx.currentTime + 0.02);
+    this.#cueSeqs.push({ id, seq, out });
     this.played.set(`cue:${id}`, (this.played.get(`cue:${id}`) ?? 0) + 1);
     this.pump();
+  }
+
+  /**
+   * Cuts every instance of sound effect `id` short, with the voices' short fade (a loop the story
+   * ends: the door hum as the SEAL is pressed). Returns how many it stopped.
+   */
+  stop(id: SfxId): number {
+    const voices = this.#book.take(id);
+    const now = this.ctx.currentTime;
+    for (const v of voices) v.stop(now);
+    return voices.length;
+  }
+
+  /**
+   * Fades every playing instance of cue `id` out over CUE_STOP_SEC and schedules no more of its
+   * notes (a sung line taking over from the one before). Returns how many it stopped.
+   */
+  stopCue(id: CueId): number {
+    const now = this.ctx.currentTime;
+    let n = 0;
+    this.#cueSeqs = this.#cueSeqs.filter((c) => {
+      if (c.id !== id) return true;
+      c.out.gain.cancelScheduledValues(now);
+      c.out.gain.setTargetAtTime(0, now, CUE_STOP_SEC / 3);
+      this.#cueTails.push({ out: c.out, until: now + CUE_TAIL_SEC });
+      n++;
+      return false;
+    });
+    return n;
   }
 
   /** The theme playing (not fading out), or null. */
@@ -337,7 +384,12 @@ export class Synth {
       g.connect(fade);
       return g;
     };
-    const layers = { base: layer('base'), drums: layer('drums'), lead: layer('lead') };
+    const layers = {
+      base: layer('base'),
+      drums: layer('drums'),
+      lead: layer('lead'),
+      choir: layer('choir'),
+    };
     this.#themes.push({
       id,
       seq: createSequencer(this.#compile(THEMES[id]), t + 0.05),
@@ -412,12 +464,23 @@ export class Synth {
       th.fade.disconnect();
       return false;
     });
-    for (const seq of this.#cueSeqs) {
-      seq.pump(until, (e, at) => {
-        if (at >= now - LATE_SEC) this.#playNote(e, at, this.cues);
+    for (const c of this.#cueSeqs) {
+      c.seq.pump(until, (e, at) => {
+        if (at >= now - LATE_SEC) this.#playNote(e, at, c.out);
       });
     }
-    this.#cueSeqs = this.#cueSeqs.filter((s) => !s.done);
+    this.#cueSeqs = this.#cueSeqs.filter((c) => {
+      if (!c.seq.done) return true;
+      this.#cueTails.push({ out: c.out, until: now + CUE_TAIL_SEC });
+      return false;
+    });
+    if (this.#cueTails.some((t) => t.until <= now)) {
+      this.#cueTails = this.#cueTails.filter((t) => {
+        if (t.until > now) return true;
+        t.out.disconnect();
+        return false;
+      });
+    }
     this.#updateDuck();
   }
 
@@ -434,6 +497,7 @@ export class Synth {
       th.fade.gain.setTargetAtTime(0, t, 0.02);
       th.stopAt = t + 0.1;
     }
+    for (const c of this.#cueSeqs) this.#cueTails.push({ out: c.out, until: t + CUE_TAIL_SEC });
     this.#cueSeqs = [];
   }
 

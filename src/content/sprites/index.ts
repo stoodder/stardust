@@ -144,7 +144,10 @@ import { propSeam } from './props/seam.ts';
 import { propWall } from './props/wall.ts';
 import { propRelocationFence } from './props/relocation_fence.ts';
 import { propBasin } from './props/basin.ts';
+import { propShuttle } from './props/shuttle.ts';
+import { propBlastDoor } from './props/blast_door.ts';
 import { tileHush } from './tiles/hush.ts';
+import { tileRift } from './tiles/rift.ts';
 import { tileApron } from './tiles/apron.ts';
 import { tileGrass } from './tiles/grass.ts';
 import { tilePath } from './tiles/path.ts';
@@ -267,7 +270,10 @@ export const SPRITES = [
   propWall,
   propRelocationFence,
   propBasin,
+  propShuttle,
+  propBlastDoor,
   tileHush,
+  tileRift,
   towerRivet,
   towerRivetHead,
   towerThumper,

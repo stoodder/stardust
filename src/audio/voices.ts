@@ -36,6 +36,8 @@ export interface VoiceBook<H> {
   add(id: string, priority: Priority, start: number, end: number, handle: H): void;
   /** Instances still sounding at `now`. */
   live(now: number): number;
+  /** Takes every instance of `id` out of the book (the caller stops them): a sound cut short. */
+  take(id: string): H[];
   clear(): void;
 }
 
@@ -87,6 +89,11 @@ export function createVoiceBook<H>(maxVoices: number): VoiceBook<H> {
     live(now) {
       prune(now);
       return entries.length;
+    },
+    take(id) {
+      const taken = entries.filter((e) => e.id === id);
+      if (taken.length > 0) entries = entries.filter((e) => e.id !== id);
+      return taken.map((e) => e.handle);
     },
     clear() {
       entries = [];

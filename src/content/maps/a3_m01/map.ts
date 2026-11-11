@@ -66,6 +66,26 @@ export const map = defineMapLayout({
     '..#.o.................',
     '..C...................',
   ],
+  // The bowl (render-only, T640c): the rim outside the spiral's outer ring, a step down to the
+  // band between the rings, and another into the inner basin, where the warren homes stand under
+  // the sign. Cliff faces show on the bowl's back walls; the road runs along each lip.
+  // prettier-ignore
+  terraces: [
+    '2222222222222222222222',
+    '2222222222222222222222',
+    '2222222222222222222222',
+    '2222222221111111222222',
+    '2222222221111111222222',
+    '2222222221100011222222',
+    '2222222221100011222222',
+    '2222222221100011222222',
+    '2222222221222222222222',
+    '2222222222222222222222',
+    '2222222222222222222222',
+    '2222222222222222222222',
+    '2222222222222222222222',
+    '2222222222222222222222',
+  ],
   paths: [
     // The refugees' road, and the Hollow inside the basin behind them.
     { id: 'spiral', tiles: SPIRAL.map(([a, b]) => [a, b]) },

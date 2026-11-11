@@ -10,10 +10,11 @@
 // door (waves.ts). The unchosen door is shut and dark (render's), but any enemy that reaches either
 // door follows the exit rule and takes one of the sheltered (sim/escort.ts `leakAtExit`).
 //
-// Two rifts open behind Bricks, onto the forks, never through him: the east rift (cracks with W3,
-// opens with W4) in from the east edge along row 6 and down onto the east fork; the west rift (W11,
-// the doomed escalation) the same from the west. Both cross only decor and road, never a pad (maps.md
-// § 4). Rift Moths fly two lanes from the north corners, crossing over the choke to the far door.
+// Two rifts open behind Bricks, onto the forks, never through him: the east rift (cracks as W3
+// starts, opens as W4 does) down column 15 from the north edge onto the east fork; the west rift
+// (W11, the doomed escalation) down column 5 onto the west fork. Both cross only decor and road,
+// never a pad (maps.md § 4). Rift Moths fly two lanes from the north corners, crossing over the
+// choke to the far door.
 //
 // Markers: the blast doors (each a core `C` a group's `exit` names), Bricks's post on the rock
 // beside the choke (he blocks the road where it passes nearest it, (10,6); sim/blocker.ts), the
@@ -68,8 +69,8 @@ const WARREN_ROAD: GridPos[] = [
 export const GROUPS = ['first', 'second', 'third', 'fourth', 'fifth', 'last'] as const;
 
 /** The script event releasing group `g` through both doors (the door C3 didn't pick stays home). */
-function release(g: (typeof GROUPS)[number], on: ScriptTrigger): ScriptedEvent[] {
-  return [{ id: g, on, actions: [{ spawnAllies: `convoy_${g}` }, { spawnAllies: `warren_${g}` }] }];
+function release(g: (typeof GROUPS)[number], on: ScriptTrigger): ScriptedEvent {
+  return { id: g, on, actions: [{ spawnAllies: `convoy_${g}` }, { spawnAllies: `warren_${g}` }] };
 }
 
 export const map = defineMapLayout({
@@ -233,12 +234,12 @@ export const map = defineMapLayout({
   events: [
     // The groups walk out as their waves start (W1, W4, W7, W9, W10); the last as W14's countdown
     // opens, timed to clear its door as W14 starts (waves.ts LAST_WALK_SEC).
-    ...release('first', { wave: 1, phase: 'start' }),
-    ...release('second', { wave: 4, phase: 'start' }),
-    ...release('third', { wave: 7, phase: 'start' }),
-    ...release('fourth', { wave: 9, phase: 'start' }),
-    ...release('fifth', { wave: 10, phase: 'start' }),
-    ...release('last', { wave: 14, phase: 'countdown' }),
+    release('first', { wave: 1, phase: 'start' }),
+    release('second', { wave: 4, phase: 'start' }),
+    release('third', { wave: 7, phase: 'start' }),
+    release('fourth', { wave: 9, phase: 'start' }),
+    release('fifth', { wave: 10, phase: 'start' }),
+    release('last', { wave: 14, phase: 'countdown' }),
     // The last name tag (app/dialogue.ts: a `latest` tag's moment): {name}, on the newest turret,
     // as W10's countdown opens.
     {

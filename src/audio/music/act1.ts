@@ -3,6 +3,7 @@
 // the couplet answers "brighter every day" (E–F–G–A–G) and "clearing the way" (D–E–D–C).
 // Eight bars over C | F | Am | G | C | F | G | C, so every loop resolves home and wraps cleanly.
 import type { Song } from '../types.ts';
+import { CHOIR_LINE_BRIGHT } from './act3.ts';
 import { KIT } from './instruments.ts';
 
 /** The couplet melody in 8ths (the lead of both themes): the PA's "Everglow Bright". */
@@ -44,6 +45,8 @@ export const ACT1_BATTLE: Song = {
       pattern: [BEAT, BEAT, BEAT, FILL, BEAT, BEAT, BEAT, FILL].join(' | '),
     },
     { layer: 'lead', instrument: 'lead', stepsPerToken: 2, gain: 0.6, pattern: COUPLET },
+    // The Hum Choir's harmony line, while a Choir stands (T650).
+    ...CHOIR_LINE_BRIGHT,
   ],
 };
 

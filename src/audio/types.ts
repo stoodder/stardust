@@ -84,9 +84,13 @@ export interface Instrument {
   readonly gain: number;
 }
 
-/** The music layers a battle adds as it intensifies (D001 #9; architecture.md § Audio). */
-export type MusicLayer = 'base' | 'drums' | 'lead';
-export const MUSIC_LAYERS: readonly MusicLayer[] = ['base', 'drums', 'lead'];
+/**
+ * The music layers a battle adds as it intensifies (D001 #9; architecture.md § Audio), and the
+ * Hum Choir's harmony line, which joins whenever a Choir stands (T650; design/towers.md § Hum
+ * Choir).
+ */
+export type MusicLayer = 'base' | 'drums' | 'lead' | 'choir';
+export const MUSIC_LAYERS: readonly MusicLayer[] = ['base', 'drums', 'lead', 'choir'];
 
 /**
  * One track of a song: a pattern string (music/pattern.ts) played by an instrument on a layer.

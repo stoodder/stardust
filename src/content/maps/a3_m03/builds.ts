@@ -2,7 +2,8 @@
 // on Evacuated % against its 50% floor (balance/holdout.ts; maps.md § 6.4), outside the monotonic
 // chain. The harness runs par through both doors (`flagVariants`: the convoy, the reference's first,
 // and the warren), and every build ends by pressing the SEAL (its `scriptInput` step) as W14
-// starts. Suppressing Fire goes on the choke as its cooldown allows.
+// starts. Suppressing Fire goes where par loses people: the east rift's head as W4's Motes come in,
+// the W8 cluster at the choke, and the first rift Undertows of W11 and W12.
 import { defineBuilds } from '../../define.ts';
 import { REFERENCE_PROFILES } from '../../upgrades/reference.ts';
 import type { BuildStep, GridPos, TowerId } from '../../types.ts';

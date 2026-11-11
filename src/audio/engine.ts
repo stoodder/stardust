@@ -34,6 +34,10 @@ export interface AudioEngine {
   unlock(): void;
   play(id: SfxId, opts?: PlayOptions): boolean;
   cue(id: CueId): void;
+  /** Cuts every instance of sound effect `id` short (a loop the story ends; Synth.stop). */
+  stop(id: SfxId): void;
+  /** Fades out every playing instance of cue `id` (a sung line taking over; Synth.stopCue). */
+  stopCue(id: CueId): void;
   /** The music to play; remembered until unlock. */
   setMusic(
     theme: ThemeId | null,
@@ -68,6 +72,8 @@ export function silentEngine(muted = false): AudioEngine {
     unlock() {},
     play: () => false,
     cue() {},
+    stop() {},
+    stopCue() {},
     setMusic() {},
     holdDuck() {},
     holdSfxDuck() {},
@@ -98,7 +104,7 @@ export function createAudioEngine(factory: ContextFactory = browserContext): Aud
     theme: ThemeId | null;
     layers: Readonly<Record<MusicLayer, number>>;
     level: number;
-  } = { theme: null, layers: { base: 0, drums: 0, lead: 0 }, level: 1 };
+  } = { theme: null, layers: { base: 0, drums: 0, lead: 0, choir: 0 }, level: 1 };
   const held = new Map<string, { level: number; fadeSec?: number }>();
   const sfxHeld = new Map<string, number>();
 
@@ -141,6 +147,12 @@ export function createAudioEngine(factory: ContextFactory = browserContext): Aud
     cue(id) {
       if (synth === null || ctx?.state !== 'running') return;
       synth.cue(id);
+    },
+    stop(id) {
+      synth?.stop(id);
+    },
+    stopCue(id) {
+      synth?.stopCue(id);
     },
     setMusic(theme, layers, level = 1) {
       music = { theme, layers, level };

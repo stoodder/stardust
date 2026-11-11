@@ -216,6 +216,30 @@ export const DRUMS = {
       },
     ],
   },
+  /**
+   * A heartbeat (T650; Act III's bed while a wave walks): a soft, low, round thump with no click,
+   * felt more than heard.
+   */
+  heart: {
+    gain: 0.6,
+    layers: [
+      {
+        wave: 'sine',
+        freq: 62,
+        glide: 0.7,
+        glideSec: 0.12,
+        env: { a: 0.006, d: 0.18, s: 0, r: 0.08 },
+        gain: 0.85,
+      },
+      {
+        wave: 'noise',
+        freq: 440,
+        filter: { type: 'lowpass', freq: 220 },
+        env: { a: 0.004, d: 0.06, s: 0, r: 0.03 },
+        gain: 0.15,
+      },
+    ],
+  },
 } as const satisfies Readonly<Record<string, Instrument>>;
 
 /** The standard kit: k kick, s snare, h hat, o open hat. */

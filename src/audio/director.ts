@@ -1,7 +1,8 @@
 // The music director (pure): which theme plays and how loud each layer is, from what's on screen
 // and how the battle is going. Layers add as a battle intensifies (architecture.md § Audio):
 // the base always, drums while a wave is on the field, and the lead for the final waves or when
-// the core is in trouble. The synth crossfades to whatever this returns.
+// the core is in trouble; the Hum Choir's harmony line whenever a Choir stands. The synth
+// crossfades to whatever this returns.
 import type { Act } from '../content/types.ts';
 import { BATTLE_THEME, type ThemeId } from './music/index.ts';
 import type { MusicLayer } from './types.ts';
@@ -27,6 +28,8 @@ export interface BattleMood {
   readonly integrity: number;
   readonly outcome: 'playing' | 'won' | 'lost';
   readonly paused: boolean;
+  /** A tower projecting a Hum Choir aura stands (fieldSounds' `choirLive`): its harmony line. */
+  readonly choir?: boolean;
 }
 
 export type LayerLevels = Readonly<Record<MusicLayer, number>>;
@@ -39,8 +42,8 @@ export interface MusicIntent {
   readonly level: number;
 }
 
-const SILENT: LayerLevels = { base: 0, drums: 0, lead: 0 };
-const TITLE_LAYERS: LayerLevels = { base: 1, drums: 0, lead: 1 };
+const SILENT: LayerLevels = { base: 0, drums: 0, lead: 0, choir: 0 };
+const TITLE_LAYERS: LayerLevels = { base: 1, drums: 0, lead: 1, choir: 0 };
 
 /** The music for a battle in `mood`. A finished map is silent: its win or loss cue plays alone. */
 export function battleMusic(mood: BattleMood): MusicIntent {
@@ -54,6 +57,7 @@ export function battleMusic(mood: BattleMood): MusicIntent {
       base: 1,
       drums: mood.waveActive ? 1 : 0,
       lead: finalWaves || lowIntegrity ? 1 : 0,
+      choir: mood.choir === true ? 1 : 0,
     },
     level: mood.paused ? PAUSED_LEVEL : 1,
   };
