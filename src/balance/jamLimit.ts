@@ -1,7 +1,8 @@
 // Harness #10, the jam limit (conventions.md § Balance sims; design/enemies.md § 4's wave-design
 // limit; D146; T702): on a map whose waves send a jammer (rules.ts JAMMER_ENEMIES), the par build
-// never has more than JAM_MAX_TOWER_SHARE (25%) of its live towers Jammed at once, on every seed.
-// The sim tallies it each tick (sim/jam.ts: `stats.jamOverLimitTicks`, the ticks over the share;
+// never has more towers Jammed at once than the jam limit, max(1, ⌊JAM_MAX_TOWER_SHARE (25%) × live
+// towers⌋), on every seed. The sim tallies it each tick (sim/jam.ts: `stats.jamOverLimitTicks`, the
+// ticks over `jamLimitFor`, the limit the jammers land within (D150);
 // `jammedPeak`; `jammedTowerTicks` / `towerTicks`, the jam uptime the report prints).
 import type { CompiledMapDef } from '../content/compiled.ts';
 import { JAM_MAX_TOWER_SHARE, JAMMER_ENEMIES } from '../content/rules.ts';

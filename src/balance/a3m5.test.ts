@@ -17,6 +17,7 @@ import { compileContent } from '../content/compile.ts';
 import type { CompiledBuild } from '../content/compiled.ts';
 import { PADS } from '../content/maps/a3_m05/builds.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
+import type { ProfileDef } from '../content/types.ts';
 import { ROAD_TILES, TICK_HZ, beatMisses, one, runA3m5 } from './__fixtures__/a3m5.ts';
 import { runMap } from './harness.ts';
 import { profileModifiers } from './profile.ts';
@@ -129,7 +130,7 @@ describe('A3M5 W2, the healer teach (D150)', { timeout: HARNESS_TEST_TIMEOUT_MS 
     ]);
     const ref = map.builds.referenceProfile;
     expect(ref.protocols).toEqual(['emergency_bulkhead']);
-    const headStart = { ...ref, protocols: ['head_start'] };
+    const headStart: ProfileDef = { ...ref, protocols: ['head_start'] };
     const r = runA3m5(content, 'par', {
       profile: {
         difficulty: 'standard',
