@@ -5,7 +5,8 @@
 // its two halves bobbing out of step with each other, so it plainly comes apart. One half carries
 // a pale ring where a face should be and the acid pinprick eyes (three, never a pair), the other a
 // stalk that wilts the wrong way; too many legs, popping to new places each frame; a pale
-// (inverted) outline; 1–3 pixels missing from every frame (`dropPixels`).
+// (inverted) outline with the Mote's `ink.0` contour inside it, the crack lit to the rim (T569);
+// 1–3 pixels missing from every frame (`dropPixels`).
 // - `walk_<facing>` (3 frames, 5 fps): the halves lurch, one up while the other sinks.
 // - `heavy_<facing>` (the `heavy` tell, §8): swollen and darker, the victim pale inside it, the
 //   outline doubled, speed lines trailing.

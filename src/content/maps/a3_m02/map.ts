@@ -111,7 +111,7 @@ export const map = defineMapLayout({
   // Bricks rides along (slot 2: Suppressing Fire); slot 1 is Orbital Strike until the cue.
   companion: { id: 'bricks', state: 'present' },
   events: [
-    // The Clean Exit (act3.md § A3M2): mid-W7, inside its spawn window (waves.ts CUE_SEC), so an
+    // The Clean Exit (act3.md § A3M2): 12 s into W7, mid-column (waves.ts W7_GAP), so an
     // early W8 call can't skip it. Sterling revokes the Everglow class with the most credits
     // invested (100% refund) and the Orbital Strike uplink, and QUILL's lockout begins.
     {

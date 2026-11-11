@@ -203,6 +203,21 @@ test('A3M2: from the Sector map, the drones, the Clean Exit, the locked preview,
     { timeout: 10_000 },
   );
   await shot(page, 'a3m2', 5, 'clean-exit');
+  // The pausing panel reads on through QUILL's broken tell and the held silence to the buffer, and
+  // Sterling's last line; then it closes.
+  const panel = page.getByRole('dialog', { name: 'Comms' });
+  const next = panel.getByRole('button', { name: /^(Skip|Next)/ });
+  await expect(async () => {
+    if (await next.isVisible()) await next.click();
+    await expect(page.getByTestId('line-announce')).toContainText('Smiling is mandatory', {
+      timeout: 500,
+    });
+  }).toPass({ timeout: 30_000 });
+  await shot(page, 'a3m2', 6, 'clean-exit-buffer');
+  await expect(async () => {
+    if (await next.isVisible()) await next.click();
+    await expect(next).toBeHidden({ timeout: 500 });
+  }).toPass({ timeout: 15_000 });
 
   // W8's countdown: the preview is locked, and QUILL leaks the wave's trait under it.
   expect(await until(page, 'w8')).toBe(true);
@@ -211,17 +226,17 @@ test('A3M2: from the Sector map, the drones, the Clean Exit, the locked preview,
   await expect(page.getByTestId('preview-leak')).toContainText('wave eight is mostly Hollow', {
     timeout: 10_000,
   });
-  await shot(page, 'a3m2', 6, 'locked-preview');
+  await shot(page, 'a3m2', 7, 'locked-preview');
 
   // W10: the east rift is open and the Motes come through both.
   expect(await until(page, 'rifts')).toBe(true);
   await play(page, 300);
-  await shot(page, 'a3m2', 7, 'both-rifts');
+  await shot(page, 'a3m2', 8, 'both-rifts');
 
   // W12: the big drone wave, as Sterling's shuttle leaves.
   expect(await until(page, 'shuttle')).toBe(true);
   await play(page, 400);
-  await shot(page, 'a3m2', 8, 'shuttle-wave');
+  await shot(page, 'a3m2', 9, 'shuttle-wave');
   void comms;
 
   // The win: Results, then Continue plays the Asset Yield Log, and QUILL's lines come in over it.
@@ -231,15 +246,15 @@ test('A3M2: from the Sector map, the drones, the Clean Exit, the locked preview,
     .getByRole('dialog')
     .filter({ has: page.getByRole('button', { name: 'Continue' }) });
   await expect(card).toBeVisible({ timeout: 15_000 });
-  await shot(page, 'a3m2', 9, 'results');
+  await shot(page, 'a3m2', 10, 'results');
   await card.getByRole('button', { name: 'Continue' }).click();
   await expect(page.getByTestId('stage-yield-log')).toBeVisible({ timeout: 10_000 });
   await expect(page.getByTestId('yield-log-header')).toContainText(
     'ASSET YIELD LOG · ENTRIES: 41,206 + ',
   );
   await page.waitForTimeout(3000);
-  await shot(page, 'a3m2', 10, 'yield-log');
+  await shot(page, 'a3m2', 11, 'yield-log');
   const scene = page.getByRole('dialog', { name: 'Scene' });
   await expect(scene).toContainText('I thought it was inventory.', { timeout: 30_000 });
-  await shot(page, 'a3m2', 11, 'inventory');
+  await shot(page, 'a3m2', 12, 'inventory');
 });

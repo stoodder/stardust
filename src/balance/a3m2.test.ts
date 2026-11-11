@@ -1,10 +1,12 @@
-// A3M2's tuning is robust where it matters (T621). As tuned, par wins at PAR_INTEGRITY/22 on the
-// Defend chain after A2M6's 72.7 (act3.md § A3M2): the Clean Exit takes its Rivets mid-W7, the refund
-// rebuilds as a Harpoon and Mindspikes, and its leaks are the hasted drone rushes of W12, W14 and
-// W15 (Emergency Bulkhead takes the first five). Without armor the drones walk through and the map
-// is lost by W10; without splash the packed Mote clusters of W2 and W4 take it. Both alts win, the
-// cue taking the Sprinkler and the Rivet; par wins with the cue forced onto its Thumper; Story
-// wins; alwaysCallEarly wins.
+// A3M2's tuning is robust where it matters (T621). As tuned, par wins at 14/22 (63.6%), the Defend
+// chain after A2M6's 72.7 (act3.md § A3M2): the Clean Exit takes its Rivets 12 s into W7, the refund
+// rebuilds as a Harpoon and two Mindspikes, and its only leaks are W12's hasted rush (thirteen
+// drones; Emergency Bulkhead takes the first five), so it earns Back on Your Feet. Without its
+// casts (Orbital Strike before the cue, Suppressing Fire on W14's rush) it ends at 45.5. Without
+// armor the drone columns walk through and the map is lost in W8; without splash the packed Mote
+// packs of W2 and W4 take it in W4. Both alts win (100 each), the cue taking the Sprinkler and the
+// Rivets; par wins with the cue forced onto its Thumper (77.3); the Crane alt (T501c-M6) wins on
+// the reference profile plus the Crane's specs; Story wins; alwaysCallEarly wins (54.5).
 //
 // The beats (act3.md § A3M2): the Clean Exit runs once, 12 s into W7 while its drone column is still
 // spawning (so an early W8 call can't skip it, and it lands the same under alwaysCallEarly), with
@@ -13,7 +15,7 @@
 // spawning); the west rift cracks as W1 starts and opens as W2 starts, the east rift as W9 and W10
 // start, and nothing walks a rift before it opens; Sterling's shuttle lifts during W12's spawn
 // window. Every reference run lands them, and so does par with every drone, Expediter, Mote or
-// Fracture group shifted ±0.2 s, where par stays in the band.
+// Fracture group shifted ±0.2 s, where par holds 13–15 of 22 (inside the band).
 import { describe, expect, it } from 'vitest';
 import { compileContent } from '../content/compile.ts';
 import type { CompiledBuild, CompiledBuildStep, CompiledContent } from '../content/compiled.ts';
@@ -248,7 +250,7 @@ describe('A3M2 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
     expect(r.steps.filter((st) => st.error !== null)).toEqual([]);
   });
 
-  it('runs twelve to fourteen minutes at 1× (Act III: 12–18)', () => {
+  it('runs about fourteen minutes at 1× (Act III: 12–18)', () => {
     const minutes = run('par').result!.ticks / (TICK_HZ * 60);
     expect(minutes).toBeGreaterThan(12);
     expect(minutes).toBeLessThan(18);
@@ -277,7 +279,7 @@ describe('A3M2 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
     (_name, _way, patches) => {
       const c = shiftedContent('a3_m02', patches);
       const b = beats(c, 'par');
-      expect(b.integrity).toBeGreaterThanOrEqual(11);
+      expect(b.integrity).toBeGreaterThanOrEqual(13);
       expect(b.integrity).toBeLessThanOrEqual(15);
       expectBeats(b, 'par', 'rivet');
     },

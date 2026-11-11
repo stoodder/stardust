@@ -3,7 +3,8 @@
 // direction §4): a half-moon of drained body, its broken face a raw, flat edge glowing cold violet
 // (the Fracture's crack, unsung stardust), carried at the back; half a pale ring for a face on the
 // round side; two acid eyes (never a pair: one big, one a pinprick); legs on its round side only, so
-// it hobbles, lurching toward its missing half every other step; a pale (inverted) outline; 1–3
+// it hobbles, lurching toward its missing half every other step; a pale (inverted) outline with the
+// Mote's `ink.0` contour inside it (T569), the broken edge lit to the rim; 1–3
 // pixels missing from every frame. Smaller than a Fracture, bigger than a Mote, and the only Hollow
 // shape with a straight edge, so a pair of them reads as one Fracture's two halves.
 // - `walk_<facing>` (3 frames, 7 fps); `heavy_<facing>` (§8 `heavy`); `tell_<facing>` (the reach).

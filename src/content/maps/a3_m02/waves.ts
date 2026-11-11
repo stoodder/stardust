@@ -1,7 +1,7 @@
 // A3M2 waves: docs/story/campaign/act3.md § A3M2, Waves. Routes: `road` (A1M4's U-road, where
 // Everglow Security walks to repossess the gate), and the rift lanes `rift_w` (from W2, in along
-// the band's row 4 onto the west side) and `rift_e` (from W10, in along the band's north row onto
-// the road past the billboards). A countdown opens once the wave before it finishes spawning.
+// the band's row 4 onto the west side) and `rift_e` (from W10, in along the band's south row under
+// the gate and up into the plaza onto the south side's east end). A countdown opens once the wave before it finishes spawning.
 // Groups without an `intervalSec` use the enemy's default spacing (Mote 0.3 s, Fracture 1.2 s,
 // Compliance Drone 1.0 s, Expediter 1.5 s).
 import { defineWaves } from '../../define.ts';
@@ -77,7 +77,7 @@ export const waves = defineWaves([
   },
   // W3 · Compliance Drones ×4 [T: Everglow Security; armor 4]
   { countdownSec: COUNTDOWN, groups: [drones(4, 0, 2), motes(14, 'rift_w', 8, 0.2)] },
-  // W4 · drones + Motes [X]
+  // W4 · drones + Motes [X: the splash test, one packed pack of 38]
   { countdownSec: COUNTDOWN, groups: [drones(6, 0, 1.5), motes(MOTES4, 'road', 6, M_GAP)] },
   // W5 · one Expediter + drones [T: haste aura; kill it first]
   { countdownSec: COUNTDOWN, groups: [drones(3, 0, 1.2), expediters(1, 3), drones(4, 4.5, 1.2)] },
@@ -129,7 +129,7 @@ export const waves = defineWaves([
       g('fracture', 2, 'rift_w', 26, 4),
     ],
   },
-  // W14 · everything Everglow: a column with its escorts, then the biggest rush
+  // W14 · everything Everglow: a column with its escorts, then a rush behind three Expediters
   {
     countdownSec: COUNTDOWN,
     groups: [drones(22, LEAD, 1.0), expediters(2, LEAD + 6, 8), ...rush(LEAD + 30, 3, W14_RUSH)],

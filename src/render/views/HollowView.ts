@@ -3,8 +3,9 @@
 // and ripples sit in `decal`, under the units; the tendrils in `vfx`, over them, from body to body
 // (a held unit is close enough that under the sprites they'd hide). Redrawn each frame into three
 // Graphics: allocation-free.
-// T630a polishes the unit marks (tendrils, growth, ripples), T630b the rift telegraph, and
-// T640a/T640c draw the real sprites and props.
+// T630a polishes the unit marks (tendrils, growth, ripples), T630b the rift telegraph, and T640c
+// the props. The Maw's growth and tendril pose and the Undertow's `under` ripple are its sprites'
+// (T640a; EnemyView draws them, gatherLook.ts `mawBody`).
 import type * as Phaser from 'phaser';
 import type { CompiledMapDef } from '../../content/compiled.ts';
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
