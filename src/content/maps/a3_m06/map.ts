@@ -77,7 +77,7 @@ export const map = defineMapLayout({
   revisitAt: [4, 2],
   // A generous limit (act3.md § A3M6: the breather inside A3M5 → A3M6 → FIN): the map is lost
   // once half the refugees are lost (27 of 54).
-  maxLostPct: 0.5,
+  maxLostPct: 0.55,
   size: { cols: 22, rows: 14 },
   // The band only: '*' is A1M1's footprint, composed in unchanged.
   // prettier-ignore
@@ -196,7 +196,7 @@ export const map = defineMapLayout({
     when: { flag: 'door_choice', eq: 'convoy' },
     attack: {
       type: 'kinetic' as const,
-      damage: 6,
+      damage: 4,
       ratePerSec: 1,
       rangeTiles: 3.5,
       targets: { ground: true, air: false },

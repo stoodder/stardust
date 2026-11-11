@@ -113,12 +113,7 @@ export const waves = defineWaves([
   // W13 · the bearers' biggest group, and the Hollow behind it
   {
     ...NO_CALL,
-    groups: [
-      motes(9, 'hunt', HUNT_SEC, 0.4),
-      motes(6, 'vats', 4),
-      liabilities(1, 0),
-      drones(4, 4),
-    ],
+    groups: [motes(9, 'hunt', HUNT_SEC, 0.4), motes(6, 'vats', 4), liabilities(1, 0), drones(4, 4)],
   },
   // W14 · "Shareholder Value" (Sterling by remote): drones from the hangar, Hostile Takeover,
   // the jettison

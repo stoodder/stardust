@@ -87,6 +87,7 @@ function parSteps(): BuildStep[] {
     { wave: 1, build: 'harpoon', tile: YARD_N },
     { wave: 1, build: 'thumper', tile: SLUICE_S },
     { wave: 2, upgrade: YARD_S },
+    still(3, YARD_STILL_SEC, YARD_N_ROAD),
     { wave: 3, build: 'bloom', tile: INTAKE_W },
     { wave: 4, build: 'harpoon', tile: SLUICE_N },
     { wave: 5, build: 'choir', tile: BEND },
@@ -120,6 +121,10 @@ function parSteps(): BuildStep[] {
 /** W13: Stillness on the hunt as it catches the biggest bearer group by the old intake. */
 const HUNT_STILL_SEC = 19;
 const HUNT_STILL: GridPos = [0, 6];
+
+/** W3: Stillness on the Fractures as they reach the yard (the road's turn down past YARD_N). */
+const YARD_STILL_SEC = 12;
+const YARD_N_ROAD: GridPos = [5, 4];
 
 /** W14 under Rewrite: Suppressing Fire on the vats' row, then on the turn down to the core. */
 const SUPPRESS_1: GridPos = [12, 9];

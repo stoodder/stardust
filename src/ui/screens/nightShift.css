@@ -1,0 +1,141 @@
+/* Night Shift (nightShiftStage.tsx; T714; art-direction.md § Dialogue presentation): the shelters
+   at night in deep violet-black, one lamp's gold pool, the banner's faded pink. Ves'thara's laugh
+   blooms the pool; after it the room holds a step warmer. The lines sit at the bottom on a dark
+   panel. Whole pixels, no rotation. */
+.dlg-stage[data-staging='night_shift'] {
+  box-sizing: border-box;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding-bottom: 8px;
+  background: linear-gradient(var(--sd-ink-0), rgb(26 14 40) 60%, var(--sd-ink-0));
+}
+
+.dlg-stage[data-staging='night_shift'] .dlg-fullscreen {
+  position: relative;
+  background: var(--panel-fill);
+  box-shadow: 0 0 0 1px var(--sd-violet-1);
+}
+
+.ns {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ns-room {
+  position: relative;
+  width: 560px;
+  height: 200px;
+  margin: 8px auto 0;
+  overflow: hidden;
+  background: rgb(20 12 32);
+  box-shadow: 0 0 0 1px var(--sd-ink-3);
+}
+
+/* The blast-door bays along the back wall. */
+.ns-bays {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  top: 60px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.ns-bay {
+  width: 72px;
+  height: 70px;
+  background: var(--sd-ink-0);
+  box-shadow:
+    inset 0 0 0 2px var(--sd-ink-2),
+    inset 0 4px 0 2px var(--sd-ink-1);
+}
+
+/* The last Mandatory Fun Friday banner: faded pink cloth, its right half sagging. */
+.ns-banner {
+  position: absolute;
+  left: 112px;
+  top: 26px;
+  display: flex;
+  font-family: var(--font-heading);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--sd-gold-2);
+}
+
+.ns-banner-half {
+  padding: 3px 8px;
+  background: var(--sd-pink-1);
+  box-shadow: 0 1px 0 var(--sd-ink-0);
+}
+
+.ns-banner-half.sag {
+  transform: translateY(4px);
+}
+
+/* The lamp and its pool. */
+.ns-lamp {
+  position: absolute;
+  left: 271px;
+  top: 0;
+  display: block;
+}
+
+.ns-pool {
+  position: absolute;
+  left: 80px;
+  right: 80px;
+  top: 6px;
+  bottom: -40px;
+  background: radial-gradient(ellipse 50% 60% at 50% 12%, rgb(232 170 70 / 18%), transparent 100%);
+  transition:
+    opacity 600ms ease-out,
+    filter 600ms ease-out;
+  opacity: 0.7;
+}
+
+.ns-warm .ns-pool {
+  opacity: 1;
+}
+
+.ns-laugh .ns-pool {
+  opacity: 1;
+  filter: brightness(1.9) saturate(1.3);
+}
+
+.ns-warm .ns-room,
+.ns-laugh .ns-room {
+  background: rgb(30 16 36);
+}
+
+.ns-room {
+  transition: background-color 600ms ease-out;
+}
+
+.ns-floor {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 152px;
+  height: 40px;
+}
+
+.ns-sleeper {
+  position: absolute;
+}
+
+.ns-sleeper svg {
+  display: block;
+}
+
+.ns.still .ns-pool,
+.ns.still .ns-room {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ns-pool,
+  .ns-room {
+    transition: none;
+  }
+}

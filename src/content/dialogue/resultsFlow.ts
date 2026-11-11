@@ -90,6 +90,10 @@ export const RESULTS_FLOW: Readonly<Partial<Record<CampaignMapId, ResultsFlow>>>
   // card, whose debrief asks C4 in its way on's place (app/resultsFlow.ts RESULTS_CHOICES, T710).
   // Night Shift follows at the base (app/baseScenes.ts).
   a3_m04: { beforeResults: ['a3_m04_scene_mail'] },
+  // A3M6 · Let Them In (act3.md § A3M6): Pebble names you Waykeeper. The debrief plays full-screen
+  // before the card at Dome 1 (T714's staging, ui/dialogue/staging.ts), so the callsign turns on
+  // the stage, not under a payroll.
+  a3_m06: { debriefAsScene: true },
 };
 
 /** Map `map`'s results flow (an empty one when it has none). */

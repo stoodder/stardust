@@ -160,7 +160,7 @@ export const waves = defineWaves([
       moths(4, 'sky_w', 8),
       gunships(2, 'sky_e', 10, 4),
       expediters(2, 14),
-      drones(4, 16),
+      drones(5, 16),
     ],
   },
   // W18 · the road behind it fills
@@ -174,8 +174,8 @@ export const waves = defineWaves([
       moths(4, 'sky_w', 8),
       moths(4, 'sky_e', 10),
       gunships(2, 'sky_w', 12, 4),
-      expediters(2, 12),
-      drones(5, 14),
+      expediters(3, 12),
+      drones(6, 14),
     ],
   },
 ]);

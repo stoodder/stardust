@@ -64,6 +64,8 @@ export const VISIT_SCENES: readonly VisitScene[] = [
   {
     id: NIGHT_SHIFT_SCENE,
     due: (save) => save.story.flags.quill_choice !== undefined,
+    // On the dark stage in the shelters (T714's staging, ui/screens/nightShift.ts).
+    mode: 'fullscreen',
     noSkip: true,
   },
 ];
