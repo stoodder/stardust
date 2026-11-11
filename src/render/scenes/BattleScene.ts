@@ -137,6 +137,7 @@ import { EnemyView } from '../views/EnemyView.ts';
 import { FieldTintView } from '../views/FieldTintView.ts';
 import { LightingView } from '../views/LightingView.ts';
 import { TimerBarView } from '../views/TimerBarView.ts'; // T806
+import { SongView } from '../views/SongView.ts'; // T805
 import { DarknessView } from '../views/DarknessView.ts';
 import { WorldGlowView } from '../views/WorldGlowView.ts';
 import { SweepView } from '../views/SweepView.ts';
@@ -178,6 +179,7 @@ import { PlacementView } from '../views/PlacementView.ts';
 import { ProjectileView } from '../views/ProjectileView.ts';
 import { RefugeeViews } from '../views/RefugeeView.ts';
 import { BearerViews } from '../views/BearerView.ts'; // T706
+import { ChoirWalkView } from '../views/ChoirWalkView.ts'; // T804
 import { flagGatedGround } from '../views/flagDressing.ts'; // T706
 import { enemyBody, facingOf } from '../views/spriteInfo.ts';
 import { TowerView } from '../views/TowerView.ts';
@@ -241,6 +243,7 @@ export class BattleScene extends Phaser.Scene {
   /** Escort refugees (T305c). */
   #refugees!: RefugeeViews;
   #bearers!: BearerViews; // T706: bearers with their burden, militia posts
+  #choirWalk!: ChoirWalkView; // T804: the finale's choir, its song circles and halt window
   #placement!: PlacementView;
   #fx!: FxView;
   #core!: CoreView;
@@ -277,6 +280,8 @@ export class BattleScene extends Phaser.Scene {
   #bossBar!: BossBarView;
   /** The secondary timers' minimal bar (the Deep Bore; T806). */
   #timerBars!: TimerBarView;
+  /** The Leaving Song's rest flip and gold motes, the scatter's violet motes (T805). */
+  #song!: SongView;
   #huddles!: HuddleView;
   /** Aelari shields: the ripple, the pulse tell and ring (T403). */
   #shields!: ShieldView;
@@ -447,6 +452,7 @@ export class BattleScene extends Phaser.Scene {
     this.#allies = new ViewPool(() => new AllyView(ctx, prefersReducedMotion));
     this.#refugees = new RefugeeViews(ctx);
     this.#bearers = new BearerViews(ctx, prefersReducedMotion); // T706
+    this.#choirWalk = new ChoirWalkView(ctx); // T804
     this.#placement = new PlacementView(ctx, this.#elevationOf);
     this.#links = new LinkView(ctx, prefersReducedMotion);
     this.#fx = new FxView(ctx, prefersReducedMotion);
@@ -487,6 +493,7 @@ export class BattleScene extends Phaser.Scene {
     );
     this.#bossBar = new BossBarView(ctx, prefersReducedMotion);
     this.#timerBars = new TimerBarView(ctx, map.timers); // T806
+    this.#song = new SongView(ctx, prefersReducedMotion); // T805
     this.#huddles = new HuddleView(ctx, prefersReducedMotion, pulseOn);
     this.#shields = new ShieldView(ctx, this.#fx, prefersReducedMotion);
     // T530a: views that mark a unit find its body as EnemyView draws it (unitAnchor.ts).
@@ -662,6 +669,7 @@ export class BattleScene extends Phaser.Scene {
       this.#blinks.bind(bus, () => sim.state.enemies),
       this.#phases.bind(bus),
       this.#jams.bind(bus, () => sim.state.towers), // T702
+      this.#song.bind(bus, () => sim.state.enemies), // T805
       this.#leapers.bind(bus, () => sim.state.enemies), // T704
       this.#rings.bind(bus), // T707
       this.#takeover.bind(bus, () => sim.state.enemies), // T707; T730a: the jettison's burst
@@ -688,6 +696,7 @@ export class BattleScene extends Phaser.Scene {
       this.#allies.releaseAll();
       this.#refugees.releaseAll();
       this.#bearers.releaseAll(); // T706
+      this.#choirWalk.releaseAll(); // T804
       this.#offs.length = 0;
       this.#fx.reset();
       this.#sacks.reset();
@@ -710,6 +719,7 @@ export class BattleScene extends Phaser.Scene {
       this.#tidybots.reset();
       this.#bossBar.reset();
       this.#timerBars.reset(); // T806
+      this.#song.reset(); // T805
       this.#huddles.reset();
       this.#shields.reset();
       this.#auras.reset();
@@ -779,6 +789,7 @@ export class BattleScene extends Phaser.Scene {
     this.#tidybots.update(state.tick);
     this.#bossBar.update(dt, state.enemies);
     this.#timerBars.update(state.timers); // T806
+    this.#song.update(dt); // T805
     this.#huddles.update(state.enemies);
     this.#shields.update(dt, state.enemies);
     this.#auras.update(state.enemies, state.tick);
@@ -912,6 +923,7 @@ export class BattleScene extends Phaser.Scene {
       allies,
       refugees: this.#refugees.counts,
       bearers: this.#bearers.counts, // T706
+      choirWalk: this.#choirWalk.counts, // T804
       shields: {
         ripples: sh.ripples,
         breaks: sh.breaks,
@@ -1006,6 +1018,12 @@ export class BattleScene extends Phaser.Scene {
       debris: this.#fx.debrisLive,
       bossBar: this.bossBarFill,
       timerBars: this.#timerBars.shown, // T806
+      song: {
+        ...this.#song.shown,
+        restsSeen: this.#song.restsSeen,
+        scattersSeen: this.#song.scattersSeen,
+        reformsSeen: this.#song.reformsSeen,
+      }, // T805
       bossShield: this.#bossBar.shieldPx,
       bossEnd: this.#bossBar.endPx,
       bossCells: this.#bossBar.segments, // T731
@@ -1219,7 +1237,8 @@ export class BattleScene extends Phaser.Scene {
     let hoveredUid = 0;
     for (let i = 0; i < enemies.used; i++) {
       const e = enemies.items[i]!; // i < used
-      if (!e.alive || e.def === null) continue;
+      // A scattered unit is motes until it re-forms (SongView; T805): no body.
+      if (!e.alive || e.def === null || e.scatterTicks > 0) continue;
       let v = this.#enemies.get(e.uid);
       if (v === undefined) {
         v = this.#enemies.acquire(e.uid);
@@ -1300,6 +1319,7 @@ export class BattleScene extends Phaser.Scene {
       const a = allies.items[i]!; // i < used
       if (!a.alive || a.kind === null || a.group >= 0) continue; // refugees: RefugeeViews (T305c)
       if (a.mode === 'owner') continue; // swarmlings: SwarmView (T604)
+      if (a.mode === 'choir') continue; // the choir: ChoirWalkView, BearerViews (T804)
       let v = this.#allies.get(a.uid);
       if (v === undefined) {
         v = this.#allies.acquire(a.uid);
@@ -1326,6 +1346,7 @@ export class BattleScene extends Phaser.Scene {
     this.#allies.sweep(stamp);
     this.#refugees.sync(allies, stamp);
     this.#bearers.sync(state, stamp, this.time.now); // T706
+    this.#choirWalk.update(state, this.#deps.sim.map, stamp); // T804
     if (fireFrom === null) {
       this.#fx.setFireSource(Number.NaN, Number.NaN);
     } else {

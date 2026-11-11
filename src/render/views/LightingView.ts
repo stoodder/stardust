@@ -196,9 +196,9 @@ export class LightingView {
     const skies = this.#skies;
     for (let k = 0; k < skies.length; k++) {
       const img = skies[k]!; // k < length
-      if (k === 0 && this.#voidBase) img.setVisible(false); // no schedule: no sky of its own
-      else if (k === mix.stop) img.setVisible(true).setAlpha(1);
-      else if (k === mix.stop + 1) img.setVisible(mix.t > 0).setAlpha(mix.t);
+      const own = !(k === 0 && this.#voidBase); // no schedule: the map's env has no sky shown
+      if (own && k === mix.stop) img.setVisible(true).setAlpha(1);
+      else if (own && k === mix.stop + 1) img.setVisible(mix.t > 0).setAlpha(mix.t);
       else img.setVisible(false);
     }
   }

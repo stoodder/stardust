@@ -74,6 +74,7 @@ import { lookie_here } from '../../content/links/lookie_here.ts'; // T704
 import { bounce_chorus } from '../../content/links/bounce_chorus.ts'; // T704
 import { jamMap, takeoverMap } from './devM7.ts'; // T707
 import { gmawMap } from './devM7.ts'; // T708
+import { boreMap } from './devPhases.ts'; // T806
 import { songMap } from './devM8.ts'; // T805
 import { voicesMap } from './devM8.ts'; // T804
 import { blackbudget } from '../../content/enemies/blackbudget.ts'; // T703
@@ -1517,6 +1518,7 @@ export const DEV_CONTENT: RawContent<DevIds> = {
     dev_jam: jamMap, // T707 (devM7.ts: the tendril, the Auditors' rings among healed drones)
     dev_takeover: takeoverMap, // T707 (devM7.ts: Shareholder Value's hangar, Takeover, jettison)
     dev_gmaw: gmawMap, // T708 (devM7.ts: the Gathering Maw's gather, split, and merge)
+    dev_bore: boreMap, // T806 (devPhases.ts: the Deep Bore, Phase 2's checkpoint, Dawn's light)
     dev_song: songMap, // T805 (devM8.ts: rest inside the song, scatter and re-form outside, Dawn)
     dev_voices: voicesMap, // T804 (devM8.ts: the choir's walk, its halts, hushed singers, Voices)
   }),

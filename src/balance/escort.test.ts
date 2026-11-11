@@ -119,13 +119,11 @@ describe('the Escort chain', () => {
 });
 
 describe('the harness on an Escort map', () => {
-  it('lifts its refusal (the Holdout and the Choir stay refused)', () => {
+  it('lifts its refusal (the Choir is measured on Voices since T804)', () => {
     expect(HARNESS_GATES.objectives).toBeNull();
     const map = escortContent().maps.fx_map;
     expect(refusedFeatures(map)).toEqual([]);
-    expect(refusedFeatures(Object.assign({}, map, { objective: 'choir' as const }))).toHaveLength(
-      1,
-    );
+    expect(refusedFeatures(Object.assign({}, map, { objective: 'choir' as const }))).toEqual([]);
   });
 
   it('judges par by Evacuated %, with the escort numbers in the result', () => {

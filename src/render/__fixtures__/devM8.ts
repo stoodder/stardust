@@ -139,7 +139,8 @@ export const songMap = dev.defineMap({
   ...LONG_WALK,
   id: 'dev_song',
   choir: CHOIR,
-  song: SONG,
+  // T805: a small target, so every C4 answer reaches Dawn (p = 1) before W2's Motes run out.
+  song: { ...SONG, restTarget: 12 },
   waves: dev.defineWaves([
     { groups: [{ enemy: 'mote', count: 8, route: 'a', intervalSec: 0.8 }] },
     { countdownSec: 6, groups: [{ enemy: 'mote', count: 12, route: 'a', intervalSec: 0.5 }] },

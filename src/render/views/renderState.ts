@@ -263,6 +263,16 @@ export interface RenderState {
     readonly militia: number;
     readonly shots: number;
   };
+  /**
+   * ChoirWalkView (T804): the finale's choir members drawn now (the Returned are `bearers`), the
+   * hushed ones among them, the song circles drawn, and whether the halt window shows a halt.
+   */
+  readonly choirWalk: {
+    readonly shown: number;
+    readonly hushed: number;
+    readonly rings: number;
+    readonly halted: boolean;
+  };
   /** Pinned units roped to a stake now, and Skewer lines drawn so far (T408, HarpoonView). */
   readonly harpoon: { readonly pins: number; readonly skewered: number };
   /**
@@ -288,6 +298,17 @@ export interface RenderState {
   readonly bossBar: number;
   /** Each secondary timer's bar fill (px of 96; −1 before it starts; T806's TimerBarView). */
   readonly timerBars: readonly number[];
+  /**
+   * SongView (T805): rest and scatter bursts showing now, and the units laid to rest, scattered,
+   * and re-formed this battle.
+   */
+  readonly song: {
+    readonly rests: number;
+    readonly scatters: number;
+    readonly restsSeen: number;
+    readonly scattersSeen: number;
+    readonly reformsSeen: number;
+  };
   /**
    * The boss bar's shield strip fill (px of 160; −1: none shows, or the boss has no shield) and
    * its end mark (px; −1: none), where the Penitent kneels (review R6).

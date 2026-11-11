@@ -57,7 +57,7 @@ export function darkTarget(keys: readonly CompiledLightingKey[], wave: number): 
   let prevDark = 0;
   for (let k = 0; k < keys.length; k++) {
     const key = keys[k]!; // k < length
-    if (key.skyOnly) continue; // the sky alone (T806)
+    if (key.skyOnly === true) continue; // the sky alone (T806)
     if (wave < key.wave) {
       return prevDark + ((key.dark - prevDark) * (wave - prevWave)) / (key.wave - prevWave);
     }

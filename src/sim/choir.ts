@@ -13,9 +13,9 @@
 //   toward its spawn, once wave 1 has started, at the choir's `pace`: `state.choir.dist` is how far
 //   the leader has walked, `x`/`y` where she stands. The column files behind her
 //   CHOIR_SPACING_TILES apart in this order: the singers still singing, the Returned, the hushed.
-//   A member behind its place closes up at up to CHOIR_CATCHUP_MUL × the pace; one ahead of it
-//   stands until the column reaches it (so a hushed singer falls back through the column to its
-//   tail); one held in a hush tell stands. She stops for good at the road's point nearest the
+//   Each member moves toward its place at up to CHOIR_CATCHUP_MUL × the pace (so the column closes
+//   up behind a hushed singer, and the hushed singer drifts back through it to the tail); one held
+//   in a hush tell stands. She stops for good at the road's point nearest the
 //   `stopAt` marker (`arrived`: the Halls mouth).
 // - **The halt rule.** While she walks, the choir halts while a Hollow unit walking the ground
 //   within reach (not burrowed, Phased or leaving) is within `haltTiles` ahead of her: on her
@@ -235,8 +235,9 @@ function walkColumn(state: SimState, c: CompiledChoir, lead: number): void {
     if (target > end) target = end;
     if (rank === 0) {
       a.dist = lead; // Pebble, and Thrum beside her
-    } else if (a.hushUid === 0 && a.dist > target) {
-      a.dist = a.dist - step > target ? a.dist - step : target;
+    } else if (a.hushUid === 0 && a.dist !== target) {
+      const d = target - a.dist;
+      a.dist = d > step ? a.dist + step : d < -step ? a.dist - step : target;
     } else {
       continue;
     }

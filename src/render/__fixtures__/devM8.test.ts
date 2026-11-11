@@ -45,7 +45,7 @@ function refused(mapId: string): string[] {
 }
 
 describe('the finale dev maps', () => {
-  it('dev_voices: the choir alone, refused until T804', () => {
+  it('dev_voices: the choir alone, runs since T804', () => {
     const map = maps.dev_voices!;
     expect(map.objective).toBe('choir');
     expect(map.minVoicesPct).toBe(0.4);
@@ -66,7 +66,7 @@ describe('the finale dev maps', () => {
     expect(map.choir?.paceTilesPerTick).toBeCloseTo(0.35 / 60);
     expect(map.song).toBeNull();
     expect(map.timers).toEqual([]);
-    expect(refused('dev_voices')).toEqual(['the choir (Voices) is not simulated until T804']);
+    expect(refused('dev_voices')).toEqual([]); // T804 (devVoices.test.ts)
   });
 
   it('dev_song: the song, Phase 2 from wave 1, Dawn (T805, T806)', () => {
@@ -74,7 +74,7 @@ describe('the finale dev maps', () => {
     expect(map.song).toEqual({
       baseRadius: 2.5,
       silentPct: 0.6,
-      restTarget: 40,
+      restTarget: 12,
       restPerTick: 0.2 / 60,
       restPerBossHp: 0.001,
       multipliers: [
@@ -84,9 +84,7 @@ describe('the finale dev maps', () => {
       ],
       scatter: { reformTicks: 240, hpPct: 0.5 },
     });
-    expect(refused('dev_song')).toEqual([
-      'the choir (Voices) is not simulated until T804',
-    ]);
+    expect(refused('dev_song')).toEqual([]);
   });
 
   it('dev_phases: the Bore, the Halls, Directive 0, the echo, the Unsung, Dawn (T804–T808)', () => {
@@ -102,7 +100,6 @@ describe('the finale dev maps', () => {
       "a phase's HP floor (unsung) is not simulated until T808",
       'a burrow toward the choir (unsung) is not simulated until T808',
       "a phase's adds (unsung) is not simulated until T808",
-      'the choir (Voices) is not simulated until T804',
       "event 'directive0': action lockAbility is not simulated until T807",
       "event 'not_everglow': action restoreTowerClass is not simulated until T807",
       "event 'echo': action spawnEcho is not simulated until T807",
@@ -110,8 +107,11 @@ describe('the finale dev maps', () => {
   });
 
   it('are not in DEV_CONTENT until their tasks register them', () => {
-    expect(DEV_CONTENT.maps.dev_song).toBe(songMap); // T805
-    for (const id of Object.keys(DEV_M8_MAPS).filter((m) => m !== 'dev_song')) {
+    const registry: Readonly<Record<string, unknown>> = DEV_CONTENT.maps;
+    expect(registry.dev_song).toBe(songMap); // T805
+    expect(registry.dev_voices).toBe(voicesMap); // T804
+    const registered = new Set(['dev_song', 'dev_voices']);
+    for (const id of Object.keys(DEV_M8_MAPS).filter((m) => !registered.has(m))) {
       expect(Object.hasOwn(DEV_CONTENT.maps, id), id).toBe(false);
     }
   });

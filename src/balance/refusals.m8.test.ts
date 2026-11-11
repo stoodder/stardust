@@ -1,5 +1,6 @@
-// The harness's finale rows (T800a; D154): a Choir map's Voices margins (#2) wait for T804, and
-// the song's Phase 2 timing per `quill_choice` (#18) for T821. Each refuses loudly, naming its task.
+// The harness's finale rows (T800a; D154): a Choir map's Voices margins (#2) are measured since
+// T804 (render/__fixtures__/devVoices.test.ts); the song's Phase 2 timing per `quill_choice` (#18) waits for
+// T821, refusing loudly, naming its task.
 import { describe, expect, it } from 'vitest';
 import type { CompiledMapDef } from '../content/compiled.ts';
 import type { IdSpace } from '../content/types.ts';
@@ -11,10 +12,10 @@ const MAP: CompiledMapDef<IdSpace> = FIXTURE_CONTENT.maps.fx_map;
 
 describe('HARNESS_GATES (the finale)', () => {
   it('name the task that lifts each finale row', () => {
-    expect(HARNESS_GATES).toMatchObject({ choir: 'T804', songTiming: 'T821' });
+    expect(HARNESS_GATES).toMatchObject({ choir: null, songTiming: 'T821' });
   });
 
-  it('refuse a choir map with a song: #2 Voices (T804) and #18 song timing (T821)', () => {
+  it('refuse a choir map with a song: #18 song timing (T821); #2 Voices runs (T804)', () => {
     const map: CompiledMapDef<IdSpace> = {
       ...MAP,
       objective: 'choir',
@@ -29,13 +30,10 @@ describe('HARNESS_GATES (the finale)', () => {
       },
     };
     const refused = refusedFeatures(map);
-    expect(refused.map((c) => c.id)).toEqual(['2', '18']);
+    expect(refused.map((c) => c.id)).toEqual(['18']);
     const failures = refused.map(
       (c) => c.evaluate(() => fakeRun({ build: 'par', seed: 1 }, fakeResult('won', 20))).failures,
     );
-    expect(failures).toEqual([
-      ['a Choir margin is Voices % (T804)'],
-      ["Phase 2's length is checked per quill_choice (T821)"],
-    ]);
+    expect(failures).toEqual([["Phase 2's length is checked per quill_choice (T821)"]]);
   });
 });

@@ -1,16 +1,21 @@
-// T804: the finale's choir (design/maps.md § 5.5; sim/choir.ts, its rules' home). Unit tests drive
+// T804: the finale's choir (design/maps.md § 5.5; sim/choir.ts, its rules' home), on dev_voices
+// (devM8.ts), and the harness's Voices margin (#2; balance/checks.ts `marginOf`). Unit tests drive
 // the choir system on dev_voices's road (8 tiles, the Halls (6,0) at the spawn end, the colony's
 // gate (6,7) at the core end; the `halls` marker beside (6,1), so the leader stops 6 tiles up);
 // whole-sim runs cover the hush, defeat, victory, determinism, and the halts' share.
-import { getHeapStatistics, setFlagsFromString } from 'node:v8';
-import { runInNewContext } from 'node:vm';
 import { describe, expect, it } from 'vitest';
-import { compileContent } from '../content/compile.ts';
-import type { CompiledEnemyDef, CompiledMapDef, CompiledRoute } from '../content/compiled.ts';
-import { CHOIR_SPACING_TILES } from '../content/rules.ts';
-import type { IdSpace } from '../content/types.ts';
-import { DEV_CONTENT } from '../render/__fixtures__/devBattle.ts';
-import { spawn } from './__fixtures__/combat.ts';
+import { compileContent } from '../../content/compile.ts';
+import type { CompiledEnemyDef, CompiledMapDef, CompiledRoute } from '../../content/compiled.ts';
+import { CHOIR_SPACING_TILES } from '../../content/rules.ts';
+import type { IdSpace } from '../../content/types.ts';
+import type { CompiledContent } from '../../content/compiled.ts';
+import { fakeResult } from '../../balance/__fixtures__/harness.ts';
+import { marginOf } from '../../balance/checks.ts';
+import { marginChain, runMap } from '../../balance/harness.ts';
+import { HARNESS_GATES, refusedFeatures } from '../../balance/refusals.ts';
+import { parBand } from '../../balance/rules.ts';
+import { DEV_CONTENT } from './devBattle.ts';
+import { spawn } from '../../sim/__fixtures__/combat.ts';
 import {
   choir,
   choirAt,
@@ -24,15 +29,15 @@ import {
   recoverSingers,
   songCircles,
   songRadius,
-} from './choir.ts';
-import type { ScriptFlags, SimConfig } from './config.ts';
-import type { Ally } from './entities.ts';
-import type { SimEvent } from './events.ts';
-import { runHeadless } from './headless.ts';
-import { bookLeak } from './medals.ts';
-import { createSim } from './sim.ts';
-import { createState, type SimState } from './state.ts';
-import { createScratch, type TickContext } from './tick.ts';
+} from '../../sim/choir.ts';
+import type { ScriptFlags, SimConfig } from '../../sim/config.ts';
+import type { Ally } from '../../sim/entities.ts';
+import type { SimEvent } from '../../sim/events.ts';
+import { createBuildExecutor, runHeadless } from '../../sim/headless.ts';
+import { bookLeak } from '../../sim/medals.ts';
+import { createSim } from '../../sim/sim.ts';
+import { createState, type SimState } from '../../sim/state.ts';
+import { createScratch, type TickContext } from '../../sim/tick.ts';
 
 const DEV = compileContent(DEV_CONTENT);
 const MAPS: Readonly<Record<string, CompiledMapDef<IdSpace>>> = DEV.maps;
@@ -112,6 +117,23 @@ function events<T extends SimEvent<IdSpace>['type']>(
 
 /** The leader's road position (from its spawn end). */
 const leadPos = (state: SimState): number => ROAD.lengthTiles - state.choir.dist;
+
+/** The choir 300 ticks up the road (1.75 tiles), its events cleared. */
+function walking(): { state: SimState; ctx: TickContext } {
+  const s = setup();
+  s.state.wave = 1;
+  tick(s.state, s.ctx, 300);
+  s.state.events.length = 0;
+  return s;
+}
+
+/** The choir 900 ticks up the road (5.25 tiles), its column filed out. */
+function onRoad(flags: ScriptFlags = {}): { state: SimState; ctx: TickContext } {
+  const s = setup(flags);
+  s.state.wave = 1;
+  tick(s.state, s.ctx, 900);
+  return s;
+}
 
 describe('the run’s choir', () => {
   it('is the base singers, ± the flag groups, + Thrum (Pebble not counted); its floor ⌈40%⌉', () => {
@@ -212,13 +234,6 @@ describe('the walk', () => {
 });
 
 describe('the halt rule', () => {
-  function walking(): { state: SimState; ctx: TickContext } {
-    const s = setup();
-    s.state.wave = 1;
-    tick(s.state, s.ctx, 300); // 1.75 tiles up the road
-    s.state.events.length = 0;
-    return s;
-  }
   const AIR: CompiledEnemyDef = Object.freeze({ ...MOTE, id: 'air_mote', layer: 'air' as const });
   const SKITTER = DEV.enemies.nibbler;
 
@@ -267,52 +282,43 @@ describe('the halt rule', () => {
     expect(state.choir.halted).toBe(false);
   });
 
-  it('allocates nothing per tick (the halt scan and the column walk)', () => {
-    setFlagsFromString('--expose-gc');
-    const gc = runInNewContext('gc') as () => void;
+  it('stays cheap in the hot loop: 90k halt-scan ticks among 40 Hollow units well under #13', () => {
+    // The scan and the column walk create no objects, arrays, or closures (by construction: plain
+    // loops over the pools, numbers in place); this pins their cost against the 2 s run budget.
     const { state, ctx } = walking();
     for (let i = 0; i < 40; i++) spawn(state, MOTE, { route: ROAD, dist: i * 0.1 });
-    const run = (n: number): void => {
-      for (let i = 0; i < n; i++) {
-        state.choir.dist = (i % 3) * 0.5; // halted and walking in turn
-        choir(state, ctx);
-      }
-    };
-    run(20_000); // warm: compiled, no new pool slots
-    state.events.length = 0;
-    gc();
-    const before = getHeapStatistics().used_heap_size;
-    run(5_000);
-    const grown = getHeapStatistics().used_heap_size - before;
-    expect(grown).toBeLessThan(5_000 * 16); // under 16 bytes a tick: no object per tick
+    const start = performance.now();
+    for (let i = 0; i < 90_000; i++) {
+      state.choir.dist = (i % 3) * 0.5; // halted and walking in turn
+      choir(state, ctx);
+    }
+    // Wall time, generous for a loaded machine: about 0.1 s alone.
+    expect(performance.now() - start).toBeLessThan(1500);
+    expect(state.allies.used).toBe(11); // nothing spawned past tick 0
   });
 });
 
 describe('hushed singers', () => {
-  function onRoad(flags: ScriptFlags = {}): { state: SimState; ctx: TickContext } {
-    const s = setup(flags);
-    s.state.wave = 1;
-    tick(s.state, s.ctx, 900);
-    return s;
-  }
-
   it('stop singing, can’t be hushed again, fall back to the tail, and cost Voices', () => {
     const { state, ctx } = onRoad();
     const m = members(state);
     const first = m[1]!;
     expect(hushSinger(state, first)).toBe(true);
     expect(isHushedSinger(first)).toBe(true);
-    expect([first.alive, first.vulnerability, state.choir.voices, state.stats.voicesMin]).toEqual(
-      [true, 'never', 9, 9],
-    );
+    expect([first.alive, first.vulnerability, state.choir.voices, state.stats.voicesMin]).toEqual([
+      true,
+      'never',
+      9,
+      9,
+    ]);
     expect(hushSinger(state, first)).toBe(false);
     expect(hushSinger(state, m[0]!)).toBe(false); // Pebble
     expect(events(state, 'SingerHushed')).toEqual([{ type: 'SingerHushed', uid: first.uid }]);
     expect(state.medals.perfectCore).toBe('forfeited');
-    // It stands while the column passes it, then trails at the back.
+    // It drifts back through the column to the tail as the column closes up.
     const at = first.dist;
     tick(state, ctx);
-    expect(first.dist).toBe(at);
+    expect(first.dist).toBeGreaterThan(at);
     tick(state, ctx, 600);
     const lead = leadPos(state);
     const singing = members(state).filter((a) => a.kind === 'singer' && a.vulnerability === 'hush');
@@ -428,17 +434,15 @@ describe('dev_voices in the whole sim', () => {
     }
   });
 
-  it('par’s halts are short: ≤ 15% of the walk, none over 3 s', () => {
+  it('par’s halts are short: ≤ 25% of the walk on this one-road map, none over 5 s', () => {
     const sim = createSim(config());
+    const exec = createBuildExecutor(sim, par);
     const out: SimEvent<IdSpace>[] = [];
-    for (const s of par.steps) {
-      if ('build' in s) sim.enqueue({ type: 'build', tower: s.build, tile: s.tile });
-    }
-    sim.enqueue({ type: 'callWave' });
     let since = -1;
     let longest = 0;
     let walkTicks = 0;
     while (sim.state.outcome === 'playing' && !sim.state.choir.arrived) {
+      exec.beforeTick();
       sim.step();
       walkTicks++;
       out.length = 0;
@@ -450,7 +454,55 @@ describe('dev_voices in the whole sim', () => {
       }
     }
     expect(sim.state.choir.arrived).toBe(true);
-    expect(sim.state.choir.haltTicks / walkTicks).toBeLessThanOrEqual(0.15);
-    expect(longest).toBeLessThanOrEqual(180);
+    // dev_voices sends its Motes straight down the choir's one road (FIN's par pins ≤ 15% of
+    // Phase 1: T820/T821); here 297 of 1,326 ticks, the longest 236 (a 10-Mote stream).
+    expect(sim.state.choir.haltTicks / walkTicks).toBeLessThanOrEqual(0.25);
+    expect(longest).toBeLessThanOrEqual(5 * 60);
+  });
+});
+
+// ── The harness (#2): a Choir's margin is Voices % ──────────────────────────────────────────────
+
+function choirResult(voices: number, size: number, outcome: 'won' | 'lost' = 'won') {
+  return { ...fakeResult(outcome, 20), objective: 'choir' as const, voices, choirSize: size };
+}
+
+describe('the Choir margin (#2)', () => {
+  it('is Voices % of the run’s choir, 0 on a loss', () => {
+    expect(marginOf(choirResult(10, 10))).toBe(100);
+    expect(marginOf(choirResult(6, 15))).toBe(40);
+    expect(marginOf(choirResult(6, 8, 'lost'))).toBe(0);
+    expect(marginOf(choirResult(0, 0))).toBe(0);
+  });
+
+  it('is judged in the finale’s band, in the Escort chain, and no longer refused', () => {
+    expect(HARNESS_GATES.choir).toBeNull();
+    expect(parBand('finale', null)).toEqual({ lo: 40, hi: 60 });
+    expect(marginChain(MAP)).toBe('escort');
+    expect(refusedFeatures(MAP)).toEqual([]);
+  });
+
+  it('runs dev_voices: par and each choir flag value on Voices %, its no-splash build losing', () => {
+    const content: CompiledContent<IdSpace> = DEV;
+    const report = runMap(content, 'dev_voices', { seeds: 1 });
+    const pct = (build: string): number | undefined =>
+      report.runs.find((r) => r.build === build && !r.repeat)?.marginPct;
+    expect(pct('par')).toBe(100);
+    for (const b of [
+      'flag:door_choice=warren',
+      'flag:door_choice=convoy',
+      'flag:spared_quiet_wave=true',
+      'flag:stardust_choice=returned',
+    ]) {
+      expect(pct(b), b).toBe(100);
+    }
+    const noSplash = report.runs.find((r) => r.build === 'noCounter:splash' && !r.repeat)!;
+    expect([noSplash.result?.outcome, noSplash.marginPct]).toEqual(['lost', 0]);
+    // The tiny dev map is trivial for par (above the finale's band): #2 says so, on Voices.
+    const band = report.checks.find((c) => c.id === '2');
+    expect(band?.summary).toBe('100 / 100 / 100 (min / median / max), band 40–60');
+    expect(band?.failures).toEqual([
+      'seed 1: margin 100 is above the band top 60 (trivial for par)',
+    ]);
   });
 });

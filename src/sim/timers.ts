@@ -42,7 +42,10 @@ export function timers(state: SimState, ctx: TickContext): void {
 }
 
 /** How full timer `t` is (0–1). */
-export function timerFill(t: Pick<TimerState, 'filled'>, def: { readonly fillTicks: number }): number {
+export function timerFill(
+  t: Pick<TimerState, 'filled'>,
+  def: { readonly fillTicks: number },
+): number {
   return def.fillTicks > 0 ? Math.min(1, t.filled / def.fillTicks) : 0;
 }
 
@@ -52,7 +55,8 @@ function fixBossBonus(
   def: { readonly fillTicks: number; readonly bossHpPerTenth: number },
 ): void {
   const tenths = Math.floor((10 * t.filled) / def.fillTicks + 1e-9);
-  t.bossHpPct = def.bossHpPerTenth * Math.min(10, tenths);
+  // Rounded to 1e-9, so +5% × 7 reads 0.35 (the HUD and the tests show it), not 0.35000000000000003.
+  t.bossHpPct = Math.round(def.bossHpPerTenth * Math.min(10, tenths) * 1e9) / 1e9;
 }
 
 /** The HP share a boss spawning now gains from the map's stopped timers (0 for none). */
@@ -87,6 +91,7 @@ export function setTimerRate(state: SimState, map: TimerMap, id: string, pct: nu
   if (t === undefined) return;
   t.ratePct = pct;
   if (!t.running || t.full) return;
-  if (pct <= 0) fixBossBonus(t, map.timers[i]!); // i found
+  if (pct <= 0)
+    fixBossBonus(t, map.timers[i]!); // i found
   else t.bossHpPct = 0;
 }
