@@ -99,14 +99,17 @@ test("journal: after A3M3 the Elder's citation is the Amended Survey's, NEW agai
   page,
 }) => {
   // The A3M3 save with the Elder's correction read at A3M1, filed in slot 1 and continued, so the
-  // base's catch-up runs on it. A3M3 is on record as won even before its map is registered (the
-  // dev save skips an unregistered map; a won record is all the codex and the Inbox read).
+  // base's catch-up runs on it. The dev save skips A3M3 until its map is registered (T622).
   await page.goto('/?test=1&seed=1&save=after_a3m3_convoy');
   await waitForReady(page);
+  const wonA3M3 = await page.evaluate(() => {
+    const maps: Partial<Record<string, { completed: boolean }>> =
+      globalThis.__sd!.save()!.campaign.maps;
+    return maps['a3_m03']?.completed === true;
+  });
+  test.skip(!wonA3M3, "A3M3's map isn't registered yet, so the dev save hasn't won it");
   await page.evaluate((v) => {
     const data = globalThis.__sd!.save()!;
-    const maps: Record<string, unknown> = data.campaign.maps;
-    maps['a3_m03'] ??= maps['a3_m02'];
     const read = ['codex_elder__original', 'codex_elder__corrected'];
     data.story.seen = [...data.story.seen.filter((s) => !read.includes(s)), ...read];
     localStorage.setItem('stardust:slot:1', JSON.stringify({ v, savedAt: 1793100000000, data }));

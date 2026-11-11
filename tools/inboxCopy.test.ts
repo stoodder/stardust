@@ -160,7 +160,7 @@ describe('codex lines the docs quote', () => {
 });
 
 /** An entry's version text, the revised wording where `revised` is asked for. */
-function text(id: string, version: 'original' | 'corrected' | 'revised'): string {
+function journalText(id: string, version: 'original' | 'corrected' | 'revised'): string {
   const v = CODEX[id]?.versions;
   if (version === 'revised') return v?.corrected?.revised?.text ?? '';
   return v?.[version]?.text ?? '';
@@ -168,10 +168,10 @@ function text(id: string, version: 'original' | 'corrected' | 'revised'): string
 
 describe("the Field Journal's lines the docs quote (Act III, T611)", () => {
   it("corrects the Hauler and the Elder as the style guide quotes them, the Elder's citation the act file's", () => {
-    expectQuoted(STYLE, `"${text('codex_brood_hauler', 'corrected')}"`);
-    expectQuoted(STYLE, `"${text('codex_elder', 'revised')}"`);
+    expectQuoted(STYLE, `"${journalText('codex_brood_hauler', 'corrected')}"`);
+    expectQuoted(STYLE, `"${journalText('codex_elder', 'revised')}"`);
     expectQuoted(ACT3, 'the Elder\'s citation still reads "Survey 2346, Okonkwo" until A3M3');
-    expect(text('codex_elder', 'corrected')).toContain('(Survey 2346, Okonkwo.)');
+    expect(journalText('codex_elder', 'corrected')).toContain('(Survey 2346, Okonkwo.)');
     expectQuoted(
       ACT3,
       `now cites "Amended Survey 2346, Okonkwo: 'Correction: they were singing.'"`,
@@ -202,11 +202,11 @@ describe("the Field Journal's lines the docs quote (Act III, T611)", () => {
     ['codex_amended_survey', 'original', 'It is fifteen years late. He filed it anyway.'],
   ] as const)('%s (%s) holds act3.md\'s "%s"', (id, version, line) => {
     expectQuoted(ACT3, `"${line}`);
-    expect(text(id, version)).toContain(line);
+    expect(journalText(id, version)).toContain(line);
   });
 
   it("quotes the QUILL directives exactly as A3M2's confession scene gives them", () => {
-    const directives = text('codex_quill_directives', 'original').split('\n').slice(1, 6);
+    const directives = journalText('codex_quill_directives', 'original').split('\n').slice(1, 6);
     expect(directives).toHaveLength(5);
     for (const d of directives) expectQuoted(ACT3, `"${d}"`);
   });

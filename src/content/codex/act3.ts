@@ -233,8 +233,8 @@ export const ACT3_CODEX: readonly CodexEntryDef[] = [
         text:
           'Drafted the Buffer Protocol. Designed Second Harvest. Holds a seat on the way out ' +
           "under Clean Exit. Revoked a technician's license mid-shift and called it nothing " +
-          'personal. It was not personal. That was the point. She uses employee numbers, never ' +
-          'names. In every portrait the smile is the same. Only the eyes change.',
+          'personal. It was not personal. That was the point. In every portrait the smile is ' +
+          'the same. Only the eyes change.',
         when: FROM_A3M2,
       },
     },
