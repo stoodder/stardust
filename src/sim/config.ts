@@ -13,6 +13,7 @@ import type {
   TowerStat,
 } from '../content/types.ts';
 import { MAX_LOADOUT } from '../content/rules.ts';
+import { flagConditionHolds } from '../content/flagConditions.ts';
 import { abilityConfigErrors } from './systems/abilities.ts';
 import { unsupportedScript } from './systems/triggers.ts';
 import { gateRefusals } from './gates.ts';
@@ -246,6 +247,13 @@ export function validateConfig(cfg: SimConfig<IdSpace>): CompiledMapDef<IdSpace>
     // The validator's [wave] rule refuses it too; a run with no waves would win on tick 0.
     if (map.waves.length === 0) errors.push(`map '${cfg.mapId}' has no waves`);
     errors.push(...unsupportedScript(map));
+    // Slot 1 can't hold an ability the map locks under the run's story flags (A3M5's System
+    // Reboot under C4 Rewrite; D150), so no run (the harness's included) plays what a player can't.
+    for (const l of map.lockedAbilities) {
+      if (l.ability === slot1 && flagConditionHolds(l.when, cfg.scriptFlags)) {
+        errors.push(`abilities.slot1: '${slot1}' is locked on '${cfg.mapId}' under these story flags`);
+      }
+    }
   }
   if (errors.length > 0) throw new RangeError(`invalid SimConfig:\n- ${errors.join('\n- ')}`);
   // map is defined: a missing map pushed an error, and errors throw above.
