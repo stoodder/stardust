@@ -1747,3 +1747,35 @@ The owner, on D147's fork: "I'm down to run a fast check where it makes sense". 
 - **Whole gate:** `npm run check`, with every smoke flow and the 8-minute budget it reports against. The orchestrator runs it on each wave's integrated tree, after each round of review fixes, and before shipping. A task that changes shared infrastructure (`tools/`, configs, the smoke harness, BattleScene's wiring) runs the whole gate itself.
 
 The old `check:fast` (typecheck, lint, test, the inner loop) is replaced. The inner loop is `npm run test`, a single `sim -- --map`, or `smoke -- -g`. CLAUDE.md step 5 and conventions.md § The test loop say this. The whole gate's time overrun (D147) stays a warning. T766 tracks the rest of the trims.
+
+### D149 — 2026-11-11 — M7 as built: rulings and addenda to D146
+
+M7's build waves made these rulings. Each landed with its task's tests, and `tasks.md` § M7 links the tasks.
+
+**Jamming (T702, T707, T720, T721, T760).** The A3M4 and A3M5 balance runs showed jamming barely biting, so the rules were retuned as a set:
+- A jammer is ready from its first tick and tells as soon as a tower is in reach.
+- The Silencer jams for 6 s and the Auditor for 4 s (`JAM_MAX_SEC` 6). Hostile Takeover jams for 4 s, so a Hum Choir at T3 still earns Declined.
+- Immunity after a jam is 3 s, and System Reboot's is 6 s (`REBOOT_IMMUNITY_SEC`).
+- A tendril, ring or Takeover lands only while fewer than max(1, ⌊25% × towers placed⌋) towers are Jammed, so harness #10 holds by construction.
+- A jammer holds still through its tell. Jams never stack or extend. A Jammed tower behaves like Hold Fire.
+- **Harness #6 never runs for jam.** The jam limit caps what jamming can take below what the full catalog adds. #5 (reference no-jam loses) runs on every jam map.
+
+  As tuned: reference no-jam loses A3M4 in W16 and ends A3M5 47 points under par (it loses 10 of 12 bearers but not the map; A3M5 keeps a `counterExemptions` entry for jam with that reason). A3M4 stays a teach map.
+
+**Bosses.**
+- **Shareholder Value:** 3800 HP, armor 15. Before the jettison, par's armor-piercing damage is about 36 dps over a 130 s road. Takeover fires every 20 s, and the hangar launches 2 drones every 8 s.
+- **The Gathering Maw:** 4000 HP (parts 800), armor 4. A1M1's road is 20 tiles. Its gather tell is 1.5 s, as for every boss. It splits at 50% of stat HP and merges 12 s later, the merge walk kept. With no `BossEnded`, the "beaten" sting keys on the last part's death.
+
+**Harness.** `counterExemptions` is a per-map list with a reason, used by A3M5 for jam and A3M6 for detection. Detection's reason: canon gives the Operatives one teach wave and one test wave. A3M5's no-armor loses by W14, because its long road delays the Liability column's leak. Flag runs apply the game's own story modifiers, such as Purge's −2 armor. `referenceProfileByFlag` lists each door × C4 cell, with an optional par build.
+
+**Content and story.**
+- The Night Shift scene id is `a3_m04_base_night_shift`.
+- A radio scene that opens with a reply button may run 4 lines (A3M6's knock-knock keeps both canon endings). Its reply is `a3_m06_cue_knock_answer`.
+- QUILL's list is data (`QUILL_LIST`) behind a `system` header line.
+- Under Rewrite, every QUILL line on A3M5 is skipped, and `system` gives the threat advisory.
+- QUILL is "it" (characters.md), including in UI copy.
+- Leapers Pin only flyers. A boss is Chilled 50% only if it flies, because ground bosses would be chilled 75–100% of the time.
+- The crate opens on Clock in. Night Shift and the Waykeeper beat are full-screen.
+- Zibzab's Rapport shipped (Clearance Sale cooldown 4 → 3 waves), and Rapports are numbers only (progression.md §7.3).
+
+**Curve.** As tuned, par is A3M4 68.2, A3M5 63.6 and A3M6 59.3. A3M5 ends below A3M4 but above campaign.md's ~57 target; the gameplay review weighs it. Cut lever 4 (2-wide lanes) was pulled by geometry, since no M7 map has a band road. No other lever was pulled.
