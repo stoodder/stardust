@@ -1,7 +1,8 @@
 // Revocation and QUILL's lockout in the app (design/towers.md § 9, core-loop.md § 2.2 and § 2.11;
 // T606's minimal hook, which T631's HUD and T621's leak lines build on). The HUD's `revokedHud`
-// follows the sim (`state.revoked`, `scriptModifiers`; ClassRevoked, AbilityRevoked, and
-// ModifierChanged, and the state as the battle binds, so a checkpoint replay lands on it). As the
+// follows the sim (`state.revoked`, `scriptModifiers`, `abilitiesLocked`; ClassRevoked,
+// AbilityRevoked, ModifierChanged, and the finale's ClassRestored and AbilityLocked (T807), and
+// the state as the battle binds, so a checkpoint replay lands on it). As the
 // class goes, a placement of it is cancelled (an armed build slot); as a slot goes dark, its aim is
 // cancelled (a pause-aimed Orbital Strike: D141). The build slot and the hotkeys then refuse it with
 // a notice (app/commands.ts), and the sim refuses anything that gets through (`revoked`). The
@@ -34,6 +35,13 @@ export function bindRevoked(host: Host<IdSpace>, interaction: BattleInteraction)
       if (interaction.armed === e.tower) interaction.arm(null);
     }),
     host.bus.on('AbilityRevoked', () => {
+      sync(host, revokedHud.value.leakLine);
+      const aim = interaction.aiming;
+      if (aim !== null && revokedHud.value.slots.includes(aim)) interaction.aimAbility(null);
+    }),
+    // T807: the finale's restored class ("Not Everglow.") and Directive 0's phase lock.
+    host.bus.on('ClassRestored', () => sync(host, revokedHud.value.leakLine)),
+    host.bus.on('AbilityLocked', () => {
       sync(host, revokedHud.value.leakLine);
       const aim = interaction.aiming;
       if (aim !== null && revokedHud.value.slots.includes(aim)) interaction.aimAbility(null);

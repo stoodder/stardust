@@ -44,6 +44,10 @@
 //   the `flagVariants` (each flag unset or one of its values; the cell's par where its cell gives
 //   one), and the alt and no-counter builds under the flags every run sets (a flag gating a
 //   refugee group or an ally post takes its first variant: sim/escort.ts `gatedFlagDefaults`).
+//   Nor does any equip the ability its companion brings in slot 2 (T501; content/technician.ts):
+//   par (and each cell's par) beside every companion it runs with (the map's present companion,
+//   or on a pick-list map each pick, #15), the alt and no-counter builds beside their own (their
+//   pick, else the list's first).
 // - [revocation] (T606; validateRevocation.ts): the counter guarantee treats a revoked class as
 //   unowned, whichever class a `revokeTowerClass` could take, on its map and on the maps after it
 //   until the class is back.
@@ -80,6 +84,7 @@ import type {
   ScriptedBuild,
 } from './types.ts';
 import type { MapCtx } from './validateMap.ts';
+import { technicianClashes, type CompanionOwned } from './technician.ts'; // T807 (T501)
 import { BUILDABLE, Issues, duplicates, fmt, keyOf, type Grid } from './validateHelpers.ts';
 import { revocationCandidates, validateRevocation } from './validateRevocation.ts'; // T606
 
@@ -98,7 +103,7 @@ export function validateBuilds(
   const where = `maps.${def.id}`;
   validateProfile(issues, ctx, def.referenceProfile, `${where}.referenceProfile`);
   validateFlagProfiles(issues, def, grid, ctx, where);
-  validateLockedAbilities(issues, def, where);
+  validateLockedAbilities(issues, def, ctx, where);
 
   const builds: [string, ScriptedBuild<IdSpace>][] = [
     ['parBuild', def.parBuild],
@@ -491,7 +496,12 @@ const showFlags = (flags: Readonly<Record<string, unknown>>): string => {
 };
 
 /** [locked-abilities] (D150; see the header). */
-function validateLockedAbilities(issues: Issues, def: MapDef<IdSpace>, where: string): void {
+function validateLockedAbilities(
+  issues: Issues,
+  def: MapDef<IdSpace>,
+  ctx: MapCtx,
+  where: string,
+): void {
   const locks = def.lockedAbilities ?? [];
   for (const [i, l] of locks.entries()) {
     if (!isFlagCondition(l.when)) {
@@ -502,16 +512,44 @@ function validateLockedAbilities(issues: Issues, def: MapDef<IdSpace>, where: st
       );
     }
   }
-  if (locks.length === 0) return;
+  // T501: the companions each build runs beside, and what each brings (content/technician.ts).
+  const owned: Record<string, CompanionOwned> = {};
+  for (const [companion, ability] of ctx.companionAbilities) owned[ability] = { companion };
+  const mapCompanion = def.companion;
+  const pick = mapCompanion !== null && 'pick' in mapCompanion ? mapCompanion.pick : null;
+  const fixed =
+    mapCompanion !== null && 'state' in mapCompanion && mapCompanion.state === 'present'
+      ? mapCompanion.id
+      : null;
+  const companionsOf = (b: ScriptedBuild<IdSpace>, isPar: boolean): readonly string[] => {
+    if (pick === null) return fixed === null ? [] : [fixed];
+    if (isPar) return b.companion === undefined ? pick : [...new Set([b.companion, ...pick])];
+    const one = b.companion ?? pick[0];
+    return one === undefined ? [] : [one];
+  };
   const reported = new Set<string>();
   const check = (
     b: ScriptedBuild<IdSpace>,
     owner: ProfileDef<IdSpace>,
     flags: Readonly<Record<string, unknown>>,
     at: string,
+    isPar = false,
   ): void => {
     const ability = b.technicianAbility ?? owner.technicianAbility;
-    if (ability === null || reported.has(at)) return;
+    if (ability === null) return;
+    const clashKey = `${at}#companion`;
+    if (!reported.has(clashKey)) {
+      const beside = companionsOf(b, isPar).find((c) => technicianClashes(owned, ability, c));
+      if (beside !== undefined) {
+        reported.add(clashKey);
+        issues.add(
+          'locked-abilities',
+          at,
+          `equips '${ability}' in slot 1 beside companion '${beside}', who brings it in slot 2`,
+        );
+      }
+    }
+    if (reported.has(at)) return;
     if (locks.some((l) => l.ability === ability && flagConditionHolds(l.when, flags))) {
       reported.add(at);
       issues.add(
@@ -527,8 +565,8 @@ function validateLockedAbilities(issues: Issues, def: MapDef<IdSpace>, where: st
     const i = cells.findIndex((c) => cellMatches(c.when, flags));
     const par = i >= 0 ? cells[i]!.parBuild : undefined; // i is an index of cells
     if (par !== undefined) {
-      check(par, cells[i]!.profile, flags, `${where}.referenceProfileByFlag[${i}].parBuild`);
-    } else check(def.parBuild, def.referenceProfile, flags, `${where}.parBuild`);
+      check(par, cells[i]!.profile, flags, `${where}.referenceProfileByFlag[${i}].parBuild`, true);
+    } else check(def.parBuild, def.referenceProfile, flags, `${where}.parBuild`, true);
   }
   // Every other build runs under the flags every run sets: a gate's flag at its first variant.
   const gated: Record<string, unknown> = {};
@@ -545,8 +583,8 @@ function validateLockedAbilities(issues: Issues, def: MapDef<IdSpace>, where: st
   const i = cells.findIndex((c) => cellMatches(c.when, gated));
   const par = i >= 0 ? cells[i]!.parBuild : undefined; // i is an index of cells
   if (par !== undefined) {
-    check(par, cells[i]!.profile, gated, `${where}.referenceProfileByFlag[${i}].parBuild`);
-  } else check(def.parBuild, def.referenceProfile, gated, `${where}.parBuild`);
+    check(par, cells[i]!.profile, gated, `${where}.referenceProfileByFlag[${i}].parBuild`, true);
+  } else check(def.parBuild, def.referenceProfile, gated, `${where}.parBuild`, true);
   for (const [n, b] of Object.entries(def.altBuilds ?? {})) {
     check(b, def.referenceProfile, gated, `${where}.altBuilds.${n}`);
   }

@@ -44,7 +44,7 @@
 // - After a scripted revocation (T606; sim/revoke.ts), a step for the revoked class is skipped
 //   (`skipped`, issued at the tick it was reached, no error) and the build goes on: a build of
 //   the class, a step on a tile whose last build was a tower of it that is gone now, and a cast
-//   from a revoked slot.
+//   from a revoked slot (or one dark under a phase lock: the finale's Directive 0, T807).
 import type { CompiledBuild, CompiledBuildStep } from '../content/compiled.ts';
 import { MAX_TIER_BEFORE_SPEC } from '../content/rules.ts';
 import type { GridPos, IdSpace, LiveIds, MedalKind, WaveTag } from '../content/types.ts';
@@ -219,7 +219,12 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
   /** Whether step `s` is for a revoked class or ability slot (see the header). */
   const forRevoked = (s: CompiledBuildStep<K>): boolean => {
     const r = state.revoked;
-    if (r.towers.length === 0 && r.abilities.length === 0 && !state.scriptModifiers.quillLockout) {
+    if (
+      r.towers.length === 0 &&
+      r.abilities.length === 0 &&
+      state.abilitiesLocked.length === 0 && // T807: a phase lock (sim/revoke.ts)
+      !state.scriptModifiers.quillLockout
+    ) {
       return false;
     }
     if (s.kind === 'build') return r.towers.includes(s.tower);
