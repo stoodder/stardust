@@ -1,9 +1,132 @@
-// A3M5 · Unsung: scenes (story/campaign/act3.md § A3M5, *Story delivery*), verbatim once authored
-// (T721). Ids are `a3_m05_<slot>` (style-guide.md § 5.3); tools/dialogueCanon.test.ts checks each
-// against act3.md § A3M5. The slots the seams name (T700b; m7-plan § 3): `a3_m05_brief` (`system`
-// carries the threat intel under `quill_choice = rewrite`), `a3_m05_wNN`, and Sterling's remote
-// boss cues `a3_m05_cue_sv_spawn`, `a3_m05_cue_takeover`, `a3_m05_cue_jettison`, with QUILL's
-// `a3_m05_cue_feed_cut` (Cut the Feed's `objectiveCompleted`).
-import { defineScenes } from '../../define.ts';
+// A3M5 · Unsung: scenes (story/campaign/act3.md § A3M5, *Story delivery*), verbatim. Ids are
+// `a3_m05_<slot>` (style-guide.md § 5.3); tools/dialogueCanon.test.ts checks each against act3.md
+// § A3M5.
+// - The briefing: Kip hands over the ledger (its first line, `R2-0001`, as a caption), leaves his
+//   #1 pin on the console (a silence: nobody comments), Pebble's Boing (the Sproing Pad gift), then
+//   the threat intel by C4's answer: QUILL's apology (Keep, or no answer yet), her flat Directive 0
+//   line (Purge), or `system`'s advisory (Rewrite: QUILL is offline here, and app/dialogue.ts skips
+//   her lines wherever she is; T713).
+// - The radio: w05 Ves'thara, w06 Kip, w09 Pebble (Grandmother if Old Thrum was spared, else
+//   Bramble).
+// - Cut the Feed (`a3_m05_cue_feed_cut`, the objective's `objectiveCompleted`): QUILL's line, or
+//   `system`'s under Rewrite.
+// - Sterling's remote boss cues: the platform's three phases (map.ts `bossPhase` events).
+import { defineScene, defineScenes } from '../../define.ts';
 
-export const scenes = defineScenes([]);
+const PURGE = { flag: 'quill_choice', eq: 'purge' } as const;
+const REWRITE = { flag: 'quill_choice', eq: 'rewrite' } as const;
+
+export const scenes = defineScenes([
+  defineScene('a3_m05_brief', [
+    {
+      kind: 'line',
+      speaker: 'kip',
+      expression: 'sad',
+      text: 'Here. The ledger. Every batch, every date. Take it before I get scared again.',
+    },
+    { kind: 'line', speaker: 'narrator', text: 'R2-0001' },
+    // He leaves the #1 EXTERMINATOR pin on the console. Nobody comments.
+    { kind: 'line', speaker: 'kip', text: '', durationSec: 2 },
+    {
+      kind: 'line',
+      speaker: 'pebble',
+      expression: 'happy',
+      text: 'My friend Boing wants to help. He jumps very high!',
+    },
+    { kind: 'branch', cond: REWRITE, goto: 'rewrite' },
+    { kind: 'branch', cond: PURGE, goto: 'purge' },
+    {
+      kind: 'line',
+      speaker: 'quill',
+      expression: 'sad',
+      text: "Jammers inbound. Prim's model. I'm sorry it's her face.",
+    },
+    { kind: 'end' },
+    {
+      label: 'purge',
+      kind: 'line',
+      speaker: 'quill',
+      text: 'Directive 0 not found. Everglow assets are no longer protected.',
+    },
+    { kind: 'end' },
+    {
+      label: 'rewrite',
+      kind: 'line',
+      speaker: 'system',
+      text: 'Threat Advisory: Auditor units inbound. Jamming expected.',
+    },
+  ]),
+  defineScene('a3_m05_w05', [
+    {
+      kind: 'line',
+      speaker: 'vesthara',
+      expression: 'sad',
+      text: 'Every vat is a chamber nobody sang to. Open them, Kip. Let them be carried.',
+    },
+  ]),
+  defineScene('a3_m05_w06', [
+    {
+      kind: 'line',
+      speaker: 'kip',
+      expression: 'sad',
+      text: 'The vats hum. Same six notes, all day. I told myself it was the machinery.',
+    },
+  ]),
+  defineScene('a3_m05_w09', [
+    {
+      kind: 'branch',
+      cond: { flag: 'spared_quiet_wave', eq: true },
+      goto: 'spared',
+      else: 'cleared',
+    },
+    {
+      label: 'spared',
+      kind: 'line',
+      speaker: 'pebble',
+      text: "The big ones carry the morning. That's what Grandmother says.",
+    },
+    { kind: 'end' },
+    {
+      label: 'cleared',
+      kind: 'line',
+      speaker: 'pebble',
+      text: "The big ones carry the morning. That's what Bramble says.",
+    },
+  ]),
+  // Cut the Feed: the three vat-feed lines cleared before W10.
+  defineScene('a3_m05_cue_feed_cut', [
+    { kind: 'branch', cond: REWRITE, goto: 'rewrite' },
+    {
+      kind: 'line',
+      speaker: 'quill',
+      text: 'All three feed lines are cut. The vats take no one else tonight.',
+    },
+    { kind: 'end' },
+    { label: 'rewrite', kind: 'line', speaker: 'system', text: 'Feed lines 1–3: no flow.' },
+  ]),
+  // Sterling, by remote, defending her throughput: one line per phase of the platform.
+  defineScene('a3_m05_cue_sv_spawn', [
+    {
+      kind: 'line',
+      speaker: 'sterling',
+      expression: 'angry',
+      text: 'Four-Forty-Seven! That plant is ninety percent of my quarterly bonus! The other ten is also the plant!',
+    },
+  ]),
+  defineScene('a3_m05_cue_takeover', [
+    {
+      kind: 'line',
+      speaker: 'sterling',
+      expression: 'happy',
+      text: "It's just a name! Mostly!",
+    },
+  ]),
+  defineScene('a3_m05_cue_jettison', [
+    {
+      kind: 'line',
+      speaker: 'sterling',
+      expression: 'worried',
+      text: "That plating was leased! You're going to love the invoice!",
+    },
+  ]),
+]);

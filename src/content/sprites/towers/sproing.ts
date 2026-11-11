@@ -241,7 +241,7 @@ function sproingHead(kind: Kind, beat: Beat): string[] {
   const top = pad(g, kind, squash + wob);
   const seat = top + 1;
   if (beat === 'spring') {
-    // The leaper's gone: a puff of spores where it left, its feet the last thing in frame.
+    // The leaper's gone: a puff of spores where it left.
     for (const [ox, oy] of [
       [-4, -2],
       [3, -3],
@@ -251,8 +251,6 @@ function sproingHead(kind: Kind, beat: Beat): string[] {
     ] as const) {
       plot(g, CX + ox, top + oy, 'X');
     }
-    plot(g, CX - 1, 0, '1');
-    plot(g, CX + 1, 0, '1');
     return rows(g);
   }
   if (beat === 'wobble' || beat === 'empty0' || beat === 'empty1') return rows(g);

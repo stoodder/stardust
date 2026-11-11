@@ -2,7 +2,7 @@
 // Big Glorp Gloop in the road's corner spits green globs (`projectile.gloop_glob`) at the Compliance
 // Officers and the Liability-Class Enforcer: each landing leaves a pool of acid (PuddleView: a
 // translucent green ellipse with a solid rim and glints) that dries in steps, and the units it hits
-// carry Corroded. A Skyhook beside it forms Sticky Flak (its callout). Screenshots in
+// carry Corroded. A Skyhook beside it forms Sticky Flak (its callout and tether). Screenshots in
 // <out>/screens/gloop/ (look at them: the pools under the units and the tether are the point).
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
@@ -56,9 +56,10 @@ test('gloop: the spit, Big Glorp’s puddles, Corroded, and Sticky Flak', async 
   });
   expect(linked.spec).toBe('a');
   expect(linked.rate).toBeCloseTo(0.1); // Sticky Flak: the Gloop fires 10% faster
-  // Sticky Flak has no tether art yet (only Crossfire, Sitting Ducks, and Conductive draw one):
-  // its callout floats as it forms.
+  // Sticky Flak's callout floats as it forms, and its tether (T740b: a thick gooey green line with
+  // violet beads) joins the two.
   await nextFrames(page);
+  expect(await page.evaluate(() => globalThis.__sd!.render()!.tethers)).toBe(1);
   await shot(page, 'gloop', 1, 'big-glorp-sticky-flak');
 
   await page.evaluate(() => {

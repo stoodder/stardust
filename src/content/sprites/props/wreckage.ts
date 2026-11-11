@@ -24,6 +24,10 @@
 //   its hazard-striped mouth gaping at us, a leg snapped and sticking up; `v5` a hopper listing on a
 //   buckled leg, its mouth split down the front. Both spill the vats' grey slurry flecked cold
 //   violet, and the stake carries the intake manifest (the same battered data case).
+// - `v6`, `v7` (and theirs): A3M5's vat-feed lines (act3.md § A3M5, Cut the Feed; render picks
+//   them under a `feed*` marker): `v6` a thick feed pipe burst in two, its torn ends bleeding the
+//   vats' cold violet slurry into a pool; `v7` a feed junction, its valve wheel sheared off and lying
+//   in the pool, slurry spraying from the bare stem. The salvage stake as on every wreck.
 // A cleared tile draws its `underWreckage` tile and no prop.
 import { defineSprite } from '../defineSprite.ts';
 import {
@@ -314,6 +318,75 @@ function buckledHopper(g: CharGrid): void {
   soot(g, 6);
 }
 
+/** Slurry run out of a burst feed line: a cold violet pool, brightest where it wells up. */
+function slurryPool(g: CharGrid, cx: number, cy: number, rx: number): void {
+  for (let y = Math.floor(cy - rx / 2); y <= Math.ceil(cy + rx / 2); y++) {
+    for (let x = Math.floor(cx - rx); x <= Math.ceil(cx + rx); x++) {
+      const d = Math.hypot((x + 0.5 - cx) / rx, ((y + 0.5 - cy) * 2) / rx);
+      if (d <= 1) plot(g, x, y, d < 0.35 ? 'P' : d < 0.7 ? 'F' : 'C');
+    }
+  }
+}
+
+/** A length of thick feed pipe along the grid's x axis, from column x0 to x1, lit along its top. */
+function feedPipe(g: CharGrid, x0: number, x1: number, y0: number): void {
+  for (let x = x0; x <= x1; x++) {
+    const y = y0 + Math.round((x - x0) / 2);
+    plot(g, x, y - 2, 'V');
+    plot(g, x, y - 1, 'W');
+    plot(g, x, y, 'S');
+    plot(g, x, y + 1, 'T');
+    // Riveted collars every few pixels.
+    if ((x - x0) % 6 === 0) {
+      plot(g, x, y - 2, 'W');
+      plot(g, x, y + 1, 'U');
+    }
+  }
+}
+
+/** v6 (A3M5): a vat-feed line burst in two, its open ends bleeding the vats' violet slurry. */
+function feedBurst(g: CharGrid): void {
+  slurryPool(g, 15, TOP + 8, 5.5);
+  feedPipe(g, 2, 12, TOP + 2);
+  feedPipe(g, 18, 28, TOP + 7);
+  // The torn ends: dark bores, a jagged lip, the slurry welling out of each.
+  stamp(g, 12, TOP + 5, ['K', 'K', 'K']);
+  stamp(g, 18, TOP + 4, ['K', 'K', 'K']);
+  plot(g, 13, TOP + 6, 'P');
+  plot(g, 17, TOP + 6, 'P');
+  // A run of slurry along the pipe's belly, and a drip.
+  line(g, 6, TOP + 6, 11, TOP + 8, 'F');
+  plot(g, 22, TOP + 11, 'F');
+  soot(g, 7);
+}
+
+/** v7 (A3M5): a feed line's junction, its valve wheel sheared off, slurry spraying from the stem. */
+function feedValve(g: CharGrid): void {
+  slurryPool(g, 11, TOP + 10, 6);
+  feedPipe(g, 3, 27, TOP + 1);
+  // The junction box on the line: a steel block, cracked.
+  isoBox(g, 15, TOP + 8, 4, 6, { top: 'W', rim: 'V', left: 'S', right: 'T' });
+  crack(g, [
+    [15, TOP + 1],
+    [14, TOP + 4],
+    [16, TOP + 7],
+  ]);
+  // The bare stem, the slurry spraying from it in an arc, and the wheel lying in the pool.
+  line(g, 15, TOP - 1, 15, TOP - 3, 'U');
+  for (const [x, y] of [
+    [14, TOP - 5],
+    [12, TOP - 6],
+    [10, TOP - 5],
+    [9, TOP - 3],
+    [8, TOP],
+  ] as const) {
+    plot(g, x, y, 'F');
+  }
+  plot(g, 13, TOP - 6, 'P');
+  stamp(g, 7, TOP + 8, ['.Q.', 'QKQ', '.Q.']);
+  soot(g, 8);
+}
+
 /** The half-cleared wreck: the big piece is gone; a few scraps, the parcels, and the stake. */
 function half(g: CharGrid, v: WreckIndex): void {
   if (v === 0) {
@@ -322,6 +395,9 @@ function half(g: CharGrid, v: WreckIndex): void {
   } else if (v === 1) {
     disc(g, 22, TOP + 9, 1.8, (d) => (d > 1.2 ? 'G' : 'H'));
     stamp(g, 9, TOP + 5, ['..SW.', '.TWWS', 'KUTT.']);
+  } else if (v >= 6) {
+    slurryPool(g, 13, TOP + 9, 4);
+    stamp(g, 18, TOP + 6, ['.WS.', 'WWST', '.TT.']);
   } else if (v >= 4) {
     spoil(g, v === 4 ? 3 : 12, TOP + 10);
     stamp(g, 14, TOP + 6, ['.OK.', 'KWWS', '.TT.']);
@@ -359,7 +435,7 @@ function outlined(g: CharGrid, debris: CharGrid): void {
 }
 
 /** The wrecks: Act I's drone and cart (`v0`, `v1`), Act II's broken rigs (`v2`, `v3`). */
-type WreckIndex = 0 | 1 | 2 | 3 | 4 | 5;
+type WreckIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 const STAKE_AT: Readonly<Record<WreckIndex, readonly [number, number]>> = {
   0: [27, TOP - 6],
@@ -368,6 +444,8 @@ const STAKE_AT: Readonly<Record<WreckIndex, readonly [number, number]>> = {
   3: [26, TOP - 4],
   4: [27, TOP - 4],
   5: [27, TOP - 4],
+  6: [27, TOP - 5],
+  7: [27, TOP - 5],
 };
 
 function wreck(v: WreckIndex, state: 'dark' | 'lit' | 'half'): string[] {
@@ -380,10 +458,12 @@ function wreck(v: WreckIndex, state: 'dark' | 'lit' | 'half'): string[] {
   else if (v === 2) derrick(d);
   else if (v === 3) pumpHouse(d);
   else if (v === 4) toppledHopper(d);
-  else buckledHopper(d);
+  else if (v === 5) buckledHopper(d);
+  else if (v === 6) feedBurst(d);
+  else feedValve(d);
   const [sx, sy] = STAKE_AT[v];
   stake(d, sx, sy, state === 'lit');
-  if (v >= 2) crewLog(d, sx, sy + 3);
+  if (v >= 2 && v < 6) crewLog(d, sx, sy + 3);
   outlined(g, d);
   return rows(g);
 }
@@ -424,6 +504,9 @@ export const propWreckage = defineSprite({
     M: 'steel.2',
     F: 'violet.3',
     R: 'teal.2',
+    // A3M5's feed lines: the vats' slurry, cold violet, brightest where it wells up.
+    C: 'violet.2',
+    P: 'violet.4',
   },
   frames: {
     v0: wreck(0, 'dark'),
@@ -444,6 +527,12 @@ export const propWreckage = defineSprite({
     v5_lit: wreck(5, 'lit'),
     v4_half: wreck(4, 'half'),
     v5_half: wreck(5, 'half'),
+    v6: wreck(6, 'dark'),
+    v7: wreck(7, 'dark'),
+    v6_lit: wreck(6, 'lit'),
+    v7_lit: wreck(7, 'lit'),
+    v6_half: wreck(6, 'half'),
+    v7_half: wreck(7, 'half'),
   },
   anims: {
     blink_v0: { frames: ['v0', 'v0_lit'], fps: 2 },
@@ -460,5 +549,9 @@ export const propWreckage = defineSprite({
     blink_v5: { frames: ['v5', 'v5_lit'], fps: 2 },
     idle_v4: { frames: ['v4', 'v4', 'v4', 'v4', 'v4', 'v4', 'v4', 'v4_lit'], fps: 4 },
     idle_v5: { frames: ['v5', 'v5', 'v5', 'v5', 'v5', 'v5', 'v5', 'v5_lit'], fps: 4 },
+    blink_v6: { frames: ['v6', 'v6_lit'], fps: 2 },
+    blink_v7: { frames: ['v7', 'v7_lit'], fps: 2 },
+    idle_v6: { frames: ['v6', 'v6', 'v6', 'v6', 'v6', 'v6', 'v6', 'v6_lit'], fps: 4 },
+    idle_v7: { frames: ['v7', 'v7', 'v7', 'v7', 'v7', 'v7', 'v7', 'v7_lit'], fps: 4 },
   },
 });

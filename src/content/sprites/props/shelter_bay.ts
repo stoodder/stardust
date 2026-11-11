@@ -3,7 +3,7 @@
 // sleeps tonight. A ferrocrete alcove the size of a tile, its two back walls standing on the tile's
 // north edges (coursed grime, lit along their tops) over a swept concrete floor, open to the front.
 // - `v0`: a cot with a teal Everglow blanket and a pillow, a lantern burning warm on a crate beside
-//   it (its light on the wall behind).
+//   it.
 // - `v1`: two lettuce crates stacked against the back wall, a bedroll laid out in front of them,
 //   and a small coral plush (a Skitterkin, someone's) sitting up on it.
 // Everglow-owned (ferrocrete and the bay's things in its own legend): it keeps its colours in
@@ -52,16 +52,9 @@ function bay(look: 'v0' | 'v1'): string[] {
     stamp(g, 6, TOPD + 5, ['WW', 'WV']);
     plot(g, 5, TOPD + 12, '1');
     plot(g, 16, TOPD + 12, '1');
-    // A crate by the right wall, a lantern on it burning warm, its light on the wall.
+    // A crate by the right wall, a lantern on it burning warm.
     isoBox(g, 22, TOPD + 9, 3, 3, { top: 'C', rim: 'D', left: 'C', right: 'B' });
     stamp(g, 21, TOPD + 1, ['.1.', '1+1', '1*1', '111']);
-    for (const [x, y] of [
-      [19, TOPD - 1],
-      [24, TOPD],
-      [21, TOPD - 3],
-    ] as const) {
-      plot(g, x, y, 'O');
-    }
   } else {
     // Two lettuce crates stacked against the back wall, a head peeking out of the top one.
     isoBox(g, 17, TOPD + 6, 5, 4, { top: 'D', rim: 'D', left: 'C', right: 'B' });
@@ -69,7 +62,7 @@ function bay(look: 'v0' | 'v1'): string[] {
     stamp(g, 15, TOPD - 5, ['.GH.', 'GHGH']);
     // A bedroll in front of them, a coral plush sitting up on it.
     isoBox(g, 13, TOPD + 11, 5, 1, { top: 'P', rim: 'Q', left: 'Q', right: 'R' });
-    stamp(g, 15, TOPD + 6, ['.ss.', 'ssss', 'skks', '.ss.']);
+    stamp(g, 15, TOPD + 6, ['.SS.', 'SSSS', 'SkkS', '.SS.']);
   }
   return rows(g);
 }
@@ -99,7 +92,7 @@ export const propShelterBay = defineSprite({
     Q: 'blue.1',
     R: 'blue.0',
     O: 'orange.1',
-    s: 'coral.3',
+    S: 'coral.3',
   },
   frames: { v0: bay('v0'), v1: bay('v1') },
 });

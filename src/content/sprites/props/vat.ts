@@ -6,7 +6,10 @@
 // orange valve wheel runs off its shaded side, and a hazard band rings its foot. The body sits in
 // the environment's band (steel.1–steel.3, a step under the units); only the slurry is bright, and
 // it is the colour the act's story is about. Frames `v0`–`v2` (anim `churn`, 3 fps: the swirl turns
-// and a bubble rises and pops); `v0` is the Second Harvest codex entry's picture.
+// and a bubble rises and pops); `v0` is the Second Harvest codex entry's picture. `blaze_0`–`blaze_2`
+// (anim `blaze`, 4 fps; A3M5, act3.md § A3M5: "glowing violet at full blaze"): the same vat at
+// maximum throughput, its slurry burning brighter round a white-hot heart, the rim lit violet, and
+// the slurry brimming over the front lip in two runs down the tank.
 import { defineSprite } from '../defineSprite.ts';
 import { grid, isoBox, line, plot, rows, stamp, type CharGrid } from '../helpers.ts';
 
@@ -48,8 +51,11 @@ function body(g: CharGrid): void {
   }
 }
 
-/** The open top: a lit rim round the slurry, which swirls (phase `k`) and glows cold violet. */
-function slurry(g: CharGrid, k: number): void {
+/**
+ * The open top: a lit rim round the slurry, which swirls (phase `k`) and glows cold violet; at
+ * `blaze` (A3M5, maximum throughput) it burns brighter, a white-hot heart in it, the rim lit violet.
+ */
+function slurry(g: CharGrid, k: number, blaze: boolean): void {
   for (let x = CX - RX; x < CX + RX; x++) {
     const dx = x + 0.5 - CX;
     const h = half(dx, RX, RY);
@@ -59,7 +65,8 @@ function slurry(g: CharGrid, k: number): void {
       const rim = y === yTop || y === yBot || x === CX - RX || x === CX + RX - 1;
       if (rim) {
         // The rim: lit along the back, a dark lip at the front where the wall drops away.
-        plot(g, x, y, y === yBot ? 'B' : dx < 4 ? 'E' : 'D');
+        const lit = blaze && y !== yBot ? 'V' : 'E';
+        plot(g, x, y, y === yBot ? 'B' : dx < 4 ? lit : 'D');
         continue;
       }
       // The slurry: brightest at its churning heart, deep violet at the walls, with ripples that
@@ -68,7 +75,8 @@ function slurry(g: CharGrid, k: number): void {
       const r = Math.hypot(dx, (y + 0.5 - YT) * 2) / RX;
       const ripple = Math.sin(a * 3 + r * 7 - (k * 2 * Math.PI) / 3) * 0.22;
       const v = r + ripple;
-      plot(g, x, y, v < 0.32 ? 'Y' : v < 0.72 ? 'V' : 'U');
+      if (blaze) plot(g, x, y, v < 0.18 ? 'Z' : v < 0.52 ? 'Y' : v < 0.88 ? 'V' : 'U');
+      else plot(g, x, y, v < 0.32 ? 'Y' : v < 0.72 ? 'V' : 'U');
     }
   }
   // A bubble rising and popping, a different spot each frame.
@@ -108,14 +116,26 @@ function fittings(g: CharGrid): void {
   stamp(g, px + 1, YB - 9, ['.c.', 'cKc', '.c.']);
 }
 
-function vatGrid(k: number): string[] {
+/** At full blaze the slurry brims over the front lip: two violet runs down the body (phase `k`). */
+function overflow(g: CharGrid, k: number): void {
+  for (const [x, len] of [
+    [CX - 4, 5 + k],
+    [CX + 5, 7 - k],
+  ] as const) {
+    const top = Math.round(YT + half(x + 0.5 - CX, RX, RY));
+    for (let y = top; y < top + len; y++) plot(g, x, y, y === top + len - 1 ? 'Y' : 'V');
+  }
+}
+
+function vatGrid(k: number, blaze = false): string[] {
   const g = grid(W, H);
   isoBox(g, CX, FOOT_Y + 1, 15, 0, { top: '_', rim: '_', left: '_', right: '_' });
   // The low plinth it stands on.
   isoBox(g, CX, FOOT_Y, 14, 2, { top: 'B', rim: 'C', left: 'B', right: 'A' });
   body(g);
-  slurry(g, k);
+  slurry(g, k, blaze);
   fittings(g);
+  if (blaze) overflow(g, k);
   return rows(g);
 }
 
@@ -134,9 +154,20 @@ export const propVat = defineSprite({
     U: 'violet.2',
     V: 'violet.3',
     Y: 'violet.4',
+    Z: 'white.1',
     O: 'orange.2',
     K: 'ink.1',
   },
-  frames: { v0: vatGrid(0), v1: vatGrid(1), v2: vatGrid(2) },
-  anims: { churn: { frames: ['v0', 'v1', 'v2'], fps: 3 } },
+  frames: {
+    v0: vatGrid(0),
+    v1: vatGrid(1),
+    v2: vatGrid(2),
+    blaze_0: vatGrid(0, true),
+    blaze_1: vatGrid(1, true),
+    blaze_2: vatGrid(2, true),
+  },
+  anims: {
+    churn: { frames: ['v0', 'v1', 'v2'], fps: 3 },
+    blaze: { frames: ['blaze_0', 'blaze_1', 'blaze_2'], fps: 4 },
+  },
 });

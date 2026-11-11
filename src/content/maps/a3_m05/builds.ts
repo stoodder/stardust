@@ -101,12 +101,14 @@ function parSteps(): BuildStep[] {
     { wave: 11, upgrade: CATWALK_E },
     { wave: 11, upgrade: CATWALK_W },
     { wave: 12, upgrade: YARD_N },
+    still(13, HUNT_STILL_SEC, HUNT_STILL),
     { wave: 13, upgrade: CATWALK_E },
     { wave: 13, upgrade: BEND },
     slot1(14, TAKEOVER_SEC),
     still(14, BOSS_STILL_SEC, [14, 10]),
     slot1(14, TAKEOVER_SEC + 45),
     { wave: 14, upgrade: CATWALK_W },
+    { wave: 15, upgrade: SLUICE_S },
     { wave: 15, build: 'thumper', tile: VAT_E },
     { wave: 15, upgrade: VAT_E },
     { wave: 16, build: 'thumper', tile: SOUTH },
@@ -114,6 +116,10 @@ function parSteps(): BuildStep[] {
     { wave: 17, upgrade: SOUTH },
   ];
 }
+
+/** W13: Stillness on the hunt as it catches the biggest bearer group by the old intake. */
+const HUNT_STILL_SEC = 19;
+const HUNT_STILL: GridPos = [0, 6];
 
 /** W14 under Rewrite: Suppressing Fire on the vats' row, then on the turn down to the core. */
 const SUPPRESS_1: GridPos = [12, 9];
@@ -210,6 +216,7 @@ export const builds = defineBuilds({
         { wave: 11, specialize: CONDUIT, spec: 'b' },
         { wave: 12, upgrade: CATWALK_E },
         { wave: 12, upgrade: INTAKE_W },
+        still(13, HUNT_STILL_SEC, HUNT_STILL),
         { wave: 13, build: 'thumper', tile: VAT_E },
         { wave: 13, upgrade: BEND },
         slot1(14, TAKEOVER_SEC),
@@ -256,8 +263,7 @@ export const builds = defineBuilds({
         slot1(14, TAKEOVER_SEC),
         still(14, BOSS_STILL_SEC, [14, 10]),
         { wave: 14, upgrade: VAT_E },
-        { wave: 15, specialize: CONDUIT, spec: 'a' },
-        { wave: 16, build: 'zapcoil', tile: SOUTH },
+        { wave: 15, build: 'zapcoil', tile: SOUTH },
         { wave: 16, upgrade: SOUTH },
       ],
     },

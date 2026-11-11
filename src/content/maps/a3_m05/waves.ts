@@ -134,7 +134,7 @@ export const waves = defineWaves([
     countdownAfter: 'bossEnded',
     groups: [
       motes(6, 'hunt', HUNT_SEC, 0.5),
-      fractures(1, 'hunt', HUNT_SEC + 4),
+      fractures(2, 'hunt', HUNT_SEC + 4, 3),
       motes(8, 'vats', 2),
       fractures(2, 'vats', 6),
       g('maw', 1, 'vats', 10),

@@ -37,7 +37,7 @@ describe('master palette', () => {
 
 describe('slot palettes', () => {
   it('map every slot to a master color', () => {
-    expect(PALETTE_IDS.length).toBe(12);
+    expect(PALETTE_IDS.length).toBe(13);
     for (const id of PALETTE_IDS) {
       const p: SlotPalette = PALETTES[id];
       expect(Object.keys(p), id).toHaveLength(SLOT_COUNT);
