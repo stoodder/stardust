@@ -37,6 +37,8 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+const ids = (list: readonly { id: string }[]): string[] => list.map((d) => d.id);
+
 describe('CodeSpriteSource', () => {
   it('gives every atlas page a willReadFrequently context before drawing on it', () => {
     const canvases: FakeCanvas[] = [];
@@ -146,7 +148,6 @@ describe('CodeSpriteSource', () => {
   });
 
   it('holds every sprite but the portraits (T766: they are drawn only in the DOM)', () => {
-    const ids = (list: readonly { id: string }[]): string[] => list.map((d) => d.id);
     expect(ids(ATLAS_SPRITES)).toEqual(ids(SPRITES).filter((id) => !id.startsWith('portrait.')));
     expect(ids(SPRITES).some((id) => id.startsWith('portrait.'))).toBe(true);
   });

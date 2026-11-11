@@ -553,8 +553,8 @@ The npm scripts that make up the test loop (D002) are defined here. **What each 
 | `sim` | `node --experimental-strip-types tools/sim.ts`: headless balance sims for every map, maps in parallel on worker threads (args: `--map <id>`, `--seeds <n>`, `--build <name>`, `--jobs <n>`, `--report`) |
 | `smoke` | `playwright test --trace off`: browser smoke tests against `npm run preview` |
 | `check:docs` | `node --experimental-strip-types tools/check-docs.ts`: link and docs-index checks |
-| `check` | **The whole gate:** `node --experimental-strip-types tools/gate.ts`: `typecheck` → `lint` → `test` → `build` → `smoke` and `sim` side by side → `check:docs`, failing after the first phase with a red step, then each step's time against its budget ([conventions.md § Gate time](conventions.md#gate-time)) |
-| `check:fast` | **The per-task gate** (D148): `node --experimental-strip-types tools/gate.ts --fast <smoke specs…>`: the whole gate's steps with `smoke` cut to the named specs ([conventions.md § The test loop](conventions.md#the-test-loop)) |
+| `check` | **The whole gate:** `node --experimental-strip-types tools/gate.ts`. Six phases, one after another: `typecheck`, `lint`, `test`, `build` (with the initial-JS check), `smoke` and `sim` side by side, `check:docs`. It stops after the first phase with a red step, then prints each step's time against its share and the wall time against the budget ([conventions.md § Gate time](conventions.md#gate-time)) |
+| `check:fast` | **The per-task gate** (D148): `node --experimental-strip-types tools/gate.ts --fast <smoke specs…>`. The same phases, with `smoke` cut to the named specs (skipped when none is named), against the fast budget ([conventions.md § The test loop](conventions.md#the-test-loop)) |
 
 `package.json` sets `"type": "module"` and `"engines": { "node": ">=22.6" }`.
 

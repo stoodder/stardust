@@ -6,6 +6,7 @@ import { SCENES } from './index.ts';
 import { RESULTS_FLOW, resultsFlow } from './resultsFlow.ts';
 import { parseSceneId } from './rules.ts';
 import type { Condition } from './types.ts';
+import { MEMOS, PLANNED_MEMOS } from '../memos/index.ts';
 
 /** Every `thisRun` flag a condition reads. */
 function thisRunFlags(c: Condition): string[] {
@@ -22,6 +23,25 @@ describe('RESULTS_FLOW', () => {
         const parsed = parseSceneId(id);
         expect(parsed?.map, id).toBe(map);
         expect(parsed?.slot.kind, id).toBe('scene');
+      }
+    });
+
+    it(`${map}: its ending's scenes are its own, its memos registered or reserved for it`, () => {
+      const steps = [...(flow.ending?.first ?? []), ...(flow.ending?.replay ?? [])];
+      for (const step of steps) {
+        if ('scene' in step) {
+          const parsed = parseSceneId(step.scene);
+          expect([parsed?.map, parsed?.slot.kind], step.scene).toEqual([map, 'scene']);
+        }
+        if ('memo' in step) {
+          const planned = PLANNED_MEMOS.find((m) => m.id === step.memo);
+          expect(MEMOS[step.memo]?.afterMap ?? planned?.afterMap, step.memo).toBe(map);
+        }
+      }
+      // The close ends on the post-game star map, on a first win and a replay alike.
+      if (flow.ending !== undefined) {
+        expect(flow.ending.first.at(-1)).toEqual({ screen: 'post_game' });
+        expect(flow.ending.replay.at(-1)).toEqual({ screen: 'post_game' });
       }
     });
 
