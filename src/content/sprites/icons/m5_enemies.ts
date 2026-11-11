@@ -11,7 +11,7 @@ import { grid, line, plot, rows, stamp, type CharGrid } from '../helpers.ts';
 import { enemyFractureShard } from '../enemies/fracture_shard.ts';
 import { hollowBody } from '../enemies/hollow.ts';
 import { outlineOutside, rim, weave, type Mask } from '../enemies/lattice.ts';
-import { MOTE_LEGEND } from '../enemies/mote.ts';
+import { MOTE_BODY_LEGEND, MOTE_LEGEND } from '../enemies/mote.ts';
 import { ICON } from './iconGen.ts';
 
 /** The Aelari icons' full size (the outline is drawn inside it). */
@@ -243,7 +243,7 @@ export const iconEnemyFractureShard = defineSprite({
   anchor: { x: 0, y: 0 },
   palette: 'hollow',
   outline: 'auto',
-  legend: MOTE_LEGEND,
+  legend: MOTE_BODY_LEGEND,
   frames: { icon: fitted(walkFrame()) },
 });
 

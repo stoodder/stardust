@@ -33,7 +33,6 @@ function placeholder<const Id extends string>(
 }
 
 // Units (T640a).
-export const enemyCompliance = placeholder(enemyGerald, 'enemy.compliance');
 export const enemyExpediter = placeholder(enemyGerald, 'enemy.expediter');
 export const allySwarmling = placeholder(allyRefugee, 'ally.swarmling');
 export const allyChampion = placeholder(allyRefugee, 'ally.champion');

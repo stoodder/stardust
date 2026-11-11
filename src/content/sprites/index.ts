@@ -22,6 +22,7 @@ import {
   enemyMawG4,
   enemyMawG5,
 } from './enemies/maw.ts';
+import { enemyCompliance } from './enemies/compliance.ts';
 import { enemyMote } from './enemies/mote.ts';
 import { enemyUndertow } from './enemies/undertow.ts';
 import { enemyGlimmer } from './enemies/glimmer.ts';
@@ -199,7 +200,6 @@ import { towerLantern, towerLanternHead } from './towers/lantern.ts';
 import {
   allyChampion,
   allySwarmling,
-  enemyCompliance,
   enemyExpediter,
   iconAbilityUnderfoot,
   iconEnemyCompliance,

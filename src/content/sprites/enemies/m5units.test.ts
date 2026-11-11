@@ -241,7 +241,8 @@ describe("M5's Hollow units (art-direction §4 The Hollow)", () => {
         const rows = grid(id, f);
         expect(count(rows, '+*'), `${id}:${f} acid eyes`).toBeGreaterThanOrEqual(2);
         expect(count(rows, 'VU'), `${id}:${f} unsung violet`).toBeGreaterThanOrEqual(1);
-        expect(count(rows, '0123'), `${id}:${f} drained body`).toBeGreaterThan(30);
+        // The drained greys and their `ink.0` contour (K; T569).
+        expect(count(rows, '0123K'), `${id}:${f} drained body`).toBeGreaterThan(30);
       }
     }
     // The Fracture's crack and the Shard's broken edge glow down their length.

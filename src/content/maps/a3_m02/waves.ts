@@ -108,7 +108,7 @@ export const waves = defineWaves([
   // a hasted rush
   {
     countdownSec: COUNTDOWN,
-    groups: [drones(20, 0, 1.2), ...rush(28, 2, W12_RUSH)],
+    groups: [...rush(0, 2, W12_RUSH), drones(20, 12, 1.2)],
   },
   // W13 · the Hollow, both rifts
   {
@@ -123,18 +123,18 @@ export const waves = defineWaves([
   // W14 · everything Everglow: a column with its escorts, then the biggest rush
   {
     countdownSec: COUNTDOWN,
-    groups: [drones(22, 0, 1.0), expediters(2, 6, 8), ...rush(30, 3, W14_RUSH)],
+    groups: [...rush(0, 3, W14_RUSH), drones(22, 12, 1.0), expediters(2, 18, 8)],
   },
   // W15 · everything
   {
     countdownSec: COUNTDOWN,
     groups: [
-      drones(14, 0, 1.0),
-      expediters(2, 3, 6),
-      motes(18, 'rift_w', 10, 0.3),
+      ...rush(0, 2, W15_RUSH),
+      motes(18, 'rift_w', 8, 0.3),
+      drones(14, 12, 1.0),
       g('fracture', 2, 'rift_e', 14, 4),
+      expediters(2, 15, 6),
       motes(18, 'rift_e', 24, 0.3),
-      ...rush(34, 2, W15_RUSH),
     ],
   },
 ]);

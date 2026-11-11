@@ -3,8 +3,9 @@
 // only ones), a loss's card the same, the counter the meter's line, no star. (2) The Title's tip
 // with an Act III campaign in play: "Remember.". (3) The codex is the *Field Journal* from A3M1.
 // (4) A3M2's three billboards dark, the hum-glyph over Evie's smile. (5) A3M1's first wave clear:
-// no jingle plays, and QUILL notices ("...No song. Logging it."). Screenshots via shot()
-// (smoke/out.ts); look at the card, the journal, and the boards.
+// no jingle plays, and QUILL notices ("...No song. Logging it."). (6) A3M2's Clean Exit cue on a
+// pausing panel (Sterling's portrait; the battle holds), its 2 s held beat moving on by itself.
+// Screenshots via shot() (smoke/out.ts); look at the card, the journal, the boards, the panel.
 import type { Page } from '@playwright/test';
 import { SAVE_VERSION } from '../src/meta/saveData.ts';
 import { expect, test } from './fixtures.ts';
