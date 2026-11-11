@@ -63,7 +63,7 @@ const ACT3_BPM = 72;
  * The Act III battle loop, eight bars over Am | F | C | G | Am | F | Dm | E:
  * - **base:** a low drone held for most of each bar, then a rest; a soft colour tone halfway in;
  *   and one far glass note in bars 3 and 7, a star in the dark.
- * - **drums:** no drums: a heartbeat, a lub-dub every half bar, while a wave walks.
+ * - **drums:** a heartbeat instead of a kit, a lub-dub every half bar, while a wave walks.
  * - **lead** (the last two waves, or integrity low): the home motif on glass, in bars 3–4 and 7–8.
  * - **choir** (a Hum Choir stands): "Everglow Bright" hummed in bars 1–2 and 5–6, the melody over
  *   its tenths.

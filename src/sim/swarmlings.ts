@@ -54,14 +54,8 @@ import { damageOn, rangeOf } from './systems/towers.ts';
 import type { TickContext } from './tick.ts';
 
 type Spawner = Extract<CompiledAttack, { kind: 'spawner' }>;
-// EXPERIMENT (T604c): toggles from env.
-const ENV: Record<string, string | undefined> = (globalThis as any).process?.env ?? {};
-const EXP = {
-  ride: ENV.RIDE === '1',
-  wake: ENV.WAKE === '1',
-  prefb: ENV.PREFB === '1',
-  hop: ENV.HOP === '1',
-};
+// EXPERIMENT (T604c, temporary): rule toggles the scratch runner sets; all off by default.
+export const EXP = { ride: false, wake: false, prefb: false, hop: false };
 
 /** A swarmling's or Champion's dash and run home (the docs give none; T604's choice). */
 export const SWARM_DASH_TILES_PER_SEC = 4;

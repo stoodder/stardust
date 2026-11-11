@@ -1,13 +1,14 @@
-// The Scuttle Den's swarmlings (towers.md § 7; T604): the minimal readable view (T630a polishes
-// it). Its bodies are `ally.swarmling` and `ally.champion` (T640a: young Skitterkin, the Champion a
+// The Scuttle Den's swarmlings (towers.md § 7; T604, polished by T630a; swarmLook.ts has the
+// rules). Its bodies are `ally.swarmling` and `ally.champion` (T640a: young Skitterkin, the Champion a
 // size up in a red headband). Read from the sim's owner allies each frame:
 // - at home (resting in the mound) none is drawn;
 // - dashing out or running home, each scurries in its walk anim in the Skitterkin allies' palette,
 //   facing the way it moves, depth-sorted in `world` like a unit;
-// - latched, it rides its target: its feet on the top of the body as drawn (the lane offset, a
-//   flyer's lift; unitAnchor.ts, falling back to the grid point), so the body still shows under
-//   it, spread a few px by uid so a pile reads as a pile, nibbling in its `latch` anim (squashed
-//   flat, legs splayed), sorted just in front of the body. On a burrowed unit it rides the mound.
+// - latched, it rides its target's back as drawn (the lane offset, a flyer's lift; unitAnchor.ts,
+//   falling back to the grid point), low enough that it never climbs over the frame's top, where
+//   the target's health bar sits (`clingFeetY`), spread a few px by uid so a pile reads as a pile,
+//   nibbling in its `latch` anim (squashed flat, legs splayed), sorted just in front of the body.
+//   On a burrowed unit it rides the mound.
 // Allocation-free per frame: a fixed pool of sprites, set up once; an anim restarts only when the
 // slot's look changes.
 import type * as Phaser from 'phaser';
@@ -18,6 +19,7 @@ import { worldDepth } from '../depth.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
 import { DEFAULT_VARIANT } from '../sprites/bake.ts';
 import { REFUGEE_VARIANT } from './RefugeeView.ts';
+import { clingFeetY, clingSpreadPx, RIDE_PX } from './swarmLook.ts';
 import { facingOf, hasAnim, type Facing } from './spriteInfo.ts';
 import { AIR_LIFT_PX, BODY_LIFT_PX } from './TransientFx.ts';
 import { blankBox, NO_ANCHORS, type UnitAnchors } from './unitAnchor.ts';
@@ -53,10 +55,6 @@ export const SWARM_VARIANT: ReadonlyMap<string, string> = new Map(
 
 /** Enough for four Big Families and a Finders Keepers each (more go unshown). */
 const MAX_SWARM = 40;
-/** How far down from the top of its target's frame a latched one's feet cling (px). */
-const CLING_PX = 4;
-/** A latched one's sideways spread by uid (px either way), so a pile of them reads. */
-const SPREAD_PX = 3;
 
 interface Slot {
   readonly body: Phaser.GameObjects.Sprite;
@@ -119,8 +117,13 @@ export class SwarmView {
       let y: number;
       let foot: number;
       if (held && this.#anchors.box(a.targetUid, drawn)) {
-        x = drawn.x + (((a.uid * 7) % (2 * SPREAD_PX + 1)) - SPREAD_PX);
-        y = drawn.top + CLING_PX; // its feet on the body's back: the body still shows
+        x = drawn.x + clingSpreadPx(a.uid, drawn.halfW);
+        // On the body's back, under the frame's top: the body shows, and its bar stays clear.
+        y = clingFeetY(
+          drawn.top,
+          drawn.bottom,
+          RIDE_PX[a.kind === 'champion' ? 'champion' : 'swarmling'],
+        );
         foot = drawn.groundY + 1;
       } else {
         gridToScreen(a.x, a.y, this.#ctx.origin, pos);
