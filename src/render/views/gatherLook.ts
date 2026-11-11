@@ -1,5 +1,5 @@
 // The Hollow's Act III looks, as rules (T602's views, polished by T630a; HollowView draws them; T640a
-// draws the Maw's growth steps and the Undertow; the rift cracks are T630b/T640c's):
+// draws the Maw's growth steps and the Undertow; the rift cracks are RiftView's, riftCrack.ts):
 // - **The tendril tell** (art-direction §8's `consumer`: "inward-pulling tendrils for 1 s"): while
 //   a Maw holds a unit (`Enemy.gatherUid`), a cold `violet.4` noose over an `ink.0` under-stroke
 //   rings the unit, closing from 0.5 to 0.2 tiles as the tell runs (the unit drawn in), and three
@@ -22,11 +22,8 @@
 //   staying where it formed, widening and stepping down the alpha ladder as the unit draws away,
 //   so the trail reads as the ground disturbed in its wake rather than marks it carries. It moves
 //   only as the unit does (no clock), so reduced motion keeps it.
-// - **Rift cracks** (maps.md § 4): a rift lane's tiles joined by a jagged line: none while closed,
-//   a dashed `violet.4` crack pulsing on the 1 Hz clock while opening (the wave before), and a
-//   solid `hollow.4` one once open, each over an `ink.0` under-stroke.
 import type { DeepReadonly } from '../../shared/types.ts';
-import { gatherScale, type Enemy, type RiftStatus } from '../../sim/index.ts';
+import { gatherScale, type Enemy } from '../../sim/index.ts';
 import { STEPPED_ALPHA } from '../vfx/fxTiming.ts';
 import { enemyBody } from './spriteInfo.ts';
 
@@ -154,14 +151,4 @@ export function rippleAt(dist: number, k: number, out: Ripple): boolean {
 export function drawnBody(e: DeepReadonly<Pick<Enemy, 'def' | 'absorbs' | 'tags'>>): string {
   if (e.def === null) return '';
   return mawBody(enemyBody(e.def.sprites.body, e.tags), e);
-}
-
-/** A rift crack's look by status: drawn or not, dashed, and its alpha (`on`: the 1 Hz pulse). */
-export function riftLook(
-  status: RiftStatus,
-  on: boolean,
-): { readonly drawn: boolean; readonly dashed: boolean; readonly alpha: number } {
-  if (status === 'closed') return { drawn: false, dashed: false, alpha: 0 };
-  if (status === 'opening') return { drawn: true, dashed: true, alpha: on ? 1 : 0.55 };
-  return { drawn: true, dashed: false, alpha: 1 };
 }

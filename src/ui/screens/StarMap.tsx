@@ -41,6 +41,12 @@ import './starMap.css';
 
 /** The node panel's width (art-direction § 10). */
 const PANEL_W = 176;
+/**
+ * What the node panel covering the corner chrome (the header, the banks, the footer's Title and
+ * Settings) costs a placement, against 1 per node it covers (T631): a tall Act III panel would
+ * rather lie over a neighbour's glyph than over a button the player can't reach under it.
+ */
+const CHROME_COST = 6;
 /** The marker's walk to a newly won node (art-direction § 10). */
 const WALK_MS = 600;
 /** The first-visit notice shows this long, after the sweep. */
@@ -329,7 +335,17 @@ export function StarMap() {
     const h = panel.current.offsetHeight;
     const others = view.nodes.filter((n) => n.id !== node.id).map((n) => ({ x: n.x, y: n.y }));
     setPanelPos(
-      placePanel(node.x, node.y, PANEL_W, h, others, STAR_MAP_RESERVED, NODE_CLEAR_BOX, NODE_BOX),
+      placePanel(
+        node.x,
+        node.y,
+        PANEL_W,
+        h,
+        others,
+        STAR_MAP_RESERVED,
+        NODE_CLEAR_BOX,
+        NODE_BOX,
+        CHROME_COST,
+      ),
     );
   }, [view, selected]);
 

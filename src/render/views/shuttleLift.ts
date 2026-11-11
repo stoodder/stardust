@@ -4,7 +4,6 @@
 // it on its lift jets, hangs a moment, then climbs away north-east and fades: its lights cross the
 // sky. Pure and on sim ticks (pause holds it, 2× runs it fast), so it is unit-tested; under reduced
 // motion the ship neither climbs nor flickers its jets: it fades out where it stood.
-import type { CompiledScriptedEvent } from '../../content/compiled.ts';
 
 /** The cue the shuttle lifts on (no scene; render keys on it) and the marker of its pad. */
 export const SHUTTLE_CUE = 'a3_m02_cue_shuttle';
@@ -33,13 +32,14 @@ export interface LiftPose {
 
 /** True once any of the map's events that cue `cue` has fired (`state.scriptFired`, same order). */
 export function cueFired(
-  events: readonly Pick<CompiledScriptedEvent, 'actions'>[],
+  events: readonly { readonly actions: readonly object[] }[],
   fired: readonly boolean[],
   cue: string,
 ): boolean {
   for (let i = 0; i < events.length; i++) {
     if (fired[i] !== true) continue;
-    for (const a of events[i]!.actions) if ('cue' in a && a.cue === cue) return true; // i < length
+    const ev = events[i]!; // i < length
+    for (const a of ev.actions) if ('cue' in a && a.cue === cue) return true;
   }
   return false;
 }
@@ -61,7 +61,7 @@ export function liftPose(ticks: number, still: boolean, out: LiftPose): LiftPose
     return out;
   }
   if (t < LIFT_HOVER_TICKS) {
-    out.dy = -LIFT_HOVER_PX * ease(t / LIFT_HOVER_TICKS);
+    out.dy = 0 - LIFT_HOVER_PX * ease(t / LIFT_HOVER_TICKS);
     out.alpha = 1;
     out.done = false;
     return out;

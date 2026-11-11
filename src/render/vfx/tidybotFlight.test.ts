@@ -15,10 +15,13 @@ import {
   TIDY_MAX_STOPS,
   TIDY_OUT_TICKS,
   TIDY_STAGGER_TICKS,
+  TIDY_STOP_GAP,
   TIDY_UNLOAD_TICKS,
   TIDY_VAC_TICKS,
+  tidyDock,
   tidyPose,
   tidyTicks,
+  UNLOAD_MARKER,
   type TidyPose,
 } from './tidybotFlight.ts';
 
@@ -84,10 +87,70 @@ describe('planSweep', () => {
     );
   });
 
+  it('never sends two drones to one spot (T567): a pile gets them side by side', () => {
+    // A crowd fallen in one heap (a choke): three drones, every stop on the same point at first.
+    const heap = Array.from({ length: 18 }, () => ({ x: 6, y: 5 }));
+    const sweep = planSweep(heap, 20, 12);
+    expect(sweep.plans).toHaveLength(3);
+    const gaps: number[] = [];
+    sweep.plans.forEach((a, i) =>
+      sweep.plans.slice(i + 1).forEach((b) => {
+        for (const p of a.stops)
+          for (const q of b.stops) gaps.push(Math.hypot(p.x - q.x, p.y - q.y));
+      }),
+    );
+    expect(Math.min(...gaps)).toBeGreaterThanOrEqual(TIDY_STOP_GAP - 1e-9);
+    // Beside the heap, not across the map: each drone stays within a tile and a half of it.
+    for (const p of sweep.plans) {
+      for (const s of p.stops) expect(Math.hypot(s.x - 6, s.y - 5)).toBeLessThanOrEqual(1.5);
+    }
+    // Two piles nearly on one spot, split between two drones, likewise.
+    const two = [
+      ...Array.from({ length: 6 }, () => ({ x: 3, y: 3 })),
+      ...Array.from({ length: 6 }, () => ({ x: 3.2, y: 3.1 })),
+    ];
+    const [p0, p1] = planSweep(two, 20, 12).plans;
+    for (const p of p0!.stops) {
+      for (const q of p1!.stops) {
+        expect(Math.hypot(p.x - q.x, p.y - q.y)).toBeGreaterThanOrEqual(TIDY_STOP_GAP - 1e-9);
+      }
+    }
+    // On the map's edge, a drone moved off a pile turns back inside the map.
+    const edge = planSweep(
+      Array.from({ length: 12 }, () => ({ x: 19.5, y: 0.5 })),
+      20,
+      12,
+    );
+    for (const p of edge.plans) {
+      for (const s of p.stops) {
+        expect(s.x).toBeLessThanOrEqual(19.5);
+        expect(s.y).toBeGreaterThanOrEqual(0.5);
+      }
+    }
+  });
+
+  it('keeps every drone’s timing when it spreads their stops (the chimes count specks only)', () => {
+    const heap = Array.from({ length: 18 }, () => ({ x: 6, y: 5 }));
+    const spread = Array.from({ length: 18 }, (_, i) => ({ x: i % 9, y: Math.floor(i / 9) * 6 }));
+    expect(planSweep(heap, 20, 12).plans.map(tidyTicks)).toEqual(
+      planSweep(spread, 20, 12).plans.map(tidyTicks),
+    );
+  });
+
   it('enters and leaves by the edges nearest its first and last stops', () => {
     const plan = planSweep([{ x: 1, y: 6 }], 20, 12).plans[0]!;
     expect(plan.entry).toEqual({ x: -TIDY_EDGE_OUT, y: 6 });
     expect(plan.exit).toEqual({ x: -TIDY_EDGE_OUT, y: 6 });
+  });
+});
+
+describe('tidyDock', () => {
+  it("is Intake B's tile centre on a map whose drones unload, and nowhere else", () => {
+    const markers = { [UNLOAD_MARKER]: [4, 7] as const };
+    expect(tidyDock('unloading', markers)).toEqual({ x: 4.5, y: 7.5 });
+    expect(tidyDock('on', markers)).toBeNull();
+    expect(tidyDock('off', markers)).toBeNull();
+    expect(tidyDock('unloading', {})).toBeNull();
   });
 });
 

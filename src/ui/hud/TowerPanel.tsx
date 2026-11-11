@@ -13,7 +13,14 @@ import { rampNow } from '../../app/hudText.ts';
 import { PRIORITY_LABEL } from './words.ts';
 import { hud, type SelectedTowerView, type SpecOptionView } from '../state.ts';
 import { Icon } from './Icon.tsx';
-import { hudCorners, PANEL_W, placePanel, specCardHeight, towerPanelHeight } from './layout.ts';
+import {
+  hudCorners,
+  objectiveRows,
+  PANEL_W,
+  placePanel,
+  specCardHeight,
+  towerPanelHeight,
+} from './layout.ts';
 import { alignPulse } from './pulse.ts';
 import { Key, Credits, Glyph, HOLD_GLYPH, SPARE_GLYPH } from './parts.tsx';
 
@@ -95,7 +102,7 @@ export function TowerPanel({ t }: { t: SelectedTowerView }) {
   const others = hud.towerPoints.value.filter((p) => p.x !== t.x || p.y !== t.y);
   const h = towerPanelHeight(t);
   const corners = hudCorners(
-    hud.objectives.value.length,
+    objectiveRows(hud.objectives.value),
     hud.asset.value !== null,
     hud.escort.value === null ? false : hud.escort.value.holdout ? 'holdout' : true,
   );

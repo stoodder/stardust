@@ -23,6 +23,18 @@ export interface Rect {
 const STATUS_H = 72;
 /** What each objective row adds to it (the first also adds the grid gap above the list). */
 const OBJECTIVE_ROW_H = 10;
+/** An objective's name past this many characters wraps to a second line (hud.css; T631). */
+export const OBJECTIVE_LINE_CHARS = 15;
+
+/**
+ * The tracker's rows as the status panel's height counts them: one per objective, two for a name
+ * that wraps (A3M1's "The Matriarch's Young").
+ */
+export function objectiveRows(objectives: readonly { readonly name: string }[]): number {
+  let n = 0;
+  for (const o of objectives) n += o.name.length > OBJECTIVE_LINE_CHARS ? 2 : 1;
+  return n;
+}
 
 /**
  * The HUD's corner blocks (art-direction §9; their CSS in hud.css): the status panel (name plate,
@@ -120,7 +132,8 @@ function covers(
  * above and below it (centered, then shifted left, then right). Each is clamped onto the screen.
  * The first one that covers none of the `others` (the other towers' ground points, or nodes'
  * centres, with `othersBox`, by default the same box) and none of the `blocked` rectangles (the HUD corners, T213) wins;
- * failing that, the cheapest (another box costs 1, a blocked rectangle 2). A candidate that
+ * failing that, the cheapest (another box costs 1, a blocked rectangle `blockedCost`, by default
+ * 2; the star map's chrome costs more, T631: its buttons under a panel can't be reached). A candidate that
  * covers the selected box itself only wins when every one does.
  */
 export function placePanel(
@@ -132,6 +145,7 @@ export function placePanel(
   blocked: readonly Rect[] = [],
   box: AnchorBox = TOWER_BOX,
   othersBox: AnchorBox = box,
+  blockedCost: number = CORNER_COST,
 ): { left: number; top: number } {
   const self: Point = { x: towerX, y: towerY };
   // Level with the box's middle, 3 px low (a tower's panel sits 8 px above its ground point).
@@ -155,7 +169,7 @@ export function placePanel(
     const top = clamp(y, EDGE, UI_H - EDGE - h);
     let score = covers(left, top, w, h, self, box) ? 1000 : 0;
     for (const p of others) if (covers(left, top, w, h, p, othersBox)) score++;
-    for (const r of blocked) if (overlapsRect(left, top, w, h, r)) score += CORNER_COST;
+    for (const r of blocked) if (overlapsRect(left, top, w, h, r)) score += blockedCost;
     if (score < bestScore) {
       best = { left, top };
       bestScore = score;

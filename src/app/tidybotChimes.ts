@@ -4,9 +4,9 @@
 // depends only on how many specks it sweeps (render/vfx/tidybotFlight.ts `planSweep`: how many
 // drones, and how many stops each) and on whether its drones unload (A2M4's Intake B: each one
 // takes its turn at the hopper after its chime, so the sweep ends later), so this counts specks
-// rather than placing them, and plans with render's dock (`tidyDock`, as views/TidybotView.ts
-// finds it).
-import type { TidybotMode } from '../content/presentation.ts';
+// rather than placing them (stops moved apart so two drones never share one keep their timing),
+// and plans with render's dock (vfx/tidybotFlight.ts `tidyDock`, which TidybotView flies to).
+// `tidyDock` is re-exported here for the audio wiring (app/audio.ts).
 import type { Vec2 } from '../render/iso.ts';
 import {
   planSweep,
@@ -17,6 +17,8 @@ import {
   TIDY_OUT_TICKS,
   TIDY_UNLOAD_TICKS,
 } from '../render/vfx/tidybotFlight.ts';
+
+export { tidyDock } from '../render/vfx/tidybotFlight.ts';
 
 export interface TidyChimes {
   /** A Skitterkin died: its speck waits for the next sweep. */
@@ -30,21 +32,6 @@ export interface TidyChimes {
 }
 
 const ORIGIN = { x: 0, y: 0 } as const;
-
-/** The marker whose prop the drones unload into (views/TidybotView.ts `UNLOAD_MARKER`). */
-const UNLOAD_MARKER = 'intake_b';
-
-/**
- * Where the drones unload (grid; the hopper's tile centre), as TidybotView finds it: the
- * `intake_b` marker on a map whose `tidybots` dial is `unloading`, else none.
- */
-export function tidyDock(
-  mode: TidybotMode,
-  markers: Readonly<Record<string, readonly [number, number]>>,
-): Vec2 | null {
-  const intake = mode === 'unloading' ? markers[UNLOAD_MARKER] : undefined;
-  return intake === undefined ? null : { x: intake[0] + 0.5, y: intake[1] + 0.5 };
-}
 
 /**
  * The chimes for a battle whose Tidybots are `on` (the map's `tidybots` dial isn't `off`), whose

@@ -4,7 +4,7 @@
 import { nextTimeMark } from '../../app/hudText.ts';
 import { hud, type MedalView, type ObjectiveView } from '../state.ts';
 import { AssetMeter } from './AssetMeter.tsx';
-import { EscortMeter, escortIcon } from './EscortMeter.tsx';
+import { EscortMeter } from './EscortMeter.tsx';
 import { Icon } from './Icon.tsx';
 import { useTicker } from './parts.tsx';
 
@@ -117,8 +117,7 @@ function ObjectiveTracker() {
               data-testid="objective-walking"
               aria-hidden="true"
             >
-              <Icon id={escortIcon()} />
-              {o.walking}
+              +{o.walking}
             </span>
           )}
         </li>

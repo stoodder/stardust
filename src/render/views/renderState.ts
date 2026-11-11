@@ -114,7 +114,8 @@ export interface RenderState {
   readonly bloom: { readonly fields: number; readonly flashing: number };
   /**
    * HollowView (T602): Maw tendril tells up now and seen since the battle began, Maws wearing a
-   * growth ring, ripples drawn behind burrowed Hollow units, and each rift lane's status.
+   * growth ring, ripples drawn behind burrowed Hollow units; and each rift lane's status as its
+   * crack is drawn (RiftView, T630b).
    */
   readonly hollow: {
     readonly tells: number;
@@ -122,6 +123,19 @@ export interface RenderState {
     readonly grown: number;
     readonly ripples: number;
     readonly rifts: readonly ('closed' | 'opening' | 'open')[];
+  };
+  /**
+   * Act III's world (T630b): the rift cracks' `tile.rift` halves drawn and those open now
+   * (RiftView); Sterling's shuttle, whether it has left its pad and is climbing now (ShuttleView);
+   * and each blast door's marker and frame, and the SEAL's phase (BlastDoorView). The Long
+   * Night's moons are `glow.moons` (vfx/nightGlow.ts).
+   */
+  readonly world: {
+    readonly cracks: number;
+    readonly openCracks: number;
+    readonly shuttle: { readonly left: boolean; readonly lifting: boolean };
+    readonly doors: readonly { readonly marker: string; readonly frame: string }[];
+    readonly seal: 'none' | 'closing' | 'sealed';
   };
   /**
    * The Scuttle Den and Underfoot (T604): swarmlings drawn dashing or running home now and latched

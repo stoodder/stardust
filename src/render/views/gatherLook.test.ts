@@ -20,7 +20,6 @@ import {
   NOOSE_SNAP,
   nooseColor,
   nooseTiles,
-  riftLook,
   RIPPLE_SPACING,
   RIPPLE_W_FROM,
   RIPPLE_W_TO,
@@ -75,13 +74,6 @@ describe('the Hollow looks (T602)', () => {
     expect(showsRipples(unit({ def: E.undertow, burrowed: false }))).toBe(false);
     expect(showsRipples(unit({ def: E.digger, burrowed: true }))).toBe(false);
     expect(showsRipples(unit({ def: E.undertow, burrowed: true, leaving: true }))).toBe(false);
-  });
-
-  it('a rift is hidden closed, a pulsing dashed crack opening, a solid one open', () => {
-    expect(riftLook('closed', true).drawn).toBe(false);
-    expect(riftLook('opening', true)).toEqual({ drawn: true, dashed: true, alpha: 1 });
-    expect(riftLook('opening', false).alpha).toBeLessThan(1);
-    expect(riftLook('open', false)).toEqual({ drawn: true, dashed: false, alpha: 1 });
   });
 });
 

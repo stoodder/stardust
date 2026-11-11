@@ -20,7 +20,10 @@ const NIGHT_ENV = 'act3';
 export const NIGHT_GLOW = 0.75;
 
 /** Props whose views swap their frame on a cue and carry their own glow (frameGlow.ts). */
-export const OWN_GLOW: ReadonlySet<SpriteId> = new Set<SpriteId>(['prop.shuttle', 'prop.blast_door']);
+export const OWN_GLOW: ReadonlySet<SpriteId> = new Set<SpriteId>([
+  'prop.shuttle',
+  'prop.blast_door',
+]);
 
 /** Whether a map of `env` is in the Long Night (lit as a full night with no darkness). */
 export function isLongNight(env: string | undefined): boolean {

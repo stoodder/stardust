@@ -108,7 +108,7 @@ test("hudAct3: A3M1's tracker walks Bramble's column; the Den's panel; Underfoot
     for (let i = 0; i < st.allies.used; i++) {
       const a = st.allies.items[i]!;
       const tiles = a.alive && a.group >= 0 ? a.route?.tiles : undefined;
-      if (tiles !== undefined && tiles.length > 30) return [tiles[30]![0], tiles[30]![1]];
+      if (tiles !== undefined && tiles.length > 44) return [tiles[44]![0], tiles[44]![1]];
     }
     return null;
   });

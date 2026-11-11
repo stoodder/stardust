@@ -3,12 +3,15 @@
 // views/TidybotView.ts draws it. After a wave resolves, the stardust specks its Skitterkin left are
 // split among 1–3 drones (`planSweep`): each hovers in from the nearest map edge, vacuums its stops
 // one after another (a speck is gone once the nozzle has worked its stop halfway), chimes at its
-// last stop, and leaves by the nearest edge. Where the map's drones unload (A2M4's Intake B, the
+// last stop, and leaves by the nearest edge. Two drones never work the same spot: a stop within
+// TIDY_STOP_GAP of another drone's is moved off to that distance (a pile of specks gets two
+// drones side by side), which leaves every drone's timing as it was. Where the map's drones unload (A2M4's Intake B, the
 // `unloading` dial; T501f, T530b), each one, after its chime, rises and flies to the hopper's
-// mouth (`dock`), empties its load into it, and leaves by the edge nearest the hopper; the drones
+// mouth (`dock`, `tidyDock`: the one home of where that is), empties its load into it, and leaves by the edge nearest the hopper; the drones
 // take turns at the mouth, a later one hovering at its last stop until the one before it is done.
 // The chime keeps its tick either way (app/tidybotChimes.ts rings it from the same sums).
 // Allocation-free per frame (`tidyPose` writes in place).
+import type { TidybotMode } from '../../content/presentation.ts';
 import type { Vec2 } from '../iso.ts';
 
 /** At most this many drones per sweep, and stops per drone. */
@@ -31,6 +34,24 @@ export const TIDY_UNLOAD_TICKS = 72;
 export const TIDY_STAGGER_TICKS = 18;
 /** How far past the map's edge a drone enters and leaves (grid units). */
 export const TIDY_EDGE_OUT = 1.5;
+/** The nearest two drones' stops may be (grid units): no two drones hover on one spot. */
+export const TIDY_STOP_GAP = 1;
+
+/** The marker whose prop the drones unload into (A2M4's Intake B). */
+export const UNLOAD_MARKER = 'intake_b';
+
+/**
+ * Where the drones unload (grid; the hopper's tile centre): the `intake_b` marker on a map whose
+ * `tidybots` dial is `unloading`, else none (without the marker they sweep as everywhere else).
+ * TidybotView flies them there and app/tidybotChimes.ts times their chimes from it.
+ */
+export function tidyDock(
+  mode: TidybotMode,
+  markers: Readonly<Record<string, readonly [number, number]>>,
+): Vec2 | null {
+  const intake = mode === 'unloading' ? markers[UNLOAD_MARKER] : undefined;
+  return intake === undefined ? null : { x: intake[0] + 0.5, y: intake[1] + 0.5 };
+}
 
 /** One drone's route: in from `entry`, each stop vacuumed in turn, out to `exit` (grid points). */
 export interface TidyPlan {
@@ -85,10 +106,58 @@ function runs(n: number, k: number): [number, number][] {
 }
 
 /**
+ * Moves each drone's stops off every earlier drone's (in place) until none is nearer than
+ * TIDY_STOP_GAP: straight away from the stop it crowds, or, on the very spot, to the screen's right
+ * for odd drones and left for even ones; kept on the map (`cols` × `rows`), turning back if the
+ * edge is in the way. A few passes at most; the stops' count and order never change.
+ */
+function spreadStops(bots: Vec2[][], cols: number, rows: number): void {
+  const clamp = (v: number, n: number): number =>
+    Math.min(Math.max(v, 0.5), Math.max(n - 0.5, 0.5));
+  for (let b = 1; b < bots.length; b++) {
+    const side = b % 2 === 1 ? 1 : -1;
+    const mine = bots[b]!; // b < length
+    for (const stop of mine) {
+      for (let pass = 0; pass < 4; pass++) {
+        let moved = false;
+        for (let o = 0; o < b; o++) {
+          const theirs = bots[o]!; // o < b < length
+          for (const q of theirs) {
+            let dx = stop.x - q.x;
+            let dy = stop.y - q.y;
+            const d = Math.hypot(dx, dy);
+            if (d >= TIDY_STOP_GAP - 1e-9) continue;
+            if (d < 1e-6) {
+              // Screen-right is +x −y on the grid.
+              dx = side * Math.SQRT1_2;
+              dy = -side * Math.SQRT1_2;
+            } else {
+              dx /= d;
+              dy /= d;
+            }
+            let x = q.x + dx * TIDY_STOP_GAP;
+            let y = q.y + dy * TIDY_STOP_GAP;
+            if (clamp(x, cols) !== x || clamp(y, rows) !== y) {
+              x = clamp(q.x - dx * TIDY_STOP_GAP, cols);
+              y = clamp(q.y - dy * TIDY_STOP_GAP, rows);
+            }
+            stop.x = x;
+            stop.y = y;
+            moved = true;
+          }
+        }
+        if (!moved) break;
+      }
+    }
+  }
+}
+
+/**
  * The sweep for `specks` (grid points) on a `cols` × `rows` map: none for no specks. The specks are
  * ordered across the screen (left to right, then top to bottom), cut into one run per drone, and
- * each run into up to TIDY_MAX_STOPS stops at their centroids. With a `dock` (the map's unloading
- * hopper, grid), every drone unloads there after its chime, in turn, and leaves from it.
+ * each run into up to TIDY_MAX_STOPS stops at their centroids, spread so no two drones' stops are
+ * nearer than TIDY_STOP_GAP (`spreadStops`). With a `dock` (the map's unloading hopper, grid),
+ * every drone unloads there after its chime, in turn, and leaves from it.
  */
 export function planSweep(
   specks: readonly Vec2[],
@@ -103,8 +172,7 @@ export function planSweep(
     .toSorted((a, b) => a.sx - b.sx || a.sy - b.sy || a.i - b.i);
   const bots = Math.min(TIDY_MAX_BOTS, Math.ceil(n / TIDY_SPECKS_PER_BOT));
   const stopOf: number[] = Array.from({ length: n }, () => 0);
-  const plans: TidyPlan[] = [];
-  runs(n, bots).forEach(([from, to], bot) => {
+  const botStops: Vec2[][] = runs(n, bots).map(([from, to], bot) => {
     // Within a drone's run, visit top to bottom of the screen.
     const mine = order.slice(from, to).toSorted((a, b) => a.sy - b.sy || a.i - b.i);
     const count = Math.min(TIDY_MAX_STOPS, Math.ceil(mine.length / 2));
@@ -120,15 +188,19 @@ export function planSweep(
       }
       return { x: x / (b - a), y: y / (b - a) };
     });
+    return stops;
+  });
+  spreadStops(botStops, cols, rows);
+  const plans: TidyPlan[] = botStops.map((stops, bot) => {
     const first = stops[0]!; // a run has at least one speck, so one stop
     const last = stops[stops.length - 1]!;
-    plans.push({
+    return {
       entry: edgeNear(first, cols, rows),
       stops,
       exit: edgeNear(dock ?? last, cols, rows),
       delay: bot * TIDY_STAGGER_TICKS,
       ...(dock === null ? {} : { dock: { x: dock.x, y: dock.y }, hold: 0 }),
-    });
+    };
   });
   return { plans: dock === null ? plans : queueAtDock(plans), stopOf };
 }

@@ -102,6 +102,9 @@ import { CoreView } from '../views/CoreView.ts';
 import { BlinkView } from '../views/BlinkView.ts';
 import { PhaseView } from '../views/PhaseView.ts';
 import { HollowView } from '../views/HollowView.ts'; // T602
+import { RiftView } from '../views/RiftView.ts'; // T630b
+import { ShuttleView } from '../views/ShuttleView.ts'; // T630b
+import { BlastDoorView } from '../views/BlastDoorView.ts'; // T630b
 import { BlockerView } from '../views/BlockerView.ts'; // T605
 import { ChoirView } from '../views/ChoirView.ts'; // T607
 import { BloomView } from '../views/BloomView.ts'; // T608
@@ -268,6 +271,9 @@ export class BattleScene extends Phaser.Scene {
   /** Phasing: the broken ring under a telling or Phased unit (T503). */
   #phases!: PhaseView;
   #hollow!: HollowView; // T602
+  #rifts!: RiftView; // T630b: the rift cracks, a wave ahead
+  #shuttle!: ShuttleView; // T630b: Sterling's shuttle lifting off (A3M2)
+  #doors!: BlastDoorView; // T630b: A3M3's blast doors and the SEAL
   #blocker!: BlockerView; // T605: Bricks's bar at the Gap, the units he holds
   #choir!: ChoirView; // T607: the Hum Choir's song and Lullaby rings, its notes, Lulled notes
   #bloom!: BloomView; // T608: the Stasis Bloom's field disc and its pulse
@@ -392,6 +398,11 @@ export class BattleScene extends Phaser.Scene {
 
     const wreckProps = new Map<number, Phaser.GameObjects.Sprite>();
     const coreProps = drawGround(ctx, map, map.env, wreckProps);
+    // T630b: before the world's glow, so it sees doors and the cracks lie first in `decal`.
+    const flags = sim.config.scriptFlags;
+    this.#doors = new BlastDoorView(ctx, map, flags, coreProps, prefersReducedMotion);
+    this.#rifts = new RiftView(ctx, map, prefersReducedMotion);
+    this.#shuttle = new ShuttleView(ctx, map, prefersReducedMotion);
     this.#airLanes = new AirLaneView(ctx, map, prefersReducedMotion);
     // T630a: every Choir sings Thrum's ring once she was spared (towerLook.ts `towerVoice`).
     const voice = towerVoice(sim.config.scriptFlags);
@@ -420,7 +431,7 @@ export class BattleScene extends Phaser.Scene {
     this.#glow = new WorldGlowView(
       ctx,
       this.#darkness,
-      { lights: map.lights, lighting: map.lighting, dark: hasDarkness(map) },
+      { lights: map.lights, lighting: map.lighting, dark: hasDarkness(map), env: map.env }, // T630b
       (c, r) => this.#liftPx(c, r),
     );
     this.#sweeps = new SweepView(ctx, this.#fx);
@@ -453,7 +464,7 @@ export class BattleScene extends Phaser.Scene {
     );
     this.#blinks = new BlinkView(ctx, this.#fx, prefersReducedMotion);
     this.#phases = new PhaseView(ctx, this.#fx, prefersReducedMotion, anchors);
-    this.#hollow = new HollowView(ctx, map, prefersReducedMotion, pulseOn); // T602
+    this.#hollow = new HollowView(ctx, prefersReducedMotion); // T602
     this.#blocker = new BlockerView(ctx, prefersReducedMotion); // T605
     this.#choir = new ChoirView(ctx, prefersReducedMotion, anchors); // T607
     this.#bloom = new BloomView(ctx, prefersReducedMotion); // T608, T630a
@@ -482,7 +493,7 @@ export class BattleScene extends Phaser.Scene {
       v.muzzle(this.#muzzle);
       this.#fx.setFireSource(this.#muzzle.x, this.#muzzle.y);
     };
-    this.#core = new CoreView(ctx, map, prefersReducedMotion, coreProps);
+    this.#core = new CoreView(ctx, map, prefersReducedMotion, coreProps, this.#doors.tiles);
     this.#cursor = new CursorView(ctx);
     const peekerAt = map.markers['peeker'];
     this.#peeker =
@@ -594,6 +605,8 @@ export class BattleScene extends Phaser.Scene {
       this.#blinks.bind(bus, () => sim.state.enemies),
       this.#phases.bind(bus),
       this.#bloom.bind(bus), // T630a: Gravity Well's pull streak
+      this.#shuttle.bind(bus, () => sim.state.tick), // T630b
+      this.#doors.bind(bus), // T630b
       this.#mind.bind(bus),
       this.#everglow.bind(bus, sim.config.content.enemies, presentationOfMap(map).skitterkinDeath),
       this.#harpoon.bind(bus, (uid) => {
@@ -640,6 +653,9 @@ export class BattleScene extends Phaser.Scene {
       this.#blinks.reset();
       this.#phases.reset();
       this.#hollow.reset(); // T602
+      this.#rifts.reset(); // T630b
+      this.#shuttle.reset(); // T630b
+      this.#doors.reset(); // T630b
       this.#blocker.reset(); // T605
       this.#choir.reset(); // T607
       this.#bloom.reset(); // T608
@@ -689,7 +705,10 @@ export class BattleScene extends Phaser.Scene {
     this.#wards.update(state.allies, state.enemies);
     this.#blinks.update(dt, state.enemies);
     this.#phases.update(state.enemies);
-    this.#hollow.update(dt, state.wave, state.enemies, state.allies); // T602
+    this.#hollow.update(dt, state.enemies, state.allies); // T602
+    this.#rifts.update(state.wave); // T630b
+    this.#shuttle.update(state.tick, state.scriptFired); // T630b
+    this.#doors.update(state.forcedResolved); // T630b
     this.#blocker.update(dt, state); // T605
     this.#choir.update(state, state.tick); // T607
     this.#bloom.update(state, dt); // T608; T630a: its burst ring and pull streaks
@@ -825,7 +844,18 @@ export class BattleScene extends Phaser.Scene {
         phasedIn: this.#phases.phasedIn,
         phasedOut: this.#phases.phasedOut,
       },
-      hollow: { ...this.#hollow.shown, tellsSeen: this.#hollow.tellsSeen }, // T602
+      hollow: {
+        ...this.#hollow.shown,
+        tellsSeen: this.#hollow.tellsSeen,
+        rifts: this.#rifts.rifts,
+      }, // T602, T630b
+      world: {
+        cracks: this.#rifts.shown.halves,
+        openCracks: this.#rifts.shown.open,
+        shuttle: { left: this.#shuttle.left, lifting: this.#shuttle.lifting },
+        doors: this.#doors.looks(),
+        seal: this.#doors.seal,
+      }, // T630b
       swarm: { ...this.#swarm.shown, ...this.#traps.shown }, // T604
       blocker: {
         shown: this.#blocker.shown,

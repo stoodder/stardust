@@ -1,5 +1,5 @@
 // Underfoot's aim (core-loop.md § 3.2; T631): while Bramble's Underfoot is aimed, a ghost of the
-// snare (trapLook.ts's moss ring and jaws, the trap's own look) lies at 60% on the hovered ground
+// snare (trapLook.ts's moss ring and jaws, the trap's own look) lies at 80% on the hovered ground
 // path tile, the one tile the trap would hold, so the aim reads as the trap and not as Suppressing
 // Fire's warm stretch. Off the road the hover's red tile (input/intents.ts) says no instead, and
 // nothing shows. Held still (no breath), so it never reads as a live trap. One image, set up once.
@@ -9,8 +9,11 @@ import { imageToCanvas } from '../sprites/canvas.ts';
 import { trapImage } from './trapLook.ts';
 import type { ViewContext } from './ViewContext.ts';
 
-/** The ghost's alpha: the placement ghost's 60% (art-direction §7, stepped alpha). */
-export const TRAP_AIM_ALPHA = 0.6;
+/**
+ * The ghost's alpha (art-direction §7, stepped alpha): 80%, as Stillness's aim rim, since the
+ * thin moss ring at the placement ghost's 60% sank into Act III's dark road (T631).
+ */
+export const TRAP_AIM_ALPHA = 0.8;
 const AIM_KEY = 'fx.underfoot_snare_aim';
 
 const pos: Vec2 = { x: 0, y: 0 };

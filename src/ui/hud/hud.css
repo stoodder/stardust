@@ -213,6 +213,9 @@ section.chamfer,
      the padding (T431). */
   width: 112px;
   display: grid;
+  /* One track no wider than the panel: a long row (an objective's name) wraps instead of pushing
+     the meters' numbers out past the edge (T631). */
+  grid-template-columns: minmax(0, 1fr);
   gap: 4px;
   padding: 6px 6px 6px 6px;
 }
@@ -1375,15 +1378,23 @@ section.chamfer,
 }
 
 .hud-objective {
+  position: relative;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 4px;
-  height: 8px;
+  min-height: 8px;
+  line-height: 8px;
   color: var(--sd-white-0);
-  white-space: nowrap;
+}
+
+/* A name longer than a line (OBJECTIVE_LINE_CHARS) wraps under itself (layout.ts counts it). */
+.hud-objective-name {
+  min-width: 0;
 }
 
 .hud-objective-box {
+  flex: none;
+  margin-top: 1px;
   box-sizing: border-box;
   width: 6px;
   height: 6px;
@@ -1493,17 +1504,12 @@ section.chamfer,
   color: var(--accent-2);
 }
 
-/* A group objective's walkers (T631; A3M1's The Matriarch's Young): the refugee glyph and how many
-   of Bramble's column are on the road, while they walk. */
+/* A group objective's walkers (T631; A3M1's The Matriarch's Young): how many of Bramble's column
+   are on the road, in the escort chip's green, at the row's bottom right (beside a wrapped name's
+   short last line), while they walk. */
 .hud-objective-walking {
-  display: inline-flex;
-  align-items: center;
-  gap: 1px;
-  margin-left: auto;
+  position: absolute;
+  right: 0;
+  bottom: 0;
   color: var(--sd-green-4);
-}
-
-.hud-objective-walking .icon {
-  width: 8px;
-  height: 8px;
 }

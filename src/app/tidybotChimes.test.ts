@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { MAPS } from '../content/maps/index.ts';
 import type { Vec2 } from '../render/iso.ts';
-import { UNLOAD_MARKER } from '../render/views/TidybotView.ts';
 import {
   planSweep,
   TIDY_DOCK_TICKS,
@@ -9,6 +8,7 @@ import {
   TIDY_UNLOAD_TICKS,
   tidyPose,
   tidyTicks,
+  UNLOAD_MARKER,
   type TidyPose,
 } from '../render/vfx/tidybotFlight.ts';
 import { presentationOfMap } from '../story/presentation.ts';

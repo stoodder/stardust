@@ -1,23 +1,13 @@
 // The Hollow's Act III view (T602, polished by T630a; the rules are gatherLook.ts): a Maw's tendril
 // tell (noose, tendrils, beads, the snap) and the gulp ring each absorb pulses, a burrowed
-// Undertow's ripple trail, and the rift cracks. The cracks, gulps, and ripples sit in `decal`,
-// under the units; the tendrils in `vfx`, over them, from body to body (a held unit is close
-// enough that under the sprites they'd hide). Redrawn each frame into three Graphics; the gulps
-// are a fixed pool and each Maw's absorb count one map entry: allocation-free per frame.
-// The rift telegraph is T630b's and the props T640c's. The Maw's growth and tendril pose and the
+// Undertow's ripple trail. The gulps and ripples sit in `decal`, under the units; the tendrils in
+// `vfx`, over them, from body to body (a held unit is close enough that under the sprites they'd
+// hide). Redrawn each frame into two Graphics; the gulps are a fixed pool and each Maw's absorb
+// count one map entry: allocation-free per frame. The rift cracks are RiftView's (T630b). The Maw's growth and tendril pose and the
 // Undertow's `under` pose are its sprites' (T640a; EnemyView draws them, gatherLook.ts `mawBody`).
 import type * as Phaser from 'phaser';
-import type { CompiledMapDef } from '../../content/compiled.ts';
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
-import type { IdSpace } from '../../content/types.ts';
-import {
-  pointAt,
-  riftStatus,
-  type Ally,
-  type Enemy,
-  type Point,
-  type RiftStatus,
-} from '../../sim/index.ts';
+import { pointAt, type Ally, type Enemy, type Point } from '../../sim/index.ts';
 import type { DeepReadonly } from '../../shared/types.ts';
 import { gridToScreen, rangeEllipsePx, type Vec2 } from '../iso.ts';
 import {
@@ -27,7 +17,6 @@ import {
   gulpRing,
   nooseColor,
   nooseTiles,
-  riftLook,
   rippleAt,
   RIPPLES,
   showsRipples,
@@ -51,8 +40,6 @@ const SNAP = hex('white.1');
 const BEAD = hex('white.1');
 const GROWTH = hex('violet.3');
 const RIPPLE = hex('hollow.4');
-const OPENING = hex('violet.4');
-const OPEN = hex('hollow.4');
 
 /** Tendrils per tell, their sideways wave (px), and the wave's speed (rad/ms). */
 const TENDRILS = 3;
@@ -82,16 +69,12 @@ const pt: Point = { x: 0, y: 0 };
 export class HollowView {
   readonly #ctx: ViewContext;
   readonly #reducedMotion: () => boolean;
-  readonly #pulseOn: () => boolean;
-  readonly #rifts: readonly DeepReadonly<CompiledMapDef<IdSpace>['routeList'][number]>[];
-  readonly #cracks: Phaser.GameObjects.Graphics;
   readonly #marks: Phaser.GameObjects.Graphics;
   readonly #tendrils: Phaser.GameObjects.Graphics;
   #clockMs = 0;
   #tells = 0;
   #grown = 0;
   #ripples = 0;
-  #status: RiftStatus[] = [];
   /** Each live Maw's absorbs last frame, by uid (a rise pulses its gulp ring). */
   readonly #absorbs = new Map<number, { n: number; frame: number }>();
   readonly #gulps: Gulp[] = [];
@@ -102,20 +85,10 @@ export class HollowView {
   /** Tendril tells seen since the view was made (the smoke flow's check). */
   tellsSeen = 0;
 
-  constructor(
-    ctx: ViewContext,
-    map: DeepReadonly<Pick<CompiledMapDef<IdSpace>, 'routeList'>>,
-    reducedMotion: () => boolean,
-    pulseOn: () => boolean,
-  ) {
+  constructor(ctx: ViewContext, reducedMotion: () => boolean) {
     this.#ctx = ctx;
     this.#reducedMotion = reducedMotion;
-    this.#pulseOn = pulseOn;
-    this.#rifts = map.routeList.filter((r) => r.kind === 'rift');
-    this.#status = this.#rifts.map(() => 'closed');
-    this.#cracks = ctx.scene.make.graphics({}, false);
     this.#marks = ctx.scene.make.graphics({}, false);
-    ctx.layers.decal.add(this.#cracks);
     ctx.layers.decal.add(this.#marks);
     this.#tendrils = ctx.scene.make.graphics({}, false);
     ctx.layers.vfx.add(this.#tendrils);
@@ -123,10 +96,9 @@ export class HollowView {
       this.#gulps.push({ active: false, ms: 0, x: 0, y: 0, tiles: 0 });
   }
 
-  /** Each frame: the cracks for this wave, then the Maws' and burrowers' marks. */
-  update(dtMs: number, wave: number, enemies: Pool<Enemy>, allies: Pool<Ally>): void {
+  /** Each frame: the Maws' and burrowers' marks. */
+  update(dtMs: number, enemies: Pool<Enemy>, allies: Pool<Ally>): void {
     this.#clockMs += dtMs;
-    this.#drawCracks(wave);
     const g = this.#marks;
     g.clear();
     this.#tendrils.clear();
@@ -154,18 +126,12 @@ export class HollowView {
     this.#ripples = ripples;
   }
 
-  /** What shows now (the smoke flow's check): tells, grown Maws, ripples, and each rift's status. */
-  get shown(): {
-    readonly tells: number;
-    readonly grown: number;
-    readonly ripples: number;
-    readonly rifts: readonly RiftStatus[];
-  } {
-    return { tells: this.#tells, grown: this.#grown, ripples: this.#ripples, rifts: this.#status };
+  /** What shows now (the smoke flow's check): tells, grown Maws, and ripples. */
+  get shown(): { readonly tells: number; readonly grown: number; readonly ripples: number } {
+    return { tells: this.#tells, grown: this.#grown, ripples: this.#ripples };
   }
 
   reset(): void {
-    this.#cracks.clear();
     this.#marks.clear();
     this.#tendrils.clear();
     this.#absorbs.clear();
@@ -173,35 +139,6 @@ export class HollowView {
     this.#tells = 0;
     this.#grown = 0;
     this.#ripples = 0;
-  }
-
-  #drawCracks(wave: number): void {
-    const g = this.#cracks;
-    g.clear();
-    const on = this.#reducedMotion() || this.#pulseOn();
-    for (let r = 0; r < this.#rifts.length; r++) {
-      const lane = this.#rifts[r]!; // r < length
-      const status = riftStatus(lane, wave);
-      this.#status[r] = status;
-      const look = riftLook(status, on);
-      if (!look.drawn) continue;
-      const tiles = lane.tiles;
-      for (let i = 0; i + 1 < tiles.length; i++) {
-        if (look.dashed && i % 2 === 1) continue;
-        const [c0, r0] = tiles[i]!; // i + 1 < length
-        const [c1, r1] = tiles[i + 1]!;
-        gridToScreen(c0 + 0.5, r0 + 0.5, this.#ctx.origin, a);
-        gridToScreen(c1 + 0.5, r1 + 0.5, this.#ctx.origin, b);
-        // A jag at the midpoint, alternating sides, so it reads as a crack, not a road.
-        const jag = i % 2 === 0 ? 2 : -2;
-        const mx = (a.x + b.x) / 2 + jag;
-        const my = (a.y + b.y) / 2 - jag / 2;
-        g.lineStyle(4, INK, 0.7 * look.alpha);
-        g.lineBetween(a.x, a.y, mx, my).lineBetween(mx, my, b.x, b.y);
-        g.lineStyle(2, look.dashed ? OPENING : OPEN, look.alpha);
-        g.lineBetween(a.x, a.y, mx, my).lineBetween(mx, my, b.x, b.y);
-      }
-    }
   }
 
   /** The ripples behind a burrowed unit along its route (gatherLook.ts `rippleAt`); how many drew. */

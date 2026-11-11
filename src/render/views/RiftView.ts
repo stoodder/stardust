@@ -14,7 +14,7 @@ import { riftStatus, type RiftStatus } from '../../sim/index.ts';
 import type { DeepReadonly } from '../../shared/types.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
 import { FrameGlow } from './frameGlow.ts';
-import { envVariant } from './groundTiles.ts';
+import { DEFAULT_VARIANT } from '../sprites/bake.ts';
 import { riftCrackLook, riftCrackTiles } from './riftCrack.ts';
 import type { VergeEdge } from '../../content/sprites/tiles/verge.ts';
 import type { ViewContext } from './ViewContext.ts';
@@ -46,11 +46,14 @@ export class RiftView {
 
   constructor(
     ctx: ViewContext,
-    map: DeepReadonly<Pick<CompiledMapDef<IdSpace>, 'cols' | 'rows' | 'tiles' | 'routeList' | 'env'>>,
+    map: DeepReadonly<
+      Pick<CompiledMapDef<IdSpace>, 'cols' | 'rows' | 'tiles' | 'routeList' | 'env'>
+    >,
     reducedMotion: () => boolean,
   ) {
     this.#ctx = ctx;
-    this.#variant = envVariant(map.env);
+    // The crack's colours are master colours (custom legend): one variant reads on every ground.
+    this.#variant = DEFAULT_VARIANT;
     this.#reducedMotion = reducedMotion;
     const { scene, sprites, layers, origin } = ctx;
     for (const route of map.routeList) {
@@ -65,7 +68,11 @@ export class RiftView {
           const body = scene.make.sprite({}, false);
           body.setTexture(f.texture, f.frame).setDisplayOrigin(a.x, a.y).setPosition(pos.x, pos.y);
           layers.decal.add(body);
-          halves.push({ edge, body, glow: new FrameGlow(sprites, RIFT, this.#variant, body, layers.decal) });
+          halves.push({
+            edge,
+            body,
+            glow: new FrameGlow(sprites, RIFT, this.#variant, body, layers.decal),
+          });
         }
       }
       this.#lanes.push({ route, halves, status: null, still: false });

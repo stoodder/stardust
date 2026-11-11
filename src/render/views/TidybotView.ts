@@ -25,6 +25,7 @@ import {
   TIDY_MAX_BOTS,
   TIDY_MAX_SPECKS,
   TIDY_MAX_STOPS,
+  tidyDock,
   tidyPose,
   type TidyPhase,
   type TidyPlan,
@@ -42,8 +43,6 @@ const PHASE_ANIM: Readonly<Record<Exclude<TidyPhase, 'waiting' | 'gone'>, string
   chime: 'chime',
   unload: 'unload',
 };
-/** The marker whose prop the drones unload into (A2M4's Intake B). */
-export const UNLOAD_MARKER = 'intake_b';
 /**
  * How far over the hopper's ground point its mouth is (`prop.intake`): the unloading drone's
  * anchor hangs there, so the stream from its nozzle falls into the mouth (T540c).
@@ -91,7 +90,7 @@ export class TidybotView {
   readonly #bots: Bot[] = [];
   readonly #pose: TidyPose = { x: 0, y: 0, phase: 'gone', cleared: 0, lift: 0 };
   /** Where the drones unload (grid), on a map whose dial is `unloading`; else null. */
-  readonly #dock: Vec2 | null = null;
+  readonly #dock: Vec2 | null;
   /** The sim tick the current sweep began, or −1 with none under way. */
   #sweepTick = -1;
   /** The battle has ended: no new sweeps. */
@@ -111,9 +110,8 @@ export class TidybotView {
     this.#cols = cols;
     this.#rows = rows;
     this.#on = mode !== 'off';
-    // A2M4's drones unload at Intake B (without the marker they sweep as everywhere else).
-    const intake = mode === 'unloading' ? markers[UNLOAD_MARKER] : undefined;
-    if (intake !== undefined) this.#dock = { x: intake[0] + 0.5, y: intake[1] + 0.5 };
+    // A2M4's drones unload at Intake B (vfx/tidybotFlight.ts `tidyDock`, the chimes' too).
+    this.#dock = tidyDock(mode, markers);
     if (!this.#on) return;
     const { scene, layers, sprites } = ctx;
     const px = debrisTexture(scene, 1);
