@@ -236,6 +236,21 @@ export interface TierDef {
   readonly lull?: { readonly radiusTiles: number };
   /** A control field (the Stasis Bloom, towers.md § 7; T608): chill inside, Stasis pulses. */
   readonly field?: FieldDef;
+  /**
+   * A puddle each hit leaves where it lands (the Gloop Spitter [Big Glorp], towers.md § 7; T700a
+   * seam, T705 runs it): a zone of `radiusTiles` for `durationSec`, Chilling every ground enemy
+   * inside `chillPct` and dealing `damagePerSec` of `type` as a DoT that bypasses armor.
+   */
+  readonly puddle?: PuddleDef;
+}
+
+/** Big Glorp's puddle (TierDef.puddle; T705): 3 s, Chilled 25%, 10/s Kinetic acid. */
+export interface PuddleDef {
+  readonly durationSec: number;
+  readonly radiusTiles: number;
+  readonly chillPct: number;
+  readonly damagePerSec: number;
+  readonly type: DamageType;
 }
 
 /**
@@ -393,6 +408,19 @@ export type AttackDef = AttackCommon &
          */
         readonly burrowedDotMul?: number;
       }
+    | {
+        // Sproing Pad (towers.md § 7; T700a seam, T704 runs it): `leapers` leapers (allies from the
+        // swarmling pool, AllyKind 'leaper') live at the pad. Each boings to one target within
+        // `rangeTiles`, always a flyer when one is in range (Lookie Here: a Marked one first),
+        // bonks it for `damage` of `type` (a `splashTiles` burst where it lands: Big Bonk), and
+        // Pins a bonked flyer `pinSec` (Pinned grounds it, so ground towers hit it; a boss takes
+        // Chilled 50% instead, the Pin rule), then boings home. `ratePerSec` is each leaper's
+        // leaps per second. They can't be harmed and always come home.
+        readonly kind: 'leaper';
+        readonly leapers: number;
+        readonly pinSec: number;
+        readonly splashTiles?: number;
+      }
     // Sprinkler: every period, hits every enemy within rangeTiles (no target, no priority)
     | {
         readonly kind: 'pulse';
@@ -538,6 +566,16 @@ export interface LinkPartnerDef<K extends IdSpace = LiveIds> {
    */
   readonly fieldRadiusTiles?: number;
   readonly pulseSoonerSec?: number;
+  /**
+   * M7's link extras (T700a seams; their towers' tasks run them): `corrodedStacks` Corroded stacks
+   * each hit of the partner applies, at any tier, under the Corroded rule's cap (Acid Rain's
+   * Thumper, Sticky Flak's Skyhook: 1; T705); a Sproing Pad partner's `pinSec` added to its Pin
+   * (Bounce Chorus: +0.5 s) and `preferMarked`, its leapers pick a Marked flyer first (Lookie
+   * Here; T704).
+   */
+  readonly corrodedStacks?: number;
+  readonly pinSec?: number;
+  readonly preferMarked?: true;
 }
 /**
  * A stat bonus under the stacking formula (towers.md § 4): `flat` adds to the stat, `pct` (a
@@ -636,6 +674,23 @@ export interface EnemyDef<Id extends string = string> {
    */
   readonly hasteAura?: HasteAuraDef;
   /**
+   * Jamming (the `jammer` trait, `disabler` tell; enemies.md § 4; T700a seam): every `periodSec`,
+   * after a `tellSec` tell (≥ JAM_MIN_TELL_SEC), it jams towers within `radiusTiles` for
+   * `durationSec` (≤ JAM_MAX_SEC, × each tower's `jamMul`). `ring` (the Auditor, T707): every
+   * non-immune tower in reach at the tell's end. `tendril` (the Silencer, T702): one tower picked
+   * at the tell's start (`prefer: 'choir'`: a Hum Choir in reach first, else the highest tier, ties
+   * lowest uid, skipping immune towers), jammed if still in reach at its end. Stasis and Unnerved
+   * interrupt the tell (the period restarts); Lulled stretches the period ×1.5.
+   */
+  readonly jam?: JamDef;
+  /**
+   * A healer aura (the `healer_aura` trait, `healer` tell; the Maintenance Associate, enemies.md
+   * § 5.3; T700a seam, T703 runs it): every other unit of its faction with that `body` within
+   * `radiusTiles` regains `hpPerSec`, continuously, never past its max (not itself, not a boss; two
+   * auras don't stack).
+   */
+  readonly healAura?: HealAuraDef;
+  /**
    * A neutral unit (Gerald, core-loop.md § 2.7): towers that aren't holding fire target it like an
    * enemy, but it takes no damage (hits plink off, `NeutralHit`), never leaks, pays nothing, and
    * never counts toward a wave's resolution or a medal (T304a).
@@ -728,6 +783,30 @@ export interface HasteAuraDef {
   readonly pct: number;
 }
 
+/** How a jammer jams (JamDef.kind): the Auditor's ring or the Silencer's tendril. */
+export type JamKind = 'ring' | 'tendril';
+
+/**
+ * Jamming (EnemyDef.jam; enemies.md § 4): the Silencer `tendril` every 12 s, 2 s tell, 2.5 tiles,
+ * 4 s, Choir first; the Auditor `ring` every 10 s, 2 s tell, 2 tiles, 3 s.
+ */
+export interface JamDef {
+  readonly kind: JamKind;
+  readonly periodSec: number;
+  readonly tellSec: number;
+  readonly radiusTiles: number;
+  readonly durationSec: number;
+  /** A `tendril`'s pick: a Hum Choir in reach first (the Silencer). */
+  readonly prefer?: 'choir';
+}
+
+/** A healer aura (EnemyDef.healAura; the Maintenance Associate: 12 HP/s to Mechanical within 1.5). */
+export interface HealAuraDef {
+  readonly radiusTiles: number;
+  readonly hpPerSec: number;
+  readonly body: Body;
+}
+
 /** How a boss fight ends without a death (design/enemies.md § 6.1). */
 export type BossEnding = 'driveOff' | 'retreat' | 'pivot' | 'layToRest';
 
@@ -798,6 +877,65 @@ export interface BossPhaseDef {
   readonly pulse?: PulseDef;
   /** Blinks while in this phase (the Glass Witch's phase 2; T404). */
   readonly blink?: BlinkDef;
+  // M7's phase kinds (T700a seams; each run by the task named).
+  /**
+   * Gathers while in this phase (the Gathering Maw's phase 1: 2 tiles every 5 s, 1 s tell; T708),
+   * by the gathering rule (EnemyDef.gather), at this phase's radius and period.
+   */
+  readonly gather?: GatherDef;
+  /**
+   * A hangar (Shareholder Value's phase 1; T707): launches `count` of `enemy` (an EnemyId) every
+   * `everySec` from its position.
+   */
+  readonly hangar?: HangarDef;
+  /**
+   * Hostile Takeover (Shareholder Value's phase 2; T707): every phase entry and then on its own
+   * timer, a `tellSec` targeting laser on the `min(2, floor(0.25 × towers placed))` highest-tier
+   * non-immune towers (picked as it starts), then a jam of `durationSec` on each (the jam rules).
+   */
+  readonly takeover?: TakeoverDef;
+  /**
+   * The jettison (Shareholder Value's phase 3; T707): as the phase begins its armor drops to 0,
+   * it gains Haste `hastePct`, and its plates land on the map's `plates` markers (decor; an
+   * `openTile` to wreckage each, never a par pad).
+   */
+  readonly jettison?: JettisonDef;
+  /**
+   * A split (the Gathering Maw's phase 2; T708): as the phase begins it splits into `count` of
+   * `part` (an EnemyId), each with `hpPct` of its max HP (boss rules; one boss bar sums them).
+   * `mergeAfterSec` after the split (or as the last but one part dies) the survivors merge into
+   * one with their summed HP and Haste `mergeHastePct` (the merge). All parts dead before the
+   * merge: the boss is beaten.
+   */
+  readonly split?: BossSplitDef;
+}
+
+/** A boss hangar (BossPhaseDef.hangar): `count` of `enemy` every `everySec`. */
+export interface HangarDef {
+  readonly enemy: string;
+  readonly count: number;
+  readonly everySec: number;
+}
+
+/** Hostile Takeover (BossPhaseDef.takeover): D146's 3 s laser, then a 4 s jam. */
+export interface TakeoverDef {
+  readonly tellSec: number;
+  readonly durationSec: number;
+}
+
+/** The jettison (BossPhaseDef.jettison): D146's armor 0, Haste 40%, four `crash_*` plates. */
+export interface JettisonDef {
+  readonly hastePct: number;
+  readonly plates: readonly MarkerId[];
+}
+
+/** A boss split and its merge (BossPhaseDef.split): D146's 3 parts at 20%, merge at 12 s, Haste 30%. */
+export interface BossSplitDef {
+  readonly part: string;
+  readonly count: number;
+  readonly hpPct: number;
+  readonly mergeAfterSec: number;
+  readonly mergeHastePct: number;
 }
 
 // ── Commander abilities ──────────────────────────────────────────────────────────────────────
@@ -826,7 +964,7 @@ interface AbilityCommon<Id extends string> {
 export type AbilityCooldown =
   | { readonly cooldownSec: number; readonly cooldownWaves?: never }
   | { readonly cooldownWaves: number; readonly cooldownSec?: never };
-/** Other effect kinds (System Reboot, …) arrive with their tasks. */
+/** Commander ability effects; each runs in sim/systems/abilities.ts or its own file. */
 export type AbilityEffect =
   | {
       // Orbital Strike: a targeted area hit after a visible reticle
@@ -899,6 +1037,14 @@ export type AbilityEffect =
       readonly damage: number;
       readonly pinSec: number;
       readonly durationSec: number;
+    }
+  | {
+      /**
+       * System Reboot (core-loop.md § 3.2; T700a seam, T702 runs it): no target; clears Jammed on
+       * every tower and makes each immune to jamming for `immuneSec` (6 s, JAM_IMMUNITY_SEC's).
+       */
+      readonly kind: 'reboot';
+      readonly immuneSec: number;
     };
 
 /**
@@ -911,6 +1057,11 @@ export interface AllyPostDef {
   readonly kind: 'bricks' | 'militia';
   /** The decor marker its post stands on (`markers`). */
   readonly post: MarkerId;
+  /**
+   * The post is manned only when this story flag has this value (A3M6's militia under `convoy`;
+   * T700a seam, T706 runs it): otherwise it never spawns.
+   */
+  readonly when?: FlagGateDef;
   /** A hitscan attack, like a Rivet's. */
   readonly attack: {
     readonly type: DamageType;
@@ -936,6 +1087,16 @@ export interface AllyPostDef {
 export interface BlockDef {
   readonly capacity: number;
   readonly health: readonly { readonly wave: number; readonly pct: number }[];
+}
+
+/**
+ * A story-flag gate on map data (fixed for the run): the thing exists only when `flag` (a script
+ * flag) has the value `eq` (A3M3's `door_choice` refugee groups; M7's militia posts, dressing, and
+ * decor). An unset flag never matches.
+ */
+export interface FlagGateDef {
+  readonly flag: ScriptFlagId;
+  readonly eq: FlagValue;
 }
 
 // ── Maps ─────────────────────────────────────────────────────────────────────────────────────
@@ -987,6 +1148,12 @@ export interface MapLayoutDef<K extends IdSpace = LiveIds, Id extends string = s
   }[];
   /** Named decor tiles for scripts: the Peeker rock, exits, crash sites. */
   readonly markers?: Readonly<Record<MarkerId, GridPos>>;
+  /**
+   * Flag-gated decor (maps.md § 7, *State-dependent dressing*; T700a seam, render's T730b): the
+   * prop on each listed marker shows only when its gate holds (A3M4's HE HELD THE DOOR under
+   * `convoy`). Render-only; scripts still read the marker.
+   */
+  readonly markerWhen?: Readonly<Record<MarkerId, FlagGateDef>>;
   readonly startCredits: number;
   /** Default 20. */
   readonly coreIntegrity?: number;
@@ -1090,7 +1257,13 @@ export interface MapLayoutDef<K extends IdSpace = LiveIds, Id extends string = s
    * Refugees are `refugees` (spawned by script); a blocker's health timeline is its `block`.
    */
   readonly allies?: readonly AllyPostDef[];
-  // Not yet: song (finale); flag-conditioned dressing (maps.md § 7, with its maps).
+  /**
+   * Wave groups a script spawns by id (`spawnWave`; A3M5's W10 surge when Cut the Feed isn't
+   * done; T700a seam, T706 runs it): each walks as it would in a wave, from the moment the action
+   * runs, counted in the wave then running.
+   */
+  readonly scriptGroups?: Readonly<Record<string, WaveGroup<K>>>;
+  // Not yet: song (finale).
 }
 
 /** One key of a map's lighting schedule (MapLayoutDef.lighting). */
@@ -1133,7 +1306,14 @@ export interface RefugeeGroupDef {
    * A group that doesn't walk is never released (`spawnAllies` does nothing) and never counts
    * toward the meter's total (`state.refugeeTotal`; sim/escort.ts).
    */
-  readonly when?: { readonly flag: ScriptFlagId; readonly eq: FlagValue };
+  readonly when?: FlagGateDef;
+  /**
+   * `'bearer'` (A3M5's Brood Hauler bearers; T700a seam, T706 runs it): a group carrying the vats'
+   * dead home on a Protect map whose asset has `bearers` (AssetDef). A hushed bearer costs the
+   * asset 1; one that reaches its exit is home (`stats.bearersHome`), no meter change. Default
+   * `'refugee'`.
+   */
+  readonly kind?: 'refugee' | 'bearer';
 }
 
 /**
@@ -1146,6 +1326,8 @@ export interface RefugeeGroupDef {
 export interface DressingLayerDef {
   readonly kind: 'greySoil' | 'mineScar';
   readonly area: 'original' | 'band' | 'all' | { readonly from: GridPos; readonly to: GridPos };
+  /** Shown only when this story flag has this value (maps.md § 7; T700a seam, T730b draws it). */
+  readonly when?: FlagGateDef;
 }
 
 /**
@@ -1162,6 +1344,11 @@ export interface AssetDef {
   readonly integrity: number;
   readonly marker: MarkerId;
   readonly routes: readonly RouteId[];
+  /**
+   * The asset is the bearers too (A3M5; T700a seam, T706 runs it): the map's `kind: 'bearer'`
+   * refugee groups walk with it, and each one hushed costs the meter 1.
+   */
+  readonly bearers?: true;
 }
 
 export interface WaveDef<K extends IdSpace = LiveIds> {
@@ -1294,8 +1481,26 @@ export interface AltBuildExpectation {
   readonly outcome?: 'lose' | 'either';
 }
 
+/**
+ * One flag-variant cell's reference profile (BuildsDef.referenceProfileByFlag; T700a): a run
+ * whose story flags match every entry of `when` (door_choice × quill_choice on A3M5–A3M6) is owned
+ * by `profile` instead of the map's `referenceProfile`, and plays `parBuild` instead of the map's
+ * par build where it gives one (A3M4's warren: Gloop for Rivet).
+ */
+export interface FlagProfileDef<K extends IdSpace = LiveIds> {
+  readonly when: { readonly [F in ScriptFlagId]?: FlagValueOf<F> };
+  readonly profile: ProfileDef<K>;
+  readonly parBuild?: ScriptedBuild<K>;
+}
+
 export interface BuildsDef<K extends IdSpace = LiveIds> {
   readonly referenceProfile: ProfileDef<K>;
+  /**
+   * Flag-variant cells with their own reference profile (and par build), first match wins; a run
+   * no cell matches uses `referenceProfile` and `parBuild` (balance/profile.ts
+   * `referenceProfileFor`). Default none.
+   */
+  readonly referenceProfileByFlag?: readonly FlagProfileDef<K>[];
   readonly parBuild: ScriptedBuild<K>;
   /** Keys are exactly the map's requiredCounters. */
   readonly noCounterBuilds: Readonly<Partial<Record<CounterId, ScriptedBuild<K>>>>;
@@ -1385,7 +1590,15 @@ export type RunStat =
    */
   | 'refugeesGathered'
   /** Revocations that took effect this run: each tower class and each ability counts one (T606). */
-  | 'revocations';
+  | 'revocations'
+  /**
+   * M7 (T700a seams): the most towers Jammed at once this run (Keep the Lights On: `lte: 1`;
+   * T702), the longest single Hostile Takeover jam in ticks (Declined: `lte: 60`, 1 s; T707), and
+   * bearers who reached home (A3M5's Results line; T706).
+   */
+  | 'jammedPeak'
+  | 'takeoverJamTicks'
+  | 'bearersHome';
 
 /**
  * Medal, objective, and script `when` conditions: one grammar, evaluated by the sim over run state
@@ -1447,6 +1660,12 @@ export type ConditionDef<K extends IdSpace = LiveIds> =
   | { readonly wreckageCleared: MarkerId }
   /** That optional objective of the map is done (settled `done`; failed or open is false). */
   | { readonly objectiveDone: string }
+  /**
+   * The drone cleared the wreckage under every one of `cleared` before wave `byWave` started
+   * (Cut the Feed: the three `feed_*` markers before W10; T700a seam, T706 runs it). A run atom:
+   * settled true once all are cleared in time, false once that wave starts without them.
+   */
+  | { readonly cleared: readonly MarkerId[]; readonly byWave: number }
   /**
    * Refugees of that group (a `refugees` key) lost this run, hushed, gathered, or taken at the
    * exit (The Matriarch's Young: Bramble's column loses no one, `lte: 0`). A run atom.

@@ -34,6 +34,12 @@ import { barks as a3m02Barks } from './a3/a3_m02/barks.ts';
 import { scenes as a3m02Scenes } from './a3/a3_m02/scenes.ts';
 import { barks as a3m03Barks } from './a3/a3_m03/barks.ts';
 import { scenes as a3m03Scenes } from './a3/a3_m03/scenes.ts';
+import { barks as a3m04Barks } from './a3/a3_m04/barks.ts';
+import { scenes as a3m04Scenes } from './a3/a3_m04/scenes.ts';
+import { barks as a3m05Barks } from './a3/a3_m05/barks.ts';
+import { scenes as a3m05Scenes } from './a3/a3_m05/scenes.ts';
+import { barks as a3m06Barks } from './a3/a3_m06/barks.ts';
+import { scenes as a3m06Scenes } from './a3/a3_m06/scenes.ts';
 import { SHARED_BARKS } from './barks/index.ts';
 import type { Bark, BarkId, MapDialogue, Scene, SceneId } from './types.ts';
 
@@ -58,6 +64,10 @@ export const MAP_DIALOGUE: readonly MapDialogue[] = [
   { map: 'a3_m01', scenes: [...a3m01Scenes, ...a3m01BaseScenes], barks: a3m01Barks },
   { map: 'a3_m02', scenes: a3m02Scenes, barks: a3m02Barks },
   { map: 'a3_m03', scenes: a3m03Scenes, barks: a3m03Barks },
+  // M7's maps: registered empty (T700b) so each map task fills only its own files.
+  { map: 'a3_m04', scenes: a3m04Scenes, barks: a3m04Barks },
+  { map: 'a3_m05', scenes: a3m05Scenes, barks: a3m05Barks },
+  { map: 'a3_m06', scenes: a3m06Scenes, barks: a3m06Barks },
 ];
 
 /** Every scene, by id. */

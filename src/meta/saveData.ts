@@ -93,6 +93,14 @@ export interface SaveData {
     abilities: AbilityId[];
     /** Subset of `abilities`. */
     revokedAbilities: AbilityId[];
+    /**
+     * Companion abilities inherited as Technician abilities, in the order inherited (A3M4's mail:
+     * Suppressing Fire; C4 Keep: Time Dilation; meta/storyTransactions.ts `inheritAbility`). Each is
+     * also in `abilities`, which is what the loadout reads; this records where it came from (the
+     * finale's Keep script takes Time Dilation back). Optional, absent until the first, so it needs
+     * no SaveData bump (like a map record's `objectives`). Subset of `abilities`.
+     */
+    inheritedAbilities?: AbilityId[];
     /** Field Protocols owned (bought at Zibzab's shop, progression.md § 4.4). */
     protocols: ProtocolId[];
   };

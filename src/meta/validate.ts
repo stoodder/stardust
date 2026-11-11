@@ -353,15 +353,12 @@ function checkUnlocks(
   path: string,
   known: KnownIds,
 ): SaveData['unlocks'] | null {
-  const u = c.object(x, path, [
-    'towers',
-    'specs',
-    'revokedTowers',
-    'jailbroken',
-    'abilities',
-    'revokedAbilities',
-    'protocols',
-  ]);
+  const u = c.object(
+    x,
+    path,
+    ['towers', 'specs', 'revokedTowers', 'jailbroken', 'abilities', 'revokedAbilities', 'protocols'],
+    ['inheritedAbilities'],
+  );
   if (u === null) return null;
   const towers = c.ids(u['towers'], `${path}.towers`, known.towers);
   const specs = c.ids(u['specs'], `${path}.specs`, known.towers);
@@ -379,7 +376,16 @@ function checkUnlocks(
   c.subset(jailbroken, towers, `${path}.jailbroken`, towersPath);
   c.subset(revokedAbilities, abilities, `${path}.revokedAbilities`, `${path}.abilities`);
   const protocols = c.ids(u['protocols'], `${path}.protocols`, known.protocols);
-  return { towers, specs, revokedTowers, jailbroken, abilities, revokedAbilities, protocols };
+  const out = { towers, specs, revokedTowers, jailbroken, abilities, revokedAbilities, protocols };
+  // Optional (absent until the first inheritance, so no SaveData bump): kept absent when absent.
+  if (u['inheritedAbilities'] === undefined) return out;
+  const inheritedAbilities = c.ids(
+    u['inheritedAbilities'],
+    `${path}.inheritedAbilities`,
+    known.abilities,
+  );
+  c.subset(inheritedAbilities, abilities, `${path}.inheritedAbilities`, `${path}.abilities`);
+  return { ...out, inheritedAbilities };
 }
 
 function checkUpgrades(

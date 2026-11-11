@@ -5,7 +5,8 @@
 //   as the shop opens); and Bricks handing Pebble to Goldie at Dome 3 (act2.md § A2M4, *Base*),
 //   once A2M4 is won; and after A2M6 (act2.md § A2M6, *Base scene*, *Base vignette*), QUILL's
 //   loophole, then Bricks teaching Pebble to whistle; and after A3M1 (act3.md § A3M1, *Base
-//   scene*), Bricks's survey confession. Several due on one visit play in turn.
+//   scene*), Bricks's survey confession; and after A3M4's C4 (act3.md § A3M4, *Base vignette*
+//   `base_a3_night_shift`), Night Shift. Several due on one visit play in turn.
 // - **The open question**, "Where does stardust come from?", which the player asks from its shop
 //   row (meta/purchase.ts `openQuestionOffered`).
 // Each plays as a pausing panel over the base (app/dialogue.ts) unless its row stages it
@@ -29,6 +30,12 @@ export const LOOPHOLE_SCENE: SceneId = 'a2_m06_base_loophole';
 export const WHISTLE_SCENE: SceneId = 'a2_m06_base_whistle';
 /** Bricks's survey confession (after A3M1). */
 export const SURVEY_SCENE: SceneId = 'a3_m01_base_survey';
+/**
+ * Night Shift (act3.md § A3M4's `base_a3_night_shift` vignette; the scene id follows the
+ * `<map_id>_base_<name>` rule): Pebble, Ves'thara and QUILL in the shelters, due once C4 is
+ * answered (D146: mandatory at the next base visit; its no-skip staging is T710/T714's).
+ */
+export const NIGHT_SHIFT_SCENE: SceneId = 'a3_m04_base_night_shift';
 /** The shop's open question. */
 export const OPEN_QUESTION_SCENE: SceneId = 'a1_m03_base_stardust';
 
@@ -49,6 +56,11 @@ export const VISIT_SCENES: readonly VisitScene[] = [
   { id: WHISTLE_SCENE, due: (save) => isMapWon(save, 'a2_m06'), mode: 'fullscreen' },
   // After the Preserve: Bricks's survey confession, its own beat after the Leaving Song.
   { id: SURVEY_SCENE, due: (save) => isMapWon(save, 'a3_m01') },
+  // After Empty Slot's C4 (answered on the card, or at the base before anything else): Night Shift.
+  {
+    id: NIGHT_SHIFT_SCENE,
+    due: (save) => isMapWon(save, 'a3_m04') && save.story.flags.quill_choice !== undefined,
+  },
 ];
 
 /**

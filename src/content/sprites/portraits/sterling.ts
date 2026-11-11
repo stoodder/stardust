@@ -5,6 +5,10 @@
 // pixels in every expression. Expression patches touch only the eye and brow rows
 // (STERLING_EYE_ROWS); the mouth band (STERLING_MOUTH_ROWS) changes only to talk, the same way
 // whatever her eyes are doing.
+// Variant `remote` (A3M5's boss cues: she flies "Shareholder Value" from her office): the same
+// portrait seen on a live feed. Behind her the transparent ground fills with a teal-dark scanline
+// field, white viewfinder brackets mark the four corners, and a red REC lamp burns top left. She
+// is untouched (her face and smile are the base frame's), so the fair-play tell holds.
 import { disc, grid, line, plot, type CharGrid } from '../helpers.ts';
 import { definePortrait, outlineInPlace, PORTRAIT_SIZE, type PaintArgs } from './portrait.ts';
 
@@ -209,7 +213,33 @@ const SMILE = {
   ],
 } as const;
 
-function paint({ expression, mouth }: PaintArgs): CharGrid {
+/**
+ * The `remote` feed, painted behind her after the outline: scanlines on every pixel left
+ * transparent, viewfinder brackets in the corners, and the REC lamp.
+ */
+function feed(g: CharGrid): void {
+  for (let y = 0; y < S; y++) {
+    for (let x = 0; x < S; x++) if (g[y]?.[x] === '.') plot(g, x, y, y % 2 === 0 ? 'A' : 'K');
+  }
+  const corner = ['SSSS', 'S...', 'S...', 'S...'];
+  const flip = (rows: readonly string[]): string[] => rows.map((r) => [...r].reverse().join(''));
+  // The brackets show on the feed only (her suit and the globe sit in front of the lower ones).
+  const onFeed = (x: number, y: number, rows: readonly string[]): void =>
+    rows.forEach((r, dy) => {
+      for (let dx = 0; dx < r.length; dx++) {
+        const at = g[y + dy]?.[x + dx];
+        if (r.charAt(dx) !== '.' && (at === 'A' || at === 'K')) plot(g, x + dx, y + dy, 'S');
+      }
+    });
+  onFeed(2, 2, corner);
+  onFeed(S - 6, 2, flip(corner));
+  onFeed(2, S - 6, [...corner].reverse());
+  onFeed(S - 6, S - 6, flip([...corner].reverse()));
+  // The REC lamp: a red dot with a darker rim, inside the top-left bracket.
+  put(g, 4, 4, ['.Y.', 'YXY', '.Y.']);
+}
+
+function paint({ expression, variant, mouth }: PaintArgs): CharGrid {
   const g = grid(S, S);
   suit(g);
   face(g);
@@ -218,6 +248,7 @@ function paint({ expression, mouth }: PaintArgs): CharGrid {
   put(g, CX - 6, STERLING_MOUTH_ROWS.y0, mouth === 'talk' ? SMILE.talk : SMILE.closed);
   snowGlobe(g);
   outlineInPlace(g);
+  if (variant === 'remote') feed(g);
   return g;
 }
 
@@ -231,7 +262,9 @@ export const portraitSterling = definePortrait({
     I: 'gold.3', J: 'gold.4', Q: 'gold.2',
     T: 'violet.2', U: 'violet.3', V: 'violet.1', Z: 'violet.4',
     L: 'brass.0', M: 'brass.1', N: 'brass.3',
+    A: 'teal.0', K: 'ink.1', S: 'white.0', X: 'red.3', Y: 'red.1',
   },
   expressions: ['neutral', 'happy', 'worried', 'angry', 'sad'],
+  variants: ['remote'],
   paint,
 });

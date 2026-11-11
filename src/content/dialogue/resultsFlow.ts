@@ -85,6 +85,11 @@ export const RESULTS_FLOW: Readonly<Partial<Record<CampaignMapId, ResultsFlow>>>
   // A3M2 · License Revoked (act3.md § A3M2): after the card, QUILL's confession, the Asset Yield
   // Log (T621's scene; it plays once registered).
   a3_m02: { afterResults: ['a3_m02_scene_confession'] },
+  // A3M4 · Empty Slot (act3.md § A3M4): Gerald's mail first, full-screen over the frozen shelters
+  // (D146: its grant, Suppressing Fire, is run end's `inheritAbility` on the first win), then the
+  // card, whose debrief asks C4 in its way on's place (app/resultsFlow.ts RESULTS_CHOICES, T710).
+  // Night Shift follows at the base (app/baseScenes.ts).
+  a3_m04: { beforeResults: ['a3_m04_scene_mail'] },
 };
 
 /** Map `map`'s results flow (an empty one when it has none). */

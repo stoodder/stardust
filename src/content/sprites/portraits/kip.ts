@@ -111,8 +111,7 @@ function coat(g: CharGrid, act3 = false): void {
     // The jumpsuit's collar lies down round his neck now, and the pin is gone: two pinholes in the
     // lapel where it sat.
     stamp(g, 18, 35, ['99888.7766', '.98....76.']);
-    plot(g, 29, 40, '1');
-    plot(g, 32, 40, '1');
+    for (const [x, y] of KIP_PINHOLES) plot(g, x, y, '1');
     return;
   }
   // The popped jumpsuit collar still stands up out of the coat's.
@@ -363,26 +362,26 @@ const MOUTHS_ACT3: Readonly<Record<string, { readonly closed: readonly string[];
   },
 };
 
-/** `act3`: bare-headed, his sandy hair flat and uncombed, a fringe over his brow. */
+/** `act3`: bare-headed, his sandy hair flat and uncombed, uneven locks falling over his brow. */
 function hair(g: CharGrid): void {
-  for (let y = 6; y <= 15; y++) {
+  // How far each column's fringe falls (rows), left to right across his brow.
+  const fringe = [13, 14, 15, 14, 13, 14, 15, 15, 14, 13, 14, 15, 14, 13, 14, 13, 13];
+  for (let y = 7; y <= 15; y++) {
     for (let x = 0; x < S; x++) {
-      const nx = (x + 0.5 - CX) / 9.4;
-      const ny = (y + 0.5 - 14) / 7.8;
+      const nx = (x + 0.5 - CX) / 9.2;
+      const ny = (y + 0.5 - 14) / 6.6;
       if (nx * nx + ny * ny > 1) continue;
-      // The fringe hangs in uneven locks below row 13.
-      if (y >= 14 && (x * 7 + 3) % 5 < 2) continue;
-      if (y === 15 && (x < 17 || x > 29 || x % 3 !== 0)) continue;
-      let ch = nx < -0.35 ? 'J' : nx < 0.35 ? 'I' : 'H';
-      // A few darker strands through it.
-      if ((x * 3 + y * 5) % 11 === 0) ch = 'H';
+      const f = fringe[x - 15];
+      if (y > 12 && (f === undefined ? y > 14 : y > f)) continue;
+      let ch = nx < -0.4 && y < 12 ? 'J' : nx < 0.3 ? 'I' : 'H';
+      // Darker strands run through it, and the locks' tips are in shadow.
+      if ((x * 3 + y * 5) % 7 === 0) ch = 'H';
+      if (f !== undefined && y === f && y > 12) ch = 'H';
       plot(g, x, y, ch);
     }
   }
-  // A cowlick that won't lie down, and hair over his ears at the back.
-  stamp(g, 25, 4, ['.I', 'IH', 'H.']);
-  stamp(g, 30, 13, ['IH', 'HH', '.H']);
-  stamp(g, 15, 13, ['JI', 'IH']);
+  // A cowlick that won't lie down.
+  stamp(g, 26, 5, ['.H', 'IH']);
 }
 
 /** `act3`: a day's stubble along his jaw. */
@@ -400,36 +399,48 @@ function stubble(g: CharGrid): void {
     plot(g, x, y, 'B');
 }
 
+/** `act3`: the two pinholes on his lapel where the #1 pin sat (for the sprite test). */
+export const KIP_PINHOLES: readonly (readonly [number, number])[] = [
+  [31, 40],
+  [33, 40],
+];
+
 /** Where the `act3` ledger sits on his chest (for the sprite test). */
-export const KIP_LEDGER = { x0: 13, y0: 37, x1: 27, y1: 47 } as const;
+export const KIP_LEDGER = { x0: 12, y0: 36, x1: 29, y1: 47 } as const;
 
 /**
- * `act3`: the ledger, held flat to his chest: a worn brass-brown binder, spine on the left, the
- * pages' edge showing on the right, a white label; a long hand round its spine and one over its
- * edge.
+ * `act3`: the ledger, held flat to his chest: a thick, worn brass-brown binder (a dark spine on
+ * the left, its top lit), the white edge of its pages along the top and the right, a white label
+ * with two ruled lines; one long hand round its spine, the other over the pages' edge.
  */
 function ledger(g: CharGrid): void {
   const { x0, y0, x1, y1 } = KIP_LEDGER;
   for (let y = y0; y <= y1; y++) {
-    for (let x = x0 + 1; x <= x1 - 1; x++) {
+    for (let x = x0; x <= x1; x++) {
       let ch = x <= x0 + 2 ? 'Y' : 'X';
-      if (y === y0) ch = 'Z';
-      if (x === x1 - 1) ch = y % 2 === 0 ? 'W' : 'V';
+      if (y === y0 + 1 && x > x0 + 2) ch = 'Z';
+      // The pages' edge, white ruled in steel, along the top and the right.
+      if (y === y0 && x > x0) ch = x % 2 === 0 ? 'W' : 'V';
+      if (x === x1 && y > y0) ch = y % 2 === 0 ? 'W' : 'V';
+      if (x === x1 - 1 && y > y0) ch = 'Y';
       plot(g, x, y, ch);
     }
   }
+  // Scuffs on the cover.
+  plot(g, 24, 45, 'Z');
+  plot(g, 25, 46, 'Z');
   // The label: white, two ruled lines.
   // prettier-ignore
-  stamp(g, 17, 40, [
-    'VVVVVVV',
-    'VWWWWWV',
-    'VWKKKWV',
-    'VWWWWWV',
-    'VVVVVVV',
+  stamp(g, 17, 39, [
+    'WWWWWWWW',
+    'WKKKKKKW',
+    'WWWWWWWW',
+    'WKKKKWWW',
+    'WWWWWWWW',
   ]);
   // His right hand (screen left) round the spine; his left over the pages' edge.
-  stamp(g, 12, 41, ['CC.', 'CCC', 'BCC', 'BB.']);
-  stamp(g, 25, 43, ['.CC', 'CCC', 'CCB', '.BB']);
+  stamp(g, 10, 40, ['.CC.', 'CCCC', 'BCCC', 'BCCB', '.BB.']);
+  stamp(g, 27, 42, ['.CC.', 'CCCC', 'CCCB', 'BCBB', '.BB.']);
 }
 
 /** Worried: a bead of sweat by his temple. */

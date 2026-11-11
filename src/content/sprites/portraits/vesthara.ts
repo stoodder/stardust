@@ -10,6 +10,11 @@
 // Variant `touched` (A2M5 on, Hollow-touched; characters.md § Ves'thara): her left arm and neck
 // (screen right) fray: the threads there go grey and slack, with cold violet in the gaps. Her
 // face, veil and cut thread are the base frame's, so her expressions read as before.
+// Extra `laugh` (Night Shift, after A3M4; act3.md § A3M4, characters.md § Ves'thara): her one
+// laugh, short and surprised. Brows flown up into arches, the knots of light squeezed shut into
+// bright upturned creases, the seam of her mouth open on her inner light. Under `touched_deep`
+// it is the one face whose eyes and mouth keep their white core: for a moment the laugh lights
+// her up again (the light she remembers at Dawn).
 import { grid, line, plot, type CharGrid } from '../helpers.ts';
 import { definePortrait, outlineInPlace, PORTRAIT_SIZE, type PaintArgs } from './portrait.ts';
 
@@ -252,6 +257,19 @@ const EYES: Readonly<Record<string, readonly string[]>> = {
     '..............',
     '..............',
   ],
+  // The laugh: brows flown up into arches; the knots squeezed shut into dark upturned creases,
+  // their light (a white core) leaking out between the lids, cheeks lifted under them.
+  laugh: [
+    '..1111..1111..',
+    '.1....11....1.',
+    '..............',
+    '...11....11...',
+    '..1*+1..1+*1..',
+    '.1....1.1....1',
+    '..............',
+    '..............',
+    '..............',
+  ],
   // Slack threads, inner ends lifted, outer ends fallen; the knots dimmed a step, and one light
   // falls from her eye like a tear.
   sad: [
@@ -286,6 +304,11 @@ const MOUTHS: Readonly<Record<string, { readonly closed: readonly string[]; read
   angry: {
     closed: ['........', '..kkkk..', '.k....k.'],
     talk: ['..kkkk..', '.k*++*k.', '.k....k.'],
+  },
+  // Open on her light even at rest (a laugh does not close between words); wider to talk.
+  laugh: {
+    closed: ['.k....k.', '.k+**+k.', '..kkkk..'],
+    talk: ['kk....kk', 'k+****+k', '.kkkkkk.'],
   },
   sad: {
     closed: ['........', '...kk...', '.kk..kk.'],
@@ -444,11 +467,12 @@ function relit(g: CharGrid): void {
 const DIM_FACE: Readonly<Record<string, string>> = { '4': '3', '3': '2' };
 const DIM_LIGHT: Readonly<Record<string, string>> = { '*': '+', '+': '8', '8': '7' };
 
-function dimInnerLight(g: CharGrid): void {
+function dimInnerLight(g: CharGrid, laughing: boolean): void {
   for (let y = 0; y < S; y++) {
     for (let x = 0; x < S; x++) {
       const ch = g[y]?.[x] ?? '.';
-      const lightRow = y >= 13 && y <= 27 && x >= 16 && x <= 31;
+      // The laugh keeps her face's lights (eyes and mouth) lit; the chest knot still dims.
+      const lightRow = !laughing && y >= 13 && y <= 27 && x >= 16 && x <= 31;
       const dimmed = DIM_LIGHT[ch];
       if (dimmed !== undefined && (lightRow || (y >= 36 && y <= 40 && x >= 21 && x <= 26))) {
         plot(g, x, y, dimmed);
@@ -470,7 +494,7 @@ function paint({ expression, variant, mouth }: PaintArgs): CharGrid {
   put(g, 17, EYE_Y - 4, EYES[expression] ?? EYES['neutral'] ?? []);
   const m = MOUTHS[expression] ?? MOUTHS['neutral'];
   if (m !== undefined) put(g, 20, MOUTH_Y - 1, mouth === 'talk' ? m.talk : m.closed);
-  if (variant === 'touched_deep') dimInnerLight(g);
+  if (variant === 'touched_deep') dimInnerLight(g, expression === 'laugh');
   outlineInPlace(g);
   // The lattice's gaps are real holes: the panel behind her shows through (art-direction §4).
   for (const [x, y] of holes) if (g[y]?.[x] === HOLE) plot(g, x, y, '.');
@@ -488,7 +512,7 @@ export const portraitVesthara = definePortrait({
     U: 'violet.0', V: 'violet.1', W: 'violet.2',
     X: 'gold.2', Y: 'gold.4', Z: 'gold.3',
   },
-  expressions: ['neutral', 'happy', 'worried', 'angry', 'sad'],
+  expressions: ['neutral', 'happy', 'worried', 'angry', 'sad', 'laugh'],
   variants: ['touched', 'touched_deep', 'dawn'],
   paint,
 });
