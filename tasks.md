@@ -305,7 +305,7 @@ Every map task: par in Act III's band on its reference profile, robustness shift
 - [x] **T630b** World render: rift telegraphs a wave ahead, the shuttle lift-off, blast doors, billboards, Act III's tint; T567's Tidybot items (`tidyDock`, duplicate stops).
 - [x] **T631** HUD: the Holdout meter (no Lost pips), the hidden preview + QUILL's leak line, REVOKED slots, Underfoot aim, the Choir aura preview, the Den's swarmling count, Bramble's objective tracker.
 - [x] **T650** Audio: Act III's silence-forward bed (no jingle; the Hollow's unravel silent), the Maw, swarmlings, Underfoot, drones/Expediter, the revocation stamp, Sterling's cue, the SEAL's loop, the Leaving Song (six notes of "Everglow Bright", sung), the Choir's harmony line, C2's base sting (T569).
-- [~] **T660** The Act III curve: A3M1 ~66 (Escort chain), A3M2 ~63 (Defend chain), A3M3's floor; Story wins; 12–15 min; spared/cleared, each revoked class, both doors; the Lantern probe (T568).
+- [x] **T660** The Act III curve: A3M1 ~66 (Escort chain), A3M2 ~63 (Defend chain), A3M3's floor; Story wins; 12–15 min; spared/cleared, each revoked class, both doors; the Lantern probe (T568).
 - [~] **T661** Docs: *Built so far (M6)* and the as-built notes.
 
 Carried into M6, folded in:
@@ -319,6 +319,7 @@ Carried into M6, folded in:
 
 ## M7 — Act III, part two (A3M4–A3M6)
 To be split up when we reach it. Inherits: jamming (Auditor, Silencer, Hostile Takeover, `jamLimit` #10, System Reboot, the Choir's jam rules live); Liability, Associate, Gunship, Black Budget; the bosses Shareholder Value (jettison → `openTile`) and the Gathering Maw; Gloop and Sproing (register Bounce Chorus with the Sproing; the Choir side is built); the absent companion and authored silence; Gerald's mail; `inheritAbility`; C4, Night Shift and C4's effects; the jailbreak; bearers as a walking Protect payload; `objectiveCompleted`; A3M6's Sheltered escort, militia, crate, Who's there? and Waykeeper; QUILL `purge`, Kip `act3`; the A2M4 and A1M1 revisits; the Lantern on Black Budget; Flak Curtain.
+- [ ] **T660b** M7: Act III balance follow-ups from T660: A3M3's Zapcoil alt touches the floor (18/36) under one shift; Truthlight too costly to matter on A3M3 (re-probe with A3M6's Operatives); A3M1 has no non-Skyhook air alt (the design's Den + Zapcoil alt still loses); A3M2's alts win at 100% while par sits at 63.6 (gameplay review).
 - [ ] **T609c** M7: Zibzab's Rapport (`rapport_zibzab`, after A1M4; Clearance Sale 4 waves → 3, core-loop §3.2) — adds a `par@rnd` pick on A1M4/A2M4, so it needs harness runs. Also progression.md §7.3's "Unlocks companion-specific barks" isn't built for any companion: build or cut.
 - [ ] **T501c-M6** M7: the Flak Curtain alt on A3M6 (A3M2 has no air). The Harpoon (par, `coil_and_beam`) and the Crane → Magnet Crane alt (90.9) landed on A3M2 in M6 (T621).
 
