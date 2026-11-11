@@ -160,12 +160,16 @@ describe('counter exemptions (BuildsDef.counterExemptions)', () => {
         ...RAW_CONTENT,
         maps: { ...RAW_CONTENT.maps, a3_m05: { ...raw, counterExemptions } },
       }).filter((e) => e.includes('counterExemptions'));
-    expect(withEx([{ counter: 'jam', reason: 'ok' }])).toEqual([]);
-    expect(withEx([{ counter: 'jam', reason: ' ' }]).join()).toMatch(/needs a reason/);
+    const pinnedBy = 'src/balance/a3m5Jam.test.ts';
+    expect(withEx([{ counter: 'jam', reason: 'ok', pinnedBy }])).toEqual([]);
+    expect(withEx([{ counter: 'jam', reason: ' ', pinnedBy }]).join()).toMatch(/needs a reason/);
+    expect(withEx([{ counter: 'jam', reason: 'ok', pinnedBy: 'a3m5Jam' }]).join()).toMatch(
+      /must name the unit test/,
+    );
     expect(
       withEx([
-        { counter: 'jam', reason: 'a' },
-        { counter: 'jam', reason: 'b' },
+        { counter: 'jam', reason: 'a', pinnedBy },
+        { counter: 'jam', reason: 'b', pinnedBy },
       ]).join(),
     ).toMatch(/listed twice/);
     const a3m4 = RAW_CONTENT.maps.a3_m02;
@@ -173,7 +177,7 @@ describe('counter exemptions (BuildsDef.counterExemptions)', () => {
       ...RAW_CONTENT,
       maps: {
         ...RAW_CONTENT.maps,
-        a3_m02: { ...a3m4, counterExemptions: [{ counter: 'jam', reason: 'x' }] },
+        a3_m02: { ...a3m4, counterExemptions: [{ counter: 'jam', reason: 'x', pinnedBy }] },
       },
     });
     expect(off.join('\n')).toMatch(

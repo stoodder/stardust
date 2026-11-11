@@ -126,6 +126,7 @@ export const builds = defineBuilds({
       counter: 'detection',
       reason:
         "detection exam is W5/W9's two Operative waves (campaign.md §4.8: one teach, one test)",
+      pinnedBy: 'src/balance/a3m6.test.ts',
     },
   ],
   // The convoy first: a run with no door set (a dev battle) mans the militia's posts.

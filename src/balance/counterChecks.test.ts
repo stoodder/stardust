@@ -99,7 +99,9 @@ const exempt = (counter: 'jam' | 'detection') => ({
   builds: {
     ...map.builds,
     noCounterBuilds: { [counter]: steps(), splash: steps() },
-    counterExemptions: [{ counter, reason: 'pinned by the map tests' }],
+    counterExemptions: [
+      { counter, reason: 'pinned by the map tests', pinnedBy: 'src/balance/a3m5Jam.test.ts' },
+    ],
   },
 });
 

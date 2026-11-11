@@ -200,6 +200,7 @@ export const builds = defineBuilds({
     {
       counter: 'jam',
       reason: 'jam exam is the hub under the hunt (W13, W15): no-jam ≥ 40 under par',
+      pinnedBy: 'src/balance/a3m5Jam.test.ts',
     },
   ],
   // The armor exam is the W11 Liability column (it walks the 39-tile road for ~80 s, so it lands

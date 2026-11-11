@@ -15,10 +15,7 @@ describe('counter exemptions name the tests that pin them', () => {
   );
 
   it('the live content has some (A3M5 jam, A3M6 detection)', () => {
-    expect(entries.map((x) => `${x.map}:${x.counter}`)).toEqual([
-      'a3_m05:jam',
-      'a3_m06:detection',
-    ]);
+    expect(entries.map((x) => `${x.map}:${x.counter}`)).toEqual(['a3_m05:jam', 'a3_m06:detection']);
   });
 
   it.each(entries)('$map $counter: pinnedBy exists and names the map and counter', (x) => {

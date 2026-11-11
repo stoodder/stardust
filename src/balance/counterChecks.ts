@@ -136,8 +136,8 @@ export function noCounterChecks<K extends IdSpace>(
       : "by the map's override";
   for (const counter of Object.keys(b.noCounterBuilds)) {
     const label = `noCounter:${counter}`;
-    // A counter the map exempts (BuildsDef.counterExemptions; A3M6's detection, D146 addendum) isn't
-    // held to #5's loss or #6: the map's own tests pin its cost. #5's premise (no answer carried)
+    // A counter the map exempts (BuildsDef.counterExemptions; A3M5's jam, A3M6's detection) isn't
+    // held to #5's loss or #6: the unit test its `pinnedBy` names pins its cost instead (D150). #5's premise (no answer carried)
     // still holds (noCounterAnswerChecks).
     if (b.counterExemptions.some((x) => x.counter === counter)) continue;
     checks.push(
@@ -153,9 +153,10 @@ export function noCounterChecks<K extends IdSpace>(
         (recs) => recs.map(describeRun).join(', '),
       ),
     );
-    // #6: meta can't replace a counter (design/progression.md § 10). Not for jam (D146 addendum,
-    // T760): the jam limit (sim/jam.ts `jamRoom`) caps what jamming takes at 25% of the towers,
-    // less than the whole catalog adds, so #5 holds no-jam to losing on the reference instead.
+    // #6: meta can't replace a counter (design/progression.md § 10). Not for jam (D149): the jam
+    // limit (sim/jam.ts `jamRoom`) caps what jamming takes at 25% of the towers, less than the
+    // whole catalog adds, so #5 (just above) holds no-jam to losing on the reference instead, or,
+    // where the map exempts jam (A3M5), the test its exemption's `pinnedBy` names.
     if (counter === 'jam') continue;
     const note =
       leftOut.length === 0 ? '' : ` (left out, not simulated yet: ${leftOut.join(', ')})`;
