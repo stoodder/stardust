@@ -133,7 +133,9 @@ describe('the memo content', () => {
     expect(MEMOS.memo_a3_01).toMatchObject({
       from: 'Director Joy Sterling, Frontier Operations',
       subject: "We'll Get Through This Together!",
-      smallPrint: 'Engineers: Clean Exit Asset Recovery, Phase 1 (Colony Core).',
+      // The fair-play clue A3M2 pays (bible.md § Sterling: "the Preserve's buffer is 'depleted'").
+      smallPrint:
+        'Engineers: Clean Exit Asset Recovery, Phase 1 (Colony Core). Preserve buffer: depleted.',
     });
     expect(MEMOS.memo_a3_01?.body).toContain(
       'I fought for that Preserve, Four-Forty-Seven. I really did. Engineers inbound to secure ' +
@@ -142,7 +144,19 @@ describe('the memo content', () => {
     expect(MEMOS.memo_a3_02).toMatchObject({
       from: 'Everglow Automated Systems',
       subject: 'Your Access Has Been Updated',
+      smallPrint:
+        'Revocation is final. Refunds issued per Policy CE-1. This message was not reviewed.',
     });
+    // The Clean Exit filed as an access update (T611): both revocations, the refund, no reply.
+    const body = MEMOS.memo_a3_02?.body ?? '';
+    expect(body.startsWith('This is an automated message.\n\n')).toBe(true);
+    for (const line of [
+      'Your Corporate Tower License has been revoked.',
+      'Your Orbital Strike uplink has been revoked.',
+      'Replies to this address are not monitored.',
+    ]) {
+      expect(body).toContain(line);
+    }
     expect(MEMOS.memo_a3_03).toMatchObject({
       from: 'Everglow Automated Systems',
       subject: 'Personnel Update',

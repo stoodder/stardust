@@ -26,8 +26,8 @@ function expectQuoted(doc: string, text: string): void {
   expect(doc.includes(text), `the doc doesn't quote: ${text}`).toBe(true);
 }
 
-/** Memos whose small print the act file leaves to the content (A1M5's and A3M2's name none). */
-const UNQUOTED_SMALL_PRINT = new Set(['memo_a1_00', 'memo_a1_05', 'memo_a3_02']);
+/** Memos whose small print the act file leaves to the content (A1M5's names none). */
+const UNQUOTED_SMALL_PRINT = new Set(['memo_a1_00', 'memo_a1_05']);
 
 describe('the welcome memo is the style guide sample', () => {
   const m = MEMOS.memo_a1_00!;
@@ -156,5 +156,63 @@ describe('codex lines the docs quote', () => {
     expectQuoted(ACT1, `(small print: "${strike.replace(/\.$/, '')}")`);
     const rig = original('codex_rig_nine').replace(/\.$/, '').toLowerCase();
     expectQuoted(ACT1.toLowerCase(), `"${rig}"`);
+  });
+});
+
+describe("the Field Journal's lines the docs quote (Act III, T611)", () => {
+  /** An entry's version text, the revised wording where `revised` is asked for. */
+  function text(id: string, version: 'original' | 'corrected' | 'revised'): string {
+    const v = CODEX[id]?.versions;
+    if (version === 'revised') return v?.corrected?.revised?.text ?? '';
+    return v?.[version]?.text ?? '';
+  }
+
+  it("corrects the Hauler and the Elder as the style guide quotes them, the Elder's citation the act file's", () => {
+    expectQuoted(STYLE, `"${text('codex_brood_hauler', 'corrected')}"`);
+    expectQuoted(STYLE, `"${text('codex_elder', 'revised')}"`);
+    expectQuoted(ACT3, 'the Elder\'s citation still reads "Survey 2346, Okonkwo" until A3M3');
+    expect(text('codex_elder', 'corrected')).toContain('(Survey 2346, Okonkwo.)');
+    expectQuoted(
+      ACT3,
+      `now cites "Amended Survey 2346, Okonkwo: 'Correction: they were singing.'"`,
+    );
+  });
+
+  it.each([
+    [
+      'codex_chitterbloom',
+      'corrected',
+      "Not 'Chitterbloom.' A mother who walks at the back so no one is left",
+    ],
+    ['codex_leaving_song', 'original', "Everglow's name for it is 'Everglow Bright.'"],
+    ['codex_leaving_song', 'original', "The Aelari render it 'the Singers.'"],
+    ['codex_small_ones_walk', 'original', 'Her name was Thrum.'],
+    ['codex_compliance', 'original', 'No one is inside. Everglow does not send people.'],
+    ['codex_quill_directives', 'original', 'QUILL asked that no one decide about it yet.'],
+    ['codex_buffer_protocol', 'original', 'Plenty of room!'],
+    ['codex_buffer_protocol', 'corrected', 'The Preserve was the buffer.'],
+    [
+      'codex_clean_exit',
+      'corrected',
+      'The colony is not on the list of assets. Neither are its people.',
+    ],
+    ['codex_sterling', 'corrected', 'It was not personal. That was the point.'],
+    ['codex_okonkwos_gap', 'original', 'On the old charts it had a number.'],
+    ['codex_okonkwos_gap', 'original', "The colony calls it Okonkwo's Gap now."],
+    ['codex_amended_survey', 'original', 'It is fifteen years late. He filed it anyway.'],
+  ] as const)('%s (%s) holds act3.md\'s "%s"', (id, version, line) => {
+    expectQuoted(ACT3, `"${line}`);
+    expect(text(id, version)).toContain(line);
+  });
+
+  it("quotes the QUILL directives exactly as A3M2's confession scene gives them", () => {
+    const directives = text('codex_quill_directives', 'original').split('\n').slice(1, 6);
+    expect(directives).toHaveLength(5);
+    for (const d of directives) expectQuoted(ACT3, `"${d}"`);
+  });
+
+  it("memo_a3_02's closing line is act3.md's", () => {
+    expectQuoted(ACT3, '"Replies to this address are not monitored."');
+    expect(MEMOS.memo_a3_02?.body).toContain('Replies to this address are not monitored.');
   });
 });

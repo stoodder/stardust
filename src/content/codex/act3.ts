@@ -103,7 +103,7 @@ export const ACT3_CODEX: readonly CodexEntryDef[] = [
         text:
           "Pebble's grandmother was an Elder of the Terraces warren. At the Northern Gate she led " +
           'six young ones down the warren track, slowly, so the smallest could keep up. They did ' +
-          "not walk home. Pebble says her grandmother walked with the small ones, and that the " +
+          'not walk home. Pebble says her grandmother walked with the small ones, and that the ' +
           'sky sang the Leaving Song that day. Skitterkin do not count their dead. They remember ' +
           'them. Her name was Thrum.',
         when: { all: [FROM_A3M1, { flag: 'spared_quiet_wave', eq: false }] },
@@ -232,7 +232,7 @@ export const ACT3_CODEX: readonly CodexEntryDef[] = [
       corrected: {
         text:
           'Drafted the Buffer Protocol. Designed Second Harvest. Holds a seat on the way out ' +
-          'under Clean Exit. Revoked a technician\'s license mid-shift and called it nothing ' +
+          "under Clean Exit. Revoked a technician's license mid-shift and called it nothing " +
           'personal. It was not personal. That was the point. She uses employee numbers, never ' +
           'names. In every portrait the smile is the same. Only the eyes change.',
         when: FROM_A3M2,
