@@ -1,0 +1,143 @@
+/* Zibzab's crate (crateCard.tsx; T714; art-direction.md § Menu screens and § Dialogue
+   presentation): a chamfered card over A3M6's briefing in Vrell orange on deep ink, its lid a
+   band of crate slats with the NO REFUNDS sticker peeled half off; the tune-ups as shelf-style
+   rows, the protocols as a pick of `ink.2` options (steel through their 700 ms lock, the picked
+   one on the accent). */
+.cr {
+  --edge: var(--sd-orange-3);
+  position: absolute;
+  box-sizing: border-box;
+  display: grid;
+  gap: 6px;
+  width: 300px;
+  padding: 0 10px 10px;
+  font-family: var(--font-body);
+  font-size: 8px;
+  line-height: 9px;
+  text-transform: uppercase;
+  color: var(--sd-white-1);
+  pointer-events: auto;
+}
+
+/* The lid: slats in Vrell orange, the brand burned in, the sticker peeled half off. */
+.cr-lid {
+  position: relative;
+  height: 22px;
+  margin: 0 -10px;
+  background: repeating-linear-gradient(
+    var(--sd-orange-1) 0 5px,
+    var(--sd-orange-0) 5px 6px
+  );
+  box-shadow: inset 0 -1px 0 var(--sd-ink-0);
+}
+
+.cr-lid-brand {
+  position: absolute;
+  left: 12px;
+  top: 7px;
+  color: var(--sd-orange-3);
+  letter-spacing: 1px;
+}
+
+/* Peeled: only its left half still stuck, the rest a pale scar; never readable as a promise. */
+.cr-sticker {
+  position: absolute;
+  right: 14px;
+  top: 5px;
+  padding: 2px 4px;
+  color: var(--sd-red-2);
+  background: linear-gradient(90deg, var(--sd-white-0) 0 46%, rgb(220 210 200 / 18%) 46% 100%);
+  box-shadow: 0 0 0 1px rgb(220 210 200 / 30%);
+}
+
+.cr-title {
+  margin: 4px 0 0;
+  font-family: var(--font-heading);
+  font-size: 8px;
+  font-weight: normal;
+  color: var(--sd-orange-3);
+}
+
+.cr-line {
+  margin: 0;
+  color: var(--sd-steel-4);
+}
+
+.cr-rows,
+.cr-pick {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cr-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 3px 5px;
+  background: var(--sd-ink-1);
+  box-shadow: inset 2px 0 0 var(--sd-orange-3);
+}
+
+.cr-row-name {
+  color: var(--sd-white-1);
+}
+
+.cr-row-ranks {
+  color: var(--sd-teal-4);
+}
+
+.cr-option {
+  display: grid;
+  gap: 2px;
+  padding: 3px 5px;
+  font: inherit;
+  text-align: left;
+  text-transform: inherit;
+  color: var(--sd-white-1);
+  background: var(--sd-ink-2);
+  border: 0;
+  box-shadow: inset 2px 0 0 var(--sd-ink-4);
+  cursor: pointer;
+}
+
+.cr-option-effect {
+  color: var(--sd-teal-4);
+}
+
+.cr-option.locked {
+  color: var(--sd-steel-3);
+  cursor: default;
+}
+
+.cr-option.locked .cr-option-effect {
+  color: var(--sd-steel-3);
+}
+
+.cr-option:hover:not(.locked),
+.cr-option:focus-visible {
+  outline: none;
+  background: var(--sd-teal-1);
+}
+
+.cr-option.picked {
+  background: var(--sd-orange-1);
+  box-shadow: inset 2px 0 0 var(--sd-orange-3);
+}
+
+.cr-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.cr-take {
+  --edge: var(--sd-orange-3);
+  color: var(--sd-orange-3);
+}
+
+.cr-take[aria-disabled='true'] {
+  --edge: var(--sd-steel-1);
+  color: var(--sd-steel-3);
+}

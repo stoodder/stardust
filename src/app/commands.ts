@@ -25,6 +25,8 @@ import { announce, showNotice } from './hud.ts';
 import { lockedText, rejectText } from './hudText.ts';
 import { aimOf, priceOf, readyInWaves } from './hudViews.ts';
 import { revokedText } from './revoked.ts'; // T606
+import { crateHere, crateIntercepts } from '../ui/screens/crate.ts'; // T714
+import { activeSave } from './save.ts';
 import type { Speed } from './testHookTypes.ts';
 
 /** What commands act on: the running battle, or null outside one. */
@@ -282,6 +284,8 @@ export function dismissBriefing(force = false): void {
   // A briefing waiting on its story choice (C3) closes only once it's answered (D141; T610);
   // autoplay (`force`) clocks in regardless, leaving the choice unmade.
   if (!force && dialogueView.scene.value?.held === true) return;
+  // A3M6 (T714): Clock in opens Zibzab's crate's card first; taking it clocks in.
+  if (!force && crateIntercepts(crateHere(hud.mapId.value, activeSave()))) return;
   hud.briefing.value = null;
 }
 

@@ -1744,8 +1744,14 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
       purchased();
       towerOf.set(e.uid, e.tower);
       stepTags(e);
+      // On high ground (`^`): A3M6's greenhouse-roof line waits for it (T722).
+      const high = mapDef.tiles[e.tile[1] * mapDef.cols + e.tile[0]] === '^';
       offerBarks([
-        isTower(e.tower) ? { on: 'tower_built', tower: e.tower } : { on: 'tower_built' },
+        {
+          on: 'tower_built',
+          ...(isTower(e.tower) ? { tower: e.tower } : {}),
+          ...(high ? { highGround: true as const } : {}),
+        },
       ]);
     }),
     bus.on('TowerSold', (e) => {

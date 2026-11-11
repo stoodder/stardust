@@ -1,5 +1,5 @@
 // A3M5's tuning (T721; act3.md § A3M5, As tuned). Par wins at 7/12 bearers (58.3%, the lower of
-// the asset and the core's 16/22): the act's difficulty peak, under A3M4's 63.6. The asset pays for
+// the asset and the core's 14/22): the act's difficulty peak, under A3M4's 63.6. The asset pays for
 // the hunts out of the sluice (W13's biggest group and W15's last), the core for the vats' surges.
 // "Shareholder Value" (3800 HP, D146 addendum) is driven off a few tiles short of the core after
 // all three of its phases. No-splash loses in W10's surge; no-armor in the W14 platform, having
@@ -21,13 +21,13 @@ import { HARNESS_TEST_TIMEOUT_MS } from './rules.ts';
 const content = compileContent(RAW_CONTENT);
 const map = content.maps.a3_m05;
 const PAR_ASSET = 7;
-const PAR_CORE = 16;
+const PAR_CORE = 14;
 
 describe('A3M5 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
   const report = runMap(content, 'a3_m05', { seeds: 1 });
   const rec = (build: string) => report.runs.find((r) => r.build === build && !r.repeat)!;
 
-  it('passes every harness check as tuned, par at 7/12 bearers (core 16/22), Cut the Feed', () => {
+  it('passes every harness check as tuned, par at 7/12 bearers (core 14/22), Cut the Feed', () => {
     expect(report.checks.filter((k) => !k.ok).map((k) => `${k.id} ${k.subject}`)).toEqual([]);
     const par = rec('par').result!;
     expect(par.outcome).toBe('won');

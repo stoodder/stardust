@@ -18,6 +18,8 @@ import type { LineView, SceneView } from '../dialogue/state.ts';
 import { plainText } from '../dialogue/text.ts';
 import { loadoutChangeable } from '../screens/loadoutView.ts';
 import { Icon } from './Icon.tsx';
+import { crate } from '../screens/crate.ts'; // T714: Zibzab's crate's card over A3M6's briefing
+import { CrateCard } from '../screens/crateCard.tsx';
 
 /**
  * The briefing's threat-intel strip (T202d; campaign.md § 4.8): the map's threats as tell glyphs
@@ -128,6 +130,7 @@ export function Briefing({ view }: { view: SceneView }) {
         aria-modal="true"
         aria-labelledby="hud-briefing-heading"
         onKeyDown={trapTab}
+        inert={crate.open.value}
       >
         <h2 id="hud-briefing-heading" class="hud-briefing-title">
           Shift briefing
@@ -184,6 +187,7 @@ export function Briefing({ view }: { view: SceneView }) {
           </button>
         </div>
       </section>
+      <CrateCard />
     </div>
   );
 }

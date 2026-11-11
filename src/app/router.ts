@@ -59,6 +59,7 @@ import { heldRewards } from '../ui/screens/state.ts';
 import { withResultsChoice } from './resultsFlow.ts';
 import { escortAtEnd } from './resultsStory.ts';
 import type { RunOutcome, ScreenId } from './testHookTypes.ts';
+import { resetCrate, takenPick } from '../ui/screens/crate.ts'; // T714
 
 /** The campaign screen's notice when a checkpoint retry couldn't replay to its checkpoint. */
 export const RETRY_FAILED =
@@ -315,7 +316,10 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
     battle = next;
     // The briefing's Change loadout: only where the loadout screen came before it.
     loadoutChangeable.value = briefing && loadoutOffered(mapId);
-    if (briefing) restartOnBriefingFlags(request, cfg, next);
+    if (briefing) {
+      resetCrate(); // T714: a fresh briefing asks about the crate afresh.
+      restartOnBriefingFlags(request, cfg, next);
+    }
     screen.value = 'battle';
     if (resume !== null) {
       // A checkpoint retry waits, paused, in the wave's countdown: the player looks, rebuilds,
@@ -344,7 +348,9 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
       // After the dialogue's own close (which commits the briefing's effects to the save).
       queueMicrotask(() => {
         if (battle !== b || ended) return;
-        openCrateAtBriefing(cfg.mapId);
+        // T714: with the protocol picked on the crate's card, when it asked for one.
+        openCrateAtBriefing(cfg.mapId, takenPick());
+        resetCrate();
         if (!briefingChangedBattle(cfg, activeSave())) return;
         let next: SimConfig<IdSpace>;
         try {

@@ -1,0 +1,50 @@
+/* QUILL's own list (quillListCard.tsx; T714; art-direction.md § Dialogue presentation): an
+   Everglow terminal gone quiet, deep ink with QUILL's teal edge, low over the briefing so its lines
+   stay in sight above it. The header in steel, each directive's number in teal, its words in
+   white: QUILL's voice, no system cheer. */
+.ql {
+  --edge: var(--sd-teal-3);
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  box-sizing: border-box;
+  display: grid;
+  gap: 5px;
+  width: 384px;
+  padding: 8px 10px;
+  font-family: var(--font-body);
+  font-size: 8px;
+  line-height: 9px;
+  text-transform: uppercase;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.ql-header {
+  margin: 0;
+  padding-bottom: 4px;
+  color: var(--sd-steel-4);
+  box-shadow: 0 1px 0 var(--sd-ink-3);
+}
+
+.ql-entries {
+  display: grid;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ql-entry {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 6px;
+}
+
+.ql-label {
+  color: var(--sd-teal-4);
+}
+
+.ql-words {
+  color: var(--sd-white-1);
+}

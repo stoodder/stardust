@@ -32,6 +32,7 @@ const COMPLETE = [
   'a3_m03',
   'a3_m04',
   'a3_m05',
+  'a3_m06',
 ];
 
 function actFile(act: string): string {

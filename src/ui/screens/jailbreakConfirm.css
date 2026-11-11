@@ -1,0 +1,88 @@
+/* The jailbreak's confirmation (jailbreakConfirm.tsx; T714; art-direction.md § Menu screens): a
+   small opaque panel over the shop under a 45% scrim, Vrell orange for what comes back, the
+   revoked icon dimmed under its stamp, the price line in gold (teal when free). */
+.jb-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(5 3 10 / 45%);
+}
+
+.jb {
+  --edge: var(--sd-orange-3);
+  box-sizing: border-box;
+  display: grid;
+  gap: 6px;
+  width: 300px;
+  padding: 10px 12px;
+}
+
+.jb-title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: normal;
+  line-height: 16px;
+  color: var(--sd-orange-3);
+}
+
+.jb-towers {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.jb-tower {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.jb-icon {
+  position: relative;
+  display: inline-flex;
+  padding: 2px;
+  background: var(--sd-ink-2);
+}
+
+.jb-icon.revoked > .icon:first-child {
+  opacity: 0.3;
+}
+
+.jb-icon .jb-stamp {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.jb-arrow {
+  color: var(--sd-steel-3);
+}
+
+.jb-tag {
+  color: var(--sd-orange-3);
+}
+
+.jb-what {
+  margin: 0;
+  color: var(--sd-steel-4);
+}
+
+.jb-price {
+  margin: 0;
+  color: var(--sd-gold-3);
+}
+
+.jb-price.free {
+  color: var(--sd-teal-4);
+}
+
+.jb-buttons {
+  justify-content: flex-end;
+}

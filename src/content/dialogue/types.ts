@@ -342,7 +342,11 @@ export type BarkTrigger =
    * T330), so the event must carry the wave it fired in.
    */
   | { readonly on: 'not_firing'; readonly wave?: number }
-  | { readonly on: 'tower_built'; readonly tower?: TowerId }
+  /**
+   * A tower was built. `highGround: true`: on a high-ground tile (`^`), so a line can wait for one
+   * spot (A3M6's greenhouse roof, A1M1's one `^`, where the first Rivet went; T722).
+   */
+  | { readonly on: 'tower_built'; readonly tower?: TowerId; readonly highGround?: true }
   | { readonly on: 'tower_sold'; readonly tower?: TowerId; readonly tagged?: boolean }
   /**
    * A tower was revoked (A3M2's Clean Exit; the sim's `TowerRevoked`). `tagged: true`: it was the

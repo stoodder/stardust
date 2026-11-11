@@ -9,7 +9,8 @@
 import { signal } from '@preact/signals';
 import { PROTOCOLS, UPGRADES } from '../../content/upgrades/index.ts';
 import type { ProtocolId, UpgradeId } from '../../content/types.ts';
-import type { SaveData } from '../../meta/index.ts';
+import { CRATE, type SaveData } from '../../meta/index.ts';
+import { crateOffer } from '../../app/storyMeta.ts';
 import { grantText } from './storeText.ts';
 
 /** What the crate holds, as its card lists it. */
@@ -72,14 +73,21 @@ export function crateView(offer: CrateOfferLike | null, save: SaveData | null): 
   };
 }
 
+/** The crate's view on `mapId` for `save` (the map it opens on, unopened), else null. */
+export function crateHere(mapId: string | null, save: SaveData | null): CrateView | null {
+  return mapId === CRATE.map ? crateView(crateOffer(save), save) : null;
+}
+
 /** The sticker on the crate, peeled off (act3.md § A3M6). */
 export const STICKER = 'No refunds';
 
 /** The card's line under its title, by what the crate holds. */
 export function crateLine(view: CrateView): string {
-  if (view.kind === 'tune_ups') return 'Every Vrell tune-up you were missing, installed at no cost.';
+  if (view.kind === 'tune_ups') {
+    return 'Every tune-up rank your Vrell turrets were missing, installed at no cost.';
+  }
   if (view.kind === 'pick') {
-    return 'You own every Vrell tune-up already. Pick one Field Protocol instead.';
+    return 'Your Vrell turrets are fully tuned already. Pick one Field Protocol instead.';
   }
   return 'You own everything it could hold. The sticker was the point.';
 }
