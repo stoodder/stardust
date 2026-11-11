@@ -32,4 +32,16 @@ describe('the Results card in Act III (T613)', () => {
     expect(offeredMedals(core).map((m) => m.name)).toContain('Perfect Core');
     expect(medalViews(escort, OPEN, []).map((v) => v.name)).toContain('Perfect');
   });
+
+  it('names Perfect\'s slot "Held the Door" on the Holdout, with its 85% line (T605b)', () => {
+    const gap = mapOf('a3_m03');
+    expect(perfectMedalName(gap)).toBe('Held the Door');
+    expect(offeredMedals(gap).map((m) => m.name)).toEqual([
+      'Victory',
+      'Held the Door',
+      'Much Obliged',
+    ]);
+    const view = medalViews(gap, OPEN, []).find((v) => v.name === 'Held the Door');
+    expect(view?.description).toBe('Get 85% or more of them out.');
+  });
 });

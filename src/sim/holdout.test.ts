@@ -18,9 +18,24 @@ import { checkpointAt } from './systems/waves.ts';
 /** The fixture with its events replaced (and its own kept unless `keep` is false). */
 function withEvents(events: MapDef<FixtureIds, 'fx_map'>['events'], keep = false) {
   const raw = SIM_FIXTURE.maps.fx_map;
+  // A map that forces an input has every build end by pressing it (validateBuilds, T605b).
+  const forced = (events ?? []).flatMap((e) =>
+    e.actions.flatMap((a) => ('forceInput' in a ? [a.forceInput.id] : [])),
+  );
+  const press = <B extends { readonly steps: readonly object[] }>(b: B): B =>
+    forced.length === 0 ? b : { ...b, steps: [...b.steps, { wave: 2, scriptInput: forced[0]! }] };
   const content = compileContent<FixtureIds>({
     ...SIM_FIXTURE,
-    maps: { fx_map: { ...raw, events: [...(keep ? (raw.events ?? []) : []), ...(events ?? [])] } },
+    maps: {
+      fx_map: {
+        ...raw,
+        events: [...(keep ? (raw.events ?? []) : []), ...(events ?? [])],
+        parBuild: press(raw.parBuild),
+        altBuilds: Object.fromEntries(
+          Object.entries(raw.altBuilds ?? {}).map(([k, b]) => [k, press(b)]),
+        ),
+      },
+    },
   });
   return fixtureConfig({ content });
 }

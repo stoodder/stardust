@@ -78,7 +78,7 @@ import {
   type DialogueCursor,
   type DialogueEffects,
 } from '../story/runner.ts';
-import { escortLow, integrityLow } from '../story/meters.ts';
+import { escortLow, holdoutLow, integrityLow } from '../story/meters.ts';
 import { plateName } from '../story/plates.ts';
 import { giveTag, newTagState, tagIndexAfter, tagStep, type TagState } from '../story/tags.ts';
 import { resolveText, type TextContext } from '../story/text.ts';
@@ -1442,10 +1442,16 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
     }),
     // On an Escort the meter is the refugees (T513): `low_integrity` once the losses left before
     // defeat are a quarter of `maxLost` or fewer (story/meters.ts `escortLow`), the core's rule's
-    // twin.
+    // twin; on a Holdout, once half the losses its floor allows are gone (`holdoutLow`).
     bus.on('RefugeeLost', () => {
       const st = sim.state;
-      if (lowFired || st.objective !== 'escort' || !escortLow(st.stats.refugeesLost, maxLost)) {
+      const lost = st.stats.refugeesLost;
+      // A Holdout's mark is a share of the run's refugees (story/meters.ts `holdoutLow`; T622).
+      const low =
+        st.objective === 'holdout'
+          ? holdoutLow(lost, st.refugeeTotal, mapDef.evacuatedFloor)
+          : st.objective === 'escort' && escortLow(lost, maxLost);
+      if (lowFired || !low) {
         return;
       }
       lowFired = true;

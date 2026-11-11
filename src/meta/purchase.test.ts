@@ -329,6 +329,113 @@ describe("Xenotech (progression.md § 7.2: Ves'thara's attunements, T509)", () =
   });
 });
 
+describe("a gift tower's rows wait for the gift (progression.md § 4.2's listing rule, T609)", () => {
+  const towersOf = (save: SaveData, pane: 'shop' | 'engineering'): string[] =>
+    shelf(save, pane).flatMap((o) => (o.tower === null ? [] : [o.tower]));
+
+  it("the Scuttle Den's rows are off the shelves until A3M1's briefing gives it", () => {
+    const before = DEV_SAVES.after_a2m6.build();
+    expect(towersOf(before, 'shop')).not.toContain('burrow');
+    expect(towersOf(before, 'engineering')).not.toContain('burrow');
+    // Still a real offer, needing its tower; just not listed.
+    expect(offerFor(before, { kind: 'upgrade', id: 'tune_burrow' })?.refusal).toBe('not_owned');
+    // The briefing's gift, as the app makes it when A3M1's loadout first opens.
+    const given = (save: SaveData) => ({
+      ...save,
+      unlocks: { ...save.unlocks, towers: [...save.unlocks.towers, 'burrow' as const] },
+    });
+    const briefed = given(before);
+    expect(shelf(briefed, 'shop').find((o) => o.tower === 'burrow')).toMatchObject({
+      refusal: null,
+      price: 40,
+    });
+    expect(shelf(briefed, 'engineering').find((o) => o.tower === 'burrow')?.price).toBe(3);
+  });
+
+  it('the Hum Choir: listed after A3M1 only if it was given (spared), else not before A3M4', () => {
+    for (const id of [
+      'after_a3m1_cleared',
+      'after_a3m2_rivet',
+      'after_a3m2_thumper',
+      'after_a3m3_convoy',
+      'after_a3m3_warren',
+    ] as const) {
+      const save = DEV_SAVES[id].build();
+      expect(save.unlocks.towers, id).not.toContain('choir');
+      expect(towersOf(save, 'shop'), id).not.toContain('choir');
+      expect(towersOf(save, 'engineering'), id).not.toContain('choir');
+    }
+    const spared = DEV_SAVES.after_a3m1_spared.build();
+    expect(shelf(spared, 'shop').find((o) => o.tower === 'choir')?.refusal).toBe(null);
+    expect(shelf(spared, 'engineering').find((o) => o.tower === 'choir')?.price).toBe(3);
+  });
+
+  it('the Prism (given at A2M5) and the attuned towers list as before', () => {
+    const save = DEV_SAVES.after_a2m5.build();
+    for (const pane of ['shop', 'engineering'] as const) {
+      expect(towersOf(save, pane)).toEqual(
+        expect.arrayContaining(['prism', 'mindspike', 'lantern']),
+      );
+    }
+    // The Stasis Bloom is attuned, not given: its rows list once A3M1 is won, owned or not.
+    const cleared = DEV_SAVES.after_a3m1_cleared.build();
+    expect(cleared.unlocks.towers).not.toContain('bloom');
+    expect(shelf(cleared, 'shop').find((o) => o.tower === 'bloom')?.refusal).toBe('not_owned');
+    expect(towersOf(DEV_SAVES.after_a2m6.build(), 'shop')).not.toContain('bloom');
+  });
+
+  it('every dev save lists what the stocked rule lists, less only the rows of a gift not owned', () => {
+    // The rule before T609: a gift's rows listed once its access row is stocked, as an
+    // attunement's are. Reading a gift as an attunement reproduces it.
+    const stockedRule = {
+      ...LIVE_STORE,
+      towerAccess: Object.fromEntries(
+        Object.entries(LIVE_STORE.towerAccess ?? {}).map(([t, a]) => [
+          t,
+          a.how === 'gift'
+            ? ({
+                how: 'attune',
+                currency: 'intel',
+                price: 0,
+                availableAfter: a.availableAfter,
+              } as const)
+            : a,
+        ]),
+      ),
+    };
+    const gifts = new Set(
+      Object.entries(LIVE_STORE.towerAccess ?? {}).flatMap(([t, a]) =>
+        a.how === 'gift' ? [t] : [],
+      ),
+    );
+    const changed = new Set<string>();
+    for (const [id, dev] of Object.entries(DEV_SAVES)) {
+      const save = dev.build();
+      const owned: readonly string[] = save.unlocks.towers;
+      for (const pane of ['shop', 'engineering'] as const) {
+        const before = shelf(save, pane, [], stockedRule);
+        const old = before.filter(
+          (o) => o.tower === null || !gifts.has(o.tower) || owned.includes(o.tower),
+        );
+        if (old.length !== before.length) changed.add(id);
+        expect(items(shelf(save, pane)), `${id} ${pane}`).toEqual(items(old));
+      }
+    }
+    // Every save through A2M5 lists exactly what it did; only the Den's map-early rows and the
+    // un-given Choir's go.
+    expect([...changed].toSorted()).toEqual(
+      [
+        'after_a2m6',
+        'after_a3m1_cleared',
+        'after_a3m2_rivet',
+        'after_a3m2_thumper',
+        'after_a3m3_convoy',
+        'after_a3m3_warren',
+      ].toSorted(),
+    );
+  });
+});
+
 function order(kind: string): number {
   return ['license', 'global', 'tune', 'protocol'].indexOf(kind);
 }

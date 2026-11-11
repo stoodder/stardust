@@ -15,6 +15,7 @@
 // A map without a Challenge leaves `challenge` open and never emits for it. Checkpoint runs
 // forfeit Perfect Core and the Challenge at run end (meta; checkpoints arrive in M3).
 import type { CompiledMapDef } from '../content/compiled.ts';
+import { HELD_THE_DOOR_PCT } from '../content/rules.ts';
 import type { IdSpace, MedalId, MedalKind } from '../content/types.ts';
 import type { DeepReadonly } from '../shared/types.ts';
 import {
@@ -79,12 +80,17 @@ export function leakedThisTick(e: Enemy): boolean {
  */
 export function bookLeak(state: SimState, e: Enemy): void {
   if (isMedalExempt(e.tags)) state.stats.medalExemptLeaks++;
-  else if (state.objective !== 'escort') forfeit(state, 'perfectCore');
+  else if (state.objective !== 'escort' && state.objective !== 'holdout') {
+    forfeit(state, 'perfectCore');
+  }
 }
 
-/** A refugee was lost (sim/escort.ts): Perfect on an Escort is "no refugee lost". */
+/**
+ * A refugee was lost (sim/escort.ts): Perfect on an Escort is "no refugee lost"; a Holdout's Held
+ * the Door is judged at the win instead.
+ */
 export function bookRefugeeLost(state: SimState): void {
-  forfeit(state, 'perfectCore');
+  if (state.objective !== 'holdout') forfeit(state, 'perfectCore');
 }
 
 /** Forfeits an open Challenge whose condition can no longer hold (cleanup, every tick in play). */
@@ -105,11 +111,19 @@ export function settleLoss(state: SimState, map: MedalMap): void {
 /** The map is won: Victory, an open Perfect Core, and the Challenge judged on this tick. */
 export function settleWin(state: SimState, map: MedalMap, ctx: ConditionContext): void {
   set(state, 'victory', 'earned');
-  if (state.medals.perfectCore === 'open') set(state, 'perfectCore', 'earned');
+  if (state.medals.perfectCore === 'open') {
+    set(state, 'perfectCore', heldTheDoor(state) ? 'earned' : 'forfeited');
+  }
   if (map.medals !== null && state.medals.challenge === 'open') {
     const ok = evaluateCondition(map.medals.challenge.condition, state, ctx);
     set(state, 'challenge', ok ? 'earned' : 'forfeited');
   }
+}
+
+/** Perfect's slot at a win: always on most maps; on a Holdout, Held the Door (see the header). */
+function heldTheDoor(state: SimState): boolean {
+  if (state.objective !== 'holdout') return true;
+  return state.stats.evacuated >= HELD_THE_DOOR_PCT * state.refugeeTotal;
 }
 
 function forfeit(state: SimState, kind: MedalKind): void {

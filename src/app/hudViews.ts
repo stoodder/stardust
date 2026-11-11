@@ -268,10 +268,23 @@ export const ESCORT_PERFECT = {
  */
 export const ESCORT_PERFECT_NAME = 'Perfect';
 
-/** Perfect Core's name on `map`: "Perfect" on an Escort or a map that pivots to one. */
+/**
+ * Perfect's slot on a Holdout (act3.md § A3M3, Medals; T605b): Held the Door, earned at Evacuated
+ * ≥ 85% (sim/medals.ts, HELD_THE_DOOR_PCT).
+ */
+export const HOLDOUT_PERFECT = {
+  name: 'Held the Door',
+  description: 'Get 85% or more of them out.',
+} as const;
+
+/**
+ * Perfect Core's name on `map`: "Perfect" on an Escort or a map that pivots to one, "Held the
+ * Door" on a Holdout.
+ */
 export function perfectMedalName(
   map: Partial<Pick<CompiledMapDef<IdSpace>, 'objective' | 'escort'>>,
 ): string {
+  if (map.objective === 'holdout') return HOLDOUT_PERFECT.name;
   const escort =
     map.objective === 'escort' || (map.objective === 'defend' && (map.escort ?? null) !== null);
   return escort ? ESCORT_PERFECT_NAME : MEDAL_TEXT.perfectCore.name;
@@ -283,6 +296,7 @@ function perfectText(map: Partial<Pick<CompiledMapDef<IdSpace>, 'objective' | 'e
   readonly description: string;
 } {
   const core = MEDAL_TEXT.perfectCore;
+  if (map.objective === 'holdout') return HOLDOUT_PERFECT;
   const name = perfectMedalName(map);
   if (map.objective === 'escort') return { name, description: ESCORT_PERFECT.escort };
   if (map.objective === 'defend' && (map.escort ?? null) !== null) {

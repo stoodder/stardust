@@ -1,5 +1,6 @@
 // The catalog's item copy: one in-voice line per item, at most 100 characters. This file is the
-// text's home; story/style-guide.md § 6.3 (Zibzab) and § 6.4 (QUILL) hold the rules.
+// text's home; story/style-guide.md § 6.3 (Zibzab), § 6.4 (QUILL), and § 6.5 (Ves'thara) hold the
+// rules.
 //
 // - Zibzab sells the shop's global upgrades, tune-ups, and Field Protocols. His lines are "price
 //   first": the cost (the first rank's, then how it climbs), the pitch, the honest correction. He
@@ -67,12 +68,13 @@ export const ITEM_COPY: Readonly<Record<string, string>> = {
     'Price first: 40 stardust, rising. It hums in my teeth. I tuned it anyway. Teeth are fine.',
   tune_lantern:
     'Price first: 40 stardust, rising. Rank three, it sees further. It looked at me. All of me.',
-  // The Skitterkin tune-ups (T604): Zibzab's too. Shown once the Den is given.
+  // The Skitterkin tune-ups (T604, T607): Zibzab's too. Listed once each gift is given (the Den in
+  // A3M1's briefing; the Hum Choir at A3M1's debrief or in A3M4), so they speak from Act III.
   tune_burrow:
-    'Price first: 40 stardust, rising. Sharper little teeth, a wider yard. They paid in moss. I took it.',
+    'Price first: 40 stardust, rising. Sharper bites, cheaper burrows, a wider yard. They tip in moss.',
   tune_choir:
-    'Price first: 40 stardust, rising. Louder, cheaper, wider. I tried tuning the song. They let me.',
-  // The Stasis Bloom's (T608; T609 settles the copy): shown once the Bloom is attuned.
+    'Price first: 40 stardust, rising. Louder, cheaper, wider. I tuned the song. They tuned it back.',
+  // The Stasis Bloom's (T608): listed once its attunement is stocked, after A3M1.
   tune_bloom:
     'Price first: 40 stardust, rising. Colder garden, cheaper seeds, a wider bed. I stood in it. Once.',
   // Granted, never sold: C2 Sell's (progression.md § 2.1; T510).
@@ -119,10 +121,13 @@ export const ITEM_COPY: Readonly<Record<string, string>> = {
   gift_prism: 'I made it to break your rigs. Now it holds a light for you. Keep it lit.',
   attune_mindspike:
     'A thought, made sharp. It strikes the mind, not the shell. What has no mind, it barely touches.',
+  // The Lantern earns its place where things hide (Act III's cloaks) or dig (Truthlight holds A3M3's
+  // Undertows), so her line says when to bring it (T568). It holds in every act.
   attune_lantern:
-    'The Watch kept vigil by this light. Now it watches for you. What it sees cannot hide.',
-  // A first draft registered with the stub (T600a); T609 settles the Bloom's row.
-  attune_bloom: 'A garden where time holds still. What walks into it stops, and waits.',
+    'The Watch kept this light for what hides. Its truest light holds what digs. Bring it when they do.',
+  // The Stasis Bloom (T608): its field slows (the chill), then stops (the Stasis pulse).
+  attune_bloom:
+    'A garden of still glass. In it, time slows, then stops. What walks in waits, as memories wait.',
 };
 
 /** Item `id`'s copy, or null when it has none (copy.test.ts proves every catalog item has one). */

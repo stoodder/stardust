@@ -9,7 +9,16 @@ import { FIXTURE_CONTENT, SIM_FIXTURE, fixtureConfig } from './__fixtures__/sim.
 import type { SimConfig } from './config.ts';
 import type { SimEvent } from './events.ts';
 import { runHeadless } from './headless.ts';
-import { earnedMedalIds, mapMedalIds, medalId } from './medals.ts';
+import {
+  bookLeak,
+  bookRefugeeLost,
+  earnedMedalIds,
+  mapMedalIds,
+  medalId,
+  settleWin,
+} from './medals.ts';
+import { HELD_THE_DOOR_PCT } from '../content/rules.ts';
+import { ENEMY_BLANK } from './entities.ts';
 import { poolKill } from './pool.ts';
 import { createState, type SimState } from './state.ts';
 import { cleanup } from './systems/cleanup.ts';
@@ -192,5 +201,34 @@ describe('medals', () => {
     expect(a.hash).toBe(b.hash);
     expect(a.medals.victory).toBe(a.outcome === 'won' ? 'earned' : 'forfeited');
     if (a.outcome === 'won') expect(a.medals.challenge).toBe('earned'); // par builds a gun
+  });
+});
+
+/** A won Holdout with `evacuated` of 36 through, after a leak and a lost refugee. */
+function heldWith(evacuated: number): SimState {
+  const { state, ctx, map } = setup();
+  state.objective = 'holdout';
+  state.refugeeTotal = 36;
+  bookLeak(state, { ...ENEMY_BLANK, tags: [] });
+  bookRefugeeLost(state);
+  // Nothing during play forfeits it.
+  expect(state.medals.perfectCore).toBe('open');
+  state.stats.evacuated = evacuated;
+  settleWin(state, map, ctx);
+  return state;
+}
+
+describe("Held the Door: a Holdout's Perfect slot (T605b; act3.md § A3M3)", () => {
+  it('is earned at Evacuated ≥ 85% of the run’s refugees, forfeited below', () => {
+    expect(heldWith(31).medals.perfectCore).toBe('earned'); // 86.1%
+    expect(heldWith(30).medals.perfectCore).toBe('forfeited'); // 83.3%
+    expect(HELD_THE_DOOR_PCT).toBe(0.85);
+  });
+
+  it('leaves the other objectives as they were: an Escort still forfeits on a lost refugee', () => {
+    const { state } = setup();
+    state.objective = 'escort';
+    bookRefugeeLost(state);
+    expect(state.medals.perfectCore).toBe('forfeited');
   });
 });

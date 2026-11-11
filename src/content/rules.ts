@@ -617,3 +617,8 @@ export const BLOCKER_HEALTH_FLOOR = 0.05;
  * tile beside the post. Validation holds every blocker post within it of a ground route (T605b).
  */
 export const BLOCKER_REACH_TILES = 1;
+/**
+ * Held the Door (act3.md § A3M3, Medals; T605b): on a Holdout, Perfect's slot is earned at
+ * Evacuated ≥ this share of the run's refugees. Leaks and losses don't forfeit it on their own.
+ */
+export const HELD_THE_DOOR_PCT = 0.85;

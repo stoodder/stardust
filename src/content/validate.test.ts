@@ -329,6 +329,61 @@ describe('validate: maps', () => {
     );
   });
 
+  it('[ally] a blocker post lies within 1 tile of a ground route (T605b)', () => {
+    const attack = {
+      type: 'kinetic',
+      damage: 8,
+      ratePerSec: 2,
+      rangeTiles: 3,
+      targets: { ground: true, air: true },
+    } as const;
+    const block = { capacity: 2, health: [{ wave: 2, pct: 0.5 }] };
+    const post = { kind: 'bricks', post: 'rock', attack, block } as const;
+    // (1,2) is beside the path's (2,2); the fixture's rock (0,2) is two tiles from it.
+    expect(validate(withMap({ markers: { rock: [1, 2] }, allies: [post] }))).toEqual([]);
+    rejects(withMap({ allies: [post] }), 'ally');
+    // A post that only blocks nothing is fine: without `block`, any decor tile will do.
+    expect(validate(withMap({ allies: [{ kind: 'bricks', post: 'rock', attack }] }))).toEqual([]);
+  });
+
+  it('[holdout] a Holdout forces an input and ends by script; every build presses it (T605b)', () => {
+    const seal = { forceInput: { id: 'seal' } } as const;
+    const holdout: Partial<MapDef<IdSpace>> = {
+      objective: 'holdout',
+      meterLabel: 'evacuated',
+      evacuatedFloor: 0.5,
+      markers: { rock: [0, 2], gate: [5, 4] },
+      safeExit: 'gate',
+      refugees: { g1: { route: 'a' } },
+      events: [
+        { id: 'g1', on: { wave: 1, phase: 'start' }, actions: [{ spawnAllies: 'g1' }] },
+        { id: 'seal', on: { wave: 2, phase: 'start' }, actions: [seal] },
+        { id: 'held', on: { forcedInputResolved: 'seal' }, actions: [{ endMap: 'completed' }] },
+      ],
+      parBuild: {
+        ...fxBuilds.parBuild,
+        steps: [...fxBuilds.parBuild.steps, { wave: 2, scriptInput: 'seal' }],
+      },
+      noCounterBuilds: Object.fromEntries(
+        Object.entries(fxBuilds.noCounterBuilds).map(([c, b]) => [
+          c,
+          { ...b, steps: [...b!.steps, { wave: 2, scriptInput: 'seal' }] },
+        ]),
+      ),
+      altBuilds: {},
+    };
+    const ok = validate(withMap(holdout)).filter((e) => /^\[(holdout|build-step)\]/.test(e));
+    expect(ok).toEqual([]);
+    // No forced input, and no end.
+    rejects(withMap({ ...holdout, events: holdout.events!.slice(0, 1) }), 'holdout');
+    rejects(withMap({ ...holdout, events: holdout.events!.slice(0, 2) }), 'holdout');
+    // A build that never presses it: its last step isn't the press.
+    const unpressed = validate(withMap({ ...holdout, parBuild: fxBuilds.parBuild }));
+    expect(unpressed.filter((e) => e.startsWith('[build-step]'))).toEqual([
+      expect.stringMatching(/parBuild\.steps: the map forces an input \('seal'\)/),
+    ]);
+  });
+
   it('[map-range] start credits, integrity, Stardust', () => {
     rejects(withMap({ startCredits: -5 }), 'map-range');
     rejects(withMap({ coreIntegrity: 0 }), 'map-range');

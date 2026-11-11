@@ -531,8 +531,11 @@ function entryPrice(o: Offer, catalog: StoreCatalog): number {
  * Whether a shelf lists `o` yet. Everything is listed, greyed out until stocked ("Arrives after
  * {map}"), except an item that would name an ally the player hasn't met: an upgrade marked
  * `hideUntilStocked` (Ves'thara's Rapport), and a tune-up or spec unlock for a tower that's given
- * or attuned (an Aelari or Skitterkin tower), whose row waits until that tower's access row is
- * stocked. A pane `devUnlocks` opens is fully stocked, so it lists everything.
+ * or attuned (an Aelari or Skitterkin tower). An attuned tower's rows wait until its access row is
+ * stocked; a given tower's until it is owned, since a gift is never sold and can come later than
+ * its earliest map (the Scuttle Den in A3M1's briefing; the Hum Choir at A3M1's debrief only if
+ * the Quiet Wave was spared, else in A3M4). A pane `devUnlocks` opens is fully stocked, so it
+ * lists everything.
  */
 function listed(
   save: SaveData,
@@ -548,9 +551,8 @@ function listed(
   if ((o.item.kind === 'upgrade' || o.item.kind === 'specs') && o.tower !== null) {
     const access = catalog.towerAccess ?? {};
     const a = Object.hasOwn(access, o.tower) ? access[o.tower] : undefined;
-    if (a !== undefined && (a.how === 'gift' || a.how === 'attune')) {
-      return stocked(a.availableAfter);
-    }
+    if (a !== undefined && a.how === 'gift') return owns(save, o.tower);
+    if (a !== undefined && a.how === 'attune') return stocked(a.availableAfter);
   }
   return true;
 }

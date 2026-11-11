@@ -153,3 +153,63 @@ describe("Xenotech's rows (T509)", () => {
     expect(p.verb).toBe('Attune');
   });
 });
+
+describe("Act III's shelf rows (T609)", () => {
+  it('Engineering sells the Skitterkin specs at 3 Intel once each gift is given', () => {
+    const eng = shelf(DEV_SAVES.after_a3m1_spared.build(), 'engineering');
+    const row = (tower: string) => eng.find((o) => o.tower === tower);
+    for (const [tower, pair] of [
+      ['burrow', 'Big Family or Brave Hearts'],
+      ['choir', 'Lullaby or Rally Chorus'],
+    ] as const) {
+      const o = row(tower);
+      if (o === undefined) throw new Error(`no ${tower} specs row`);
+      expect(effectText(o)).toBe(`Unlocks tier 4: ${pair}`);
+      expect(priceText(o)).toBe('3 Intel');
+      expect(o.refusal).toBe(null);
+    }
+    expect(offerName(row('burrow')!)).toBe('Scuttle Den specializations');
+    // The Choir not given (the Quiet Wave cleared): no row names it before A3M4.
+    const cleared = shelf(DEV_SAVES.after_a3m1_cleared.build(), 'engineering');
+    expect(cleared.map(offerName)).not.toContain('Hum Choir specializations');
+  });
+
+  it("the Stasis Bloom's Xenotech row is live after A3M1, in Ves'thara's settled line", () => {
+    const xeno = shelf(DEV_SAVES.after_a3m1_cleared.build(), 'xenotech');
+    const bloom = xeno.find((o) => o.tower === 'bloom');
+    if (bloom === undefined) throw new Error('no Bloom row');
+    expect(bloom.refusal).toBe(null);
+    expect(offerName(bloom)).toBe('Stasis Bloom');
+    expect(priceText(bloom)).toBe('3 Intel');
+    expect(effectText(bloom)).toBe('Adds the Stasis Bloom to your turrets: Hard control');
+    expect(offerCopy(bloom)).toBe(ITEM_COPY.attune_bloom);
+    // Before A3M1 it is listed, greyed, with its arrival.
+    const early = shelf(DEV_SAVES.after_a2m6.build(), 'xenotech').find((o) => o.tower === 'bloom');
+    expect(early?.refusal).toBe('not_stocked');
+  });
+
+  it("the Seer's Lantern's card says what it is for: what hides, and what digs (T568)", () => {
+    const lantern = shelf(DEV_SAVES.after_a2m5.build(), 'xenotech').find(
+      (o) => o.tower === 'lantern',
+    );
+    expect(lantern === undefined ? null : offerCopy(lantern)).toBe(ITEM_COPY.attune_lantern);
+    expect(ITEM_COPY.attune_lantern).toMatch(/hides/);
+    expect(ITEM_COPY.attune_lantern).toMatch(/digs/);
+  });
+
+  it("the Act III tune-ups read their ranks: the Bloom's first is its field's strength", () => {
+    const shop = shelf(DEV_SAVES.after_a3m1_spared.build(), 'shop');
+    const tune = (id: string) => effectText(byId(shop, id));
+    expect(tune('tune_burrow')).toBe('+5% Scuttle Den damage');
+    expect(tune('tune_choir')).toBe('+5% Hum Choir aura strength');
+    expect(tune('tune_bloom')).toBe('+5% Stasis Bloom field strength');
+    expect(UPGRADES.tune_bloom.ranks.map((r) => r.grants.map(grantText))).toEqual([
+      ['+5% Stasis Bloom field strength'],
+      ['−5% Stasis Bloom build and upgrade cost'],
+      ['+5% Stasis Bloom radius'],
+    ]);
+    for (const id of ['tune_burrow', 'tune_choir', 'tune_bloom']) {
+      expect(offerCopy(byId(shop, id))).toBe(ITEM_COPY[id]);
+    }
+  });
+});

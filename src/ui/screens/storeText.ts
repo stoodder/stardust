@@ -31,6 +31,14 @@ const TOWER_SPECS: Readonly<
   >
 > = TOWERS;
 const TOWER_ROLES: Readonly<Record<string, { readonly role: string }>> = TOWERS;
+const TOWER_TIERS: Readonly<
+  Record<string, { readonly tiers: readonly { readonly field?: unknown }[] }>
+> = TOWERS;
+
+/** A field tower (the Stasis Bloom): its aura-strength grant is its field's strength (its chill). */
+function isFieldTower(tower: string): boolean {
+  return lookup(TOWER_TIERS, tower)?.tiers[0]?.field !== undefined;
+}
 
 function lookup<T>(table: Readonly<Record<string, T>>, id: string): T | undefined {
   return Object.hasOwn(table, id) ? table[id] : undefined;
@@ -101,7 +109,8 @@ export function grantText(g: ModifierGrant): string {
     }
     case 'supportStat': {
       const who = g.tower === '*' ? 'support tower' : towerName(g.tower);
-      const what = g.stat === 'aura' ? 'aura strength' : g.stat === 'radius' ? 'radius' : 'income';
+      const aura = g.tower !== '*' && isFieldTower(g.tower) ? 'field strength' : 'aura strength';
+      const what = g.stat === 'aura' ? aura : g.stat === 'radius' ? 'radius' : 'income';
       return `${pct(g.pct)} ${who} ${what}`;
     }
     case 'linkBonus':
