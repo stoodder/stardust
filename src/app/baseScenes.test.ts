@@ -15,6 +15,7 @@ import {
   VISIT_SCENES,
   visitScenesDue,
   SURVEY_SCENE,
+  NIGHT_SHIFT_SCENE,
   WHISTLE_SCENE,
 } from './baseScenes.ts';
 import { chooseOption, closeScene, setDialogueEnabled, skipScene } from './dialogue.ts';
@@ -133,6 +134,7 @@ describe("Sundown's visit scenes (A2M6)", () => {
       LOOPHOLE_SCENE,
       WHISTLE_SCENE,
       SURVEY_SCENE,
+      NIGHT_SHIFT_SCENE,
     ]);
   });
 
@@ -149,6 +151,22 @@ describe("Sundown's visit scenes (A2M6)", () => {
       );
     }
     expect(visitScenesDue()).toEqual([]);
+  });
+});
+
+describe('Night Shift (A3M4, after C4; T700b seam)', () => {
+  it('is due once A3M4 is won and C4 answered, and never before its scene is registered', () => {
+    const row = VISIT_SCENES.find((v) => v.id === NIGHT_SHIFT_SCENE);
+    expect(NIGHT_SHIFT_SCENE).toBe('a3_m04_base_night_shift');
+    loadDevSave('all_unlocked');
+    const save = activeSave()!;
+    const maps: Record<string, unknown> = save.campaign.maps;
+    maps['a3_m04'] = { completed: true, medals: ['victory'], bestMeter: 20 };
+    expect(row?.due(save)).toBe(false); // C4 not answered yet
+    save.story.flags.quill_choice = 'keep';
+    expect(row?.due(save)).toBe(true);
+    // all_unlocked has seen every Act III visit scene, so the base opens clear.
+    expect(save.story.seen).toContain(NIGHT_SHIFT_SCENE);
   });
 });
 

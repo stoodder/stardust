@@ -192,7 +192,10 @@ export const REFERENCE_PROFILES = {
 export const REFERENCE_VARIANTS = {
   a3_m04: [{ when: { door_choice: 'warren' }, profile: A3M4_WARREN }],
   a3_m05: [
-    { when: { door_choice: 'warren', quill_choice: 'rewrite' }, profile: { ...A3M5_WARREN, ...REWRITE } },
+    {
+      when: { door_choice: 'warren', quill_choice: 'rewrite' },
+      profile: { ...A3M5_WARREN, ...REWRITE },
+    },
     { when: { door_choice: 'convoy', quill_choice: 'rewrite' }, profile: { ...A3M5, ...REWRITE } },
     { when: { door_choice: 'warren' }, profile: A3M5_WARREN },
   ],

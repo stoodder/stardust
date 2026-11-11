@@ -702,7 +702,7 @@ export const C4_EFFECTS: Readonly<
  */
 export function resolveC4(save: SaveData, choice: C4Choice): StoryOutcome {
   if (!C4_CHOICES.includes(choice)) {
-    return refuse('invalid', `story: '${String(choice)}' isn't a quill_choice value`);
+    return refuse('invalid', `story: '${choice}' isn't a quill_choice value`);
   }
   if (save.story.flags.quill_choice !== undefined) return { ok: true, save, applied: null };
   return unbuilt('C4');

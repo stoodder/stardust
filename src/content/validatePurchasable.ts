@@ -86,45 +86,67 @@ export function validatePurchasable<K extends IdSpace>(
   for (const [index, id] of rules.plan.entries()) {
     const def = maps.get(id);
     if (def === undefined || !campaign.has(id)) continue;
-    const where = `maps.${id}.referenceProfile`;
-    const report = (field: string, msg: string): void =>
-      issues.add('purchasable', `${where}${field}`, msg);
-    const bill = billOf(def.referenceProfile, index, rules, towers, report);
+    // The map's profile, then each flag-variant cell's (T700a), each priced the same way.
+    const profiles: [ProfileDef<IdSpace>, string][] = [
+      [def.referenceProfile, `maps.${id}.referenceProfile`],
+      ...(def.referenceProfileByFlag ?? []).map((c, i): [ProfileDef<IdSpace>, string] => [
+        c.profile,
+        `maps.${id}.referenceProfileByFlag[${i}].profile`,
+      ]),
+    ];
+    for (const [profile, where] of profiles) {
+      checkProfileBill(issues, maps, towers, rules, index, profile, where);
+    }
+  }
+}
 
-    // What the earlier maps paid, restarting at each bank reset.
-    let stardust = 0;
-    let spentBeforeReset = 0;
-    let resetAfter: string | null = null;
-    for (const earlier of rules.plan.slice(0, index)) {
-      stardust += maps.get(earlier)?.stardust ?? 0;
-      if (rules.economy.bankResetAfter.includes(earlier)) {
-        const owned = maps.get(earlier)?.referenceProfile;
-        const at = rules.plan.indexOf(earlier);
-        spentBeforeReset =
-          owned === undefined ? 0 : billOf(owned, at, rules, towers, quiet).spent.stardust;
-        stardust = 0;
-        resetAfter = earlier;
-      }
+/** A profile at plan position `index` is affordable and available by then ([purchasable]). */
+function checkProfileBill(
+  issues: Issues,
+  maps: ReadonlyMap<string, MapDef<IdSpace>>,
+  towers: ReadonlyMap<string, TowerDef>,
+  rules: PurchaseRules,
+  index: number,
+  profile: ProfileDef<IdSpace>,
+  where: string,
+): void {
+  const report = (field: string, msg: string): void =>
+    issues.add('purchasable', `${where}${field}`, msg);
+  const bill = billOf(profile, index, rules, towers, report);
+
+  // What the earlier maps paid, restarting at each bank reset.
+  let stardust = 0;
+  let spentBeforeReset = 0;
+  let resetAfter: string | null = null;
+  for (const earlier of rules.plan.slice(0, index)) {
+    stardust += maps.get(earlier)?.stardust ?? 0;
+    if (rules.economy.bankResetAfter.includes(earlier)) {
+      const owned = maps.get(earlier)?.referenceProfile;
+      const at = rules.plan.indexOf(earlier);
+      spentBeforeReset =
+        owned === undefined ? 0 : billOf(owned, at, rules, towers, quiet).spent.stardust;
+      stardust = 0;
+      resetAfter = earlier;
     }
-    const intel = index * rules.economy.intelPerMap;
-    const stardustSpent = bill.spent.stardust - spentBeforeReset;
-    if (stardustSpent > stardust) {
-      report(
-        '',
-        `spends ${stardustSpent} Stardust${resetAfter === null ? '' : ` since the bank reset after ${resetAfter}`}; ` +
-          `the maps before it pay ${stardust}`,
-      );
-    }
-    if (bill.spent.intel > intel) {
-      report('', `spends ${bill.spent.intel} Intel; Victory medals before it pay ${intel}`);
-    }
-    const equipped = def.referenceProfile.protocols.length;
-    if (equipped > bill.protocolSlots) {
-      report(
-        '.protocols',
-        `${equipped} protocols in ${bill.protocolSlots} slot${bill.protocolSlots === 1 ? '' : 's'}`,
-      );
-    }
+  }
+  const intel = index * rules.economy.intelPerMap;
+  const stardustSpent = bill.spent.stardust - spentBeforeReset;
+  if (stardustSpent > stardust) {
+    report(
+      '',
+      `spends ${stardustSpent} Stardust${resetAfter === null ? '' : ` since the bank reset after ${resetAfter}`}; ` +
+        `the maps before it pay ${stardust}`,
+    );
+  }
+  if (bill.spent.intel > intel) {
+    report('', `spends ${bill.spent.intel} Intel; Victory medals before it pay ${intel}`);
+  }
+  const equipped = profile.protocols.length;
+  if (equipped > bill.protocolSlots) {
+    report(
+      '.protocols',
+      `${equipped} protocols in ${bill.protocolSlots} slot${bill.protocolSlots === 1 ? '' : 's'}`,
+    );
   }
 }
 

@@ -257,7 +257,10 @@ const M7_STARDUST = [
  * crate's ranks taken off the shop, and the jailbreak as a stand-in upgrade (`jailbreak`, its
  * `StoryPricing.stardust`, plus `extra` to test the check reads it). Stub towers count as landed.
  */
-function pricedErrors(flags: { door_choice: 'convoy' | 'warren'; quill_choice: string }, extra = 0): string[] {
+function pricedErrors(
+  flags: { door_choice: 'convoy' | 'warren'; quill_choice: string },
+  extra = 0,
+): string[] {
   const raw = withRows();
   const a1m5: MapDef<IdSpace> = RAW_CONTENT.maps.a1_m05;
   const maps: Record<string, MapDef<IdSpace>> = { ...raw.maps };
@@ -276,14 +279,15 @@ function pricedErrors(flags: { door_choice: 'convoy' | 'warren'; quill_choice: s
     if (!campaign.includes(id)) campaign.push(id);
     maps[id] = { ...(maps[id] ?? a1m5), id, stardust, referenceProfile: priced };
   }
-  const jailbreak = {
+  const jailbreak: UpgradeDef<string, string> = {
     id: 'jailbreak',
     name: 'Jailbreak',
+    copy: null,
     kind: 'shop',
     currency: 'stardust',
     availableAfter: 'a3_m03',
     ranks: [{ price: REFERENCE_STORY_PRICING.a3_m04.warren.stardust + extra, grants: [] }],
-  } as unknown as UpgradeDef<string, string>;
+  };
   const rules: PurchaseRules = {
     ...LIVE_PURCHASE_RULES,
     aheadOfTask: [],

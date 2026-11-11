@@ -65,8 +65,8 @@ describe('Old Thrum sings (T600b)', () => {
 });
 
 describe('the dialogue registries', () => {
-  it('has one entry per map through A3M3 (A3M1–A3M3 from M6, T600b), in campaign order', () => {
-    expect(MAP_DIALOGUE.map((m) => m.map)).toEqual(CAMPAIGN_PLAN_IDS.slice(0, 14));
+  it('has one entry per map through A3M6 (A3M4–A3M6 from M7, T700b), in campaign order', () => {
+    expect(MAP_DIALOGUE.map((m) => m.map)).toEqual(CAMPAIGN_PLAN_IDS.slice(0, 17));
   });
 
   it('files every scene under its own map, with a well-formed, unique id', () => {

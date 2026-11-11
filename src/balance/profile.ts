@@ -1,11 +1,17 @@
 // Profiles → SimConfig (conventions.md § Balance sims, Profiles). A run's meta is a profile: a
-// map's `referenceProfile` (what a Standard player owns there, design/progression.md § 10), or the
+// map's `referenceProfile` (what a Standard player owns there, design/progression.md § 10; on a
+// flag-variant run, the matching `referenceProfileByFlag` cell's: `referenceProfileFor`), or the
 // full-catalog profile (assertion 6), on Standard or Story difficulty (assertion 9). Its modifiers
 // come from meta/modifiers.ts, the code the game uses on a save, so the harness tests the real
 // progression math. Anything the mapping or the sim can't take is refused, never ignored (D013),
 // with one stated exception: the full catalog leaves out grants the sim doesn't simulate yet, and
 // says which (`leftOut`).
-import type { CompiledBuild, CompiledContent, CompiledMapDef } from '../content/compiled.ts';
+import type {
+  CompiledBuild,
+  CompiledContent,
+  CompiledFlagProfile,
+  CompiledMapDef,
+} from '../content/compiled.ts';
 import type { IdSpace, LiveIds, ProfileDef } from '../content/types.ts';
 import {
   LIVE_CATALOG,
@@ -96,14 +102,50 @@ export function profileModifiers<K extends IdSpace = LiveIds>(
   );
 }
 
-/** A map's reference profile as a run profile (Standard unless `difficulty` says otherwise). */
+/**
+ * The flag-variant cell a run under `flags` falls in (BuildsDef.referenceProfileByFlag; T700a):
+ * the first whose every `when` flag equals the run's, or null (the map's own profile and par).
+ */
+export function flagProfileCell<K extends IdSpace = LiveIds>(
+  map: CompiledMapDef<K>,
+  flags: ScriptFlags,
+): CompiledFlagProfile<K> | null {
+  for (const cell of map.builds.referenceProfileByFlag) {
+    const when: Readonly<Record<string, unknown>> = cell.when;
+    const set: Readonly<Record<string, unknown>> = flags;
+    if (Object.entries(when).every(([f, v]) => Object.hasOwn(set, f) && set[f] === v)) return cell;
+  }
+  return null;
+}
+
+/** What a Standard player owns on `map` under the run's story flags (its cell's, else the map's). */
+export function referenceProfileFor<K extends IdSpace = LiveIds>(
+  map: CompiledMapDef<K>,
+  flags: ScriptFlags = {},
+): ProfileDef<K> {
+  return flagProfileCell(map, flags)?.profile ?? map.builds.referenceProfile;
+}
+
+/** The par build on `map` under the run's story flags (its cell's, if it gives one, else the map's). */
+export function parBuildFor<K extends IdSpace = LiveIds>(
+  map: CompiledMapDef<K>,
+  flags: ScriptFlags = {},
+): CompiledBuild<K> {
+  return flagProfileCell(map, flags)?.parBuild ?? map.builds.parBuild;
+}
+
+/**
+ * A map's reference profile as a run profile (Standard unless `difficulty` says otherwise), under
+ * the run's story flags (`referenceProfileFor`; none: the map's own).
+ */
 export function referenceRunProfile<K extends IdSpace = LiveIds>(
   map: CompiledMapDef<K>,
   content: CompiledContent<K>,
   difficulty: DifficultyId = 'standard',
   catalog: MetaCatalog = LIVE_CATALOG,
+  flags: ScriptFlags = {},
 ): RunProfile<K> {
-  const profile = map.builds.referenceProfile;
+  const profile = referenceProfileFor(map, flags);
   return {
     kind: 'reference',
     difficulty,
@@ -153,14 +195,15 @@ export function rndPicks<K extends IdSpace = LiveIds>(
   return out;
 }
 
-/** The reference profile with R&D pick `pick` (rank 1) bought too, on Standard. */
+/** The reference profile (under the run's flags) with R&D pick `pick` (rank 1) bought too, on Standard. */
 export function rndPickProfile<K extends IdSpace = LiveIds>(
   map: CompiledMapDef<K>,
   content: CompiledContent<K>,
   pick: string,
   catalog: MetaCatalog = LIVE_CATALOG,
+  flags: ScriptFlags = {},
 ): RunProfile<K> {
-  const profile = map.builds.referenceProfile;
+  const profile = referenceProfileFor(map, flags);
   const modifiers = modifiersFor(
     {
       upgrades: { ...profile.shop, [pick]: 1 },

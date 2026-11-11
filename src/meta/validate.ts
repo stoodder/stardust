@@ -356,7 +356,15 @@ function checkUnlocks(
   const u = c.object(
     x,
     path,
-    ['towers', 'specs', 'revokedTowers', 'jailbroken', 'abilities', 'revokedAbilities', 'protocols'],
+    [
+      'towers',
+      'specs',
+      'revokedTowers',
+      'jailbroken',
+      'abilities',
+      'revokedAbilities',
+      'protocols',
+    ],
     ['inheritedAbilities'],
   );
   if (u === null) return null;

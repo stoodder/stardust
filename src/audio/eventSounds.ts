@@ -647,6 +647,22 @@ export function createEventSounds(
         case 'AllyHealthChanged':
         case 'ClassRevoked':
         case 'ModifierChanged':
+        // M7's events (declared by T700a): silent until T750.
+        case 'JamTell':
+        case 'TowerJammed':
+        case 'TowerUnjammed':
+        case 'JamInterrupted':
+        case 'Rebooted':
+        case 'TakeoverTell':
+        case 'Jettisoned':
+        case 'TileOpened':
+        case 'BossSplit':
+        case 'BossMerged':
+        case 'LeaperBonk':
+        case 'FlyerGrounded':
+        case 'PuddleSpawned':
+        case 'BearerHome':
+        case 'ScriptGroupSpawned':
           return;
         default:
           assertNever(e);

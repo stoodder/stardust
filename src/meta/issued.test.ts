@@ -46,6 +46,8 @@ describe('issued towers', () => {
       burrow: { how: 'gift', availableAfter: null },
       choir: { how: 'gift', availableAfter: null },
       bloom: { how: 'attune', availableAfter: null, currency: 'intel', price: 3 },
+      gloop: { how: 'gift', availableAfter: null },
+      sproing: { how: 'gift', availableAfter: null },
     } as const satisfies Record<TowerId, unknown>;
     expect(issuedTowers(createNewSave(), access)).toEqual(['rivet']);
   });

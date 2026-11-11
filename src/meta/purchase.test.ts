@@ -470,6 +470,10 @@ describe("a gift tower's rows wait for the gift (progression.md § 4.2's listing
         'after_a3m2_thumper',
         'after_a3m3_convoy',
         'after_a3m3_warren',
+        // M7's saves (T700b) lack the Choir only until A3M4 is registered (its briefing gives it).
+        ...Object.entries(DEV_SAVES).flatMap(([id, dev]) =>
+          /^after_a3m[4-6]/.test(id) && !dev.build().unlocks.towers.includes('choir') ? [id] : [],
+        ),
       ].toSorted(),
     );
   });

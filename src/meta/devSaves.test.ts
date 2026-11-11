@@ -288,25 +288,28 @@ describe('Act III part two: a save for every door and C4 answer (T700b)', () => 
     expect(build('after_a3m6')).toEqual(build('after_a3m3_convoy'));
   });
 
-  it.runIf(isRegistered('a3_m04'))('A3M4: the jailbreak, the gifts, the mail, C4, Night Shift', () => {
-    for (const [id, door, c4] of A3M4) {
-      const save = build(id);
-      expect(save.unlocks.revokedTowers, id).toEqual([]);
-      expect(save.unlocks.jailbroken, id).toEqual(['rivet']);
-      expect(save.unlocks.abilities, id).toEqual(
-        expect.arrayContaining(['system_reboot', 'suppressing_fire']),
+  it.runIf(isRegistered('a3_m04'))(
+    'A3M4: the jailbreak, the gifts, the mail, C4, Night Shift',
+    () => {
+      for (const [id, door, c4] of A3M4) {
+        const save = build(id);
+        expect(save.unlocks.revokedTowers, id).toEqual([]);
+        expect(save.unlocks.jailbroken, id).toEqual(['rivet']);
+        expect(save.unlocks.abilities, id).toEqual(
+          expect.arrayContaining(['system_reboot', 'suppressing_fire']),
+        );
+        expect(save.unlocks.towers.includes('gloop'), id).toBe(door === 'warren');
+        expect(save.unlocks.towers, id).toContain('choir');
+        expect(save.story.flags.quill_choice, id).toBe(c4);
+        expect(save.unlocks.abilities.includes('time_dilation'), id).toBe(c4 === 'keep');
+        expect(save.story.seen, id).toContain('a3_m04_base_night_shift');
+      }
+      // The warren paid 300 for the jailbreak; the convoy's was free.
+      expect(build('after_a3m4_keep').currencies.stardust).toBe(
+        build('after_a3m4_keep_warren').currencies.stardust + 300,
       );
-      expect(save.unlocks.towers.includes('gloop'), id).toBe(door === 'warren');
-      expect(save.unlocks.towers, id).toContain('choir');
-      expect(save.story.flags.quill_choice, id).toBe(c4);
-      expect(save.unlocks.abilities.includes('time_dilation'), id).toBe(c4 === 'keep');
-      expect(save.story.seen, id).toContain('a3_m04_base_night_shift');
-    }
-    // The warren paid 300 for the jailbreak; the convoy's was free.
-    expect(build('after_a3m4_keep').currencies.stardust).toBe(
-      build('after_a3m4_keep_warren').currencies.stardust + 300,
-    );
-  });
+    },
+  );
 
   it.runIf(isRegistered('a3_m05'))('A3M5: the Sproing Pad, the Bloom, Mindspike tune 1', () => {
     for (const id of ['after_a3m5_keep', 'after_a3m5_purge', 'after_a3m5_rewrite'] as const) {
@@ -366,4 +369,3 @@ describe('Act III part two: a save for every door and C4 answer (T700b)', () => 
     });
   });
 });
-

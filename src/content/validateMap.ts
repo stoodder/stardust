@@ -62,8 +62,11 @@
 // - [dressing]: dressing over a revisit's `original` or `band` needs a revisit; a corner-to-corner
 //   area lies on the map; no layer twice.
 // - [clickable]: each `clickables` entry is a marker with a name; `setClickable` and the
-//   `interacted` trigger name one ([script] also checks `wreckageCleared` markers sit on
-//   wreckage and `objectiveDone` names another objective of the map).
+//   `interacted` trigger name one ([script] also checks `wreckageCleared` and `cleared` markers
+//   sit on wreckage, `cleared.byWave` names a later wave of the map, and `objectiveDone` names
+//   another objective of the map).
+// - [flag-gate], [bearers], [script-group], [jettison]: validateM7.ts (T700a): flag gates on
+//   posts, dressing, and decor; bearer groups; script groups and `spawnWave`; jettison plates.
 // Parts: this file (the map loop, feature guards, ranges, geometry), validateWaves.ts ([wave],
 // [route-walk], [wave-tag], [fleeing-lead], [quiet-wave-reach]), validateThreats.ts (intel,
 // counters, teach, novelty), validateScripts.ts ([script], [flag-variants]), and validateBuilds.ts
@@ -93,6 +96,7 @@ import {
 } from './validateHelpers.ts';
 import { validateDarkness, validateEscort } from './validateEscort.ts';
 import { validateScripts } from './validateScripts.ts';
+import { validateM7Map } from './validateM7.ts';
 import { TOWERS_AHEAD_OF_TASK } from './towers/index.ts';
 import type { RangedTower } from './counterAnswers.ts';
 import { emptyHistory, validateNovelty, validateThreats, type History } from './validateThreats.ts';
@@ -258,6 +262,7 @@ function validateMap(
   validateThreats(issues, ctx, def, campaign?.history ?? emptyHistory(), where);
   if (campaign !== null) validateNovelty(issues, ctx, def, grid, campaign.history, where);
   validateScripts(issues, def, where);
+  validateM7Map(issues, ctx.enemies, def, grid, where); // T700a: [flag-gate], [bearers], …
   validateBuilds(issues, def, grid, ctx, campaign?.index ?? null, introducesCounter);
 }
 

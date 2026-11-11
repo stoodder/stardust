@@ -32,6 +32,9 @@
 //   `noCounterLoseByWave` override is a whole wave from 1 to waves − 1 (never the final wave) on a
 //   map with no-counter builds, or up to the final wave on a `teachMap` (a campaign map that
 //   introduces a required-counter category).
+// - [flag-profile] (T700a): each `referenceProfileByFlag` cell names at least one flag, each with a
+//   `flagVariants` entry listing its value; no two cells name the same values; its profile follows
+//   [profile], and its par build (if any) [loadout] and [build-step] against that profile.
 // - [revocation] (T606; validateRevocation.ts): the counter guarantee treats a revoked class as
 //   unowned, whichever class a `revokeTowerClass` could take, on its map and on the maps after it
 //   until the class is back.
@@ -59,7 +62,15 @@ import {
   type ScopeEnemy,
 } from './counterAnswers.ts';
 import { FLAG_RULES } from './dialogue/flags.ts';
-import type { BuildStep, CounterId, GridPos, IdSpace, MapDef, ScriptedBuild } from './types.ts';
+import type {
+  BuildStep,
+  CounterId,
+  GridPos,
+  IdSpace,
+  MapDef,
+  ProfileDef,
+  ScriptedBuild,
+} from './types.ts';
 import type { MapCtx } from './validateMap.ts';
 import { BUILDABLE, Issues, duplicates, fmt, keyOf, type Grid } from './validateHelpers.ts';
 import { revocationCandidates, validateRevocation } from './validateRevocation.ts'; // T606
@@ -74,17 +85,8 @@ export function validateBuilds(
   introducesCounter = false,
 ): void {
   const where = `maps.${def.id}`;
-  const profile = def.referenceProfile;
-  const pw = `${where}.referenceProfile`;
-  for (const t of duplicates(profile.towers))
-    issues.add('profile', `${pw}.towers`, `'${t}' is listed twice`);
-  for (const t of profile.specs) {
-    if (!profile.towers.includes(t)) {
-      issues.add('profile', `${pw}.specs`, `'${t}' isn't one of the profile's towers`);
-    } else if (!ctx.towersWithSpecs.has(t)) {
-      issues.add('profile', `${pw}.specs`, `'${t}' has no tier-4 specs to unlock`);
-    }
-  }
+  validateProfile(issues, ctx, def.referenceProfile, `${where}.referenceProfile`);
+  validateFlagProfiles(issues, def, grid, ctx, where);
 
   const builds: [string, ScriptedBuild<IdSpace>][] = [
     ['parBuild', def.parBuild],
@@ -367,6 +369,57 @@ interface Placed {
   readonly tower: string;
   tier: number;
   spec: boolean;
+}
+
+/** [profile]: no tower twice; spec unlocks are owned towers with specs. */
+function validateProfile(
+  issues: Issues,
+  ctx: MapCtx,
+  profile: ProfileDef<IdSpace>,
+  pw: string,
+): void {
+  for (const t of duplicates(profile.towers))
+    issues.add('profile', `${pw}.towers`, `'${t}' is listed twice`);
+  for (const t of profile.specs) {
+    if (!profile.towers.includes(t)) {
+      issues.add('profile', `${pw}.specs`, `'${t}' isn't one of the profile's towers`);
+    } else if (!ctx.towersWithSpecs.has(t)) {
+      issues.add('profile', `${pw}.specs`, `'${t}' has no tier-4 specs to unlock`);
+    }
+  }
+}
+
+/** [flag-profile] (T700a; see the header). */
+function validateFlagProfiles(
+  issues: Issues,
+  def: MapDef<IdSpace>,
+  grid: Grid | null,
+  ctx: MapCtx,
+  where: string,
+): void {
+  const variants: Readonly<Record<string, readonly unknown[] | undefined>> = def.flagVariants ?? {};
+  const seen = new Set<string>();
+  for (const [i, cell] of (def.referenceProfileByFlag ?? []).entries()) {
+    const w = `${where}.referenceProfileByFlag[${i}]`;
+    const entries = Object.entries(cell.when).toSorted(([a], [b]) => (a < b ? -1 : 1));
+    if (entries.length === 0) issues.add('flag-profile', `${w}.when`, 'names at least one flag');
+    for (const [flag, value] of entries) {
+      const values = variants[flag];
+      if (values === undefined) {
+        issues.add('flag-profile', `${w}.when`, `flagVariants has no '${flag}' entry`);
+      } else if (!values.includes(value)) {
+        issues.add('flag-profile', `${w}.when`, `'${String(value)}' isn't a '${flag}' variant`);
+      }
+    }
+    const key = JSON.stringify(entries);
+    if (seen.has(key)) issues.add('flag-profile', `${w}.when`, 'another cell names these values');
+    seen.add(key);
+    validateProfile(issues, ctx, cell.profile, `${w}.profile`);
+    if (cell.parBuild !== undefined) {
+      const owned = { ...def, referenceProfile: cell.profile };
+      validateBuild(issues, owned, grid, ctx, cell.parBuild, `${w}.parBuild`);
+    }
+  }
 }
 
 function validateBuild(

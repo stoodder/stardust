@@ -12,7 +12,14 @@ import { MAPS } from '../../content/maps/index.ts';
 import { MEMO_IDS } from '../../content/memos/index.ts';
 import { STAR_MAP_SEEN_ID } from '../../content/starMap.ts';
 import { PROTOCOLS, UPGRADES } from '../../content/upgrades/index.ts';
-import type { AbilityId, EnemyId, MapId, MedalId, ProtocolId, TowerId } from '../../content/types.ts';
+import type {
+  AbilityId,
+  EnemyId,
+  MapId,
+  MedalId,
+  ProtocolId,
+  TowerId,
+} from '../../content/types.ts';
 import type { CallsignId } from '../../content/dialogue/profile.ts';
 import { tagIndexAfter } from '../../story/tags.ts';
 import { withIssuedTowers } from '../issued.ts';
@@ -25,7 +32,6 @@ import type { MapRecord, SaveData, SceneId } from '../saveData.ts';
 import { LIVE_KNOWN_IDS, createNewSave } from '../saveData.ts';
 import { withStoryUnlocks } from '../story.ts';
 import {
-  C4_CHOICES,
   C4_EFFECTS,
   briefingGifts,
   buyJailbreak,
@@ -451,12 +457,12 @@ function made(save: SaveData, r: StoryOutcome, intended: (s: SaveData) => SaveDa
 
 /** The jailbreak as `JAILBREAK` documents it: every revoked class back, drawn jailbroken. */
 function intendedJailbreak(save: SaveData): SaveData {
-  const price = jailbreakPrice(save);
-  if (save.currencies.stardust < price) throw new Error('dev save: short for the jailbreak');
+  const cost = jailbreakPrice(save);
+  if (save.currencies.stardust < cost) throw new Error('dev save: short for the jailbreak');
   const u = save.unlocks;
   return {
     ...save,
-    currencies: { ...save.currencies, stardust: save.currencies.stardust - price },
+    currencies: { ...save.currencies, stardust: save.currencies.stardust - cost },
     unlocks: { ...u, revokedTowers: [], jailbroken: [...u.jailbroken, ...u.revokedTowers] },
     story: { ...save.story, granted: [...save.story.granted, JAILBREAK.grant] },
   };
@@ -489,7 +495,11 @@ function intendedC4(choice: C4Choice): (save: SaveData) => SaveData {
       story: { ...save.story, flags: { ...save.story.flags, quill_choice: choice } },
     };
     if (effects.inherit === null) return flagged;
-    return made(flagged, inheritAbility(flagged, effects.inherit), intendedInherit(effects.inherit));
+    return made(
+      flagged,
+      inheritAbility(flagged, effects.inherit),
+      intendedInherit(effects.inherit),
+    );
   };
 }
 
@@ -597,23 +607,17 @@ export const INTENDED = {
 /** The reference's Act III branches: C1 cleared, the Rivet revoked, the convoy. */
 const A3_REF = { c1: 'cleared', revoked: 'rivet', door: 'convoy' } as const;
 
-/** The three `after_a3m4_<c4><suffix>` saves for one door. */
-function a3m4Saves<S extends '' | '_warren'>(
-  door: C3Choice,
-  suffix: S,
-): Record<`after_a3m4_${C4Choice}${S}`, DevSave> {
+/** The `after_a3m4_<c4>` save for `door` (`_warren` saves take the warren). */
+function a3m4Save(door: C3Choice, c4: C4Choice): DevSave {
   const jailbreak = door === 'convoy' ? "free: Goldie's engineers" : '300 Stardust';
   const gloop = door === 'warren' ? ", and the warren's Gloop Spitter" : '';
-  const save = (c4: C4Choice): DevSave => ({
+  return {
     description:
       `after_a3m3_${door}, then the jailbreak (${jailbreak}) and A3M4 won (Victory): System ` +
       `Reboot and the Hum Choir given in its briefing${gloop}; Gerald's mail (Suppressing Fire ` +
       `inherited), C4 ${c4}, and Night Shift seen. Skipped while A3M4 is not registered.`,
     build: () => actThreeThrough('a3_m04', { ...A3_REF, door, c4 }),
-  });
-  const out: Partial<Record<string, DevSave>> = {};
-  for (const c4 of C4_CHOICES) out[`after_a3m4_${c4}${suffix}`] = save(c4);
-  return out as Record<`after_a3m4_${C4Choice}${S}`, DevSave>;
+  };
 }
 
 export const DEV_SAVES: Readonly<Record<DevSaveId, DevSave>> = {
@@ -764,8 +768,12 @@ export const DEV_SAVES: Readonly<Record<DevSaveId, DevSave>> = {
   },
   // A3M4–A3M6 (T700b): until each map is registered it is skipped with its prep, so these equal
   // the save before it. Transactions whose bodies wait for T710 are applied by hand (`made`).
-  ...a3m4Saves('convoy', ''),
-  ...a3m4Saves('warren', '_warren'),
+  after_a3m4_keep: a3m4Save('convoy', 'keep'),
+  after_a3m4_purge: a3m4Save('convoy', 'purge'),
+  after_a3m4_rewrite: a3m4Save('convoy', 'rewrite'),
+  after_a3m4_keep_warren: a3m4Save('warren', 'keep'),
+  after_a3m4_purge_warren: a3m4Save('warren', 'purge'),
+  after_a3m4_rewrite_warren: a3m4Save('warren', 'rewrite'),
   after_a3m5_keep: {
     description:
       'after_a3m4_keep, then the Stasis Bloom attuned and Mindspike tune 1 bought and A3M5 won ' +

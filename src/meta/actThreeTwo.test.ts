@@ -145,6 +145,7 @@ describe('resolveC4 (signature and data)', () => {
 
   it("refuses a value outside the flag's as 'invalid', else 'unbuilt'; asked once", () => {
     const save = deepFreeze(createNewSave());
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- a caller's bad value
     expect(resolveC4(save, 'maybe' as C4Choice)).toMatchObject({ ok: false, reason: 'invalid' });
     for (const c of C4_CHOICES) {
       const r = resolveC4(save, c);
@@ -156,15 +157,15 @@ describe('resolveC4 (signature and data)', () => {
   });
 });
 
-describe("Zibzab's crate (signature and data)", () => {
-  /** A save owning the Zapcoil (tune 2) and the Harpoon, and the Rivet (not Vrell). */
-  function intoA3M6(): SaveData {
-    const save = createNewSave();
-    save.unlocks.towers.push('zapcoil', 'harpoon');
-    save.upgrades = { tune_zapcoil: 2, tune_rivet: 1 };
-    return save;
-  }
+/** A save owning the Zapcoil (tune 2) and the Harpoon, and the Rivet (not Vrell). */
+function intoA3M6(): SaveData {
+  const save = createNewSave();
+  save.unlocks.towers.push('zapcoil', 'harpoon');
+  save.upgrades = { tune_zapcoil: 2, tune_rivet: 1 };
+  return save;
+}
 
+describe("Zibzab's crate (signature and data)", () => {
   it("installs every owned Vrell tower's tune-up ranks the save lacks, at the top rank", () => {
     expect(CRATE).toEqual({ grant: 'crate', map: 'a3_m06', faction: 'vrell' });
     expect(crateContents(intoA3M6())).toEqual({ tune_zapcoil: 3, tune_harpoon: 3 });
@@ -179,6 +180,7 @@ describe("Zibzab's crate (signature and data)", () => {
     expect(openCrate(save, 'head_start')).toMatchObject({ ok: false, reason: 'invalid' });
     const full = intoA3M6();
     full.upgrades = { tune_zapcoil: 3, tune_harpoon: 3 };
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- a caller's bad id
     expect(openCrate(full, 'no_such_protocol' as never)).toMatchObject({ reason: 'invalid' });
     expect(openCrate(full, 'head_start')).toMatchObject({ ok: false, reason: 'unbuilt' });
     const opened = { ...save, story: { ...save.story, granted: [CRATE.grant] } };

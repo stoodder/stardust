@@ -45,6 +45,17 @@ export function validateScripts(issues: Issues, def: MapDef<IdSpace>, mapWhere: 
   for (const [c, w] of conditions) {
     for (const atom of atomsOf(c)) {
       if ('wreckageCleared' in atom) wreck(atom.wreckageCleared, w);
+      if ('cleared' in atom) {
+        // Cut the Feed (T700a seam): wreckage markers cleared before a wave of the map starts.
+        if (atom.cleared.length === 0)
+          issues.add('script', w, '`cleared` names at least one marker');
+        for (const m of atom.cleared) wreck(m, w);
+        for (const m of duplicates(atom.cleared)) issues.add('script', w, `'${m}' is listed twice`);
+        const n = def.waves.length;
+        if (!Number.isInteger(atom.byWave) || atom.byWave < 2 || atom.byWave > n) {
+          issues.add('script', w, `byWave ${atom.byWave} must be a wave of the map from 2 to ${n}`);
+        }
+      }
       if ('objectiveDone' in atom && !objectives.has(atom.objectiveDone)) {
         issues.add('script', w, `unknown objective '${atom.objectiveDone}'`);
       }

@@ -1093,11 +1093,19 @@ class SheetPacker {
     box.append(block);
     // A sheet's first block stays even if it alone is too tall (the smoke test names it).
     // The fractional box the smoke test measures (offsetHeight rounds, so 8000.1 passed as 8000).
-    if (box.childElementCount > 1 && sheet.getBoundingClientRect().height > SHEET_MAX_PX) {
+    if (sheet.getBoundingClientRect().height <= SHEET_MAX_PX) return;
+    if (box.childElementCount > 1) {
       block.remove();
       this.#newSheet();
       this.#open(`${this.#title} (continued)`);
       this.#box?.append(block);
+    } else if (sheet.querySelector('h2') !== box.previousElementSibling) {
+      // A section's first block that overflows a sheet already holding other sections: the
+      // section (its heading and box) starts on the next sheet instead.
+      const head = box.previousElementSibling;
+      this.#newSheet();
+      if (head !== null) this.#sheet?.append(head);
+      this.#sheet?.append(box);
     }
   }
 
