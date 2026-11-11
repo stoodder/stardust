@@ -28,7 +28,8 @@ describe('shell bursts, capped per tile (review R14)', () => {
     expect(fx.burstsCapped).toBe(1);
     expect(fx.shellBurst(4.1, 4.1)).toBe(true); // the next tile
     // Bomblets count apart from shells, against their own cap.
-    for (let i = 0; i < BURSTS_PER_TILE.small; i++) expect(fx.shellBurst(3.5, 4.5, true)).toBe(true);
+    for (let i = 0; i < BURSTS_PER_TILE.small; i++)
+      expect(fx.shellBurst(3.5, 4.5, true)).toBe(true);
     expect(fx.shellBurst(3.5, 4.5, true)).toBe(false);
     expect(fx.burstsCapped).toBe(2);
   });

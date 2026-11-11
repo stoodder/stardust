@@ -1354,6 +1354,22 @@ section.chamfer,
   top: auto;
 }
 
+/* Under a forced input (A3M3's SEAL): the comms panel at the top centre, between the status and
+   wave panels, off the map's doors (D143 R3). */
+.hud-comms-top {
+  position: absolute;
+  left: 50%;
+  top: 4px;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.hud-comms-top .dlg-comms-slot {
+  position: relative;
+  left: auto;
+  top: auto;
+}
+
 /* The name plate (core-loop §5): "JPT-1 · SPROUT" above the meter. */
 .hud-plate {
   height: 8px;
@@ -1512,4 +1528,12 @@ section.chamfer,
   right: 0;
   bottom: 0;
   color: var(--sd-green-4);
+}
+
+/* Act III's NEW tag is quiet (D143 R13): steel with a violet ring. */
+.hud[data-act='3'] .hud-new:not(.hud-free-tag) {
+  background: var(--sd-steel-3);
+  box-shadow:
+    0 0 0 1px var(--sd-violet-4),
+    0 0 0 2px var(--sd-ink-0);
 }

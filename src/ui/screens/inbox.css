@@ -466,3 +466,16 @@
 .sd-memo.automated .sd-memo-subject {
   color: var(--sd-ink-1);
 }
+
+/* The reader under a scene over the base: nothing open (D143 R8). */
+.sd-story-reader-empty {
+  min-height: 48px;
+}
+
+/* Act III's NEW tags are quiet (D143 R13): steel with a violet ring, never Act I's teal or pink. */
+[data-act='3'] .sd-new-tag {
+  background: var(--sd-steel-3);
+  box-shadow:
+    0 0 0 1px var(--sd-violet-4),
+    0 0 0 2px var(--sd-ink-0);
+}

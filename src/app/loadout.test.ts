@@ -115,12 +115,15 @@ describe('the loadout screen (app side)', () => {
     });
     // Every protocol owned, one slot plus R&D's two (T308).
     expect(view.protocolSlots).toBe(3);
+    // Nothing revoked on this save (A3M2's Clean Exit stamps a class; loadoutRevoked.test.ts).
+    expect(view.revoked).toEqual([]);
     expect(view.protocols).toHaveLength(10);
     expect(view.protocols[0]).toEqual({
       id: 'head_start',
       name: 'Head Start',
       effect: '+10% starting credits',
       takesTower: false,
+      inert: null,
     });
   });
 

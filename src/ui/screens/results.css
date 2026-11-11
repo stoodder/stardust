@@ -238,6 +238,12 @@
   background: var(--accent);
 }
 
+/* Act III's card: the quiet NEW (D143 R13), steel with a violet ring. */
+.sd-results[data-act='3'] .sd-results-new {
+  background: var(--sd-steel-3);
+  box-shadow: 0 0 0 1px var(--sd-violet-4);
+}
+
 /* The first payday (T235): a gold tag on the Stardust line. */
 .sd-results-payday {
   padding: 0 2px;

@@ -46,8 +46,9 @@ export const map = defineMapLayout({
   objective: 'escort',
   meterLabel: 'evacuated',
   // The refugees lost (hushed or gathered on the road, or taken at the gate) that lose the map,
-  // every pip full (D138).
-  maxLost: 13,
+  // every pip full (D138), as a share of who walks (D143 R7): ⌈0.53 × total⌉, 13 of 24, 16 of 30
+  // when Old Thrum's group walks.
+  maxLostPct: 0.53,
   size: { cols: 22, rows: 14 },
   // prettier-ignore
   tiles: [

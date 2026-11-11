@@ -524,6 +524,23 @@ export function resultsStats(
 }
 
 /**
+ * Whether the card's counter line would only repeat a stat row (D143 R13): Act III's meter line
+ * ("Evacuated: 30.") under the Escort's row ("Evacuated 30 / 30"), the same label and count, with
+ * no career line of its own. The card then drops the counter line; the row says it.
+ */
+export function counterRepeatsStat(
+  counter: { readonly label: string; readonly n: number | null; readonly career: string | null },
+  rows: readonly ResultsStat[],
+): boolean {
+  if (counter.career !== null) return false;
+  const label = counter.label.replace(/:$/, '').trim().toLowerCase();
+  return rows.some(
+    (r) =>
+      r.label.trim().toLowerCase() === label && Number(r.value.split('/')[0]?.trim()) === counter.n,
+  );
+}
+
+/**
  * The save after a run's debrief (T413): a **won** run applies what its `<map>_debrief` does as
  * this run plays it (`readThrough`: its `set` nodes up to any choice; A2M2's Thorn callsign) and
  * marks it seen, once a campaign: a debrief already in `story.seen` changes nothing, so a replay

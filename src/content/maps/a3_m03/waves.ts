@@ -115,10 +115,10 @@ export const waves = defineWaves([
       motes(10, 'cut_west', OPEN + 10, 0.25),
     ],
   },
-  // W10 · the last holdable wave, the fifth group on the road. Its cluster is the doom's preview (D143
-  // R4c): 18 Motes 0.15 s apart down the west fork, in among the Undertows. Splash holds it (par,
-  // a Zapcoil in the Thumpers' place); a single-target build (Mindspikes or Rivets there) loses
-  // people to it, so a build without splash shows it here, while the wave is still holdable.
+  // W10 · the last holdable wave, the fifth group on the road. Its cluster is the doom's preview
+  // (D143 R4c): 18 Motes 0.15 s apart down the west fork, in among the Undertows. Splash holds it
+  // (par, or a Zapcoil in the Thumpers' place); a single-target build (Mindspikes or Rivets there)
+  // loses people to it, so a build without splash shows here, while the wave is still holdable.
   {
     countdownSec: COUNTDOWN,
     noCall: true,

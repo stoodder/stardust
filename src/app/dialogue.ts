@@ -97,6 +97,7 @@ import { silkText } from '../ui/silk.ts';
 import { hud, screen, speed } from '../ui/state.ts';
 import { setSpeed } from './commands.ts';
 import { attemptKills } from './checkpoints.ts';
+import { revokedHud } from '../ui/hud/revokedState.ts';
 import { setLeakLine } from './revoked.ts';
 import type { Host } from './host.ts';
 import { activeSave, updateActiveSave } from './save.ts';
@@ -1607,15 +1608,25 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
       }
       const scene = SCENES[e.cueId];
       // A leak line (T613) goes on the wave preview as it's cued, radio or not (fair-play intel).
+      // Shown there (the preview locked), it isn't said again on the radio (D143 R13): one place.
+      let inSlot = false;
       if (scene !== undefined && isLeakLine(scene)) {
         const ctx = storyContext(map);
-        if (scenePlays(scene, ctx)) setLeakLine(leakLineText(scene, ctx, textContext()));
+        if (scenePlays(scene, ctx)) {
+          setLeakLine(leakLineText(scene, ctx, textContext()));
+          inSlot = revokedHud.value.previewHidden;
+        }
       }
       if (scene !== undefined) {
         // A cue scene plays once a battle, however many events cue it (A2M1's crew-log line is
         // cued by either log or by W6's countdown, whichever comes first).
         if (cuedScenes.has(scene.id)) return;
         cuedScenes.add(scene.id);
+        if (inSlot) {
+          // Heard all the same: the slot said it.
+          if (enabled && !host.replaying) commit(scene.id, NO_EFFECTS);
+          return;
+        }
         if (enabled && !host.replaying) playScene(scene);
         return;
       }

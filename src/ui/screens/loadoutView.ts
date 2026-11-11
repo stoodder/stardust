@@ -77,6 +77,11 @@ export interface LoadoutProtocolView {
   readonly effect: string;
   /** It takes a tower pick when equipped (Specialist). */
   readonly takesTower: boolean;
+  /**
+   * Why it does nothing on this map, or null (D143 R9: a core-only protocol, Emergency Bulkhead,
+   * on a map with no core reads "No core on this shift"). It still equips: the player's choice.
+   */
+  readonly inert: string | null;
 }
 
 export interface LoadoutPickView {

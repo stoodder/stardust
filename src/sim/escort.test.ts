@@ -302,6 +302,11 @@ describe('the exit rule', () => {
   });
 });
 
+/** The loss limit of a map with `maxLostPct` over a run of `refugeeTotal` refugees. */
+function pct(maxLostPct: number, refugeeTotal: number): number | null {
+  return escortMaxLost({ refugeeTotal }, { maxLost: null, maxLostPct });
+}
+
 describe('defeat and victory', () => {
   it('losing maxLost refugees loses the map (every pip full)', () => {
     const { state, ctx } = setup();
@@ -319,8 +324,6 @@ describe('defeat and victory', () => {
   });
 
   it("maxLostPct: the limit is the share of the run's refugees, rounded up (D143 R7)", () => {
-    const pct = (maxLostPct: number, refugeeTotal: number) =>
-      escortMaxLost({ refugeeTotal }, { maxLost: null, maxLostPct });
     // A3M1's 0.53: 13 of 24, 16 of 30 (lost ≥ ⌈pct × total⌉ ⇔ lost ≥ pct × total).
     expect([pct(0.53, 24), pct(0.53, 30)]).toEqual([13, 16]);
     expect(pct(0.5, 24)).toBe(12); // exact: no rounding up past it
@@ -330,7 +333,13 @@ describe('defeat and victory', () => {
     expect(escortMaxLost({ refugeeTotal: 30 }, { maxLost: 4, maxLostPct: null })).toBe(4);
     expect(escortMaxLost({ refugeeTotal: 30 }, { maxLost: null, maxLostPct: null })).toBeNull();
     // Defeat at the limit, on the map's run total (fx_map's escort walks 6 + 2 refugees: ⌈0.3 × 8⌉ = 3).
-    const map = content({ maxLost: undefined, maxLostPct: 0.3 }).maps.fx_map;
+    const { maxLost: _given, ...noMax } = ESCORT;
+    const fx = SIM_FIXTURE.maps.fx_map;
+    const map = compileContent({
+      ...SIM_FIXTURE,
+      maps: { fx_map: { ...fx, ...noMax, maxLostPct: 0.3 } },
+    }).maps.fx_map;
+    expect([map.maxLost, map.maxLostPct]).toEqual([null, 0.3]);
     const { state } = setup();
     expect(state.refugeeTotal).toBe(8);
     state.stats.refugeesLost = 2;

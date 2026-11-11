@@ -242,19 +242,37 @@ function Letter({ memo }: { memo: MemoView }) {
   );
 }
 
-/** The Inbox tab's pane: the memo list and the reader. */
+/**
+ * The Inbox tab's pane: the memo list and the reader. While a scene plays over the base (a visit
+ * scene: Bricks's survey confession after A3M1), no memo is open, so a cheerful Sterling memo never
+ * sits under a sad scene (D143 R8); the one it would have opened (the newest unread) opens as the
+ * scene ends. A memo the player picks under it stays picked.
+ */
 export function InboxPane() {
   // Subscribing to the campaign view re-renders the pane whenever the save changes (a read).
   void campaign.value;
   const memos = inboxView();
   const firstUnread = memos.find((m) => m.unread)?.id ?? memos[0]?.id ?? null;
   const [picked, setPicked] = useState<string | null>(firstUnread);
-  const shown = memos.find((m) => m.id === picked) ?? memos[0] ?? null;
+  const [touched, setTouched] = useState(false);
+  const waiting = dialogue.scene.value !== null && !touched;
+  const shown = waiting ? null : (memos.find((m) => m.id === picked) ?? memos[0] ?? null);
 
   // Showing a memo reads it (core-loop.md § 6.4: the badge counts the unread).
   useReadOnDwell(shown?.id ?? null, markMemoRead);
   const reader = useReaderTop(shown?.id ?? null);
 
+  if (waiting && memos.length > 0) {
+    // Under a scene: the list, nothing open, an empty reader.
+    return (
+      <div class="sd-story-pane sd-inbox">
+        <nav class="sd-story-list" aria-label="Memos">
+          <p class="sd-story-list-title">Inbox · {memos.length}</p>
+        </nav>
+        <div class="sd-story-reader sd-story-reader-empty" data-testid="inbox-reader-empty" />
+      </div>
+    );
+  }
   if (shown === null) {
     return (
       <div class="sd-pane-body">
@@ -267,6 +285,7 @@ export function InboxPane() {
     const id = memos[i]?.id;
     if (id === undefined) return;
     setPicked(id);
+    setTouched(true);
     markMemoRead(id);
   };
   return (

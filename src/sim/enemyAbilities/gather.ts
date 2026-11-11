@@ -174,8 +174,9 @@ function offer(s: GatherScratch, r: number, code: number, d2: number, uid: numbe
  * gatherer that may take it, once, and offers itself there; each gatherer keeps the nearest unit
  * offered (ties to the lower uid). That is the pairwise rule exactly (a gatherer takes its nearest
  * unit among those whose nearest ready gatherer it is), with the held marks read once rather than
- * per pair: pairwise, 30 Maws among 300 units took ~130 ms a tick (O(G²·N²)); a test holds the
- * two equal on random fields. Fills `s.code` for each `s.ready` gatherer (NO_UNIT when none).
+ * per pair. Pairwise (O(G²·N²)), 30 ready Maws among 300 units took ~130 ms a match; this takes
+ * ~0.06 ms (8 among 150: ~0.01 ms; 4 cores, quiet, 2026-11-11). gather.test.ts holds the two equal
+ * on 200 random dense fields. Fills `s.code` for each `s.ready` gatherer (NO_UNIT when none).
  */
 function matchUnits(state: SimState, s: GatherScratch): void {
   const pool = state.enemies;

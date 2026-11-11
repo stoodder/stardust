@@ -12,6 +12,7 @@ import type {
   CounterId,
   IdSpace,
   LinkBonusDef,
+  ObjectiveKind,
   ProtocolId,
   TowerId,
   TowerStat,
@@ -170,14 +171,30 @@ function towerView(
   };
 }
 
-/** An owned Field Protocol as the picker shows it: its name and its grants in words. */
-function protocolView(id: ProtocolId): LoadoutProtocolView {
+/** The objectives with no core to protect: an Escort's road, a Holdout's doors (D143 R9). */
+const CORELESS: readonly ObjectiveKind[] = ['escort', 'holdout'];
+
+/** What a core-only protocol reads on a map with no core. */
+export const NO_CORE_TEXT = 'No core on this shift';
+
+/** Whether a protocol only ever acts on the core (Emergency Bulkhead's `leakAbsorb`). */
+export function coreOnly(id: ProtocolId): boolean {
+  const grants = PROTOCOLS[id].grants;
+  return grants.length > 0 && grants.every((g) => g.kind === 'leakAbsorb');
+}
+
+/**
+ * An owned Field Protocol as the picker shows it: its name and its grants in words, and why it's
+ * inert on a map of `objective` (a core-only one on a map with no core).
+ */
+function protocolView(id: ProtocolId, objective: ObjectiveKind): LoadoutProtocolView {
   const def = PROTOCOLS[id];
   return {
     id,
     name: silkText(def.name),
     effect: silkText(def.grants.map(grantText).join(' · ')),
     takesTower: takesTowerPick(id),
+    inert: CORELESS.includes(objective) && coreOnly(id) ? NO_CORE_TEXT : null,
   };
 }
 
@@ -264,7 +281,7 @@ export function openLoadout(mapId: string): boolean {
             `${displayName(cfg.companion)} · ${content.abilities[slot2]?.name ?? displayName(slot2)}`,
           ),
     protocols: (pools.protocols ?? []).flatMap((p) =>
-      save.unlocks.protocols.filter((o) => o === p).map(protocolView),
+      save.unlocks.protocols.filter((o) => o === p).map((o) => protocolView(o, map.objective)),
     ),
     protocolSlots: pools.protocolSlots ?? 0,
     initial: {

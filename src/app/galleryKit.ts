@@ -6,7 +6,13 @@ import { rgbOf } from '../content/palettes/master.ts';
 import type { SpriteId } from '../content/sprites/index.ts';
 import type { EnvPaletteId } from '../content/sprites/types.ts';
 import type { TileChar } from '../content/types.ts';
-import { DEFAULT_VARIANT, frameKey, glowKey, type BakedFrame, type BakedSprite } from '../render/sprites/bake.ts';
+import {
+  DEFAULT_VARIANT,
+  frameKey,
+  glowKey,
+  type BakedFrame,
+  type BakedSprite,
+} from '../render/sprites/bake.ts';
 import { imageToCanvas } from '../render/sprites/canvas.ts';
 import { moonsImage } from '../render/vfx/lighting.ts';
 

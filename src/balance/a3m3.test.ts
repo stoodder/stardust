@@ -6,24 +6,25 @@
 // each taking one of the sheltered (two hush the convoy on its road). Without its casts (Suppressing
 // Fire on the east rift's W4 Motes, the W8 cluster at the choke, and the rift Undertows of W11–W12)
 // it ends at 66.7. Both alts reach the floor through both doors (Den + Zapcoil + Skyhook + Lookout
-// 55.6 / 61.1; Den + Prism + Harpoon + Zapcoil 58.3 / 63.9). Without air the Moths take the
-// sheltered (22.2 / 27.8); without splash, Mindspikes where par's Thumpers stand hold every
-// holdable wave but the doomed waves' packed clusters flood the choke past Bricks (27.8 / 30.6);
-// doing nothing loses. Air and splash are the map's required counters; burrowing is intel (map.ts
-// `softExempt`): A3M3 introduces the Undertow and doom-scripts it, and the burrowed exam is the
-// finale's (D141, T604c).
+// 55.6 / 61.1; Den + Prism + Harpoon + Zapcoil 61.1 / 66.7). Without air the Moths take the
+// sheltered (22.2 / 27.8); without splash, Mindspikes where par's Thumpers stand first lose people
+// to W10's packed cluster (four or five: the doom's preview, a wave splash holds, D143), then the
+// doomed waves' clusters flood the choke past Bricks (19.4 / 25.0); doing nothing loses. Air and
+// splash are the map's required counters; burrowing is intel (map.ts `softExempt`): A3M3
+// introduces the Undertow and doom-scripts it, and the burrowed exam is the finale's (D141, T604c).
 //
 // The revocation window (A3M2's Clean Exit could take the Rivet, the Thumper, the Sprinkler or the
 // Skyhook; content/validateRevocation.ts checks the counter guarantee statically): each build is run
 // with the class the cue took swapped for the Rivet the player kept, through both doors. The alts
 // (neither carries a Thumper) still reach the floor, and so does par unless the cue took its
-// Thumper: Rivets in its place make it a no-splash build, and it falls with them (16.7 / 19.4; that
-// player brings the Zapcoil the counter guarantee leaves them, as both alts do). No-air and
-// no-splash stay under the floor.
+// Thumper: Rivets in its place make it a no-splash build, which leaks in W10 and falls in the doom
+// (13.9 / 19.4). That player's briefing says so (Bricks: "Bring something that chains."), and a
+// plain Zapcoil wherever par builds a Thumper holds W10 and the floor (55.6 / 58.3; D143). No-air
+// and no-splash stay under the floor.
 //
 // The Seer's Lantern probe (T568; report-only, like A2M6's D138 probes): par with the Lantern in
-// the Prism's place holds 26/36 / 28/36, a match for par, so it is no trap; Truthlight there, bought
-// with par's upgrades from W8 on, lands only in W11 and holds 22 / 24 (its 360 credits don't pay
+// the Prism's place holds 25/36 / 27/36, a match for par, so it is no trap; Truthlight there, bought
+// with par's upgrades from W8 on, lands only in W11 and holds 21 / 23 (its 360 credits don't pay
 // back before the doom, whose Undertows nothing else is placed to kill once marked). In the
 // Mindspike's place the Lantern falls under the floor (12 / 14): the Mindspike is what kills the
 // Undertows, and the Lantern's 4 Psionic/s doesn't.
@@ -58,31 +59,59 @@ const REVOCABLE = ['rivet', 'thumper', 'sprinkler', 'skyhook'] as const;
 /** The waves whose start releases a group (the last group's is W14's countdown). */
 const GROUP_WAVES = [1, 4, 7, 9, 10] as const;
 
-/** `build` with `taken` (the class A3M2 took) swapped for the Rivet the player kept. */
-function withoutClass(build: CompiledBuild, taken: TowerId): CompiledBuild {
-  if (taken === 'rivet' || !build.loadout.includes(taken)) return build;
+/** `build` with every `from` (its loadout slot and each build of it) swapped for `to`. */
+function swapClass(build: CompiledBuild, from: TowerId, to: TowerId): CompiledBuild {
+  if (from === to || !build.loadout.includes(from)) return build;
   return {
     ...build,
-    loadout: build.loadout.map((t) => (t === taken ? 'rivet' : t)),
+    loadout: build.loadout.map((t) => (t === from ? to : t)),
     steps: build.steps.map((s) =>
-      s.kind === 'build' && s.tower === taken ? { ...s, tower: 'rivet' } : s,
+      s.kind === 'build' && s.tower === from ? { ...s, tower: to } : s,
     ),
   };
 }
 
+/** `build` with `taken` (the class A3M2 took) swapped for the Rivet the player kept. */
+const withoutClass = (build: CompiledBuild, taken: TowerId): CompiledBuild =>
+  swapClass(build, taken, 'rivet');
+
+/**
+ * Par as the player whose Thumper the Clean Exit took and who took Bricks's briefing advice
+ * ("Bring something that chains."): a Zapcoil wherever par builds a Thumper, nothing else changed.
+ */
+const zapcoilSwap = (): CompiledBuild =>
+  swapClass(buildFor('par', content.maps.a3_m03, content)!, 'thumper', 'zapcoil');
+
+/** `label`'s build (optionally without a class), or `build` itself, played through `door`. */
+function play(
+  label: string | CompiledBuild,
+  door: Door,
+  taken: TowerId = 'rivet',
+  catalog: 'reference' | 'full' = 'reference',
+) {
+  const map = content.maps.a3_m03;
+  const at = typeof label === 'string' ? label : 'build';
+  const base = typeof label === 'string' ? buildFor(label, map, content)! : label;
+  const build = withoutClass(base, taken);
+  const profile =
+    catalog === 'full' ? fullCatalogProfile(map, content) : referenceRunProfile(map, content);
+  const r = runHeadless(runConfig(content, map, build, profile, 1, { door_choice: door }), build);
+  expect(r.forcedInputs, at).toEqual(['seal']);
+  return r;
+}
+
+/** The refugees `wave`'s units cost a run. */
+const lostIn = (r: ReturnType<typeof play>, wave: number): number =>
+  r.waves[wave - 1]!.refugeesLost;
+
 /** Evacuated % of `label`'s build (optionally without a class) through `door`. */
 function evacuatedPct(
-  label: string,
+  label: string | CompiledBuild,
   door: Door,
   taken: TowerId = 'rivet',
   catalog: 'reference' | 'full' = 'reference',
 ): number {
-  const map = content.maps.a3_m03;
-  const build = withoutClass(buildFor(label, map, content)!, taken);
-  const profile =
-    catalog === 'full' ? fullCatalogProfile(map, content) : referenceRunProfile(map, content);
-  const r = runHeadless(runConfig(content, map, build, profile, 1, { door_choice: door }), build);
-  expect(r.forcedInputs, label).toEqual(['seal']);
+  const r = play(label, door, taken, catalog);
   return (100 * r.stats.evacuated) / r.escortTotal;
 }
 
@@ -345,6 +374,31 @@ describe('A3M3 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
       }
     },
   );
+
+  it('holds the floor with a plain Zapcoil-for-Thumper swap of par, through both doors (D143)', () => {
+    for (const door of DOORS) {
+      expect(evacuatedPct(zapcoilSwap(), door), door).toBeGreaterThanOrEqual(50);
+    }
+  });
+
+  // The doom's preview (D143 R4c): W10's packed cluster is where a build without splash first
+  // loses people, so the player can tell a build's failure from the doom before the doom comes.
+  it('shows a no-splash build leaking in W10, a holdable wave that splash holds', () => {
+    for (const door of DOORS) {
+      for (const label of ['par', 'alt:coils', 'alt:no_everglow']) {
+        expect(lostIn(play(label, door), 10), `${label} ${door}`).toBe(0);
+      }
+      expect(lostIn(play(zapcoilSwap(), door), 10), `zapcoil swap ${door}`).toBe(0);
+      expect(
+        lostIn(play('noCounter:splash', door), 10),
+        `no-splash ${door}`,
+      ).toBeGreaterThanOrEqual(2);
+      expect(
+        lostIn(play('par', door, 'thumper'), 10),
+        `par, Rivets ${door}`,
+      ).toBeGreaterThanOrEqual(2);
+    }
+  });
 
   it('keeps no-air and no-splash under the floor with the full catalog, through either door', () => {
     for (const door of DOORS) {

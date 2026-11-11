@@ -422,6 +422,22 @@
 }
 
 /* Specialist's tower, under its row. */
+/* A protocol with nothing to do on this map (a core-only one with no core; D143 R9): dimmed, its
+   note in steel under the effect. Still a control: equipping it stays the player's call. */
+.sd-lo-protocol.sd-lo-inert {
+  color: var(--sd-steel-3);
+}
+
+.sd-lo-protocol.sd-lo-inert .sd-lo-protocol-effect {
+  opacity: 0.6;
+}
+
+.sd-lo-protocol-inert {
+  display: block;
+  color: var(--sd-steel-3);
+  text-transform: none;
+}
+
 .sd-lo-protocol-tower {
   display: flex;
   align-items: center;

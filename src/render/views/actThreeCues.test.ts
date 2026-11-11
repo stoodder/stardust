@@ -4,7 +4,8 @@ import { describe, expect, it } from 'vitest';
 import { compileContent } from '../../content/compile.ts';
 import { RAW_CONTENT } from '../../content/registry.ts';
 import { SPRITES } from '../../content/sprites/index.ts';
-import { doorCores, doorLook, SEAL_INPUT, type SealPhase } from './blastDoor.ts';
+import { gridToScreen } from '../iso.ts';
+import { doorCores, doorLook, doorScreenBox, SEAL_INPUT, type SealPhase } from './blastDoor.ts';
 import {
   cueFired,
   LIFT_HOVER_TICKS,
@@ -153,5 +154,20 @@ describe("A3M3's blast doors", () => {
         }
       }
     }
+  });
+});
+
+describe("a blast door's screen box (review R3: the HUD keeps off the chosen door)", () => {
+  it("covers the door's sprite round its tile's center, outline included", () => {
+    const origin = { x: 100, y: 50 };
+    const box = doorScreenBox(3, 13, origin, { x: 0, y: 0, w: 0, h: 0 });
+    const c = { x: 0, y: 0 };
+    gridToScreen(3.5, 13.5, origin, c);
+    expect(box.x).toBeLessThan(c.x);
+    expect(box.x + box.w).toBeGreaterThan(c.x);
+    expect(box.y).toBeLessThan(c.y);
+    expect(box.y + box.h).toBeGreaterThan(c.y);
+    const def = SPRITES.find((d) => d.id === 'prop.blast_door')!;
+    expect([box.w, box.h]).toEqual([def.size.w + 2, def.size.h + 2]);
   });
 });

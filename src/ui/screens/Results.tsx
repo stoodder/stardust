@@ -29,7 +29,7 @@ import {
   retryRun,
 } from '../../app/navigation.ts';
 import { pickResultsChoice } from '../../app/resultsFlow.ts';
-import { resultsStats } from '../../app/runResult.ts';
+import { counterRepeatsStat, resultsStats } from '../../app/runResult.ts';
 import { countUpDuration, countUpValue } from './countUp.ts';
 import { formatCount } from './format.ts';
 import { focusOnce } from './focus.ts';
@@ -505,12 +505,15 @@ function Body({ result }: { result: RunResult }) {
   const header = resultsHeader(result.counter, result.outcome);
   // The map's meter line where the dial shows one (Act III; core-loop.md § 6.2); none on an Act
   // III map with no meter, whose card has no counter line at all.
-  const counter = resultsCounter(
+  const stats = resultsStats(result);
+  const full = resultsCounter(
     result.counter,
     result.pestsProcessed,
     rewards?.lifetimePests ?? result.pestsProcessed,
     result.meter,
   );
+  // A meter line that only repeats its stat row goes (D143 R13: "Evacuated" once).
+  const counter = full !== null && counterRepeatsStat(full, stats) ? null : full;
   const asking = result.choice !== null && result.choice.picked === null;
   const counted = useCountUp(counter?.n ?? 0);
   return (
@@ -531,7 +534,7 @@ function Body({ result }: { result: RunResult }) {
       ))}
       <dl class="sd-results-stats">
         {/* An Escort's meter stands in Core integrity's place (core-loop.md § 6.2). */}
-        {resultsStats(result).map((row) => (
+        {stats.map((row) => (
           <div key={row.id} data-testid={`results-${row.id}`}>
             <dt>{silkText(row.label)}</dt>
             <dd>

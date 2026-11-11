@@ -95,6 +95,7 @@ import { SPRITE_SOURCE_KEY } from '../sprites/CodeSpriteSource.ts';
 import type { SpriteSource } from '../sprites/SpriteSource.ts';
 import { AirLaneView } from '../views/AirLaneView.ts';
 import { AllyView } from '../views/AllyView.ts';
+import { XrayWatch } from '../views/xrayWatch.ts'; // review R3
 import { quietWaves, weaponsLowered } from '../views/allyPose.ts';
 import { ChainFx } from '../views/ChainFx.ts';
 import { SpecFx } from '../views/SpecFx.ts';
@@ -348,6 +349,7 @@ export class BattleScene extends Phaser.Scene {
   #quietWaves: readonly boolean[] = [];
   /** The ally Suppressing Fire's streaks come from (Bricks), and his post (grid), or null. */
   #shooter: AllyView | null = null;
+  readonly #xrayWatch = new XrayWatch(); // review R3: Bricks's x-ray over a tower in front of him
   #shooterX = 0;
   #shooterY = 0;
 
@@ -410,7 +412,7 @@ export class BattleScene extends Phaser.Scene {
     this.#leaves = new LeaveFx(ctx);
     this.#enemies = new ViewPool(() => new EnemyView(ctx, this.#leaves, this.#keepClear));
     this.#projectiles = new ViewPool(() => new ProjectileView(ctx));
-    this.#allies = new ViewPool(() => new AllyView(ctx));
+    this.#allies = new ViewPool(() => new AllyView(ctx, prefersReducedMotion));
     this.#refugees = new RefugeeViews(ctx);
     this.#placement = new PlacementView(ctx, this.#elevationOf);
     this.#links = new LinkView(ctx, prefersReducedMotion);
@@ -861,6 +863,7 @@ export class BattleScene extends Phaser.Scene {
         shown: this.#blocker.shown,
         holding: this.#blocker.holding,
         health: this.#blocker.health,
+        xray: [...this.#allies.live.values()].some((v) => v.xrayShown), // review R3
       }, // T605
       choir: {
         rings: this.#choir.rings,
@@ -1178,6 +1181,11 @@ export class BattleScene extends Phaser.Scene {
       v.stamp = stamp;
       v.sync(a);
       v.setLowered(lowered);
+      // Review R3: a blocker shows through a tower standing in front of him (x-ray outline).
+      v.setXray(
+        a.blockCapacity > 0 && this.#xrayWatch.hidden(v, this.#towers.live),
+        this.game.loop.delta,
+      );
       const target = a.targetUid === 0 ? undefined : this.#enemies.get(a.targetUid);
       if (target !== undefined) v.setFacing(facingOf(target.x - a.x, target.y - a.y));
       if (fireFrom === null && v.sprite !== null && !v.lowered) {

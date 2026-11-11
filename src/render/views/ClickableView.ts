@@ -157,7 +157,7 @@ export class ClickableView {
 }
 
 /** The alpha of a texture frame's pixels, read once from its source canvas. */
-function frameAlpha(
+export function frameAlpha(
   scene: Phaser.Scene,
   f: ObjectFrame,
 ): { alpha: Uint8Array; w: number; h: number } {

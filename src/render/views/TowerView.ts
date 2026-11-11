@@ -23,6 +23,7 @@ import { gridToScreen, type Vec2 } from '../iso.ts';
 import { DEFAULT_VARIANT } from '../sprites/bake.ts';
 import { imageToCanvas } from '../sprites/canvas.ts';
 import { BUILD_DROP_PX, BUILD_DROP_STEP_FRAMES, UPGRADE_FLASH_FRAMES } from '../vfx/fxTiming.ts';
+import type { Rect } from '../vfx/xrayPixels.ts';
 import {
   baseFrame,
   headStyle,
@@ -195,6 +196,41 @@ export class TowerView implements PooledView {
 
   get y(): number {
     return this.#y;
+  }
+
+  /** Its sort depth in `world` (its base's; the head sorts a hair after it). */
+  get depth(): number {
+    return this.#base.depth;
+  }
+
+  /**
+   * The screen box its base and head frames cover now, into `out` (w 0 while hidden): what the
+   * x-ray reads to see whether it stands in front of Bricks (vfx/xrayPixels.ts `occludes`).
+   */
+  bounds(out: Rect): Rect {
+    const b = this.#base;
+    if (!b.visible) {
+      out.x = out.y = out.w = out.h = 0;
+      return out;
+    }
+    let x0 = b.x - b.displayOriginX;
+    let y0 = b.y - b.displayOriginY;
+    let x1 = x0 + b.width;
+    let y1 = y0 + b.height;
+    const h = this.#head;
+    if (h.visible) {
+      const hx = h.x - h.displayOriginX;
+      const hy = h.y - h.displayOriginY;
+      x0 = Math.min(x0, hx);
+      y0 = Math.min(y0, hy);
+      x1 = Math.max(x1, hx + h.width);
+      y1 = Math.max(y1, hy + h.height);
+    }
+    out.x = x0;
+    out.y = y0;
+    out.w = x1 - x0;
+    out.h = y1 - y0;
+    return out;
   }
 
   /**

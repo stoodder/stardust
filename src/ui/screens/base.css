@@ -218,16 +218,28 @@
 }
 
 /* A3M3's held-back rewards (T610; HeldRewards.tsx): one quiet line over the tabs, once. */
+/* A3M3's held rewards above Bricks's memo: muted, never gold (D143 R13; a record, not a prize). */
 .sd-base-held {
   margin: 0 0 4px;
   font-family: var(--font-heading);
   font-size: 8px;
   line-height: 10px;
-  color: var(--sd-gold-3);
+  color: var(--sd-steel-3);
 }
 
 .sd-base-held-kicker {
   color: var(--sd-steel-3);
   letter-spacing: 1px;
   text-transform: uppercase;
+}
+
+/* A scene over the base (a visit scene; D143 R8): the base dims behind it, a neutral backdrop. */
+.sd-base-panel.sd-base-dim {
+  filter: brightness(0.45) saturate(0.6);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sd-base-panel {
+    transition: filter 200ms ease-out;
+  }
 }

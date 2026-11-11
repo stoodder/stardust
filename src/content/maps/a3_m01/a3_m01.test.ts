@@ -23,7 +23,8 @@ describe('A3M1 · The Preserve', () => {
       rows: 14,
       startCredits: 600,
       stardust: 280,
-      maxLost: 13,
+      maxLost: null,
+      maxLostPct: 0.53,
       requiredCounters: ['splash', 'air'],
     });
     expect(map.waves).toHaveLength(14);

@@ -13,6 +13,9 @@ import type { CompiledMapDef } from '../../content/compiled.ts';
 import type { IdSpace } from '../../content/types.ts';
 import type { ScriptFlags } from '../../sim/index.ts';
 import type { DeepReadonly } from '../../shared/types.ts';
+import { SPRITES } from '../../content/sprites/index.ts';
+import { gridToScreen, type IsoOrigin, type Vec2 } from '../iso.ts';
+import type { Rect } from '../vfx/xrayPixels.ts';
 
 /** The door's sprite. */
 export const BLAST_DOOR = 'prop.blast_door' as const;
@@ -69,4 +72,25 @@ export function doorLook(
   return seal === 'closing'
     ? { frame: 'closing_0', anim: 'closing' }
     : { frame: 'sealed_0', anim: 'sealed' };
+}
+
+const at: Vec2 = { x: 0, y: 0 };
+/** The door sprite's size and anchor (its baked outline adds a pixel on each side). */
+const DOOR_DEF = SPRITES.find((d) => d.id === BLAST_DOOR);
+
+/**
+ * The game-px box a door on tile (col, row) draws in (its sprite's frame, outline included), into
+ * `out`: what the HUD keeps its comms panel and the SEAL button off at the SEAL (review R3), so the
+ * door C3 chose is never covered as it closes. Anchored on the tile's center, as GroundView draws
+ * a core prop.
+ */
+export function doorScreenBox(col: number, row: number, origin: IsoOrigin, out: Rect): Rect {
+  gridToScreen(col + 0.5, row + 0.5, origin, at);
+  const w = DOOR_DEF?.size.w ?? 0;
+  const h = DOOR_DEF?.size.h ?? 0;
+  out.x = at.x - (DOOR_DEF?.anchor.x ?? 0) - 1;
+  out.y = at.y - (DOOR_DEF?.anchor.y ?? 0) - 1;
+  out.w = w + 2;
+  out.h = h + 2;
+  return out;
 }

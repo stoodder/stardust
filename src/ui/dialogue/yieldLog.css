@@ -41,13 +41,13 @@
     0 1px 0 var(--sd-steel-1);
 }
 
-/* Where your entries light: a hairline across the window. */
+/* Where your entries light: a gold rule across the window (D143 R13). */
 .yl-read-line {
   position: absolute;
   left: 0;
   right: 0;
   height: 1px;
-  background: var(--sd-gold-1);
+  background: var(--sd-gold-3);
 }
 
 .yl-rows {
@@ -71,9 +71,10 @@
   color: var(--sd-steel-3);
 }
 
+/* Lit: a clear warm band (D143 R13: `gold.1`, not the muddy `gold.0`). */
 .yl-row.yours.lit {
   color: var(--sd-gold-4);
-  background: var(--sd-gold-0);
+  background: var(--sd-gold-1);
 }
 
 .yl-tech {

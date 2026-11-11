@@ -423,9 +423,9 @@ function refBetter(d2: number, uid: number, bestD2: number, bestUid: number): bo
   return bestD2 < 0 || d2 < bestD2 || (d2 === bestD2 && uid < bestUid);
 }
 
-function refNearest<U extends Pick<Enemy, 'route' | 'dist' | 'x' | 'y'>>(
+function refNearest(
   state: SimState,
-  u: U,
+  u: Pick<Enemy, 'route' | 'dist' | 'x' | 'y'>,
   may: (m: Enemy) => boolean,
 ): Enemy | null {
   let best: Enemy | null = null;

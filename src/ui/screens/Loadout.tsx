@@ -199,11 +199,11 @@ function Protocols(props: {
           <li key={p.id} class="sd-lo-protocol-row">
             <button
               type="button"
-              class={`sd-lo-protocol${on ? ' sd-lo-on' : ''}${blocked ? ' sd-lo-full' : ''}`}
+              class={`sd-lo-protocol${on ? ' sd-lo-on' : ''}${blocked ? ' sd-lo-full' : ''}${p.inert === null ? '' : ' sd-lo-inert'}`}
               data-protocol={p.id}
               aria-pressed={on}
               aria-disabled={blocked}
-              aria-label={`${p.name}: ${p.effect}${on ? ', equipped' : ''}`}
+              aria-label={`${p.name}: ${p.effect}${p.inert === null ? '' : `. ${p.inert}`}${on ? ', equipped' : ''}`}
               onClick={() => {
                 const next = togglePickProtocol(pick, p.id);
                 if (next === pick) props.onFull();
@@ -216,6 +216,12 @@ function Protocols(props: {
               <span class="sd-lo-protocol-effect" aria-hidden="true">
                 {p.effect}
               </span>
+              {p.inert !== null && (
+                // Still equips (the player's call); it just has nothing to do here (D143 R9).
+                <span class="sd-lo-protocol-inert" aria-hidden="true" data-testid="protocol-inert">
+                  {p.inert}
+                </span>
+              )}
             </button>
             {on && p.takesTower && (
               <label class="sd-lo-protocol-tower">

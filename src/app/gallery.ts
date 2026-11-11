@@ -8,6 +8,8 @@
 // Ward kneeling over the road as refugees file past and a Prism beaming; at full dark, a lamp's
 // pool, a beaming Prism's lit disc and a resting one's ghost, composited with the game's own
 // night (vfx/darknessPixels.ts, vfx/glowPixels.ts) so the trail shows the night as play draws it.
+// Then the M6 corners (review R10, app/galleryM6.ts): A3M1's Preserve and A3M3's Gap at the SEAL.
+// The act3 diorama and the M6 corners hang the two moons in their sky (app/galleryKit.ts).
 import { ENV_PALETTE_IDS } from '../content/palettes/env.ts';
 import { PALETTES } from '../content/palettes/index.ts';
 import { SPRITES, type SpriteId } from '../content/sprites/index.ts';
@@ -1174,6 +1176,12 @@ function render(root: HTMLElement): void {
   ] as const) {
     const box = el('div', 'frame');
     box.append(m5Corner(byId, night, 2), el('span', undefined, label));
+    pack.add(box);
+  }
+  // The M6 corners (review R10): A3M1's Preserve, then A3M3's Gap at the SEAL.
+  for (const [scene, label] of M6_CORNERS) {
+    const box = el('div', 'frame');
+    box.append(m6Corner(byId, scene, 2), el('span', undefined, label));
     pack.add(box);
   }
 

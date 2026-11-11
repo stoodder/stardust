@@ -95,9 +95,15 @@ export interface RenderState {
   };
   /**
    * BlockerView (T605): blocker bars drawn now (Bricks at the Gap), the units drawn as held now,
-   * and the health the bar shows (NaN with none).
+   * the health the bar shows (NaN with none), and whether his x-ray outline shows over a tower in
+   * front of him (review R3).
    */
-  readonly blocker: { readonly shown: number; readonly holding: number; readonly health: number };
+  readonly blocker: {
+    readonly shown: number;
+    readonly holding: number;
+    readonly health: number;
+    readonly xray: boolean;
+  };
   /** T606: LICENSE REVOKED stamps up now, and played this battle (RevokedView). */
   readonly revoked: { readonly shown: number; readonly played: number };
   /**

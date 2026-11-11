@@ -9,7 +9,10 @@
 // a silent tell, never mentioned.
 // A blocker (Bricks at the Gap, T605) braces, strains, and goes down on one knee as his health
 // falls (BlockerView `blockerPose`, T640a): `<stance>_<facing>` idles and `<stance>_fire_<facing>`
-// shots, where the sprite draws them.
+// shots, where the sprite draws them. While a tower stands in front of him (BattleScene asks
+// `setXray`; vfx/xrayPixels.ts `occludes`), his silhouette shows through it as an x-ray outline in
+// `overlay` (review R3), baked once per frame he shows and following his anim; it breathes slowly,
+// still under reduced motion.
 import * as Phaser from 'phaser';
 import { STANCE_DROP } from '../../content/sprites/allies/bricks.ts';
 import type { SpriteId } from '../../content/sprites/index.ts';
@@ -18,6 +21,9 @@ import { worldDepth } from '../depth.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
 import { DEFAULT_VARIANT } from '../sprites/bake.ts';
 import { blockerPose, type BlockerStance } from './BlockerView.ts';
+import { imageToCanvas } from '../sprites/canvas.ts';
+import { xrayAlpha, xrayImage, XRAY_PAD, type Rect } from '../vfx/xrayPixels.ts';
+import { frameAlpha } from './ClickableView.ts';
 import { hasAnim, type Facing } from './spriteInfo.ts';
 import type { ViewContext } from './ViewContext.ts';
 import type { PooledView } from './ViewPool.ts';
@@ -103,18 +109,30 @@ export class AllyView implements PooledView {
   #isLowered = false;
   /** A blocker's stance (BlockerView `blockerPose`, T640a), where the sprite draws it. */
   #stance: BlockerStance | null = null;
+  /** His x-ray outline over a tower in front of him (review R3), in `overlay`. */
+  readonly #xray: Phaser.GameObjects.Image;
+  /** The x-ray texture of each baked frame key, made the first time it shows. */
+  readonly #xrayFor = new Map<string, string>();
+  #xrayOn = false;
+  /** Real ms since the x-ray came on (its breath steps from it). */
+  #xrayMs = 0;
+  readonly #reducedMotion: () => boolean;
 
-  constructor(ctx: ViewContext) {
+  constructor(ctx: ViewContext, reducedMotion: () => boolean = () => false) {
     this.#ctx = ctx;
+    this.#reducedMotion = reducedMotion;
     this.#body = ctx.scene.make.sprite({}, false);
     this.#glow = ctx.scene.make.image({}, false).setBlendMode(Phaser.BlendModes.ADD);
+    // Under the overheads (their band starts at OVERHEAD_DEPTH), so his bar reads over it.
+    this.#xray = ctx.scene.make.image({}, false).setOrigin(0, 0).setVisible(false).setDepth(0);
     ctx.layers.world.add(this.#body);
     ctx.layers.vfx.add(this.#glow);
+    ctx.layers.overlay.add(this.#xray);
     // Only the fire anims end (idles loop): a finished shot settles back to idle.
     this.#body.on(Phaser.Animations.Events.ANIMATION_COMPLETE, () => this.#play(false));
-    // The halo follows every frame the body shows.
-    this.#body.on(Phaser.Animations.Events.ANIMATION_UPDATE, () => this.#syncGlow());
-    this.#body.on(Phaser.Animations.Events.ANIMATION_START, () => this.#syncGlow());
+    // The halo and the x-ray follow every frame the body shows.
+    this.#body.on(Phaser.Animations.Events.ANIMATION_UPDATE, () => this.#syncFrame());
+    this.#body.on(Phaser.Animations.Events.ANIMATION_START, () => this.#syncFrame());
     this.release();
   }
 
@@ -194,6 +212,45 @@ export class AllyView implements PooledView {
     this.#play(true);
   }
 
+  /** Its sort depth in `world`. */
+  get depth(): number {
+    return this.#body.depth;
+  }
+
+  /** Whether its x-ray outline shows (the render-state hook's view of it). */
+  get xrayShown(): boolean {
+    return this.#xray.visible;
+  }
+
+  /** The screen box its body's frame covers now, into `out` (w 0 while hidden). */
+  bounds(out: Rect): Rect {
+    const b = this.#body;
+    if (!b.visible) {
+      out.x = out.y = out.w = out.h = 0;
+      return out;
+    }
+    out.x = b.x - b.displayOriginX;
+    out.y = b.y - b.displayOriginY;
+    out.w = b.width;
+    out.h = b.height;
+    return out;
+  }
+
+  /**
+   * One frame of the x-ray (review R3): `on` while a tower stands in front of him (BattleScene's
+   * call, vfx/xrayPixels.ts `occludes`), `realMs` of wall time for its breath.
+   */
+  setXray(on: boolean, realMs: number): void {
+    if (on !== this.#xrayOn) {
+      this.#xrayOn = on;
+      this.#xrayMs = 0;
+      this.#syncXray();
+    } else if (on) {
+      this.#xrayMs += Number.isFinite(realMs) && realMs > 0 ? realMs : 0;
+    }
+    if (this.#xray.visible) this.#xray.setAlpha(xrayAlpha(this.#xrayMs, this.#reducedMotion()));
+  }
+
   /** Writes the muzzle's screen position (px) for the current facing into `out`. */
   muzzle(out: Vec2): Vec2 {
     const m = BRICKS_MUZZLE[this.#facing];
@@ -219,6 +276,45 @@ export class AllyView implements PooledView {
     this.#sy = pos.y;
     this.#body.setPosition(pos.x, pos.y).setDepth(worldDepth(pos.y, 'tower', this.#uid));
     this.#glow.setPosition(pos.x, pos.y);
+    this.#syncXray();
+  }
+
+  /** The halo and the x-ray follow the frame the body shows. */
+  #syncFrame(): void {
+    this.#syncGlow();
+    this.#syncXray();
+  }
+
+  /**
+   * Points the x-ray at the shown frame's outline (baked the first time that frame shows with the
+   * x-ray on), over the body; hidden while it's off or the body is.
+   */
+  #syncXray(): void {
+    const b = this.#body;
+    if (!this.#xrayOn || !b.visible || this.#id === null) {
+      this.#xray.setVisible(false);
+      return;
+    }
+    const frameKey = `${b.texture.key}:${b.frame.name}`;
+    let key = this.#xrayFor.get(frameKey);
+    if (key === undefined) {
+      key = `overlay.xray.${frameKey}`;
+      const { scene } = this.#ctx;
+      if (!scene.textures.exists(key)) {
+        const m = frameAlpha(scene, {
+          texture: b.texture.key,
+          frame: b.frame.name,
+          left: 0,
+          top: 0,
+        });
+        scene.textures.addCanvas(key, imageToCanvas(xrayImage(m.alpha, m.w, m.h)));
+      }
+      this.#xrayFor.set(frameKey, key);
+    }
+    if (this.#xray.texture.key !== key) this.#xray.setTexture(key);
+    this.#xray
+      .setPosition(b.x - b.displayOriginX - XRAY_PAD, b.y - b.displayOriginY - XRAY_PAD)
+      .setVisible(true);
   }
 
   /**
@@ -261,6 +357,8 @@ export class AllyView implements PooledView {
     this.#body.stop();
     this.#body.setVisible(false);
     this.#glow.setVisible(false);
+    this.#xrayOn = false;
+    this.#xray.setVisible(false);
   }
 
   #play(fire: boolean): void {
@@ -275,6 +373,7 @@ export class AllyView implements PooledView {
       const sa = sprites.frameAnchor(this.#id, `${st}_${f}_0`);
       this.#body.play(sprites.anim(this.#id, anim, DEFAULT_VARIANT), !fire);
       this.#body.setDisplayOrigin(sa.x, sa.y);
+      this.#syncXray();
       return;
     }
     const low = !fire && this.#isLowered ? this.#lowered[i] : undefined;
@@ -285,5 +384,6 @@ export class AllyView implements PooledView {
     // A new shot restarts the fire anim; an idle already playing carries on.
     this.#body.play(fire ? shot : idle, !fire);
     this.#body.setDisplayOrigin(a.x, a.y);
+    this.#syncXray();
   }
 }

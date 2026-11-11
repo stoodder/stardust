@@ -62,11 +62,18 @@ export function Hud() {
         <Lock locked={locked}>
           <PausedOverlay />
           <WaveBannerView />
-          {/* Top-left: status, then the comms panel under it (it follows the status panel's height). */}
+          {/* Top-left: status, then the comms panel under it (it follows the status panel's height).
+              Under a forced input the panel moves to the top centre, clear of the map's doors
+              (D143 R3: at A3M3's SEAL it covered the convoy's blast door). */}
           <div class="hud-top-left">
             <StatusPanel />
-            <CommsPanel />
+            {!locked && <CommsPanel />}
           </div>
+          {locked && (
+            <div class="hud-comms-top" data-testid="comms-top">
+              <CommsPanel />
+            </div>
+          )}
         </Lock>
         <div class="hud-top-right">
           <div class="hud-top-row">

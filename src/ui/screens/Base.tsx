@@ -11,7 +11,9 @@
 // arrival (app/baseScenes.ts, T308; with any other visit scene due, such as Pebble's handover after
 // A2M4); otherwise an unread memo opens the Inbox (T320), and nothing new opens Research. Before
 // any of them, a won A2M4 whose card was never answered offers C2 as a panel over the base (D138;
-// app/baseChoice.ts, BaseChoice.tsx), the base behind it inert.
+// app/baseChoice.ts, BaseChoice.tsx), the base behind it inert. While a scene plays over the base,
+// the base dims behind it and the Inbox opens no memo (InboxPane; D143 R8): a visit scene plays
+// over a neutral backdrop, and the memo opens once it ends.
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { dropBaseChoice, offerChoiceAtBase } from '../../app/baseChoice.ts';
 import { arrivalDue, playBaseScenesIfDue } from '../../app/baseScenes.ts';
@@ -28,6 +30,7 @@ import { Banks } from './Campaign.tsx';
 import { useEscape } from './escape.ts';
 import { focusOnce } from './focus.ts';
 import { baseChoice, campaign, type CampaignView, type SystemView } from './state.ts';
+import { dialogue } from '../dialogue/state.ts';
 import './screens.css';
 import './base.css';
 import './inbox.css';
@@ -119,7 +122,10 @@ export function Base() {
   };
   return (
     <main class="sd-screen sd-menu" aria-labelledby="sd-base-heading">
-      <section class="sd-panel sd-menu-panel sd-base-panel" inert={baseChoice.value !== null}>
+      <section
+        class={`sd-panel sd-menu-panel sd-base-panel${dialogue.scene.value === null ? '' : ' sd-base-dim'}`}
+        inert={baseChoice.value !== null}
+      >
         <header class="sd-menu-header">
           <div>
             <p class="sd-kicker">Everglow · Dome Row Perimeter · Base</p>

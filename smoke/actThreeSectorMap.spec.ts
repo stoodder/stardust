@@ -110,13 +110,15 @@ test("act three's Results: the report auto-filed, the meter's line, and no count
   await page.goto('/?test=1&seed=1&save=after_a3m1_spared');
   await waitForReady(page);
 
-  // A3M1, an Escort: the counter is its Evacuated line (the fixture walks every refugee home).
+  // A3M1, an Escort: its Evacuated row says it once (the fixture walks every refugee home); the
+  // meter's counter line would only repeat it, so it goes (D143 R13).
   await page.evaluate(() => globalThis.__sd!.results({ map: 'a3_m01', outcome: 'won', pests: 0 }));
   const escort = page.getByRole('dialog', { name: 'PERIMETER SECURED.' });
   await expect(escort).toBeVisible();
   await expect(escort.getByText('Shift report · Auto-filed')).toBeVisible();
   await expect(escort.getByTestId('results-escort')).toContainText('30 / 30');
-  await expect(escort.getByTestId('results-counter')).toHaveText('Evacuated: 30.');
+  await expect(escort.getByTestId('results-counter')).toHaveCount(0);
+  await expect(escort.getByText(/Evacuated/)).toHaveCount(1);
   await expect(escort).not.toContainText('Held.');
   await shot(page, 'act3-sector', 5, 'results-a3m1');
 
