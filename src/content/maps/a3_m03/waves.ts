@@ -154,9 +154,9 @@ export const waves = defineWaves([
     noCall: true,
     groups: [
       g('undertow', 1, 'rift_west', OPEN),
-      motes(28, 'cut_west', OPEN + 2, 0.15),
+      motes(27, 'cut_west', OPEN + 2, 0.15),
       g('undertow', 2, 'rift_east', OPEN + 4, 2.5),
-      motes(16, 'cut_east', OPEN + 6, 0.15),
+      motes(17, 'cut_east', OPEN + 6, 0.15),
       g('fracture', 1, 'cut_west', OPEN + 8, 2),
       g('riftmoth', 3, 'sky_east', OPEN + 10, 1.5),
     ],

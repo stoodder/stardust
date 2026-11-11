@@ -301,12 +301,12 @@ Every map task: par in Act III's band on its reference profile, robustness shift
 - [x] **T630a** Unit render: tendrils and growth, swarmling dash/latch, the Underfoot trap, the haste ring, the Undertow ripple, the blocker's bar, fold-away; T567's view headers and MarkView's anchor.
 - [x] **T640c** Props and tiles: the Preserve, A1M4 at night, the Gap; the `act3` ground; rift cracks (closed/opening/open).
 - [x] **T609** Shelves: Skitterkin specs in Engineering (3 Intel), the Bloom's Xenotech row ("still growing it" if the lever is pulled), T568's card copy, T567's `copy.ts` header.
-- [~] **T609b** Bramble's Rapport (`rapport_bramble`, stocked after A3M1: Underfoot first plays there): progression.md (top, §7.3) says "the other two Rapports join with their abilities" and §7's Intel total counts all five; add the row with QUILL's copy and `hideUntilStocked`, or log a deliberate gap. Zibzab's Rapport waits for his ability (M7).
+- [x] **T609b** Bramble's Rapport (`rapport_bramble`, stocked after A3M1: Underfoot first plays there): progression.md (top, §7.3) says "the other two Rapports join with their abilities" and §7's Intel total counts all five; add the row with QUILL's copy and `hideUntilStocked`, or log a deliberate gap. Zibzab's Rapport waits for his ability (M7).
 - [x] **T630b** World render: rift telegraphs a wave ahead, the shuttle lift-off, blast doors, billboards, Act III's tint; T567's Tidybot items (`tidyDock`, duplicate stops).
 - [~] **T631** HUD: the Holdout meter (no Lost pips), the hidden preview + QUILL's leak line, REVOKED slots, Underfoot aim, the Choir aura preview, the Den's swarmling count, Bramble's objective tracker.
 - [x] **T650** Audio: Act III's silence-forward bed (no jingle; the Hollow's unravel silent), the Maw, swarmlings, Underfoot, drones/Expediter, the revocation stamp, Sterling's cue, the SEAL's loop, the Leaving Song (six notes of "Everglow Bright", sung), the Choir's harmony line, C2's base sting (T569).
 - [~] **T660** The Act III curve: A3M1 ~66 (Escort chain), A3M2 ~63 (Defend chain), A3M3's floor; Story wins; 12–15 min; spared/cleared, each revoked class, both doors; the Lantern probe (T568).
-- [ ] **T661** Docs: *Built so far (M6)* and the as-built notes.
+- [~] **T661** Docs: *Built so far (M6)* and the as-built notes.
 
 Carried into M6, folded in:
 - [x] **T567** Stale code comments after M5: "placeholder" sprite/icon notes in content/enemies/{fracture_shard,glimmer_shard,puffwing,digger,gerald}.ts, content/abilities/{stillness,clearance_sale}.ts, content/towers/{skyhook,zapcoil}.ts; "minimal view / T530a polishes" headers in render/views/{ShieldAuraView,MarkView,RefugeeView,standDownLook}.ts; `validateBuilds.ts:234` `TODO(A3M5, M5)` → M6; `upgrades/copy.ts` header should cite style-guide §6.5. Also: MarkView should anchor on the drawn body (`UnitAnchors`); `planSweep` can send two Tidybots to nearly the same stop; move `tidyDock` (the `intake_b` marker + 0.5) into `render/vfx/tidybotFlight.ts` so TidybotView and app/tidybotChimes share one home (a test pins them together today). (→ T600a content comments, T630a/T630b view headers and Tidybot items, T609 `copy.ts`)
@@ -319,6 +319,7 @@ Carried into M6, folded in:
 
 ## M7 — Act III, part two (A3M4–A3M6)
 To be split up when we reach it. Inherits: jamming (Auditor, Silencer, Hostile Takeover, `jamLimit` #10, System Reboot, the Choir's jam rules live); Liability, Associate, Gunship, Black Budget; the bosses Shareholder Value (jettison → `openTile`) and the Gathering Maw; Gloop and Sproing (register Bounce Chorus with the Sproing; the Choir side is built); the absent companion and authored silence; Gerald's mail; `inheritAbility`; C4, Night Shift and C4's effects; the jailbreak; bearers as a walking Protect payload; `objectiveCompleted`; A3M6's Sheltered escort, militia, crate, Who's there? and Waykeeper; QUILL `purge`, Kip `act3`; the A2M4 and A1M1 revisits; the Lantern on Black Budget; Flak Curtain.
+- [ ] **T609c** M7: Zibzab's Rapport (`rapport_zibzab`, after A1M4; Clearance Sale 4 waves → 3, core-loop §3.2) — adds a `par@rnd` pick on A1M4/A2M4, so it needs harness runs. Also progression.md §7.3's "Unlocks companion-specific barks" isn't built for any companion: build or cut.
 - [ ] **T501c-M6** M7: the Flak Curtain alt on A3M6 (A3M2 has no air). The Harpoon (par, `coil_and_beam`) and the Crane → Magnet Crane alt (90.9) landed on A3M2 in M6 (T621).
 
 ## M8 — Finale, post-game & polish
