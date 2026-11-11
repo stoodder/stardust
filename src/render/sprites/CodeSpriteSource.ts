@@ -1,5 +1,6 @@
-// The code-generated SpriteSource: bakes every sprite definition at boot, packs the frames into
-// atlas pages, and registers them with Phaser as canvas textures, frames, and animations.
+// The code-generated SpriteSource: bakes every sprite definition the renderer draws (ATLAS_SPRITES)
+// at boot, packs the frames into atlas pages, and registers them with Phaser as canvas textures,
+// frames, and animations.
 import type * as Phaser from 'phaser';
 import { PALETTES } from '../../content/palettes/index.ts';
 import { SPRITES, type SpriteId } from '../../content/sprites/index.ts';
@@ -8,6 +9,7 @@ import { packShelves } from './atlas.ts';
 import {
   animKey,
   bakeAll,
+  categoryOf,
   DEFAULT_VARIANT,
   frameKey,
   glowKey,
@@ -22,6 +24,16 @@ import type { FrameRef, SpriteSource } from './SpriteSource.ts';
 export const PAGE_PREFIX = 'sprites.';
 /** Where BootScene stores the source in the game registry. */
 export const SPRITE_SOURCE_KEY = 'spriteSource';
+
+/**
+ * The sprites the atlas holds: every one but the portraits (T766). Portraits are drawn only in the
+ * DOM (ui/dialogue/Portrait.tsx, ui/hud/Icon.tsx bake one on demand) and the gallery bakes its own,
+ * so baking them at boot cost ~600 frames (12% of the atlas's pixels) and painting every portrait
+ * (definePortrait paints on first read) for nothing.
+ */
+export const ATLAS_SPRITES: readonly (typeof SPRITES)[number][] = SPRITES.filter(
+  (def) => categoryOf(def.id) !== 'portrait',
+);
 
 /** The parts of a Phaser scene `register` uses (a `Phaser.Scene` is one; tests pass a fake). */
 export interface SpriteScene {
@@ -57,9 +69,9 @@ export class CodeSpriteSource implements SpriteSource {
 
   /** Synchronous `load`: bakes, packs, and registers everything with the scene's game. */
   register(scene: SpriteScene): void {
-    const baked = bakeAll(SPRITES, PALETTES);
+    const baked = bakeAll(ATLAS_SPRITES, PALETTES);
     for (const b of baked) this.#baked.set(b.id, b);
-    for (const def of SPRITES) {
+    for (const def of ATLAS_SPRITES) {
       const m = mountOf(def);
       if (m !== null) this.#mounts.set(def.id, m);
     }

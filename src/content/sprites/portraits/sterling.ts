@@ -10,6 +10,7 @@
 // field, white viewfinder brackets mark the four corners, and a red REC lamp burns top left. She
 // is untouched (her face and smile are the base frame's), so the fair-play tell holds.
 import { disc, grid, line, mirrorRows, plot, type CharGrid } from '../helpers.ts';
+import { paintPartyHat } from './partyHat.ts';
 import { definePortrait, outlineInPlace, PORTRAIT_SIZE, type PaintArgs } from './portrait.ts';
 
 const S = PORTRAIT_SIZE;
@@ -246,6 +247,15 @@ function paint({ expression, variant, mouth }: PaintArgs): CharGrid {
   put(g, 16, STERLING_EYE_ROWS.y0, EYES[expression] ?? EYES['neutral'] ?? []);
   put(g, CX - 6, STERLING_MOUTH_ROWS.y0, mouth === 'talk' ? SMILE.talk : SMILE.closed);
   snowGlobe(g);
+  if (variant === 'party_hat') {
+    // Everglow teal, of course: she ordered the hats.
+    paintPartyHat(g, {
+      base: [29, 5],
+      tip: [36, 0],
+      halfWidth: 4,
+      ink: { stripe: '8', stripeShade: '7', gold: 'I', goldShade: 'Q', pom: 'w', pomShade: '4' },
+    });
+  }
   outlineInPlace(g);
   if (variant === 'remote') feed(g);
   return g;
@@ -264,6 +274,6 @@ export const portraitSterling = definePortrait({
     A: 'teal.0', K: 'ink.1', S: 'white.0', X: 'red.3', Y: 'red.1',
   },
   expressions: ['neutral', 'happy', 'worried', 'angry', 'sad'],
-  variants: ['remote'],
+  variants: ['remote', 'party_hat'],
   paint,
 });

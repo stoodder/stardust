@@ -5,7 +5,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PALETTES } from '../../content/palettes/index.ts';
 import { SPRITES } from '../../content/sprites/index.ts';
 import { bakeAll } from './bake.ts';
-import { CodeSpriteSource, PAGE_PREFIX, type SpriteScene } from './CodeSpriteSource.ts';
+import {
+  ATLAS_SPRITES,
+  CodeSpriteSource,
+  PAGE_PREFIX,
+  type SpriteScene,
+} from './CodeSpriteSource.ts';
 
 interface FakeCanvas {
   width: number;
@@ -120,7 +125,7 @@ describe('CodeSpriteSource', () => {
     );
     // Every frame's pixels, row by row, where its texture frame says it is.
     let checked = 0;
-    for (const b of bakeAll(SPRITES, PALETTES)) {
+    for (const b of bakeAll(ATLAS_SPRITES, PALETTES)) {
       for (const f of b.frames) {
         const at = frames.get(f.key);
         const put = at === undefined ? undefined : puts[at.page];
@@ -136,5 +141,13 @@ describe('CodeSpriteSource', () => {
       }
     }
     expect(checked).toBe(frames.size);
+    // Portraits are DOM-only (T766): none is in the atlas.
+    expect([...frames.keys()].filter((k) => k.startsWith('portrait.'))).toEqual([]);
+  });
+
+  it('holds every sprite but the portraits (T766: they are drawn only in the DOM)', () => {
+    const ids = (list: readonly { id: string }[]): string[] => list.map((d) => d.id);
+    expect(ids(ATLAS_SPRITES)).toEqual(ids(SPRITES).filter((id) => !id.startsWith('portrait.')));
+    expect(ids(SPRITES).some((id) => id.startsWith('portrait.'))).toBe(true);
   });
 });

@@ -14,6 +14,7 @@
 // the ledger held flat to his chest in both hands: a worn brass-brown binder, a white label, its
 // pages' edge showing.
 import { grid, line, plot, stamp, type CharGrid } from '../helpers.ts';
+import { paintPartyHat } from './partyHat.ts';
 import { definePortrait, outlineInPlace, PORTRAIT_SIZE, type PaintArgs } from './portrait.ts';
 
 const S = PORTRAIT_SIZE;
@@ -470,6 +471,15 @@ function paint({ expression, variant, mouth }: PaintArgs): CharGrid {
   if (m !== undefined) stamp(g, 19, 26, mouth === 'talk' ? m.talk : m.closed);
   if (expression === 'worried') sweat(g);
   if (act3) ledger(g);
+  if (variant === 'party_hat') {
+    // On top of the backwards cap, naturally.
+    paintPartyHat(g, {
+      base: [19, 4],
+      tip: [11, 0],
+      halfWidth: 3.5,
+      ink: { stripe: 'd', stripeShade: 'c', gold: 'M', goldShade: 'L', pom: 'w', pomShade: '4' },
+    });
+  }
   outlineInPlace(g);
   return g;
 }
@@ -485,8 +495,10 @@ export const portraitKip = definePortrait({
     G: 'gold.1', M: 'gold.3', N: 'gold.4', O: 'gold.0',
     E: 'pink.4', F: 'gold.4',
     T: 'steel.1', V: 'steel.3', X: 'brass.1', Y: 'brass.0', Z: 'brass.2',
+    // The party hat's shaded gold (`party_hat`).
+    L: 'gold.2',
   },
   expressions: ['neutral', 'happy', 'worried', 'angry', 'sad'],
-  variants: ['act2', 'act3'],
+  variants: ['act2', 'act3', 'party_hat'],
   paint,
 });

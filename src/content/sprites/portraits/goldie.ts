@@ -8,6 +8,7 @@
 // cord (its brim shows behind her shoulders), and a clipboard in place of Duchess. Her face, brows
 // and mouth are the base frame's, so every expression reads as it does there.
 import { disc, grid, line, plot, stamp, type CharGrid } from '../helpers.ts';
+import { paintPartyHat } from './partyHat.ts';
 import { definePortrait, outlineInPlace, PORTRAIT_SIZE, type PaintArgs } from './portrait.ts';
 
 const S = PORTRAIT_SIZE;
@@ -215,6 +216,18 @@ function hat(g: CharGrid): void {
 }
 
 /** Duchess, in her terracotta pot under Goldie's left arm (screen right). */
+/** Duchess's party hat (A1M5): a steel thimble, dimpled, on top of her heart leaves. */
+function thimble(g: CharGrid): void {
+  // prettier-ignore
+  stamp(g, 37, 22, [
+    '.WWV.',
+    'W3V3V',
+    'V3V3V',
+    '3V3VV',
+    'WWWVV',
+  ]);
+}
+
 function duchess(g: CharGrid): void {
   // The pot.
   for (let y = 40; y < S; y++) {
@@ -342,6 +355,16 @@ function paint({ expression, variant, mouth }: PaintArgs): CharGrid {
   if (m !== undefined) stamp(g, 18, 29, mouth === 'talk' ? m.talk : m.closed);
   if (act3) clipboard(g);
   else duchess(g);
+  if (variant === 'party_hat') {
+    // Perched on the sun hat's brim; Duchess has hers.
+    paintPartyHat(g, {
+      base: [38, 12],
+      tip: [43, 3],
+      halfWidth: 3.5,
+      ink: { stripe: 'P', stripeShade: 'Q', gold: 'M', goldShade: 'd', pom: 'w', pomShade: '4' },
+    });
+    thimble(g);
+  }
   outlineInPlace(g);
   return g;
 }
@@ -360,6 +383,6 @@ export const portraitGoldie = definePortrait({
     W: 'white.0', V: 'steel.3', U: 'grime.2',
   },
   expressions: ['neutral', 'happy', 'worried', 'angry', 'sad'],
-  variants: ['act3'],
+  variants: ['act3', 'party_hat'],
   paint,
 });

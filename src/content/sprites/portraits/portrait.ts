@@ -150,8 +150,35 @@ function closed(expression: string, variant: string | null): PaintArgs {
  * Declares a portrait: the default `neutral` is a full grid; every other expression is a patch
  * over its variant's `neutral`, a variant's `neutral` a patch over the default `neutral`, and each
  * talk (and scan) frame a patch over its expression. Talk anims alternate closed and open mouths.
+ *
+ * Painting is lazy (T766): the frames are painted the first time `frames` or `anims` is read (a
+ * dialogue line's portrait, the gallery, a test), not when the module loads, so a boot that shows
+ * no portrait paints none (~0.2 s of a boot's CPU). Once painted, the def keeps them.
  */
 export function definePortrait<const Id extends string>(spec: PortraitSpec<Id>): SpriteDef<Id> {
+  let painted: Pick<SpriteDef<Id>, 'frames' | 'anims'> | null = null;
+  const frameSet = (): Pick<SpriteDef<Id>, 'frames' | 'anims'> => (painted ??= paintAll(spec));
+  return defineSprite({
+    id: spec.id,
+    size: { w: PORTRAIT_SIZE, h: PORTRAIT_SIZE },
+    // Portraits sit in a panel, not on the map: the anchor is the frame's bottom center.
+    anchor: { x: PORTRAIT_SIZE / 2, y: PORTRAIT_SIZE },
+    palette: spec.palette,
+    outline: 'none',
+    legend: spec.legend,
+    get frames() {
+      return frameSet().frames;
+    },
+    get anims() {
+      return frameSet().anims;
+    },
+  });
+}
+
+/** Paints every frame and anim of a portrait (definePortrait's lazy half). */
+function paintAll<const Id extends string>(
+  spec: PortraitSpec<Id>,
+): Pick<SpriteDef<Id>, 'frames' | 'anims'> {
   const cache = new Map<string, readonly string[]>();
   const paint = (args: PaintArgs): readonly string[] => {
     const key = `${args.variant ?? ''}|${args.expression}|${args.mouth}|${String(args.scan)}`;
@@ -197,15 +224,5 @@ export function definePortrait<const Id extends string>(spec: PortraitSpec<Id>):
     }
   }
   const extra = spec.extra?.(paint);
-  return defineSprite({
-    id: spec.id,
-    size: { w: PORTRAIT_SIZE, h: PORTRAIT_SIZE },
-    // Portraits sit in a panel, not on the map: the anchor is the frame's bottom center.
-    anchor: { x: PORTRAIT_SIZE / 2, y: PORTRAIT_SIZE },
-    palette: spec.palette,
-    outline: 'none',
-    legend: spec.legend,
-    frames: { ...frames, ...extra?.frames },
-    anims: { ...anims, ...extra?.anims },
-  });
+  return { frames: { ...frames, ...extra?.frames }, anims: { ...anims, ...extra?.anims } };
 }

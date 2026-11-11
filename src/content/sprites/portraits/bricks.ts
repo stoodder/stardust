@@ -7,6 +7,7 @@
 // her head and the Peeker's seedling up over the flap, her front feet hooked on its edge. She
 // grins when he does and looks up at him when he's worried or sad.
 import { disc, grid, line, plot, type CharGrid } from '../helpers.ts';
+import { paintPartyHat } from './partyHat.ts';
 import { definePortrait, outlineInPlace, PORTRAIT_SIZE, type PaintArgs } from './portrait.ts';
 
 const S = PORTRAIT_SIZE;
@@ -286,6 +287,15 @@ function paint({ expression, variant, mouth }: PaintArgs): CharGrid {
   plot(g, 29, EYE_Y - 1, 'F');
   const m = MOUTHS[expression] ?? MOUTHS['neutral'];
   if (m !== undefined) put(g, 18, 24, mouth === 'talk' ? m.talk : m.closed);
+  if (variant === 'party_hat') {
+    // A small pink cone, sliding off a very large head.
+    paintPartyHat(g, {
+      base: [19, 6],
+      tip: [12, 1],
+      halfWidth: 3.5,
+      ink: { stripe: 'T', stripeShade: 'O', gold: 'Y', goldShade: 'Z', pom: 'w', pomShade: '4' },
+    });
+  }
   outlineInPlace(g);
   return g;
 }
@@ -301,8 +311,10 @@ export const portraitBricks = definePortrait({
     N: 'coral.2', Q: 'steel.1', R: 'grime.1',
     // Pebble (the `pebble` variant): coral fuzz, the seedling's greens, a shimmer fleck.
     M: 'coral.3', P: 'coral.4', U: 'green.2', V: 'green.3', X: 'green.4', T: 'pink.3',
+    // The party hat (`party_hat`): pink stripes (with T) between gold ones.
+    O: 'pink.2', Y: 'gold.3', Z: 'gold.2',
   },
   expressions: ['neutral', 'happy', 'worried', 'angry', 'sad'],
-  variants: ['pebble'],
+  variants: ['pebble', 'party_hat'],
   paint,
 });

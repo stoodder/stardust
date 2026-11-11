@@ -8,6 +8,7 @@
 // His tiny visor cap sits between the stalks; one oversized hauling claw fills the lower left
 // (the faction's one oversized limb) while his two fine counting arms hold a coin.
 import { disc, grid, line, plot, stamp, type CharGrid } from '../helpers.ts';
+import { paintPartyHat } from './partyHat.ts';
 import { definePortrait, outlineInPlace, PORTRAIT_SIZE, type PaintArgs } from './portrait.ts';
 
 const S = PORTRAIT_SIZE;
@@ -348,18 +349,27 @@ function sweat(g: CharGrid): void {
   stamp(g, 29, 22, ['.w.', 'wUw', 'UUU']);
 }
 
-function paint({ expression, mouth }: PaintArgs): CharGrid {
+function paint({ expression, variant, mouth }: PaintArgs): CharGrid {
   const g = grid(S, S);
   const face = ZIBZAB_FACES[expression] ?? ZIBZAB_FACES['neutral'];
   if (face === undefined) throw new Error(`zibzab: no face ${expression}`);
   shell(g);
   lantern(g);
   body(g);
+  if (variant === 'party_hat') {
+    // His own stock, two stardust (honestly, one), in place of the visor cap, behind the stalks.
+    paintPartyHat(g, {
+      base: [20.5, 19],
+      tip: [22, 8],
+      halfWidth: 4.5,
+      ink: { stripe: 'V', stripeShade: 'X', gold: 'H', goldShade: 'G', pom: 'w', pomShade: 'W' },
+    });
+  }
   stalk(g, face.left);
   stalk(g, face.right);
   eyeball(g, face.left);
   eyeball(g, face.right);
-  cap(g);
+  if (variant !== 'party_hat') cap(g);
   const m = MOUTHS[expression] ?? MOUTHS['neutral'];
   if (m !== undefined) stamp(g, 14, 31, mouth === 'talk' ? m.talk : m.closed);
   // The feelers at the mouth's corners.
@@ -379,7 +389,10 @@ export const portraitZibzab = definePortrait({
   legend: {
     W: 'white.0', B: 'red.2', P: 'pink.3', Q: 'pink.4', U: 'blue.4',
     G: 'gold.2', H: 'gold.3', I: 'gold.1', R: 'steel.1', S: 'steel.2', T: 'teal.3',
+    // The party hat's violet stripes (`party_hat`).
+    V: 'violet.3', X: 'violet.2',
   },
   expressions: ['neutral', 'happy', 'worried', 'angry', 'sad'],
+  variants: ['party_hat'],
   paint,
 });
