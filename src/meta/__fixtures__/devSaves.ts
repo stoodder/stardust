@@ -582,14 +582,11 @@ export const DEV_SAVES: Readonly<Record<DevSaveId, DevSave>> = {
   after_a3m2_rivet: {
     description:
       'after_a3m1_cleared, then the Harpoon licensed, the Mindspike attuned, and A3M2 won ' +
-      '(Victory): the Clean Exit took the Rivet and Orbital Strike (the reference). Skipped while ' +
-      'A3M2 is not registered.',
+      '(Victory): the Clean Exit took the Rivet and Orbital Strike (the reference).',
     build: () => actThreeThrough('a3_m02', { c1: 'cleared', revoked: 'rivet', door: 'convoy' }),
   },
   after_a3m2_thumper: {
-    description:
-      'after_a3m2_rivet, but the Clean Exit took the Thumper (and Orbital Strike). Skipped while ' +
-      'A3M2 is not registered.',
+    description: 'after_a3m2_rivet, but the Clean Exit took the Thumper (and Orbital Strike).',
     build: () => actThreeThrough('a3_m02', { c1: 'cleared', revoked: 'thumper', door: 'convoy' }),
   },
   after_a3m3_convoy: {
