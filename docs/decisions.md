@@ -1990,3 +1990,19 @@ Round 3, the last, found no highs. Fixed:
 - **Accessibility:** a locked choice's key hint is the group's description, and each C5 option's accessible name carries who backs it. The credits' screen-reader text joins a block's lines with commas.
 - The epilogue plays its cards one at a time, before the counter and the credits (every doc and comment now says so, not "over the credits").
 Backlogged (T877/T878): the post-game header's Everglow kicker, the Song's 1× silhouette, the Song on Keep, the economy fold duplicated in wreckage.ts, `reuseSeed` guarding seeded content.
+
+### D160 — 2026-11-12 — M8 shipped: the finale, the post-game and polish
+
+The campaign is complete. **FIN *Clearing the Way*:**
+- The Long Walk escorts the choir to the Deep Halls. Directive 0 asks Keep / Purge / Rewrite's last question, and the knock-knock lands as a joke before QUILL asks you to rebuild.
+- The Unsung rises (gathers → splits → phases and burrows → the Song on a long walk) and is laid to rest by the song, not killed.
+- Dawn breaks. Finale Results reads PESTS PROCESSED: 0; Sterling's farewell memo; **C5** (Stay or Go).
+- The epilogue plays its cards one at a time; the counter flips to REMEMBERED; the credits open with "A game by Rick Allen, and Claude, by Anthropic" and come to rest on "And you", the player's name over "Waykeeper"; the final image by ending.
+
+**The post-game** opens on the star map at dawn: veteran replays (the bonus pays only on a new best), QUILL's sim deck with Endless *The Long Shift* and three challenge maps, and "Watch the epilogue". **Polish:** the declutter pass (D153), lazy-loaded acts and the finale (initial JS 786 kB gz, down from 883), the split gate (D148) and the slow lane (D157).
+- **Balance:** FIN par 53.8 at Unsung damage ×1, ×1.5 and ×2; every alt and all 96 Story cells win; the challenge maps 54.5 / 63.6 / 57.1 (D155–D157, D159).
+- **Gate at ship:** typecheck, lint, 5,955 unit tests, the balance harness on 21 maps, the slow lane (the finale's 24-cell sweeps), 396 smoke flows and check:docs, in 1,115 s against the 8-minute budget (a warning; T878 holds the gate-time work).
+- **Reviews:** three rounds (D156, D157, D159). Round 3 found no highs.
+- **Art trail:** [docs/art/gallery/m8/](art/gallery/m8/), twelve sheets of ≤ 8,000 px: the Deep Halls, the Bore rig, the Unsung's growth ladder and forms, the choir, the memorial wrecks, Dawn, Wayside and the orbit, and the cast's dawn, damaged and singing portraits.
+- **Next:** no milestone is planned. The backlog (tasks.md § Backlog / Ideas) holds T877 (polish) and T878 (gate time and architecture), and the open follow-ups carried from M6–M8.
+- **Owner asks:** create release `m8` on GitHub (Releases → Draft a new release → new tag `m8` on `main`), which starts the Deploy workflow (architecture.md § 5, *Owner recipe*: enable GitHub Pages and the `github-pages` environment's tag rule first). Then play it through, both endings.
