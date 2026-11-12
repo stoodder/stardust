@@ -72,8 +72,16 @@ test('loadout: pick towers and an ability, lock in, change it from the briefing,
   // Bricks's card says he brings Suppressing Fire, so slot 2 needs no line of its own (T803d).
   await expect(page.getByTestId('loadout-brings')).toContainText(/Bricks brings it/i);
   await expect(page.locator('.sd-lo-companion')).toHaveCount(0);
-  // The formed links' names in view; the whole list behind "Every link" (T803d).
-  await expect(page.locator('.sd-lo-linked')).toHaveText('Crossfire · Sitting Ducks');
+  // The formed links in view, each name with its bonus under it (D156); the whole list behind
+  // "Every link" (T803d).
+  const linked = page.getByTestId('loadout-linked').getByRole('listitem');
+  await expect(linked).toHaveCount(2);
+  await expect(linked.nth(0)).toContainText('Crossfire');
+  await expect(linked.nth(1)).toContainText('Sitting Ducks');
+  for (const i of [0, 1]) {
+    // oxlint-disable-next-line no-await-in-loop -- one row after another
+    await expect(linked.nth(i).locator('.sd-lo-linked-bonus')).not.toHaveText('');
+  }
   await page.getByRole('button', { name: /^Every link/ }).click();
   const links = page.locator('.sd-lo-link');
   await expect(links).toHaveCount(17);

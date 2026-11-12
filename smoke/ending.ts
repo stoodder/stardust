@@ -84,9 +84,15 @@ export async function answerC5(
     // The badge's number answers its option.
     await page.keyboard.press(answer.startsWith('We stay') ? 'Digit1' : 'Digit2');
   } else {
-    // Enter on the group puts the focus on the first option; the next Enter picks it.
-    await expect(page.getByTestId('choice-group')).toBeFocused();
+    // Enter on the group answers nothing and moves nothing (mashed Enter never picks; D156);
+    // an arrow onto an option, then Enter, picks it.
+    const group = page.getByTestId('choice-group');
+    await expect(group).toBeFocused();
     await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+    await expect(group).toBeFocused();
+    await expect(page.getByRole('button', { name: /^We (stay|go)\./ })).toHaveCount(2);
+    await page.keyboard.press('ArrowDown');
     await expect(page.getByRole('button', { name: /^We stay\./ })).toBeFocused();
     if (!answer.startsWith('We stay')) await page.keyboard.press('ArrowDown');
     await page.keyboard.press('Enter');

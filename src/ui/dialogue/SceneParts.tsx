@@ -236,8 +236,9 @@ export function ChoiceList({ choices }: { choices: readonly ChoiceView[] }) {
       return;
     }
     if (!isPressKey(e.code)) return;
-    // On the group itself, Enter and Space answer nothing (no game key, no pause, no answer). Past
-    // the lock, Enter there puts the focus on the first option, so the next Enter picks it.
+    // On the group itself, Enter and Space do nothing (no game key, no pause, no answer, and no
+    // focus move: Enter mashed through a scene never reaches an option; D144 S4, D156). The way in
+    // is a number key, or an arrow and then Enter, which the hint under the options says.
     const onOption = e.target instanceof HTMLButtonElement;
     const now = performance.now();
     const fresh = choicePressAccepted({ until: end.current, downAt: now, now, repeat: e.repeat });
@@ -245,9 +246,6 @@ export function ChoiceList({ choices }: { choices: readonly ChoiceView[] }) {
       e.preventDefault();
       e.stopPropagation();
       if (e.code === 'Space') spaceRefused.current = true;
-      if (!onOption && fresh && e.code !== 'Space') {
-        e.currentTarget.querySelector<HTMLButtonElement>('button')?.focus();
-      }
       return;
     }
     down.current = { at: now, pointer: false, onReveal: false };

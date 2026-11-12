@@ -6,7 +6,8 @@
 // nothing; a click moves on a card): the world card under Stay, Thrum's card, the counter's flip
 // to REMEMBERED, the credits, and the final image (PERIMETER STATUS: OPEN over Wayside); then the
 // star map. The card (D156) headlines PESTS PROCESSED: 0 on the dawn (the first REMEMBERED is the
-// epilogue's flip), its medal "Perfect"; C5 is answered from the keyboard (Enter, then Enter). The
+// epilogue's flip), its medal "Perfect"; C5 is answered from the keyboard (Enter on the group answers
+// nothing; Down, then Enter). The
 // fixture writes nothing, so the post-game star map at dawn is shot from `save=after_fin_stay`.
 // Screenshots in <out>/screens/ending-stay/ (look at every one).
 import { expect, test } from './fixtures.ts';
