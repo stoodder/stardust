@@ -1,6 +1,6 @@
 // The finale's dev saves (T800b; meta-runtime.md § Dev saves) load into the app: the reference into
-// the finale under each C4 answer, the choir's two extremes, and the saves after C5. Until the
-// finale is registered each reaches the Sector map with the finale teased (they equal A3M6's).
+// the finale under each C4 answer, the choir's two extremes, and the saves after C5. Each reaches the
+// Sector map with the finale on it (registered by T820: open after A3M6).
 // One screenshot per save in <out>/screens/finale-saves/.
 import { expect, test } from './fixtures.ts';
 import { nextFrames, shot, waitForReady } from './hooks.ts';

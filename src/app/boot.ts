@@ -26,6 +26,7 @@ import { hasBattleMap } from './battleSetup.ts';
 import { loadDevFixtures } from './devRegistry.ts';
 import { ensureAllActs } from './actContent.ts';
 import { gateRouter } from './contentGate.ts';
+import { loadBattleRenderer } from './battleRenderer.ts';
 import { initSettings } from './settings.ts';
 import { createTestHooks, installTestHooks } from './testHooks.ts';
 import type { BootParams } from './testHookTypes.ts';
@@ -72,8 +73,6 @@ export async function boot(): Promise<void> {
   installAudio(params.audio);
   setJinglePlayer(playJingle);
   initSaves(browserKeyValueStore());
-  // The dev fixtures (the dev battles and saves) stay out of the initial JS: a dev URL (`?test=1`,
-  // or `?map=` naming no live map) loads their chunk first (devRegistry.ts; D150).
   // The story's later acts are lazy chunks (app/actContent.ts; T802), each loaded before a screen
   // that needs it (the router's gate, app/contentGate.ts). A dev server validates all the content
   // (it needs every act), and a test boot holds them all up front, since its hooks reach any of it
@@ -81,7 +80,12 @@ export async function boot(): Promise<void> {
   // oxlint-disable-next-line typescript/no-unnecessary-condition -- undefined outside Vite
   const devServer = import.meta.env === undefined || import.meta.env.DEV;
   const lazy = new URLSearchParams(window.location.search).get('lazy') === '1';
-  if (devServer || (params.test && !lazy)) await ensureAllActs();
+  // A test boot also loads the battle renderer up front, so no idle fetch is left in flight when a
+  // flow navigates away (a failed request fails a smoke flow).
+  if (devServer || (params.test && !lazy))
+    await Promise.all([ensureAllActs(), loadBattleRenderer()]);
+  // The dev fixtures (the dev battles and saves) stay out of the initial JS: a dev URL (`?test=1`,
+  // or `?map=` naming no live map) loads their chunk first (devRegistry.ts; D150).
   if (params.test || (params.map !== null && !hasBattleMap(params.map))) await loadDevFixtures();
   const devSave = params.save !== null && loadDevSave(params.save);
   if (params.save !== null && !devSave) logError(`boot: unknown dev save '${params.save}'`);
