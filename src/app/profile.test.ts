@@ -18,6 +18,7 @@ import {
   setIntakeEnabled,
   signIntake,
   withIntake,
+  withPreludeSeen,
   withProfileEdit,
 } from './profile.ts';
 import { activeSave, closeSession, initSaves, newGame, slotEmpty } from './save.ts';
@@ -56,6 +57,13 @@ describe('the name rule', () => {
 });
 
 describe('the intake writes', () => {
+  it('the prelude into story.seen, once (T1001)', () => {
+    const save = withPreludeSeen(createNewSave());
+    expect(save.story.seen).toEqual(['a1_m01_scene_prelude']);
+    expect(withPreludeSeen(save)).toBe(save);
+  });
+
+
   it('the profile with the first callsign, and the arrival_reason flag', () => {
     const save = withIntake(createNewSave(), { name: 'Ada', address: 'ms' }, 'lettuce');
     expect(save.profile).toEqual({

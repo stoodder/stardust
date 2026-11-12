@@ -4,6 +4,8 @@
 import { describe, expect, it } from 'vitest';
 import { SCENES } from '../../content/dialogue/index.ts';
 import {
+  DESCENT_H,
+  DESCENT_PAN,
   PRELUDE_FRAMES,
   PRELUDE_STILLS,
   preludeStillDef,
@@ -123,6 +125,9 @@ describe('the pan', () => {
     expect(PRELUDE_PAN.still).toBe('scene.descent');
     const def = preludeStillDef('scene.descent');
     expect(def.size.h - PRELUDE_PAN.to).toBe(180);
+    // The art's own numbers (descent.ts), kept literal in the core's rules (prelude.ts).
+    expect(PRELUDE_PAN.to).toBe(DESCENT_PAN);
+    expect(def.size.h).toBe(DESCENT_H);
     let last = -1;
     for (let ms = 0; ms <= PRELUDE_PAN.ms + 500; ms += 37) {
       const y = panOffset(PRELUDE_PAN, ms, false);
