@@ -2006,3 +2006,7 @@ The campaign is complete. **FIN *Clearing the Way*:**
 - **Art trail:** [docs/art/gallery/m8/](art/gallery/m8/), twelve sheets of ≤ 8,000 px: the Deep Halls, the Bore rig, the Unsung's growth ladder and forms, the choir, the memorial wrecks, Dawn, Wayside and the orbit, and the cast's dawn, damaged and singing portraits.
 - **Next:** no milestone is planned. The backlog (tasks.md § Backlog / Ideas) holds T877 (polish) and T878 (gate time and architecture), and the open follow-ups carried from M6–M8.
 - **Owner asks:** create release `m8` on GitHub (Releases → Draft a new release → new tag `m8` on `main`), which starts the Deploy workflow (architecture.md § 5, *Owner recipe*: enable GitHub Pages and the `github-pages` environment's tag rule first). Then play it through, both endings.
+
+### D161 — 2026-11-12 — M9: the polish pass
+
+The owner asked to finish M8's polish items (T877) after the ship. They become **M9**, run as a milestone (plan, test loop, review, art trail `docs/art/gallery/m9/`), in three lanes split by file ownership: UI (T900), render and art (T901), content, balance and docs (T902). Two items are dropped: T777(4)'s comms panel move (nothing shows players miss the lane) and the Song on Keep (D159). T878 (gate time and architecture) stays in the backlog.
