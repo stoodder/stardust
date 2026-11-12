@@ -366,6 +366,8 @@ export class EnemyView implements PooledView {
   #ownDepth = 0;
   #overDepth = 0;
   #depthFloor = Number.NEGATIVE_INFINITY;
+  /** Its sort lift while the song holds it (px of foot y; UnsungView, M8 R1), 0 otherwise. */
+  #holdLift = 0;
   /** The scene's keep-clear spots (null: none), and whether it stands near one now. */
   readonly #keepClear: KeepClear | null;
   #clear = false;
@@ -673,6 +675,7 @@ export class EnemyView implements PooledView {
     this.#strode = false;
     this.#tellStart = -1;
     this.#depthFloor = Number.NEGATIVE_INFINITY;
+    this.#holdLift = 0;
     this.#stopFlash();
     const layer = flying ? this.#ctx.layers.air : this.#ctx.layers.world;
     layer.add(this.#body);
@@ -824,11 +827,21 @@ export class EnemyView implements PooledView {
   }
 
   /**
-   * Sorts the body (and its mound) at its own depth or its floor, whichever is higher, and its
-   * overhead at its own.
+   * Lifts the body's sort by `px` of foot y (0: none): the held Unsung draws over the towers round
+   * it (UnsungView, unsungLook.ts UNSUNG_HOLD_LIFT_PX; M8 R1). Its overhead keeps its own sort.
+   */
+  setHoldLift(px: number): void {
+    if (px === this.#holdLift) return;
+    this.#holdLift = px;
+    if (!Number.isNaN(this.#x)) this.#applyDepth();
+  }
+
+  /**
+   * Sorts the body (and its mound) at its own depth (lifted while held) or its floor, whichever is
+   * higher, and its overhead at its own.
    */
   #applyDepth(): void {
-    const depth = Math.max(this.#ownDepth, this.#depthFloor);
+    const depth = Math.max(this.#ownDepth + this.#holdLift, this.#depthFloor);
     if (this.#body.depth !== depth) {
       this.#body.setDepth(depth);
       this.#mound.setDepth(depth);
@@ -1306,6 +1319,7 @@ export class EnemyView implements PooledView {
     this.#hitch = false;
     this.#fray = 0;
     this.#overClear = false;
+    this.#holdLift = 0;
     this.#dress.hideAll();
     this.#stopFlash();
     this.#body.stop();

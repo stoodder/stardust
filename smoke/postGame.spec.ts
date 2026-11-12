@@ -56,9 +56,9 @@ test('post-game: the Title at dawn, the Sector map at dawn under Stay, the plate
   const map = page.getByTestId('star-map');
   await expect(map).toBeVisible();
   await expect(map).toHaveAttribute('data-phase', 'dawn');
-  await expect(page.getByRole('heading', { name: 'After the dawn' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Start The Open Perimeter' })).toBeFocused();
-  await expect(row(page, /^Endless: The Open Perimeter/)).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('heading', { name: "QUILL's sim deck" })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Start The Long Shift' })).toBeFocused();
+  await expect(row(page, /^Endless: The Long Shift/)).toHaveAttribute('aria-pressed', 'true');
   // Stay: the colony's label is Wayside, Everglow's old words struck above it.
   const gardens = page.locator('[data-region="gardens"]');
   await expect(gardens).toContainText('Wayside');
@@ -148,9 +148,9 @@ test('post-game: Endless on a typed seed, the Next line, 3x, and the score scree
   await seed.fill('31337');
   await expect(page.getByTestId('endless-best')).toHaveText('No run on this seed yet.');
   await seed.fill('abc');
-  await expect(page.getByRole('button', { name: 'Start The Open Perimeter' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Start The Long Shift' })).toBeDisabled();
   await seed.fill('31337');
-  await page.getByRole('button', { name: 'Start The Open Perimeter' }).click();
+  await page.getByRole('button', { name: 'Start The Long Shift' }).click();
   const lockIn = page.getByRole('button', { name: 'Lock in' });
   await expect(lockIn.or(page.getByTestId('hud'))).toBeVisible();
   if (await lockIn.isVisible()) await lockIn.click();

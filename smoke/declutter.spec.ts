@@ -276,7 +276,7 @@ test('declutter c: the Sector map by phase', async ({ page }) => {
 
 test('declutter c: the post-game star map, a challenge, a replay, Go', async ({ page }) => {
   await boot(page, '&save=after_fin_stay');
-  await expect(page.getByRole('heading', { name: 'After the dawn' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: "QUILL's sim deck" })).toBeVisible();
   await capture(page, 'postgame-map');
   const shifts = page.getByRole('list', { name: 'Shifts' });
   await page

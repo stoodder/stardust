@@ -367,6 +367,8 @@ export interface RenderState {
     /** T830: the Unsung's bodies drawn now (its form sprites), and surfacing bursts showing. */
     readonly forms: readonly string[];
     readonly bursts: number;
+    /** M8 R1: bodies the song holds now, drawn rimmed and lifted (the boss's in its pool). */
+    readonly held: number;
   };
   /**
    * The boss bar's shield strip fill (px of 160; −1: none shows, or the boss has no shield) and

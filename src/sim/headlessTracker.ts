@@ -28,6 +28,12 @@ export interface WaveSummary {
    * reached the exit; 0 on other maps; T305c).
    */
   refugeesLost: number;
+  /**
+   * Singers hushed on a choir map (SingerHushed) while it was the latest wave started: the choir's
+   * per-wave loss, which the `gradual` check (D028) reads against the hush allowance (D156); 0 on
+   * other maps.
+   */
+  singersHushed: number;
   /** The tick it started, or −1. */
   startTick: number;
   /** Called during its countdown, and the bonus that paid. */
@@ -68,7 +74,8 @@ export interface RunSummary {
   /**
    * The map's objective at the end (an Escort from the start or by a pivot measures Evacuated;
    * T305c), its refugees (`escort.total`; 0 without escort data), and its loss limit (`escortMaxLost`:
-   * `maxLost`, or `maxLostPct` of the run's refugees; null: none).
+   * `maxLost`, or `maxLostPct` of the run's refugees; on a choir map its hush allowance,
+   * `ChoirDef.maxHushed` (D156); null: none).
    */
   readonly objective: ObjectiveKind;
   readonly escortTotal: number;
@@ -133,6 +140,7 @@ export function createRunTracker<K extends IdSpace>(
     integrityLost: 0,
     assetLost: 0,
     refugeesLost: 0,
+    singersHushed: 0,
     startTick: -1,
     early: false,
     earlyBonus: 0,
@@ -399,8 +407,13 @@ export function createRunTracker<K extends IdSpace>(
           case 'BearerHome':
           case 'ScriptGroupSpawned':
           // The finale (T800a seams): their tasks may tally them.
+          case 'SingerHushed': {
+            // Booked to the latest wave started (a hush by the Unsung or a Maw has no wave of its own).
+            const w = waveOf(state.wave);
+            if (w !== undefined) w.singersHushed++;
+            break;
+          }
           case 'ChoirHalted':
-          case 'SingerHushed':
           case 'LaidToRest':
           case 'Scattered':
           case 'Reformed':
@@ -534,7 +547,7 @@ export function createRunTracker<K extends IdSpace>(
         maxAsset: state.maxAsset,
         objective: state.objective,
         escortTotal: state.refugeeTotal,
-        maxLost: escortMaxLost(state, map),
+        maxLost: map.choir?.maxHushed ?? escortMaxLost(state, map),
         voices: state.choir.voices,
         choirSize: state.choir.singers,
         choirBase: choirBaseOf(map),

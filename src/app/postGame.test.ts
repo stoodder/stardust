@@ -87,7 +87,7 @@ describe('the post-game plate', () => {
     expect(entries[0]).toMatchObject({
       id: 'end_m01',
       kind: 'endless',
-      name: 'The Open Perimeter',
+      name: 'The Long Shift',
     });
     const challenges = entries.filter((e) => e.kind === 'challenge');
     expect(challenges.map((e) => e.id)).toContain('ch_m01');
@@ -118,7 +118,7 @@ describe('the post-game plate', () => {
     expect(parseSeed('-1')).toBeNull();
     expect(parseSeed('1.5')).toBeNull();
     expect(parseSeed('')).toBeNull();
-    expect(mapName('end_m01')).toBe('The Open Perimeter');
+    expect(mapName('end_m01')).toBe('The Long Shift');
     expect(mapName('ch_m01')).toBe('Skitterkin Only');
     expect(wavesText(1)).toBe('1 wave');
     expect(wavesText(23)).toBe('23 waves');

@@ -18,7 +18,7 @@
 //   jingle the player heard after every cleared wave in Act I, home at last. It plays from Dawn's
 //   light in the battle, and again from the epilogue's counter flip under the credits and the
 //   final image (app/ending.ts `ENDING_MUSIC`). `dawn_sung` is one pass of its first phrase and
-//   last line, as the Dawn scene says "Everyone sings it."
+//   last line, as the Dawn scene says "...and this time everyone sings it."
 // - **The song's end** (`fin_win`, the finale's win): "clear-ing the way", the last line, landing
 //   home on a full C major chord.
 // - **Sung lines** (storyCues.ts LINE_CUES): Pebble's hum at the memorial (`memorial_hum`: Bricks's
@@ -253,8 +253,8 @@ export const DAWN_MAJOR: Song = {
 };
 
 /**
- * "The jingle comes round again, in a major key. Everyone sings it." (the Dawn scene, a sung line):
- * one pass of the phrase and the last line, home, at Dawn's tempo.
+ * "The jingle comes round again, and this time everyone sings it." (the Dawn scene, a sung line):
+ * one pass of the phrase and the last line, home, in the major key at Dawn's tempo.
  */
 export const DAWN_SUNG: Song = {
   id: 'dawn_sung',

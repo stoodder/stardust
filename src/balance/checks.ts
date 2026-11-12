@@ -65,7 +65,7 @@ export interface CheckSpec {
  * measures Voices at their lowest (`stats.voicesMin`: Dawn wakes the hushed): singers singing ÷
  * the run's choir × 100, or, with a hush allowance (`ChoirDef.maxHushed`; T821), (base choir −
  * singers hushed) ÷ base choir × 100, so every flag cell reads the same margin for the same
- * hushes; 0 on a loss.
+ * hushes; with a core (the finale's gate), the lower of that and integrity % (D156); 0 on a loss.
  */
 export function marginOf(
   r: Pick<
@@ -88,8 +88,15 @@ export function marginOf(
     // The fewest singing (Dawn wakes the hushed: the score is the low point; T821). With a hush
     // allowance, Voices % of the base choir: the same hushes read the same margin in every cell.
     const voices = r.stats.voicesMin;
-    if (r.choirBase > 0) return (100 * (r.choirBase - (r.choirSize - voices))) / r.choirBase;
-    return (100 * voices) / r.choirSize;
+    const sung =
+      r.choirBase > 0
+        ? (100 * (r.choirBase - (r.choirSize - voices))) / r.choirBase
+        : (100 * voices) / r.choirSize;
+    // A choir map with a core (the finale's gate, D156): the weaker meter decides, as on a Protect
+    // map, since losing either loses.
+    if (r.maxIntegrity <= 0) return sung;
+    const core = (100 * r.integrity) / r.maxIntegrity;
+    return core < sung ? core : sung;
   }
   if (r.objective === 'escort') {
     if (r.outcome === 'lost' || r.escortTotal <= 0) return 0;
@@ -276,6 +283,7 @@ function waveLoss(w: HeadlessResult['waves'][number]): string {
   let out = `${w.integrityLost}`;
   if (w.assetLost > 0) out += `+${w.assetLost}a`;
   if (w.refugeesLost > 0) out += `+${w.refugeesLost}r`;
+  if (w.singersHushed > 0) out += `+${w.singersHushed}h`;
   return out;
 }
 
@@ -296,17 +304,24 @@ export function notGradual(r: HeadlessResult): string | null {
   if (assetWall !== undefined) {
     return `W${assetWall.wave} costs ${assetWall.assetLost} of ${r.maxAsset} asset, over ${MAX_WAVE_LOSS_PCT}%`;
   }
-  // An Escort's budget is the losses that lose it: maxLost refugees (T305c, D138).
+  // An Escort's budget is the losses that lose it: maxLost refugees (T305c, D138). A choir's is
+  // its hush allowance, and its losses are singers hushed (D156).
   const budget = r.maxLost ?? 0;
+  const choir = r.objective === 'choir';
+  const lostIn = (w: HeadlessResult['waves'][number]): number =>
+    choir ? w.singersHushed : w.refugeesLost;
   const refugeeCap = (budget * MAX_WAVE_LOSS_PCT) / 100;
-  const refugeeWall = budget > 0 ? r.waves.find((w) => w.refugeesLost > refugeeCap) : undefined;
+  const refugeeWall = budget > 0 ? r.waves.find((w) => lostIn(w) > refugeeCap) : undefined;
   if (refugeeWall !== undefined) {
-    return `W${refugeeWall.wave} loses ${refugeeWall.refugeesLost} refugees of the ${budget} that lose the map, over ${MAX_WAVE_LOSS_PCT}%`;
+    const what = choir ? 'singers hushed' : 'refugees';
+    return `W${refugeeWall.wave} loses ${lostIn(refugeeWall)} ${what} of the ${budget} the map allows, over ${MAX_WAVE_LOSS_PCT}%`;
   }
   if (r.outcome === 'lost') {
     const lost = r.lostAtWave ?? r.waves.length;
     const first =
-      r.waves.find((w) => w.integrityLost > 0 || w.assetLost > 0 || w.refugeesLost > 0)?.wave ??
+      r.waves.find(
+        (w) => w.integrityLost > 0 || w.assetLost > 0 || w.refugeesLost > 0 || w.singersHushed > 0,
+      )?.wave ??
       lost;
     if (first > lost - LEAK_LEAD_WAVES) {
       return `it loses in W${lost}, but its leaks only start in W${first} (they must start by W${lost - LEAK_LEAD_WAVES})`;

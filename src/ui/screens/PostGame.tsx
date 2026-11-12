@@ -36,7 +36,7 @@ import {
 import { activeSave } from '../../app/save.ts';
 import { campaignScreenName } from '../../app/starMap.ts';
 import { endlessScores } from '../../meta/endless.ts';
-import { POST_GAME_MAPS } from '../../content/postGame.ts';
+import { POST_GAME_MAPS, POST_GAME_PLATE } from '../../content/postGame.ts';
 import { RAW_CONTENT } from '../../content/registry.ts';
 import { trapTab } from '../dialogue/SceneParts.tsx';
 import { Disclosure } from '../components/Disclosure.tsx';
@@ -53,8 +53,8 @@ export function firstPostGameEntry(): string | null {
   return POST_GAME_MAPS.find((m) => Object.hasOwn(RAW_CONTENT.maps, m.id))?.id ?? null;
 }
 
-/** The plate's heading (story/style-guide.md § 2, *Finale*). */
-export const POST_GAME_HEADING = 'After the dawn';
+/** The plate's heading (story/style-guide.md § 2, *Finale*): QUILL's sim deck (D156). */
+export const POST_GAME_HEADING = POST_GAME_PLATE.heading;
 
 /** Endless's panel: the seed, the seed's best, and Start. */
 function EndlessBody({
@@ -322,10 +322,16 @@ export function PostGameLayer({ selected, select, arrival }: PostGameLayerProps)
     />
   );
   // The heading tops the column: over the open entry's panel, else over the rows.
+  // Under it, the deck's own line: none of it is real, and nobody is counted (D156).
   const heading = (
-    <h2 id="sd-pg-heading" class="sd-pg-heading" data-voice="heading">
-      {POST_GAME_HEADING}
-    </h2>
+    <>
+      <h2 id="sd-pg-heading" class="sd-pg-heading" data-voice="heading">
+        {POST_GAME_HEADING}
+      </h2>
+      <p class="sd-star-tagline sd-pg-tagline" data-voice="tagline">
+        {POST_GAME_PLATE.tagline}
+      </p>
+    </>
   );
   const endless = entries.filter((e) => e.kind === 'endless');
   const challenges = entries.filter((e) => e.kind === 'challenge');

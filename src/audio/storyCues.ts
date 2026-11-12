@@ -69,7 +69,7 @@ export interface LineCue {
  *   phrase low (`memorial_hum`); at the mouth of the Halls her six notes, the choir coming in on
  *   the last (`halls_hum`), before the hymn; for Thrum's echo, her six notes with her
  *   grandmother's voice answering in tenths that land on C (`echo_hum`); and in the Dawn scene,
- *   "Everyone sings it." is the jingle in C major, sung (`dawn_sung`).
+ *   "...and this time everyone sings it." is the jingle in C major, sung (`dawn_sung`).
  */
 export const LINE_CUES: readonly LineCue[] = [
   {
@@ -148,7 +148,7 @@ export const LINE_CUES: readonly LineCue[] = [
   {
     scene: 'fin_m01_scene_dawn',
     speaker: 'narrator',
-    text: '(The hushed ones wake. The jingle comes round again, in a major key. Everyone sings it.)',
+    text: '(The hushed ones wake. The jingle comes round again, and this time everyone sings it.)',
     cue: 'dawn_sung',
     quietMs: 0,
     musicDuck: 0.2,

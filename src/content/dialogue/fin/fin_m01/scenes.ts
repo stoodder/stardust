@@ -253,7 +253,7 @@ export const scenes = defineScenes([
     {
       kind: 'line',
       speaker: 'narrator',
-      text: '(The hushed ones wake. The jingle comes round again, in a major key. Everyone sings it.)',
+      text: '(The hushed ones wake. The jingle comes round again, and this time everyone sings it.)',
     },
     {
       kind: 'line',

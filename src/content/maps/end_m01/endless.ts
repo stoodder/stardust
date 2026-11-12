@@ -37,15 +37,15 @@ export interface EndlessDef {
   readonly categoryFrom: Readonly<Record<CounterId, number>>;
   /**
    * The units a block draws from: every enemy met in the campaign's waves except the neutral, the
-   * bosses and their parts, and units only a death or a boss makes (sim/endless.test.ts holds the
-   * list to the campaign's).
+   * bosses and their parts, units only a death or a boss makes, and the Skitterkin (D156;
+   * sim/endless.test.ts holds the list to the campaign's).
    */
   readonly roster: readonly EnemyId[];
   /** The first boss wave (it closes a block). */
   readonly firstBossWave: number;
   /** A boss every this many waves after it. */
   readonly bossEvery: number;
-  /** The bosses, the first one the run's first; each must walk any map (no markers, no story). */
+  /** The bosses, the first one the run's first; each must walk this map (no story beat). */
   readonly bosses: readonly EnemyId[];
   /** A group whose count would pass this takes a heavier unit when one fits (spawn time, CPU). */
   readonly maxGroupCount: number;
@@ -64,22 +64,16 @@ export const ENDLESS: EndlessDef = {
   firstWaveThreat: 600,
   growth: 1.07,
   // The warm-up, then one counter, two, and three from the fourth block (W16–W20) on. A boss's
-  // own categories can raise its block's count (Chitterbloom's brood brings splash to its armor).
+  // own categories can raise its block's count ("Shareholder Value" brings jam to its armor).
   countersPerBlock: [0, 1, 2, 3],
   // Act I's answers first (armor, air, splash), then shields; detection, burrowing, and jamming
   // once the third block (W11–W15) is past.
   categoryFrom: { armor: 1, air: 1, splash: 1, shield: 2, detection: 3, burrowed: 3, jam: 3 },
+  // No Skitterkin (D156): the post-game is QUILL's sim deck, and after "Remember them." it never
+  // asks the player to shoot the people they walked home. Ves'thara's lumenglass constructs stay:
+  // they were remote-piloted glass, not people.
   roster: [
-    // Skitterkin
-    'nibbler',
-    'zoomer',
-    'chonk',
-    'hauler',
-    'puffwing',
-    'bunchling',
-    'digger',
-    'elder',
-    // Aelari
+    // Aelari (lumenglass constructs)
     'glimmer',
     'weft_warden',
     'lightwing',
@@ -105,12 +99,12 @@ export const ENDLESS: EndlessDef = {
   firstBossWave: 20,
   bossEvery: 10,
   // The first boss at W20, once a build has had three blocks to grow (at W10 the reference build,
-  // five towers in, lost to Chitterbloom on every seed tried). Chitterbloom first (the colony's
-  // oldest pest, back at Dome Row), then the Glass Witch and the
-  // Gathering Maw with it in a seeded rotation. Not "Shareholder Value" (its jettison needs the
-  // crash-site markers A3M5 has), the Sunderglass Penitent (it pivots: its faction stops after
-  // it), or the Unsung (it is laid to rest only by the Leaving Song).
-  bosses: ['chitterbloom', 'glass_witch', 'gathering_maw'],
+  // five towers in, lost to the run's first boss on every seed tried). The Gathering Maw first,
+  // then it and "Shareholder Value" (Sterling's platform, its plates landing on the map's crash
+  // site) in turn. Not Bramble (Chitterbloom) or Ves'thara (the Glass Witch, and the Sunderglass
+  // Penitent she piloted): people the player walked home are never targets here (D156). Not the
+  // Unsung either (it is laid to rest only by the Leaving Song).
+  bosses: ['gathering_maw', 'shareholder_value'],
   maxGroupCount: 24,
   spawnWindowSec: 16,
   minIntervalSec: 0.25,

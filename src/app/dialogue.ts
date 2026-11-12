@@ -38,6 +38,7 @@ import { SHARED_BARKS } from '../content/dialogue/barks/index.ts';
 import { barksFor, BARKS, mapDialogue, SCENES } from '../content/dialogue/index.ts';
 import type { FlagSet } from '../content/dialogue/flags.ts';
 import { isCampaignMapId, parseSceneId } from '../content/dialogue/rules.ts';
+import { POST_GAME_MAPS } from '../content/postGame.ts';
 import { SPEAKER_DEFS } from '../content/dialogue/speakers.ts';
 import {
   SCENE_ID,
@@ -322,6 +323,12 @@ export function lineView(
 /** What dialogue knows about the battle in play. */
 interface Session {
   readonly map: CampaignMapId | null;
+  /**
+   * The campaign map the story reads as, where `map` is null: a post-game map's is the finale's
+   * (`POST_GAME_STORY_MAP`; the world after the dawn), so its map conditions hold as there (CH1's
+   * Pebble keeps Bricks's cap and her name). Null on a campaign or dev map.
+   */
+  readonly storyMap: CampaignMapId | null;
   /** Speakers on the radio: QUILL and the companion when present (style-guide § 5.5). */
   readonly present: readonly SpeakerId[];
   /**
@@ -383,8 +390,21 @@ export function setStoryRun(run: RunContext | null): void {
   storyRun = run;
 }
 
-/** The story context for `map`: the save's (meta/story.ts), plus the run's kills so far. */
-function storyContext(map: CampaignMapId | null): StoryContext {
+/** The campaign map a post-game map's story reads as (M8 r1, D156): the finale's. */
+export const POST_GAME_STORY_MAP: CampaignMapId = 'fin_m01';
+
+/** The campaign map `mapId`'s story reads as: its own, a post-game map's the finale's, else null. */
+export function storyMapOf(mapId: string): CampaignMapId | null {
+  if (isCampaignMapId(mapId)) return mapId;
+  return POST_GAME_MAPS.some((m) => m.id === mapId) ? POST_GAME_STORY_MAP : null;
+}
+
+/**
+ * The story context for `map`: the save's (meta/story.ts), plus the run's kills so far. With no
+ * campaign map, a post-game battle's reads as the finale (`Session.storyMap`).
+ */
+function storyContext(campaignMap: CampaignMapId | null): StoryContext {
+  const map = campaignMap ?? session?.storyMap ?? null;
   const save = activeSave();
   const kills = session?.runKills() ?? 0;
   const live = session === null ? {} : { live: session.live(), liveScript: session.script() };
@@ -1574,6 +1594,7 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
   const offline = offlineSpeakers(map, activeSave());
   const s: Session = {
     map,
+    storyMap: null,
     present: presentSpeakers(mapDef, everglow.includes(true), sim.config.companion).filter(
       (id) => !offline.includes(id),
     ),

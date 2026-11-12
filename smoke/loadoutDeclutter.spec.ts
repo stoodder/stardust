@@ -169,9 +169,9 @@ test('loadout declutter: Skitterkin Only greys the other towers; Endless gets a 
     .getByTestId('post-game')
     .getByRole('button', { name: /^Endless: / })
     .click();
-  await page.getByRole('button', { name: 'Start The Open Perimeter' }).click();
+  await page.getByRole('button', { name: 'Start The Long Shift' }).click();
   await expect(page.getByRole('heading', { name: 'Loadout' })).toBeVisible();
-  await expect(page.locator('.sd-lo-header .sd-kicker')).toHaveText('The Open Perimeter');
+  await expect(page.locator('.sd-lo-header .sd-kicker')).toHaveText('The Long Shift');
   await nextFrames(page);
   await shot(page, FLOW, 5, 'endless');
   await page.getByRole('button', { name: 'Lock in' }).click();

@@ -529,7 +529,11 @@ export class BattleScene extends Phaser.Scene {
     );
     this.#bossBar = new BossBarView(ctx, prefersReducedMotion);
     this.#song = new SongView(ctx, prefersReducedMotion); // T805
-    this.#unsung = new UnsungView(ctx, prefersReducedMotion); // T808
+    this.#unsung = new UnsungView(ctx, prefersReducedMotion, {
+      view: (uid) => this.#enemies.get(uid),
+      fx: this.#fx,
+      map: () => this.#deps.sim.map,
+    }); // T808; M8 R1: the song's hold on it
     this.#huddles = new HuddleView(ctx, prefersReducedMotion, pulseOn);
     this.#shields = new ShieldView(ctx, this.#fx, prefersReducedMotion);
     // T530a: views that mark a unit find its body as EnemyView draws it (unitAnchor.ts).

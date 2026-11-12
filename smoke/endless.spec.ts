@@ -1,4 +1,4 @@
-// T861: Endless's map, END_M01 *The Open Perimeter*, registered by the finale's lazy chunk, opens
+// T861: Endless's map, END_M01 *The Long Shift*, registered by the finale's lazy chunk, opens
 // as a battle (`?map=end_m01`): A1M1's Dome Row at dawn in its 22×14 band (two rifts, two air lanes
 // from the north corners, ten new buildable tiles), the core on A1M1's gate. The battle plays the
 // map's authored warm-up (the generated waves are the post-game shell's to swap in, T863): W1's
@@ -7,7 +7,7 @@
 import { expect, test } from './fixtures.ts';
 import { shot, waitForReady } from './hooks.ts';
 
-test('endless: The Open Perimeter boots at dawn and W1 walks the old road', async ({ page }) => {
+test('endless: The Long Shift boots at dawn and W1 walks the old road', async ({ page }) => {
   await page.goto('/?test=1&map=end_m01&skipIntro=1&seed=7');
   await waitForReady(page);
   const start = await page.evaluate(() => {

@@ -25,7 +25,7 @@ export interface PostGameEntryView {
   readonly medals: number;
   /** A challenge's briefing facts (threats, required, medals by name); null for Endless. */
   readonly brief: StarBriefView | null;
-  /** The plate entry's accessible name: "Endless: The Open Perimeter. Best: 23 waves." */
+  /** The plate entry's accessible name: "Endless: The Long Shift. Best: 23 waves." */
   readonly label: string;
 }
 

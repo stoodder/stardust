@@ -52,7 +52,7 @@ const cats = (id: string): Set<CounterId> => categoriesOf(enemy(id));
 const within = (a: ReadonlySet<CounterId>, b: readonly CounterId[]): boolean =>
   [...a].every((c) => b.includes(c));
 
-describe('END_M01 · The Open Perimeter', () => {
+describe('END_M01 · The Long Shift', () => {
   it('is A1M1 revisited at dawn: a Defend map with ten pads of its own around the old ten', () => {
     expect(map).toMatchObject({ act: 'endless', env: 'finale', objective: 'defend' });
     expect(map.revisitOf).toBe('a1_m01');
@@ -94,18 +94,39 @@ describe('the rules', () => {
     expect(() => endlessPlan(bad, content, 1)).toThrow(RangeError);
   });
 
-  it("draws from every enemy met in the campaign's waves but the neutral, bosses, and broods", () => {
+  it("draws from every enemy met in the campaign's waves but the neutral, bosses, broods, and Skitterkin", () => {
     const met = new Set<string>();
     for (const id of content.campaign) {
       const m = content.maps[id];
       for (const w of m.waves) for (const g of w.groups) met.add(g.enemy.id);
       for (const g of Object.values(m.scriptGroups)) met.add(g.enemy.id);
     }
+    // No Skitterkin (D156): the post-game never asks the player to shoot the people they walked
+    // home.
     const expected = [...met].filter((id) => {
       const e = enemy(id);
-      return e.boss === null && !e.neutral;
+      return e.boss === null && !e.neutral && e.faction !== 'skitterkin';
     });
     expect([...ENDLESS.roster].toSorted()).toEqual(expected.toSorted());
+  });
+
+  it('fields no one the player walked home: no Skitterkin, Bramble, or Ves\'thara', () => {
+    const walkedHome = (id: string): boolean => {
+      const e = enemy(id);
+      return e.faction === 'skitterkin' || ['glass_witch', 'sunderglass_penitent'].includes(id);
+    };
+    expect(ENDLESS.bosses.filter(walkedHome)).toEqual([]);
+    for (const w of map.waves) for (const g of w.groups) expect(walkedHome(g.enemy.id)).toBe(false);
+    for (const seed of SEEDS) {
+      for (const w of plans.get(seed)!.waves) {
+        for (const g of w.groups) expect(walkedHome(g.enemy), `seed ${seed}`).toBe(false);
+        // Nor what a splitter's death releases.
+        for (const g of w.groups) {
+          const split = enemy(g.enemy).split;
+          if (split !== null) expect(walkedHome(split.enemy)).toBe(false);
+        }
+      }
+    }
   });
 
   it("measures a unit's threat as the content validator does", () => {
