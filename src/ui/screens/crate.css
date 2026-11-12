@@ -58,8 +58,15 @@
   position: absolute;
   left: 12px;
   top: 7px;
+  margin: 0;
+  font: inherit;
   color: var(--sd-orange-3);
   letter-spacing: 1px;
+}
+
+.cr-lid-brand:focus-visible {
+  outline: 1px solid var(--sd-orange-3);
+  outline-offset: 1px;
 }
 
 /* Peeled off (act3.md § A3M6): a torn white scrap still stuck at its left end, then the pale
@@ -86,14 +93,6 @@
   width: 6px;
   background: var(--sd-white-0);
   clip-path: polygon(0 0, 100% 0, 50% 25%, 100% 50%, 34% 75%, 84% 100%, 0 100%);
-}
-
-.cr-title {
-  margin: 4px 0 0;
-  font-family: var(--font-heading);
-  font-size: 8px;
-  font-weight: normal;
-  color: var(--sd-orange-3);
 }
 
 /* Zibzab's word (D150), under his plate as a briefing line has it: plate column, then the words. */

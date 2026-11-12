@@ -1,7 +1,8 @@
 // Top-right: speed and pause, the wave counter, the call-wave button (with its early-call bonus),
 // and the next wave's preview with its countdown (core-loop §2.2): a NEW tag on a type the player
 // has never met, a MAIL tag with the hold-fire glyph on a neutral (Gerald, R9), and on a map with
-// two spawns, which spawn each group comes from (a spawn opening for the first time is flagged too).
+// two spawns, which spawn each group comes from: the groups by spawn, its name once before them
+// (T803b; a spawn opening for the first time is flagged too).
 import { callWave, setSpeed } from '../../app/commands.ts';
 import { hud, speed } from '../state.ts';
 import { Icon } from './Icon.tsx';
@@ -37,17 +38,58 @@ export function SpeedControls() {
   );
 }
 
-/** Longest spawn name the preview's chip shows whole. */
-const SPAWN_CHIP_CHARS = 5;
+/** Longest spawn chip the preview shows (8 px Silkscreen: ~48 px). */
+const SPAWN_CHIP_CHARS = 8;
+/** A spawn name's last word that says nothing on its own ("Bore road" is the Bore's). */
+const SPAWN_GENERIC_WORDS = new Set(['road', 'field', 'path', 'lane', 'route', 'trail']);
+/** Compass words, shown as capitals ("Rift ne" → "Rift NE"). */
+const COMPASS_WORDS = new Set(['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw']);
+/** A compass word's letter, for a name too long to show whole ("Rift East" → "Rift E"). */
+const COMPASS_LETTERS: Readonly<Record<string, string>> = {
+  north: 'N',
+  south: 'S',
+  east: 'E',
+  west: 'W',
+};
 
-/** A spawn's chip in the preview: its name ("West"), or its initials if long ("North Gate" → "NG"). */
+/**
+ * A spawn's chip in the preview (T803b: words, never cryptic initials): its name without a generic
+ * last word ("Bore road" → "Bore", "Rift field" → "Rift"), compass words in capitals ("Rift NE"),
+ * a long name's compass word as its letter ("Rift East" → "Rift E"), and failing that its first
+ * word (cut to SPAWN_CHIP_CHARS). The group's tooltip and screen-reader label carry the full name.
+ */
 export function spawnShort(spawn: string): string {
-  if (spawn.length <= SPAWN_CHIP_CHARS) return spawn;
-  return spawn
-    .split(' ')
-    .map((w) => w.charAt(0))
-    .join('')
-    .slice(0, SPAWN_CHIP_CHARS);
+  const words = spawn.split(' ').filter((w) => w !== '');
+  const last = words.at(-1)?.toLowerCase() ?? '';
+  if (words.length > 1 && SPAWN_GENERIC_WORDS.has(last)) words.pop();
+  const shown = words.map((w) => (COMPASS_WORDS.has(w.toLowerCase()) ? w.toUpperCase() : w));
+  const whole = shown.join(' ');
+  if (whole.length <= SPAWN_CHIP_CHARS) return whole;
+  // Still long: a compass word to its letter ("Rift East" → "Rift E"), else the first word.
+  const terse = shown.map((w) => COMPASS_LETTERS[w.toLowerCase()] ?? w).join(' ');
+  if (terse.length <= SPAWN_CHIP_CHARS) return terse;
+  return (shown[0] ?? whole).slice(0, SPAWN_CHIP_CHARS);
+}
+
+/**
+ * The preview's groups in spawn order (T803b): each spawn's groups together, in the order the spawns
+ * first appear, so its chip shows once, on the first of them (`chip`), not on every row.
+ */
+export function bySpawn<G extends { readonly spawn: string | null }>(
+  groups: readonly G[],
+): { readonly group: G; readonly chip: boolean }[] {
+  const order: (string | null)[] = [];
+  for (const g of groups) if (!order.includes(g.spawn)) order.push(g.spawn);
+  const out: { group: G; chip: boolean }[] = [];
+  for (const spawn of order) {
+    let first = true;
+    for (const g of groups) {
+      if (g.spawn !== spawn) continue;
+      out.push({ group: g, chip: first && spawn !== null });
+      first = false;
+    }
+  }
+  return out;
 }
 
 /**
@@ -137,7 +179,7 @@ export function WavePanel() {
             </li>
           )}
           {!restricted &&
-            next.groups.map((g) => {
+            bySpawn(next.groups).map(({ group: g, chip }) => {
               const where = `${g.air ? ', air' : ''}${g.spawn === null ? '' : `, from ${g.spawn}${g.newSpawn ? ', a new spawn' : ''}`}`;
               return (
                 <li
@@ -147,6 +189,12 @@ export function WavePanel() {
                   aria-label={`${g.count} ${g.label}${g.neutral ? ', the mail: hold fire' : ''}${g.isNew ? ', new' : ''}${g.fast ? ', fast' : ''}${where}`}
                   title={`${g.label}${g.neutral ? ' (the mail: hold fire)' : ''}${g.fast ? ' (fast)' : ''}${g.air ? ' (air)' : ''}${g.spawn === null ? '' : ` (${g.spawn})`}`}
                 >
+                  {/* Its spawn's chip, once per spawn, before the first of its groups (T803b). */}
+                  {chip && g.spawn !== null && (
+                    <span class={`hud-spawn${g.newSpawn ? ' opens' : ''}`} aria-hidden="true">
+                      {spawnShort(g.spawn)}
+                    </span>
+                  )}
                   <span class="hud-preview-icon">
                     <Icon id={g.icon} />
                     {g.isNew && (
@@ -162,11 +210,6 @@ export function WavePanel() {
                     <span class="hud-mail">
                       <Glyph rects={HOLD_GLYPH} />
                       Mail
-                    </span>
-                  )}
-                  {g.spawn !== null && (
-                    <span class={`hud-spawn${g.newSpawn ? ' opens' : ''}`} aria-hidden="true">
-                      {spawnShort(g.spawn)}
                     </span>
                   )}
                 </li>

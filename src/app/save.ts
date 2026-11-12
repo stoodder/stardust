@@ -8,6 +8,7 @@ import { CAMPAIGN, CAMPAIGN_PLAN } from '../content/campaign.ts';
 import { MAPS } from '../content/maps/index.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
 import { POST_GAME_MAPS } from '../content/postGame.ts'; // T803d
+import { challengeRunEnd } from '../meta/challengeRunEnd.ts'; // T803d
 import type { MapId } from '../content/types.ts';
 import { devFixtures } from './devRegistry.ts';
 import {
@@ -271,14 +272,23 @@ export function stardustNoteText(): string {
 /**
  * Ends a run in the save in play (meta-runtime.md § Run end: Pests Processed, medals, rewards) and
  * writes it. Returns what the run paid with the write's status, or null without a save or for a
- * non-campaign map (a `?map=` dev battle), which leave no record. A failed write is logged; the
+ * map that is neither a campaign map nor a challenge (Endless, a `?map=` dev battle), which leave
+ * no record here. A failed write is logged; the
  * session keeps the new save, and Results says so.
  */
 export function recordRun(
   input: Omit<RunEndInput, 'mapId'> & { readonly mapId: string },
 ): RecordedRun | null {
-  if (session === null || !isCampaignMap(input.mapId)) return null;
-  const { save, summary } = runEnd(session.save, { ...input, mapId: input.mapId });
+  if (session === null) return null;
+  const mapId = input.mapId;
+  // A challenge (T803d) keeps its own record and pays Intel for medals, never Stardust, and never
+  // touches the campaign (meta/challengeRunEnd.ts). Endless files its score elsewhere
+  // (app/postGame.ts `recordEndlessEnd`).
+  let ended: ReturnType<typeof runEnd>;
+  if (isChallengeMap(mapId)) ended = challengeRunEnd(session.save, { ...input, mapId });
+  else if (isCampaignMap(mapId)) ended = runEnd(session.save, { ...input, mapId });
+  else return null;
+  const { save, summary } = ended;
   session.save = save;
   const w = persist();
   const unspendable = summary.stardust.amount > 0 && !systemOpen('shop');
@@ -310,6 +320,11 @@ export function setDifficulty(difficulty: Difficulty): SaveResult {
   if (session.save.settings.difficulty === difficulty) return { ok: true };
   session.save = { ...session.save, settings: { ...session.save.settings, difficulty } };
   return persist();
+}
+
+/** A registered challenge map (T862): its runs are recorded (T803d), Endless's are not here. */
+function isChallengeMap(id: string): id is MapId {
+  return POST_GAME_MAPS.some((m) => m.id === id && m.kind === 'challenge') && isPostGameMap(id);
 }
 
 /**
@@ -478,9 +493,10 @@ function summarize(save: SaveData): { progress: string; mapsWon: number } {
   const next = onStarMap(save)
     ? starMapEntries(save).find((e) => e.state === 'open')
     : shiftBoard(save).find((e) => e.state === 'open');
-  const mapsWon = Object.values(save.campaign.maps).filter(
-    (m) => m !== undefined && m.completed,
-  ).length;
+  // Campaign maps only: a challenge's record (T803d) is not a shift cleared.
+  const maps: Readonly<Record<string, { readonly completed: boolean } | undefined>> =
+    save.campaign.maps;
+  const mapsWon = CAMPAIGN_PLAN.filter((m) => maps[m.id]?.completed === true).length;
   const progress =
     next !== undefined
       ? `Shift ${next.index} · ${next.name}`

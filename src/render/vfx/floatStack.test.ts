@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { FLOAT_ROW_PX, FLOAT_STACK_ROWS, stackFloat, type FloatSlot } from './floatStack.ts';
+import {
+  amountText,
+  floatAmount,
+  FLOAT_ROW_PX,
+  FLOAT_STACK_ROWS,
+  stackFloat,
+  type FloatSlot,
+} from './floatStack.ts';
 
 const at = (cx: number, baseY: number, w = 20): FloatSlot => ({ active: true, cx, baseY, w });
 
@@ -32,5 +39,17 @@ describe('stackFloat (T334, T332)', () => {
       50 - 2 * FLOAT_ROW_PX,
     ]);
     expect(placed.slice(FLOAT_STACK_ROWS).every((y) => y === null)).toBe(true);
+  });
+});
+
+describe('floatAmount and amountText (T803b)', () => {
+  it('reads a signed number back, and words as none', () => {
+    expect(floatAmount('\u2212150')).toBe(-150);
+    expect(floatAmount('-3')).toBe(-3);
+    expect(floatAmount('+40')).toBe(40);
+    expect(floatAmount('CROSSFIRE!')).toBeNull();
+    expect(floatAmount('PLINK!')).toBeNull();
+    expect(amountText(-495)).toBe('\u2212495');
+    expect(amountText(80)).toBe('+80');
   });
 });

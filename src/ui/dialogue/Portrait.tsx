@@ -99,15 +99,24 @@ function useClock(key: number, running: boolean): number {
  * speaker's colour, or a lettered placeholder while the art is still to come. Decorative: the
  * name plate beside it names the speaker.
  */
-export function Portrait({ line, talking }: { line: LineView; talking: boolean }) {
+export function Portrait({
+  line,
+  talking,
+  still: held = false,
+}: {
+  line: LineView;
+  talking: boolean;
+  /** At rest for good: no flap, flicker or policy flash (the briefing's earlier faces; T803e). */
+  still?: boolean;
+}) {
   const p = line.portrait;
-  const still = prefersReducedMotion();
+  const still = held || prefersReducedMotion();
   const ms = useClock(line.id, p !== null && !still);
   const style = { '--dlg-edge': plateColor(line.color) };
   if (p === null) return null;
   const s = spriteFrames(p.sprite);
   const frame =
-    s === null ? null : pickFrame(s.names, p.variant, p.expression, phaseAt(p, ms, talking, still));
+    s === null ? null : pickFrame(s.names, p.variant, p.expression, held ? 'rest' : phaseAt(p, ms, talking, still));
   const img = s === null || frame === null ? null : frameUrl(s, p.sprite, frame, p.dark);
   return (
     <span

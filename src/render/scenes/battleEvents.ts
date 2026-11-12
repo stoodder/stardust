@@ -12,7 +12,8 @@
 // new tower's `−cost`; and T430a's: deaths in the act's tone (deathLook.ts: Act I's comic pop, Act
 // II's quiet pop and lingering stardust fleck, the Aelari's shatter, the Hollow's unravelling
 // violet motes), the hush's vanish (its tell is EnemyView's, on sim ticks), and Cloudburst's
-// pulse ring at the flyers' height as well as on the ground. Render-only: it reads sim state.
+// pulse ring at the flyers' height as well as on the ground; and T803b's: on the finale, no
+// Harmony callout in Phase 2 and no floater at all from Dawn. Render-only: it reads sim state.
 import type { IdSpace } from '../../content/types.ts';
 import type { Bus } from '../../shared/bus.ts';
 import type { DeepReadonly } from '../../shared/types.ts';
@@ -88,6 +89,13 @@ const HUSH_RING_TILES = 0.6;
 const HUSH_RING_MS = 300;
 /** Cloudburst's ring at the flyers' height (its ground ring is the Sprinkler's `blue.4`). */
 const AIR_PULSE_COLOR = 'white.1';
+/**
+ * The finale's script phases as the floaters read them (T803b; sim `state.phase`): in Phase 2 the
+ * Harmony link's callout stays quiet under the choir's song, and from Dawn nothing floats at all.
+ */
+const SONG_PHASE = 2;
+const DAWN_PHASE = 3;
+const HARMONY_LINK = 'harmony';
 /** Where a death's shards and motes start: the body's middle, above its ground point (px). */
 const DEATH_BODY_PX = 6;
 
@@ -325,6 +333,8 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
       const look = Object.hasOwn(LINK_CALLOUT, e.link) ? LINK_CALLOUT[e.link] : undefined;
       const name = content.links.find((l) => l.id === e.link)?.name;
       if (look === undefined) return;
+      // The finale's Phase 2 (T803b): the choir is singing; the Harmony link doesn't call over it.
+      if (e.link === HARMONY_LINK && sim.state.phase === SONG_PHASE) return;
       for (const t of [a, b]) {
         fx.ring(t.col + 0.5, t.row + 0.5, LINK_RING_TILES, look.ring, LINK_RING_MS, true, t.liftPx);
       }
@@ -596,7 +606,12 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
     bus.on('AllyRemoved', (e) => {
       views.allies.release(e.uid);
     }),
+    // The finale's Dawn (T803b): no number or callout rises over the sunrise.
+    bus.on('PhaseChanged', (e) => {
+      if (map.song !== null && e.phase >= DAWN_PHASE) fx.muteText();
+    }),
   ];
+  if (map.song !== null && sim.state.phase >= DAWN_PHASE) fx.muteText();
   // A battle that starts past tick 0 resumed from a checkpoint (app/checkpoints.ts): its replay ran
   // before this scene, so the views the events would have made come from the state instead (towers
   // and enemies sync every frame): the active links' tethers, and the props cued by now.

@@ -5,7 +5,16 @@ import { VIEW_H, VIEW_W } from '../render/scale.ts';
 import { createSim } from '../sim/index.ts';
 import { battleConfig } from './battleSetup.ts';
 import { nextPriority, PRIORITY_CYCLE } from './commands.ts';
-import { announce, callPulses, staysArmed, UPGRADE_TEACH_WAVE, upgradeHintShows } from './hud.ts';
+import {
+  announce,
+  callPulses,
+  CHECKPOINT_CUE_MS,
+  cueStale,
+  staysArmed,
+  UPGRADE_TEACH_WAVE,
+  upgradeHintShows,
+  WAVE_BANNER_MS,
+} from './hud.ts';
 import { selectedView } from './hudPanel.ts';
 import {
   abilityDescription,
@@ -369,5 +378,16 @@ describe('the upgrade teach (D028)', () => {
     expect(upgradeHintShows(true, true, 1, true)).toBe(false); // upgraded once: done for good
     expect(upgradeHintShows(true, false, 0, true)).toBe(false); // nothing to upgrade
     expect(upgradeHintShows(true, false, 1, false)).toBe(false); // the map ended
+  });
+});
+
+describe('cues on a timer also leave on sim time (T803b)', () => {
+  it("keeps a cue through its beat at 3x, and drops it after a fast-forward's minute", () => {
+    // At 3x, the 1.2 s banner's wall-clock span is 216 ticks: still up then.
+    expect(cueStale(100, 100 + 216, WAVE_BANNER_MS)).toBe(false);
+    expect(cueStale(100, 100 + 60 * 60, WAVE_BANNER_MS)).toBe(true);
+    // The checkpoint chip (3 s) over the next wave, a fast-forward later.
+    expect(cueStale(0, 540, CHECKPOINT_CUE_MS)).toBe(false);
+    expect(cueStale(0, 60 * 20, CHECKPOINT_CUE_MS)).toBe(true);
   });
 });

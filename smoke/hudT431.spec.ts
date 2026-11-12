@@ -100,6 +100,8 @@ test('hud: A2M1 briefs its objective, shows Bricks on slot 2, and teaches Spare 
   const intel = page.getByTestId('threat-intel');
   await expect(intel).toContainText('Hollow clusters');
   await expect(intel).not.toContainText('Clustered');
+  // The medals and objectives wait one press away (T803e): "3 medals · 1 optional".
+  await page.getByRole('button', { name: /medals and optional objectives$/ }).click();
   const objectives = page.getByTestId('briefing-objectives');
   await expect(objectives).toContainText('Crew Logs');
   await expect(objectives).toContainText('+1 Intel');

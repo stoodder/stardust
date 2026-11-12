@@ -8,11 +8,20 @@
 // "License revoked", never pickable; a revoked Orbital Strike reads "Uplink revoked" under its
 // stamp in the Technician column (towers.md § 9; D143 R4).
 // The router shows it only when there's a choice to make (meta/loadout.ts, the skip rule).
+// Declutter (T803d; D153): what the pick decides stays in first view (the threats on their own row
+// under the kicker, every card's counter chips, the picked protocols' effects, the formed links'
+// names, the heads-up); the rest is one hover, focus or press away: an unpicked protocol's effect
+// shows on the line under the list while it's hovered or focused, the whole Links list opens from
+// its toggle (a floating Disclosure), and the pick-order hint is the grid's tooltip. Slot 2's line
+// shows only where no Technician card already says who brings it. The run's rules show where they
+// bite (T860, T862): Short-Handed beside the tower count, a challenge's stay-home towers greyed
+// with why, Radio Silence and No Protocols as a line under their heading.
 // Keys: Tab moves between the groups; the arrows move within the tower grid and the ability
 // radio group; Enter or Space toggles a tower or a protocol; Lock in has the focus on arrival, so
 // Enter goes straight on with the remembered pick; Esc goes back to the Shift board.
 import { MenuNotice } from './MenuNotice.tsx';
 import { Fragment, type RefObject } from 'preact';
+import { Disclosure } from '../components/Disclosure.tsx';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import {
   abilityGreyed,
@@ -46,6 +55,9 @@ import {
 import './screens.css';
 import './Loadout.css';
 
+/** How the pick's order plays (the Towers heading's tooltip and the grid's description). */
+const PICK_ORDER_HINT = 'Pick order is build-slot order (keys 1–4 in the shift).';
+
 /** The tower grid's columns (the arrow keys move by these). */
 const GRID_COLUMNS = 2;
 
@@ -64,17 +76,19 @@ function TowerCard(props: {
   onToggle: () => void;
 }) {
   const { t, slot, full, index } = props;
-  const blocked = slot === null && full;
+  const stays = t.stays !== undefined;
+  const blocked = slot === null && (full || stays);
   const answers = t.answers.map((a) => (a.via === null ? a.label : `${a.label} ${a.via}`));
   return (
     <li>
       <button
         type="button"
-        class={`sd-lo-tower${slot !== null ? ' sd-lo-on' : ''}${blocked ? ' sd-lo-full' : ''}`}
+        class={`sd-lo-tower${slot !== null ? ' sd-lo-on' : ''}${blocked ? ' sd-lo-full' : ''}${stays ? ' sd-lo-stays' : ''}`}
         aria-pressed={slot !== null}
         aria-disabled={blocked}
         aria-label={
           `${t.name}${t.jailbroken === true ? ', jailbroken' : ''}, ${t.role}, ${t.cost} credits` +
+          (stays ? `, ${t.stays}` : '') +
           (answers.length > 0 ? `, answers ${answers.join(', ')}` : '') +
           (slot !== null ? `, build slot ${slot}` : '')
         }
@@ -114,6 +128,12 @@ function TowerCard(props: {
             {/* Zibzab's firmware (T731; towers.md § 9): said in words too, not only the glow. */}
             {t.jailbroken === true && <span class="sd-lo-jb"> · Jailbroken</span>}
           </span>
+          {/* A challenge's faction rule leaves it home (T862): greyed, and says why. */}
+          {stays && (
+            <span class="sd-lo-stays-why" data-testid="loadout-stays">
+              {t.stays}
+            </span>
+          )}
           {t.answers.length > 0 && (
             <span class="sd-lo-chips" data-critical="tower-counters">
               {t.answers.map((a) => (
@@ -313,6 +333,9 @@ function CompanionPicker(props: {
 /**
  * The Field Protocol picker: each owned protocol toggles on and off (aria-pressed), up to the
  * slots; with one slot, picking another swaps it in. Specialist, once equipped, picks its tower.
+ * A row is its name; an equipped one shows its effect too, and the others show theirs on the line
+ * under the list while hovered or focused (T803d; the button's name always carries it). A note
+ * (no core on this shift, benched) always shows: it says why the row is dim.
  */
 function Protocols(props: {
   view: LoadoutView;
@@ -321,68 +344,91 @@ function Protocols(props: {
   onFull: () => void;
 }) {
   const { view, pick } = props;
+  const [peek, setPeek] = useState<string | null>(null);
   if (view.protocols.length === 0) {
     return <p class="sd-lo-dim">None owned yet. Zibzab sells them.</p>;
   }
   const full = pick.protocols.length >= view.protocolSlots && view.protocolSlots > 1;
+  const peeked = view.protocols.find((p) => p.id === peek && !pick.protocols.includes(p.id));
   return (
-    <ul class="sd-lo-protocols" aria-label={`Field Protocols, equip up to ${view.protocolSlots}`}>
-      {view.protocols.map((p: LoadoutProtocolView) => {
-        const on = pick.protocols.includes(p.id);
-        const blocked = !on && full;
-        const tower = pick.protocolPicks[p.id];
-        // Benched on arrival (D144 S1b), its note says so until the player equips it again.
-        const note = on ? p.inert : (p.benched ?? p.inert);
-        return (
-          <li key={p.id} class="sd-lo-protocol-row">
-            <button
-              type="button"
-              class={`sd-lo-protocol${on ? ' sd-lo-on' : ''}${blocked ? ' sd-lo-full' : ''}${p.inert === null ? '' : ' sd-lo-inert'}`}
-              data-protocol={p.id}
-              aria-pressed={on}
-              aria-disabled={blocked}
-              aria-label={`${p.name}: ${p.effect}${note === null ? '' : `. ${note}`}${on ? ', equipped' : ''}`}
-              onClick={() => {
-                const next = togglePickProtocol(pick, p.id);
-                if (next === pick) props.onFull();
-                else props.onPick(next);
-              }}
-            >
-              <span class="sd-lo-protocol-name" aria-hidden="true">
-                {p.name}
-              </span>
-              <span class="sd-lo-protocol-effect" aria-hidden="true">
-                {p.effect}
-              </span>
-              {note !== null && (
-                // Still equips (the player's call); it just has nothing to do here (D143 R9).
-                <span class="sd-lo-protocol-inert" aria-hidden="true" data-testid="protocol-inert">
-                  {note}
+    <>
+      <ul class="sd-lo-protocols" aria-label={`Field Protocols, equip up to ${view.protocolSlots}`}>
+        {view.protocols.map((p: LoadoutProtocolView) => {
+          const on = pick.protocols.includes(p.id);
+          const blocked = !on && full;
+          const tower = pick.protocolPicks[p.id];
+          // Benched on arrival (D144 S1b), its note says so until the player equips it again.
+          const note = on ? p.inert : (p.benched ?? p.inert);
+          const show = (): void => setPeek(p.id);
+          const hide = (): void => setPeek((was) => (was === p.id ? null : was));
+          return (
+            <li key={p.id} class="sd-lo-protocol-row">
+              <button
+                type="button"
+                class={`sd-lo-protocol${on ? ' sd-lo-on' : ''}${blocked ? ' sd-lo-full' : ''}${p.inert === null ? '' : ' sd-lo-inert'}`}
+                data-protocol={p.id}
+                aria-pressed={on}
+                aria-disabled={blocked}
+                aria-label={`${p.name}: ${p.effect}${note === null ? '' : `. ${note}`}${on ? ', equipped' : ''}`}
+                onMouseEnter={show}
+                onMouseLeave={hide}
+                onFocus={show}
+                onBlur={hide}
+                onClick={() => {
+                  const next = togglePickProtocol(pick, p.id);
+                  if (next === pick) props.onFull();
+                  else props.onPick(next);
+                }}
+              >
+                <span class="sd-lo-protocol-name" aria-hidden="true">
+                  {p.name}
                 </span>
-              )}
-            </button>
-            {on && p.takesTower && (
-              <label class="sd-lo-protocol-tower">
-                <span class="sd-lo-dim">Tower </span>
-                <select
-                  value={tower}
-                  aria-label={`${p.name}: tower`}
-                  onChange={(e) =>
-                    props.onPick(setProtocolTower(pick, p.id, e.currentTarget.value))
-                  }
+                {/* Equipped: what it does stays in view (the pick is the decision). */}
+                <span
+                  class={on ? 'sd-lo-protocol-effect' : 'sd-lo-protocol-effect sd-lo-peek-only'}
+                  aria-hidden="true"
                 >
-                  {view.towers.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            )}
-          </li>
-        );
-      })}
-    </ul>
+                  {p.effect}
+                </span>
+                {note !== null && (
+                  // Still equips (the player's call); it just has nothing to do here (D143 R9).
+                  <span
+                    class="sd-lo-protocol-inert"
+                    aria-hidden="true"
+                    data-testid="protocol-inert"
+                  >
+                    {note}
+                  </span>
+                )}
+              </button>
+              {on && p.takesTower && (
+                <label class="sd-lo-protocol-tower">
+                  <span class="sd-lo-dim">Tower </span>
+                  <select
+                    value={tower}
+                    aria-label={`${p.name}: tower`}
+                    onChange={(e) =>
+                      props.onPick(setProtocolTower(pick, p.id, e.currentTarget.value))
+                    }
+                  >
+                    {view.towers.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+      {/* The hovered or focused protocol's effect, one line under the list (the screen reader has
+          it in the button's name already). */}
+      <p class="sd-lo-peek" aria-hidden="true" data-testid="protocol-peek">
+        {peeked === undefined ? '' : `${peeked.name}: ${peeked.effect}`}
+      </p>
+    </>
   );
 }
 
@@ -424,6 +470,48 @@ function Links({ view, pick }: { view: LoadoutView; pick: LoadoutPickView }) {
         );
       })}
     </ul>
+  );
+}
+
+/**
+ * The Links section (T803d): its heading with the formed count, the formed links' names in view
+ * (what the pick does), and the whole list, bonuses and what each still needs, one press away in a
+ * floating Disclosure that opens upward over the column, so it never pushes the heads-up or the
+ * footer.
+ */
+function LinksSection({ view, pick }: { view: LoadoutView; pick: LoadoutPickView }) {
+  const formed = formedLinks(pick);
+  const names = view.links.filter((l) => formed.includes(l.id)).map((l) => l.name);
+  return (
+    <section class="sd-lo-links-section" aria-labelledby="sd-lo-links-label">
+      <h2 id="sd-lo-links-label" class="sd-panel-heading sd-lo-heading">
+        Links{' '}
+        {view.links.length > 0 && (
+          // How many of the pool's links the pick forms (T431).
+          <span class="sd-lo-count" data-testid="loadout-links-count">
+            {linkedCount(view, pick)} / {view.links.length}
+          </span>
+        )}
+      </h2>
+      {view.links.length === 0 ? (
+        <Links view={view} pick={pick} />
+      ) : (
+        <div class="sd-lo-links-row">
+          <p class={names.length === 0 ? 'sd-lo-linked sd-lo-dim' : 'sd-lo-linked'}>
+            {names.length === 0 ? 'None formed' : names.join(' · ')}
+          </p>
+          <Disclosure
+            float
+            class="sd-lo-links-more"
+            label="Every link"
+            lessLabel="Hide links"
+            about="every link your towers can form, and what each needs"
+          >
+            <Links view={view} pick={pick} />
+          </Disclosure>
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -509,7 +597,13 @@ export function Loadout() {
   const toggle = (id: string): void => {
     const next = togglePickTower(pick, id);
     if (next === pick) {
-      setNotice(`${view.max} towers is the limit. Drop one to swap this one in.`);
+      const t = view.towers.find((x) => x.id === id);
+      const cap = view.rules?.cap ?? null;
+      setNotice(
+        t?.stays !== undefined
+          ? `${t.name}: ${t.stays}.`
+          : `${view.max} towers is the limit${cap === null ? '' : ` (${cap})`}. Drop one to swap this one in.`,
+      );
       return;
     }
     setNotice(null);
@@ -518,8 +612,9 @@ export function Loadout() {
   return (
     <main class="sd-screen sd-menu" aria-labelledby="sd-loadout-heading">
       <section class="sd-panel sd-menu-panel sd-lo-panel">
-        <header class="sd-menu-header">
-          <div>
+        {/* The kicker has its own line; the threats sit beside the heading, never under it. */}
+        <header class="sd-menu-header sd-lo-header">
+          <div class="sd-lo-title">
             <p class="sd-kicker" data-voice="kicker">
               {view.shift === null ? view.mapName : `Shift ${view.shift} · ${view.mapName}`}
             </p>
@@ -558,12 +653,28 @@ export function Loadout() {
         <MenuNotice />
         <div class="sd-lo-body">
           <section class="sd-lo-main" aria-labelledby="sd-lo-towers-label">
-            <h2 id="sd-lo-towers-label" class="sd-panel-heading sd-lo-heading">
+            {/* The pick-order hint is the heading's tooltip and the grid's description (T803d). */}
+            <h2
+              id="sd-lo-towers-label"
+              class="sd-panel-heading sd-lo-heading"
+              title={PICK_ORDER_HINT}
+            >
               Towers{' '}
-              <span class="sd-lo-count">
-                {pick.towers.length} / {view.max}
+              <span class="sd-lo-count-group">
+                {view.rules?.cap !== null && view.rules?.cap !== undefined && (
+                  // A run rule lowers the limit (Short-Handed; T860): said where the count is.
+                  <span class="sd-lo-rule" data-testid="loadout-cap">
+                    {view.rules.cap}
+                  </span>
+                )}
+                <span class="sd-lo-count">
+                  {pick.towers.length} / {view.max}
+                </span>
               </span>
             </h2>
+            <p id="sd-lo-order-hint" class="sd-visually-hidden">
+              {PICK_ORDER_HINT}
+            </p>
             <div class="sd-lo-towers-wrap">
               <div class="sd-lo-grid-row">
                 <ul
@@ -571,6 +682,7 @@ export function Loadout() {
                   id="sd-lo-towers"
                   class="sd-lo-towers"
                   aria-label={`Towers, pick up to ${view.max}`}
+                  aria-describedby="sd-lo-order-hint"
                 >
                   {view.towers.map((t, i) => {
                     const at = pick.towers.indexOf(t.id);
@@ -627,6 +739,9 @@ export function Loadout() {
                     {pick.protocols.length} / {view.protocolSlots}
                   </span>
                 </h2>
+                {view.rules?.noProtocols !== null && view.rules?.noProtocols !== undefined && (
+                  <p class="sd-lo-rule-note">{view.rules.noProtocols}</p>
+                )}
                 <Protocols
                   view={view}
                   pick={pick}
@@ -652,7 +767,10 @@ export function Loadout() {
               (view.lockedAbilities ?? []).length === 0 && (
                 <p class="sd-lo-dim">No abilities issued yet.</p>
               )}
-            {view.abilities.length > 0 && (
+            {view.rules?.noAbilities !== null && view.rules?.noAbilities !== undefined && (
+              <p class="sd-lo-rule-note">{view.rules.noAbilities}</p>
+            )}
+            {view.abilities.length > 0 && (view.rules?.noAbilities ?? null) === null && (
               <AbilityPicker
                 abilities={view.abilities}
                 picked={pick.ability}
@@ -678,23 +796,16 @@ export function Loadout() {
                 />
               </>
             ) : (
-              view.companion !== null && (
+              // Slot 2's line, unless a Technician card already says who brings it (T803d).
+              view.companion !== null &&
+              !view.abilities.some((a) => a.brings !== undefined) && (
                 <p class="sd-lo-companion">
                   <span class="sd-lo-dim">Slot 2 </span>
                   {view.companion}
                 </p>
               )
             )}
-            <h2 class="sd-panel-heading sd-lo-heading">
-              Links{' '}
-              {view.links.length > 0 && (
-                // How many of the pool's links the pick forms: the list may scroll (T431).
-                <span class="sd-lo-count" data-testid="loadout-links-count">
-                  {linkedCount(view, pick)} / {view.links.length}
-                </span>
-              )}
-            </h2>
-            <Links view={view} pick={pick} />
+            {/* The heads-up before the links, so it always has room (T871). */}
             <div class="sd-lo-warnings" aria-live="polite">
               {warnings.map((w) => (
                 <p key={w} class="sd-lo-warning">
@@ -702,12 +813,13 @@ export function Loadout() {
                 </p>
               ))}
             </div>
+            <LinksSection view={view} pick={pick} />
           </aside>
         </div>
         <footer class="sd-row sd-menu-footer">
-          {/* Left of the buttons, so the column above keeps its height for the protocols (D144). */}
+          {/* A notice (the limit, a stay-home tower), left of the buttons (D144). */}
           <p class="sd-lo-hint" role="status">
-            {notice ?? 'Pick order is build-slot order (keys 1–4 in the shift).'}
+            {notice ?? ''}
           </p>
           <button type="button" class="sd-button" onClick={toCampaign}>
             {campaignScreenName()}

@@ -12,7 +12,6 @@ import { slotAimsAtPath } from '../render/input/tileFacts.ts';
 import { VIEW_H, VIEW_W } from '../render/scale.ts';
 import { createSim, towerStats, type Sim, type SimState } from '../sim/index.ts';
 import { hud } from '../ui/state.ts';
-import { objectiveRows } from '../ui/hud/layout.ts';
 import type { StoryContext } from '../story/conditions.ts';
 import { battleConfig } from './battleSetup.ts';
 import { lineView } from './dialogue.ts';
@@ -88,9 +87,6 @@ describe("Bramble's column on the tracker (A3M1's The Matriarch's Young)", () =>
     const [walking] = objectiveViews(sim.map, {}, [], { matriarchs_young: 6 });
     expect(walking?.walking).toBe(6);
     expect(objectiveViews(sim.map)[0]).not.toHaveProperty('walking');
-    // Its long name wraps to two lines in the status panel's height.
-    expect(objectiveRows(objectiveViews(sim.map))).toBe(2);
-    expect(objectiveRows([{ name: 'Clean Audit' }])).toBe(1);
   });
 });
 

@@ -1433,14 +1433,82 @@ section.chamfer,
   letter-spacing: -1px;
 }
 
-/* The objective tracker: a 6 px box per objective and its name, under the medals. In reach: the
-   accent outline. Done: gold. Out of reach this run: dimmed (never red; the tooltip says
-   "Next time!"). */
-.hud-objectives {
+/* The records row (T803b): the medal diamonds, then the objective boxes, on one 8 px line at the
+   panel's foot; the "+" at its right end opens their names over the playfield (a floated
+   Disclosure). The "+" is a 16 px button laid over the row's edge, so the row stays 8 px tall. */
+.hud-records {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 8px;
+}
+
+.hud-records-more {
+  position: absolute;
+  right: -4px;
+  top: -4px;
+}
+
+.hud-records-more > .sd-disclosure-toggle {
+  min-width: 16px;
+  justify-content: center;
+  padding: 0;
+  font-size: 0;
+}
+
+.hud-records-more .sd-disclosure-caret {
+  font-size: 8px;
+}
+
+.hud-records-more > .sd-disclosure-region {
+  left: auto;
+  right: -6px;
+  top: calc(100% + 2px);
+  width: 168px;
+  min-width: 0;
+}
+
+.hud-records-list {
   display: grid;
-  gap: 2px;
+  gap: 4px;
   margin: 0;
-  padding: 0 0 0 2px;
+  padding: 0;
+  list-style: none;
+  line-height: 9px;
+  color: var(--sd-white-0);
+  text-transform: none;
+}
+
+.hud-records-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+}
+
+.hud-records-item > .hud-medal,
+.hud-records-item > .hud-objective-box {
+  flex: none;
+  margin-top: 2px;
+}
+
+.hud-records-item.forfeited,
+.hud-records-item.failed {
+  color: var(--sd-steel-3);
+}
+
+.hud-records-name {
+  color: var(--accent);
+}
+
+/* The objective tracker: a 6 px box per objective beside the medals (its walkers' count beside
+   it). In reach: the accent outline. Done: gold. Out of reach this run: dimmed (never red; the
+   tooltip says "Next time!"). */
+.hud-objectives {
+  display: flex;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
   list-style: none;
 }
 
@@ -1452,11 +1520,6 @@ section.chamfer,
   min-height: 8px;
   line-height: 8px;
   color: var(--sd-white-0);
-}
-
-/* A name longer than a line (OBJECTIVE_LINE_CHARS) wraps under itself (layout.ts counts it). */
-.hud-objective-name {
-  min-width: 0;
 }
 
 .hud-objective-box {
@@ -1473,7 +1536,7 @@ section.chamfer,
   background: var(--sd-gold-3);
 }
 
-.hud-objective.done .hud-objective-name {
+.hud-objective.done .hud-records-name {
   color: var(--sd-gold-3);
 }
 
@@ -1562,8 +1625,9 @@ section.chamfer,
   margin-top: 4px;
 }
 
+/* A spawn's chip, once before its groups (T803b). */
 .hud-spawn {
-  margin-left: 1px;
+  margin-right: 2px;
   color: var(--sd-steel-3);
 }
 
@@ -1572,12 +1636,8 @@ section.chamfer,
 }
 
 /* A group objective's walkers (T631; A3M1's The Matriarch's Young): how many of Bramble's column
-   are on the road, in the escort chip's green, at the row's bottom right (beside a wrapped name's
-   short last line), while they walk. */
+   are on the road, in the escort chip's green, beside its box, while they walk. */
 .hud-objective-walking {
-  position: absolute;
-  right: 0;
-  bottom: 0;
   color: var(--sd-green-4);
 }
 
@@ -1691,21 +1751,16 @@ section.chamfer,
   color: var(--sd-white-1);
 }
 
-/* The choir's rows start under its glyph: "Hushed" and up to 15 pips (its hushes before the floor)
-   fit the panel's 100 px only without the Escort's 12 px indent. */
-.hud-escort.choir .hud-escort-of,
+/* The choir's Hushed row starts under its glyph: "Hushed" and up to 15 pips (its hushes before the
+   floor) fit the panel's 100 px only without the Escort's 12 px indent. */
 .hud-escort.choir .hud-escort-lost {
   margin-left: 0;
 }
 
-/* The choir halted (the playfield's HALTED plate): white on red at the end of the "of 16" row. */
-.hud-escort.choir .hud-escort-of {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
+/* The choir halted (the playfield's HALTED plate): the Voices row's label reads HALTED, white on
+   red, its "16/16" beside it (T803b). */
 .hud-halted-tag {
+  justify-self: start;
   padding: 0 2px;
   color: var(--sd-white-1);
   background: var(--sd-red-2);

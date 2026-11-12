@@ -18,3 +18,38 @@
 .sd-offer-retired .sd-offer-effect {
   color: var(--sd-steel-3);
 }
+
+/* Declutter (T803d): a row owned in full (or retired) sorts last in its group (Shelf.tsx
+   `settledLast`) and drops its effect line (its tooltip, and still in the row for screen
+   readers); the seller's line stays, since it is the character's (an Engineering row, with none,
+   is one line). */
+.sd-offer-compact {
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+
+.sd-offer-compact .sd-offer-effect {
+  display: none;
+}
+
+/* A row that waits ("Arrives after The Audit", "Needs the Prism Spire") says so at the end of its
+   name's line, on one line, and gives the row the side column it doesn't need. */
+.sd-offer-head {
+  flex-wrap: wrap;
+}
+
+.sd-offer-head .sd-offer-wait {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: none;
+  margin-left: auto;
+  font-family: var(--font-heading);
+  line-height: 8px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.sd-offer-side:empty {
+  display: none;
+}

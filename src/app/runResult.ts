@@ -30,7 +30,7 @@ import { linesUntilChoice, readThrough } from '../story/runner.ts';
 import type { ResultsMeter } from '../story/counter.ts';
 import { resolveText, type TextContext } from '../story/text.ts';
 import { PERFECT_CORE_MEDAL_ID, VICTORY_MEDAL_ID } from '../sim/index.ts';
-import type { VeteranModifierId } from '../meta/veteran.ts'; // T860
+import { veteranBonusPct, type VeteranModifierId } from '../meta/veteran.ts'; // T860
 import type { SpokenLine } from '../ui/state.ts';
 import type {
   MedalResult,
@@ -352,6 +352,10 @@ export function runRewardsOf(
       wavesResolved: summary.stardust.wavesResolved,
       waveCount,
       fromWave,
+      // T860: the bonus a replay win carried, noted on the line (the payout already holds it).
+      ...(source === 'replay' && input.veteran !== undefined
+        ? { veteranPct: veteranBonusPct(input.veteran) }
+        : {}),
     },
     intel: summary.intel,
     lifetimePests: summary.pestsProcessed.lifetime,
@@ -564,7 +568,7 @@ export function meterOf(input: Pick<RunEndInput, 'escort' | 'bearers'>): Results
   return b === undefined ? null : { kind: 'carried', n: b.home, total: b.total };
 }
 
-/** One of the card's stat rows under the headline: "Waves survived 12 / 12". */
+/** One of the card's stat rows under the headline: "Waves survived 5 / 12". */
 export interface ResultsStat {
   /** The row's id (its smoke test id is `results-<id>`). */
   readonly id: 'waves' | 'integrity' | 'escort' | 'asset' | 'voices';
@@ -575,25 +579,36 @@ export interface ResultsStat {
 }
 
 /**
- * The card's stat rows (core-loop.md § 6.2): the waves, then the map's meter as it ended. A map
- * that ended as an Escort (from the start, or after a pivot like A2M5's) lists its meter in Core
- * integrity's place, as the HUD did ("Evacuated 25 / 36 · lost 11"; the lost count only when one
- * was lost); a Protect map's asset joins the core.
+ * The card's stat rows (core-loop.md § 6.2): a loss's waves survived (a win's headline says them),
+ * then the map's meter as it ended. A map that ended as an Escort (from the start, or after a
+ * pivot like A2M5's) lists its meter in Core integrity's place, as the HUD did ("Evacuated 25 / 36
+ * · lost 11"; the lost count only when one was lost); a Protect map's asset joins the core.
  */
 export function resultsStats(
   r: Pick<
     RunResult,
-    'wavesSurvived' | 'waveCount' | 'integrity' | 'maxIntegrity' | 'escort' | 'asset' | 'voices'
+    | 'outcome'
+    | 'wavesSurvived'
+    | 'waveCount'
+    | 'integrity'
+    | 'maxIntegrity'
+    | 'escort'
+    | 'asset'
+    | 'voices'
   >,
 ): ResultsStat[] {
-  const out: ResultsStat[] = [
-    {
-      id: 'waves',
-      label: 'Waves survived',
-      value: `${r.wavesSurvived} / ${r.waveCount}`,
-      note: null,
-    },
-  ];
+  // A win survived every wave (its headline says so): the row would only repeat "8 / 8" (T803e).
+  const out: ResultsStat[] =
+    r.outcome === 'won'
+      ? []
+      : [
+          {
+            id: 'waves',
+            label: 'Waves survived',
+            value: `${r.wavesSurvived} / ${r.waveCount}`,
+            note: null,
+          },
+        ];
   const { escort, asset, voices } = r;
   if (voices !== undefined) {
     // A choir map (the finale): its Voices stand where the core would (T809), as what the player

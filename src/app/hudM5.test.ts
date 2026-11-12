@@ -178,8 +178,8 @@ describe('the Escort meter (T531)', () => {
   });
 
   it('grows the status corner by its two small rows', () => {
-    expect(hudCorners(0, false, true)[0]!.h).toBe(HUD_CORNERS[0]!.h + ESCORT_EXTRA_H);
-    expect(hudCorners(0)).toBe(HUD_CORNERS);
+    expect(hudCorners(false, true)[0]!.h).toBe(HUD_CORNERS[0]!.h + ESCORT_EXTRA_H);
+    expect(hudCorners()).toBe(HUD_CORNERS);
   });
 
   it("counts the ramp row and Sundown's line in the tower panel's height", () => {

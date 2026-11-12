@@ -1,18 +1,20 @@
 // The results screen (T115, T204c, T316, T410b): shown over the frozen battle when a run ends, in
 // the map's presentation dials (its counter style and UI act theme; core-loop.md § 6.7). One headline
-// (with any story stamp beside it: A1M5's CONTAINMENT LAPSE, core-loop.md § 6.2), the run's waves
-// and integrity on one line, the counter and the lifetime count, which tick up together
-// (art-direction §9; T235), the payroll (the Stardust paid and why, the first payday marked; on a
-// win the map's medals and optional objectives, this run's lit and first-time ones tagged NEW with
-// their Intel), and the debrief with its speakers' name plates (D028). The way on is Continue (base
-// or Shift board) or Retry, with Change loadout beside Retry where the map offers the loadout
-// screen (T220), and after a loss with a checkpoint (Act II on) "Retry from wave N" first
-// (core-loop.md § 2.12); after a win, leaving plays the map's after-Results scenes first
-// (app/runFlow.ts). The story's transactions join the payroll (T510: A2M4's Q3 Bonus with its memo,
-// A2M5's gift, C2's trade; T610: A3M2's revocations with the uplink's refund row), Act III's
-// Stardust arrives as the warrens' gift stones under "Given", A3M3's card holds its payroll back for
-// the base (`heldRewards`) and a won Holdout's card is only "Held." and "Evacuated: {n}." (T614,
-// heldCard.ts), an Escort's meter takes Core integrity's place in the stats (Evacuated, with its lost count), and a debrief's story
+// (with any story stamp beside it: A1M5's CONTAINMENT LAPSE, core-loop.md § 6.2), the run's meter
+// on one line (a loss's waves survived first; a win's headline says them, T803e), the counter and
+// the lifetime count, which tick up together (art-direction §9; T235), the payroll (the Stardust
+// paid and why beside the act's Stardust icon, the first payday marked; on a win the map's medals
+// and optional objectives, this run's lit and first-time ones tagged NEW with their Intel), and
+// the debrief with its speakers' name plates (D028). The way on is Continue (base or Shift board)
+// or Retry, with Change loadout beside Retry where the map offers the loadout screen (T220), and
+// after a loss with a checkpoint (Act II on) "Retry from wave N" first (core-loop.md § 2.12), with
+// Retry then asking once (T329); the finale's win offers Continue alone (T803e). After a win,
+// leaving plays the map's after-Results scenes first (app/runFlow.ts). The story's transactions
+// join the payroll (T510: A2M4's Q3 Bonus with its memo, A2M5's gift, C2's trade; T610: A3M2's
+// revocations with the uplink's refund row), Act III's Stardust arrives as the warrens' gift stones
+// under "Given", A3M3's card holds its payroll back for the base (`heldRewards`) and a won
+// Holdout's card is only "Held." and "Evacuated: {n}." (T614, heldCard.ts), an Escort's meter takes
+// Core integrity's place in the stats (Evacuated, with its lost count), and a debrief's story
 // choice (C2) takes the way on's place until it is answered (app/resultsFlow.ts; StoryChoice.tsx:
 // price first, its heading focused, its options locked for a beat). The card is a real modal: Tab
 // stays on it.
@@ -48,6 +50,12 @@ import {
 import { sceneBlocks } from '../dialogue/state.ts';
 import { trapTab } from '../dialogue/SceneParts.tsx';
 import { colorVar } from '../color.ts';
+import { Icon } from '../hud/Icon.tsx';
+import {
+  STARDUST_ICON,
+  type StardustPhase,
+} from '../../content/sprites/icons/stardust.ts'; // T843: the currency icon by phase
+import type { StoryAct } from '../../content/dialogue/types.ts';
 import { assertNever } from '../../shared/types.ts';
 import { prefersReducedMotion } from '../motion.ts';
 import type { SpokenLine } from '../state.ts';
@@ -177,22 +185,34 @@ function Amount({ n, currency }: { n: number; currency: keyof typeof CURRENCY })
   );
 }
 
-/** The Stardust line's label and note, in Everglow's voice (style-guide § 2, Act I system copy). */
-function stardustLine(s: RunRewards['stardust']): { label: string; note?: string } {
+/** A replay win's veteran bonus, noted on the Stardust line (T860): "Veteran +40%", or null. */
+export function veteranNote(s: RunRewards['stardust']): string | null {
+  return s.source === 'replay' && (s.veteranPct ?? 0) > 0 ? `Veteran +${s.veteranPct}%` : null;
+}
+
+/** Notes joined with the line's " · ", or none. */
+function joined(...notes: (string | null)[]): { note?: string } {
+  const kept = notes.filter((n): n is string => n !== null);
+  return kept.length === 0 ? {} : { note: kept.join(' · ') };
+}
+
+/**
+ * The Stardust line's label and note, in Everglow's voice (style-guide § 2, Act I system copy). A
+ * defeat's share isn't spelled out in waves: the stat row above says them (T803e); after a
+ * checkpoint retry it says where the stipend counts from (D006).
+ */
+export function stardustLine(s: RunRewards['stardust']): { label: string; note?: string } {
+  const unpaid = s.base === 0 ? 'Training shifts are unpaid!' : null;
   switch (s.source) {
     case 'first_clear':
-      return s.base === 0
-        ? { label: 'Shift bonus', note: 'Training shifts are unpaid!' }
-        : { label: 'Shift bonus' };
+      return { label: 'Shift bonus', ...joined(unpaid) };
     case 'replay':
-      return s.base === 0
-        ? { label: 'Overtime bonus', note: 'Training shifts are unpaid!' }
-        : { label: 'Overtime bonus' };
-    case 'defeat': {
-      // After a checkpoint retry the stipend counts the waves from the checkpoint on (D006).
-      const since = s.fromWave === null ? '' : ` since wave ${s.fromWave}`;
-      return { label: 'Effort stipend', note: `${s.wavesResolved}/${s.waveCount} waves${since}` };
-    }
+      return { label: 'Overtime bonus', ...joined(veteranNote(s), unpaid) };
+    case 'defeat':
+      return {
+        label: 'Effort stipend',
+        ...joined(s.fromWave === null ? null : `Since wave ${s.fromWave}`),
+      };
     case 'defeat_replay':
       return { label: 'Effort stipend', note: 'Shift already cleared!' };
     default:
@@ -207,12 +227,14 @@ function stardustLine(s: RunRewards['stardust']): { label: string; note?: string
 export function stonesLine(s: RunRewards['stardust']): { label: string; note?: string } {
   switch (s.source) {
     case 'first_clear':
-    case 'replay':
       return { label: 'Gift stones' };
-    case 'defeat': {
-      const since = s.fromWave === null ? '' : ` since wave ${s.fromWave}`;
-      return { label: 'Gift stones', note: `${s.wavesResolved}/${s.waveCount} waves${since}` };
-    }
+    case 'replay':
+      return { label: 'Gift stones', ...joined(veteranNote(s)) };
+    case 'defeat':
+      return {
+        label: 'Gift stones',
+        ...joined(s.fromWave === null ? null : `Since wave ${s.fromWave}`),
+      };
     case 'defeat_replay':
       return { label: 'Gift stones', note: 'Walked before' };
     default:
@@ -220,9 +242,27 @@ export function stonesLine(s: RunRewards['stardust']): { label: string; note?: s
   }
 }
 
-/** A gift stone (art-direction.md § 6): a warm-gold pebble beside the Act III Stardust line. */
-function GiftStone() {
-  return <span class="sd-gift-stone" aria-hidden="true" data-testid="results-gift-stone" />;
+/** The Stardust icon's phase for a card in act theme `theme` (art-direction.md § 2's table). */
+export function stardustPhase(theme: StoryAct): StardustPhase {
+  return theme === 'finale' ? 'finale' : theme === 3 ? 'act3' : theme === 2 ? 'act2' : 'act1';
+}
+
+/**
+ * The Stardust currency icon beside the Stardust line (T843's `STARDUST_ICON` by phase): Everglow's
+ * candy-cut gem in Acts I–II, the warrens' gift stone from Act III (its own test id there).
+ */
+export function StardustIcon({ theme }: { theme: StoryAct }) {
+  const phase = stardustPhase(theme);
+  const stone = phase === 'act3' || phase === 'finale';
+  return (
+    <span
+      class="sd-results-stardust-icon"
+      aria-hidden="true"
+      data-testid={stone ? 'results-gift-stone' : 'results-stardust-icon'}
+    >
+      <Icon id={STARDUST_ICON[phase]} />
+    </span>
+  );
 }
 
 /**
@@ -416,8 +456,11 @@ function Payroll({
   resumedFromWave,
   resumedPlace,
   marks,
+  theme,
 }: {
   rewards: RunRewards;
+  /** The card's act theme: which Stardust icon the line wears. */
+  theme: StoryAct;
   won: boolean;
   resumedFromWave: number | null;
   /** A labelled checkpoint's place ("the Halls"), else absent. */
@@ -434,7 +477,7 @@ function Payroll({
       <ul>
         <li data-testid="results-stardust">
           <span class="sd-results-pay-label">
-            {rewards.stones && <GiftStone />}
+            <StardustIcon theme={theme} />
             {label}
             {note !== undefined && <span class="sd-results-pay-note"> · {note}</span>}
             {rewards.firstPayday && <span class="sd-results-payday">FIRST PAYDAY!</span>}
@@ -611,6 +654,7 @@ function Body({ result }: { result: RunResult }) {
           resumedFromWave={result.resumedFromWave}
           {...(result.resumedPlace === undefined ? {} : { resumedPlace: result.resumedPlace })}
           marks={medalMarks(result.counter)}
+          theme={result.theme}
         />
       )}
       {rewards !== null && result.heldRewards && rewards.saveNotice !== null && (
@@ -623,7 +667,15 @@ function Body({ result }: { result: RunResult }) {
         <StoryChoice choice={result.choice} onPick={pickResultsChoice} />
       )}
       {!asking && result.choice !== null && <Remembered choice={result.choice} />}
-      {!asking && <WayOn result={result} won={won} checkpoint={checkpoint} />}
+      {!asking &&
+        (counterIsHeadline(result.counter, result.outcome) ? (
+          // The campaign's last beat (T803e): the finale's win goes on, and only on.
+          <div class="sd-results-buttons">
+            <OnwardButton won />
+          </div>
+        ) : (
+          <WayOn result={result} won={won} checkpoint={checkpoint} />
+        ))}
     </section>
   );
 }
@@ -651,14 +703,7 @@ function WayOn({
           {result.retryLabel ?? `Retry from wave ${checkpoint}`}
         </button>
       )}
-      <button
-        type="button"
-        class={won || checkpoint !== null ? 'sd-button' : 'sd-button sd-button-primary'}
-        ref={won || checkpoint !== null ? null : focusOnce}
-        onClick={retryRun}
-      >
-        Retry
-      </button>
+      <RetryButton won={won} confirm={checkpoint !== null} />
       {/* Before a retry, a different four (T220): only where the loadout screen is offered. */}
       {campaign.value !== null && loadoutOfferedAfterRun(result.mapId) && (
         <button type="button" class="sd-button" onClick={() => changeLoadoutAfterRun(result.mapId)}>
@@ -668,6 +713,36 @@ function WayOn({
       <OnwardButton won={won} />
     </div>
   );
+}
+
+/**
+ * Retry (from wave 1). Beside "Retry from wave N" it asks once (T329): the first press turns it to
+ * "From wave 1?" and the second retries; leaving it (blur) takes the question back. Elsewhere one
+ * press retries.
+ */
+function RetryButton({ won, confirm }: { won: boolean; confirm: boolean }) {
+  const [asking, setAsking] = useState(false);
+  const primary = !won && !confirm;
+  return (
+    <button
+      type="button"
+      class={primary ? 'sd-button sd-button-primary' : 'sd-button'}
+      ref={primary ? focusOnce : null}
+      data-testid="results-retry"
+      onClick={() => {
+        if (confirm && !asking) setAsking(true);
+        else retryRun();
+      }}
+      onBlur={() => setAsking(false)}
+    >
+      {retryText(confirm && asking)}
+    </button>
+  );
+}
+
+/** Retry's words: "Retry", or while it asks (T329), "From wave 1?". */
+export function retryText(asking: boolean): string {
+  return asking ? 'From wave 1?' : 'Retry';
 }
 
 /**

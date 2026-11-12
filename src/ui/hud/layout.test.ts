@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   EDGE,
+  CHOIR_EXTRA_H,
+  COMMS_COST,
+  COMMS_W,
+  commsRect,
   ESCORT_EXTRA_H,
   FINALE_CLOCK_RECT,
   GATE_ROW_H,
@@ -173,12 +177,10 @@ function status(r: readonly { h: number }[]): number {
 }
 
 describe('hudCorners (T431)', () => {
-  it("grows the status panel by its objective rows and a Protect map's asset row", () => {
+  it("grows the status panel by a Protect map's asset row (objectives share the medals' row)", () => {
     const base = status(HUD_CORNERS);
-    expect(hudCorners(0)).toBe(HUD_CORNERS);
-    expect(status(hudCorners(1))).toBe(base + 12);
-    expect(status(hudCorners(0, true))).toBe(base + 20);
-    expect(status(hudCorners(2, true))).toBe(base + 22 + 20);
+    expect(hudCorners()).toBe(HUD_CORNERS);
+    expect(status(hudCorners(true))).toBe(base + 20);
     // The status panel's width (hud.css: four-digit credits fit).
     expect(HUD_CORNERS[0]?.w).toBe(112);
   });
@@ -190,11 +192,11 @@ const overFooter = (p: { top: number }): boolean => p.top + 120 > 330;
 describe('hudCorners and placePanel in Act III (T631)', () => {
   it("grows the status panel by a Holdout's one row, and the wave panel by QUILL's leak line", () => {
     const base = status(HUD_CORNERS);
-    expect(status(hudCorners(0, false, true))).toBe(base + ESCORT_EXTRA_H);
-    expect(status(hudCorners(0, false, 'holdout'))).toBe(base + HOLDOUT_EXTRA_H);
+    expect(status(hudCorners(false, true))).toBe(base + ESCORT_EXTRA_H);
+    expect(status(hudCorners(false, 'holdout'))).toBe(base + HOLDOUT_EXTRA_H);
     const waves = HUD_CORNERS[1]?.h ?? 0;
-    expect(hudCorners(0, false, false, true)[1]?.h).toBe(waves + LEAK_EXTRA_H);
-    expect(hudCorners(0, false, false, false)).toBe(HUD_CORNERS);
+    expect(hudCorners(false, false, true)[1]?.h).toBe(waves + LEAK_EXTRA_H);
+    expect(hudCorners(false, false, false)).toBe(HUD_CORNERS);
   });
 
   it('weighs covering a blocked rectangle by `blockedCost` (the star map chrome)', () => {
@@ -211,18 +213,54 @@ describe('hudCorners and placePanel in Act III (T631)', () => {
 });
 
 describe('hudCorners on the finale (T832)', () => {
-  it("grows the status panel by the choir's rows and the gate's", () => {
-    const [panel] = hudCorners(0, false, 'choir');
-    expect(panel!.h).toBe(HUD_CORNERS[0]!.h + ESCORT_EXTRA_H + GATE_ROW_H);
+  it("grows the status panel by the choir's Hushed row and the gate's (16/16 is one row)", () => {
+    const [panel] = hudCorners(false, 'choir');
+    expect(panel!.h).toBe(HUD_CORNERS[0]!.h + CHOIR_EXTRA_H + GATE_ROW_H);
+    expect(CHOIR_EXTRA_H).toBe(ESCORT_EXTRA_H / 2);
   });
 
   it('keeps the tower panel off the clock while it shows', () => {
-    const corners = hudCorners(1, false, 'choir', false, 0, true);
+    const corners = hudCorners(false, 'choir', false, 0, true);
     expect(corners).toContain(FINALE_CLOCK_RECT);
     expect(corners).toHaveLength(HUD_CORNERS.length + 1);
-    expect(hudCorners(0, false, false, false, 0, true).at(-1)).toBe(FINALE_CLOCK_RECT);
+    expect(hudCorners(false, false, false, 0, true).at(-1)).toBe(FINALE_CLOCK_RECT);
     // Centred on the screen, under the boss bar (its bar at 39, its flags to 47).
     expect(FINALE_CLOCK_RECT.x * 2 + FINALE_CLOCK_RECT.w).toBe(UI_W);
     expect(FINALE_CLOCK_RECT.y).toBeGreaterThan(47);
+  });
+});
+
+describe('the comms panel stays clear of the tower panel (T803b)', () => {
+  const quill = {
+    text: "Thank you! Gerald thanks you. Gerald can't talk.",
+    cue: null,
+    portrait: true,
+    button: false,
+  };
+
+  it('boxes the panel under the status panel, as tall as its portrait or its wrapped words', () => {
+    const box = commsRect(72, quill);
+    expect(box).toEqual({ x: EDGE, y: EDGE + 72 + 4, w: COMMS_W, h: 58 });
+    // A long line wraps, and grows the box past the portrait; a cue above it adds its own lines.
+    const long = commsRect(72, { ...quill, text: 'word '.repeat(60) });
+    expect(long.h).toBeGreaterThan(box.h);
+    expect(commsRect(72, { ...quill, cue: 'Knock knock!' }).h).toBeGreaterThan(box.h);
+    expect(commsRect(72, { ...quill, button: true }).h).toBeGreaterThanOrEqual(box.h);
+  });
+
+  it("moves a tower's panel off a comms line it would have covered (finding #8)", () => {
+    // A1M3's W3: a Rivet left of the screen's middle; its panel opened over QUILL's line.
+    const comms = { ...commsRect(72, quill), cost: COMMS_COST };
+    const tower = { x: 290, y: 170 };
+    const panelH = 112;
+    const before = placePanel(tower.x, tower.y, 152, panelH, [], hudCorners());
+    const covers = (p: { left: number; top: number }): boolean =>
+      p.left < comms.x + comms.w &&
+      comms.x < p.left + 152 &&
+      p.top < comms.y + comms.h &&
+      comms.y < p.top + panelH;
+    expect(covers(before)).toBe(true);
+    const after = placePanel(tower.x, tower.y, 152, panelH, [], [...hudCorners(), comms]);
+    expect(covers(after)).toBe(false);
   });
 });

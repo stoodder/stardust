@@ -1,6 +1,6 @@
 // Zibzab's crate card (act3.md § A3M6; T714; the rules are crate.ts): over A3M6's briefing once
-// Clock in is pressed. The crate's lid with the NO REFUNDS sticker peeling, Zibzab's "Price first:
-// nothing." under his plate (D150), a line, then what it holds: the tune-ups it installs, listed,
+// Clock in is pressed. The crate's lid (its ZIBZAB stencil the card's heading) with the NO REFUNDS
+// sticker peeling, Zibzab's "Price first: nothing." under his plate (D150), a line, then what it holds: the tune-ups it installs, listed,
 // or the Field Protocols to pick one from (a story choice's 700 ms lock first, CHOICE_LOCK_MS). "Take the crate" (focused, or once a pick is
 // made) takes it and clocks in. A modal over the briefing: Tab stays inside it.
 import { useEffect, useState } from 'preact/hooks';
@@ -94,18 +94,21 @@ function Card({ view }: { view: CrateView }) {
         data-kind={view.kind}
         onKeyDown={trapTab}
       >
-        <div class="cr-lid" data-voice="sticker" aria-hidden="true">
-          <span class="cr-lid-brand">Zibzab</span>
-          <span class="cr-sticker">{STICKER}</span>
+        {/* The lid's stencil is the card's heading (T803e: "Zibzab" said once by the lid and once
+            by his plate, not a third time in a title); screen readers hear "Zibzab's crate". */}
+        <div class="cr-lid" data-voice="sticker">
+          <h2
+            id="cr-title"
+            class="cr-lid-brand"
+            tabIndex={-1}
+            ref={view.kind === 'pick' ? focusOnce : null}
+          >
+            Zibzab<span class="hud-sr-only">'s crate</span>
+          </h2>
+          <span class="cr-sticker" aria-hidden="true">
+            {STICKER}
+          </span>
         </div>
-        <h2
-          id="cr-title"
-          class="cr-title"
-          tabIndex={-1}
-          ref={view.kind === 'pick' ? focusOnce : null}
-        >
-          Zibzab's crate
-        </h2>
         {quote !== null && (
           <p class="cr-quote" data-testid="crate-quote" data-voice="quote">
             <span class="cr-quote-plate" style={{ color: plateColor(SPEAKERS.zibzab.color) }}>

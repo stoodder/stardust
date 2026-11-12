@@ -305,8 +305,9 @@ describe("the finale's card (finale.md § FIN, Dawn: the results screen reads RE
     expect(counter.line).toBe(`REMEMBERED: ${save.stats.pestsProcessed.toLocaleString('en-US')}`);
     expect(resultsHeader(r.counter, 'won').headline).toBe('PERIMETER SECURED.');
     const rows = resultsStats(r);
-    expect(rows.map((x) => x.id)).toEqual(['waves', 'voices']);
-    expect(rows[1]).toMatchObject({
+    // A win's waves go unsaid (its headline says them; T803e): Voices held is the one row.
+    expect(rows.map((x) => x.id)).toEqual(['voices']);
+    expect(rows[0]).toMatchObject({
       label: 'Voices held',
       value: `${r.voices!.n} of ${r.voices!.total}`,
     });

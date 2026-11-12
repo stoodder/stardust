@@ -161,6 +161,23 @@ export function starStateText(state: StarMapState): string {
   return STATE_WORDS[state];
 }
 
+/**
+ * The node panel's kicker (T803c, D153): "Shift 6 · The Diggings", or "Shift 12" alone when the
+ * place is the map's own name (The Preserve at the Preserve), so the panel doesn't say it twice.
+ */
+export function starKicker(node: Pick<StarNodeView, 'index' | 'place' | 'name'>): string {
+  const same = node.place.trim().toLowerCase() === node.name.trim().toLowerCase();
+  return same ? `Shift ${node.index}` : `Shift ${node.index} · ${node.place}`;
+}
+
+/**
+ * Whether the node panel shows its state line (T803c): "Cleared" beside Replay and "Coming soon"
+ * on a teaser, never "Next up" beside Start (the button's verb already says it).
+ */
+export function showsStateLine(state: StarMapState): boolean {
+  return state !== 'open';
+}
+
 type MapDef = CompiledMapDef<IdSpace>;
 
 /** The compiled maps, keyed by id (one compile serves every node), or null if none can be built. */

@@ -1,5 +1,6 @@
-// The selected tower's panel (T106, T202d), placed clear of its neighbours (T126): tier pips,
-// stats and bonuses, upgrade, sell, targeting, fire control, and the tier-4 choice.
+// The selected tower's panel (T106, T202d), placed clear of its neighbours (T126) and of the comms
+// panel while a line is up (T803b): tier pips, stats and bonuses, upgrade, sell, targeting, fire
+// control, and the tier-4 choice.
 import {
   cancel,
   cycleTargeting,
@@ -13,10 +14,18 @@ import { rampNow } from '../../app/hudText.ts';
 import { PRIORITY_LABEL } from './words.ts';
 import { hud, type SelectedTowerView, type SpecOptionView } from '../state.ts';
 import { Icon } from './Icon.tsx';
+import { dialogue } from '../dialogue/state.ts';
+import { plainText } from '../dialogue/text.ts';
+import { forcedInput, forcedInputAvoid } from './forcedInputState.ts';
 import {
+  COMMS_COST,
+  commsRect,
+  COMMS_W,
+  EDGE,
   hudCorners,
-  objectiveRows,
   PANEL_W,
+  type Rect,
+  UI_W,
   placePanel,
   specCardHeight,
   towerPanelHeight,
@@ -122,6 +131,23 @@ function JamRow({ jam, immune }: { jam: number; immune: number }) {
 }
 
 /**
+ * The comms panel's box while a line is up (T803b), under a status panel `statusH` tall, or at the
+ * top centre while a forced input moves it there (ui/hud/index.tsx); null with no line.
+ */
+function commsBox(statusH: number): Rect | null {
+  const view = dialogue.comms.value;
+  if (view === null) return null;
+  const box = commsRect(statusH, {
+    text: plainText(view.line.text),
+    cue: view.cue === null ? null : plainText(view.cue.text),
+    portrait: view.line.portrait !== null,
+    button: view.button !== null,
+  });
+  const top = forcedInput.value !== null || forcedInputAvoid.value.length > 0;
+  return top ? { ...box, x: Math.round((UI_W - COMMS_W) / 2), y: EDGE } : box;
+}
+
+/**
  * The selected tower's panel, beside the tower: its stats after every bonus and where the bonuses
  * come from, then upgrade (or, at tier 3, the tier-4 choice), sell, and targeting. Its height
  * follows its rows (layout.ts `towerPanelHeight`), so it's placed before it renders.
@@ -129,8 +155,7 @@ function JamRow({ jam, immune }: { jam: number; immune: number }) {
 export function TowerPanel({ t }: { t: SelectedTowerView }) {
   const others = hud.towerPoints.value.filter((p) => p.x !== t.x || p.y !== t.y);
   const h = towerPanelHeight(t);
-  const corners = hudCorners(
-    objectiveRows(hud.objectives.value),
+  const status = hudCorners(
     hud.asset.value === null ? false : hud.asset.value.bearers === undefined ? true : 'bearers',
     hud.escort.value === null
       ? false
@@ -143,6 +168,9 @@ export function TowerPanel({ t }: { t: SelectedTowerView }) {
     hud.lockedAbilities.value.length,
     finaleClock.value !== null, // T832
   );
+  // T803b: never over the comms panel while a line is up (D153: the story keeps its place).
+  const comms = commsBox(status[0]?.h ?? 0);
+  const corners = comms === null ? status : [...status, { ...comms, cost: COMMS_COST }];
   const { left, top } = placePanel(t.x, t.y, PANEL_W, h, others, corners);
   const credits = hud.credits.value;
   const max = t.upgradeCost === null;

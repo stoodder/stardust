@@ -582,6 +582,7 @@ export class BattleScene extends Phaser.Scene {
     this.#ping = new PingView(ctx, prefersReducedMotion);
     this.#nameTag = new NameTagView(ctx);
     this.#nameTag.setKeepClear(this.#keepClear);
+    this.#fx.setFloatObstacle(this.#nameTag); // T803b: floaters rise clear of the name tag
     this.#spawnFlags = new SpawnFlagView(ctx, map, prefersReducedMotion, pulseOn);
     this.#pinged = 0;
     this.#pingTower = 0;

@@ -1,20 +1,25 @@
-/* The post-game shell (T863; art-direction.md § 10, *After the finale*): the plate under the Sector
-   map's header (in the notices' column, so a notice stacks above it), its rows, "Watch the
-   epilogue", the selected row's panel beside the plate in the node panel's grammar, and the
-   Endless score screen in the results card's place. Calm: one accent edge, no glow, no motion. */
+/* The post-game shell (T863; art-direction.md § 10, *After the finale*): one column under the Sector
+   map's header (in the notices' column, so a notice stacks above it; T803c): "After the dawn" with
+   the selected entry's panel in the node panel's grammar, then the plate's rows by kind and "Watch
+   the epilogue"; and the Endless score screen in the results card's place. Calm: one accent edge,
+   no glow, no motion. The column is 176 px wide where the panel is and 136 px under it, so neither
+   box covers The Long Walk's node (176, 164) or The Preserve's (152, 208) with Endless open. */
 
 .sd-pg {
   position: relative;
-  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
 }
 
-.sd-pg-plate {
+.sd-pg-box {
   box-sizing: border-box;
   width: 136px;
   display: flex;
   flex-direction: column;
   gap: 3px;
-  padding: 5px 6px 6px;
+  padding: 4px 6px 5px;
   border: 1px solid var(--accent);
   background: rgb(13 10 24 / 92%);
   clip-path: polygon(
@@ -31,6 +36,11 @@
   text-align: left;
 }
 
+/* The open entry's box is the node panel's width (its tagline's lines as on a node's). */
+.sd-pg-head {
+  width: 176px;
+}
+
 .sd-pg-heading {
   margin: 0;
   font-size: 8px;
@@ -38,6 +48,39 @@
   letter-spacing: 1px;
   text-transform: uppercase;
   color: var(--accent);
+}
+
+/* The selected entry, under the heading: the node panel's parts without its box. */
+.sd-pg-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.sd-pg-panel p,
+.sd-pg-panel h3,
+.sd-pg-panel ul {
+  margin: 0;
+  padding: 0;
+}
+
+.sd-pg-panel ul {
+  list-style: none;
+}
+
+.sd-pg-panel .sd-star-kicker {
+  letter-spacing: 0;
+}
+
+.sd-pg-cleared {
+  color: var(--sd-gold-3);
+}
+
+.sd-pg-kind {
+  margin: 0;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--sd-steel-3);
 }
 
 .sd-pg-list {
@@ -53,8 +96,9 @@
   position: relative;
   box-sizing: border-box;
   display: flex;
-  flex-direction: column;
-  gap: 1px;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1px 4px;
   width: 100%;
   margin: 0;
   padding: 2px 3px;
@@ -79,39 +123,26 @@
   background: var(--sd-ink-2);
 }
 
-.sd-pg-kind {
-  flex: none;
-  color: var(--sd-steel-3);
-}
-
 .sd-pg-name {
   color: var(--sd-gold-4);
 }
 
-/* A challenge cleared: the cleared glyph's diamond, small, at the row's top right. */
-.sd-pg-diamond {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 3px;
-  height: 3px;
-  background: var(--sd-gold-3);
-  transform: rotate(45deg);
+.sd-pg-row-best {
+  flex-basis: 100%;
+  color: var(--sd-steel-3);
+}
+
+/* A cleared challenge's medals: the campaign's pips, at the row's end. */
+.sd-pg-row .sd-medals {
+  margin-left: auto;
 }
 
 .sd-pg-epilogue {
   align-self: flex-start;
   margin-top: 2px;
-}
-
-/* The panel: beside the plate, its top level with the plate's. */
-.sd-pg-panel {
-  left: 142px;
-  top: 0;
-}
-
-.sd-pg-cleared {
-  color: var(--sd-gold-3);
+  padding: 4px 4px;
+  letter-spacing: 0;
+  white-space: nowrap;
 }
 
 .sd-pg-seed {
@@ -146,16 +177,23 @@
   border-color: var(--sd-coral-3);
 }
 
-.sd-pg-best,
-.sd-pg-top,
-.sd-pg-note {
+/* Endless's last row: the seed's best, Start beside it. */
+.sd-pg-go {
+  flex-wrap: nowrap;
+  gap: 4px;
+  margin-top: 0;
+}
+
+.sd-pg-best {
+  flex: 1;
   font-family: var(--font-body);
   line-height: 9px;
   color: var(--sd-white-0);
 }
 
-.sd-pg-top,
 .sd-pg-note {
+  font-family: var(--font-body);
+  line-height: 9px;
   color: var(--sd-steel-3);
 }
 

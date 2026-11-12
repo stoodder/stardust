@@ -36,22 +36,26 @@ describe('resultsStats', () => {
   };
   const card = { ...runResultOf(INPUT, 'won') };
 
-  it('lists the waves and Core integrity on a Defend map', () => {
+  it('lists Core integrity on a Defend map, and the waves survived only after a loss', () => {
+    // A win's headline says every wave was survived: the row would only repeat "7 / 7" (T803e).
     expect(resultsStats(card)).toEqual([
-      { id: 'waves', label: 'Waves survived', value: '7 / 7', note: null },
       { id: 'integrity', label: 'Core integrity', value: '13 / 20', note: null },
+    ]);
+    const lost = runResultOf({ ...INPUT, integrity: 0 }, 'lost');
+    expect(resultsStats(lost)).toEqual([
+      { id: 'waves', label: 'Waves survived', value: '4 / 7', note: null },
+      { id: 'integrity', label: 'Core integrity', value: '0 / 20', note: null },
     ]);
   });
 
   it("lists an Escort's meter with its lost count in Core integrity's place, pivot or not", () => {
     // A2M5's par: the map ended as an Escort after its pivot, so its core isn't listed.
     expect(resultsStats({ ...card, escort })).toEqual([
-      { id: 'waves', label: 'Waves survived', value: '7 / 7', note: null },
       { id: 'escort', label: 'Evacuated', value: '25 / 36', note: 'lost 11' },
     ]);
     // Nobody lost: no lost count.
     const safe = { ...escort, evacuated: 36, lost: 0 };
-    expect(resultsStats({ ...card, escort: safe })[1]).toEqual({
+    expect(resultsStats({ ...card, escort: safe })[0]).toEqual({
       id: 'escort',
       label: 'Evacuated',
       value: '36 / 36',
@@ -62,7 +66,6 @@ describe('resultsStats', () => {
   it("adds a Protect map's asset after the core", () => {
     const asset = { name: 'Rigs', value: 7, max: 10 };
     expect(resultsStats({ ...card, asset }).map((r) => [r.id, r.value])).toEqual([
-      ['waves', '7 / 7'],
       ['integrity', '13 / 20'],
       ['asset', '7 / 10'],
     ]);

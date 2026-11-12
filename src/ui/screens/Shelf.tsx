@@ -11,6 +11,13 @@
 // row (T709) shows the classes it brings back, drawn jailbroken (T731's icon variant). An upgrade
 // whose price the story paid back (Purge's QUILL Rapport, the uplink's Mk II) reads "Refunded", and
 // one never bought then reads "No longer stocked", with no button (storeText `retiredText`).
+// Declutter (T803d; D153): within each group, what can still be bought leads, and a row owned in
+// full (or retired) sorts last without its effect line (its tooltip, kept in the row for screen
+// readers), keeping the seller's line, which is the character's; a gift ("Given") keeps its whole
+// row, since the giver's line is the story. A row that waits ("Arrives after The Audit", "Needs the
+// Prism Spire") says so on its name's line, not in a three-line column, and takes the row's width. Engineering's rows read
+// "Rivet" and "Rivet Storm or Railspike" (the pane says they're tier-4 specializations), with the
+// full words kept for screen readers.
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { playSfx } from '../../app/audio.ts';
@@ -66,12 +73,26 @@ export function RankPips({ owned, ranks }: { owned: number; ranks: number }) {
 
 type Said = { readonly tone: 'thanks' | 'refusal' | 'warn'; readonly text: string } | null;
 
+/** What every Engineering row's effect starts with: the pane says it once (T803d). */
+const SPECS_LEAD = /^Unlocks tier 4: /;
+
 /** The effect line: what the next rank adds, or the top rank's once owned in full. */
 function effectLine(o: Offer): string {
   const effect = effectText(o);
   if (o.ranks <= 1) return effect;
   const rank = Math.min(o.owned + 1, o.ranks);
   return `Rank ${rank}: ${effect}`;
+}
+
+/** A row done with: owned in full (not a gift), or taken off the shelf by the story. */
+function settled(o: Offer, save: SaveData | null): boolean {
+  if (retiredText(o, save) !== null) return true;
+  return o.refusal === 'maxed' && !o.gift;
+}
+
+/** `offers` with the settled rows last, each part in its own order (T803d). */
+export function settledLast(offers: readonly Offer[], save: SaveData | null): Offer[] {
+  return [...offers.filter((o) => !settled(o, save)), ...offers.filter((o) => settled(o, save))];
 }
 
 /** A row's stable key: the item it sells. */
@@ -121,6 +142,10 @@ function OfferRow({
   const r = offer.refusal;
   const state = retired !== null ? 'retired' : r === null ? 'buyable' : r;
   const bank = offer.currency === 'intel' ? 'sd-intel' : 'sd-stardust';
+  // Done with: no effect line, which is its tooltip (T803d).
+  const compact = settled(offer, save);
+  // A row that waits says why on its name's line (T803d).
+  let wait: string | null = null;
   let side;
   if (retired !== null) {
     side = (
@@ -129,20 +154,12 @@ function OfferRow({
       </span>
     );
   } else if (r === 'not_stocked' || r === 'pane_locked') {
-    side = (
-      <span class="sd-offer-wait">
-        <span class="sd-lock" aria-hidden="true" />
-        {arrivalText(offer, save)}
-      </span>
-    );
+    wait = arrivalText(offer, save);
   } else if (r === 'not_owned' || r === 'no_specs') {
-    side = (
-      <span class="sd-offer-wait">
-        {r === 'not_owned'
-          ? `Needs the ${towerName(offer.needs ?? offer.tower ?? '')}`
-          : 'Arrives in a later shipment'}
-      </span>
-    );
+    wait =
+      r === 'not_owned'
+        ? `Needs the ${towerName(offer.needs ?? offer.tower ?? '')}`
+        : 'Arrives in a later shipment';
   } else if (r === 'maxed') {
     side = <span class="sd-offer-owned">{offer.gift ? 'Given' : 'Owned'}</span>;
   } else {
@@ -164,15 +181,47 @@ function OfferRow({
       </>
     );
   }
+  // Engineering's rows: the turret and its two specs in view, the full words for screen readers.
+  const specsTower = offer.item.kind === 'specs' ? offer.item.tower : null;
+  const specs = specsTower !== null;
+  const effect = effectLine(offer);
+  const shownEffect = specs ? effect.replace(SPECS_LEAD, '') : effect;
   return (
-    <li class={`sd-offer sd-offer-${state}`} data-offer={offerKey(offer)} tabIndex={-1}>
+    <li
+      class={`sd-offer sd-offer-${state}${compact ? ' sd-offer-compact' : ''}`}
+      data-offer={offerKey(offer)}
+      tabIndex={-1}
+      title={compact ? effect : undefined}
+    >
       {offer.item.kind === 'jailbreak' && <JailbreakArt save={save} />}
       <div class="sd-offer-main">
         <p class="sd-offer-head">
-          <span class="sd-offer-name">{name}</span>
+          <span class="sd-offer-name">
+            {specsTower !== null ? (
+              <>
+                {towerName(specsTower)}
+                <span class="sd-visually-hidden"> specializations</span>
+              </>
+            ) : (
+              name
+            )}
+          </span>
           {offer.item.kind === 'upgrade' && <RankPips owned={offer.owned} ranks={offer.ranks} />}
+          {wait !== null && (
+            <span class="sd-offer-wait" data-testid="offer-wait">
+              {(r === 'not_stocked' || r === 'pane_locked') && (
+                <span class="sd-lock" aria-hidden="true" />
+              )}
+              {wait}
+            </span>
+          )}
         </p>
-        <p class="sd-offer-effect">{effectLine(offer)}</p>
+        <p class="sd-offer-effect">
+          {specs && shownEffect !== effect && (
+            <span class="sd-visually-hidden">{effect.slice(0, effect.length - shownEffect.length)}</span>
+          )}
+          {shownEffect}
+        </p>
         {copy !== null && (
           <p class="sd-offer-copy" data-voice="shelf-copy">
             {copy}
@@ -292,7 +341,7 @@ export function Shelf({ pane, view, group, lead }: ShelfProps) {
           <section key={g.title} class="sd-store-group" aria-label={g.title || p.who}>
             {g.title !== '' && <h2 class="sd-store-group-title">{g.title}</h2>}
             <ul class="sd-offers">
-              {g.offers.map((o) => (
+              {settledLast(g.offers, activeSave()).map((o) => (
                 <OfferRow key={offerKey(o)} offer={o} onBuy={onBuy} quiet={quiet} />
               ))}
             </ul>

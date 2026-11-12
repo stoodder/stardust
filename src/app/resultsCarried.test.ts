@@ -71,7 +71,6 @@ describe("A3M5's Carried line", () => {
     // Beside the Bearers row (the asset's integrity, a different count), never a repeat of it.
     const rows = resultsStats(r);
     expect(rows.map((s) => `${s.label} ${s.value}`)).toEqual([
-      'Waves survived 17 / 17',
       'Core integrity 14 / 20',
       'Bearers 9 / 12',
     ]);

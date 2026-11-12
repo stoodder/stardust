@@ -25,22 +25,11 @@ export interface CostedRect extends Rect {
   readonly cost?: number;
 }
 
-/** The status panel's height with no objectives: the name plate, meter, credits, and medals. */
-const STATUS_H = 72;
-/** What each objective row adds to it (the first also adds the grid gap above the list). */
-const OBJECTIVE_ROW_H = 10;
-/** An objective's name past this many characters wraps to a second line (hud.css; T631). */
-export const OBJECTIVE_LINE_CHARS = 15;
-
 /**
- * The tracker's rows as the status panel's height counts them: one per objective, two for a name
- * that wraps (A3M1's "The Matriarch's Young").
+ * The status panel's height: the name plate, meter, credits, and the records row (the medals and
+ * any objectives beside them on one line, T803b).
  */
-export function objectiveRows(objectives: readonly { readonly name: string }[]): number {
-  let n = 0;
-  for (const o of objectives) n += o.name.length > OBJECTIVE_LINE_CHARS ? 2 : 1;
-  return n;
-}
+const STATUS_H = 72;
 
 /**
  * The HUD's corner blocks (art-direction §9; their CSS in hud.css): the status panel (name plate,
@@ -67,11 +56,13 @@ export const LOCKED_SLOT_W = 39;
 
 /** What an Escort's meter adds over the core's: its "of N" and lost rows (8 px and a 2 px gap each; T531). */
 export const ESCORT_EXTRA_H = 20;
+/** What the choir's meter adds over the core's: its Hushed row only ("16/16" is one row; T803b). */
+export const CHOIR_EXTRA_H = 10;
 /** What QUILL's leak line adds to the wave panel under the lockout: up to five 9 px lines (T631). */
 export const LEAK_EXTRA_H = 56;
 /** What a Holdout's meter adds: its "of N" row only (no lost row; T631). */
 export const HOLDOUT_EXTRA_H = 10;
-/** What the finale's choir meter adds over an Escort's: the gate's row under it (T832). */
+/** What the finale's choir meter adds under it: the gate's row (T832). */
 export const GATE_ROW_H = 12;
 
 /**
@@ -81,36 +72,39 @@ export const GATE_ROW_H = 12;
 export const FINALE_CLOCK_RECT: Rect = { x: (UI_W - 168) / 2, y: 49, w: 168, h: 26 };
 
 /**
- * The corner blocks with the status panel grown by `objectives` tracker rows (T312c), on a
- * Protect map the asset meter's row (T431), and while the map is an Escort its meter's two extra
- * rows (T531), on a Holdout its one (`'holdout'`, T631), on the finale's choir the Escort's two and
- * the gate's (`'choir'`, T832), and the wave panel grown by QUILL's leak line while one shows
- * (`leak`, T631); and the finale's clock while it shows (`clock`, T832).
+ * The corner blocks with the status panel grown by, on a Protect map, the asset meter's row
+ * (T431), while the map is an Escort its meter's two extra rows (T531), on a Holdout its one
+ * (`'holdout'`, T631), on the finale's choir its Hushed row and the gate's (`'choir'`, T832,
+ * T803b), and the wave panel grown by QUILL's leak line while one shows (`leak`, T631); the
+ * finale's clock while it shows (`clock`, T832); and the comms panel while a line is up (`comms`,
+ * T803b: a tower panel never covers the story).
  */
 export function hudCorners(
-  objectives: number,
   asset: boolean | 'bearers' = false,
   escort: boolean | 'holdout' | 'choir' = false,
   leak = false,
   lockedSlots = 0,
   clock = false,
+  comms: Rect | null = null,
 ): readonly Rect[] {
-  if (clock) {
-    return [...hudCorners(objectives, asset, escort, leak, lockedSlots), FINALE_CLOCK_RECT];
+  if (comms !== null) {
+    return [...hudCorners(asset, escort, leak, lockedSlots, clock), comms];
   }
-  if (objectives <= 0 && asset === false && escort === false && !leak && lockedSlots <= 0) {
+  if (clock) {
+    return [...hudCorners(asset, escort, leak, lockedSlots), FINALE_CLOCK_RECT];
+  }
+  if (asset === false && escort === false && !leak && lockedSlots <= 0) {
     return HUD_CORNERS;
   }
   const [status, waves, abilities, ...rest] = HUD_CORNERS;
   if (status === undefined || waves === undefined || abilities === undefined) return HUD_CORNERS;
   // QUILL's leak line (A3M2's lockout, T631) hangs up to five lines under ACCESS RESTRICTED.
   const wavesNow = leak ? { ...waves, h: waves.h + LEAK_EXTRA_H } : waves;
-  const rows = objectives > 0 ? objectives * OBJECTIVE_ROW_H + 2 : 0;
   const meter =
     escort === 'holdout'
       ? HOLDOUT_EXTRA_H
       : escort === 'choir'
-        ? ESCORT_EXTRA_H + GATE_ROW_H
+        ? CHOIR_EXTRA_H + GATE_ROW_H
         : escort
           ? ESCORT_EXTRA_H
           : 0;
@@ -120,8 +114,83 @@ export function hudCorners(
   // A locked ability (A3M5's System Reboot under Rewrite, T731) stands dark beside the slots.
   const abilitiesNow =
     lockedSlots > 0 ? { ...abilities, w: abilities.w + lockedSlots * LOCKED_SLOT_W } : abilities;
-  return [{ ...status, h: status.h + rows + extra }, wavesNow, abilitiesNow, ...rest];
+  return [{ ...status, h: status.h + extra }, wavesNow, abilitiesNow, ...rest];
 }
+
+// ── The comms panel's box (T803b) ───────────────────────────────────────────────────────────
+
+/**
+ * What a tower panel over the comms panel costs a placement (`placePanel`): more than a HUD corner
+ * or two towers, so a line is the last thing it covers.
+ */
+export const COMMS_COST = 5;
+/** The comms panel's width (dialogue.css `.dlg-comms-slot`), and its gap under the status panel. */
+export const COMMS_W = 252;
+const COMMS_GAP = 4;
+/** Its padding and the portrait's frame (dialogue.css `.dlg-comms`, Portrait.tsx's 50 px frame). */
+const COMMS_PAD_Y = 8;
+const COMMS_PORTRAIT_H = 50;
+/** Its name plate, a line of its words, and a reply button, with their 3 px gaps. */
+const COMMS_PLATE_H = 8;
+const COMMS_LINE_H = 10;
+const COMMS_BUTTON_H = 16;
+const COMMS_ROW_GAP = 3;
+/** Its words' advance (px per character, rounded up), for the wrap estimate. */
+const COMMS_CHAR_PX = 6;
+/** Characters on one line of its words beside a portrait, and without one. */
+const COMMS_CHARS = Math.floor((COMMS_W - 10 - 55) / COMMS_CHAR_PX);
+const COMMS_CHARS_WIDE = Math.floor((COMMS_W - 10) / COMMS_CHAR_PX);
+
+/** What the comms panel shows, as its box needs it (dialogue `CommsView`'s shape). */
+export interface CommsShape {
+  /** The line's words, a cue's above it (null: none), and whether a portrait and a button show. */
+  readonly text: string;
+  readonly cue: string | null;
+  readonly portrait: boolean;
+  readonly button: boolean;
+}
+
+/** How many lines `text` wraps to at `chars` a line (word-wrapped; at least one). */
+function wrappedLines(text: string, chars: number): number {
+  let lines = 1;
+  let len = 0;
+  for (const w of text.split(/\s+/)) {
+    if (w === '') continue;
+    const add = len === 0 ? w.length : len + 1 + w.length;
+    if (add <= chars || len === 0) len = add;
+    else {
+      lines++;
+      len = w.length;
+    }
+  }
+  return lines;
+}
+
+/**
+ * The comms panel's box under a status panel `statusH` tall (game px; T803b): what the tower panel
+ * keeps clear of while a line is up, so the story is never cut (D153). An estimate from the
+ * words' wrap, rounded up: a box a little large costs a panel placement, never a covered line.
+ */
+export function commsRect(statusH: number, c: CommsShape): Rect {
+  const chars = c.portrait ? COMMS_CHARS : COMMS_CHARS_WIDE;
+  const words =
+    COMMS_PLATE_H +
+    COMMS_ROW_GAP +
+    wrappedLines(c.text, chars) * COMMS_LINE_H +
+    (c.button ? COMMS_ROW_GAP + COMMS_BUTTON_H : 0);
+  const cueH =
+    c.cue === null
+      ? 0
+      : COMMS_PLATE_H + COMMS_ROW_GAP + wrappedLines(c.cue, COMMS_CHARS_WIDE) * COMMS_LINE_H + 6;
+  const body = Math.max(words, c.portrait ? COMMS_PORTRAIT_H : 0);
+  return {
+    x: EDGE,
+    y: EDGE + statusH + COMMS_GAP,
+    w: COMMS_W,
+    h: COMMS_PAD_Y + cueH + body,
+  };
+}
+
 /** What covering a HUD corner costs a candidate, against 1 per covered tower. */
 const CORNER_COST = 2;
 

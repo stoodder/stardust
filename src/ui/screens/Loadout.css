@@ -1,6 +1,7 @@
 /* The loadout screen (T201), in the menu-panel style (art-direction §9): a wider panel with the
-   tower grid on the left and the Technician, slot 2, links, and heads-ups on the right. Game
-   pixels; colors are theme.css tokens. */
+   tower grid on the left and the Technician, slot 2, heads-ups, and links on the right. Game
+   pixels; colors are theme.css tokens. Declutter (T803d): the kicker on its own line, the threats
+   beside the heading; one-line protocol rows; the links list behind a floating "Every link". */
 
 .sd-lo-panel {
   width: 584px;
@@ -8,12 +9,36 @@
   max-height: 348px;
 }
 
+/* The header: the kicker across the top on its own line, then the heading and, beside it, the
+   threat intel (a long list wraps in its own column and never runs into the kicker: A3M6, FIN). */
+.sd-lo-header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: var(--space-xl);
+  align-items: end;
+}
+
+.sd-lo-title {
+  display: contents;
+}
+
+.sd-lo-header .sd-kicker {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.sd-lo-header .sd-menu-heading {
+  grid-column: 1;
+}
+
 /* Header right: the map's threat intel and required counters. */
 .sd-lo-intel {
   display: flex;
+  grid-column: 2;
   flex-direction: column;
   align-items: flex-end;
   gap: 2px;
+  min-width: 0;
   margin: 0;
   font-family: var(--font-heading);
   text-transform: uppercase;
@@ -21,16 +46,22 @@
 
 .sd-lo-intel div {
   display: flex;
+  justify-content: flex-end;
   gap: 6px;
+  max-width: 100%;
 }
 
 .sd-lo-intel dt {
+  flex: none;
   color: var(--sd-steel-3);
 }
 
 .sd-lo-intel dd {
+  min-width: 0;
   margin: 0;
   color: var(--sd-white-1);
+  line-height: 10px;
+  text-align: right;
 }
 
 .sd-lo-intel .sd-lo-need {
@@ -71,6 +102,36 @@
 
 .sd-lo-count {
   color: var(--sd-white-1);
+}
+
+.sd-lo-count-group {
+  display: flex;
+  gap: var(--space-m);
+}
+
+/* A run rule that bends the pick (T860's Short-Handed by the tower count; T862), in orange: a
+   heads-up, never red. */
+.sd-lo-rule {
+  color: var(--sd-orange-3);
+}
+
+.sd-lo-rule-note {
+  margin: 0;
+  color: var(--sd-orange-3);
+  font-family: var(--font-heading);
+  line-height: 10px;
+  text-transform: uppercase;
+}
+
+/* A tower a challenge leaves home (T862): greyed like a full card, never a pick, with why. */
+.sd-lo-tower.sd-lo-stays {
+  border-left-color: var(--sd-ink-3);
+  background: var(--sd-ink-1);
+  cursor: default;
+}
+
+.sd-lo-stays-why {
+  color: var(--sd-orange-3);
 }
 
 /* The tower grid: two columns of cards; it scrolls when the collection outgrows the column
@@ -334,7 +395,7 @@
   color: var(--sd-gold-4);
 }
 
-/* The hint (or a notice) sits in the footer, left of the buttons. */
+/* A notice (the limit, a stay-home tower) sits in the footer, left of the buttons. */
 .sd-lo-hint {
   flex: 1;
   align-self: center;
@@ -400,21 +461,61 @@
   text-transform: uppercase;
 }
 
-/* The links take the column's leftover height and scroll when the pool forms more than fit (T431:
-   five with all_unlocked ran under the footer's buttons), formed links first; a link still missing
-   a partner is one line. */
-.sd-lo-links {
+/* Links (T803d): at the column's foot, the heading, then the formed links' names beside the
+   "Every link" toggle. The whole list (formed first; a link still missing a partner is one line)
+   opens upward over the column, as wide as it, and scrolls past its cap (T431), so it never runs
+   under the footer's buttons. */
+.sd-lo-links-section {
+  position: relative;
   display: flex;
-  flex: 1 1 0;
   flex-direction: column;
   gap: 2px;
-  min-height: 24px;
+  margin-top: auto;
+}
+
+.sd-lo-links-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--gap-inline);
+}
+
+.sd-lo-linked {
+  flex: 1;
+  min-width: 0;
   margin: 0;
-  padding: 0;
+  color: var(--accent-2);
+  line-height: 10px;
+  text-transform: uppercase;
+}
+
+.sd-lo-linked.sd-lo-dim {
+  color: var(--sd-steel-3);
+}
+
+.sd-lo-links-more {
+  position: static;
+  flex: none;
+}
+
+.sd-lo-links-more.sd-disclosure-float > .sd-disclosure-region {
+  top: auto;
+  right: 0;
+  bottom: 100%;
+  left: 0;
+  min-width: 0;
+  max-height: 232px;
   overflow-y: auto;
-  list-style: none;
   scrollbar-width: thin;
   scrollbar-color: var(--sd-steel-1) var(--sd-ink-1);
+}
+
+.sd-lo-links {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .sd-lo-link {
@@ -489,11 +590,10 @@
   outline-offset: 1px;
 }
 
-/* Field Protocols (T308): toggles like the ability rows, the effect under the name. */
-/* Under the tower grid, two to a row like the towers, as tall as its rows up to the column's
-   leftover height (it scrolls when a save owns more than fit; the tower grid above shrinks
-   first). A row shows its whole effect and note (D144: the pick-order hint went to the footer and
-   the cards tightened, so A3M3's Bulkhead row fits whole on both branches at 1280×720). */
+/* Field Protocols (T308): toggles like the ability rows. Under the tower grid, two to a row like
+   the towers, as tall as its rows up to the column's leftover height (it scrolls when a save owns
+   more than fit; the tower grid above shrinks first). A row is its name, plus its effect once
+   equipped and any note (D144: A3M3's Bulkhead row shows whole on both branches at 1280×720). */
 .sd-lo-protocols {
   display: grid;
   flex: 0 1 auto;
@@ -520,7 +620,7 @@
   flex-direction: column;
   gap: 1px;
   width: 100%;
-  min-height: 20px;
+  min-height: 12px;
   padding: 2px 4px 2px 2px;
   border: 0;
   border-left: 2px solid var(--sd-ink-4);
@@ -553,6 +653,19 @@
 .sd-lo-protocol-effect {
   color: var(--sd-steel-3);
   text-transform: none;
+}
+
+/* An unpicked protocol's effect shows on the peek line under the list, not in its row (T803d). */
+.sd-lo-protocol-effect.sd-lo-peek-only {
+  display: none;
+}
+
+.sd-lo-peek {
+  min-height: 8px;
+  margin: 0;
+  color: var(--sd-teal-4);
+  font-family: var(--font-heading);
+  line-height: 8px;
 }
 
 .sd-lo-protocol.sd-lo-on .sd-lo-protocol-effect {
@@ -597,12 +710,16 @@
   outline: 1px solid var(--sd-teal-4);
 }
 
-/* Heads-ups: orange, never red (a warning, not a scold). */
+/* Heads-ups: orange, never red (a warning, not a scold), above the links (T871: never under the
+   footer's buttons). */
 .sd-lo-warnings {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  margin-top: auto;
+}
+
+.sd-lo-warnings:empty {
+  display: none;
 }
 
 .sd-lo-warning {

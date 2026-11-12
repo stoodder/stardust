@@ -140,11 +140,13 @@
 
 /* ── The comms panel: top-left under the status panel, never blocking ────────────────────── */
 
+/* 252 px wide (T803b: a long line wraps a line shorter rather than losing words); the tower panel
+   keeps clear of it while a line is up (ui/hud/layout.ts `commsRect`, COMMS_W). */
 .dlg-comms-slot {
   position: absolute;
   left: 4px;
   top: 68px;
-  width: 236px;
+  width: 252px;
   pointer-events: none;
 }
 

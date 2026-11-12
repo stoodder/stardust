@@ -248,6 +248,11 @@ export interface RunRewards {
     readonly waveCount: number;
     /** The checkpoint wave a defeat's stipend counts from (`wavesResolved` from it on), or null. */
     readonly fromWave: number | null;
+    /**
+     * The veteran modifiers' Stardust bonus a replay win paid, in % (T860; the line notes it:
+     * "Veteran +40%"). Absent or 0: none.
+     */
+    readonly veteranPct?: number;
   };
   /** The map's optional objectives in map order, with this run's standing (none on most maps). */
   readonly objectives: readonly ObjectiveResult[];

@@ -14,10 +14,11 @@
 // On a Holdout (A3M3; T631) the meter is Evacuated "of 36" with no lost row: a Holdout has no
 // defeat, so nothing counts down to one. Once its losses pass the low mark (`holdoutLow`) the
 // blinking alarm box sits beside the label instead, and each refugee lost still flashes it.
-// On the finale's choir (T832) it is **Voices**: the singers singing "of 16", and a **Hushed** row,
-// one pip per hush the choir can take (its floor), filled as singers are hushed; each hush flashes
-// it, and while the choir is halted a small HALTED tag sits at the end of its "of 16" row (the
-// playfield's plate, echoed where the eye checks the choir). The finale's alarm box carries no "!" (its tone).
+// On the finale's choir (T832) it is **Voices**: the singers singing over the whole on one row
+// ("16/16", like the wave counter; T803b), and a **Hushed** row, one pip per hush the choir can
+// take (its floor), filled as singers are hushed; each hush flashes it, and while the choir is
+// halted the row's label reads HALTED, white on red (the playfield's plate, echoed where the eye
+// checks the choir). The finale's alarm box carries no "!" (its tone).
 import { lostWords, relabelShown } from '../../app/hudEscort.ts';
 import { hud, type MeterRelabel } from '../state.ts';
 import { choirHalted } from './finaleState.ts';
@@ -94,7 +95,11 @@ export function EscortMeter() {
         <>
           <div class="hud-meter">
             <Icon id={escortIcon()} />
-            {relabel === null ? (
+            {halted ? (
+              <span class="hud-label hud-halted-tag" data-testid="choir-halted" aria-hidden="true">
+                {HALTED_TAG}
+              </span>
+            ) : relabel === null ? (
               <span class={m.holdout && m.low ? 'hud-label danger' : 'hud-label'}>
                 {label}
                 {/* A Holdout's alarm sits by its label: it has no lost row (T631). */}
@@ -109,16 +114,21 @@ export function EscortMeter() {
                 {label}
               </span>
             )}
-            <span class="big num">{m.evacuated}</span>
+            <span class="big num">
+              {m.evacuated}
+              {/* The choir's whole on the Voices row, as the wave counter reads (T803b). */}
+              {choir && (
+                <span class="dim" data-testid="escort-total">
+                  /{m.total}
+                </span>
+              )}
+            </span>
           </div>
-          <span class="hud-escort-of num" data-testid="escort-total">
-            of {m.total}
-            {halted && (
-              <span class="hud-halted-tag" data-testid="choir-halted" aria-hidden="true">
-                {HALTED_TAG}
-              </span>
-            )}
-          </span>
+          {!choir && (
+            <span class="hud-escort-of num" data-testid="escort-total">
+              of {m.total}
+            </span>
+          )}
           {!m.holdout && (
             <div class="hud-escort-lost" data-testid="escort-lost">
               <span class={m.low ? 'hud-label danger' : 'hud-label'}>

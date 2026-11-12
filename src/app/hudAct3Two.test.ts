@@ -127,9 +127,9 @@ describe('a locked ability (T731; A3M5 System Reboot under Rewrite)', () => {
   });
 
   it('widens the bottom-left corner by a slot', () => {
-    const [, , abilities] = hudCorners(0, false, false, false, 1);
+    const [, , abilities] = hudCorners(false, false, false, 1);
     expect(abilities?.w).toBe(HUD_CORNERS[2]!.w + LOCKED_SLOT_W);
-    expect(hudCorners(0)).toBe(HUD_CORNERS);
+    expect(hudCorners()).toBe(HUD_CORNERS);
   });
 });
 
@@ -146,8 +146,8 @@ describe("the bearers' meter (T731; A3M5)", () => {
   });
 
   it("adds the row's height to the status corner", () => {
-    const [plain] = hudCorners(0, true);
-    const [bearers] = hudCorners(0, 'bearers');
+    const [plain] = hudCorners(true);
+    const [bearers] = hudCorners('bearers');
     expect(bearers!.h - plain!.h).toBe(BEARER_ROW_H);
   });
 });

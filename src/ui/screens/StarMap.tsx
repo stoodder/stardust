@@ -12,8 +12,11 @@ import {
   STAR_MAP_ACCESS_NOTICE,
   STAR_MAP_CHART_LABEL,
   markStarMapOpened,
+  showsStateLine,
+  starKicker,
   starMapView,
   starStateText,
+  type StarBriefView,
   type StarMapView,
   type StarNodeView,
 } from '../../app/starMap.ts';
@@ -28,6 +31,7 @@ import {
 } from '../../content/starMap.ts';
 import { drawImageAt } from '../../render/sprites/canvas.ts';
 import type { RgbaImage } from '../../render/sprites/rasterize.ts';
+import { Disclosure } from '../components/Disclosure.tsx';
 import { Icon, baked } from '../hud/Icon.tsx';
 import { placePanel, type CostedRect } from '../hud/layout.ts';
 import { prefersReducedMotion } from '../motion.ts';
@@ -51,24 +55,36 @@ const PANEL_W = 176;
  */
 const CHROME_COST = 6;
 /**
- * The post-game plate's box in chart px (its buttons cost what the footer's do), or none: it is
- * DOM in the notices' column, so it is measured, at the screen's scale.
+ * What the node panel covering a region label costs (T803c): a little more than a node, so the
+ * chart's names (voice, D153) stay in view when the panel has somewhere else to go.
  */
-function plateRect(screen: HTMLElement | null): CostedRect[] {
-  const plate = screen?.querySelector<HTMLElement>('.sd-pg-plate') ?? null;
-  if (screen === null || plate === null) return [];
+const REGION_COST = 2;
+/**
+ * The DOM over the chart the node panel keeps clear of, in chart px, measured at the screen's
+ * scale: the post-game column's boxes (their buttons cost what the footer's do) and the region
+ * labels (`REGION_COST`).
+ */
+function measuredRects(screen: HTMLElement | null): CostedRect[] {
+  if (screen === null) return [];
   const s = screen.getBoundingClientRect();
-  const p = plate.getBoundingClientRect();
   const k = s.width / CHART_W;
   if (k <= 0) return [];
+  // `pad` chart px around the box: a label's words must not touch the panel's edge.
+  const rect = (el: HTMLElement, cost: number, pad = 0): CostedRect => {
+    const p = el.getBoundingClientRect();
+    return {
+      x: Math.round((p.left - s.left) / k) - pad,
+      y: Math.round((p.top - s.top) / k) - pad,
+      w: Math.round(p.width / k) + 2 * pad,
+      h: Math.round(p.height / k) + 2 * pad,
+      cost,
+    };
+  };
   return [
-    {
-      x: Math.round((p.left - s.left) / k),
-      y: Math.round((p.top - s.top) / k),
-      w: Math.round(p.width / k),
-      h: Math.round(p.height / k),
-      cost: CHROME_COST,
-    },
+    ...[...screen.querySelectorAll<HTMLElement>('.sd-pg-box')].map((el) => rect(el, CHROME_COST)),
+    ...[...screen.querySelectorAll<HTMLElement>('[data-region]')].map((el) =>
+      rect(el, REGION_COST, 2),
+    ),
   ];
 }
 
@@ -204,6 +220,21 @@ function Node({
   );
 }
 
+/** A map's three medals by name, those on file marked (the node panel's and a challenge's "more"). */
+export function StarMedals({ medals }: { medals: StarBriefView['medals'] }) {
+  return (
+    <ul class="sd-star-medals" aria-label="Medals">
+      {medals.map((m) => (
+        <li key={m.id} class={m.earned ? 'sd-star-earned' : ''}>
+          <span class="sd-star-diamond" aria-hidden="true" />
+          <span class="sd-star-medal-name">{m.name}</span>
+          {m.earned && <span class="sd-star-onfile">On file</span>}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 /** The selected node's panel (art-direction § 10 *The panel and the chrome*). */
 function Panel({
   node,
@@ -241,16 +272,16 @@ function Panel({
       }
       data-testid="star-panel"
     >
-      <p class="sd-star-kicker">
-        Shift {node.index} · {node.place}
-      </p>
+      <p class="sd-star-kicker">{starKicker(node)}</p>
       <h2 id="sd-star-panel-name" class="sd-star-name">
         {node.name}
       </h2>
-      <p class="sd-star-state">
-        {node.state === 'coming_soon' && <span class="sd-lock" aria-hidden="true" />}
-        {starStateText(node.state)}
-      </p>
+      {showsStateLine(node.state) && (
+        <p class="sd-star-state">
+          {node.state === 'coming_soon' && <span class="sd-lock" aria-hidden="true" />}
+          {starStateText(node.state)}
+        </p>
+      )}
       <p class="sd-star-tagline" data-voice="tagline">
         {node.tagline}
       </p>
@@ -266,44 +297,47 @@ function Panel({
               </li>
             ))}
           </ul>
-          {brief.required.map((r) => (
-            <p key={r} class="sd-star-required" data-critical="counters">
-              Required: {r}
+          {brief.required.length > 0 && (
+            <p class="sd-star-required" data-critical="counters">
+              Required: {brief.required.join(' · ')}
             </p>
-          ))}
-          <ul class="sd-star-medals" aria-label="Medals">
-            {brief.medals.map((m) => (
-              <li key={m.id} class={m.earned ? 'sd-star-earned' : ''}>
-                <span class="sd-star-diamond" aria-hidden="true" />
-                <span class="sd-star-medal-name">{m.name}</span>
-                {m.earned && <span class="sd-star-onfile">On file</span>}
-              </li>
-            ))}
-          </ul>
-          {brief.objectives.length > 0 && (
-            <ul class="sd-star-objectives" aria-label="Objectives">
-              {brief.objectives.map((o) => (
-                <li key={o.id} class={o.done ? 'sd-star-done' : ''}>
-                  <span class="sd-star-square" aria-hidden="true" />
-                  <span>{o.name}</span>
-                  {o.done && <span class="sd-visually-hidden"> (done)</span>}
-                </li>
-              ))}
-            </ul>
           )}
         </>
       )}
-      {playable && (
+      {(playable || brief !== null) && (
         <div class="sd-star-actions">
-          <button
-            type="button"
-            class={`sd-button sd-button-small${node.state === 'open' ? ' sd-button-primary' : ''}`}
-            aria-label={`${verb} ${node.name}`}
-            ref={button}
-            onClick={() => playMap(node.id)}
-          >
-            {verb}
-          </button>
+          {/* T803c (D153): the medals and the optional objectives one press away, beside Start. */}
+          {brief !== null && (
+            <Disclosure
+              class="sd-star-more"
+              label="Medals"
+              about={brief.objectives.length > 0 ? 'by name, and the objectives' : 'by name'}
+            >
+              <StarMedals medals={brief.medals} />
+              {brief.objectives.length > 0 && (
+                <ul class="sd-star-objectives" aria-label="Objectives">
+                  {brief.objectives.map((o) => (
+                    <li key={o.id} class={o.done ? 'sd-star-done' : ''}>
+                      <span class="sd-star-square" aria-hidden="true" />
+                      <span>{o.name}</span>
+                      {o.done && <span class="sd-visually-hidden"> (done)</span>}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Disclosure>
+          )}
+          {playable && (
+            <button
+              type="button"
+              class={`sd-button sd-button-small${node.state === 'open' ? ' sd-button-primary' : ''}`}
+              aria-label={`${verb} ${node.name}`}
+              ref={button}
+              onClick={() => playMap(node.id)}
+            >
+              {verb}
+            </button>
+          )}
         </div>
       )}
     </section>
@@ -379,6 +413,20 @@ export function StarMap() {
     return () => cancelAnimationFrame(raf);
   }, []);
 
+  // The pixel font can land after the first layout (a cold load): the panel's height and the
+  // labels' widths change with it, so the panel is placed again once it has.
+  const [fontsIn, setFontsIn] = useState(false);
+  useEffect(() => {
+    let live = true;
+    // oxlint-disable-next-line typescript/no-unnecessary-condition -- absent outside a browser
+    void (document.fonts?.ready ?? Promise.resolve()).then(() => {
+      if (live) setFontsIn(true);
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
+
   const node = view?.nodes[selected] ?? null;
   // Place the panel beside its node once its height is known (before paint).
   useLayoutEffect(() => {
@@ -392,13 +440,13 @@ export function StarMap() {
         PANEL_W,
         h,
         others,
-        [...STAR_MAP_RESERVED, ...plateRect(screenRef.current)],
+        [...STAR_MAP_RESERVED, ...measuredRects(screenRef.current)],
         NODE_CLEAR_BOX,
         NODE_BOX,
         CHROME_COST,
       ),
     );
-  }, [view, selected, post]);
+  }, [view, selected, post, fontsIn]);
 
   // A region label the panel covers hides (the panel's plate would show it through, half read).
   useLayoutEffect(() => {
@@ -415,7 +463,7 @@ export function StarMap() {
     setCovered((prev) =>
       prev.size === under.size && [...under].every((id) => prev.has(id)) ? prev : under,
     );
-  }, [panelPos, selected, post]);
+  }, [panelPos, selected, post, fontsIn]);
 
   // Esc in the panel returns to its node; on a node it does nothing (falls through).
   useEscape(() => {

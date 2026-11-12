@@ -3,11 +3,13 @@
 // finale's screens chunk (app/acts/postGame.ts registers them, app/postGameHooks.ts holds the
 // seams), so none of this reaches the initial JS.
 //
-// The plate leads with what's new (the owner's declutter ask, D153): under the header, "After the
-// dawn" lists Endless and each challenge map as one button a row, and "Watch the epilogue" under
-// them. Selecting a row opens its panel beside the plate in the node panel's grammar (the chart's
-// nodes keep theirs). Endless's panel holds the seed (typed, or a new one) and the seed's best;
-// a challenge's, its rule, threats, and medals. Esc in a panel returns to its row.
+// The plate leads with what's new (the owner's declutter ask, D153; T803c's one column): under the
+// header, "After the dawn" and the selected entry's panel in the node panel's grammar, and under
+// them the plate's rows by kind (Endless, then the challenges) and "Watch the epilogue". The column
+// stands clear of the campaign's west nodes (The Long Walk, The Preserve) with Endless open. Endless's
+// panel holds the seed (typed, or a new one), the seed's best and Start; a challenge's, its rule,
+// threats and required counters, its medals and what they pay one press away. Esc in a panel
+// returns to its row.
 import { useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { watchEpilogue } from '../../app/ending.ts';
 import { randomSeed } from '../../app/battleSetup.ts';
@@ -33,10 +35,14 @@ import {
 } from '../../app/postGameView.ts';
 import { activeSave } from '../../app/save.ts';
 import { campaignScreenName } from '../../app/starMap.ts';
+import { endlessScores } from '../../meta/endless.ts';
 import { POST_GAME_MAPS } from '../../content/postGame.ts';
 import { RAW_CONTENT } from '../../content/registry.ts';
 import { trapTab } from '../dialogue/SceneParts.tsx';
+import { Disclosure } from '../components/Disclosure.tsx';
 import { Icon } from '../hud/Icon.tsx';
+import { MedalPips } from './Banks.tsx';
+import { StarMedals } from './StarMap.tsx';
 import { useEscape } from './escape.ts';
 import { focusOnce } from './focus.ts';
 import { campaign } from './state.ts';
@@ -50,7 +56,7 @@ export function firstPostGameEntry(): string | null {
 /** The plate's heading (story/style-guide.md § 2, *Finale*). */
 export const POST_GAME_HEADING = 'After the dawn';
 
-/** Endless's panel: the seed, its best, and Start. */
+/** Endless's panel: the seed, the seed's best, and Start. */
 function EndlessBody({
   entry,
   startRef,
@@ -87,19 +93,14 @@ function EndlessBody({
           New seed
         </button>
       </div>
-      <p class="sd-pg-best" data-testid="endless-best">
-        {seed === null
-          ? 'A seed is a whole number.'
-          : facts?.best === null || facts === null
-            ? 'No run on this seed yet.'
-            : `Best on this seed: ${wavesText(facts.best)}.`}
-      </p>
-      {facts?.top !== null && facts?.top !== undefined && facts.top.seed !== seed && (
-        <p class="sd-pg-top">
-          Your best: {wavesText(facts.top.wave)}, seed {facts.top.seed}.
+      <div class="sd-star-actions sd-pg-go">
+        <p class="sd-pg-best" data-testid="endless-best">
+          {seed === null
+            ? 'A seed is a whole number.'
+            : facts?.best === null || facts === null
+              ? 'No run on this seed yet.'
+              : `Best on this seed: ${wavesText(facts.best)}.`}
         </p>
-      )}
-      <div class="sd-star-actions">
         <button
           type="button"
           class="sd-button sd-button-small sd-button-primary"
@@ -117,7 +118,10 @@ function EndlessBody({
   );
 }
 
-/** A challenge's panel: its threats, its required counters, and its medals by name. */
+/**
+ * A challenge's panel: its threats and its required counters in view; its medals by name and what
+ * they pay one press away (T803c, D153), beside Start.
+ */
 function ChallengeBody({
   entry,
   startRef,
@@ -131,6 +135,7 @@ function ChallengeBody({
     <>
       {brief !== null && (
         <>
+          <hr class="sd-star-rule" />
           <ul class="sd-star-threats" data-critical="threats" aria-label="Threat intel">
             {brief.threats.map((t) => (
               <li key={t.id} title={t.tip ?? undefined}>
@@ -139,24 +144,24 @@ function ChallengeBody({
               </li>
             ))}
           </ul>
-          {brief.required.map((r) => (
-            <p key={r} class="sd-star-required" data-critical="counters">
-              Required: {r}
+          {brief.required.length > 0 && (
+            <p class="sd-star-required" data-critical="counters">
+              Required: {brief.required.join(' · ')}
             </p>
-          ))}
-          <ul class="sd-star-medals" aria-label="Medals">
-            {brief.medals.map((m) => (
-              <li key={m.id} class={m.earned ? 'sd-star-earned' : ''}>
-                <span class="sd-star-diamond" aria-hidden="true" />
-                <span class="sd-star-medal-name">{m.name}</span>
-                {m.earned && <span class="sd-star-onfile">On file</span>}
-              </li>
-            ))}
-          </ul>
-          <p class="sd-pg-note">Medals here pay Intel.</p>
+          )}
         </>
       )}
       <div class="sd-star-actions">
+        {brief !== null && (
+          <Disclosure
+            class="sd-star-more"
+            label={entry.medals > 0 ? `Medals ${entry.medals}/3` : 'Medals'}
+            about="by name, and what they pay"
+          >
+            <StarMedals medals={brief.medals} />
+            <p class="sd-pg-note">{MEDALS_PAY}</p>
+          </Disclosure>
+        )}
         <button
           type="button"
           class="sd-button sd-button-small sd-button-primary"
@@ -171,7 +176,13 @@ function ChallengeBody({
   );
 }
 
-/** The selected post-game map's panel, beside the plate. */
+/** What a challenge's medals pay (style-guide.md § 2, *Finale*), in its medals' "more". */
+export const MEDALS_PAY = 'Medals here pay Intel.';
+
+/**
+ * The selected post-game map's panel, under the plate's heading: Endless's has no kicker (its
+ * tagline names Dome Row), a challenge's names its ground.
+ */
 function EntryPanel({
   entry,
   focusStart,
@@ -191,7 +202,7 @@ function EntryPanel({
   return (
     <section
       id="sd-pg-panel"
-      class={`sd-star-panel sd-pg-panel sd-pg-panel-${entry.kind}`}
+      class={`sd-pg-panel sd-pg-panel-${entry.kind}`}
       role="region"
       aria-labelledby="sd-pg-panel-name"
       ref={(el) => {
@@ -199,21 +210,18 @@ function EntryPanel({
       }}
       data-testid="post-game-panel"
     >
-      <p class="sd-star-kicker">
-        {entry.kindText} · {entry.place}
-      </p>
-      <h2 id="sd-pg-panel-name" class="sd-star-name">
-        {entry.name}
-      </h2>
       {entry.kind === 'challenge' && (
-        <p class={`sd-star-state${entry.cleared ? ' sd-pg-cleared' : ''}`}>
-          {entry.cleared ? 'Cleared' : 'New'}
+        <p class="sd-star-kicker">
+          {entry.kindText} · {entry.place}
         </p>
       )}
+      <h3 id="sd-pg-panel-name" class="sd-star-name">
+        {entry.name}
+        {entry.cleared && <span class="sd-pg-cleared"> · Cleared</span>}
+      </h3>
       <p class="sd-star-tagline" data-voice="tagline">
         {entry.tagline}
       </p>
-      <hr class="sd-star-rule" />
       {entry.kind === 'endless' ? (
         <EndlessBody entry={entry} startRef={ref} />
       ) : (
@@ -223,15 +231,55 @@ function EntryPanel({
   );
 }
 
+/** One entry's row on the plate: its name; Endless's best run, a cleared challenge's pips. */
+function EntryRow({
+  entry,
+  best,
+  on,
+  rowRef,
+  onPick,
+}: {
+  entry: PostGameEntryView;
+  best: string | null;
+  on: boolean;
+  rowRef: (el: HTMLButtonElement | null) => void;
+  onPick: () => void;
+}) {
+  return (
+    <li>
+      <button
+        type="button"
+        class={`sd-pg-row${on ? ' sd-pg-row-on' : ''}`}
+        aria-label={entry.label}
+        aria-pressed={on}
+        aria-controls={on ? 'sd-pg-panel' : undefined}
+        ref={rowRef}
+        onClick={onPick}
+        data-entry={entry.id}
+      >
+        <span class="sd-pg-name">{entry.name}</span>
+        {best !== null && <span class="sd-pg-row-best">{best}</span>}
+        {entry.cleared && <MedalPips earned={entry.medals} />}
+      </button>
+    </li>
+  );
+}
+
 /**
- * The post-game plate over the Sector map at dawn (app/postGameHooks.ts `PostGameLayerProps`): the
- * rows, "Watch the epilogue", and the selected row's panel.
+ * The post-game column over the Sector map at dawn (app/postGameHooks.ts `PostGameLayerProps`;
+ * T803c, D153): one column under the header, clear of the campaign's west nodes. On top, "After the
+ * dawn" and the selected entry's panel; under it, the plate's rows by kind (Endless, then the
+ * challenges) and "Watch the epilogue".
  */
 export function PostGameLayer({ selected, select, arrival }: PostGameLayerProps) {
   const camp = campaign.value;
   const entries = useMemo(() => {
     const save = activeSave();
     return save === null ? [] : postGameEntries(save);
+  }, [camp]);
+  const top = useMemo(() => {
+    const save = activeSave();
+    return save === null ? null : (endlessScores(save)[0]?.wave ?? null);
   }, [camp]);
   const rows = useRef<Record<string, HTMLButtonElement | null>>({});
   const panel = useRef<HTMLElement | null>(null);
@@ -255,40 +303,54 @@ export function PostGameLayer({ selected, select, arrival }: PostGameLayerProps)
       .catch((err: unknown) => logError('post-game: the epilogue failed', err))
       .finally(() => setWatching(false));
   };
+  const row = (e: PostGameEntryView) => (
+    <EntryRow
+      key={e.id}
+      entry={e}
+      best={e.kind === 'endless' && top !== null ? `Best: ${wavesText(top)}` : null}
+      on={e.id === selected}
+      rowRef={(el) => {
+        rows.current[e.id] = el;
+      }}
+      onPick={() => {
+        setFocusPanel(true);
+        select(e.id);
+        requestAnimationFrame(() =>
+          panel.current?.querySelector<HTMLElement>('.sd-star-actions .sd-button')?.focus(),
+        );
+      }}
+    />
+  );
+  // The heading tops the column: over the open entry's panel, else over the rows.
+  const heading = (
+    <h2 id="sd-pg-heading" class="sd-pg-heading" data-voice="heading">
+      {POST_GAME_HEADING}
+    </h2>
+  );
+  const endless = entries.filter((e) => e.kind === 'endless');
+  const challenges = entries.filter((e) => e.kind === 'challenge');
   return (
-    <div class="sd-pg" data-testid="post-game">
-      <section class="sd-pg-plate" aria-labelledby="sd-pg-heading">
-        <h2 id="sd-pg-heading" class="sd-pg-heading" data-voice="heading">
-          {POST_GAME_HEADING}
-        </h2>
-        <ul class="sd-pg-list">
-          {entries.map((e) => (
-            <li key={e.id}>
-              <button
-                type="button"
-                class={`sd-pg-row${e.id === selected ? ' sd-pg-row-on' : ''}`}
-                aria-label={e.label}
-                aria-pressed={e.id === selected}
-                aria-controls={e.id === selected ? 'sd-pg-panel' : undefined}
-                ref={(el) => {
-                  rows.current[e.id] = el;
-                }}
-                onClick={() => {
-                  setFocusPanel(true);
-                  select(e.id);
-                  requestAnimationFrame(() =>
-                    panel.current?.querySelector<HTMLElement>('.sd-star-actions button')?.focus(),
-                  );
-                }}
-                data-entry={e.id}
-              >
-                <span class="sd-pg-kind">{e.kindText}</span>
-                <span class="sd-pg-name">{e.name}</span>
-                {e.cleared && <span class="sd-pg-diamond" aria-hidden="true" />}
-              </button>
-            </li>
-          ))}
-        </ul>
+    <section class="sd-pg" aria-labelledby="sd-pg-heading" data-testid="post-game">
+      {entry !== null && (
+        <div class="sd-pg-box sd-pg-head">
+          {heading}
+          <EntryPanel key={entry.id} entry={entry} focusStart={focusPanel} panelRef={panel} />
+        </div>
+      )}
+      <div class="sd-pg-box sd-pg-plate">
+        {entry === null && heading}
+        {endless.length > 0 && (
+          <>
+            <p class="sd-pg-kind">Endless</p>
+            <ul class="sd-pg-list">{endless.map(row)}</ul>
+          </>
+        )}
+        {challenges.length > 0 && (
+          <>
+            <p class="sd-pg-kind">Challenges</p>
+            <ul class="sd-pg-list">{challenges.map(row)}</ul>
+          </>
+        )}
         {answered && (
           <button
             type="button"
@@ -299,11 +361,8 @@ export function PostGameLayer({ selected, select, arrival }: PostGameLayerProps)
             Watch the epilogue
           </button>
         )}
-      </section>
-      {entry !== null && (
-        <EntryPanel key={entry.id} entry={entry} focusStart={focusPanel} panelRef={panel} />
-      )}
-    </div>
+      </div>
+    </section>
   );
 }
 

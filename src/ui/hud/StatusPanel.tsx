@@ -1,9 +1,11 @@
 // Top-left: the name plate ("JPT-1 · SPROUT", core-loop §5), the meter (core integrity, or the
-// map's own meter), a Protect map's asset meter under it (T305a), credits, the medal tracker (T202d), and the map's optional objectives under it
-// (T312c). On the finale (T832) the meter is Voices (EscortMeter.tsx) and the core's row stays under
-// it as the colony **Gate** (its integrity: the flyers' and Everglow's leaks spend it); at Dawn the
-// panel steps back to the name plate alone (ui/hud/index.tsx `data-dawn`, hud.css).
+// map's own meter), a Protect map's asset meter under it (T305a), credits, and the records row: the
+// medal tracker (T202d) and the map's optional objectives (T312c) side by side, their names behind
+// the row's "+" (T803b). On the finale (T832) the meter is Voices (EscortMeter.tsx) and the core's
+// row stays under it as the colony **Gate** (its integrity: the flyers' and Everglow's leaks spend
+// it); at Dawn the panel steps back to the name plate alone (ui/hud/index.tsx `data-dawn`, hud.css).
 import { nextTimeMark } from '../../app/hudText.ts';
+import { Disclosure } from '../components/Disclosure.tsx';
 import { hud, type MedalView, type ObjectiveView } from '../state.ts';
 import { AssetMeter } from './AssetMeter.tsx';
 import { alarmMark, EscortMeter } from './EscortMeter.tsx';
@@ -60,8 +62,7 @@ export function StatusPanel() {
         <span class="hud-label">Credits</span>
         <span class="big num gold">{credits}</span>
       </div>
-      <MedalTracker />
-      <ObjectiveTracker />
+      <Records />
     </section>
   );
 }
@@ -102,10 +103,11 @@ function objectiveWord(o: ObjectiveView): string {
 }
 
 /**
- * The objective tracker (T312c), under the medals: one row per optional objective (Objective
- * Intel; "Clean Audit"), a box that fills gold once done and dims quietly when this run can't do it
- * any more ("Next time!", like the medals; "Next time." from Act III: `nextTimeMark`), and the
- * name; the tooltip says what completes it.
+ * The objective tracker (T312c), beside the medals on their row (T803b): one box per optional
+ * objective (Objective Intel; "Clean Audit") that fills gold once done and dims quietly when this
+ * run can't do it any more ("Next time!", like the medals; "Next time." from Act III:
+ * `nextTimeMark`); its name and what completes it are its tooltip, its screen-reader label, and the
+ * row's "more" (RecordsMore).
  */
 function ObjectiveTracker() {
   const objectives = hud.objectives.value;
@@ -123,7 +125,6 @@ function ObjectiveTracker() {
           title={`${o.name}: ${o.status === 'failed' ? nextTime : o.description} (+${o.intel} Intel)`}
         >
           <span class="hud-objective-box" aria-hidden="true" />
-          <span class="hud-objective-name">{o.name}</span>
           {/* The group it follows on the road (A3M1: Bramble's column), while it walks. */}
           {o.walking !== undefined && o.walking !== null && o.status === 'open' && (
             <span
@@ -168,6 +169,66 @@ function MedalTracker() {
           data-medal={m.kind}
           data-status={m.status}
         />
+      ))}
+    </ul>
+  );
+}
+
+/**
+ * The records row (T803b; D153's declutter): the medal diamonds and the objective boxes on one
+ * line at the panel's foot, the names and what earns each behind the row's "+" (a Disclosure,
+ * floated over the playfield; Enter or a click opens it, Esc closes it). Neither is a critical
+ * readout (smoke/declutter.ts): the state is the shapes; the words are a hover or a press away.
+ */
+function Records() {
+  const medals = hud.medals.value;
+  const objectives = hud.objectives.value;
+  if (medals.length === 0 && objectives.length === 0) return null;
+  return (
+    <div class="hud-records" data-testid="records">
+      <MedalTracker />
+      <ObjectiveTracker />
+      <Disclosure
+        float
+        label="More"
+        lessLabel="Less"
+        about={objectives.length > 0 ? 'the medals and objectives' : 'the medals'}
+        class="hud-records-more"
+      >
+        <RecordsMore medals={medals} objectives={objectives} />
+      </Disclosure>
+    </div>
+  );
+}
+
+/** The records row's "more": each medal and objective by name, with what earns it. */
+function RecordsMore({
+  medals,
+  objectives,
+}: {
+  medals: readonly MedalView[];
+  objectives: readonly ObjectiveView[];
+}) {
+  const nextTime = nextTimeMark(hud.act.value);
+  return (
+    <ul class="hud-records-list" data-testid="records-more">
+      {medals.map((m) => (
+        <li key={m.id} class={`hud-records-item ${m.status}`}>
+          <span class={`hud-medal ${m.status}${m.held ? ' held' : ''}`} aria-hidden="true" />
+          <span>
+            <span class="hud-records-name">{m.name}</span>{' '}
+            {m.status === 'forfeited' ? nextTime : m.description}
+          </span>
+        </li>
+      ))}
+      {objectives.map((o) => (
+        <li key={o.id} class={`hud-records-item hud-objective ${o.status}`}>
+          <span class="hud-objective-box" aria-hidden="true" />
+          <span>
+            <span class="hud-records-name">{o.name}</span>{' '}
+            {o.status === 'failed' ? nextTime : o.description} (+{o.intel} Intel)
+          </span>
+        </li>
       ))}
     </ul>
   );

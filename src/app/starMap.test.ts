@@ -6,7 +6,14 @@ import { DEV_SAVES } from '../meta/__fixtures__/devSaves.ts';
 import { campaign, type CampaignView } from '../ui/screens/state.ts';
 import { MemoryStore } from '../meta/index.ts';
 import { initSaves, loadDevSave } from './save.ts';
-import { campaignScreenName, phaseFor, starMapView, STAR_MAP_SEEN_ID } from './starMap.ts';
+import {
+  campaignScreenName,
+  phaseFor,
+  showsStateLine,
+  starKicker,
+  starMapView,
+  STAR_MAP_SEEN_ID,
+} from './starMap.ts';
 
 /** A campaign view to vary (any save's). */
 function campaignView(): CampaignView {
@@ -222,6 +229,28 @@ describe('phaseFor', () => {
     expect(phaseFor('a3_m06')).toBe('act3');
     expect(phaseFor('fin_m01')).toBe('act3');
     expect(phaseFor(null)).toBe('dawn');
+  });
+});
+
+describe('the node panel (T803c)', () => {
+  it('names the place in the kicker unless it is the map\'s own name', () => {
+    expect(starKicker({ index: 6, place: 'The Diggings', name: 'Rig Nine' })).toBe(
+      'Shift 6 · The Diggings',
+    );
+    expect(starKicker({ index: 12, place: 'The Preserve', name: 'The Preserve' })).toBe('Shift 12');
+    expect(starKicker({ index: 12, place: 'the preserve ', name: 'The Preserve' })).toBe('Shift 12');
+  });
+
+  it('drops "Next up" beside Start, and keeps Cleared and Coming soon', () => {
+    expect(showsStateLine('open')).toBe(false);
+    expect(showsStateLine('won')).toBe(true);
+    expect(showsStateLine('coming_soon')).toBe(true);
+  });
+
+  it('every built node of the A3M1 save names its place or its shift', () => {
+    const view = starMapView(DEV_SAVES.after_a2m6.build());
+    const preserve = view.nodes.find((n) => n.id === 'a3_m01');
+    expect(preserve === undefined ? null : starKicker(preserve)).toBe('Shift 12');
   });
 });
 

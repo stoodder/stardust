@@ -1,5 +1,6 @@
 // The map's briefing as a scene (T302b), a blocking modal over the battle: its lines in the comms
-// style, the threat-intel strip, the medals on offer, and the optional objectives (T431).
+// style, each run of one speaker's lines beside that speaker's face (T803e), the threat-intel strip,
+// and the medals on offer with the optional objectives (T431) one press away (T803e's declutter).
 import { dismissBriefing } from '../../app/commands.ts';
 import { hud, type MedalView, type ObjectiveView, type ThreatIntelView } from '../state.ts';
 import { changeLoadout } from '../../app/navigation.ts';
@@ -10,6 +11,7 @@ import {
   ChoiceList,
   LineAnnouncer,
   NextButton,
+  type SceneStep,
   trapTab,
   useFocusOn,
   useSceneStep,
@@ -24,11 +26,17 @@ import { QUILL_LIST } from '../../content/dialogue/a3/a3_m06/quillList.ts'; // T
 import { quillListUp } from '../screens/quillList.ts';
 import { QuillListCard } from '../screens/quillListCard.tsx';
 import { VeteranPicker, veteranOpen } from './VeteranPicker.tsx'; // T860: a replay's modifiers
+import { Disclosure } from '../components/Disclosure.tsx';
+import { plateColor } from '../dialogue/plate.ts';
+import { answersLabel, briefingRuns, medalsLabel, type BriefingRun } from './briefingView.ts';
+import './briefing.css';
 
 /**
  * The briefing's threat-intel strip (T202d; campaign.md § 4.8): the map's threats as tell glyphs
- * with their names, then each required counter ("Required: Armor") with the owned towers that
- * answer it. Every glyph has its word beside it (art-direction §8: never the shape alone).
+ * with their names, then each required counter ("Required: Armor"), always in view; the owned towers
+ * that answer it wait one press away under "8 of yours answer it" (T803e); a single answer, or
+ * "Nothing owned answers it yet", stays in view. Every glyph has its word beside it (art-direction §8: never the
+ * shape alone).
  */
 function IntelStrip({ intel }: { intel: ThreatIntelView }) {
   return (
@@ -49,12 +57,25 @@ function IntelStrip({ intel }: { intel: ThreatIntelView }) {
         ))}
       </ul>
       {intel.required.map((r) => (
-        <p key={r.counter} class="hud-intel-required" data-critical="counters">
+        <div key={r.counter} class="hud-intel-required" data-critical="counters">
           <span class="hud-intel-req">Required: {r.label}</span>
-          <span class="hud-intel-answers">
-            {r.answers.length === 0 ? 'Nothing owned answers it yet' : r.answers.join(', ')}
-          </span>
-        </p>
+          {r.answers.length <= 1 ? (
+            // None, or a single answer: said in place (one name is no clutter).
+            <span class="hud-intel-answers hud-intel-inline">
+              {r.answers[0] ?? 'Nothing owned answers it yet'}
+            </span>
+          ) : (
+            <Disclosure
+              class="hud-intel-more"
+              label={answersLabel(r.answers.length)}
+              about={`the towers that answer ${r.label}`}
+            >
+              <p class="hud-intel-answers" title={r.answers.join(', ')}>
+                {r.answers.join(', ')}
+              </p>
+            </Disclosure>
+          )}
+        </div>
       ))}
     </section>
   );
@@ -118,18 +139,21 @@ function BriefingObjectives({ objectives }: { objectives: readonly ObjectiveView
 /**
  * The map's briefing (story/style-guide.md § 4: before play, ≤ 8 lines), a scene in the comms
  * style and a blocking modal over the battle until Clock in (its button, or Esc, which
- * app/keys.ts routes here wherever the focus is). The speaker's portrait sits beside the lines so
- * far; the current one types, and Next (focused) reads on. Once it has played out, Clock in takes
- * the focus. With dialogue off (`?test=1`) the lines show whole at once. The threat intel and the
- * medals are always up. The rest of the HUD is `inert` while it's open, and Tab cycles inside it.
+ * app/keys.ts routes here wherever the focus is). Each run of one speaker's lines sits beside that
+ * speaker's face (`briefingRuns`); the current line types, and Next (focused) reads on. Once it has
+ * played out, Clock in takes the focus. With dialogue off (`?test=1`) the lines show whole at once.
+ * The threat intel and the required counters are always up; the medals and objectives, and the
+ * towers that answer each counter, are one press away. The rest of the HUD is `inert` while it's
+ * open, and Tab cycles inside it.
  */
 export function Briefing({ view }: { view: SceneView }) {
   const intel = hud.intel.value;
   const medals = hud.medals.value;
   const objectives = hud.objectives.value;
   const step = useSceneStep(view);
-  // The portrait shows whoever speaks now (or spoke last).
-  const speaker = view.line ?? view.transcript.at(-1) ?? null;
+  // Each run of one speaker's lines beside that speaker's face (the one being read, whole).
+  const runs = briefingRuns(view.transcript, view.line);
+  const goals = medals.length + objectives.length > 0 && !veteranOpen.value;
   const clockIn = useFocusOn(view.ended, view.ended);
   const listUp = quillListUp(view.line, view.transcript.at(-1) ?? null);
   return (
@@ -146,32 +170,21 @@ export function Briefing({ view }: { view: SceneView }) {
           Shift briefing
         </h2>
         <div class="hud-briefing-comms">
-          {speaker !== null && speaker.portrait !== null ? (
-            <Portrait line={speaker} talking={view.line !== null && !step.typed.done} />
-          ) : (
-            <span class="hud-briefing-noportrait" aria-hidden="true" />
-          )}
           <div class="hud-briefing-lines" data-testid="briefing-lines">
-            {view.transcript.map((l) => (
-              <BriefingRow key={l.id} line={l} />
+            {runs.map((run) => (
+              <Run key={run.lines[0]?.id ?? 0} run={run} view={view} step={step} />
             ))}
-            {view.line !== null && (
-              <p
-                class={`hud-briefing-line now${view.line.frame === 'caption' ? ' caption' : ''}`}
-                onClick={step.next}
-              >
-                <NamePlate line={view.line} />
-                {view.line.silence ? <Held /> : <LineText line={view.line} typed={step.typed} />}
-              </p>
-            )}
-            {view.choices !== null && <ChoiceList choices={view.choices} />}
-            {view.remember !== null && (
-              <p class="dlg-remember" data-voice="remember" role="status">
-                {view.remember}
-              </p>
-            )}
-            <div class="hud-briefing-next">
-              <NextButton step={step} lineKey={view.line?.id ?? 'none'} />
+            {/* Under the runs, in the words' column: the choices, the "will remember", Next. */}
+            <div class="hud-briefing-after">
+              {view.choices !== null && <ChoiceList choices={view.choices} />}
+              {view.remember !== null && (
+                <p class="dlg-remember" data-voice="remember" role="status">
+                  {view.remember}
+                </p>
+              )}
+              <div class="hud-briefing-next">
+                <NextButton step={step} lineKey={view.line?.id ?? 'none'} />
+              </div>
             </div>
           </div>
         </div>
@@ -184,10 +197,17 @@ export function Briefing({ view }: { view: SceneView }) {
         ) : (
           <>
             {intel !== null && <IntelStrip intel={intel} />}
-            {/* T860: the veteran picker's grid, open, stands in the medals' place. */}
-            {medals.length > 0 && !veteranOpen.value && <BriefingMedals medals={medals} />}
-            {objectives.length > 0 && !veteranOpen.value && (
-              <BriefingObjectives objectives={objectives} />
+            {/* The medals and objectives one press away (T803e); T860: the veteran picker's grid,
+                open, stands in their place. */}
+            {goals && (
+              <Disclosure
+                class="hud-briefing-goals"
+                label={medalsLabel(medals, objectives)}
+                about="the medals and optional objectives"
+              >
+                {medals.length > 0 && <BriefingMedals medals={medals} />}
+                {objectives.length > 0 && <BriefingObjectives objectives={objectives} />}
+              </Disclosure>
             )}
             <VeteranPicker />
           </>
@@ -214,6 +234,60 @@ export function Briefing({ view }: { view: SceneView }) {
         </div>
       </section>
       <CrateCard />
+    </div>
+  );
+}
+
+/**
+ * A run of one speaker's lines beside their face: the whole portrait on the run being read (its
+ * mouth moving while the line types), a chip of the face on an earlier run (still), nothing for a
+ * caption. The plate stays on every line.
+ */
+function Run({
+  run,
+  view,
+  step,
+}: {
+  run: BriefingRun;
+  view: SceneView;
+  step: SceneStep;
+}) {
+  const face = run.face;
+  return (
+    <div class={run.focus ? 'hud-briefing-run focus' : 'hud-briefing-run'}>
+      <span class="hud-briefing-face">
+        {face === null ? null : run.focus || face.portrait?.icon === true ? (
+          <Portrait
+            line={face}
+            talking={run.focus && view.line !== null && !step.typed.done}
+            still={!run.focus}
+          />
+        ) : (
+          <span
+            class="hud-briefing-chip"
+            style={{ borderColor: plateColor(face.color) }}
+            aria-hidden="true"
+          >
+            <Portrait line={face} talking={false} still />
+          </span>
+        )}
+      </span>
+      <div class="hud-briefing-run-lines">
+        {run.lines.map((l) =>
+          l === view.line ? (
+            <p
+              key={l.id}
+              class={`hud-briefing-line now${l.frame === 'caption' ? ' caption' : ''}`}
+              onClick={step.next}
+            >
+              <NamePlate line={l} />
+              {l.silence ? <Held /> : <LineText line={l} typed={step.typed} />}
+            </p>
+          ) : (
+            <BriefingRow key={l.id} line={l} />
+          ),
+        )}
+      </div>
     </div>
   );
 }

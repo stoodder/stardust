@@ -1,0 +1,104 @@
+/* The briefing's runs, its "more" toggles, and its required counters (T803e; Briefing.tsx). The
+   modal's frame, title, lines and actions are hud.css's; these rules sit under `.hud-briefing`, so
+   they win whichever stylesheet loads last. Authored in game pixels, spaced with the density tokens
+   (theme.css). */
+
+/* Every run of one speaker's lines beside that speaker's face: a 50 px face column (the whole
+   portrait on the run being read, a 34 px chip of the face on an earlier one), then the lines. */
+.hud-briefing .hud-briefing-comms {
+  display: block;
+}
+
+.hud-briefing .hud-briefing-lines {
+  gap: var(--space-m);
+}
+
+.hud-briefing-run {
+  display: grid;
+  grid-template-columns: 50px 1fr;
+  gap: var(--space-l);
+  align-items: start;
+}
+
+.hud-briefing-face {
+  display: flex;
+  justify-content: flex-end;
+  min-height: 1px;
+}
+
+.hud-briefing-run-lines {
+  display: grid;
+  gap: var(--space-xs);
+  align-content: start;
+}
+
+/* The chip: the bust's face at 1:1 (art-direction § Portraits: never scaled), a 32 px window on its
+   48 px frame, in the speaker's colour. */
+.hud-briefing-chip {
+  box-sizing: border-box;
+  display: block;
+  width: 34px;
+  height: 34px;
+  overflow: hidden;
+  border: 1px solid var(--accent);
+  background: var(--sd-ink-0);
+}
+
+.hud-briefing-chip .dlg-portrait {
+  width: 48px;
+  height: 48px;
+  margin: -7px 0 0 -8px;
+  border: 0;
+  background: transparent;
+}
+
+/* An earlier run's words step back a shade; the run being read keeps the bright ink. */
+.hud-briefing-run:not(.focus) .hud-briefing-line .dlg-text {
+  color: var(--sd-steel-4);
+}
+
+/* Under the runs, in the words' column: the choices, the "will remember", and Next. */
+.hud-briefing-after {
+  display: contents;
+}
+
+.hud-briefing-after > * {
+  margin-left: 58px;
+}
+
+/* ── The required counters: "Required: Air" in view, the towers that answer it one press away ── */
+
+.hud-briefing .hud-intel-required {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: 0 var(--space-m);
+}
+
+.hud-briefing .hud-intel-req {
+  padding-top: var(--space-xs);
+}
+
+.hud-intel-more .sd-disclosure-toggle {
+  min-height: 12px;
+  padding-top: var(--space-xs);
+  padding-bottom: var(--space-xs);
+}
+
+.hud-intel-more .sd-disclosure-region {
+  margin: 0 0 var(--space-xs) var(--space-l);
+}
+
+.hud-intel-more .hud-intel-answers {
+  margin: 0;
+}
+
+.hud-briefing .hud-intel-inline {
+  padding-top: var(--space-xs);
+}
+
+/* ── The medals and optional objectives, one press away ─────────────────────────────────────── */
+
+.hud-briefing-goals .sd-disclosure-region {
+  margin-top: var(--space-xs);
+}
