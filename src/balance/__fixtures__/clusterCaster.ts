@@ -6,8 +6,9 @@
 // - **Every targeted ability** (Stillness, Suppressing Fire) goes on a boss while one is on the
 //   map. Otherwise it goes on the biggest knot of enemies: `CLUSTER_MIN` or more within
 //   `CLUSTER_TILES` of one of them, aimed at that one's tile.
-// - With `heed` (a player who listens to the radio: A3M5's w13 line, "Save what you have. Freeze
-//   them at the old intake."), every targeted ability is held from each of `heed.waves`'
+// - With `heed` (a player who listens to the radio: A3M5's w13 and w15 lines, Kip's "Save what you
+//   have. Freeze them on the back path, by the old intake." and "Same as before. Save what you have
+//   for the old intake."), every targeted ability is held from each of `heed.waves`'
 //   countdowns until that wave resolves. It is cast at `heed.at` once a unit of `heed.enemy` on
 //   `heed.route` comes within `heed.radius` tiles of it.
 // - Nothing else. No live jam map's par carries Time Dilation or Clearance Sale in a slot.

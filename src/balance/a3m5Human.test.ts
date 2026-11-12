@@ -1,8 +1,8 @@
 // A3M5 played by a human caster, not a timer (D151). Par's builds with their scripted casts taken
 // out, and the cluster-aware caster (`__fixtures__/clusterCaster.ts`) casting instead: Reboot on a
 // tell, Stillness and Suppressing Fire on a boss or the biggest knot. It holds band min + 5 under
-// every C4 answer when it heeds Kip's w13 line (its casts saved for the hunt's Silencers at the old
-// intake, in W13 and W15), and under Keep and Purge without it. Under Rewrite there's no Reboot,
+// every C4 answer when it heeds Kip's w13 and w15 lines (its casts saved for the hunt's Silencers
+// at the old intake, in W13 and W15), and under Keep and Purge without them. Under Rewrite there's no Reboot,
 // and a caster that spends its casts on whatever knot comes first has nothing left when the hunt
 // reaches the hub: it still wins, at 25.0 (act3.md § A3M5, As tuned).
 import { describe, expect, it } from 'vitest';

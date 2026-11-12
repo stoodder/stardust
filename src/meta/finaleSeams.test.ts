@@ -1,13 +1,11 @@
 // The finale's story/meta seams (T800b; D154): C5 (`resolveC5`, its body T810's), and the dev
 // saves into and out of the finale: every C4 answer and both choir extremes after A3M6, and
-// `after_fin_{stay,go}` (C5 made by `resolveC5`; each equals A3M6's save until the finale is
-// registered).
+// `after_fin_{stay,go}` (C5 made by `resolveC5`).
 import { describe, expect, it } from 'vitest';
 import { CAMPAIGN } from '../content/campaign.ts';
 import { FIN_CHOIR_CELLS } from '../content/upgrades/reference.ts';
-import { DEV_SAVES, INTENDED } from './__fixtures__/devSaves.ts';
+import { DEV_SAVES } from './__fixtures__/devSaves.ts';
 import { C5, C5_CHOICES, resolveC5, type C5Choice } from './storyTransactions.ts';
-import { validateSave } from './validate.ts';
 
 const isRegistered = (id: string): boolean => (CAMPAIGN as readonly string[]).includes(id);
 const build = (id: keyof typeof DEV_SAVES) => DEV_SAVES[id].build();
@@ -54,16 +52,6 @@ describe('resolveC5 (bible.md § 9, C5; T810)', () => {
     const answered = build('after_a3m6_rewrite');
     answered.story.flags.ending_choice = 'stay';
     expect(resolveC5(answered, 'go')).toEqual({ ok: true, save: answered, applied: null });
-  });
-
-  it('as the dev saves make it meanwhile: ending_choice set, nothing else, and valid', () => {
-    const before = build('after_a3m6_rewrite');
-    for (const c5 of C5_CHOICES) {
-      const after = INTENDED.c5(c5)(before);
-      expect(after.story.flags).toEqual({ ...before.story.flags, ending_choice: c5 });
-      expect({ ...after, story: { ...after.story, flags: before.story.flags } }).toEqual(before);
-      expect(validateSave(after).ok).toBe(true);
-    }
   });
 });
 

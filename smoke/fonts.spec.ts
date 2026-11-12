@@ -8,10 +8,9 @@ import { expect, test } from './fixtures.ts';
 import { playShift, shot, waitForReady } from './hooks.ts';
 
 /**
- * After the finale (`all_unlocked` has won it) the Sector map opens on the post-game plate, Endless
- * selected and its panel over the chart's west side (Hatching Season's node under it): as a player
- * does, pick Shift 1, step back to its node (Esc), and arrow along the campaign to `name`'s node,
- * whose own panel then sits clear of it, ready for `playShift`.
+ * After the finale (`all_unlocked` has won it) the Sector map opens on the post-game plate with
+ * Endless selected: as a player does, pick Shift 1, step back to its node (Esc), and arrow along
+ * the campaign to `name`'s node, ready for `playShift`.
  */
 async function toCampaignShift(page: Page, name: string): Promise<void> {
   await page.getByRole('heading', { name: 'Sector map' }).waitFor();

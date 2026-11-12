@@ -413,5 +413,4 @@ The type is `TowerDef` (tiers, specializations, attack delivery, effects, sprite
 1. **Vrell license prices** (Stardust) vs **Aelari attunement** (Intel): is it confusing that two factions unlock through different currencies? It makes D001's "grind path vs mastery path" concrete, but it needs a clear shop UI.
 2. **Railspike range 6.0** may cover most of a small map. Check it against map sizes in [maps.md §6](maps.md#6-difficulty-curve).
 3. Should **links scale with tier** (for example +50% at T3+)? Flat is simpler; scaling rewards investment.
-4. Is 16 towers enough for post-game variety, or should challenge maps add **variant towers** (for example a Hollow-tainted tower in the post-game)?
-5. **Name tag timing.** Is the first wave clear early enough for the tag to register before the player starts selling and rebuilding?
+4. **Name tag timing.** Is the first wave clear early enough for the tag to register before the player starts selling and rebuilding?

@@ -318,7 +318,6 @@ Persisted per save: the profile (name, pronouns, callsign, `arrival_reason`), St
 1. **Story difficulty awarding all medals** keeps it friendly, but it lets players farm Intel on easy mode. Is that acceptable for a single-player game? (Recommendation: yes.)
 2. Should **Intel unlock a few towers** too (beyond Aelari), to honor D001's "Intel gates major unlocks such as new towers" more strongly, or is Aelari attunement enough?
 3. **Defeat Stardust (25%)**: is "keep a small share" generous enough to make a loss feel like progress?
-4. ~~Is the **Veteran medal threshold** (+100%) right, and should veteran records show on the star map?~~ Answered (D154): +100% stands, and the star map shows a veteran pip (§6).
-5. Do **Field Protocols** need limits per act (for example Linked Up is too strong early)?
-6. **C2 balance.** Both options spend the whole bank; Sell returns 3–8 Intel plus a permanent Vrell buff. Is Return's finale boon felt enough that players who are behind on upgrades still consider it? It must never be required to beat the finale.
-7. **Farming the bonus.** Replays don't re-grant the Q3 Bonus, but a player could hoard Stardust (or replay for it) before A2M4 to inflate the Sell windfall. The clamp at 8 Intel caps it; confirm that's enough.
+4. Do **Field Protocols** need limits per act (for example Linked Up is too strong early)?
+5. **C2 balance.** Both options spend the whole bank; Sell returns 3–8 Intel plus a permanent Vrell buff. Is Return's finale boon felt enough that players who are behind on upgrades still consider it? It must never be required to beat the finale.
+6. **Farming the bonus.** Replays don't re-grant the Q3 Bonus, but a player could hoard Stardust (or replay for it) before A2M4 to inflate the Sell windfall. The clamp at 8 Intel caps it; confirm that's enough.

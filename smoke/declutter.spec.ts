@@ -364,7 +364,7 @@ test('declutter e: the veteran picker, closed and open', async ({ page }) => {
   const node = page
     .getByRole('list', { name: 'Shifts' })
     .getByRole('button', { name: /^Shift \d+, Orientation Day, / });
-  // A3M1's Next-up panel covers this node: the keyboard reaches it (T863's note for T803c).
+  // The keyboard reaches the node, as a player who tabs the chart does (T863's note for T803c).
   await node.focus();
   await page.keyboard.press('Enter');
   await page.getByRole('button', { name: 'Replay Orientation Day' }).click();

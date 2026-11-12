@@ -538,33 +538,6 @@ function a3m4Save(door: C3Choice, c4: C4Choice): DevSave {
   };
 }
 
-/**
- * `r`'s save; or, while its transaction refuses `'unbuilt'` (its body waits for its task: C5's,
- * T810), the save `intended` makes, the effect meta/storyTransactions.ts documents for it as data.
- * Any other refusal is a broken fixture and throws. Once the task lands, the stand-in is never
- * reached.
- */
-function madeOrIntended(
-  save: SaveData,
-  r: StoryOutcome,
-  intended: (s: SaveData) => SaveData,
-): SaveData {
-  if (r.ok) return r.save;
-  if (r.reason === 'unbuilt') return intended(save);
-  throw new Error(`dev save: ${r.reason}: ${r.message}`);
-}
-
-/** C5 as `resolveC5` documents it: `ending_choice` set, nothing else. */
-function intendedC5(choice: C5Choice): (save: SaveData) => SaveData {
-  return (save) => ({
-    ...save,
-    story: { ...save.story, flags: { ...save.story.flags, ending_choice: choice } },
-  });
-}
-
-/** The stand-ins `madeOrIntended` applies while a transaction's body is unbuilt (T810's C5). */
-export const INTENDED = { c5: intendedC5 } as const;
-
 /** What the reference buys before the finale (campaign.md § 4.9): the Mindspike's specs. */
 const FIN_PREP: readonly PurchaseItem[] = [{ kind: 'specs', tower: 'mindspike' }];
 
@@ -577,8 +550,8 @@ const FIN_SEEN: readonly SceneId[] = ['fin_m01_brief', 'fin_m01_scene_dawn'];
 /**
  * `plan` through A3M6, then (once FIN is registered; until then the save equals A3M6's) the
  * finale prepared for (its § 4.9 purchase) and won with Victory, Head Start on: its briefing
- * gifts, run end's transactions, Dawn seen, then C5 answered `c5` on the way out
- * (`resolveC5`, or its documented effect while T810's body is unbuilt) and its scene seen.
+ * gifts, run end's transactions, Dawn seen, then C5 answered `c5` on the way out (`resolveC5`)
+ * and its scene seen.
  */
 function finaleThrough(plan: ActThreePlan, c5: C5Choice): SaveData {
   let save = actThreeThrough('a3_m06', plan);
@@ -597,7 +570,7 @@ function finaleThrough(plan: ActThreePlan, c5: C5Choice): SaveData {
   save.stats = { pestsProcessed: save.stats.pestsProcessed, runs: save.stats.runs + 2 };
   save = runEndTransactions(save, { mapId: map, won: true, wonBefore: false }).save;
   save.story.seen.push(...FIN_SEEN.filter((id) => !save.story.seen.includes(id)));
-  save = madeOrIntended(save, resolveC5(save, c5), intendedC5(c5));
+  save = made(resolveC5(save, c5));
   save.story.seen.push('fin_m01_scene_c5');
   save.story.bricksTagIndex = tagIndexFor(save);
   return caughtUp(save);

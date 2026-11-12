@@ -262,4 +262,3 @@ The `smoke/gallery.spec.ts` smoke test opens it at a 1600 px wide viewport (the 
 ## Open questions
 
 1. **More than one raised level.** §1 supports a single high-ground level. If design/maps.md wants stacked levels or ramps that enemies walk up, depth sorting needs a z-aware rule.
-2. **Finale room.** If the finale outgrows 22×14 ([design/maps.md, open questions](../design/maps.md#open-questions)), choose between panning for that map alone and a 24×12-style aspect that keeps `cols + rows ≤ 36`.

@@ -19,6 +19,7 @@ Always read `CLAUDE.md`, your task in `tasks.md`, and `decisions.md` first. Then
 | **Dialogue / story systems** | [tech/story-runtime.md](tech/story-runtime.md); [story/style-guide.md](story/style-guide.md); core-loop §6 | — |
 | **Writing story content for a map** | [story/bible.md](story/bible.md) (the relevant act); [story/characters.md](story/characters.md) (the speakers); style-guide; the map's act file | tech, art |
 | **A story map (Act I-style: dialogue, objectives, boss)** | conventions *Add a map* (step 5) and *Add dialogue*; maps.md §5.3, §6; enemies.md §3.1, §6; core-loop §2.13; story-runtime § Dialogue runner, § Dialogue in play; the map's act-file entry; style-guide §5; campaign.md §4.8–4.9 | art, progression beyond §10 |
+| **Post-game (Endless, challenges, veteran replays)** | [design/maps.md](design/maps.md) §8; [design/progression.md](design/progression.md) §6; core-loop §1.1 *After the finale*; architecture § Sim public API (*Run rules*, *Endless*) and §4 *The post-game shell*; meta-runtime § Run end | story beyond finale.md's CH1–CH3 |
 | **Review: story angles** | all of `story/`; research | tech |
 
 ## Foundation
@@ -34,14 +35,14 @@ Always read `CLAUDE.md`, your task in `tasks.md`, and `decisions.md` first. Then
   - [story/campaign/act1.md](story/campaign/act1.md): Act I map entries (A1M1–A1M5)
   - [story/campaign/act2.md](story/campaign/act2.md): Act II map entries (A2M1–A2M6)
   - [story/campaign/act3.md](story/campaign/act3.md): Act III map entries (A3M1–A3M6)
-  - [story/campaign/finale.md](story/campaign/finale.md): the finale
+  - [story/campaign/finale.md](story/campaign/finale.md): the finale and the challenge maps' briefings (CH1–CH3)
 
 ## Design (`design/`)
 - [design/core-loop.md](design/core-loop.md): the session loop, the in-map loop, win/lose, economy, story-facing systems
 - [design/towers.md](design/towers.md): tower roster, roles, upgrade paths, stacking, and synergies
 - [design/enemies.md](design/enemies.md): combat math, enemy roster, abilities, counters, and bosses
-- [design/progression.md](design/progression.md): currencies, permanent upgrades, unlocks, medals
-- [design/maps.md](design/maps.md): grid rules, tile types, objectives, map scripts, difficulty curve, harness rules
+- [design/progression.md](design/progression.md): currencies, permanent upgrades, unlocks, medals, veteran replays
+- [design/maps.md](design/maps.md): grid rules, tile types, objectives, map scripts, the finale's rules, difficulty curve, harness rules, post-game maps (challenges, Endless)
 
 ## Art (`art/`)
 - [art/art-direction.md](art/art-direction.md): the look, palettes per act, faction visual language, VFX, tells, UI style

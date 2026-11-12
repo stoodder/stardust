@@ -35,7 +35,7 @@ The one-map finale, `fin_m01`, from the end of the Long Night to the First Dawn.
   - (Purge) QUILL: "I don't have them anymore. You counted, though. It's in your file. It's not nothing."
   - (if cleared, `spared_quiet_wave = false`; at rest progress 50%) one Elder-shaped Hollow echo drifts out of the Unsung into the song. It doesn't fight and isn't a target; it turns warm gold where it stands and rises. As it reaches the song, Pebble: "Grandmother. (hum, six notes) She heard." Spared players had their reunion in A3M1; cleared players get this farewell.
 - *Barks:* Pebble `wave_cleared` (Phase 2): "Louder! Sing louder!" · Ves'thara `ally_hushed`: "Keep singing. She will come back. They all come back." · QUILL `perfect_wave` (Keep, Phase 2): "That one went gold. All of it." Pebble, Ves'thara, and the companion the player picked are all on the radio here.
-- *Full-screen scene* `fin_m01_scene_dawn` (Dawn, before the card; it can't be skipped the first time):
+- *Full-screen scene* `fin_m01_scene_dawn` (Dawn, before the card; it can't be skipped the first time). The battle's Phase 3 already plays `dawn_major` under the sweep, and the line where everyone sings is itself sung (`dawn_sung`); the music is [architecture.md § Audio](../../tech/architecture.md#audio-srcaudio-m2)'s:
   - "(The counter reaches 0. The last of the Unsung stops fighting the song and joins it.)" · "(The hushed ones wake. The jingle comes round again, in a major key. Everyone sings it.)"
   - Pebble: "Clearing the way! (That's the good part!)"
   - (spared) Old Thrum: "Nineteen days of night. At my age, that is rude."
@@ -68,7 +68,7 @@ The one-map finale, `fin_m01`, from the end of the Long Night to the First Dawn.
 | Story | 100 |
 | alwaysCallEarly | 60 (W18 cleared long before the choir arrives; Phase 2 keeps its clock: its waves are never called) |
 | Alt `cluster` / `stasis` / `no_mindspike` | 65 / 60 / **45** (the Mindspike-free answer; it wins on seeds 1–5, with every companion, through the warren, and on Story: `finM01NoMindspike.test.ts`) |
-| No burrow answer (par without its Dens or Dread) | 40: the Unsung's two digs surface among the singers (Fork 2's pinned cost, ≥ 10 under par) |
+| No burrow answer (par without its Dens or Dread) | 40: the Unsung's two digs surface among the singers (D154 Fork 2's cost: at least 10 points of Voices, two singers, under par; pinned in `finM01Phase2.test.ts`) |
 | No air / no jam / no splash | lost in Phase 1: W14 / W18 / W17 (with the full catalog: no air W15, no splash W17) |
 | None | lost W2 |
 | Phase 2 length (#18) | Keep 181 s, Purge 225 s (1.24×), Rewrite 150 s (0.83×); the trickle alone ends it in 200 s under Keep |

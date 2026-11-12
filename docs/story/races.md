@@ -75,7 +75,7 @@ About 340 people: lettuce farmers, technicians, mechanics, cooks, and their kids
 - **How they speak.** Translated (by QUILL's translator, by Ves'thara, or in Pebble's learned English), Skitterkin speech is present tense, concrete, and gentle, with odd beautiful phrasings: "the sky sings when we leave," "tall ones" (humans), "small ones" (young), "leaving ones" (the dying and the dead). Raw speech in text is rendered as hums and squeaks in parentheses: `(hum, low)`, `(squeak)`.
 - **Role in story.** The refugees, the mourners, and the heart. Act I's "pests," Act II's revelation, and Act III's people. In the finale they walk the path the other way, home.
 - **Role in gameplay.** An **enemy faction in Acts I–II** that never attacks: Nibblers, Zoomers, Chonks, Puffwings, Bunchlings, Diggers, Elders, Brood Haulers, and the Act I boss **Matriarch Chitterbloom** (Everglow's codename; her name is **Bramble**, which Pebble tells you in A3M1), who is driven off, never killed. From Act II they appear in mixed waves fleeing ahead of the Hollow (they leak for nothing; sparing them is free). From A2M5 they are **escorted refugees**. From A3M1 they are a **tower faction**: Scuttle Den, Hum Choir, Gloop Spitter, and Sproing Pad, which are always given, never sold, and the warrens give the player sung stones (Act III's Stardust). Bramble grants the **Underfoot** ability. In the finale they are the choir.
-- **Story answers to design's open questions.** Hollow units **should not** consume Skitterkin tower units; keep the promise that "their units never die" ([../design/towers.md §8](../design/towers.md#8-presentation-and-personality)). The game's grief is about what the player did, not about punishing them for trusting their allies. Bramble becoming an ally is **confirmed** (A3M1).
+- **The story's rules for Skitterkin allies.** Hollow units **should not** consume Skitterkin tower units; keep the promise that "their units never die" ([../design/towers.md §8](../design/towers.md#8-presentation-and-personality)). The game's grief is about what the player did, not about punishing them for trusting their allies. Bramble becoming an ally is **confirmed** (A3M1).
 
 ---
 
@@ -102,7 +102,7 @@ About 340 people: lettuce farmers, technicians, mechanics, cooks, and their kids
 - **Visual language.** Asymmetry, bolted plates, exposed pipes, one oversized limb, and price tags on everything. Brass, rust, and patina, with warm welding glow.
 - **How they speak.** "Price first." They say the cost before the clause, use contract phrasing, correct their own marketing in the same breath, and are relentlessly literal about honesty. They never say "free."
 - **Role in story.** The **moral mirror**. Zibzab never lies, and in the end he is the only one who always told you the price. Everglow hid the price; the Vrell say it first.
-- **Role in gameplay.** Never enemies (this answers [../design/enemies.md](../design/enemies.md) open question 5: Vrell don't fight, because fighting is bad for repeat business). A **tower faction** licensed with Stardust at Zibzab's shop (Salvage Crane, Zapcoil, Grapple Harpoon, Lookout Shack), plus the shop itself and the **Clearance Sale** ability.
+- **Role in gameplay.** Never enemies: Vrell don't fight, because fighting is bad for repeat business. A **tower faction** licensed with Stardust at Zibzab's shop (Salvage Crane, Zapcoil, Grapple Harpoon, Lookout Shack), plus the shop itself and the **Clearance Sale** ability.
 
 ---
 

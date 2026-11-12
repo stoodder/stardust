@@ -78,7 +78,7 @@ export function runA3m5(
     readonly profile?: Pick<RunProfile, 'difficulty' | 'modifiers' | 'specs'>;
     /**
      * Par's casts taken out, and the cluster-aware human caster casting instead (D151):
-     * `'plain'`, or `'heeds'` the w13 line (`HUNT_HEED`).
+     * `'plain'`, or `'heeds'` the w13 and w15 lines (`HUNT_HEED`).
      */
     readonly human?: 'plain' | 'heeds';
   } = {},
