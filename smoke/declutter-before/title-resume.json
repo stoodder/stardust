@@ -1,0 +1,57 @@
+{
+  "id": "title-resume",
+  "group": "c",
+  "voice": {
+    "kicker": {
+      "count": 1,
+      "area": 8920,
+      "shown": 8920,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 417,
+          "y": 190,
+          "w": 446,
+          "h": 20
+        }
+      ]
+    },
+    "logo": {
+      "count": 1,
+      "area": 27648,
+      "shown": 27648,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 424,
+          "y": 210,
+          "w": 432,
+          "h": 64
+        }
+      ]
+    },
+    "tip": {
+      "count": 1,
+      "area": 25600,
+      "shown": 25600,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 0,
+          "y": 680,
+          "w": 1280,
+          "h": 20
+        }
+      ]
+    }
+  },
+  "critical": {},
+  "density": {
+    "elements": 12,
+    "controls": 7,
+    "words": 22,
+    "numbers": 0,
+    "repeated": [],
+    "longCopy": []
+  }
+}

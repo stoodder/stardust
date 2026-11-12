@@ -177,6 +177,11 @@
   line-height: 16px;
 }
 
+/* "Resume the Long Walk" leads (T900): Continue follows it at the menu's gap, not a second lead's. */
+.sd-title-start + .sd-title-start {
+  margin-top: 0;
+}
+
 .sd-title-tip {
   position: absolute;
   bottom: 10px;
