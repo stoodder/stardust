@@ -1,8 +1,9 @@
-// The fizzle's prediction against the sim (D150, D151; jamLook.ts `tellDoomed`, `lasersDoomed`,
-// `ringLanded`): a System Reboot cast in a Silencer's tendril dooms it the same tick, and a doomed
-// tell never lands; with no Reboot the same tell is never doomed and lands. An Auditor's ring has
-// no fixed targets, so it is never called early: it ends exactly on the tick `ringLanded` reads,
-// landing nothing after a Reboot, but still jamming a tower built in its reach after the Reboot.
+// The fizzle's prediction against the sim (D150, D151; jamLook.ts `tellDoomed`, `lasersDoomed`):
+// a System Reboot cast in a Silencer's tendril dooms it the same tick, and a doomed tell never
+// lands; with no Reboot the same tell is never doomed and lands. An Auditor's ring has no fixed
+// targets, so it is never called early: the sim says on its landing tick whether a counter turned
+// it (JamFizzled, T777; JamView fizzles on it): after a Reboot it lands nothing and fizzles, but it
+// still jams a tower built in its reach after the Reboot, and doesn't fizzle.
 // Hostile Takeover's laser after a Reboot is doomed (`lasersDoomed`) and lands nothing. On the dev
 // ranges: dev_silence's Silencer, dev_takeover's W1 Auditors and W2's "Shareholder Value".
 import { describe, expect, it } from 'vitest';
@@ -16,7 +17,7 @@ import {
   type SimEvent,
 } from '../../sim/index.ts';
 import { DEV_CONTENT } from '../__fixtures__/devBattle.ts';
-import { lasersDoomed, ringLanded, tellDoomed } from './jamLook.ts';
+import { lasersDoomed, tellDoomed } from './jamLook.ts';
 
 const dev = compileContent(DEV_CONTENT);
 const maps: Readonly<Record<string, (typeof dev.maps)[keyof typeof dev.maps]>> = dev.maps;
@@ -85,7 +86,7 @@ function telling(s: Sim<IdSpace>, uid: number): boolean {
 
 /**
  * Steps until `uid`'s tell is over (calling `each` on every tick of it first); the jams it landed,
- * and the ticks it took from the first step.
+ * its JamFizzled events, and the ticks it took from the first step.
  */
 function playOut(s: Sim<IdSpace>, uid: number, each: () => void = () => {}) {
   const events: SimEvent<IdSpace>[] = [];
@@ -97,7 +98,8 @@ function playOut(s: Sim<IdSpace>, uid: number, each: () => void = () => {}) {
     s.drainEvents(events);
   }
   const landed = events.filter((ev) => ev.type === 'TowerJammed' && ev.source === uid).length;
-  return { landed, ticks };
+  const fizzled = events.filter((ev) => ev.type === 'JamFizzled' && ev.uid === uid).length;
+  return { landed, fizzled, ticks };
 }
 
 /** The ticks left of `uid`'s tell now. */
@@ -147,15 +149,15 @@ describe('the fizzle (D150, D151): a tendril doomed by a Reboot never lands', ()
   });
 });
 
-describe('the fizzle (D151): a ring is judged only on its landing tick', () => {
-  it('no Reboot: it ends on the tick ringLanded reads, and lands', () => {
+describe('the fizzle (D151, T777): a ring is judged only on its landing tick', () => {
+  it('no Reboot: it runs its whole tell and lands, no fizzle', () => {
     const s = sim('dev_takeover');
     const uid = untilTell(s, 'ring', AUDIT);
     const was = left(s, uid);
-    const { landed, ticks } = playOut(s, uid);
-    expect(ringLanded(was, ticks)).toBe(true);
-    expect(ringLanded(was, ticks - 1)).toBe(false);
+    const { landed, fizzled, ticks } = playOut(s, uid);
+    expect(ticks).toBe(was);
     expect(landed).toBeGreaterThan(0);
+    expect(fizzled).toBe(0);
   });
 
   it('a Reboot mid-ring: it still ends on its landing tick, landing nothing (FIZZLED then)', () => {
@@ -164,9 +166,10 @@ describe('the fizzle (D151): a ring is judged only on its landing tick', () => {
     s.step();
     reboot(s);
     const was = left(s, uid);
-    const { landed, ticks } = playOut(s, uid);
-    expect(ringLanded(was, ticks)).toBe(true);
+    const { landed, fizzled, ticks } = playOut(s, uid);
+    expect(ticks).toBe(was);
     expect(landed).toBe(0);
+    expect(fizzled).toBe(1);
   });
 
   it('a tower built in its reach after the Reboot is still jammed: no early fizzle', () => {
@@ -191,8 +194,9 @@ describe('the fizzle (D151): a ring is judged only on its landing tick', () => {
     }
     const built = s.state.towers.items.filter((t) => t.alive && t.jamImmuneTicks === 0);
     expect(built.some((t) => Math.hypot(t.x - e.x, t.y - e.y) <= 2)).toBe(true);
-    const { landed } = playOut(s, uid);
+    const { landed, fizzled } = playOut(s, uid);
     expect(landed).toBeGreaterThan(0);
+    expect(fizzled).toBe(0);
   });
 });
 
@@ -278,14 +282,10 @@ describe('the fizzle (D151): a Takeover laser spent by a Reboot', () => {
 });
 
 describe('the rules', () => {
-  it('doomed exactly while the immunity outlasts the tell; a ring lands when its ticks run out', () => {
+  it('doomed exactly while the immunity outlasts the tell', () => {
     expect(tellDoomed(0, 30)).toBe(false);
     expect(tellDoomed(30, 30)).toBe(false); // it runs out the tick the tell lands
     expect(tellDoomed(31, 30)).toBe(true);
     expect(tellDoomed(360, 0)).toBe(false); // no tell under way
-    expect(ringLanded(30, 29)).toBe(false);
-    expect(ringLanded(30, 30)).toBe(true);
-    expect(ringLanded(3, 12)).toBe(true); // several ticks a frame
-    expect(ringLanded(0, 5)).toBe(false); // none under way
   });
 });

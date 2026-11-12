@@ -353,7 +353,7 @@ export const map = defineMapLayout({
     when: CONVOY,
     attack: {
       type: 'kinetic' as const,
-      damage: 4,
+      damage: 1.5,
       ratePerSec: 1,
       rangeTiles: 3.5,
       targets: { ground: true, air: false },

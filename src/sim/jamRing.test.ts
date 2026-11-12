@@ -13,7 +13,7 @@ import { secToTicks } from '../shared/time.ts';
 import { MAP, placeTower, spawn } from './__fixtures__/combat.ts';
 import { fixtureConfig } from './__fixtures__/sim.ts';
 import { castReboot } from './abilities/reboot.ts';
-import { ringGrowth, ringTelling } from './enemyAbilities/jamRing.ts';
+import { landRing, ringGrowth, ringTelling } from './enemyAbilities/jamRing.ts';
 import type { SimEvent } from './events.ts';
 import { FEATURE_GATES } from './gates.ts';
 import { JAM_FIRST_READY_TICKS, jams, jamTower } from './jam.ts';
@@ -146,6 +146,9 @@ describe('the Auditor’s ring (enemies.md § 4)', () => {
     state.events.length = 0;
     const rest = run(state, ctx, RING.tellTicks);
     expect(rest.filter((ev) => ev.type === 'TowerJammed')).toEqual([]);
+    expect(rest.filter((ev) => ev.type === 'JamFizzled')).toEqual([
+      { type: 'JamFizzled', uid: e.uid },
+    ]);
     expect([near.jamTicks, far.jamTicks]).toEqual([0, 0]);
   });
 
@@ -199,5 +202,81 @@ describe('the Auditor’s ring (enemies.md § 4)', () => {
     run(w.state, w.ctx, FIRST + RING.tellTicks + 1);
     expect([x.jamTicks, y.jamTicks]).toEqual([240, 0]); // landed this tick
     expect(w.state.stats.jamOverLimitTicks).toBe(0);
+  });
+
+  describe('the fizzle (T777): only when a counter turned it', () => {
+    /** A ring under way over (1,1) with `n` towers out of reach placed; its Auditor and tower. */
+    function ringing(n = 0) {
+      const w = world();
+      const near = placeTower(w.state, RIVET, 1, 1);
+      fill(w.state, n);
+      const e = spawn(w.state, AUDITOR, { dist: 2 });
+      run(w.state, w.ctx, FIRST + 1 + 30);
+      expect(ringTelling(e)).toBe(true);
+      return { ...w, e, near };
+    }
+    /** The rest of the ring's tell, to its landing tick; its events. */
+    const land = (w: ReturnType<typeof ringing>) => run(w.state, w.ctx, w.e.jamTellTicks);
+
+    it('a tower in reach immune (a Reboot, a jam’s end): JamFizzled on the landing tick', () => {
+      const w = ringing();
+      w.near.jamImmuneTicks = 5000;
+      expect(land(w)).toEqual([{ type: 'JamFizzled', uid: w.e.uid }]);
+      expect(ringTelling(w.e)).toBe(false);
+    });
+
+    it('nothing in reach any more (sold in the tell): no fizzle', () => {
+      const w = ringing();
+      w.near.alive = false;
+      expect(land(w)).toEqual([]);
+    });
+
+    it('every tower in reach already Jammed: no fizzle', () => {
+      const w = ringing(4); // 5 placed: the limit is 1, so the jam below fills it
+      jamTower(w.state, w.near, 6000, 1);
+      w.state.events.length = 0;
+      expect(land(w)).toEqual([]);
+    });
+
+    it('the jam limit full, an immune tower in reach beside a jammable one: no fizzle', () => {
+      const w = ringing(2); // 3 placed: the limit is 1
+      const other = placeTower(w.state, RIVET, 3, 1); // in reach, jammable: the limit stops it
+      const far = w.state.towers.items[1]!; // out of reach
+      jamTower(w.state, far, 6000, 1);
+      w.near.jamImmuneTicks = 5000;
+      w.state.events.length = 0;
+      expect(land(w)).toEqual([]);
+      expect(other.jamTicks).toBe(0);
+    });
+
+    it('jammed one tower and an immune one beside it: a landing, not a fizzle', () => {
+      const w = ringing(8); // 9 placed, then 10: the limit is 2
+      const other = placeTower(w.state, RIVET, 3, 1);
+      w.near.jamImmuneTicks = 5000;
+      expect(land(w)).toEqual([
+        { type: 'TowerJammed', uid: other.uid, ticks: 240, source: w.e.uid },
+      ]);
+    });
+
+    it('a ring dropped on its landing tick (leaving): no fizzle', () => {
+      const w = ringing();
+      w.near.jamImmuneTicks = 5000;
+      run(w.state, w.ctx, w.e.jamTellTicks - 1);
+      w.e.leaving = true;
+      expect(run(w.state, w.ctx, 1)).toEqual([]);
+      expect(w.e.jamTellTicks).toBe(0);
+    });
+
+    it('landRing: a Rally Chorus (jamMul 0) counts as immune; nothing in reach is nothing', () => {
+      const w = world();
+      const e = spawn(w.state, AUDITOR, { dist: 2 });
+      expect(landRing(w.state, e, RING)).toBe('nothing');
+      const t = placeTower(w.state, RIVET, 1, 1);
+      t.jamMul = 0;
+      expect(landRing(w.state, e, RING)).toBe('fizzled');
+      t.jamMul = 1;
+      expect(landRing(w.state, e, RING)).toBe('jammed');
+      expect(t.jamTicks).toBe(240);
+    });
   });
 });

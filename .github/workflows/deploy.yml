@@ -1,0 +1,64 @@
+# Deploy to GitHub Pages (docs/tech/architecture.md § 5, "Deploy to GitHub Pages").
+# Runs on a milestone tag (`m*`: a GitHub release `m<N>` creates one) or by hand (Actions → Deploy →
+# Run workflow). It runs the whole gate (`npm run check`) on the tagged tree, then publishes the
+# gate's own dist/: the build the smoke flows just played, subpath boot included
+# (smoke/subpath.spec.ts). Its URLs are relative (`base: './'`), so it works at /<repo>/.
+name: Deploy
+
+on:
+  push:
+    tags: ['m*']
+  workflow_dispatch:
+    inputs:
+      gate:
+        description: 'full: the whole gate (npm run check). fast: every step but smoke (npm run check:fast).'
+        type: choice
+        options: [full, fast]
+        default: full
+
+permissions:
+  contents: read
+
+# One deploy at a time; a newer run waits rather than cancelling one mid-publish.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Playwright's own Chromium for the smoke step (playwright.config.ts uses it when neither
+      # SMOKE_CHROME nor CHROME_PATH is set).
+      - run: npx playwright install --with-deps chromium
+        if: github.event_name != 'workflow_dispatch' || inputs.gate == 'full'
+      - name: Gate (npm run check)
+        if: github.event_name != 'workflow_dispatch' || inputs.gate == 'full'
+        run: npm run check
+      - name: Gate without smoke (npm run check:fast)
+        if: github.event_name == 'workflow_dispatch' && inputs.gate == 'fast'
+        run: npm run check:fast
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

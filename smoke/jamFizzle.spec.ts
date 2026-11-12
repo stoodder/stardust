@@ -2,7 +2,7 @@
 // Silencer's tendril (`dev_silence`) dooms it: it snaps off at once with a violet puff and FIZZLED
 // rising where its tip was (JamView; jamLook.ts `tellDoomed`). An Auditor's ring (`dev_takeover`
 // W1) draws on through its tell after a Reboot (a tower built in its reach could still be jammed)
-// and fizzles over the Auditor on its landing tick, having jammed nothing (`ringLanded`). Hostile
+// and fizzles over the Auditor on its landing tick, a counter having turned it (JamFizzled). Hostile
 // Takeover's laser (W2's "Shareholder Value") spent by a Reboot goes out and fizzles over the boss
 // (`lasersDoomed`). FIZZLED holds whole 0.8 s. Screenshots in <out>/screens/jam-fizzle/ (look at
 // them: FIZZLED over the Act III ground at 1× is the point).

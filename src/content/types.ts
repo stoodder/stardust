@@ -1734,11 +1734,11 @@ export interface BuildsDef<K extends IdSpace = LiveIds> {
   readonly teachMap?: boolean;
   /**
    * Required counters the harness doesn't hold to #5's loss or #6's full-catalog loss (balance/
-   * counterChecks.ts), each with its reason: the category is still required (its no-counter build
-   * carries no answer) and the map's own tests pin what it costs instead. Only `jam`, whose jams
-   * are too short to decide a map on their own (D146 addendum; T760 retunes them to retire these),
-   * and `detection` on A3M6, whose exam is canon's two Operative waves (one teach, one test; D146
-   * addendum, T722).
+   * counterChecks.ts; design/maps.md § 6.1, § 6.4). Each entry is a `CounterExemption`: see it for
+   * what the exemption means and what it must name. Live: A3M5's `jam` (its exam is the bearers'
+   * hub under the hunt: no-jam loses most of the bearers, not the map; D149) and A3M6's
+   * `detection` (canon's two Operative waves, one teach and one test; D146 addendum, T722). Default
+   * none.
    */
   readonly counterExemptions?: readonly CounterExemption[];
   /**
@@ -1763,14 +1763,27 @@ export interface PendingChecks {
   readonly checks?: readonly string[];
 }
 
-/** A required counter the harness exempts from #5 and #6 (BuildsDef.counterExemptions). */
+/**
+ * A required counter the harness exempts from #5 (its no-counter build loses by the lose-by wave)
+ * and #6 (the full-catalog profile can't replace it) on one map (BuildsDef.counterExemptions).
+ * The counter **stays required**: it is still in `requiredCounters`, its no-counter build still
+ * runs and still carries no answer (#5's premise), and the map's exam still asks for it. Only the
+ * *loss* is waived, for a map whose exam of that counter costs a measured margin rather than the
+ * map (A3M5's jam: the bearers, not the core). Not a way to dodge a counter: [builds-range]
+ * refuses a counter the map doesn't require, one listed twice, an empty `reason`, or a `pinnedBy`
+ * that isn't a balance unit test's path.
+ */
 export interface CounterExemption {
   readonly counter: 'jam' | 'detection';
+  /** Why the loss is waived here: where the map's exam of the counter is, and what it costs. */
   readonly reason: string;
   /**
-   * The unit test that pins what the counter's absence costs on this map instead, as a repo path
-   * (`src/balance/a3m5Jam.test.ts`; D150). [builds-range] checks its shape;
-   * tools/counterExemptions.test.ts checks the file exists and names the map and counter.
+   * Required on every entry (D150): the balance unit test that pins what the counter's absence
+   * costs on this map in the harness's place, as a repo path (`src/balance/a3m5Jam.test.ts`).
+   * [builds-range] checks its shape (it runs in the browser); tools/counterExemptions.test.ts
+   * checks that the file exists and asserts the cost through balance/counterCost.ts's
+   * `expectCounterCost` for this map and counter: par's margin over the no-counter build's, at
+   * least COUNTER_COST_MIN_POINTS (T775).
    */
   readonly pinnedBy: string;
 }
