@@ -43,7 +43,7 @@ function animOf(still: PreludeStillId, frame: string): FramesAnim | null {
 function drawnFrame(s: Shown, ms: number, still: boolean): string {
   const a = animOf(s.still, s.frame);
   if (a === null) return s.frame;
-  if (still) return a.frames[0]!; // non-empty (animOf)
+  if (still) return s.frame; // reduced motion holds the cue frame
   const n = Math.floor((Math.max(0, ms) * a.fps) / 1000);
   const k = a.loop === false ? Math.min(n, a.frames.length - 1) : n % a.frames.length;
   return a.frames[k]!; // k < length

@@ -325,24 +325,18 @@ function paintBricks(g: CharGrid, x: number, y: number, wave: boolean): void {
  */
 // prettier-ignore
 const TECHNICIAN = [
-  '........v.',
-  '.......a..',
-  '......a...',
-  '...xxxxx..',
-  '..xwwwwwx.',
-  '.xwwwwwwsx',
-  '.xwwwwwwsx',
-  '.xtttttttx',
-  '.xwwwwwbbx',
-  '.xswwwwbkx',
-  '..xsssskx.',
-  '..x7888x..',
-  '.x77888x..',
-  '.x7x88x7x.',
-  '..x7888x..',
-  '..x77x8x..',
-  '..xkxxkx..',
-  '..xk..kx..',
+  '......v..',
+  '.....a...',
+  '..xxxxx..',
+  '.xwwwwwx.',
+  'xwwwwwwsx',
+  'xtttttttx',
+  'xwwwwwbkx',
+  '.xsssskx.',
+  '.x78887x.',
+  '.x78887x.',
+  '..x7x8x..',
+  '..xkxkx..',
 ];
 const TECHNICIAN_INK: Readonly<Record<string, ColorName>> = {
   x: 'ink.0',
@@ -360,7 +354,7 @@ const TECHNICIAN_INK: Readonly<Record<string, ColorName>> = {
 /** Stamps the Technician with the feet's centre at (x, y), and its shadow on the road. */
 function paintTechnician(g: CharGrid, x: number, y: number): void {
   for (let dx = -3; dx <= 4; dx++) plot(g, x + dx, y + 1, c('act1.path.1'));
-  const ox = x - 5;
+  const ox = x - 4;
   const oy = y - TECHNICIAN.length + 1;
   TECHNICIAN.forEach((row, sy) => {
     for (let sx = 0; sx < row.length; sx++) {
