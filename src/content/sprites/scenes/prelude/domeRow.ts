@@ -83,25 +83,26 @@ export function cellCentre(gx: number, gy: number): { x: number; y: number } {
 const GATE_GX = 6;
 /** The domes on the road's far side and the turrets' pads on its near side. */
 const DOMES: readonly (readonly [number, number])[] = [
-  [0, -2],
-  [2, -2],
+  [-1, -2],
+  [1.5, -2],
   [4, -2],
-  [-4, 3],
-  [-2, 3.5],
-  [0, 4],
+  [-5, 3],
+  [-3, 3.5],
+  [-1, 4],
+  [1.5, 4],
 ];
 const PADS: readonly (readonly [number, number])[] = [
-  [-2, 1.5],
-  [1, 1.5],
-  [4, 1.5],
+  [-3, 1.5],
+  [0, 1.5],
+  [3, 1.5],
 ];
 /** Bricks's feet, by the gate on the road's far side. */
 export const BRICKS_AT = cellCentre(GATE_GX + 0.4, -1.3);
 /** The Technician on the road, walking down it toward the gate. */
-export const TECHNICIAN_AT = cellCentre(4.4, 0.15);
+export const TECHNICIAN_AT = cellCentre(5, 0.1);
 /** On `gerald`: the clipboard at the Technician's boots, and Gerald hovering just past it. */
 export const CLIPBOARD_AT = { x: TECHNICIAN_AT.x + 3, y: TECHNICIAN_AT.y + 3 } as const;
-export const GERALD_AT = { x: TECHNICIAN_AT.x + 22, y: TECHNICIAN_AT.y - 4 } as const;
+export const GERALD_AT = { x: TECHNICIAN_AT.x - 8, y: TECHNICIAN_AT.y + 16 } as const;
 
 /** The far edge of the valley floor: the terraces' foot under the Spires (higher to the east). */
 function footY(x: number): number {
@@ -149,7 +150,7 @@ function paintFence(g: CharGrid, side: 'far' | 'near'): void {
   }
 }
 
-/** The gate: two Everglow pillars either side of the road, a teal lamp on each, the boom up. */
+/** The gate: two Everglow pillars either side of the road, a teal lamp on each, standing open. */
 function paintGate(g: CharGrid): void {
   for (const gy of [-0.75, 0.75]) {
     const p = cellCentre(GATE_GX + 0.5, gy);
@@ -164,14 +165,6 @@ function paintGate(g: CharGrid): void {
     plot(g, p.x - 1, p.y - 15, c('teal.4'));
     plot(g, p.x, p.y - 15, c('teal.3'));
     plot(g, p.x, p.y - 9, c('orange.3'));
-  }
-  // The boom, raised: striped, standing up off the far pillar.
-  const far = cellCentre(GATE_GX + 0.5, -0.75);
-  for (let k = 0; k < 16; k++) {
-    const x = far.x + 3 + Math.floor(k / 4);
-    const y = far.y - 12 - k;
-    plot(g, x, y, k % 4 < 2 ? c('orange.3') : c('white.0'));
-    plot(g, x + 1, y, c('ink.0'));
   }
 }
 
@@ -429,11 +422,11 @@ function bayerShade(x: number, y: number, t: number): boolean {
 function paintDomeRow(): Record<string, CharGrid> {
   const g = sceneGrid();
   paintGround(g);
+  paintBackdrop(g);
   paintFence(g, 'far');
   paintStanding(g);
   paintGate(g);
   paintFence(g, 'near');
-  paintBackdrop(g);
   paintNearShade(g);
   const still = copyGrid(g);
   paintBricks(still, BRICKS_AT.x, BRICKS_AT.y, false);

@@ -50,7 +50,17 @@ function drawnFrame(s: Shown, ms: number, still: boolean): string {
 }
 
 /** One still on the stage: its frame at 2×, the descent offset by the pan. */
-function Still({ s, now, still, fresh }: { s: Shown; now: number; still: boolean; fresh: boolean }) {
+function Still({
+  s,
+  now,
+  still,
+  fresh,
+}: {
+  s: Shown;
+  now: number;
+  still: boolean;
+  fresh: boolean;
+}) {
   const art = stillArt(preludeStillDef(s.still), drawnFrame(s, now - s.at, still));
   if (art === null) return null;
   const pan = s.still === PRELUDE_PAN.still ? panOffset(PRELUDE_PAN, now - s.at, still) : 0;

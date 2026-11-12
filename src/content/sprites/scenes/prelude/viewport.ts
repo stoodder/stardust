@@ -111,20 +111,25 @@ function groundAt(x: number, y: number, depth: number): string {
   const relief = limbRelief(x, y, 61);
   const haze = Math.max(0, 1 - depth / 26);
   const cloud = smooth(x * 0.6, y * 3, 14, 67);
-  if (cloud > 0.7 && bayer(x, y) < (cloud - 0.7) * 5) return cloud > 0.8 ? 'J' : 'I';
+  if (cloud > 0.76 && bayer(x, y) < (cloud - 0.76) * 4) return cloud > 0.84 ? 'J' : 'I';
   if (haze > 0.55 && bayer(x, y) < (haze - 0.55) * 1.6) return haze > 0.8 ? 'M' : 'L';
-  if (relief >= 0.64) {
+  // Lit where the ground faces the star (up and to the right), shaded where it turns away.
+  const slope = relief - limbRelief(x + 2, y - 1, 61);
+  if (relief >= 0.62 && slope < -0.012) return relief >= 0.69 ? 'b' : 'a';
+  if (relief >= 0.69) {
     // The northern ridges: pale clay crests, pink-gold where the sun catches them.
     const h = hash01(x, y, 63);
-    const north = haze > 0.15 ? 0.06 : 0.02;
-    if (h < north * 0.5) return 'V';
+    const north = haze > 0.1 ? 0.16 : 0.04;
+    if (h < north * 0.4) return 'V';
     if (h < north) return '+';
-    return relief > 0.7 ? 'e' : 'd';
+    return relief > 0.73 ? 'e' : 'd';
   }
-  if (relief >= 0.52) return dithered(['b', 'c', 'd'], (relief - 0.52) / 0.12, x, y);
+  if (relief >= 0.62) return dithered(['b', 'c', 'd'], (relief - 0.62) / 0.07, x, y);
   // The valleys: terraces, contour bands of green stepping down to the river beds.
   const band = Math.floor(relief * 40);
+  if (relief < 0.24) return relief < 0.2 && bayer(x, y) < 0.6 ? 'K' : '1';
   if (relief < 0.3) return band % 2 === 0 ? '2' : '1';
+  if (slope < -0.015) return '1';
   const lip = (relief * 40) % 1 < 0.22;
   return lip ? '4' : band % 2 === 0 ? '3' : '2';
 }
@@ -209,7 +214,7 @@ function paintHold(g: CharGrid, adOn: boolean): void {
     const spill = Math.max(0, 1 - Math.hypot(x - VIEWPORT.x, y - VIEWPORT.y) / (VIEWPORT.r + 50));
     // The ad's light from behind us (the near, lower left), warm, when it plays.
     const warm = adOn ? Math.max(0, 1 - Math.hypot(x * 0.8, (SCENE_H - y) * 1.2) / 230) : 0;
-    if (warm > 0 && bayer(x, y) < warm * 0.7) return warm > 0.55 && bayer(x, y) < 0.1 ? 'X' : 'W';
+    if (warm > 0 && bayer(x, y) < warm * warm * 0.6) return 'W';
     if (y === 150 || y === 151) return y === 150 ? (spill > 0.1 ? 'N' : 'B') : 'k';
     if ((x + 20) % 58 === 0 && y < 150) return 'k';
     if ((x + 21) % 58 === 0 && y < 150) return spill > 0.2 ? 'C' : 'B';

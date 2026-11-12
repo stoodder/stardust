@@ -635,11 +635,8 @@ function armAuto(h: Holding): void {
   const line = h.line;
   if (h.staging === null || !stagingAutoAdvances(h.staging.kind)) return;
   if (line === null || line.silence || h.instant || h.cursor.step.kind !== 'line') return;
-  const typedAt = h.typedOut
-    ? Math.max(h.typedFrom, h.typedAt)
-    : h.typedFrom + typeMs(line.text);
-  const wait =
-    Math.max(0, typedAt - performance.now()) + fastHoldMs(autoAdvanceHoldMs(line.text));
+  const typedAt = h.typedOut ? Math.max(h.typedFrom, h.typedAt) : h.typedFrom + typeMs(line.text);
+  const wait = Math.max(0, typedAt - performance.now()) + fastHoldMs(autoAdvanceHoldMs(line.text));
   autoTimer = setTimeout(() => {
     autoTimer = null;
     if (holding === h && h.line === line) advanceScene();

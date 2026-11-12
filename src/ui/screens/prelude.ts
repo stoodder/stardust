@@ -126,7 +126,8 @@ export function panOffset(
 
 /** What each still and frame shows, for the stage's label (aria; the lines speak for themselves). */
 const LABELS: Readonly<Record<string, string>> = {
-  'scene.prelude_ad|ad': 'An Everglow ad. Evie beams over a sunlit lettuce dome: BRIGHTER EVERY DAY!',
+  'scene.prelude_ad|ad':
+    'An Everglow ad. Evie beams over a sunlit lettuce dome: BRIGHTER EVERY DAY!',
   'scene.prelude_ad|small_print': "The ad's small print scrolls past, too fast to read.",
   'scene.freighter|cabin':
     'A freighter cabin. The ad plays on a small bulkhead screen over crates stencilled CONFETTI. You sit strapped in, the helmet far too big.',
@@ -139,8 +140,10 @@ const LABELS: Readonly<Record<string, string>> = {
     "The landing pad under a cyan sky. Evie's billboard beams. A sign: DAYS WITHOUT A PEST INCIDENT: 1.",
   'scene.touchdown|zero':
     'A Nibbler skitters past. The sign now reads 0. Something small watches from a rock.',
-  'scene.dome_row|still': 'Dome Row: the domes, turrets on their pads, and one road out through the gate.',
-  'scene.dome_row|wave': 'By the gate, a very large figure raises one hand. The other holds a cannon.',
+  'scene.dome_row|still':
+    'Dome Row: the domes, turrets on their pads, and one road out through the gate.',
+  'scene.dome_row|wave':
+    'By the gate, a very large figure raises one hand. The other holds a cannon.',
   'scene.dome_row|gerald': 'Gerald, the mail drone, satchel open. A clipboard lies at your boots.',
 };
 

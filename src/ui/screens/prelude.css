@@ -17,7 +17,8 @@
 }
 
 /* The lead-in: the ad alone, the empty line panel held back until its first line. */
-.dlg-stage[data-staging='prelude'] .dlg-fullscreen:not(:has(.dlg-line, .dlg-caption, .dlg-choices)) {
+.dlg-stage[data-staging='prelude']
+  .dlg-fullscreen:not(:has(.dlg-line, .dlg-caption, .dlg-choices)) {
   opacity: 0;
 }
 

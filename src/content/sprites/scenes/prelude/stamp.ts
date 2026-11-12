@@ -78,8 +78,8 @@ export function frameRows(def: SpriteDef, name: string): string[] {
   const fd = def.frames[name];
   if (fd === undefined) throw new Error(`${def.id}: no frame '${name}'`);
   if (isGrid(fd)) return [...fd];
-  if ('mirrorOf' in fd) return frameRows(def, fd.mirrorOf).map((r) => [...r].toReversed().join(''));
-  const out = frameRows(def, fd.from).map((r) => [...r]);
+  if ('mirrorOf' in fd) return frameRows(def, fd.mirrorOf).map((r) => r.split('').toReversed().join(''));
+  const out = frameRows(def, fd.from).map((r) => r.split(''));
   for (const p of patchList(fd)) {
     p.rows.forEach((r, dy) => {
       for (let dx = 0; dx < r.length; dx++) {
@@ -132,7 +132,7 @@ export function framePixels(
   let src = frameRows(def, frame);
   if (opts.recolor !== undefined) {
     const map = opts.recolor;
-    src = src.map((r) => [...r].map((ch) => map[ch] ?? ch).join(''));
+    src = src.map((r) => r.split('').map((ch) => map[ch] ?? ch).join(''));
   }
   const w = def.size.w;
   const h = def.size.h;
