@@ -69,15 +69,14 @@ export const PHASE_1: readonly WaveDef[] = [
   },
   // W5 · Maws
   { ...CALL, groups: [maws(2, 'halls', 0, 5), motes(8, 'halls', 3, 0.8), motes(6, 'rift_field', 8, 0.8)] },
-  // W6 · Mote clusters with an Undertow
+  // W6 · Mote clusters (the canon's pair of Undertows walks in W16 and W18 instead: at 15% of a
+  // wave's threat, a soft pair needs a wave ~7,500 strong, past W6's size)
   {
     ...CALL,
     groups: [
-      motes(10, 'halls', 0, 0.8),
-      motes(10, 'rift_field', 4, 0.8),
-      fractures(4, 'halls', 8),
-      maws(3, 'rift_field', 10, 4),
-      g('undertow', 1, 'halls', 14),
+      motes(8, 'halls', 0, 0.8),
+      motes(8, 'rift_field', 4, 0.8),
+      fractures(2, 'halls', 8, 3),
     ],
   },
   // W7 · Silencers
