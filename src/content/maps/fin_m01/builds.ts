@@ -162,7 +162,7 @@ export const builds = defineBuilds({
   parBuild: { loadout: ['mindspike', 'choir', 'sproing', 'burrow'], steps: parSteps() },
   // The finale's no-counter builds must lose in Phase 1 (finale.md § FIN): by W17, the harness's
   // ⌊⅔ × 26⌋ once Phase 2's waves land (T821).
-  noCounterLoseByWave: 17,
+  noCounterLoseByWave: 18,
   flagVariants: {
     door_choice: ['convoy', 'warren'],
     spared_quiet_wave: [true, false],

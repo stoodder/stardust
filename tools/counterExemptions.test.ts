@@ -31,6 +31,10 @@ export function skipsTests(text: string): boolean {
   );
 }
 
+/** A pinning call as a test writes it, for `map` and `counter`. */
+const call = (map: string, counter: string): string =>
+  `expectCounterCost({\n  map: '${map}',\n  counter: '${counter}',\n  par: a,\n  without: b,\n  minPoints: 40,\n});`;
+
 describe('counter exemptions name the tests that pin their cost', () => {
   const entries = Object.values(RAW_CONTENT.maps).flatMap((m) =>
     (m.counterExemptions ?? []).map((x) => Object.assign({ map: m.id }, x)),
@@ -54,8 +58,6 @@ describe('counter exemptions name the tests that pin their cost', () => {
   it('a file that only names the counter, or pins another map or counter, doesn’t pin it', () => {
     const named = "const r = run('a3_m05', 'noCounter:jam'); expect(r.outcome).toBe('won');";
     expect(pinsCost(named, 'a3_m05', 'jam')).toBe(false);
-    const call = (map: string, counter: string) =>
-      `expectCounterCost({\n  map: '${map}',\n  counter: '${counter}',\n  par: a,\n  without: b,\n  minPoints: 40,\n});`;
     expect(pinsCost(call('a3_m05', 'jam'), 'a3_m05', 'jam')).toBe(true);
     expect(pinsCost(call('a3_m06', 'jam'), 'a3_m05', 'jam')).toBe(false);
     expect(pinsCost(call('a3_m05', 'detection'), 'a3_m05', 'jam')).toBe(false);

@@ -59,6 +59,19 @@ function run(state: SimState, ctx: TickContext, n: number): SimEvent<IdSpace>[] 
   return out;
 }
 
+/** A ring under way over (1,1) with `n` towers out of reach placed; its Auditor and tower. */
+function ringing(n = 0) {
+  const w = world();
+  const near = placeTower(w.state, RIVET, 1, 1);
+  fill(w.state, n);
+  const e = spawn(w.state, AUDITOR, { dist: 2 });
+  run(w.state, w.ctx, FIRST + 1 + 30);
+  expect(ringTelling(e)).toBe(true);
+  return { ...w, e, near };
+}
+/** The rest of the ring's tell, to its landing tick; its events. */
+const land = (w: ReturnType<typeof ringing>) => run(w.state, w.ctx, w.e.jamTellTicks);
+
 describe('the Auditor’s ring (enemies.md § 4)', () => {
   it('is the roster row: every 10 s a 2 s ring, 2 tiles, 4 s; the tell is at least 1.5 s', () => {
     expect(RING).toMatchObject({
@@ -205,19 +218,6 @@ describe('the Auditor’s ring (enemies.md § 4)', () => {
   });
 
   describe('the fizzle (T777): only when a counter turned it', () => {
-    /** A ring under way over (1,1) with `n` towers out of reach placed; its Auditor and tower. */
-    function ringing(n = 0) {
-      const w = world();
-      const near = placeTower(w.state, RIVET, 1, 1);
-      fill(w.state, n);
-      const e = spawn(w.state, AUDITOR, { dist: 2 });
-      run(w.state, w.ctx, FIRST + 1 + 30);
-      expect(ringTelling(e)).toBe(true);
-      return { ...w, e, near };
-    }
-    /** The rest of the ring's tell, to its landing tick; its events. */
-    const land = (w: ReturnType<typeof ringing>) => run(w.state, w.ctx, w.e.jamTellTicks);
-
     it('a tower in reach immune (a Reboot, a jam’s end): JamFizzled on the landing tick', () => {
       const w = ringing();
       w.near.jamImmuneTicks = 5000;
