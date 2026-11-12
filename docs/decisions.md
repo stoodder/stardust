@@ -2010,3 +2010,15 @@ The campaign is complete. **FIN *Clearing the Way*:**
 ### D161 — 2026-11-12 — M9: the polish pass
 
 The owner asked to finish M8's polish items (T877) after the ship. They become **M9**, run as a milestone (plan, test loop, review, art trail `docs/art/gallery/m9/`), in three lanes split by file ownership: UI (T900), render and art (T901), content, balance and docs (T902). Two items are dropped: T777(4)'s comms panel move (nothing shows players miss the lane) and the Song on Keep (D159). T878 (gate time and architecture) stays in the backlog.
+
+### D162 — 2026-11-12 — M9 shipped: the polish pass
+
+M8's polish items (T877), done in three lanes (T900–T902) and one review round with no highs:
+- **The post-game** names its ending in the header (Stay "Wayside"; Go "Tumble IV, from orbit"; C5 unanswered "Tumble IV") and calls the player "Waykeeper {name}". Its column stands above the map's nodes, so only its boxes take clicks. A menu notice sits above the footer. The plate scrolls the pressed row into view and fades at its foot when it runs on.
+- **The finale:** Dawn rims its actors in gold and cyan (never build previews) as an east-wiping sky rises behind the sun's front, and its pads are more teal. The Song form sings: a white-hot throat and violet song rings (only rest is warm). The Phase 2 banner reads "The Halls" over "The Leaving Song". The Dawn still's choir are rimmed singers. Aelari wrecks, the Halls' seams and the orbit's day side are retouched.
+- **Elsewhere:** the Field Journal pairs stack, the original above, dimmed. A one-speaker briefing shows that speaker's whole portrait. The boss bar's ending runs on sim time, and on frame time once the map is decided. A fast-forward's effects start already aged. The test host emits events per tick.
+- **Docs:** finale.md, style-guide, progression and core-loop are caught up; `no_mindspike` is labelled to the waves it waits for, with Standard play unchanged.
+- **Gate at ship:** 5,973 unit tests, the harness on 21 maps, the slow lane, 397 smoke flows, check:docs; 1,056 s. Initial JS 786.8 kB gz.
+- **Deploy:** the site is live at https://stoodder.github.io/stardust/ (the owner's domain, rickallen.me/stardust/). The Deploy workflow now reads assertion 13 at the runner's CPU scale and runs the gate's steps one at a time on the hosted runner (architecture.md § 5). M9 deploys from `main` by hand (Actions → Deploy).
+- **Art trail:** [docs/art/gallery/m9/](art/gallery/m9/), twelve sheets; sheet 1 gains the M8 corner, the Deep Halls' mouth at Dawn.
+- **Next:** the backlog (tasks.md): T910 (M9 leftovers), T878 (gate time), and the carried follow-ups. The owner plays through and reports.
