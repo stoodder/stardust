@@ -425,6 +425,13 @@ Plan: D161. Owner (2026-11-12): "finish off those polish items" (T877, M8's left
   - progression.md §6: the veteran bonus pays only on a new best (D156).
 - Not doing: T777(4)'s comms panel move (only if players still miss the lane; no evidence they do). The Song on Keep (D159: a long walk's form; a first Silencer at the form's start doesn't reach Keep's alts and Dread cancels it for par).
 
+## M10 — The Prelude ("Arrival")
+Plan: D164. Owner (2026-11-12): a cinematic prelude on a new game, giving Everglow and the world their context and showing the Technician arriving on Tumble IV and on base. Seven shots, ~110 s, always skippable, then the New Hire Intake and A1M1. Lanes split by file ownership; then the test loop, review, ship as M10, and deploy.
+- [~] **T1000** (STORY) The scene `a1_m01_scene_prelude` (18 lines, 1 silence, cue labels) and its copy's home (act1.md *Prelude · Arrival*); bible §3/§6, style-guide §4.
+- [~] **T1001** (APP/UI/AUDIO) The `prelude` staging (still cues generalised from Dawn's, auto-advance, skip-all, pan), the route (new game → prelude → intake; seen when the intake is signed), the lazy prelude chunk, Settings "Watch the arrival", audio layers and `pa_shift`, `smoke/prelude.spec.ts`; core-loop, story-runtime, architecture, conventions.
+- [~] **T1002** (ART) Stills `scene.prelude_ad`, `scene.freighter`, `scene.viewport`; the stills' index; gallery cards; art-direction.
+- [~] **T1003** (ART) Stills `scene.descent` (320×300, panned), `scene.touchdown`, `scene.dome_row` (with Bricks's silhouette).
+
 ## Backlog / Ideas
 - [ ] **T911** (SYS/tools) Smoke on GitHub's hosted runner: real-time story flows time out there and pass locally. Run 3 (smoke beside sim and the slow lane): a3m1, a3m3 ×2, a3m6, actThree. Run 6 (smoke alone): actThree, fonts, quillOffline, revoke. Locally (whole gate, 2026-11-12): a3m6's knock-knock reply detached mid-click once, passing on rerun. The runner measures 2.1–4.4× slower than the cloud session (architecture.md § 5). Until fixed, a release deploys with gate `fast` after the session's whole gate passes. Options: drive those flows by sim ticks (`fastForward`) not wall-clock waits, scale smoke's timeouts by `SIM_CPU_SCALE`, or a larger runner.
 - [ ] **T910** (low; M9 review leftovers) The post-game menu notice could flash its border when it appears, since it sits far from the START it answers (UA-6); Dawn's settled sky drops to flat bands after the rising ellipse's rich dither: hold the last dithered gradient (UA-7); docs that repeat UI copy should link to style-guide for the words (D3's pattern beyond M9's lines).
