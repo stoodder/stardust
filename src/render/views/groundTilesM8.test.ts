@@ -67,6 +67,19 @@ describe("the finale's Halls (fin_m01)", () => {
     expect(propVariant('prop.halls_mouth', fin.env)).toBe('default');
   });
 
+  it('runs no fence across the mouth', () => {
+    const mouth = hallsMouthCell(fin);
+    if (mouth === null) throw new Error('no mouth');
+    const fences = apronCells(fin, fin.env).filter(
+      (a) => a.prop?.sprite === 'prop.fence' && a.row === -1 && Math.abs(a.col - mouth.col) <= 2,
+    );
+    expect(fences).toEqual([]);
+    // The rest of the north edge keeps its fence.
+    expect(
+      apronCells(fin, fin.env).some((a) => a.prop?.sprite === 'prop.fence' && a.row === -1),
+    ).toBe(true);
+  });
+
   it("dresses the Spires' apron: no billboard, no Dome Row, nothing behind the mouth", () => {
     const mouth = hallsMouthCell(fin);
     const props = apronCells(fin, fin.env).flatMap((a) => (a.prop === null ? [] : [a]));

@@ -456,7 +456,7 @@ Boss behavior that the story needs is **data on the boss's map** (map script tri
 - **Laid to rest:** the tick after the song's countdown completes (rest points at the target), whatever its phase, it joins the song: `BossEnded` `layToRest`, then `LaidToRest` with 0 points, and it is gone (no kill, no leak, no bounty; it books to its wave, which then resolves). Dawn's `restAll` lays its parts and every other Hollow unit to rest on the same tick.
 - **The boss bar carries the countdown:** `bossRestProgress` (`sim/index.ts`) gives the song's rest progress (0–1) for the Unsung or a part, −1 for anything else.
 - **Cues** bind to its phases as map events: `bossPhase: 1` (it rises from the Halls), `2` (the split's telegraph), `3` (the rise), `4` (the Song), each the tick after its phase begins (`dev_phases` is the worked example).
-- **On screen** (minimal, `render/views/UnsungView.ts`; T830 and T832 replace it): a `violet.3` ring on the ground where a dig will come up, tightening as it travels and blinking `violet.4`/`white.1` through the surfacing tell; a `violet.4` ring at the Halls through the Song's call; and a 2 px `gold.3` strip under the boss bar, the countdown's progress. The form sprites are T841's (`UNSUNG_FORM_SPRITE`; render picks one per phase, T830).
+- **On screen** (the looks' home is [art-direction.md §6 *The Unsung*](../art/art-direction.md#6-story-and-world-sprites)): its body is its phase's form sprite (EnemyView, `render/views/unsungLook.ts`); UnsungView marks where a dig will come up, churns it through the surfacing tell and bursts as it surfaces, and rings the Halls through the Song's call; SongView lays it to rest in gold. The 2 px `gold.3` rest strip under the boss bar is T808's placeholder for the HUD's (T832).
 
 ---
 

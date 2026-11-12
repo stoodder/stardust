@@ -1071,7 +1071,9 @@ export function apronCells(g: GroundGrid, env: string): ApronCell[] {
         if (ring === 1) {
           const alongX = row === -1 || row === g.rows;
           const alongY = col === -1 || col === g.cols;
-          if (alongX !== alongY) p = prop('prop.fence', alongX ? 'x' : 'y');
+          // No fence across the Halls' mouth: its cliff spans two cells either side of its own.
+          const byMouth = mouth !== null && row === mouth.row && Math.abs(col - mouth.col) <= 2;
+          if (alongX !== alongY && !byMouth) p = prop('prop.fence', alongX ? 'x' : 'y');
         } else if (ring === 2) {
           p = decor.get(key) ?? null;
           if (p === null) {

@@ -53,7 +53,7 @@ import { ViewPool, type PooledView } from './ViewPool.ts';
 
 /** Old Thrum walks this far (px) to Pebble's right and a step behind her (up the screen), sorted
  * behind her, so the leader always shows in front of the big old shell. */
-const THRUM_SIDE_PX = 14;
+const THRUM_SIDE_PX = 18;
 const THRUM_BACK_PX = 4;
 /** Song circles drawn at once: the leader's and each Returned's (2), with room to spare. */
 const MAX_RINGS = 4;
