@@ -23,6 +23,14 @@ import { SONG_TARGET_SEC, SONG_TOLERANCE, songSeconds } from './songChecks.ts';
 const TICK_HZ = 60;
 const content = compileContent(RAW_CONTENT);
 const map = content.maps.fin_m01;
+/** Whether two tiles are the same. */
+const sameTile = (t: readonly [number, number], u: readonly [number, number]): boolean =>
+  t[0] === u[0] && t[1] === u[1];
+/** Par's Phase 2 tier and spec on the west ledge, and its Halls Choir's upgrades (the ring moves them). */
+const ledgeOrChoirLate = (s: CompiledBuild['steps'][number]): boolean =>
+  s.wave >= 19 &&
+  (s.kind === 'upgrade' || s.kind === 'specialize') &&
+  (sameTile(s.tile, PADS.LEDGE_W) || sameTile(s.tile, PADS.HALLS_E));
 /** A3M6's par Sheltered % (balance/a3m6.test.ts): the escort chain's previous map. */
 const A3M6_PAR_PCT = (32 / 54) * 100;
 
@@ -163,18 +171,12 @@ describe('FIN Phase 2 and Dawn', { timeout: HARNESS_TEST_TIMEOUT_MS * 2 }, () =>
     // Par's Phase 2 spent on the Hum Choir at the Halls (tier 3 by W20) instead of the west
     // ledge's tier 3 and Echo Spike, whose echoes break the Hollow up the descent, outside the song.
     const par = map.builds.parBuild;
-    const at = (t: readonly [number, number], u: readonly [number, number]) =>
-      t[0] === u[0] && t[1] === u[1];
-    const late = (s: CompiledBuild['steps'][number]) =>
-      s.wave >= 19 &&
-      (s.kind === 'upgrade' || s.kind === 'specialize') &&
-      (at(s.tile, PADS.LEDGE_W) || at(s.tile, PADS.HALLS_E));
     const ring: CompiledBuild = {
       ...par,
       steps: par.steps.flatMap((s) =>
-        late(s)
+        ledgeOrChoirLate(s)
           ? []
-          : s.wave === 19 && s.kind === 'upgrade' && at(s.tile, PADS.CORNER)
+          : s.wave === 19 && s.kind === 'upgrade' && sameTile(s.tile, PADS.CORNER)
             ? [s, { ...s, tile: PADS.HALLS_E }, { ...s, wave: 20, tile: PADS.HALLS_E }]
             : [s],
       ),
