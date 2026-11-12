@@ -124,15 +124,19 @@ describe('run tracker: ally invariants (allies are never harmed, never target ex
   });
 });
 
-/** A hitscan shot by `towerUid` at `targetUid`. */
-const fired = (towerUid: number, targetUid: number): SimEvent<FixtureIds> => ({
+/** A hitscan shot by `gun` at `targetUid`, from the tower (or from `at`: a shell's bomblets). */
+const fired = (
+  gun: { readonly uid: number; readonly x: number; readonly y: number },
+  targetUid: number,
+  at: readonly [number, number] = [gun.x, gun.y],
+): SimEvent<FixtureIds> => ({
   type: 'ProjectileFired',
   uid: 0,
-  towerUid,
+  towerUid: gun.uid,
   kind: 'hitscan',
   targetUid,
-  x: 0,
-  y: 0,
+  x: at[0],
+  y: at[1],
   targetX: 0,
   targetY: 0,
   sprite: null,
@@ -144,20 +148,31 @@ describe('run tracker: fire-control invariants (core-loop.md § 2.7)', () => {
   it('a shot from a tower holding fire', () => {
     const t = withAlly();
     const gun = t.state.towers.items[0]!;
-    t.tracker.consume([fired(gun.uid, 0)]);
+    t.tracker.consume([fired(gun, 0)]);
     expect(check(t)).toEqual([]);
     gun.holdFire = true;
-    t.tracker.consume([fired(gun.uid, 0)]);
+    t.tracker.consume([fired(gun, 0)]);
     expect(check(t)).toEqual([expect.stringMatching(/tower \d+ fired while holding fire/)]);
+  });
+
+  it("a shell's bomblets, scattered where it landed, aren't a shot (D156: a jam mid-flight)", () => {
+    const t = withAlly();
+    const gun = t.state.towers.items[0]!;
+    gun.jamTicks = 60;
+    gun.holdFire = true;
+    t.tracker.consume([fired(gun, 0, [gun.x + 1, gun.y + 0.5])]);
+    expect(check(t)).toEqual([]);
+    t.tracker.consume([fired(gun, 0)]);
+    expect(check(t)).toHaveLength(2); // from the tower itself: held and Jammed
   });
 
   it('a shot at a spared unit from a tower with spare runners on', () => {
     const t = withAlly();
     const gun = t.state.towers.items[0]!;
-    t.tracker.consume([fired(gun.uid, t.enemy.uid)]); // the filter is off: fine
+    t.tracker.consume([fired(gun, t.enemy.uid)]); // the filter is off: fine
     expect(check(t)).toEqual([]);
     gun.spareRunners = true;
-    t.tracker.consume([fired(gun.uid, t.enemy.uid)]);
+    t.tracker.consume([fired(gun, t.enemy.uid)]);
     expect(check(t)).toEqual([
       expect.stringMatching(/tower \d+ with spare runners on targeted spared enemy \d+/),
     ]);

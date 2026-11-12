@@ -1084,18 +1084,24 @@ section.chamfer,
   pointer-events: none;
 }
 
-/* A speaker's word under PAUSED (the finale's rebuild pause, `pauseNote`): one line, the
-   speaker's plate colour, the notice's own panel. */
+/* A speaker's word under PAUSED (the finale's rebuild pause, `pauseNote`): the speaker's name in
+   their plate colour, the words wrapped to fit between the ability bar and the build slots, in the
+   notice's own panel. */
 .hud-paused.noted {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
+  width: max-content;
+  max-width: 236px;
   padding: 4px 10px;
-  white-space: nowrap;
 }
 
 .hud-paused-note {
+  font-family: var(--font-body);
+  line-height: 9px;
+  text-align: center;
+  text-transform: none;
   color: var(--sd-white-1);
 }
 

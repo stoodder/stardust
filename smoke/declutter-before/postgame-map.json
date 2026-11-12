@@ -4,7 +4,7 @@
   "voice": {
     "chart": {
       "count": 1,
-      "area": 633018,
+      "area": 665600,
       "shown": 921600,
       "inMore": 0,
       "boxes": [
@@ -18,7 +18,7 @@
     },
     "region": {
       "count": 5,
-      "area": 25333,
+      "area": 28540,
       "shown": 28612,
       "inMore": 0,
       "boxes": [
@@ -47,7 +47,7 @@
           "h": 40
         },
         {
-          "x": 730,
+          "x": 630,
           "y": 73,
           "w": 188,
           "h": 22
@@ -82,6 +82,26 @@
         }
       ]
     },
+    "tagline": {
+      "count": 2,
+      "area": 30672,
+      "shown": 30672,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 30,
+          "y": 140,
+          "w": 324,
+          "h": 54
+        },
+        {
+          "x": 30,
+          "y": 330,
+          "w": 244,
+          "h": 54
+        }
+      ]
+    },
     "heading": {
       "count": 1,
       "area": 4880,
@@ -90,38 +110,25 @@
       "boxes": [
         {
           "x": 30,
-          "y": 124,
+          "y": 304,
           "w": 244,
           "h": 20
-        }
-      ]
-    },
-    "tagline": {
-      "count": 1,
-      "area": 17496,
-      "shown": 17496,
-      "inMore": 0,
-      "boxes": [
-        {
-          "x": 314,
-          "y": 196,
-          "w": 324,
-          "h": 54
         }
       ]
     }
   },
   "critical": {},
   "density": {
-    "elements": 60,
-    "controls": 26,
-    "words": 85,
+    "elements": 72,
+    "controls": 29,
+    "words": 95,
     "numbers": 4,
     "repeated": [],
     "longCopy": [
       "3 lines: Everglow GardensWayside",
       "3 lines: Surge corridorThe Long Walk",
-      "3 lines: Dome Row, where it started. The waves keep coming. Hold as many as you"
+      "3 lines: Dome Row, rebuilt in the sim. The shift never ends. Hold as many waves",
+      "3 lines: Drills only. None of it is real, and nobody is counted."
     ]
   }
 }

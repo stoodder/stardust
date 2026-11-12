@@ -490,13 +490,14 @@
    "Every link" toggle. The whole list (formed first; a link still missing a partner is one line)
    opens upward over the column, as wide as it, and scrolls past its cap (T431), so it never runs
    under the footer's buttons. */
+/* Right under the Technician list (D156: in the column's band, not across it at the foot). */
 .sd-lo-links-section {
   position: relative;
   display: flex;
   flex: none;
   flex-direction: column;
   gap: 2px;
-  margin-top: auto;
+  margin-top: 8px;
 }
 
 .sd-lo-links-row {

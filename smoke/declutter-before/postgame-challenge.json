@@ -4,7 +4,7 @@
   "voice": {
     "chart": {
       "count": 1,
-      "area": 592679,
+      "area": 637673,
       "shown": 921600,
       "inMore": 0,
       "boxes": [
@@ -18,7 +18,7 @@
     },
     "region": {
       "count": 5,
-      "area": 25333,
+      "area": 28540,
       "shown": 28612,
       "inMore": 0,
       "boxes": [
@@ -47,7 +47,7 @@
           "h": 40
         },
         {
-          "x": 730,
+          "x": 630,
           "y": 73,
           "w": 188,
           "h": 22
@@ -82,6 +82,26 @@
         }
       ]
     },
+    "tagline": {
+      "count": 2,
+      "area": 24840,
+      "shown": 24840,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 30,
+          "y": 166,
+          "w": 324,
+          "h": 36
+        },
+        {
+          "x": 30,
+          "y": 412,
+          "w": 244,
+          "h": 54
+        }
+      ]
+    },
     "heading": {
       "count": 1,
       "area": 4880,
@@ -90,23 +110,9 @@
       "boxes": [
         {
           "x": 30,
-          "y": 124,
+          "y": 386,
           "w": 244,
           "h": 20
-        }
-      ]
-    },
-    "tagline": {
-      "count": 1,
-      "area": 11664,
-      "shown": 11664,
-      "inMore": 0,
-      "boxes": [
-        {
-          "x": 314,
-          "y": 202,
-          "w": 324,
-          "h": 36
         }
       ]
     }
@@ -119,28 +125,22 @@
       "inMore": 0,
       "boxes": [
         {
-          "x": 314,
-          "y": 256,
+          "x": 30,
+          "y": 220,
           "w": 324,
           "h": 68
         }
       ]
     },
     "counters": {
-      "count": 2,
-      "area": 12960,
-      "shown": 12960,
+      "count": 1,
+      "area": 6415,
+      "shown": 6480,
       "inMore": 0,
       "boxes": [
         {
-          "x": 314,
-          "y": 330,
-          "w": 324,
-          "h": 20
-        },
-        {
-          "x": 314,
-          "y": 356,
+          "x": 30,
+          "y": 294,
           "w": 324,
           "h": 20
         }
@@ -148,11 +148,15 @@
     }
   },
   "density": {
-    "elements": 69,
-    "controls": 21,
-    "words": 83,
+    "elements": 83,
+    "controls": 28,
+    "words": 90,
     "numbers": 4,
     "repeated": [],
-    "longCopy": ["3 lines: Everglow GardensWayside", "3 lines: Surge corridorThe Long Walk"]
+    "longCopy": [
+      "3 lines: Everglow GardensWayside",
+      "3 lines: Surge corridorThe Long Walk",
+      "3 lines: Drills only. None of it is real, and nobody is counted."
+    ]
   }
 }

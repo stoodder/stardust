@@ -181,9 +181,11 @@ export function createRunTracker<K extends IdSpace>(
   /**
    * Fire control (core-loop.md § 2.7): a tower holding fire never fires, and one with the
    * spare-runners filter never fires at a spared unit as its target. The tower's flags are read
-   * as the drain finds them, which is how they stood when it fired (commands apply first).
+   * as the drain finds them, which is how they stood when it fired (commands apply first). A
+   * Cluster Thumper's bomblets are fired from where their shell landed, not from the tower: the
+   * shell left before any jam or hold (D156: a jam landing mid-flight isn't a shot).
    */
-  const checkShot = (towerUid: number, targetUid: number): void => {
+  const checkShot = (towerUid: number, targetUid: number, x: number, y: number): void => {
     const pool = state.towers;
     let t: (typeof pool.items)[number] | undefined;
     for (let i = 0; i < pool.used && t === undefined; i++) {
@@ -191,8 +193,9 @@ export function createRunTracker<K extends IdSpace>(
       if (c.alive && c.uid === towerUid) t = c;
     }
     if (t === undefined) return;
-    if (t.holdFire) violate(`tower ${towerUid} fired while holding fire`);
-    if (t.jamTicks > 0) violate(`tower ${towerUid} fired while Jammed`); // T702
+    const fromTower = Math.abs(x - t.x) <= EDGE_EPS && Math.abs(y - t.y) <= EDGE_EPS;
+    if (fromTower && t.holdFire) violate(`tower ${towerUid} fired while holding fire`);
+    if (fromTower && t.jamTicks > 0) violate(`tower ${towerUid} fired while Jammed`); // T702
     if (t.spareRunners && targetUid !== 0 && spared.has(targetUid)) {
       violate(`tower ${towerUid} with spare runners on targeted spared enemy ${targetUid}`);
     }
@@ -238,7 +241,7 @@ export function createRunTracker<K extends IdSpace>(
           case 'ProjectileFired': {
             const t = towerByUid.get(e.towerUid);
             if (t !== undefined) t.shots++;
-            if (checkInvariants) checkShot(e.towerUid, e.targetUid);
+            if (checkInvariants) checkShot(e.towerUid, e.targetUid, e.x, e.y);
             break;
           }
           case 'TowerBuilt': {

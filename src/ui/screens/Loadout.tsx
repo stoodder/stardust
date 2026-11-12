@@ -478,7 +478,7 @@ const FORMED_TOLD_MAX = 3;
 
 /**
  * The Links section (T803d): its heading with the formed count, the formed links in view (what the
- * pick does: up to three with their bonus, in the Technician column's open band, D156; more by
+ * pick does: up to three with their bonus, right under the Technician list, D156; more by
  * name), and the whole list, bonuses and what each still needs, one press away in a
  * floating Disclosure that opens upward over the column, so it never pushes the heads-up or the
  * footer.
@@ -487,7 +487,7 @@ function LinksSection({ view, pick }: { view: LoadoutView; pick: LoadoutPickView
   const formed = formedLinks(pick);
   const on = view.links.filter((l) => formed.includes(l.id));
   const names = on.map((l) => l.name);
-  // A few formed links say what they do in the column's open band (D156); more read as names.
+  // A few formed links say what they do under the Technician list (D156); more read as names.
   const told = on.length <= FORMED_TOLD_MAX ? on : [];
   return (
     <section class="sd-lo-links-section" aria-labelledby="sd-lo-links-label">

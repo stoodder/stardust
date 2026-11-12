@@ -4,7 +4,7 @@
   "voice": {
     "chart": {
       "count": 1,
-      "area": 597333,
+      "area": 625261,
       "shown": 921600,
       "inMore": 0,
       "boxes": [
@@ -18,7 +18,7 @@
     },
     "region": {
       "count": 5,
-      "area": 28325,
+      "area": 28540,
       "shown": 28612,
       "inMore": 0,
       "boxes": [
@@ -47,7 +47,7 @@
           "h": 40
         },
         {
-          "x": 730,
+          "x": 630,
           "y": 73,
           "w": 188,
           "h": 22
@@ -90,21 +90,27 @@
       "boxes": [
         {
           "x": 30,
-          "y": 124,
+          "y": 114,
           "w": 244,
           "h": 20
         }
       ]
     },
     "tagline": {
-      "count": 1,
-      "area": 17496,
-      "shown": 17496,
+      "count": 2,
+      "area": 30672,
+      "shown": 30672,
       "inMore": 0,
       "boxes": [
         {
+          "x": 30,
+          "y": 140,
+          "w": 244,
+          "h": 54
+        },
+        {
           "x": 722,
-          "y": 382,
+          "y": 460,
           "w": 324,
           "h": 54
         }
@@ -120,7 +126,7 @@
       "boxes": [
         {
           "x": 722,
-          "y": 454,
+          "y": 532,
           "w": 324,
           "h": 20
         }
@@ -128,14 +134,15 @@
     }
   },
   "density": {
-    "elements": 68,
-    "controls": 24,
+    "elements": 72,
+    "controls": 27,
     "words": 90,
     "numbers": 5,
     "repeated": [],
     "longCopy": [
       "3 lines: Everglow GardensWayside",
       "3 lines: Surge corridorThe Long Walk",
+      "3 lines: Drills only. None of it is real, and nobody is counted.",
       "3 lines: Your first shift: keep the adorable pests out of the lettuce."
     ]
   }

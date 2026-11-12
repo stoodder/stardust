@@ -281,18 +281,19 @@ export const map = defineMapLayout({
     'boss',
   ],
   requiredCounters: ['air', 'jam', 'splash'],
-  // Laid to Rest (finale.md § FIN, Medals): in Phase 2, at least 60% of the Hollow destroyed are
-  // destroyed inside the song (T805's atom). The song reaches ~2 tiles round Pebble at the Halls
-  // mouth, so the ledge towers' reach up the descent breaks most of par's kills outside it (49%);
-  // par's Phase 2 spent on the Halls Choir instead of the west ledge's Echo Spike earns it (67%;
-  // T874, balance/finM01Phase2.test.ts).
+  // Laid to Rest (finale.md § FIN, Medals): in Phase 2, at least 84% of the Hollow destroyed are
+  // destroyed inside the song (T805's atom; each unit counted once, by its first death: D156).
+  // The song reaches ~2 tiles round Pebble at the Halls mouth, and par's ledge Mindspikes break
+  // Motes up the descent outside it (75% with Thrum cleared, 82% spared); par's Phase 2 spent on
+  // the Halls Choir with the Dread ledge holding fire earns it in both cells (86%, 85%), at a cost
+  // in singers (balance/finM01Phase2.test.ts). Rift Moths fly past the song, so none reaches 100%.
   medals: {
     challenge: {
       id: 'laid_to_rest',
       name: 'Laid to Rest',
       description:
-        'In Phase 2, lay most of the Hollow you destroy (60%) to rest inside the song: let them come close.',
-      condition: { restedPct: 0.6 },
+        'In Phase 2, lay 84% of the Hollow you destroy to rest inside the song: let them come close.',
+      condition: { restedPct: 0.84 },
     },
   },
   // Waymarks (finale.md § FIN, Medals): relight all four waymark lanterns in Phase 1.
