@@ -25,15 +25,23 @@ vi.mock(import('./acts/preludeUi.ts'), () => {
 /** A router that only records where it was sent. */
 function fakeRouter(): { router: Router; went: string[] } {
   const went: string[] = [];
-  const router = {
+  const none = (): Promise<void> => Promise.resolve();
+  const router: Router = {
     battle: null,
-    goto: (id: string) => {
+    goto: (id) => {
       went.push(id);
       return Promise.resolve();
     },
-    play: () => Promise.resolve(),
-    closeSettings: () => Promise.resolve(),
-  } as unknown as Router;
+    play: none,
+    retry: none,
+    retryFromCheckpoint: none,
+    resumePending: none,
+    endRun: none,
+    flushResults: none,
+    abandon: () => {},
+    presentResults: none,
+    closeSettings: none,
+  };
   return { router, went };
 }
 

@@ -247,8 +247,9 @@ function paintBackdrop(g: CharGrid): void {
  * Bricks, a silhouette (the briefing introduces him): very large, broad-shouldered, a long cannon
  * on his right shoulder, feet planted; `B` body, `C` the cannon. `wave` raises his free hand.
  */
+/** Bricks's two shapes (exported for the tests: 14–16 px tall, the wave's hand above his head). */
 // prettier-ignore
-const BRICKS_STILL = [
+export const BRICKS_STILL = [
   '..........CCCC',
   '.........CCCC.',
   '....BBB.CCCC..',
@@ -267,7 +268,7 @@ const BRICKS_STILL = [
   '..BBBB.BBBB...',
 ];
 // prettier-ignore
-const BRICKS_WAVE = [
+export const BRICKS_WAVE = [
   'B.........CCCC',
   'BB.......CCCC.',
   '.B..BBB.CCCC..',
@@ -425,13 +426,14 @@ function paintDomeRow(): Record<string, CharGrid> {
   paintGate(g);
   paintFence(g, 'near');
   paintNearShade(g);
+  paintTechnician(g, TECHNICIAN_AT.x, TECHNICIAN_AT.y);
   const still = copyGrid(g);
   paintBricks(still, BRICKS_AT.x, BRICKS_AT.y, false);
   const wave = copyGrid(g);
   paintBricks(wave, BRICKS_AT.x, BRICKS_AT.y, true);
+  // Gerald is nearer than the Technician: he's drawn over her.
   const gerald = copyGrid(wave);
   paintGeraldShot(gerald);
-  for (const f of [still, wave, gerald]) paintTechnician(f, TECHNICIAN_AT.x, TECHNICIAN_AT.y);
   return { still, wave, gerald };
 }
 
