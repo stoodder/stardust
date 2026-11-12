@@ -92,14 +92,14 @@ export const waves = defineWaves([
   { ...CALL, groups: [drones(3, 0), liabilities(2, 4), drones(3, 14)] },
   // W9 · Rift Moths + a Silencer [X]
   { ...NO_CALL, groups: [moths(5, 0), silencers(1, 'tunnel', 2), drones(3, 8)] },
-  // W10 · Hollow surge: Rift Moths and Silencers, one Fracture
+  // W10 · Hollow surge: Rift Moths and Silencers, two Mote screens
   {
     ...NO_CALL,
     groups: [
       silencers(3, 'tunnel', 0, SIL_GAP),
-      g('fracture', 1, 'tunnel', 6),
+      motes(6, 'tunnel', 6),
       moths(5, 14, 0.6),
-      motes(5, 'tunnel', 10),
+      motes(6, 'tunnel', 10),
     ],
   },
   // W11 · the Everglow column
@@ -121,13 +121,14 @@ export const waves = defineWaves([
       silencers(2, 'tunnel', 0, SIL_GAP),
       drones(6, 0, 1.0),
       liabilities(2, 6),
-      motes(6, 'tunnel', 10),
+      g('fracture', 1, 'tunnel', 8),
+      motes(4, 'tunnel', 10),
     ],
   },
   // W14 · the rifts open: Silencers up both, and Rift Moths
   {
     ...NO_CALL,
-    groups: [silencers(2, 'rift_w', 0, SIL_GAP), silencers(2, 'rift_e', 1.2, SIL_GAP), moths(8, 8)],
+    groups: [silencers(2, 'rift_w', 0, SIL_GAP), silencers(2, 'rift_e', 1.2, SIL_GAP), moths(10, 8)],
   },
   // W15 · Liability + Silencers
   {

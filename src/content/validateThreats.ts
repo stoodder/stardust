@@ -195,7 +195,7 @@ export function validateThreats(
     for (const g of groups) {
       const e = ctx.enemies.get(g.enemy);
       if (e === undefined || e.neutral === true || (g.tags ?? []).includes('fleeing')) continue;
-      const threat = threatOf(e) * g.count;
+      const threat = threatOf(e, ctx.enemies) * g.count;
       total += threat;
       if (g.teach !== true && isSoft(e, required, exempt)) soft += threat;
     }

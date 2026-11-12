@@ -112,20 +112,19 @@ const A3M3: ProfileDef = {
  * A3M4 (campaign.md § 4.9): the jailbreak brings the Rivet back (bought for 300 under the warren,
  * free under the convoy: `REFERENCE_STORY_PRICING`), the shelter elders give the Hum Choir in the
  * briefing (the reference cleared C1, so A3M1 didn't), and QUILL patches in System Reboot, slot 1's
- * par ability. A Defend with a core, so the Bulkhead is on (as A3M2). The warren also has its
- * Gloop Spitter (`A3M4_WARREN`).
+ * par ability. Head Start stays on from A3M3 (T771: what the player carries in, since A3M3 benched
+ * the Bulkhead, so the harness and a live run agree; the Bulkhead hid A3M4's early leaks, T773).
+ * The warren also has its Gloop Spitter (`A3M4_WARREN`).
  */
 const A3M4: ProfileDef = {
   ...A3M3,
   towers: [...A3M3.towers, 'rivet', 'choir'],
-  protocols: ['emergency_bulkhead'],
-  unequippedProtocols: ['head_start'],
   technicianAbility: 'system_reboot',
 };
 const A3M4_WARREN: ProfileDef = { ...A3M4, towers: [...A3M4.towers, 'gloop'] };
 /**
  * A3M5: Pebble's Sproing Pad (a briefing gift), the Stasis Bloom attuned (3 Intel: 13) and
- * Mindspike tune 1. Protect with a core, so the Bulkhead stays on. Par's slot 1 is System Reboot,
+ * Mindspike tune 1. Protect with a core, so the Bulkhead is on (as A3M2). Par's slot 1 is System Reboot,
  * but C4 Rewrite takes QUILL offline and locks it, so that cell runs Suppressing Fire (inherited in
  * A3M4's mail) instead (core-loop.md § 6.11); Keep's Time Dilation and Purge's armor change no row.
  */
@@ -133,6 +132,8 @@ const A3M5: ProfileDef = {
   ...A3M4,
   towers: [...A3M4.towers, 'sproing', 'bloom'],
   shop: { ...A3M4.shop, tune_mindspike: 1 },
+  protocols: ['emergency_bulkhead'],
+  unequippedProtocols: ['head_start'],
 };
 const A3M5_WARREN: ProfileDef = { ...A3M5, towers: [...A3M5.towers, 'gloop'] };
 const REWRITE = { technicianAbility: 'suppressing_fire' } as const;

@@ -129,8 +129,8 @@ export function categoriesOf(def: Pick<CompiledEnemyDef, 'traits'>): Set<Counter
 }
 
 /**
- * A unit's planning threat (maps.md § 6.2), from its compiled def: the content validator's
- * `threatOf` (validateThreats.ts) on the same numbers, so the budget and the soft-trait cap agree.
+ * A unit's planning threat without its brood (maps.md § 6.2), from its compiled def: the content
+ * validator's `threatOf` (validateThreats.ts) on the same numbers when given no roster.
  */
 export function unitThreat(def: CompiledEnemyDef): number {
   let factor = 1;
@@ -147,7 +147,7 @@ export function unitThreat(def: CompiledEnemyDef): number {
 /**
  * A unit's threat with what its death releases (maps.md § 6.2: "splitting: add the children's
  * threat"), the generator's budget unit: a Fracture is its 190 and its two Shards' and their four
- * Motes'. (The content validator's soft-trait share counts the parent alone: `unitThreat`.)
+ * Motes'. The content validator's soft-trait share counts the same (`threatOf` given the roster).
  */
 export function threatWithBrood(
   def: CompiledEnemyDef,

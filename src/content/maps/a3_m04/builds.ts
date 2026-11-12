@@ -110,6 +110,7 @@ function parSteps(): BuildStep[] {
     { wave: 11, upgrade: J_NE }, // T3: pierce
     reboot(12, REBOOT_SEC),
     { wave: 12, upgrade: J_S },
+    { wave: 13, upgrade: J_SW },
     reboot(14, W14_RIFT_REBOOT_SEC),
     reboot(16, W16_RIFT_REBOOT_SEC),
   ];
@@ -179,7 +180,7 @@ function withBunkerBusters(steps: readonly BuildStep[], tiles: readonly GridPos[
 
 export const builds = defineBuilds({
   // A3M4's reference profile (campaign.md § 4.9): the jailbreak's Rivet back, the Hum Choir from
-  // the shelter elders, System Reboot in slot 1, Emergency Bulkhead on. The warren's cell owns its
+  // the shelter elders, System Reboot in slot 1, Head Start on (T771). The warren's cell owns its
   // Gloop Spitter too, and its par builds the Gloop wherever the convoy's builds a Rivet.
   referenceProfile: REFERENCE_PROFILES.a3_m04,
   referenceProfileByFlag: REFERENCE_VARIANTS.a3_m04.map((cell) => ({

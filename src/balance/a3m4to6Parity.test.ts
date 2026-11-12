@@ -6,12 +6,10 @@
 // - each `after_<map>` dev save (the save as that map was won: its prep bought, its protocol equipped,
 //   its briefing gifts taken) turns into exactly the reference profile's modifiers for that map, in
 //   every door × C4 cell the dev saves cover;
-// - the live A3M4 flows load `after_a3m3_*`, which still carries A3M3's Head Start (A3M3 has no core),
-//   where A3M4's reference (a Defend with a core) equips Emergency Bulkhead (campaign.md § 4.9). That
-//   is the whole of the live run's shortfall (T720's 8/22 against the harness's 14): par is the same
-//   build, and on the save's own protocol it ends five short of the reference, which the Bulkhead's
-//   five absorbed leaks explain. So the reference is right, and a live A3M4 flow that wants par's
-//   numbers equips the Bulkhead in the loadout (as the reference player does) before it locks in.
+// - the live A3M4 flows load `after_a3m3_*`, which still carries A3M3's Head Start (A3M3 has no core
+//   and benched the Bulkhead), and A3M4's reference equips Head Start too (T771: campaign.md § 4.9),
+//   so a live A3M4 run plays the harness's numbers with no loadout change. (Before T771 the
+//   reference equipped the Bulkhead and a live run ended five short of it.)
 import { describe, expect, it } from 'vitest';
 import { compileContent } from '../content/compile.ts';
 import type { CompiledBuild } from '../content/compiled.ts';
@@ -46,12 +44,12 @@ describe('A3M4–A3M6 dev saves against the reference (T767)', () => {
     expect(norm(saveModifiers(save))).toEqual(norm(ref.modifiers));
   });
 
-  it('carries A3M3’s Head Start into A3M4, where the reference equips Emergency Bulkhead', () => {
+  it('carries A3M3’s Head Start into A3M4, which the reference equips too (T771)', () => {
     for (const id of ['after_a3m3_convoy', 'after_a3m3_warren'] as const) {
       const save = DEV_SAVES[id].build();
       expect(equippedProtocols(save).equipped, id).toEqual(['head_start']);
     }
-    expect(content.maps.a3_m04.builds.referenceProfile.protocols).toEqual(['emergency_bulkhead']);
+    expect(content.maps.a3_m04.builds.referenceProfile.protocols).toEqual(['head_start']);
   });
 });
 
@@ -80,13 +78,14 @@ describe(
       return r.integrity;
     };
 
-    it('ends five short of the reference on Head Start: the Bulkhead’s absorbed leaks, nothing else', () => {
+    it('plays par the same on the protocol the live flow carries in: no gap', () => {
       const ref = map.builds.referenceProfile;
       const par = parBuildFor(map, { door_choice: 'convoy' }) ?? buildFor('par', map, content)!;
-      const withBulkhead = play(ref, par);
-      const withHeadStart = play({ ...ref, protocols: ['head_start'] }, par);
-      expect(withBulkhead).toBe(15);
-      expect(withBulkhead - withHeadStart).toBe(5);
+      const live = DEV_SAVES.after_a3m3_convoy.build();
+      const carried = equippedProtocols(live).equipped;
+      expect(carried).toEqual(ref.protocols);
+      expect(play({ ...ref, protocols: carried }, par)).toBe(play(ref, par));
+      expect(play(ref, par)).toBe(15);
     });
   },
 );
