@@ -1,6 +1,6 @@
 // Act III's codex, the *Field Journal* (story/campaign/act3.md, each map's *Codex* line;
 // style-guide.md § 6.2). From A3M1 the codex is retitled and an entry with a `corrected` version
-// shows its original and its correction side by side (story/codex.ts `shownVersions`), so the text
+// shows its original and its correction together, the original above (story/codex.ts), so the text
 // the player laughed at becomes the evidence. This file is the home of the Field Journal's text;
 // the docs quote it where they quote at all (tools/inboxCopy.test.ts checks those quotes).
 //

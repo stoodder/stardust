@@ -28,11 +28,11 @@
 import type * as Phaser from 'phaser';
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
 import { splitHp, type Enemy } from '../../sim/index.ts';
-import { TICK_HZ } from '../../shared/time.ts';
 import type { DeepReadonly } from '../../shared/types.ts';
 import { VIEW_W } from '../scale.ts';
 import {
   BAR_HOLD_MS,
+  BarEndClock,
   barFadeAlpha,
   barFillPx,
   BOSS_BAR_H,
@@ -117,11 +117,10 @@ export class BossBarView {
   #chip = 0;
   #flashMs = 0;
   /**
-   * The sim tick its ending began (−1: still fighting), and how long it holds before stepping out.
-   * The hold and the step-out run on sim time (M9, T901), so a pause holds them and a fast-forward
-   * carries them through (a fast-forwarded smoke shot never catches the bar mid-fade).
+   * How long its ending has run (not running: still fighting; `BarEndClock`: sim time, and frame
+   * time once the outcome is decided), and how long it holds before stepping out.
    */
-  #endedTick = -1;
+  readonly #endClock = new BarEndClock();
   #holdMs = BAR_HOLD_MS;
   /** What the Graphics shows (its values packed in a number), so it redraws only on a change. */
   #key = -1;
@@ -190,22 +189,25 @@ export class BossBarView {
    * keeping the HP it shows.
    */
   ended(uid: number, pivot: boolean, tick: number): void {
-    if (uid !== this.#uid || this.#endedTick >= 0) return;
-    this.#endedTick = tick;
+    if (uid !== this.#uid || this.#endClock.running) return;
+    this.#endClock.start(tick);
     this.#holdMs = pivot ? 0 : BAR_HOLD_MS;
   }
 
-  /** One frame of `dt` ms at sim tick `tick`: finds the boss on the map, and draws its bar. */
-  update(dt: number, enemies: BossPool, tick: number): void {
+  /**
+   * One frame of `dt` ms at sim tick `tick`, `decided` once the sim's outcome is (its clock
+   * stopped): finds the boss on the map, and draws its bar.
+   */
+  update(dt: number, enemies: BossPool, tick: number, decided = false): void {
     const boss = this.#find(enemies);
     // Gone without an ending (killed): it steps out from empty; after one, it keeps its fill.
-    const gone = boss === null && this.#uid !== 0 && this.#endedTick < 0;
-    if (gone) this.#endedTick = tick;
+    const gone = boss === null && this.#uid !== 0 && !this.#endClock.running;
+    if (gone) this.#endClock.start(tick);
     if (boss !== null && bossBarKey(boss) !== this.#uid) this.#open(boss, tick);
     if (this.#uid === 0) return;
     if (boss !== null && boss.splitMaxHp > 0) this.#readSplit(boss, enemies); // T708
-    if (this.#endedTick >= 0) {
-      const a = barFadeAlpha(((tick - this.#endedTick) * 1000) / TICK_HZ, this.#holdMs);
+    if (this.#endClock.running) {
+      const a = barFadeAlpha(this.#endClock.ms(tick, dt, decided), this.#holdMs);
       if (a <= 0) {
         this.#close();
         return;
@@ -374,7 +376,8 @@ export class BossBarView {
     this.#fill = barFillPx(boss.hp, this.#maxHp);
     this.#chip = this.#fill;
     this.#flashMs = 0;
-    this.#endedTick = boss.leaving ? tick : -1;
+    if (boss.leaving) this.#endClock.start(tick);
+    else this.#endClock.stop();
     this.#holdMs = BAR_HOLD_MS;
     this.#key = -1;
     this.#key2 = -1;
@@ -393,7 +396,7 @@ export class BossBarView {
 
   #close(): void {
     this.#uid = 0;
-    this.#endedTick = -1;
+    this.#endClock.stop();
     this.#holdMs = BAR_HOLD_MS;
     this.#fill = -1;
     this.#key = -1;

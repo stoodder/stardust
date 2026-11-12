@@ -9,14 +9,15 @@ import { activeSave, initSaves, loadDevSave } from './save.ts';
 import { POST_GAME_PLATE } from '../content/postGame.ts';
 import {
   campaignScreenName,
+  GO_KICKER,
   headerKicker,
   phaseFor,
-  SIM_DECK_KICKER,
   showsStateLine,
   starKicker,
   starMapView,
   STAR_MAP_SEEN_ID,
   technicianLine,
+  UNANSWERED_KICKER,
   WAYSIDE_LABEL,
 } from './starMap.ts';
 
@@ -276,18 +277,23 @@ describe("the Sector map's header (S3-5, T900)", () => {
     const campaignMap = { postGame: false, ending: null } as const;
     expect(headerKicker(campaignMap)).toBe('Everglow · Perimeter Ops');
     expect(technicianLine(campaignMap, 'Ada')).toBe('JPT-1 Ada · #ED-447');
-    // Stay: the colony is Wayside now; Go: the post-game is QUILL's sim deck (the plate's heading).
+    // Stay: the colony is Wayside now; Go: the world left behind, from the ship; C5 unanswered
+    // (a won finale, the tab closed in C5): the world's name alone.
     expect(headerKicker({ postGame: true, ending: 'stay' })).toBe(WAYSIDE_LABEL);
-    expect(headerKicker({ postGame: true, ending: 'go' })).toBe(SIM_DECK_KICKER);
-    expect(SIM_DECK_KICKER).toBe(POST_GAME_PLATE.heading);
-    // Either way, the name the Aelari gave, and no Everglow badge.
+    expect(headerKicker({ postGame: true, ending: 'go' })).toBe(GO_KICKER);
+    expect(headerKicker({ postGame: true, ending: null })).toBe(UNANSWERED_KICKER);
+    // The kicker names the ending, never the plate's heading under it (UA-5).
+    for (const ending of ['stay', 'go', null] as const) {
+      expect(headerKicker({ postGame: true, ending })).not.toBe(POST_GAME_PLATE.heading);
+    }
+    // Either way, the name Pebble gave, and no Everglow badge.
     expect(technicianLine({ postGame: true }, 'Ada')).toBe('Waykeeper Ada');
   });
 
   it('heads the post-game dev saves by their ending', () => {
     for (const [id, kicker] of [
       ['after_fin_stay', 'Wayside'],
-      ['after_fin_go', "QUILL's sim deck"],
+      ['after_fin_go', 'Tumble IV, from orbit'],
     ] as const) {
       initSaves(new MemoryStore());
       loadDevSave(id);

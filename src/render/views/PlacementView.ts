@@ -17,6 +17,7 @@ import {
   ringTexture,
   type HighlightKind,
 } from '../vfx/overlayTextures.ts';
+import { markNoDawnRim as noRim } from './dawnRimLook.ts';
 import { headStyle, spriteId } from './spriteInfo.ts';
 import type { ViewContext } from './ViewContext.ts';
 
@@ -73,11 +74,12 @@ export class PlacementView {
     this.#hover = scene.make.image({}, false).setOrigin(0, 0).setVisible(false);
     this.#ring = scene.make.image({}, false).setVisible(false);
     layers.decal.add([this.#selected, this.#hover, this.#ring]);
-    this.#selectedRaised = scene.make.image({}, false).setOrigin(0, 0).setVisible(false);
-    this.#hoverRaised = scene.make.image({}, false).setOrigin(0, 0).setVisible(false);
+    // In `world` but not actors: Dawn never rims them (M9 review C5).
+    this.#selectedRaised = noRim(scene.make.image({}, false).setOrigin(0, 0).setVisible(false));
+    this.#hoverRaised = noRim(scene.make.image({}, false).setOrigin(0, 0).setVisible(false));
     layers.world.add([this.#selectedRaised, this.#hoverRaised]);
-    this.#ghostBase = scene.make.image({}, false).setAlpha(GHOST_ALPHA).setVisible(false);
-    this.#ghostHead = scene.make.image({}, false).setAlpha(GHOST_ALPHA).setVisible(false);
+    this.#ghostBase = noRim(scene.make.image({}, false).setAlpha(GHOST_ALPHA).setVisible(false));
+    this.#ghostHead = noRim(scene.make.image({}, false).setAlpha(GHOST_ALPHA).setVisible(false));
     layers.world.add([this.#ghostBase, this.#ghostHead]);
     this.#ghostLabel = scene.make.image({}, false).setOrigin(0.5, 1).setVisible(false);
     layers.overlay.add(this.#ghostLabel);
@@ -256,7 +258,7 @@ export class PlacementView {
         .setOrigin(0, 0)
         .setPosition(pos.x, pos.y)
         .setVisible(false);
-      if (z > 0) layers.world.add(img.setDepth(raisedDepth(pos.y, z, row * 256 + col)));
+      if (z > 0) layers.world.add(noRim(img).setDepth(raisedDepth(pos.y, z, row * 256 + col)));
       else layers.decal.addAt(img, 0);
       this.#teach.push({ col, row, img });
     }

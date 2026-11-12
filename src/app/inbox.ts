@@ -209,7 +209,7 @@ export interface CodexEntryView {
   readonly picture: CodexPicture | null;
   /** What the photo frame says without a picture ("Photo pending"; "Withheld"). */
   readonly photo: string;
-  /** The versions on screen (the newest; original beside corrected in the Field Journal). */
+  /** The versions on screen (the newest; in the Field Journal, together, the original above). */
   readonly versions: readonly CodexVersionView[];
   /** A version on screen hasn't been opened yet. */
   readonly isNew: boolean;

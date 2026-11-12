@@ -285,6 +285,9 @@ export function PostGameLayer({ selected, select, arrival }: PostGameLayerProps)
   }, [camp]);
   const rows = useRef<Record<string, HTMLButtonElement | null>>({});
   const panel = useRef<HTMLElement | null>(null);
+  const plate = useRef<HTMLDivElement | null>(null);
+  // The plate's rows run on below its edge (it gave way to a grown panel): its fade shows (UA-2).
+  const [more, setMore] = useState(false);
   const [watching, setWatching] = useState(false);
   const [focusPanel, setFocusPanel] = useState(arrival);
   const answered = activeSave()?.story.flags.ending_choice !== undefined;
@@ -297,6 +300,27 @@ export function PostGameLayer({ selected, select, arrival }: PostGameLayerProps)
     rows.current[selected]?.focus();
     return true;
   });
+
+  // When the plate gives way (the open panel grew: a challenge's medals open), the pressed row
+  // stays in its view, and the fade at its foot says when rows run on below it (UA-2).
+  useLayoutEffect(() => {
+    const box = plate.current;
+    if (box === null) return undefined;
+    const check = (): void => setMore(box.scrollTop + box.clientHeight < box.scrollHeight - 1);
+    const fit = (): void => {
+      const on = selected === null ? null : (rows.current[selected] ?? null);
+      if (on !== null && !inView(box, on)) on.scrollIntoView({ block: 'nearest' });
+      check();
+    };
+    fit();
+    box.addEventListener('scroll', check, { passive: true });
+    const watch = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(fit);
+    watch?.observe(box);
+    return () => {
+      box.removeEventListener('scroll', check);
+      watch?.disconnect();
+    };
+  }, [selected, entries]);
 
   const entry = entries.find((e) => e.id === selected) ?? null;
   const watch = (): void => {
@@ -349,7 +373,7 @@ export function PostGameLayer({ selected, select, arrival }: PostGameLayerProps)
     );
   return (
     <section class="sd-pg" aria-labelledby="sd-pg-heading" data-testid="post-game">
-      <div class="sd-pg-box sd-pg-plate">
+      <div class="sd-pg-box sd-pg-plate" ref={plate}>
         {heading}
         {endless.length > 0 && (
           <>
@@ -374,9 +398,22 @@ export function PostGameLayer({ selected, select, arrival }: PostGameLayerProps)
           </button>
         )}
       </div>
+      {more && <span class="sd-pg-more" aria-hidden="true" data-testid="post-game-more" />}
       {open}
     </section>
   );
+}
+
+/** The plate's "more below" fade, in game px (postGame.css `.sd-pg-more`, `scroll-padding-bottom`). */
+const PLATE_FADE_PX = 10;
+
+/** Whether `el` lies wholly inside `box`'s scrolled view, short of the plate's fade at its foot. */
+function inView(box: HTMLElement, el: HTMLElement): boolean {
+  const b = box.getBoundingClientRect();
+  const r = el.getBoundingClientRect();
+  // The fade's height in screen px (the UI is zoomed: offsetHeight is in game px).
+  const fade = (PLATE_FADE_PX * b.height) / Math.max(1, box.offsetHeight);
+  return r.top >= b.top && r.bottom <= b.bottom - fade;
 }
 
 /** "23 waves held.", or every wave of a run held. */

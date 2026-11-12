@@ -36,10 +36,35 @@ async function box(el: Locator): Promise<Box> {
 }
 
 /**
+ * Five points in `b` (its centre and its corners, 4 px in: 2 game px each way, inside a button's
+ * 3 px chamfer), in page px.
+ */
+const samples = (b: Box): [number, number][] => [
+  [b.x + b.width / 2, b.y + b.height / 2],
+  [b.x + 4, b.y + 4],
+  [b.x + b.width - 4, b.y + 4],
+  [b.x + 4, b.y + b.height - 4],
+  [b.x + b.width - 4, b.y + b.height - 4],
+];
+
+/** Whether every one of `points` hits `el` (or inside it): nothing over it takes its clicks. */
+async function hitsAll(el: Locator, points: [number, number][]): Promise<boolean> {
+  return el.evaluate(
+    (node, ps) =>
+      ps.every(([x, y]) => {
+        const top = document.elementFromPoint(x, y);
+        return top !== null && node.contains(top);
+      }),
+    points,
+  );
+}
+
+/**
  * The post-game column (T900): the column ends inside the 1280×720 screen, and with Endless open
- * (`walk`) none of its boxes touches The Long Walk's node (a challenge's taller panel stands under
- * the node, which stays on top and takes its click); a menu notice, when one shows, overlaps
- * neither the column nor the footer.
+ * (`walk`) none of its boxes touches The Long Walk's node; a menu notice, when one shows, overlaps
+ * neither the column nor the footer. The column stands over the chart (UA-1): every point of the
+ * open panel's Start (or Replay) hits it, and every point of a challenge's open medal list hits the
+ * panel, never a node under it.
  */
 async function columnClear(page: Page, walk: boolean): Promise<void> {
   const node = await box(
@@ -60,6 +85,13 @@ async function columnClear(page: Page, walk: boolean): Promise<void> {
   if (shown !== null) {
     expect(apart(shown, await box(page.locator('.sd-starmap-footer')))).toBe(true);
     expect(shown.y + shown.height).toBeLessThanOrEqual(720);
+  }
+  const panel = page.getByTestId('post-game-panel');
+  const start = panel.locator('.sd-star-actions .sd-button-primary');
+  expect(await hitsAll(start, samples(await box(start))), 'Start takes its own clicks').toBe(true);
+  const medals = panel.getByRole('list', { name: 'Medals' });
+  if (await medals.isVisible()) {
+    expect(await hitsAll(panel, samples(await box(medals))), 'the medals are the panel').toBe(true);
   }
 }
 
@@ -104,8 +136,8 @@ test('post-game: the Title at dawn, the Sector map at dawn under Stay, the plate
   await expect(page.getByRole('heading', { name: "QUILL's sim deck" })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Start The Long Shift' })).toBeFocused();
   await expect(row(page, /^Endless: The Long Shift/)).toHaveAttribute('aria-pressed', 'true');
-  // The header after the finale (S3-5): the colony's new name, and the Technician by the name the
-  // Aelari gave, no Everglow badge.
+  // The header after the finale (S3-5): the colony's new name, and the Technician by the name
+  // Pebble gave, no Everglow badge.
   await expect(page.locator('.sd-starmap-header .sd-kicker').first()).toHaveText(
     'Wayside · Slot 1',
   );
@@ -174,16 +206,52 @@ test('post-game: the Title at dawn, the Sector map at dawn under Stay, the plate
   // With its medals open (and the notice up) the column still ends inside the screen (T803c): the
   // plate under the panel gives way and scrolls its rows.
   await columnClear(page, false);
+  await nextFrames(page);
   await shot(page, FLOW, 11, 'challenge-medals-notice');
   await page.evaluate(() => globalThis.__sd!.notice(null));
   await expect(page.getByRole('alert')).toBeHidden();
   await columnClear(page, false);
+  // The pressed row stays in the plate's view as it gives way, and the plate's foot fades while
+  // rows run on below it (UA-2).
+  await expect(skitterkin).toBeInViewport({ ratio: 1 });
+  await expect(page.getByTestId('post-game-more')).toBeVisible();
+  await nextFrames(page);
   await shot(page, FLOW, 12, 'challenge-medals');
   await page.keyboard.press('Escape');
   await expect(panel.getByRole('list', { name: 'Medals' })).toBeHidden();
   await expect(more).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(skitterkin).toBeFocused();
+
+  // Every challenge with its medals open (UA-1, UA-2): the column ends inside the screen, Start
+  // and the medals take their own clicks, and the pressed row stays in the plate's view.
+  const names = await page
+    .getByTestId('post-game')
+    .locator('.sd-pg-row[data-entry]')
+    .evaluateAll((els) =>
+      els.flatMap((el) => {
+        const label = el.getAttribute('aria-label') ?? '';
+        return label.startsWith('Challenge: ') ? [el.getAttribute('data-entry') ?? ''] : [];
+      }),
+    );
+  expect(names.length).toBeGreaterThanOrEqual(3);
+  for (const [i, id] of names.entries()) {
+    const pick = page.locator(`[data-testid="post-game"] .sd-pg-row[data-entry="${id}"]`);
+    // oxlint-disable-next-line no-await-in-loop -- one challenge at a time
+    await pick.click();
+    // oxlint-disable-next-line no-await-in-loop -- one challenge at a time
+    await panel.getByRole('button', { name: /^Medals/ }).click();
+    // oxlint-disable-next-line no-await-in-loop -- one challenge at a time
+    await expect(panel.getByRole('list', { name: 'Medals' })).toBeVisible();
+    // oxlint-disable-next-line no-await-in-loop -- one challenge at a time
+    await columnClear(page, false);
+    // oxlint-disable-next-line no-await-in-loop -- one challenge at a time
+    await expect(pick).toBeInViewport({ ratio: 1 });
+    // oxlint-disable-next-line no-await-in-loop -- one challenge at a time
+    await nextFrames(page);
+    // oxlint-disable-next-line no-await-in-loop -- one challenge at a time
+    await shot(page, FLOW, 13 + i, `medals-${id}`);
+  }
 
   // A campaign node still opens its own panel (the plate's panel gives way).
   await page
@@ -213,9 +281,10 @@ test('post-game: Go leaves the colony unlit and keeps its old name', async ({ pa
   await expect(page.getByTestId('star-map')).toHaveAttribute('data-phase', 'dawn');
   const gardens = page.locator('[data-region="gardens"]');
   await expect(gardens).toHaveText('Everglow Gardens');
-  // The header: QUILL's sim deck, and the Waykeeper (S3-5).
+  // The header: the world left behind, from the ship (never the plate's heading), and the
+  // Waykeeper (S3-5).
   await expect(page.locator('.sd-starmap-header .sd-kicker').first()).toHaveText(
-    "QUILL's sim deck · Dev save",
+    'Tumble IV, from orbit · Dev save',
   );
   await expect(page.getByTestId('technician')).toHaveText(/^Waykeeper \S/);
   await nextFrames(page);

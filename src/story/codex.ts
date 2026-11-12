@@ -24,7 +24,7 @@ export interface CodexEncounters {
   readonly abilities: readonly string[];
 }
 
-/** The map from which the codex is the *Field Journal* and shows corrections side by side. */
+/** The map from which the codex is the *Field Journal* and shows corrections together. */
 const FIELD_JOURNAL_FROM = { mapAtLeast: 'a3_m01' } as const;
 
 /** Whether the save has met `subject` (an enemy seen, a tower or ability owned). */
@@ -86,8 +86,8 @@ export function codexTitle(ctx: StoryContext): string {
 /**
  * The versions an entry shows, given those unlocked (in version order): before Act III the newest
  * (a note version brings the record and the earlier notes with it: `notesShown`); in the *Field
- * Journal* an entry with a correction shows its original and its correction side by side
- * (core-loop.md § 6.5).
+ * Journal* an entry with a correction shows its original and its correction together, the original
+ * above (core-loop.md § 6.5).
  */
 export function shownVersions(
   unlocked: readonly CodexVersion[],

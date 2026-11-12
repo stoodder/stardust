@@ -41,11 +41,31 @@ export interface RimCandidate {
   readonly frameName: string;
   /** Whether it is scenery (scenery.ts: the grade's, not an actor). */
   readonly scenery: boolean;
+  /** Whether its view marked it no-rim (`markNoDawnRim`: a ghost or a highlight, not an actor). */
+  readonly noRim: boolean;
+}
+
+/** The objects their views marked as never an actor (M9 review C5). */
+const NO_RIM = new WeakSet<object>();
+
+/**
+ * Marks `obj` as never rimmed at Dawn: something drawn in `world` that isn't an actor (PlacementView's
+ * placement ghost and its raised hover, selection and onboarding highlights); returns it.
+ */
+export function markNoDawnRim<T extends object>(obj: T): T {
+  NO_RIM.add(obj);
+  return obj;
+}
+
+/** Whether `obj` was marked never rimmed (`markNoDawnRim`). */
+export function hasNoDawnRim(obj: object): boolean {
+  return NO_RIM.has(obj);
 }
 
 /**
  * Whether a drawn object is an actor Dawn rims: a visible, opaque-enough body drawn normally, not
- * scenery, not a glow, and not itself a rim (a fill-tinted copy: EnemyDress's, UnsungView's, ours).
+ * scenery, not a glow, not marked no-rim (a placement ghost or highlight), and not itself a rim (a
+ * fill-tinted copy: EnemyDress's, UnsungView's, ours).
  */
 export function takesDawnRim(o: RimCandidate): boolean {
   return (
@@ -54,6 +74,7 @@ export function takesDawnRim(o: RimCandidate): boolean {
     (o.blendMode === 0 || o.blendMode === 'NORMAL') &&
     o.tintMode === 0 &&
     !o.scenery &&
+    !o.noRim &&
     !o.frameName.endsWith('@glow')
   );
 }

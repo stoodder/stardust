@@ -1,7 +1,13 @@
 // Dawn's rims on the actors (T901): gold toward the sun, cyan from the sky, on actors only.
 import { describe, expect, it } from 'vitest';
 import { rgbOf } from '../../content/palettes/master.ts';
-import { DAWN_RIMS, takesDawnRim, type RimCandidate } from './dawnRimLook.ts';
+import {
+  DAWN_RIMS,
+  hasNoDawnRim,
+  markNoDawnRim,
+  takesDawnRim,
+  type RimCandidate,
+} from './dawnRimLook.ts';
 
 const body: RimCandidate = {
   visible: true,
@@ -10,6 +16,7 @@ const body: RimCandidate = {
   tintMode: 0,
   frameName: 'walk_se_0',
   scenery: false,
+  noRim: false,
 };
 
 describe("Dawn's rims (art-direction §3: highlights go gold and cyan)", () => {
@@ -32,5 +39,16 @@ describe("Dawn's rims (art-direction §3: highlights go gold and cyan)", () => {
     expect(takesDawnRim({ ...body, tintMode: 1 })).toBe(false); // a fill-tinted rim copy
     expect(takesDawnRim({ ...body, alpha: 0.1 })).toBe(false);
     expect(takesDawnRim({ ...body, visible: false })).toBe(false);
+  });
+
+  it('never rims what a view marked no-rim: a placement ghost at 60%, a raised highlight (C5)', () => {
+    const ghost = {};
+    const actor = {};
+    expect(markNoDawnRim(ghost)).toBe(ghost);
+    expect(hasNoDawnRim(ghost)).toBe(true);
+    expect(hasNoDawnRim(actor)).toBe(false);
+    // The ghost is opaque enough and drawn normally: only the mark keeps it out.
+    expect(takesDawnRim({ ...body, alpha: 0.6, noRim: hasNoDawnRim(actor) })).toBe(true);
+    expect(takesDawnRim({ ...body, alpha: 0.6, noRim: hasNoDawnRim(ghost) })).toBe(false);
   });
 });

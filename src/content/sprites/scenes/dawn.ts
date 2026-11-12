@@ -276,40 +276,39 @@ function paintHalls(g: CharGrid): void {
 
 /**
  * The choir's shapes, back-lit, each a Skitterkin in profile singing up at the sunrise (M9: a row of
- * round blobs didn't read as singers at 1×): ear tufts, the head tipped back, the mouth open (a
- * notch the sky shows through, its lips rim-lit), stubby feet. `x` is solid. Drawn facing east (the
- * sun); `west` mirrors one, turned to its neighbour. A grown singer, a little one, and an elder
- * (bigger, its tufts long and drooping).
+ * round blobs didn't read as singers at 1×): one ear tuft, the head tipped back, the mouth open (a
+ * 2 px notch the sky shows through, its lips rim-lit), stubby feet. `x` is solid. Drawn facing east
+ * (the sun); `west` mirrors one, turned to its neighbour. A grown singer, a little one, and an elder
+ * (bigger, its tuft long and drooping down its back).
  */
 const GROWN = [
-  '..x...x...', //
-  '...x.x....',
-  '..xxxxx..x',
-  '.xxxxxxxx.',
-  'xxxxxxx...',
-  'xxxxxxxxx.',
-  'xxxxxxxxx.',
-  'xxxxxxxxx.',
-  '.xxxxxxx..',
-  '..xx.xx...',
+  '..x......', //
+  '..xx.....',
+  '.xxxxxxx.',
+  'xxxxxxxxx',
+  'xxxxxxxx.',
+  'xxxxxxxx.',
+  'xxxxxxxxx',
+  '.xxxxxxx.',
+  '..xx.xx..',
 ] as const;
 const LITTLE = [
-  '.x.x...', //
-  '.xxxxxx',
-  'xxxxx..',
-  'xxxxxxx',
+  '.x.....', //
+  '.xx....',
   'xxxxxx.',
-  '.xxxx..',
+  'xxxxx..',
+  'xxxxx..',
+  'xxxxxx.',
   '.x..x..',
 ] as const;
 const ELDER = [
-  'x.......x...', //
-  '.x.....x....',
-  '..x...x.....',
-  '...xxxxxx..x',
-  '..xxxxxxxxx.',
-  '.xxxxxxxx...',
+  '...xx.......', //
+  '..x.xxxxx...',
+  '.x.xxxxxxx..',
+  'x.xxxxxxxxxx',
+  '.xxxxxxxxxx.',
   'xxxxxxxxxxx.',
+  'xxxxxxxxxxxx',
   'xxxxxxxxxxx.',
   'xxxxxxxxxxx.',
   'xxxxxxxxxxx.',
@@ -335,15 +334,17 @@ const PEBBLE = [
 const NOTE = ['.MM', '.ML', '.L.', 'LL.', 'LL.'] as const;
 
 type Singer = 'grown' | 'little' | 'elder';
-const SHAPES: Readonly<Record<Singer, readonly string[]>> = {
+/** The singers' shapes, facing east (the tests read them). */
+export const CHOIR_SHAPES: Readonly<Record<Singer, readonly string[]>> = {
   grown: GROWN,
   little: LITTLE,
   elder: ELDER,
 };
 
 /**
- * The choir on the ledge, west to east: who stands where (its left column), what shape, turned to
- * its west neighbour or not, who wears a note (its height over the head), and who rides a back.
+ * The choir on the ledge, west to east: who stands where (its left column), what shape, facing west
+ * or not (east of the sun, to face it; west of it, turned to a neighbour), who wears a note (its
+ * height over the head), and who rides a back.
  */
 const CHOIR: readonly {
   x: number;
@@ -366,30 +367,53 @@ const CHOIR: readonly {
   { x: 222, kind: 'grown', note: null },
   { x: 232, kind: 'grown', west: true, note: 10 },
   { x: 242, kind: 'little', note: null },
-  { x: 249, kind: 'little', note: 16, up: 7 },
-  { x: 247, kind: 'grown', note: 3 },
+  { x: 249, kind: 'little', west: true, note: 16, up: 7 },
+  { x: 247, kind: 'grown', west: true, note: 3 },
 ];
 const PEBBLE_AT = { x: 258 } as const;
 
+/** Where a choir pixel stands in the back-lit light: ink, its sun-side rim, or its far-side rim. */
+export type ChoirLight = 'ink' | 'rim' | 'far';
+
 /**
- * Stamps a back-lit silhouette: ink inside, a 1 px rim on its sun-facing (east and top) edges, gold
- * nearest the sun, coral further off.
+ * Pixel (x, y) of a choir `shape` in the back-lit light, the sun `sunEast` of it: a continuous 1 px
+ * rim round its outline wherever sky meets it, above or to either side (M9 review UA-4), a step
+ * dimmer on the side turned away from the sun; ink inside, on the feet on the lip (the last row),
+ * and down a stalk (Pebble's seedling: nothing solid either side, more of it above), which stays
+ * dark but for its tip so it reads as a stalk, not a gold scratch.
+ */
+export function choirLight(
+  shape: readonly string[],
+  x: number,
+  y: number,
+  sunEast: boolean,
+): ChoirLight {
+  const solid = (u: number, v: number): boolean => shape[v]?.charAt(u) === 'x';
+  if (y >= shape.length - 1) return 'ink';
+  const n = !solid(x, y - 1);
+  const e = !solid(x + 1, y);
+  const w = !solid(x - 1, y);
+  if (e && w && !n) return 'ink'; // a stalk
+  if (n || (sunEast ? e : w)) return 'rim';
+  return e || w ? 'far' : 'ink';
+}
+
+/** A rim one step dimmer, on the side turned away from the sun. */
+const FAR: Readonly<Record<string, string>> = { M: 'L', L: 'S', S: 'Z' };
+
+/**
+ * Stamps a back-lit silhouette: ink inside, its rim (`choirLight`) gold nearest the sun, coral
+ * further off.
  */
 function silhouette(g: CharGrid, x0: number, y0: number, shape: readonly string[]): void {
-  const solid = (x: number, y: number): boolean => shape[y]?.charAt(x) === 'x';
   shape.forEach((row, y) => {
     for (let x = 0; x < row.length; x++) {
-      if (!solid(x, y)) continue;
+      if (row.charAt(x) !== 'x') continue;
       const gx = x0 + x;
       const toSun = Math.abs(gx - DAWN_SUN.x);
-      // A thin stroke (a tuft, a stalk: nothing solid either side) stays dark but for its tip, so
-      // it reads as a tuft against the sky and not a gold scratch.
-      const thin = !solid(x - 1, y) && !solid(x + 1, y);
-      const tip = !solid(x - 1, y - 1) && !solid(x, y - 1) && !solid(x + 1, y - 1);
-      const rim = thin ? tip : !solid(x + 1, y) || !solid(x, y - 1);
-      let ch = 'G';
-      if (rim) ch = toSun < 22 ? 'M' : toSun < 64 ? 'L' : 'S';
-      plot(g, gx, y0 + y, ch);
+      const light = choirLight(shape, x, y, gx < DAWN_SUN.x);
+      const rim = toSun < 22 ? 'M' : toSun < 64 ? 'L' : 'S';
+      plot(g, gx, y0 + y, light === 'rim' ? rim : light === 'far' ? (FAR[rim] ?? rim) : 'G');
     }
   });
 }
@@ -398,7 +422,7 @@ function paintChoir(g: CharGrid): void {
   // Riders last, over the grown ones whose backs they ride.
   const order = CHOIR.toSorted((a, b) => (a.up ?? 0) - (b.up ?? 0));
   for (const s of order) {
-    const base = SHAPES[s.kind];
+    const base = CHOIR_SHAPES[s.kind];
     const shape = s.west === true ? base.map((r) => r.split('').toReversed().join('')) : base;
     const y0 = ledgeTop(s.x + 3) - shape.length + 1 - (s.up ?? 0);
     silhouette(g, s.x, y0, shape);

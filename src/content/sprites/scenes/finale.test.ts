@@ -10,7 +10,7 @@ import { ALL_SPRITES } from '../all.ts';
 import { isCustomChar, STANDARD_LEGEND } from '../legend.ts';
 import type { SpriteDef } from '../types.ts';
 import { validateSprites } from '../validate.ts';
-import { dawnMoteAt, DAWN_SUN } from './dawn.ts';
+import { CHOIR_SHAPES, choirLight, dawnMoteAt, DAWN_SUN } from './dawn.ts';
 import {
   DAWN_FRAMES,
   ENDING_STILL,
@@ -197,4 +197,59 @@ describe('the final images', () => {
       meanLum(sceneOrbit, 'still', 20, 168, 80, 179) * 4,
     );
   });
+});
+
+describe("the Dawn's choir silhouettes (M9 review UA-4: singers at 2×, not spiky beetles)", () => {
+  const solid = (shape: readonly string[], x: number, y: number) => shape[y]?.charAt(x) === 'x';
+  const front = (row: string) => row.lastIndexOf('x');
+
+  for (const [kind, shape] of Object.entries(CHOIR_SHAPES)) {
+    it(`${kind}: one continuous rim, brighter sunward, a 2 px mouth notch, one ear tuft`, () => {
+      // The rim (the sun east of it): one 8-connected line round the outline, no dashes.
+      const rim: [number, number][] = [];
+      const lights = new Set<string>();
+      shape.forEach((row, y) => {
+        for (let x = 0; x < row.length; x++) {
+          if (row.charAt(x) !== 'x') continue;
+          const light = choirLight(shape, x, y, true);
+          lights.add(light);
+          if (light !== 'ink') rim.push([x, y]);
+        }
+      });
+      expect([...lights].toSorted()).toEqual(['far', 'ink', 'rim']);
+      expect(rim.length).toBeGreaterThan(0);
+      const seen = new Set<string>([`${rim[0]![0]},${rim[0]![1]}`]);
+      const todo = [rim[0]!];
+      while (todo.length > 0) {
+        const [x, y] = todo.pop()!;
+        for (const [u, v] of rim) {
+          const k = `${u},${v}`;
+          if (!seen.has(k) && Math.abs(u - x) <= 1 && Math.abs(v - y) <= 1) {
+            seen.add(k);
+            todo.push([u, v]);
+          }
+        }
+      }
+      expect(seen.size).toBe(rim.length);
+      // The feet stay dark on the lip.
+      const feet = shape.length - 1;
+      for (let x = 0; x < shape[feet]!.length; x++)
+        expect(choirLight(shape, x, feet, true)).toBe('ink');
+      // The mouth: the face steps back 1 px for exactly 2 rows, once, under the upper jaw.
+      const fronts = shape.map(front);
+      const widest = Math.max(...fronts);
+      const notch = fronts.flatMap((f, y) =>
+        y > 0 && f === widest - 1 && fronts.indexOf(widest) < y && fronts.lastIndexOf(widest) > y
+          ? [y]
+          : [],
+      );
+      expect(notch).toHaveLength(2);
+      expect(notch[1]! - notch[0]!).toBe(1);
+      // One tuft: the top row is a single run.
+      const top = shape[0]!;
+      const runs = top.split('.').filter((r) => r.length > 0);
+      expect(runs).toHaveLength(1);
+      expect(solid(shape, top.indexOf('x'), 0)).toBe(true);
+    });
+  }
 });

@@ -123,10 +123,13 @@ describe('the finale HUD on fin_m01 (T832)', () => {
     expect(meter).toMatchObject({ choir: true, evacuated: host.sim.state.choir.singers });
     expect(meter.maxLost).toBe(host.sim.state.choir.singers - 1);
     host.enqueue({ type: 'callWave' });
+    host.fastForward(1);
+    expect(phaseBanner.value).toMatchObject({ kicker: PHASE_ONE_KICKER, title: 'Wave 1' });
     host.fastForward(TICK_HZ * 30);
     expect(finaleClock.value).toMatchObject({ kind: 'bore', label: 'Deep Bore' });
     expect(finaleClock.value!.fill).toBeGreaterThan(0);
-    expect(phaseBanner.value).toMatchObject({ kicker: PHASE_ONE_KICKER, title: 'Wave 1' });
+    // The banner had its beat 30 s of sim time ago: a fast-forward doesn't leave it up (T803b).
+    expect(phaseBanner.value).toBeNull();
   });
 
   it("Phase 2: the countdown from N in the Bore's place; Dawn: the counter at 0", () => {

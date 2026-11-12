@@ -6,12 +6,22 @@
    box covers The Long Walk's node (176, 164) or The Preserve's (152, 208) with Endless open. A menu
    notice stands over the footer instead of above the column (StarMap.tsx), and the column ends
    inside the screen: when the open panel grows (a challenge's medals open), the plate under it
-   gives way and scrolls its rows (T900). */
+   gives way and scrolls its rows (T900), the pressed row kept in view and a fade at its foot while
+   rows run on below (UA-2). The column stands over the chart's nodes: a challenge's panel is
+   wider than the plate, and nothing under it takes its clicks (UA-1). */
 
 .sd-starmap-post .sd-starmap-notices {
   display: flex;
   flex-direction: column;
   max-height: calc(100% - 56px);
+  z-index: 2;
+  /* Only the boxes take clicks: the column's empty width beside them stays the chart's. */
+  pointer-events: none;
+}
+
+.sd-starmap-post .sd-star-notice,
+.sd-pg-box {
+  pointer-events: auto;
 }
 
 .sd-pg {
@@ -29,6 +39,39 @@
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--sd-steel-1) var(--sd-ink-1);
+  /* A row scrolled into view clears the fade (PostGame.tsx PLATE_FADE_PX). */
+  scroll-padding-bottom: 10px;
+}
+
+/* "More below": the plate's foot fades out in three steps over one row's height while its rows run
+   on past it, inside its clipped corners, with the disclosure's down chevron (the game's one "more"
+   mark; disclosure.css) at its right; it takes no clicks. */
+.sd-pg-more {
+  position: absolute;
+  left: 3px;
+  bottom: 1px;
+  width: 130px;
+  height: 10px;
+  background: linear-gradient(
+    to bottom,
+    rgb(13 10 24 / 0%) 0 2px,
+    rgb(13 10 24 / 45%) 2px 5px,
+    rgb(13 10 24 / 75%) 5px 8px,
+    rgb(13 10 24 / 92%) 8px
+  );
+  pointer-events: none;
+}
+
+.sd-pg-more::after {
+  content: '';
+  position: absolute;
+  right: 4px;
+  bottom: 2px;
+  width: 0;
+  height: 0;
+  border-top: 3px solid var(--sd-steel-3);
+  border-right: 3px solid transparent;
+  border-left: 3px solid transparent;
 }
 
 /* A menu notice after the finale (a battle that couldn't start): over the footer, its width. */

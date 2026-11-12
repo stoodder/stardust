@@ -5,6 +5,7 @@
 // 0 (`endAtPct`: the Glass Witch's retreat, the Penitent's kneel) carries the end mark where the
 // HP stops (review R6).
 import { GLYPHS } from '../../content/sprites/font3x5.ts';
+import { TICK_HZ } from '../../shared/time.ts';
 
 /** The bar: its width and height inside a 1 px frame (game px), and where it sits on screen. */
 export const BOSS_BAR_W = 160;
@@ -132,6 +133,47 @@ export function barFadeAlpha(ms: number, holdMs = BAR_HOLD_MS): number {
   if (ms < holdMs) return 1;
   const t = (ms - holdMs) / BAR_FADE_MS;
   return t < 1 / 3 ? 0.6 : t < 2 / 3 ? 0.35 : t < 1 ? 0.15 : 0;
+}
+
+/**
+ * How long a boss's ending has run (ms), the clock the bar's hold and step-out read: sim time while
+ * the map plays (a pause holds it, a fast-forward carries it through, so a fast-forwarded smoke shot
+ * never catches the bar mid-fade), and once the sim's outcome is decided and its clock stops, frame
+ * time on top, so a boss that was the last kill still steps its bar out over the won field's hold
+ * before Results (M9 review C4).
+ */
+export class BarEndClock {
+  /** The sim tick the ending began (−1: still fighting). */
+  #tick = -1;
+  /** Frame time since the outcome was decided (ms). */
+  #decidedMs = 0;
+
+  /** Whether an ending is running. */
+  get running(): boolean {
+    return this.#tick >= 0;
+  }
+
+  /** The ending begins at sim tick `tick`. */
+  start(tick: number): void {
+    this.#tick = tick;
+    this.#decidedMs = 0;
+  }
+
+  /** No ending (the bar closed, or a new boss opened it). */
+  stop(): void {
+    this.#tick = -1;
+    this.#decidedMs = 0;
+  }
+
+  /**
+   * One frame: the ending's age (ms) at sim tick `tick`, `dt` ms after the last frame, `decided`
+   * once the sim's outcome is (its clock stopped); 0 with no ending running.
+   */
+  ms(tick: number, dt: number, decided: boolean): number {
+    if (this.#tick < 0) return 0;
+    if (decided && dt > 0) this.#decidedMs += dt;
+    return ((tick - this.#tick) * 1000) / TICK_HZ + this.#decidedMs;
+  }
 }
 
 /**

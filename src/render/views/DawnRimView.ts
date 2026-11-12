@@ -9,7 +9,13 @@ import * as Phaser from 'phaser';
 import { rgbOf } from '../../content/palettes/master.ts';
 import { screenToGrid, type Vec2 } from '../iso.ts';
 import { isSunlit } from '../vfx/songNightPixels.ts';
-import { DAWN_RIM_UNDER, DAWN_RIMS, MAX_DAWN_RIMMED, takesDawnRim } from './dawnRimLook.ts';
+import {
+  DAWN_RIM_UNDER,
+  DAWN_RIMS,
+  hasNoDawnRim,
+  MAX_DAWN_RIMMED,
+  takesDawnRim,
+} from './dawnRimLook.ts';
 import { isScenery } from './scenery.ts';
 import type { ViewContext } from './ViewContext.ts';
 
@@ -25,7 +31,16 @@ const cand: {
   tintMode: number;
   frameName: string;
   scenery: boolean;
-} = { visible: false, alpha: 0, blendMode: 0, tintMode: 0, frameName: '', scenery: false };
+  noRim: boolean;
+} = {
+  visible: false,
+  alpha: 0,
+  blendMode: 0,
+  tintMode: 0,
+  frameName: '',
+  scenery: false,
+  noRim: false,
+};
 
 const TINTS = DAWN_RIMS.map((r) => {
   const c = rgbOf(r.color);
@@ -74,6 +89,7 @@ export class DawnRimView {
         cand.tintMode = obj.tintMode;
         cand.frameName = obj.frame.name;
         cand.scenery = isScenery(obj);
+        cand.noRim = hasNoDawnRim(obj);
         if (!takesDawnRim(cand)) continue;
         screenToGrid(obj.x, obj.y, this.#ctx.origin, at);
         if (!isSunlit(at.x, this.#cols, sunStep)) continue;

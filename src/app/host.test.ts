@@ -70,7 +70,7 @@ describe('host loop', () => {
     expect(frames).toBe(1);
   });
 
-  it('fastForward steps exactly, ignores speed, and dispatches once', () => {
+  it('fastForward steps exactly, ignores speed, and runs the after-frame listeners once', () => {
     const sim = fixtureSim();
     const host = createHost(sim, { now: () => 0, speed: 0 });
     let frames = 0;
@@ -86,17 +86,41 @@ describe('host loop', () => {
     expect(() => host.fastForward(1.5)).toThrow(RangeError);
   });
 
-  it('measures sim time per tick', () => {
-    const { sim } = counted();
+  it('measures sim time per tick (a fastForward leaves its dispatch out)', () => {
+    const real = fixtureSim();
     let t = 0;
-    const host = createHost(sim, {
-      now: () => {
-        t += 2;
-        return t;
+    // Each tick costs 0.5 ms of the clock; dispatching its events costs nothing.
+    const sim: Sim<FixtureIds> = {
+      ...real,
+      step() {
+        t += 0.5;
+        real.step();
       },
-    });
-    host.fastForward(4); // 2 ms over 4 ticks
+    };
+    const host = createHost(sim, { now: () => t });
+    host.fastForward(4);
     expect(host.simMsPerTick()).toBeCloseTo(0.5);
+    host.frame(TICK_MS * 2);
+    expect(host.simMsPerTick()).toBeCloseTo(0.5);
+  });
+
+  it("fastForward dispatches each tick's events after that tick (T663), the frame's listeners once", () => {
+    const sim = fixtureSim();
+    const host = createHost(sim, { now: () => 0 });
+    // A gun on the pad by the path's corner, and the first wave called now.
+    host.enqueue({ type: 'build', tile: [1, 1], tower: 'fx_gun' });
+    host.enqueue({ type: 'callWave' });
+    host.fastForward(0);
+    const at: number[] = [];
+    host.bus.on('ProjectileFired', () => at.push(sim.state.tick));
+    let frames = 0;
+    host.onAfterFrame(() => frames++);
+    host.fastForward(600);
+    expect(frames).toBe(1);
+    // Each shot is heard on the tick it was fired, not all at the fastForward's end.
+    expect(at.length).toBeGreaterThan(2);
+    expect(new Set(at).size).toBe(at.length);
+    expect(at[0]).toBeLessThan(sim.state.tick);
   });
 
   it('onAfterFrame returns an unsubscribe', () => {

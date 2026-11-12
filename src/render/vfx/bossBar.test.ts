@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { compileContent } from '../../content/compile.ts';
 import { RAW_CONTENT } from '../../content/registry.ts';
+import { TICK_HZ } from '../../shared/time.ts';
 import {
   BAR_FADE_MS,
   BAR_HOLD_MS,
+  BarEndClock,
   barFadeAlpha,
   barFillPx,
   BOSS_BAR_H,
@@ -47,6 +49,41 @@ describe('the boss bar (T312b)', () => {
     expect(chipPx(100, 60, 100)).toBeCloseTo(84);
     expect(chipPx(100, 60, 10_000)).toBe(60);
     expect(chipPx(50, 60, 16)).toBe(60); // healed past it
+  });
+
+  it("runs the ending's clock on sim time, and on frame time once the outcome is decided (C4)", () => {
+    const tickMs = 1000 / TICK_HZ;
+    const clock = new BarEndClock();
+    expect(clock.running).toBe(false);
+    expect(clock.ms(50, 16, true)).toBe(0);
+    clock.start(100);
+    expect(clock.running).toBe(true);
+    // While the map plays, sim time: a mid-play pause (the tick held) holds the bar at full.
+    for (let f = 0; f < 600; f++) expect(clock.ms(100, 16, false)).toBe(0);
+    expect(clock.ms(130, 16, false)).toBeCloseTo(30 * tickMs);
+    // The boss was the last kill: the sim stops at the win tick, and frame time carries the bar
+    // through its hold and out over the field's hold before Results.
+    const won = new BarEndClock();
+    won.start(200);
+    let ms = 0;
+    let frames = 0;
+    while (barFadeAlpha(ms) > 0 && frames < 1000) {
+      ms = won.ms(200, 16, true);
+      frames++;
+    }
+    expect(barFadeAlpha(ms)).toBe(0);
+    expect(frames * 16).toBeGreaterThanOrEqual(BAR_HOLD_MS + BAR_FADE_MS);
+    expect(frames * 16).toBeLessThan(BAR_HOLD_MS + BAR_FADE_MS + 32); // gone in ~1.8 s, as in M8
+    // Decided partway: the sim time it ran, plus the frames since.
+    const late = new BarEndClock();
+    late.start(0);
+    expect(late.ms(30, 16, false)).toBeCloseTo(30 * tickMs);
+    expect(late.ms(30, 100, true)).toBeCloseTo(30 * tickMs + 100);
+    // A new ending starts it afresh.
+    late.start(30);
+    expect(late.ms(30, 0, true)).toBe(0);
+    late.stop();
+    expect(late.running).toBe(false);
   });
 
   it('holds after the ending, then steps out on the stepped-alpha ladder', () => {

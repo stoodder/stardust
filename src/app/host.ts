@@ -1,8 +1,9 @@
 // The host loop (architecture.md § Game speed, pause, and the host loop): turns real frame time
 // into fixed 60 Hz sim ticks at the current speed, applies commands while paused, and drains and
-// dispatches the sim's events once per frame. The sim knows nothing about speed or frames. It also
-// records the run's retry checkpoints, and a host created to resume one replays the run up to it
-// before the battle shows (app/checkpoints.ts; architecture.md § Checkpoints).
+// dispatches the sim's events once per frame (a test hook's fastForward: after each tick). The sim
+// knows nothing about speed or frames. It also records the run's retry checkpoints, and a host
+// created to resume one replays the run up to it before the battle shows (app/checkpoints.ts;
+// architecture.md § Checkpoints).
 import type { IdSpace, LiveIds } from '../content/types.ts';
 import { createBus, type Bus } from '../shared/bus.ts';
 import { TICK_HZ } from '../shared/time.ts';
@@ -21,7 +22,7 @@ const PERF_SMOOTHING = 0.1;
 
 export interface Host<K extends IdSpace = LiveIds> {
   readonly sim: Sim<K>;
-  /** Drained sim events, dispatched by type once per frame (and once per fastForward). */
+  /** Drained sim events, dispatched by type once per frame (and after each fastForward tick). */
   readonly bus: Bus<SimEvent<K>>;
   readonly speed: Speed;
   setSpeed(speed: Speed): void;
@@ -29,7 +30,10 @@ export interface Host<K extends IdSpace = LiveIds> {
   enqueue(cmd: Command<K>): void;
   /** Advances by one rendered frame of `deltaMs` real time. Returns the ticks stepped. */
   frame(deltaMs: number): number;
-  /** Steps `ticks` ticks now with no frame cap or speed, then dispatches the events once. */
+  /**
+   * Steps `ticks` ticks now with no frame cap or speed, dispatching each tick's events after it;
+   * the after-frame listeners run once, at the end.
+   */
   fastForward(ticks: number): void;
   /** Runs `listener` after every frame's (and fastForward's) dispatch. Returns its `off`. */
   onAfterFrame(listener: () => void): () => void;
@@ -112,6 +116,10 @@ export function createHost<K extends IdSpace>(sim: Sim<K>, opts: HostOptions = {
     runAfterFrame();
   };
 
+  const measure = (ms: number, n: number): void => {
+    const per = ms / n;
+    msPerTick = msPerTick === 0 ? per : msPerTick + (per - msPerTick) * PERF_SMOOTHING;
+  };
   const runSteps = (n: number): void => {
     if (n === 0) return;
     const t0 = now();
@@ -119,8 +127,7 @@ export function createHost<K extends IdSpace>(sim: Sim<K>, opts: HostOptions = {
       driver?.();
       sim.step();
     }
-    const per = (now() - t0) / n;
-    msPerTick = msPerTick === 0 ? per : msPerTick + (per - msPerTick) * PERF_SMOOTHING;
+    measure(now() - t0, n);
   };
 
   return {
@@ -157,8 +164,19 @@ export function createHost<K extends IdSpace>(sim: Sim<K>, opts: HostOptions = {
       if (!Number.isInteger(ticks) || ticks < 0) {
         throw new RangeError(`fastForward: ticks must be a non-negative integer, got ${ticks}`);
       }
-      runSteps(ticks);
-      if (ticks === 0) sim.applyPending();
+      // Each tick's events go out after that tick (as `catchUp` does), so a listener reading the
+      // sim's tick (TransientFx's StaleFx clock, T663) sees when each one happened; the after-frame
+      // listeners run once, at the end.
+      let simMs = 0;
+      for (let i = 0; i < ticks; i++) {
+        const t0 = now();
+        driver?.();
+        sim.step();
+        simMs += now() - t0;
+        emitEvents();
+      }
+      if (ticks > 0) measure(simMs, ticks);
+      else sim.applyPending();
       dispatch();
     },
     onAfterFrame(listener) {

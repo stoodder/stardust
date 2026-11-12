@@ -176,7 +176,7 @@ describe('the codex title and its versions on screen', () => {
     expect(codexTitle(ctx('fin_m01'))).toBe('Field Journal');
   });
 
-  it('shows the newest version, and original beside corrected in the Field Journal', () => {
+  it('shows the newest version, and in the Field Journal both together, the original above', () => {
     expect(shownVersions([], ctx('a1_m01'))).toEqual([]);
     expect(shownVersions(['original'], ctx('a1_m05'))).toEqual(['original']);
     expect(shownVersions(['original', 'annotated'], ctx('a2_m03'))).toEqual(['annotated']);

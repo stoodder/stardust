@@ -852,7 +852,7 @@ export class BattleScene extends Phaser.Scene {
     this.#lightGhosts.update(state.towers);
     this.#drone.update(state.wreckage, this.#clearTicks, state.tick);
     this.#tidybots.update(state.tick);
-    this.#bossBar.update(dt, state.enemies, state.tick);
+    this.#bossBar.update(dt, state.enemies, state.tick, state.outcome !== 'playing'); // C4
     this.#bore.update(state.timers); // T831
     this.#memorial.update(
       this.#hover.pointerTile(true).index,

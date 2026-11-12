@@ -141,21 +141,24 @@ export interface StarMapView {
 export const WAYSIDE_LABEL = 'Wayside';
 
 /**
- * The header's kicker in the post-game under Go (story/style-guide.md § 2, *Sector map*): the deck
- * the post-game plate is (`POST_GAME_PLATE.heading`, content/postGame.ts, which stays out of the
- * initial JS; app/starMap.test.ts pins the two alike).
+ * The header's kicker in the post-game under Go (story/style-guide.md § 2, *Sector map*): the world
+ * the colony left, seen from the ship. It names the ending, never the plate under it (UA-5).
  */
-export const SIM_DECK_KICKER = "QUILL's sim deck";
+export const GO_KICKER = 'Tumble IV, from orbit';
+
+/** The header's kicker after a won finale whose C5 is still unanswered (the tab closed in C5). */
+export const UNANSWERED_KICKER = 'Tumble IV';
 
 /** The Sector map header's kicker before the save's slot: Everglow's, or the post-game's (S3-5). */
 export function headerKicker(view: Pick<StarMapView, 'postGame' | 'ending'>): string {
   if (!view.postGame) return 'Everglow · Perimeter Ops';
-  return view.ending === 'stay' ? WAYSIDE_LABEL : SIM_DECK_KICKER;
+  if (view.ending === 'stay') return WAYSIDE_LABEL;
+  return view.ending === 'go' ? GO_KICKER : UNANSWERED_KICKER;
 }
 
 /**
  * The header's Technician line for `name`: Everglow's badge ("JPT-1 {name} · #ED-447"), and after
- * the finale the name the Aelari gave ("Waykeeper {name}"; S3-5).
+ * the finale the name Pebble gave ("Waykeeper {name}"; S3-5).
  */
 export function technicianLine(view: Pick<StarMapView, 'postGame'>, name: string): string {
   return view.postGame ? `${CALLSIGNS.waykeeper} ${name}` : `JPT-1 ${name} · #ED-447`;
