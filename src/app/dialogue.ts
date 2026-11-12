@@ -96,7 +96,14 @@ import {
   type SceneView,
   type StagingView,
 } from '../ui/dialogue/state.ts';
-import { stagingLeadInMs, stagingLockMs, stagingOf } from '../ui/dialogue/staging.ts';
+import {
+  autoAdvanceHoldMs,
+  stagingAutoAdvances,
+  stagingLeadInMs,
+  stagingLockMs,
+  stagingOf,
+  stagingSkipsAll,
+} from '../ui/dialogue/staging.ts';
 import { fastText, typedLength, typeMs } from '../ui/dialogue/text.ts';
 import { prefersReducedMotion } from '../ui/motion.ts';
 import { silkText } from '../ui/silk.ts';
@@ -554,6 +561,8 @@ interface Holding {
   /** When the line on screen started typing (performance.now), and whether Next finished it. */
   typedFrom: number;
   typedOut: boolean;
+  /** When Next finished the typing (performance.now; 0 while it types on its own). */
+  typedAt: number;
   remember: string | null;
   /** A full-screen scene's staging (ui/dialogue/staging.ts): its clock and lead-in, else null. */
   staging: StagingView | null;
@@ -608,6 +617,33 @@ let silenceTimer: ReturnType<typeof setTimeout> | null = null;
 function clearSilence(): void {
   if (silenceTimer !== null) clearTimeout(silenceTimer);
   silenceTimer = null;
+  if (autoTimer !== null) clearTimeout(autoTimer);
+  autoTimer = null;
+}
+
+let autoTimer: ReturnType<typeof setTimeout> | null = null;
+
+/**
+ * Times the line on screen moving on by itself in a staging that auto-advances (T1001: the
+ * prelude, `stagingAutoAdvances`): once typed (from its start, after any lead-in, or from the
+ * press that finished it), it holds `autoAdvanceHoldMs` and goes on. A silence keeps its own timer
+ * (`armSilence`). Re-armed on every publish of the same line.
+ */
+function armAuto(h: Holding): void {
+  if (autoTimer !== null) clearTimeout(autoTimer);
+  autoTimer = null;
+  const line = h.line;
+  if (h.staging === null || !stagingAutoAdvances(h.staging.kind)) return;
+  if (line === null || line.silence || h.instant || h.cursor.step.kind !== 'line') return;
+  const typedAt = h.typedOut
+    ? Math.max(h.typedFrom, h.typedAt)
+    : h.typedFrom + typeMs(line.text);
+  const wait =
+    Math.max(0, typedAt - performance.now()) + fastHoldMs(autoAdvanceHoldMs(line.text));
+  autoTimer = setTimeout(() => {
+    autoTimer = null;
+    if (holding === h && h.line === line) advanceScene();
+  }, wait);
 }
 
 /**
@@ -667,6 +703,7 @@ function publish(): void {
     return;
   }
   armSilence(h);
+  armAuto(h);
   const step = h.cursor.step;
   // Shown whole (dialogue off), a scene stops short of its first choice: nobody is there to pick.
   const stopped = h.instant && step.kind === 'choice';
@@ -772,6 +809,7 @@ function settle(h: Holding): void {
       h.line = view;
       h.typedFrom = performance.now();
       h.typedOut = fastText() || reducedMotion() || typedLength(view.text) === 0;
+      h.typedAt = 0;
       break;
     }
     h.transcript.push(view);
@@ -799,6 +837,7 @@ function open(scene: Scene, opts: PlayOptions, mode: SceneMode): void {
     line: null,
     typedFrom: 0,
     typedOut: false,
+    typedAt: 0,
     remember: null,
     staging: openStaging(scene.id, mode, opts.instant ?? false),
     choiceAt: 0,
@@ -872,6 +911,7 @@ export function nextScene(): void {
   }
   if (h.line !== null && !h.typedOut && performance.now() - h.typedFrom < typeMs(h.line.text)) {
     h.typedOut = true;
+    h.typedAt = now;
     publish();
     return;
   }
@@ -972,6 +1012,11 @@ export function skipScene(): boolean {
   if (h === null || h.mode === 'briefing') return false;
   // A locked staging swallows Esc too (the key is taken; nothing skips), as does a mandatory scene.
   if (h.noSkip || stagingLocked(h, performance.now())) return true;
+  // A staging that skips whole (T1001: the prelude) ends the scene here, choices and all.
+  if (h.staging !== null && stagingSkipsAll(h.staging.kind)) {
+    finish();
+    return true;
+  }
   const ctx = storyContext(h.map);
   // Every skipped line joins the transcript (T327), not only the one on screen.
   while (h.cursor.step.kind === 'line') {

@@ -11,6 +11,8 @@ export {
   countdownTick,
   crossedLowIntegrity,
   heldMusic,
+  preludeMusic,
+  PRELUDE_LAYERS,
   screenMusic,
   type BattleMood,
   type MusicIntent,

@@ -15,7 +15,7 @@ import { propBillboard } from '../../props/billboard.ts';
 import { propPeeker } from '../../props/peeker.ts';
 import type { ColorName } from '../../../palettes/master.ts';
 import { copyGrid, defineScene, dithered, fill, SCENE_H, SCENE_W, sceneGrid } from '../sceneKit.ts';
-import { paintCloud, paintRig, paintSky, paintSpires, paintTerraces } from './planetside.ts';
+import { crestNear, paintCloud, paintRig, paintSky, paintSpires, paintTerraces } from './planetside.ts';
 import { sceneInk, stampSprite } from './stamp.ts';
 
 /*
@@ -90,11 +90,13 @@ function paintBackdrop(g: CharGrid): void {
     11,
     0.3,
   );
-  for (const x of [30, 222, 300]) paintRig(g, TOUCHDOWN_INK, x, (tops[x] ?? HORIZON) + 1, 9);
-  paintTerraces(g, TOUCHDOWN_INK, HORIZON - 2, GRASS_Y + 2, 5, 0.6);
+  for (const x of [30, 222, 300]) {
+    const [rx, top] = crestNear(tops, x, 14);
+    paintRig(g, TOUCHDOWN_INK, rx, top + 1, 9);
+  }
   // The grass toward us, darkening into the foreground's shadow (the line panel sits on it).
-  fill(g, 0, GRASS_Y, SCENE_W - 1, SCENE_H - 1, (x, y) => {
-    const t = (y - GRASS_Y) / (SCENE_H - GRASS_Y);
+  fill(g, 0, HORIZON, SCENE_W - 1, SCENE_H - 1, (x, y) => {
+    const t = Math.max(0, (y - GRASS_Y) / (SCENE_H - GRASS_Y));
     let ch = dithered([c('act1.grass.0'), c('act1.grass.1'), c('act1.grass.2')], 1 - t ** 1.3, x, y);
     // Tufts: lit blades, a few pink blooms.
     const h = hash01(x >> 1, y, 23);
@@ -102,6 +104,7 @@ function paintBackdrop(g: CharGrid): void {
     else if (h > 0.997 && t < 0.6) ch = c('pink.3');
     return ch;
   });
+  paintTerraces(g, TOUCHDOWN_INK, HORIZON - 2, GRASS_Y + 2, 5, 0.6);
 }
 
 /** The pad: a steel disc on the grass, its rim hazard-striped, teal lights round it. */
@@ -254,25 +257,6 @@ function paintSign(g: CharGrid): void {
     const tx = x + Math.round((w - textWidth(line)) / 2);
     for (const p of textPixels(line, tx, y + 5 + i * 7)) plot(g, p.x, p.y, c('ink.1'));
   });
-  // Evie's sun in the corner, beaming.
-  for (const [dx, dy] of [
-    [0, 1],
-    [1, 0],
-    [2, 0],
-    [3, 1],
-    [1, 1],
-    [2, 1],
-    [0, 2],
-    [1, 2],
-    [2, 2],
-    [3, 2],
-    [1, 3],
-    [2, 3],
-  ] as const) {
-    plot(g, x + 5 + dx, y + h - 9 + dy, c('gold.4'));
-  }
-  plot(g, x + 6, y + h - 8, c('ink.1'));
-  plot(g, x + 7, y + h - 8, c('ink.1'));
 }
 
 /** The flip counter's card with its digit; `flipped` adds the old card's blur over the top. */

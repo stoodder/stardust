@@ -100,7 +100,7 @@ export const PRELUDE_PAN = {
   still: 'scene.descent',
   from: 0,
   to: 120,
-  ms: 9000,
+  ms: 10_000,
 } as const satisfies {
   readonly still: PreludeStillId;
   readonly from: number;

@@ -18,6 +18,7 @@ import {
 } from '../content/dialogue/profile.ts';
 import type { SaveData, SlotId } from '../meta/index.ts';
 import { resolveText } from '../story/text.ts';
+import { PRELUDE_SCENE } from '../ui/screens/prelude.ts';
 import { activeSave, newGame, updateActiveSave, type SaveResult } from './save.ts';
 
 // ── When the intake runs ─────────────────────────────────────────────────────────────────────
@@ -150,6 +151,15 @@ export function withProfileEdit(
   return { ...save, profile: { ...save.profile, name: edit.name, ...addressFields(edit.address) } };
 }
 
+/**
+ * `save` with the prelude in `story.seen` (T1001): a new campaign's intake signs it in, whether the
+ * prelude played, was skipped, or was off (the campaign is past it either way). Pure; a copy.
+ */
+export function withPreludeSeen(save: SaveData): SaveData {
+  if (save.story.seen.includes(PRELUDE_SCENE)) return save;
+  return { ...save, story: { ...save.story, seen: [...save.story.seen, PRELUDE_SCENE] } };
+}
+
 /** A form that can't be signed yet: which fields need another look. */
 export type IntakeSubmit = SaveResult | { readonly ok: false; readonly problems: IntakeProblems };
 
@@ -168,7 +178,8 @@ export function signIntake(form: IntakeForm): IntakeSubmit {
   const mode = intakeMode();
   if (mode === null) return { ok: false, message: 'No save is loaded.' };
   if (mode.kind === 'existing') return updateActiveSave(fill);
-  const r = newGame(mode.slot, fill);
+  // A new campaign starts past the prelude (T1001): its id goes into `story.seen` with the form.
+  const r = newGame(mode.slot, (save) => withPreludeSeen(fill(save)));
   if (r.ok) pendingNew = null;
   return r;
 }

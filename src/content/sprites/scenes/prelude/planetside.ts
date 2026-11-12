@@ -99,17 +99,22 @@ export interface Peak {
   readonly h: number;
 }
 
-/** The ridge's height above `baseY` at column x: the tallest crest over x, roughened. */
+/**
+ * The ridge's height above `baseY` at column x: each crest a massif with a crown of needle
+ * pinnacles (the Spires are crags, not hills), the tallest over x, roughened.
+ */
 function ridgeAt(peaks: readonly Peak[], x: number, seed: number): number {
   let top = 0;
-  for (const p of peaks) {
+  peaks.forEach((p, i) => {
     const t = 1 - Math.abs(x - p.x) / (p.w / 2);
-    if (t <= 0) continue;
-    // A jagged crest: steep near the top, a few broken steps down its flanks.
-    const shape = t ** 1.6 * p.h;
-    const step = Math.floor(shape / 3) * 3;
-    top = Math.max(top, shape * 0.6 + step * 0.4);
-  }
+    if (t > 0) top = Math.max(top, t ** 1.3 * p.h * 0.55);
+    for (let j = -3; j <= 3; j++) {
+      const nx = p.x + (j * p.w) / 8 + (hash01(i, j + 9, seed) - 0.5) * 8;
+      const nh = p.h * (1 - Math.abs(j) * 0.17) * (0.7 + 0.3 * hash01(j + 4, i, seed + 1));
+      const tn = 1 - Math.abs(x - nx) / (p.w / 10 + 2);
+      if (tn > 0) top = Math.max(top, nh * tn ** 0.8);
+    }
+  });
   return top + (hash01(x >> 1, seed, 17) - 0.5) * 2;
 }
 
@@ -158,6 +163,16 @@ export function paintSpires(
     }
   }
   return tops;
+}
+
+/** The highest point of a ridge (`paintSpires`' tops) within `r` columns of x: [x, top row]. */
+export function crestNear(tops: readonly number[], x: number, r: number): [number, number] {
+  let best: [number, number] = [x, tops[x] ?? 0];
+  for (let i = x - r; i <= x + r; i++) {
+    const t = tops[i];
+    if (t !== undefined && t < best[1]) best = [i, t];
+  }
+  return best;
 }
 
 /**

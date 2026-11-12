@@ -4,7 +4,7 @@
 // reason for joining show read-only), and the save's export and import codes. Difficulty and Export
 // need a save in play; from the Title they explain that instead.
 import { useState } from 'preact/hooks';
-import { closeSettings } from '../../app/navigation.ts';
+import { closeSettings, watchArrival } from '../../app/navigation.ts';
 import { exportActive, setDifficulty } from '../../app/save.ts';
 import { setAudioSettings, settings, toggleMute, type AudioSettings } from '../../app/settings.ts';
 import { editProfile } from '../../app/profile.ts';
@@ -336,6 +336,15 @@ export function Settings() {
           </div>
         </div>
         <footer class="sd-row sd-menu-footer">
+          {/* T1001: the prelude again, over Settings (no save needed; Esc or Skip ends it). */}
+          <button
+            type="button"
+            class="sd-button"
+            data-testid="watch-arrival"
+            onClick={watchArrival}
+          >
+            Watch the arrival
+          </button>
           <button
             type="button"
             class="sd-button sd-button-primary"

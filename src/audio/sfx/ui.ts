@@ -112,4 +112,59 @@ export const UI_SFX = {
       },
     ],
   },
+  /**
+   * The prelude's shuttle descending (T1001; act1.md § Prelude · Arrival, shot 4): a long, low hull
+   * rumble that swells and settles, under the PA's "Now descending…". Heard with its line.
+   */
+  shuttle_rumble: {
+    gain: 0.4,
+    priority: 1,
+    minGapMs: 1000,
+    maxVoices: 1,
+    layers: [
+      {
+        wave: 'noise',
+        freq: 120,
+        filter: { type: 'lowpass', freq: 260 },
+        env: { a: 0.6, d: 1.6, s: 0, r: 0.8 },
+        gain: 0.8,
+      },
+      {
+        wave: 'triangle',
+        freq: 55,
+        glide: 0.8,
+        glideSec: 2.4,
+        env: { a: 0.5, d: 1.8, s: 0, r: 0.6 },
+        gain: 0.4,
+      },
+    ],
+  },
+  /**
+   * The prelude's shuttle touching down (shot 5): a soft landing thump and a hiss of the ramp,
+   * under the PA's "Welcome to Everglow Gardens!".
+   */
+  shuttle_land: {
+    gain: 0.45,
+    priority: 1,
+    minGapMs: 1000,
+    maxVoices: 1,
+    layers: [
+      {
+        wave: 'sine',
+        freq: 90,
+        glide: 0.5,
+        glideSec: 0.25,
+        env: { a: 0.002, d: 0.3, s: 0, r: 0.15 },
+        gain: 0.9,
+      },
+      {
+        wave: 'noise',
+        at: 0.12,
+        freq: 440,
+        filter: { type: 'highpass', freq: 3000 },
+        env: { a: 0.05, d: 0.5, s: 0, r: 0.2 },
+        gain: 0.18,
+      },
+    ],
+  },
 } as const satisfies Readonly<Record<string, SfxRecipe>>;

@@ -16,6 +16,7 @@ import {
   type IntakeSubmit,
 } from './profile.ts';
 import { pauseMenu } from '../ui/pause/state.ts';
+import { holdPreludeSeen, playPrelude, preludeBeforeIntake } from './prelude.ts';
 import type { Router } from './router.ts';
 import { setPostGameRoute } from './ending.ts';
 import { ENDLESS_MAP_ID } from './postGameHooks.ts';
@@ -126,15 +127,28 @@ export function startGame(): SaveResult {
 }
 
 /**
- * Title → New game → a slot: the intake (character creation, T306), then a new campaign there,
- * into its first map's briefing. The save is created when the form is signed.
+ * Title → New game → a slot: the prelude (T1001, once per new campaign; app/prelude.ts), the
+ * intake (character creation, T306), then a new campaign there, into its first map's briefing.
+ * The save is created when the form is signed.
  */
 export function newGame(slot: SlotId): SaveResult {
   if (intakeBeforeNewGame()) {
     if (!slotEmpty(slot))
       return { ok: false, message: `Slot ${slot} is taken. Pick an empty one!` };
     holdNewGame(slot);
-    run('intake', (r) => r.goto('intake'));
+    if (preludeBeforeIntake()) {
+      // Held as seen from its start: Back from the intake and Start shift again skip it.
+      holdPreludeSeen(true);
+      run('prelude', (r) =>
+        playPrelude({ toIntake: true })
+          .catch((err: unknown) => {
+            logError('navigation: the prelude failed to load', err);
+          })
+          .then(() => r.goto('intake')),
+      );
+    } else {
+      run('intake', (r) => r.goto('intake'));
+    }
     return { ok: true };
   }
   const r = newSave(slot);
@@ -150,6 +164,8 @@ export function submitIntake(form: IntakeForm): IntakeSubmit {
   const mode = intakeMode();
   const r = signIntake(form);
   if (!r.ok) return r;
+  // The new campaign has the prelude in `story.seen` (signIntake); the next one plays it again.
+  if (mode?.kind === 'new') holdPreludeSeen(false);
   if (mode?.kind === 'new') playNext();
   else toCampaign();
   return r;
@@ -241,6 +257,16 @@ export function leaveResultsTo(where: 'campaign' | 'title'): void {
 /** Opens Settings; Back returns to the menu it was opened from. */
 export function openSettings(): void {
   run('settings', (r) => r.goto('settings'));
+}
+
+/**
+ * Settings → "Watch the arrival" (T1001): the prelude again over Settings, saving nothing; Esc or
+ * Skip ends it, back on Settings. No save needed.
+ */
+export function watchArrival(): void {
+  playPrelude({ toIntake: false }).catch((err: unknown) => {
+    logError('navigation: the prelude failed to load', err);
+  });
 }
 
 /** Settings → Back. */

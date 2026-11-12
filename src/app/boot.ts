@@ -27,6 +27,7 @@ import { loadDevFixtures } from './devRegistry.ts';
 import { ensureAllActs } from './actContent.ts';
 import { loadPortraits } from './portraitContent.ts';
 import { loadFinaleScreens } from './finaleScreens.ts';
+import { loadPreludeScreens, setPreludeEnabled } from './prelude.ts';
 import { gateRouter } from './contentGate.ts';
 import { loadBattleRenderer } from './battleRenderer.ts';
 import { initSettings } from './settings.ts';
@@ -48,6 +49,7 @@ export function parseBootParams(search: string): BootParams {
     map: q.get('map'),
     skipIntro: q.get('skipIntro') === '1',
     intake: !test || q.get('intake') === '1',
+    prelude: !test || q.get('prelude') === '1',
     fastText: test && q.get('fasttext') === '1',
     // Dev saves load only under ?test=1 (D031): a player URL can't open gated systems.
     save: test ? q.get('save') : null,
@@ -71,6 +73,7 @@ export async function boot(): Promise<void> {
   setDialogueEnabled(params.dialogue);
   setFastText(params.fastText);
   setIntakeEnabled(params.intake);
+  setPreludeEnabled(params.prelude);
   initSettings();
   installAudio(params.audio);
   setJinglePlayer(playJingle);
@@ -100,6 +103,7 @@ export async function boot(): Promise<void> {
     upFront ? ensureAllActs() : null,
     upFront ? loadBattleRenderer() : null,
     upFront ? loadFinaleScreens() : null, // T810
+    upFront ? loadPreludeScreens() : null, // T1001
     devFixtures ? loadDevFixtures() : null,
   ]);
   const devSave = params.save !== null && loadDevSave(params.save);

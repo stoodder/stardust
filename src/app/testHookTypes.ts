@@ -236,6 +236,12 @@ export interface BootParams {
    */
   readonly intake: boolean;
   /**
+   * Whether a new campaign plays the prelude before its intake (T1001; app/prelude.ts). On for
+   * players; `?test=1` turns it off, so no existing flow sees it, and `&prelude=1` turns it back on
+   * (it still needs the intake and dialogue on: `&intake=1&dialogue=1`).
+   */
+  readonly prelude: boolean;
+  /**
    * Test-only fast text (`?test=1&fasttext=1`, T461): dialogue lines show whole at once and timed
    * holds run shorter (`fastHoldMs` in app/dialogue.ts), so story smoke flows don't wait on the
    * typewriter. Always false without `?test=1`.

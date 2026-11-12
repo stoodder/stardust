@@ -115,6 +115,28 @@ export function screenMusic(screen: MusicScreen, postGame = false): MusicIntent 
   return { theme: null, layers: SILENT, level: 0 };
 }
 
+/**
+ * The prelude's music (T1001; act1.md § Prelude · Arrival): the title theme (it has a base and a
+ * lead, no drums), its layers by shot, 1–7. The ad plays it whole; on the freighter the lead sits
+ * back; at the viewport the base holds alone, through the silence; from the descent the layers come
+ * back, and stay up for Dome Row and the delivery, so the intake's title theme picks up unbroken.
+ */
+export const PRELUDE_LAYERS: readonly LayerLevels[] = [
+  { base: 1, drums: 0, lead: 1, choir: 0 },
+  { base: 1, drums: 0, lead: 0.4, choir: 0 },
+  { base: 1, drums: 0, lead: 0, choir: 0 },
+  { base: 1, drums: 0, lead: 1, choir: 0 },
+  { base: 1, drums: 0, lead: 1, choir: 0 },
+  { base: 1, drums: 0, lead: 1, choir: 0 },
+  { base: 1, drums: 0, lead: 1, choir: 0 },
+];
+
+/** The music under the prelude's shot `shot` (1–7; clamped): the title theme at PRELUDE_LAYERS. */
+export function preludeMusic(shot: number): MusicIntent {
+  const i = Math.min(PRELUDE_LAYERS.length - 1, Math.max(0, Math.floor(shot) - 1));
+  return { theme: 'title', layers: PRELUDE_LAYERS[i]!, level: 1 }; // i in range
+}
+
 /** The music the epilogue holds from the counter's flip to its end (app/ending.ts). */
 export function heldMusic(theme: ThemeId): MusicIntent {
   return { theme, layers: { base: 1, drums: 1, lead: 1, choir: 1 }, level: 1 };

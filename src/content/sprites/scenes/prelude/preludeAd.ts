@@ -10,7 +10,15 @@
 import { textPixels, textWidth } from '../../font3x5.ts';
 import type { CharGrid } from '../../helpers.ts';
 import { at, hash01, plot } from '../../helpers.ts';
-import { copyGrid, defineScene, dithered, eachOnLine, fill, SCENE_W, sceneGrid } from '../sceneKit.ts';
+import {
+  copyGrid,
+  defineScene,
+  dithered,
+  eachOnLine,
+  fill,
+  SCENE_W,
+  sceneGrid,
+} from '../sceneKit.ts';
 
 /*
  * Palette `act1`: 0–4 `act1.grass`, a–e `act1.clay`, 5–9 `act1.path`, + pink.3, * pink.4,
@@ -51,7 +59,7 @@ export const AD_LEGEND = {
 /** Evie: her face's centre and radius (the rays reach past it). */
 export const AD_EVIE = { x: 70, y: 66, r: 25 } as const;
 /** The dome: its centre at the ring and its half-width and height. */
-const DOME = { x: 214, y: 120, rx: 46, ry: 40 } as const;
+const DOME = { x: 214, y: 124, rx: 44, ry: 42 } as const;
 /** The NOW HIRING! starburst. */
 const BADGE = { x: 289, y: 98, r: 19 } as const;
 /** The small-print crawl's band (its top row and height). */
@@ -82,7 +90,7 @@ export function paintEvie(g: CharGrid, ex: number, ey: number, r: number): void 
       const d = Math.hypot(x + 0.5 - ex, y + 0.5 - ey);
       if (d <= r) {
         // Lit from the upper left: the heart pale gold, the rim a ring of dark gold.
-        const lit = d + ((x - ex) + (y - ey)) * 0.18;
+        const lit = d + (x - ex + (y - ey)) * 0.18;
         plot(g, x, y, d > r - 1.6 ? 'D' : lit < r * 0.55 ? 'F' : 'E');
         continue;
       }
@@ -151,50 +159,58 @@ function paintRibbon(g: CharGrid, text: string, cx: number, y: number): void {
   for (const p of textPixels(text, tx, ty, scale)) plot(g, p.x, p.y, 'H');
 }
 
-/** The land's top row at column x: rolling terraces, higher toward the edges. */
-function landTop(x: number): number {
-  return LAND_Y + Math.round(Math.sin(x * 0.021 + 0.8) * 5 + Math.sin(x * 0.057) * 2);
+/** The terraces' lips, top to bottom: each a little deeper than the last (nearer, so bigger). */
+const TERRACES = [0, 5, 11, 19, 29, 42, 58, 80] as const;
+
+/** Terrace `k`'s lip at column x: contours that sway, more at the front. */
+function lipAt(k: number, x: number): number {
+  const base = TERRACES[k] ?? 99;
+  const sway = Math.sin(x * 0.018 + k * 0.9) * (2 + k * 0.9) + Math.sin(x * 0.047 + k) * 1.2;
+  return LAND_Y + base + Math.round(sway);
 }
 
 /**
- * The land: far hills hazed into the sky, then green terraces stepping down, each lip lit, a pink
- * clay face under it, and butterhead lettuce in rows along them.
+ * The land: far hills hazed into the sky, then green terraces stepping down toward us, each lip lit,
+ * a pink clay riser under it, butterhead lettuce in rows along them (bigger on the nearer ones).
  */
 function paintLand(g: CharGrid): void {
   // Far hills: soft, pale, behind everything.
   for (let x = 0; x < SCENE_W; x++) {
-    const top = 92 + Math.round(Math.sin(x * 0.034 + 2) * 6 + Math.sin(x * 0.011) * 5);
-    for (let y = top; y < 180; y++) plot(g, x, y, dithered(['C', '4', '3'], (y - top) / 24, x, y));
+    const top = 96 + Math.round(Math.sin(x * 0.034 + 2) * 5 + Math.sin(x * 0.011) * 5);
+    for (let y = top; y < 180; y++) plot(g, x, y, dithered(['C', '4', '3'], (y - top) / 20, x, y));
   }
-  for (let x = 0; x < SCENE_W; x++) {
-    const top = landTop(x);
-    for (let y = top; y < 180; y++) {
-      const depth = y - top;
-      // Terraces 12 px deep: a lit lip, the grass, a clay face under the next lip.
-      const t = depth % 12;
-      const step = Math.floor(depth / 12);
-      let ch: string;
-      if (t === 0) ch = '4';
-      else if (t < 8) ch = dithered(['3', '2'], (t / 8) * 0.8 + step * 0.08, x, y);
-      else if (t === 8) ch = '1';
-      else ch = t === 11 ? 'b' : dithered(['d', 'c'], (t - 9) / 2, x, y);
-      plot(g, x, y, ch);
+  for (let k = 0; k < TERRACES.length - 1; k++) {
+    for (let x = 0; x < SCENE_W; x++) {
+      const top = lipAt(k, x);
+      const next = lipAt(k + 1, x);
+      const h = next - top;
+      const riser = Math.max(2, Math.round(h * 0.28));
+      for (let y = top; y < Math.min(180, next); y++) {
+        const t = y - top;
+        let ch: string;
+        if (t === 0) ch = '4';
+        else if (t < h - riser) ch = dithered(['3', '3', '2'], t / (h - riser), x, y);
+        else if (t === h - riser) ch = '1';
+        else ch = t === h - riser + 1 ? 'd' : dithered(['c', 'b'], (t - (h - riser)) / riser, x, y);
+        plot(g, x, y, ch);
+      }
+      if (k === TERRACES.length - 2) {
+        for (let y = next; y < 180; y++) plot(g, x, y, y === next ? '4' : '3');
+      }
     }
-  }
-  // Lettuce in rows on each terrace: little rosettes, lit on top.
-  for (let x = 4; x < SCENE_W; x += 7) {
-    const top = landTop(x);
-    for (let step = 0; step < 6; step++) {
-      const y = top + step * 12 + 4;
-      if (y > 176) break;
-      const lx = x + (step % 2) * 3;
-      plot(g, lx, y - 1, 'W');
-      plot(g, lx - 1, y, 'V');
-      plot(g, lx, y, 'W');
-      plot(g, lx + 1, y, 'V');
-      plot(g, lx - 1, y + 1, 'U');
-      plot(g, lx, y + 1, 'V');
-      plot(g, lx + 1, y + 1, 'U');
+    // Lettuce in a row on the terrace: rosettes lit on top, bigger and wider apart nearer us.
+    const size = k < 2 ? 0 : k < 4 ? 1 : 2;
+    const gap = [5, 6, 8, 10, 13, 16, 20][k] ?? 20;
+    for (let x = (k * 3) % gap; x < SCENE_W; x += gap) {
+      const top = lipAt(k, x);
+      const h = lipAt(k + 1, x) - top;
+      const y = top + Math.max(2, Math.round((h - Math.round(h * 0.28)) * 0.55));
+      for (let dy = -size - 1; dy <= size; dy++) {
+        for (let dx = -size - 1; dx <= size + 1; dx++) {
+          if (Math.abs(dx) + Math.abs(dy + 0.5) > size + 1.6) continue;
+          plot(g, x + dx, y + dy, dy < -size ? 'W' : dy === size ? 'U' : dx < 0 ? 'W' : 'V');
+        }
+      }
     }
   }
 }
@@ -205,56 +221,79 @@ function paintLand(g: CharGrid): void {
  */
 function paintDome(g: CharGrid): void {
   const { x: cx, y: by, rx, ry } = DOME;
+  const inShell = (x: number, y: number): boolean =>
+    y < by && Math.hypot((x + 0.5 - cx) / rx, (y + 0.5 - by) / ry) <= 1;
   // The ring: a low steel band under the shell, its shadow on the terrace.
   for (let x = cx - rx - 3; x <= cx + rx + 3; x++) {
-    plot(g, x, by + 3, '1');
-    plot(g, x, by + 2, x < cx ? 'J' : 'I');
-    plot(g, x, by + 1, x < cx ? 'K' : 'J');
-    plot(g, x, by, x < cx - rx + 4 ? 'H' : 'K');
+    const left = x < cx - rx / 3;
+    plot(g, x, by + 4, '1');
+    plot(g, x, by + 3, 'x');
+    plot(g, x, by + 2, left ? 'J' : 'I');
+    plot(g, x, by + 1, left ? 'K' : 'J');
+    plot(g, x, by, left ? 'G' : 'K');
   }
-  for (let y = by - ry; y < by; y++) {
-    for (let x = cx - rx; x <= cx + rx; x++) {
+  for (let y = by - ry - 1; y < by; y++) {
+    for (let x = cx - rx - 1; x <= cx + rx + 1; x++) {
+      if (!inShell(x, y)) continue;
+      if (!inShell(x - 1, y) || !inShell(x + 1, y) || !inShell(x, y - 1)) {
+        plot(g, x, y, 'x');
+        continue;
+      }
       const dx = (x + 0.5 - cx) / rx;
       const dy = (y + 0.5 - by) / ry;
-      const d = Math.hypot(dx, dy);
-      if (d > 1) continue;
-      const lit = -0.75 * dx - 0.6 * dy;
-      const v = Math.max(0, Math.min(1, 0.55 + lit * 0.6));
-      plot(g, x, y, dithered(['I', 'J', 'K', 'G', 'H'], v, x, y));
+      const lit = -0.8 * dx - 0.55 * dy;
+      plot(
+        g,
+        x,
+        y,
+        dithered(['I', 'J', 'K', 'G', 'H'], Math.max(0, Math.min(1, 0.45 + lit * 0.7)), x, y),
+      );
     }
   }
   // The band and its slits.
-  for (let x = cx - rx + 1; x < cx + rx; x++) {
-    const inShell = Math.hypot((x + 0.5 - cx) / rx, (by - 9.5 - by) / ry) <= 1;
-    if (!inShell) continue;
-    plot(g, x, by - 10, x < cx ? 'O' : 'N');
-    plot(g, x, by - 9, x < cx ? 'N' : 'M');
-    plot(g, x, by - 8, 'M');
+  for (let x = cx - rx; x <= cx + rx; x++) {
+    if (!inShell(x - 1, by - 9) || !inShell(x + 1, by - 9)) continue;
+    plot(g, x, by - 10, x < cx - 8 ? 'O' : 'N');
+    plot(g, x, by - 9, x < cx - 8 ? 'N' : 'M');
+    plot(g, x, by - 8, x < cx + 20 ? 'M' : 'L');
   }
-  for (let x = cx - rx + 6; x < cx + rx - 4; x += 9) {
-    plot(g, x, by - 13, 'O');
-    plot(g, x + 1, by - 13, 'H');
+  for (let x = cx - rx + 8; x < cx + rx - 6; x += 10) {
+    if (Math.abs(x - (cx - 15)) < 15) continue;
+    plot(g, x, by - 14, 'O');
+    plot(g, x + 1, by - 14, 'H');
   }
   // The window: a round pane on the lit side, steel-framed, lettuce rows in the sun inside.
-  const wx = cx - 14;
+  const wx = cx - 15;
   const wy = by - 24;
-  for (let y = -11; y <= 11; y++) {
-    for (let x = -11; x <= 11; x++) {
+  const r = 13;
+  for (let y = -r; y <= r; y++) {
+    for (let x = -r; x <= r; x++) {
       const d = Math.hypot(x, y);
-      if (d > 11) continue;
-      let ch = d > 9.6 ? 'J' : d > 8.6 ? 'H' : dithered(['Z', 'C'], (-x - y) / 16 + 0.3, wx + x, wy + y);
-      if (d <= 8.6 && y >= -2 && (y + 2) % 4 < 3) {
-        // Rows of butterhead, nearer rows lower and bigger.
-        const row = Math.floor((y + 2) / 4);
-        const leaf = (x + row * 2 + 40) % 5;
-        if ((y + 2) % 4 === 0) ch = leaf < 3 ? 'W' : ch;
-        else ch = leaf < 4 ? (leaf === 0 ? 'U' : 'V') : 'U';
+      if (d > r) continue;
+      let ch =
+        d > r - 1.2
+          ? 'x'
+          : d > r - 2.4
+            ? 'J'
+            : d > r - 3.2
+              ? 'H'
+              : dithered(['Z', 'C'], (-x - y) / 18 + 0.35, wx + x, wy + y);
+      const inner = d <= r - 3.2;
+      if (inner && y >= -3) {
+        // Rows of butterhead in the window, nearer rows lower and bigger.
+        const row = Math.floor((y + 3) / 4);
+        const t = (y + 3) % 4;
+        const leaf = (x + row * 3 + 40) % 6;
+        if (t === 0) ch = leaf < 3 ? 'W' : ch;
+        else if (t < 3) ch = leaf === 5 ? 'U' : leaf < 2 ? 'W' : 'V';
+        else ch = '2';
       }
       plot(g, wx + x, wy + y, ch);
     }
   }
   // The pane's glare: a diagonal streak.
-  for (let k = -5; k <= 1; k++) plot(g, wx + k, wy - 5 - k, 'H');
+  for (let k = -6; k <= 0; k++) plot(g, wx + k, wy - 5 - k, 'H');
+  for (let k = -5; k <= -2; k++) plot(g, wx + k + 2, wy - 5 - k, 'C');
 }
 
 /** The NOW HIRING! starburst: a sixteen-pointed orange star, white words, a lit upper edge. */
@@ -266,7 +305,7 @@ function paintBadge(g: CharGrid): void {
       const d = Math.hypot(x + 0.5 - cx, y + 0.5 - cy);
       const edge = r - 2.6 + Math.abs(Math.cos(a * 8)) * 2.6;
       if (d > edge) continue;
-      const lit = (x - cx) + (y - cy) < -r * 0.6;
+      const lit = x - cx + (y - cy) < -r * 0.6;
       plot(g, x, y, d > edge - 1 ? (lit ? 'T' : 'R') : 'S');
     }
   }

@@ -20,6 +20,7 @@ import {
   type TypeTicker,
   crossedLowIntegrity,
   heldMusic,
+  preludeMusic,
   SOUND_EVENT_TYPES,
   RADIO_DUCK,
   SPEECH_SFX_DUCK,
@@ -72,6 +73,7 @@ import { setTypeTick } from '../ui/dialogue/LineText.tsx';
 import { prefersReducedMotion } from '../ui/motion.ts';
 import { typeMs } from '../ui/dialogue/text.ts';
 import { isNaming, PLATE_TURN_HOLD_MS } from '../ui/screens/waykeeper.ts';
+import { PRELUDE_SCENE, preludeShot } from '../ui/screens/prelude.ts';
 import { presentationOfMap } from '../story/presentation.ts';
 import { dialogue, speaking } from '../ui/dialogue/state.ts';
 import {
@@ -408,6 +410,37 @@ function screenNow(s: ReturnType<(typeof screen)['peek']>): MusicIntent {
 }
 
 /**
+ * The prelude's music while it shows (T1001: the title theme, its layers by shot; audio/director.ts
+ * PRELUDE_LAYERS), or null when it isn't on screen.
+ */
+function preludeNow(): MusicIntent | null {
+  const v = dialogue.scene.peek();
+  if (v === null || v.sceneId !== PRELUDE_SCENE) return null;
+  return preludeMusic(preludeShot(v.transcript, v.line).shot);
+}
+
+/** The music for screen `s` now: held music, else the prelude's, else the screen's own. */
+function menuMusic(s: ReturnType<(typeof screen)['peek']>): MusicIntent {
+  return heldOver ?? preludeNow() ?? screenNow(s);
+}
+
+/**
+ * The prelude's layers follow its shots (T1001), and the screen's music comes back as it closes.
+ * Returns the unwiring.
+ */
+function bindPreludeAudio(): () => void {
+  let open = false;
+  return effect(() => {
+    const v = dialogue.scene.value;
+    const now = v !== null && v.sceneId === PRELUDE_SCENE;
+    if (!now && !open) return;
+    open = now;
+    const s = screen.peek();
+    if (s !== 'battle') setMusic(menuMusic(s));
+  });
+}
+
+/**
  * The close's music cue (app/ending.ts `endingCue`): `counter_flip` holds `dawn_major` over the
  * screens; `epilogue_end` lets it go back to the screen's own music.
  */
@@ -415,7 +448,7 @@ export function playEndingCue(cue: EndingCue): void {
   const theme = ENDING_MUSIC[cue];
   heldOver = theme === null ? null : heldMusic(theme);
   const s = screen.peek();
-  if (s !== 'battle') setMusic(heldOver ?? screenNow(s));
+  if (s !== 'battle') setMusic(menuMusic(s));
 }
 
 /** The listen URL's item (`?test=1&listen=<kind>:<id>`), or null (a player URL never has one). */
@@ -486,10 +519,11 @@ export function installAudio(
     bindWaykeeperSting(),
     bindSceneOpenAudio(),
     bindResultsAudio(),
+    bindPreludeAudio(),
     // Screens without a battle; a battle's frames drive its own music (bindBattleAudio).
     effect(() => {
       const s = screen.value;
-      if (s !== 'battle') setMusic(heldOver ?? screenNow(s));
+      if (s !== 'battle') setMusic(menuMusic(s));
     }),
   ];
   // The campaign's close: Dawn comes in at the counter's flip and is held under the credits and

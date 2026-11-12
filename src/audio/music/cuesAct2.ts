@@ -72,6 +72,43 @@ export const PA_SHIFT_MINOR: Song = {
 };
 
 /**
+ * The PA's shift change, bright (T1001; act1.md § Prelude · Arrival, the ad's couplet "Everglow,
+ * Everglow, brighter every day! Everglow, Everglow, clearing the way!"): PA_SHIFT_MINOR's major
+ * twin, the same six notes on the same tinny PA with its slap echo, the third natural, and
+ * "clearing the way" climbing to the high tonic instead of sinking, over a bright pad. The prelude
+ * plays it first; A2M6's minor shift change is this, curdled.
+ */
+export const PA_SHIFT: Song = {
+  id: 'pa_shift',
+  bpm: 112,
+  bars: 2,
+  loop: false,
+  tracks: [
+    {
+      layer: 'lead',
+      instrument: 'pa',
+      stepsPerToken: 2,
+      gain: 0.7,
+      pattern: 'G4 C5 E5 - F5 D5 C5 - | E5 - G5 - C6 - - .',
+    },
+    {
+      layer: 'lead',
+      instrument: 'pa',
+      stepsPerToken: 2,
+      gain: 0.22,
+      pattern: '. G4 C5 E5 - F5 D5 C5 | - E5 - G5 - C6 - .',
+    },
+    {
+      layer: 'base',
+      instrument: 'pad',
+      stepsPerToken: 2,
+      gain: 0.45,
+      pattern: 'C3 - - - F2 - - - | G2 - - - C3 - - .',
+    },
+  ],
+};
+
+/**
  * C2, sold at market (A2M4's Results, Zibzab's Price): Zibzab's coin twice, then the harmony
  * drops into minor and stops on the dominant, unresolved. A shrug, never a judgement (style-guide
  * §2: never scold the player).

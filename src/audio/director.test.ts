@@ -5,6 +5,8 @@ import {
   crossedLowIntegrity,
   heldMusic,
   PAUSED_LEVEL,
+  PRELUDE_LAYERS,
+  preludeMusic,
   screenMusic,
   VOICES_FLOOR,
   voicesLevel,
@@ -109,6 +111,21 @@ describe('battle music', () => {
     expect(voicesLevel(-1)).toBe(VOICES_FLOOR);
     const steps = new Set(Array.from({ length: 101 }, (_, i) => voicesLevel(i / 100)));
     for (const l of steps) expect(Math.round(l * 20) / 20).toBeCloseTo(l, 9);
+  });
+
+  it('plays the prelude on the title theme, its layers by shot (T1001)', () => {
+    expect(PRELUDE_LAYERS).toHaveLength(7);
+    expect(preludeMusic(1)).toEqual(screenMusic('title'));
+    // The freighter sits the lead back; the viewport holds the base alone; then they come back.
+    expect(preludeMusic(2).layers.lead).toBeGreaterThan(0);
+    expect(preludeMusic(2).layers.lead).toBeLessThan(1);
+    expect(preludeMusic(3).layers).toEqual({ base: 1, drums: 0, lead: 0, choir: 0 });
+    expect(preludeMusic(4).layers.lead).toBe(1);
+    // The delivery's layers are the intake's (the title's), so the music runs on unbroken.
+    expect(preludeMusic(7)).toEqual(screenMusic('title'));
+    for (let shot = 1; shot <= 7; shot++) expect(preludeMusic(shot).theme).toBe('title');
+    expect(preludeMusic(0)).toEqual(preludeMusic(1));
+    expect(preludeMusic(9)).toEqual(preludeMusic(7));
   });
 
   it('plays the post-game title after the finale, and holds Dawn under the epilogue', () => {

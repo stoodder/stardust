@@ -5,10 +5,12 @@
 // callsign is assigned in the field (Bricks, A1M1). An ID badge previews the name (and carries the
 // employee number) and a file note shows how the form of address reads in a sentence. The
 // name's hint shows while the field has the focus (or a problem takes its place; T803c). The copy's home is
-// docs/story/campaign/act1.md § Character creation; the rules are app/profile.ts.
-import { useRef, useState } from 'preact/hooks';
+// docs/story/campaign/act1.md § Character creation; the rules are app/profile.ts. On a new
+// campaign it follows the prelude (T1001), rising off its last line (Form FF-1 at your boots).
+import { useLayoutEffect, useRef, useState } from 'preact/hooks';
 import type { TargetedKeyboardEvent } from 'preact';
 import { cancelIntake, submitIntake } from '../../app/navigation.ts';
+import { intakeRises } from './preludeState.ts';
 import {
   ARRIVAL_ORDER,
   BLANK_INTAKE,
@@ -189,6 +191,11 @@ export function Intake() {
   const [failure, setFailure] = useState<string | null>(null);
   const nameRef = useRef<HTMLInputElement | null>(null);
   const arrivalRef = useRef<HTMLDivElement | null>(null);
+  // Off the prelude's last line (T1001), the form rises into place over the dimmed still, once.
+  const [rises] = useState(() => intakeRises.peek());
+  useLayoutEffect(() => {
+    intakeRises.value = false;
+  }, []);
   useEscape(() => {
     cancelIntake();
     return true;
@@ -214,7 +221,10 @@ export function Intake() {
   };
 
   return (
-    <main class="sd-screen sd-menu sd-intake" aria-labelledby="sd-intake-heading">
+    <main
+      class={`sd-screen sd-menu sd-intake${rises ? ' sd-intake-rise' : ''}`}
+      aria-labelledby="sd-intake-heading"
+    >
       <section class="sd-panel sd-menu-panel sd-intake-panel">
         <header class="sd-menu-header">
           <div>

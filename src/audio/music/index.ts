@@ -27,7 +27,7 @@ import {
   WIN_JINGLE,
   WITCH_STING,
 } from './cues.ts';
-import { C2_RETURNED, C2_SOLD, HOME_HUM, PA_SHIFT_MINOR } from './cuesAct2.ts';
+import { C2_RETURNED, C2_SOLD, HOME_HUM, PA_SHIFT, PA_SHIFT_MINOR } from './cuesAct2.ts';
 import type { FIN_CUES, FIN_THEMES } from './fin.ts';
 
 export { ALL_INSTRUMENTS, DRUMS, INSTRUMENTS, KIT } from './instruments.ts';
@@ -52,6 +52,7 @@ const CORE_CUES = {
   lose: LOSE_STING,
   boss_sting: BOSS_STING,
   witch_sting: WITCH_STING,
+  pa_shift: PA_SHIFT,
   pa_shift_minor: PA_SHIFT_MINOR,
   home_hum: HOME_HUM,
   c2_sold: C2_SOLD,

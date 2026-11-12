@@ -56,6 +56,7 @@ export interface LineCue {
 
 /**
  * Sung lines:
+ * - The prelude's ad (T1001): the PA's bright couplet (`pa_shift`) on its third line.
  * - Pebble's hum in A2M6's whistle scene (act2.md § A2M6, `base_a2_whistle`: "Hm. Hm-hm.
  *   Hmmm."), the home motif (HOME_MOTIF) as she first hums it, over a hushed base. (The motif is
  *   first heard on glass in C2's carried-home sting, D137.)
@@ -72,6 +73,16 @@ export interface LineCue {
  *   "...and this time everyone sings it." is the jingle in C major, sung (`dawn_sung`).
  */
 export const LINE_CUES: readonly LineCue[] = [
+  // The prelude's ad (T1001; act1.md § Prelude · Arrival): the PA sings the couplet bright, the
+  // first time the player hears it (`pa_shift`, the twin A2M6's `pa_shift_minor` curdles).
+  {
+    scene: 'a1_m01_scene_prelude',
+    speaker: 'pa',
+    text: 'Everglow, Everglow, brighter every day! Everglow, Everglow, clearing the way!',
+    cue: 'pa_shift',
+    quietMs: 4000,
+    musicDuck: 0.25,
+  },
   {
     scene: 'a2_m06_base_whistle',
     speaker: 'pebble',
@@ -233,6 +244,19 @@ export interface LineSfx {
 
 export const LINE_SFX: readonly LineSfx[] = [
   { speaker: 'pebble', text: 'Knock knock! (squeak)', sfx: 'knock_knock', blipDelaySec: 0.45 },
+  // The prelude's shuttle (T1001): it rumbles down under the PA, and lands under its welcome.
+  {
+    speaker: 'pa',
+    text: 'Now descending to Everglow Gardens! Local time: afternoon. It will be afternoon for a while!',
+    sfx: 'shuttle_rumble',
+    blipDelaySec: 0.6,
+  },
+  {
+    speaker: 'pa',
+    text: 'Welcome to Everglow Gardens! Population: 340. Now 341!',
+    sfx: 'shuttle_land',
+    blipDelaySec: 0.4,
+  },
 ];
 
 /** The sound effect line `speaker`/`text` plays as it starts (LINE_SFX), or null. */

@@ -211,6 +211,8 @@ describe('sound effect recipes', () => {
         'shield_reform',
         'shield_ripple',
         'shield_shatter',
+        'shuttle_land',
+        'shuttle_rumble',
         'singer_hushed',
         'skewer_shot',
         'sneeze',
@@ -495,6 +497,22 @@ describe("Act II's story cues (T550)", () => {
     expect(lead('pa_shift_minor').at(-1)).toBe('C4');
   });
 
+  it("plays the PA's bright shift change, the minor's twin, on the prelude's couplet", () => {
+    const pa = CUES.pa_shift.tracks.filter((t) => t.instrument === 'pa');
+    expect(pa.length).toBeGreaterThanOrEqual(1);
+    expect(lead('pa_shift').slice(0, 6)).toEqual(['G4', 'C5', 'E5', 'F5', 'D5', 'C5']);
+    // The twins differ only in the third, and where "clearing the way" goes (up, not down).
+    expect(lead('pa_shift_minor').slice(0, 6)).toEqual(
+      lead('pa_shift')
+        .slice(0, 6)
+        .map((n) => (n === 'E5' ? 'Eb5' : n)),
+    );
+    expect(lead('pa_shift').at(-1)).toBe('C6');
+    const couplet = LINE_CUES.find((c) => c.scene === 'a1_m01_scene_prelude');
+    expect(couplet?.cue).toBe('pa_shift');
+    expect(couplet?.speaker).toBe('pa');
+  });
+
   it('sings each sung line in place of its blip, matched by its scene, speaker and text', () => {
     for (const c of LINE_CUES) {
       const scene = SCENES[c.scene];
@@ -589,6 +607,13 @@ describe("Act III, part two's story sounds (T750)", () => {
     }
     expect(lineSfx('pebble', 'Knock knock! (squeak)')?.sfx).toBe('knock_knock');
     expect(lineSfx('pebble', 'Knock knock!')).toBeNull();
+    // The prelude's shuttle (T1001): it rumbles down, and lands, under the PA.
+    const labelled = (label: string): string => {
+      const n = SCENES.a1_m01_scene_prelude!.nodes.find((x) => x.label === label);
+      return n?.kind === 'line' ? n.text : '';
+    };
+    expect(lineSfx('pa', labelled('p_descent'))?.sfx).toBe('shuttle_rumble');
+    expect(lineSfx('pa', labelled('p_touchdown'))?.sfx).toBe('shuttle_land');
   });
 
   it('opens the mail scene on its delivery, a scene that exists', () => {
