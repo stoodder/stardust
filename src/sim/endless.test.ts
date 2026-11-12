@@ -28,6 +28,7 @@ import {
   endlessDefErrors,
   endlessPlan,
   endlessWavesHeld,
+  roundThreat,
   threatWithBrood,
   unitThreat,
   type EndlessPlan,
@@ -51,6 +52,11 @@ const route = (id: string): CompiledRoute => ROUTE.get(id)!;
 const cats = (id: string): Set<CounterId> => categoriesOf(enemy(id));
 const within = (a: ReadonlySet<CounterId>, b: readonly CounterId[]): boolean =>
   [...a].every((c) => b.includes(c));
+/** A unit's planning threat, its brood's included. */
+const threat = (id: string): number => threatWithBrood(enemy(id), content.enemies);
+/** Someone the player walked home (D156): a Skitterkin, Bramble, or Ves'thara (either boss). */
+const walkedHome = (id: string): boolean =>
+  enemy(id).faction === 'skitterkin' || ['glass_witch', 'sunderglass_penitent'].includes(id);
 
 describe('END_M01 · The Long Shift', () => {
   it('is A1M1 revisited at dawn: a Defend map with ten pads of its own around the old ten', () => {
@@ -110,11 +116,7 @@ describe('the rules', () => {
     expect([...ENDLESS.roster].toSorted()).toEqual(expected.toSorted());
   });
 
-  it('fields no one the player walked home: no Skitterkin, Bramble, or Ves\'thara', () => {
-    const walkedHome = (id: string): boolean => {
-      const e = enemy(id);
-      return e.faction === 'skitterkin' || ['glass_witch', 'sunderglass_penitent'].includes(id);
-    };
+  it("fields no one the player walked home: no Skitterkin, Bramble, or Ves'thara", () => {
     expect(ENDLESS.bosses.filter(walkedHome)).toEqual([]);
     for (const w of map.waves) for (const g of w.groups) expect(walkedHome(g.enemy.id)).toBe(false);
     for (const seed of SEEDS) {
@@ -167,6 +169,18 @@ describe('determinism', () => {
     const a = JSON.stringify(plans.get(1)!.waves);
     const b = JSON.stringify(plans.get(2)!.waves);
     expect(a).not.toBe(b);
+  });
+
+  it("rounds each wave's threat, so its order of summing never moves a wave across a bound", () => {
+    for (const seed of SEEDS) {
+      for (const w of plans.get(seed)!.waves) {
+        expect(w.threat).toBe(roundThreat(w.threat));
+        // The same groups summed the other way round give the same total.
+        const back = w.groups.toReversed().reduce((a, g) => a + g.count * threat(g.enemy), 0);
+        expect(roundThreat(back), `seed ${seed} W${w.number}`).toBe(w.threat);
+      }
+    }
+    expect(roundThreat(0.1 + 0.2)).toBe(roundThreat(0.3));
   });
 
   it('runs the same sim for the same seed', () => {

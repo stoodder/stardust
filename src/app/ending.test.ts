@@ -182,6 +182,18 @@ describe('the epilogue (bible.md § 10)', () => {
     );
   });
 
+  it('the credits roll names the player over Waykeeper, never a raw token (W2)', async () => {
+    const { creditsText, resolvedCredits } = await import('../ui/screens/credits.ts');
+    const view = epilogueView(epilogueFlags(base, 'stay'), base, true);
+    const you = view.credits.find((b) => b.heading === 'And you');
+    expect(you?.lines).toEqual([base.profile!.name, 'Waykeeper']);
+    expect(view.credits.find((b) => b.heading === 'And')?.lines).toContain('Ishael');
+    for (const b of view.credits) for (const l of b.lines) expect(l).not.toMatch(/[{}]/);
+    expect(creditsText(view.credits)).toContain(`And you. ${base.profile!.name}. Waykeeper`);
+    // With no save in play, the no-profile address, still never a token.
+    expect(creditsText(resolvedCredits(null))).not.toMatch(/[{}]/);
+  });
+
   it("C5's pick overrides the save's flag (the fixture's answer isn't saved)", () => {
     expect(epilogueFlags(base, 'go').ending_choice).toBe('go');
     expect(epilogueFlags(base, null).ending_choice).toBe('stay');

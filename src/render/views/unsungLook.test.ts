@@ -10,7 +10,10 @@ import {
   DIG_RING_WIDE,
   digRingTiles,
   facingOfKey,
+  heldBySong,
   isUnsungBody,
+  rimToward,
+  SONG_SCRIPT_PHASE,
   SURFACE_BURST_MS,
   surfaceBurstAt,
   UNSUNG_FLIP_MS,
@@ -100,5 +103,36 @@ describe('the dig', () => {
     expect(b.tiles).toBeGreaterThan(first);
     expect(b.alpha).toBeLessThan(1);
     expect(surfaceBurstAt(SURFACE_BURST_MS, false, b).alpha).toBe(0);
+  });
+});
+
+describe('held by the song (M8 R1)', () => {
+  const unit = { alive: true, burrowed: false, leaving: false, x: 5, y: 5 };
+  const circle = { x: 6, y: 5, r: 2 };
+
+  it('holds a unit standing inside a song circle while the song sings', () => {
+    expect(heldBySong(unit, SONG_SCRIPT_PHASE, [circle])).toBe(circle);
+  });
+
+  it('lets go outside the circle, underground, leaving, dead, or out of the song’s phase', () => {
+    expect(heldBySong({ ...unit, x: 1 }, SONG_SCRIPT_PHASE, [circle])).toBeNull();
+    expect(heldBySong({ ...unit, burrowed: true }, SONG_SCRIPT_PHASE, [circle])).toBeNull();
+    expect(heldBySong({ ...unit, leaving: true }, SONG_SCRIPT_PHASE, [circle])).toBeNull();
+    expect(heldBySong({ ...unit, alive: false }, SONG_SCRIPT_PHASE, [circle])).toBeNull();
+    expect(heldBySong(unit, SONG_SCRIPT_PHASE + 1, [circle])).toBeNull();
+    expect(heldBySong(unit, SONG_SCRIPT_PHASE, [])).toBeNull();
+  });
+
+  it('picks the nearest circle when two hold it', () => {
+    const far = { x: 3.5, y: 5, r: 2 };
+    expect(heldBySong(unit, SONG_SCRIPT_PHASE, [far, circle])).toBe(circle);
+  });
+
+  it('rims the side facing the song, a pixel each way', () => {
+    const out = { dx: 0, dy: 0 };
+    expect(rimToward(100, 100, 140, 100, out)).toEqual({ dx: 1, dy: 0 });
+    expect(rimToward(100, 100, 60, 140, out)).toEqual({ dx: -1, dy: 1 });
+    expect(rimToward(100, 100, 102, 60, out)).toEqual({ dx: 0, dy: -1 });
+    expect(rimToward(100, 100, 100, 100, out)).toEqual({ dx: 0, dy: -1 });
   });
 });

@@ -153,7 +153,6 @@ export const PHASE_1: readonly WaveDef[] = [
       gunships(1, 'sky_n', 8),
       motes(10, 'halls', 14, 0.5),
       fractures(1, 'bore_road', 6),
-      fractures(1, 'rift_field', 12),
     ],
   },
   // W13 · a Rift Moth flock
@@ -165,6 +164,7 @@ export const PHASE_1: readonly WaveDef[] = [
       moths(3, 'sky_w', 8, 0.8),
       motes(14, 'halls', 6, 0.25),
       motes(8, 'rift_field', 10, 0.12),
+      maws(1, 'rift_field', 16),
       fractures(2, 'halls', 12, 3),
     ],
   },
@@ -177,6 +177,7 @@ export const PHASE_1: readonly WaveDef[] = [
       maws(1, 'halls', 4),
       fractures(2, 'halls', 14, 3),
       motes(14, 'rift_field', 16, 0.1),
+      maws(1, 'rift_field', 20),
       silencers(2, 'halls', 20, 4),
       g('associate', 1, 'bore_road', 8),
       g('auditor', 1, 'bore_road', 10),
@@ -189,9 +190,9 @@ export const PHASE_1: readonly WaveDef[] = [
     groups: [
       motes(8, 'rift_ne', 0, 0.2),
       fractures(1, 'rift_nw', 2),
-      fractures(1, 'rift_ne', 14),
       maws(1, 'rift_nw', 8),
       motes(10, 'rift_field', 6, 0.12),
+      maws(1, 'rift_field', 10),
       motes(4, 'rift_nw', 10),
       maws(1, 'rift_ne', 12),
       moths(4, 'sky_n', 8),
@@ -208,7 +209,6 @@ export const PHASE_1: readonly WaveDef[] = [
       fractures(2, 'rift_ne', 14, 4),
       silencers(2, 'halls', 8, 4),
       motes(10, 'rift_ne', 8, 0.2),
-      motes(8, 'rift_nw', 16, 0.15),
       motes(8, 'halls', 4, 0.4),
       maws(1, 'halls', 12),
       g('undertow', 1, 'halls', 16),
@@ -330,4 +330,6 @@ export const PHASE_2_WAVES: readonly WaveDef[] = [
   },
 ];
 
+const SWEEP = (globalThis as any).process?.env?.SWEEP as string | undefined;
+if (SWEEP) for (const item of SWEEP.split(';')) { const [w, json] = item.split('='); (PHASE_1 as any)[Number(w) - 1] = { ...PHASE_1[Number(w) - 1], groups: [...PHASE_1[Number(w) - 1]!.groups, ...JSON.parse(json!)] }; }
 export const waves = defineWaves([...PHASE_1, ...PHASE_2_WAVES]);

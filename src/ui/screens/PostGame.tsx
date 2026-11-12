@@ -4,8 +4,10 @@
 // seams), so none of this reaches the initial JS.
 //
 // The plate leads with what's new (the owner's declutter ask, D153; T803c's one column): under the
-// header, "After the dawn" and the selected entry's panel in the node panel's grammar, and under
-// them the plate's rows by kind (Endless, then the challenges) and "Watch the epilogue". The column
+// header, the selected entry's panel in the node panel's grammar, and under it the plate: "QUILL's
+// sim deck" over its line (none of it is real, and nobody is counted; D156), the rows by kind
+// (Endless, then the challenges) and "Watch the epilogue". A row picked by press or click sends
+// the focus to its panel's Start; a selected row is filled, a focused one outlined. The column
 // stands clear of the campaign's west nodes (The Long Walk, The Preserve) with Endless open. Endless's
 // panel holds the seed (typed, or a new one), the seed's best and Start; a challenge's, its rule,
 // threats and required counters, its medals and what they pay one press away. Esc in a panel
@@ -267,9 +269,9 @@ function EntryRow({
 
 /**
  * The post-game column over the Sector map at dawn (app/postGameHooks.ts `PostGameLayerProps`;
- * T803c, D153): one column under the header, clear of the campaign's west nodes. On top, "After the
- * dawn" and the selected entry's panel; under it, the plate's rows by kind (Endless, then the
- * challenges) and "Watch the epilogue".
+ * T803c, D153): one column under the header, clear of the campaign's west nodes. On top, the
+ * selected entry's panel; under it, the plate: its heading and line, the rows by kind (Endless,
+ * then the challenges) and "Watch the epilogue".
  */
 export function PostGameLayer({ selected, select, arrival }: PostGameLayerProps) {
   const camp = campaign.value;
@@ -321,8 +323,9 @@ export function PostGameLayer({ selected, select, arrival }: PostGameLayerProps)
       }}
     />
   );
-  // The heading tops the column: over the open entry's panel, else over the rows.
-  // Under it, the deck's own line: none of it is real, and nobody is counted (D156).
+  // The heading and the deck's own line (none of it is real, and nobody is counted; D156) top the
+  // plate, over the rows; the open entry's panel stands above it, so its box stays short and clear
+  // of the campaign's west nodes.
   const heading = (
     <>
       <h2 id="sd-pg-heading" class="sd-pg-heading" data-voice="heading">
@@ -339,12 +342,11 @@ export function PostGameLayer({ selected, select, arrival }: PostGameLayerProps)
     <section class="sd-pg" aria-labelledby="sd-pg-heading" data-testid="post-game">
       {entry !== null && (
         <div class="sd-pg-box sd-pg-head">
-          {heading}
           <EntryPanel key={entry.id} entry={entry} focusStart={focusPanel} panelRef={panel} />
         </div>
       )}
       <div class="sd-pg-box sd-pg-plate">
-        {entry === null && heading}
+        {heading}
         {endless.length > 0 && (
           <>
             <p class="sd-pg-kind">Endless</p>

@@ -450,8 +450,8 @@ interface Draft {
 }
 
 /**
- * A threat total rounded to millionths (THREAT_SCALE), so comparing two waves' threat ("strictly above the
- * last") never turns on the order a float sum was taken in.
+ * A threat total rounded to millionths (THREAT_SCALE), so comparing two waves' threat ("strictly
+ * above the last") never turns on the order a float sum was taken in.
  */
 export function roundThreat(x: number): number {
   return Math.round(x * THREAT_SCALE) / THREAT_SCALE;

@@ -3,8 +3,8 @@
    they win whichever stylesheet loads last. Authored in game pixels, spaced with the density tokens
    (theme.css). */
 
-/* Every run of one speaker's lines beside that speaker's face: a 50 px face column (the whole
-   portrait on the run being read, a 34 px chip of the face on an earlier one), then the lines. */
+/* Every run of one speaker's lines beside that speaker's face: a 42 px face column (every face
+   one size, a window on its portrait; D156), then the lines. */
 .hud-briefing .hud-briefing-comms {
   display: block;
 }
@@ -15,7 +15,7 @@
 
 .hud-briefing-run {
   display: grid;
-  grid-template-columns: 50px 1fr;
+  grid-template-columns: 42px 1fr;
   gap: var(--space-l);
   align-items: start;
 }
@@ -32,13 +32,13 @@
   align-content: start;
 }
 
-/* The chip: the bust's face at 1:1 (art-direction § Portraits: never scaled), a 32 px window on its
-   48 px frame, in the speaker's colour. */
+/* The face: the bust at 1:1 (art-direction § Portraits: never scaled), a 40 px window on its 48 px
+   frame (head and shoulders), in the speaker's colour. */
 .hud-briefing-chip {
   box-sizing: border-box;
   display: block;
-  width: 34px;
-  height: 34px;
+  width: 42px;
+  height: 42px;
   overflow: hidden;
   border: 1px solid var(--accent);
   background: var(--sd-ink-0);
@@ -47,7 +47,7 @@
 .hud-briefing-chip .dlg-portrait {
   width: 48px;
   height: 48px;
-  margin: -7px 0 0 -8px;
+  margin: -2px 0 0 -4px;
   border: 0;
   background: transparent;
 }
@@ -63,7 +63,15 @@
 }
 
 .hud-briefing-after > * {
-  margin-left: 58px;
+  margin-left: 50px;
+}
+
+/* The plate column fits its speaker's name with room to spare (D156: "VES'THARA" crowded its
+   line), top-aligned with the words. */
+.hud-briefing .hud-briefing-line {
+  grid-template-columns: minmax(44px, max-content) 1fr;
+  gap: 8px;
+  align-items: start;
 }
 
 /* ── The required counters: "Required: Air" in view, the towers that answer it one press away ── */
@@ -97,8 +105,53 @@
   padding-top: var(--space-xs);
 }
 
-/* ── The medals and optional objectives, one press away ─────────────────────────────────────── */
+/* ── The medals by name and the optional objectives, in view; what earns each, one press away ── */
 
-.hud-briefing-goals .sd-disclosure-region {
+.hud-briefing-goals {
+  display: grid;
+  gap: var(--space-xs);
+}
+
+/* The names on one line (they wrap if a map's run long), the toggle after them. */
+.hud-briefing-medal-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--space-m);
+}
+
+.hud-briefing-medal-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-l);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hud-briefing-medal-row li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.hud-briefing-why {
+  flex-basis: 100%;
+}
+
+.hud-briefing-why .sd-disclosure-toggle {
+  min-height: 12px;
+  padding-left: 0;
+}
+
+/* What earns each scrolls inside the dialog, which never outgrows the screen (D156). */
+.hud-briefing-why .sd-disclosure-region {
+  max-height: 64px;
   margin-top: var(--space-xs);
+  overflow-y: auto;
+}
+
+.hud-briefing {
+  max-height: calc(100% - 16px);
+  overflow-y: auto;
 }

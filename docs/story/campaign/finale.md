@@ -43,7 +43,7 @@ The one-map finale, `fin_m01`, from the end of the Long Night to the First Dawn.
   - "(One gold mote rises apart from the rest. It stops at Ves'thara's shoulder.)" Her frayed threads light, one by one (her `dawn` portrait, from Phase 3 on).
   - Ves'thara: "Ishael." · "Her face. I remember her face. She was laughing."
   - Pebble: "Waykeeper is my name for you. Bricks had a different one." · "{name}. Bricks said it like that. I practiced."
-  - "(The visor goes up, once.)" A silhouette against the sunrise. The results screen reads **REMEMBERED: {n}**.
+  - "(The visor goes up, once.)" A silhouette against the sunrise. The results card reads **PESTS PROCESSED: 0**, the counter as Dawn left it, on the dawn gradient. The first **REMEMBERED** is the epilogue's flip (below): the card doesn't spend it.
 - *Debrief:* none on a win (Sterling's memo, C5, and the epilogue follow the card). *On a loss*, Pebble: "The song isn't done. We walk it again. I'm not too small."
 - *Codex:* the Unsung (Everglow's "Atmospheric Event" file, then the Journal's correction once the map is won), the Deep Halls, the Deep Bore, and the Long Walk (each Everglow's record beside the Journal's correction), and the Field Journal's last page: `REMEMBERED: {n}` (`{pests_processed}`), in pencil where the bounty stars used to go. The texts are in [`src/content/codex/finale.ts`](../../../src/content/codex/finale.ts).
 - *Then, after the card:* Sterling's only word in the finale, her farewell memo `memo_fin_01` *Clean Exit Complete!* (sent as the Ascendant aborts with a partial load; it arrives after Dawn as a card, with a reference letter: "Four-Forty-Seven was a top-five-percent technician."; small print: "Reference issued unverified (Policy CE-1). Verification was not required.") The text is in [`src/content/memos/finale.ts`](../../../src/content/memos/finale.ts).
@@ -82,7 +82,7 @@ Psionic (×1.5 against void, through armor) is still the Descent's best damage p
 
 ---
 
-The post-game's challenge maps (design: [maps.md §8](../../design/maps.md#8-post-game-maps)) are the world after the dawn, so their few lines live here. Each has a briefing and nothing else: no radio, cues, or barks. They are playful, in character, and never scold: each names the different way the map wants to be played.
+The post-game is **QUILL's sim deck** (design: [maps.md §8](../../design/maps.md#8-post-game-maps)): drills after the dawn, none of it real and nobody counted. The plate says so in its heading and the line under it ("QUILL's sim deck" · "Drills only. None of it is real, and nobody is counted."; [style-guide.md § 2](../style-guide.md#2-voice-by-act)), so after "Remember them." no run asks the player to shoot the people they walked home: Endless, *The Long Shift*, fields no Skitterkin and neither Bramble nor Ves'thara as a boss, and the challenge maps field only the Hollow and Ves'thara's old lumenglass constructs. The challenges' few lines live here. Each has a briefing and nothing else: no radio, cues, or barks. The friends who brief them play along: playful, in character, never scolding, each naming the different way the map wants to be played.
 
 ## CH1 · Skitterkin Only
 
@@ -98,6 +98,6 @@ The post-game's challenge maps (design: [maps.md §8](../../design/maps.md#8-pos
 
 ## CH3 · Glass Core
 
-`ch_m03`: Reclamation Facility 2, a core of 5 and the radio dead. The console states the facts; Zibzab, in person, prices them.
+`ch_m03`: Reclamation Facility 2, a core of 5 and the radio dead. The sim deck states the facts, on its own plate (SIM DECK, not Everglow's); Zibzab, in person, prices them.
 
-- *Briefing:* Console: "COMMS: OFFLINE. CORE INTEGRITY: 5." · Zibzab: "Price first: no radio, nothing from the sky, and a core that cracks if you frown at it." · Zibzab: "Zibzab believes in you, Technician. Zibzab also sells glue."
+- *Briefing:* Sim deck: "COMMS: OFFLINE. CORE INTEGRITY: 5." · Zibzab: "Price first: no radio, nothing from the sky, and a core that cracks if you frown at it." · Zibzab: "Zibzab believes in you, Technician. Zibzab also sells glue."

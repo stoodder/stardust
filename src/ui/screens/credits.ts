@@ -5,6 +5,8 @@
 // fonts, art-direction.md § Fonts). Copy is UI copy (style-guide.md § 6): plain, no jokes, no
 // exclamation marks. Part of the finale's chunk.
 
+import { resolveText, type TextContext } from '../../story/text.ts';
+
 /** One block of the roll: a small heading over its lines. */
 export interface CreditBlock {
   /** Small, in the act accent's dim (null: the title block, which has none). */
@@ -65,4 +67,22 @@ export const CREDITS: readonly CreditBlock[] = [
 /** Every line of the roll, headings included, in order (its screen reader text). */
 export function creditsText(blocks: readonly CreditBlock[] = CREDITS): string {
   return blocks.map((b) => [b.heading, ...b.lines].filter((l) => l !== null).join('. ')).join('. ');
+}
+
+/** What the roll's tokens read with no save in play (`{name}`: the no-profile address). */
+const NO_SAVE_TEXT: TextContext = { profile: null, pestsProcessed: 0, evacuated: null };
+
+/**
+ * The roll with its tokens resolved for the save in play (`{name}` in "And you": the player's
+ * name over "Waykeeper"), the same way the epilogue's cards resolve theirs (app/endingPlay.ts).
+ */
+export function resolvedCredits(
+  ctx: TextContext | null,
+  blocks: readonly CreditBlock[] = CREDITS,
+): CreditBlock[] {
+  const c = ctx ?? NO_SAVE_TEXT;
+  return blocks.map((b) => ({
+    heading: b.heading === null ? null : resolveText(b.heading, c),
+    lines: b.lines.map((l) => resolveText(l, c)),
+  }));
 }

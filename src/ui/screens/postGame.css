@@ -1,7 +1,7 @@
 /* The post-game shell (T863; art-direction.md § 10, *After the finale*): one column under the Sector
-   map's header (in the notices' column, so a notice stacks above it; T803c): "After the dawn" with
-   the selected entry's panel in the node panel's grammar, then the plate's rows by kind and "Watch
-   the epilogue"; and the Endless score screen in the results card's place. Calm: one accent edge,
+   map's header (in the notices' column, so a notice stacks above it; T803c): the selected entry's
+   panel in the node panel's grammar, then the plate ("QUILL's sim deck" over its line, the rows by
+   kind and "Watch the epilogue"); and the Endless score screen in the results card's place. Calm: one accent edge,
    no glow, no motion. The column is 176 px wide where the panel is and 136 px under it, so neither
    box covers The Long Walk's node (176, 164) or The Preserve's (152, 208) with Endless open. */
 
@@ -116,15 +116,20 @@
   cursor: pointer;
 }
 
-.sd-pg-row:hover,
-.sd-pg-row:focus-visible {
+/* Selected is a fill (with the accent's bar); focus is an outline only (D156): the two never read
+   as one, so a keyboard player sees where the focus is apart from what's open. */
+.sd-pg-row:hover {
   border-color: var(--sd-ink-4);
+}
+
+.sd-pg-row:focus-visible {
+  border-color: var(--sd-white-1);
   outline: none;
 }
 
 .sd-pg-row-on {
-  border-color: var(--accent);
-  background: var(--sd-ink-2);
+  background: var(--sd-ink-3);
+  box-shadow: inset 2px 0 0 var(--accent);
 }
 
 .sd-pg-name {

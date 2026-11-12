@@ -6,7 +6,8 @@
 // as Phase 1's waves clear (sky-only keys: the world's grade and night hold); the Deep Bore's rig
 // drilling, its gauge filling; the relit waymark lanterns; the memorial wreck's name on hover; and
 // Dawn: the sun raking in from the east over 8 s (start, middle, end), the rift cracks healing
-// behind its front (T871), and at once under reduced motion. Each shot plays a moment at 1× first. Screenshots in <out>/screens/fin-light/ (look at
+// behind its front (T871), and at once under reduced motion; in Phase 2 the Unsung held by the
+// song, rimmed and lifted (M8 R1). Each shot plays a moment at 1× first. Screenshots in <out>/screens/fin-light/ (look at
 // them: the song's warm light in the dark, the horizon warming behind the Halls, the sunrise).
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
@@ -93,6 +94,20 @@ test('FIN light: the night, the song, the warming sky, the Bore, and Dawn', asyn
   const bore = (await look(page)).bore!;
   expect(bore.gauge === 'full' || Number(bore.gauge.slice(1)) > 0).toBe(true);
 
+  // Phase 2 (M8 R1): the song holds the Unsung at the Halls mouth, and it reads as the final boss:
+  // rimmed gold on the song's side, lifted over the towers round it, in its violet pool.
+  for (const w of [20, 24]) {
+    expect(await until(page, w)).toMatchObject({ held: true, phase: 2, outcome: 'playing' });
+    let held = 0;
+    for (let k = 0; k < 30 && held === 0; k++) {
+      await page.evaluate(() => globalThis.__sd!.fastForward(30));
+      await nextFrames(page);
+      held = (await page.evaluate(() => globalThis.__sd!.render()!.unsung)).held;
+    }
+    expect(held, `W${w}: the Unsung held`).toBeGreaterThan(0);
+    await shot(page, 'fin-light', 9 + w / 100, `w${w}-unsung-held`);
+  }
+
   // Dawn: the sun rakes in from the east over 8 s, the night lifting behind its front.
   expect(await until(page, 'dawn')).toMatchObject({ held: true, phase: 3, outcome: 'playing' });
   await nextFrames(page);
@@ -113,6 +128,8 @@ test('FIN light: the night, the song, the warming sky, the Bore, and Dawn', asyn
   await nextFrames(page);
   const end = (await look(page)).night;
   expect(end).toMatchObject({ night: false, sun: SUN_STEPS });
+  // Dawn lights the world additively (M8 R2): the world's grade stays white, only the sky turns.
+  expect((await look(page)).grade).toBe(0xffffff);
   // The rifts have healed to their old scars behind the sun (T871).
   expect(await cracks()).toMatchObject({ cracks: torn.cracks, openCracks: 0 });
   await shot(page, 'fin-light', 12, 'dawn-end');

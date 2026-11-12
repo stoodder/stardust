@@ -11,6 +11,7 @@ import { epilogueFor, EPILOGUE_SLOTS, type EpilogueFlag } from '../content/dialo
 import type { EndingStep } from '../content/dialogue/resultsFlow.ts';
 import { C5_CHOICES, type SaveData } from '../meta/index.ts';
 import { resolveText } from '../story/text.ts';
+import { resolvedCredits } from '../ui/screens/credits.ts';
 import {
   endingScreen,
   type EndingChoice,
@@ -77,6 +78,7 @@ export function epilogueView(
       .map((c) => ({ slot: c.slot, text: text(c.text) })),
     remembered: counter === undefined ? null : text(counter.text),
     ending: C5_CHOICES.find((c) => c === ending) ?? null,
+    credits: resolvedCredits(ctx),
     first,
   };
 }

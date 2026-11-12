@@ -327,6 +327,12 @@ export function createRunTracker<K extends IdSpace>(
             if (w !== undefined) w.refugeesLost++;
             break;
           }
+          case 'SingerHushed': {
+            // Booked to the latest wave started (a hush by the Unsung or a Maw has no wave of its own).
+            const w = waveOf(state.wave);
+            if (w !== undefined) w.singersHushed++;
+            break;
+          }
           case 'TowerClassUnlocked':
           case 'ScriptCue':
           case 'AbilityUsed':
@@ -407,12 +413,6 @@ export function createRunTracker<K extends IdSpace>(
           case 'BearerHome':
           case 'ScriptGroupSpawned':
           // The finale (T800a seams): their tasks may tally them.
-          case 'SingerHushed': {
-            // Booked to the latest wave started (a hush by the Unsung or a Maw has no wave of its own).
-            const w = waveOf(state.wave);
-            if (w !== undefined) w.singersHushed++;
-            break;
-          }
           case 'ChoirHalted':
           case 'LaidToRest':
           case 'Scattered':

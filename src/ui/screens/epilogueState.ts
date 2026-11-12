@@ -8,6 +8,7 @@ import type { ComponentType } from 'preact';
 import type { EpilogueSlotId } from '../../content/dialogue/epilogue.ts';
 import type { FlagValueOf } from '../../content/dialogue/flags.ts';
 import type { MemoView } from '../../app/inbox.ts';
+import type { CreditBlock } from './credits.ts';
 
 /** C5's answer: which ending's final image the epilogue closes on. */
 export type EndingChoice = FlagValueOf<'ending_choice'>;
@@ -30,6 +31,8 @@ export interface EpilogueView {
   readonly remembered: string | null;
   /** The final image's ending, or null (no answer to draw: none shows). */
   readonly ending: EndingChoice | null;
+  /** The credits roll, its tokens resolved for the save (`{name}` over "Waykeeper"). */
+  readonly credits: readonly CreditBlock[];
   /**
    * The first time through (the campaign's close, not "Watch the epilogue"): Esc skips nothing;
    * a click or a key still moves on one card at a time.

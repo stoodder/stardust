@@ -12,7 +12,7 @@ import { closeEndingScreen } from '../../app/endingPlay.ts';
 import { assertNever } from '../../shared/types.ts';
 import { prefersReducedMotion } from '../motion.ts';
 import { silkText } from '../silk.ts';
-import { CREDITS, creditsText } from './credits.ts';
+import { creditsText, type CreditBlock } from './credits.ts';
 import {
   beatMs,
   COUNTER_ZERO,
@@ -222,7 +222,7 @@ function Beat({
       );
     }
     case 'credits':
-      return <Credits ms={ms} still={still} />;
+      return <Credits blocks={view.credits} ms={ms} still={still} />;
     case 'final':
       return <FinalImage ending={beat.ending} ms={ms} still={still} />;
     default:
@@ -230,16 +230,27 @@ function Beat({
   }
 }
 
-/** The roll: up from under the stage (a block at a time under reduced motion). */
-function Credits({ ms, still }: { ms: number; still: boolean }) {
-  const blocks = still ? [CREDITS[creditsBlockAt(ms)]!] : CREDITS;
+/**
+ * The roll (`all`: its blocks, tokens resolved for the save; the player's name over "Waykeeper"):
+ * up from under the stage (a block at a time under reduced motion).
+ */
+function Credits({
+  blocks: all,
+  ms,
+  still,
+}: {
+  blocks: readonly CreditBlock[];
+  ms: number;
+  still: boolean;
+}) {
+  const blocks = still ? [all[creditsBlockAt(ms)]!] : all;
   const style = still
     ? undefined
     : { transform: `translateY(${STAGE_PX - creditsOffsetPx(ms)}px)` };
   return (
     <div class="end-credits" data-testid="epilogue-credits" data-voice="credits">
       <p class="sd-visually-hidden" role="status">
-        {creditsText()}
+        {creditsText(all)}
       </p>
       <div class={`end-roll${still ? ' block' : ''}`} style={style} aria-hidden="true">
         {blocks.map((b, i) => (
@@ -248,8 +259,8 @@ function Credits({ ms, still }: { ms: number; still: boolean }) {
             class={b.heading === null ? 'end-roll-block title' : 'end-roll-block'}
           >
             {b.heading !== null && <p class="end-roll-head">{b.heading}</p>}
-            {b.lines.map((l) => (
-              <p key={l} class="end-roll-line">
+            {b.lines.map((l, j) => (
+              <p key={`${j}${l}`} class="end-roll-line">
                 {l}
               </p>
             ))}

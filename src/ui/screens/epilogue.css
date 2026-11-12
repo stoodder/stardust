@@ -184,3 +184,79 @@
     animation: none;
   }
 }
+
+/* The backdrop warms as the cards go by (M8 review R3; art-direction.md §3 *Finale*: the story ends
+   in hope, so the close does too): the stage starts in the plum dark above, and each pair of cards
+   raises the dawn C5 rose into (c5.css `.c5-sky`'s stops) a step from the bottom edge, until the
+   last cards stand in C5's whole dawn; the counter lands on gold (the sun's rim just under the
+   edge), and the roll keeps the risen dawn. One still gradient per step, switched with the card:
+   nothing moves, under reduced motion or not. The text's column stays in the dark half. */
+.end-epilogue[data-beat='card']:is([data-index='2'], [data-index='3']) {
+  background: linear-gradient(var(--sd-ink-0) 0, var(--sd-ink-0) 60%, var(--sd-violet-0) 100%);
+}
+
+.end-epilogue[data-beat='card']:is([data-index='4'], [data-index='5']) {
+  background: linear-gradient(
+    var(--sd-ink-0) 0,
+    var(--sd-ink-0) 46%,
+    var(--sd-violet-0) 78%,
+    var(--sd-pink-0) 100%
+  );
+}
+
+.end-epilogue[data-beat='card']:is([data-index='6'], [data-index='7']) {
+  background: linear-gradient(
+    var(--sd-ink-0) 0,
+    var(--sd-violet-0) 46%,
+    var(--sd-pink-0) 80%,
+    var(--sd-coral-0) 100%
+  );
+}
+
+.end-epilogue[data-beat='card']:is([data-index='8'], [data-index='9']) {
+  background: linear-gradient(
+    var(--sd-ink-0) 0,
+    var(--sd-violet-0) 46%,
+    var(--sd-pink-0) 72%,
+    var(--sd-coral-1) 100%
+  );
+}
+
+.end-epilogue[data-beat='card']:not(
+    [data-index='0'],
+    [data-index='1'],
+    [data-index='2'],
+    [data-index='3'],
+    [data-index='4'],
+    [data-index='5'],
+    [data-index='6'],
+    [data-index='7'],
+    [data-index='8'],
+    [data-index='9']
+  ),
+.end-epilogue[data-beat='credits'] {
+  background: linear-gradient(
+    var(--sd-ink-0) 0,
+    var(--sd-violet-0) 46%,
+    var(--sd-pink-0) 72%,
+    var(--sd-coral-1) 88%,
+    var(--sd-gold-1) 100%
+  );
+}
+
+.end-epilogue[data-beat='counter'] {
+  background:
+    radial-gradient(
+      ellipse 320px 120px at 50% 100%,
+      rgb(255 222 70 / 45%),
+      rgb(244 126 106 / 18%) 55%,
+      transparent 75%
+    ),
+    linear-gradient(
+      var(--sd-violet-0) 0,
+      var(--sd-pink-0) 36%,
+      var(--sd-coral-1) 66%,
+      var(--sd-gold-1) 86%,
+      var(--sd-gold-2) 100%
+    );
+}

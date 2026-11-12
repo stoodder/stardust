@@ -269,28 +269,30 @@ export function Briefing({ view }: { view: SceneView }) {
 }
 
 /**
- * A run of one speaker's lines beside their face: the whole portrait on the run being read (its
- * mouth moving while the line types), a chip of the face on an earlier run (still), nothing for a
- * caption. The plate stays on every line.
+ * A run of one speaker's lines beside their face, every face the same size (D156): a 42 px window
+ * on the portrait, its mouth moving on the run being read while the line types, at rest on an
+ * earlier run; Gerald's icon as it is; nothing for a caption. The plate stays on every line.
  */
 function Run({ run, view, step }: { run: BriefingRun; view: SceneView; step: SceneStep }) {
   const face = run.face;
   return (
     <div class={run.focus ? 'hud-briefing-run focus' : 'hud-briefing-run'}>
       <span class="hud-briefing-face">
-        {face === null ? null : run.focus || face.portrait?.icon === true ? (
-          <Portrait
-            line={face}
-            talking={run.focus && view.line !== null && !step.typed.done}
-            still={!run.focus}
-          />
+        {face === null ? null : face.portrait?.icon === true ? (
+          <Portrait line={face} talking={false} still={!run.focus} />
         ) : (
+          // One size for every face (D156): the run being read talks in its window; an earlier
+          // one rests.
           <span
-            class="hud-briefing-chip"
+            class={run.focus ? 'hud-briefing-chip focus' : 'hud-briefing-chip'}
             style={{ borderColor: plateColor(face.color) }}
             aria-hidden="true"
           >
-            <Portrait line={face} talking={false} still />
+            <Portrait
+              line={face}
+              talking={run.focus && view.line !== null && !step.typed.done}
+              still={!run.focus}
+            />
           </span>
         )}
       </span>
