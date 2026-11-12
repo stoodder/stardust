@@ -74,6 +74,7 @@ const ids: SfxId[] = [];
  * Every registered recipe, by id: the core's always, an act's once its chunk has loaded. Typed as
  * every sound; read one that may not be registered with `loadedSfx`.
  */
+// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- typed as every sound; read one whose act may not be in with `loadedSfx`
 export const SFX: Readonly<AllSfx> = registry as AllSfx;
 
 /** Whether `id` names a registered sound effect. */

@@ -12,6 +12,7 @@ import { frontierOf, type SaveData } from '../meta/index.ts';
 import { actsLoaded, ensureActs, preloadActs, whenIdle } from './actContent.ts';
 import { battleRendererLoaded, loadBattleRenderer } from './battleRenderer.ts';
 import { DEFAULT_MAP_ID } from './battleSetup.ts';
+import { assertNever } from '../shared/types.ts';
 import { logError } from './log.ts';
 import type { BattleRequest, Router } from './router.ts';
 import { activeSave } from './save.ts';
@@ -32,6 +33,9 @@ export function battleActs(save: SaveData | null, mapId: string): StoryAct {
   if (act === null) return 'finale';
   return actAtRank(Math.max(actRank(savedAct(save)), actRank(act)) + 1);
 }
+
+/** The acts a menu needs: through the save in play's. */
+const menuActs = (): StoryAct => savedAct(activeSave());
 
 const reportLoadError = (err: unknown): void => {
   logError('content: a lazy chunk failed to load', err);
@@ -73,7 +77,6 @@ function gated<T>(acts: StoryAct, battle: boolean, go: () => Promise<T>): Promis
 export function gateRouter(router: Router, defaults: BattleRequest = {}): Router {
   const mapOf = (request: BattleRequest): string =>
     request.mapId ?? defaults.mapId ?? DEFAULT_MAP_ID;
-  const menuActs = (): StoryAct => savedAct(activeSave());
   const runningMap = (): string | null => router.battle?.host.sim.map.id ?? null;
   const battleOrMenu = (): StoryAct => {
     const map = runningMap();
@@ -95,8 +98,14 @@ export function gateRouter(router: Router, defaults: BattleRequest = {}): Router
           );
         case 'results':
           return gated(battleOrMenu(), false, () => router.goto(id, request));
-        default:
+        case 'title':
+        case 'intake':
+        case 'campaign':
+        case 'base':
+        case 'settings':
           return gated(menuActs(), false, () => router.goto(id, request));
+        default:
+          return assertNever(id);
       }
     },
     play(request) {

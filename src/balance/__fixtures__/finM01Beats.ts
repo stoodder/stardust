@@ -1,8 +1,9 @@
 // FIN Phase 1's beats as one run shows them (balance/finM01*.test.ts; T820): the waves' starts,
 // the choir's walk (its arrival at the Halls mouth, its halts and waits), the memorial cue, W18's
 // clear, Phase 2's start with its checkpoint and the Bore stopped, the Voices, and the Waymarks.
-// `extraWave` appends a stand-in W19 (one Mote, a minute's countdown) so the run outlives W18 and
-// Phase 2's event can fire before T821's waves exist; `rushHour` plays the veteran countdowns
+// `withStandInW19` appends a stand-in W19 (one Mote, never called, five minutes' countdown) so the
+// run outlives W18 and the choir's arrival and Phase 2's event can fire before T821's waves exist
+// (`untilPhase2` stops the run there); `rushHour` plays the veteran countdowns
 // (−50%), `@story` Story.
 import { compileContent } from '../../content/compile.ts';
 import type { CompiledBuild, CompiledContent } from '../../content/compiled.ts';
@@ -18,6 +19,8 @@ export const TICK_HZ = 60;
 export interface FinM01Beats {
   readonly outcome: string;
   readonly ticks: number;
+  /** The last wave started when the run ended (a loss's wave). */
+  readonly wave: number;
   readonly voices: number;
   readonly singers: number;
   /** Ticks the choir spent halted, and waiting at a leg's end, before it arrived. */
@@ -44,7 +47,8 @@ export interface FinM01Beats {
 export function withStandInW19(): CompiledContent {
   const raw = RAW_CONTENT.maps.fin_m01;
   const w19 = {
-    countdownSec: 60,
+    countdownSec: 300,
+    noCall: true as const,
     groups: [{ enemy: 'mote' as const, count: 1, route: 'halls' }],
   };
   const maps = { ...RAW_CONTENT.maps, fin_m01: { ...raw, waves: [...raw.waves, w19] } };
@@ -55,7 +59,11 @@ export function withStandInW19(): CompiledContent {
 export function finM01Beats(
   c: CompiledContent,
   label: string,
-  opts: { readonly rushHour?: boolean; readonly build?: CompiledBuild } = {},
+  opts: {
+    readonly rushHour?: boolean;
+    readonly build?: CompiledBuild;
+    readonly untilPhase2?: boolean;
+  } = {},
 ): FinM01Beats {
   const map = c.maps.fin_m01;
   const story = label.endsWith('@story');
@@ -80,7 +88,8 @@ export function finM01Beats(
   let memorial: FinM01Beats['memorial'] = null;
   let haltTicks = 0;
   let waitTicks = 0;
-  while (st.outcome === 'playing' && st.tick < TICK_HZ * 60 * 40) {
+  const stop = (): boolean => opts.untilPhase2 === true && phase2Tick >= 0 && boreRateAtPhase2 >= 0;
+  while (st.outcome === 'playing' && st.tick < TICK_HZ * 60 * 40 && !stop()) {
     exec.beforeTick();
     sim.step();
     out.length = 0;
@@ -112,6 +121,7 @@ export function finM01Beats(
   return {
     outcome: st.outcome,
     ticks: st.tick,
+    wave: st.wave,
     voices: st.choir.voices,
     singers: st.choir.singers,
     haltTicks,
