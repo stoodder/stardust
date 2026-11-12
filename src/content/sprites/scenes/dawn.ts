@@ -358,7 +358,7 @@ function silhouette(g: CharGrid, x0: number, y0: number, shape: readonly string[
 
 function paintChoir(g: CharGrid): void {
   // Riders last, over the grown ones whose backs they ride.
-  const order = [...CHOIR].sort((a, b) => (a.up ?? 0) - (b.up ?? 0));
+  const order = CHOIR.toSorted((a, b) => (a.up ?? 0) - (b.up ?? 0));
   for (const s of order) {
     const shape = s.little ? LITTLE : GROWN;
     const y0 = ledgeTop(s.x + 3) - shape.length + 1 - (s.up ?? 0);
@@ -437,12 +437,14 @@ function inVes(x: number, y: number): VesPart | null {
   return null;
 }
 
+/** Her lattice: strands on two diagonals, holes between them (the veil's are larger). */
+function strand(x: number, y: number, step: number): boolean {
+  return (x + y) % step === 0 || (x - y + 99) % step === 0;
+}
+
 function paintVesthara(g: CharGrid, lit: boolean): void {
   const top = vesTop();
   const foot = ledgeTop(VES.x);
-  // Her lattice: strands on two diagonals, holes between them (the veil's are larger).
-  const strand = (x: number, y: number, step: number): boolean =>
-    (x + y) % step === 0 || (x - y + 99) % step === 0;
   for (let y = top; y <= foot; y++) {
     for (let x = VES.x - 16; x <= VES.x + 16; x++) {
       const part = inVes(x, y);

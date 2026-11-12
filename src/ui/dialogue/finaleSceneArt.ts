@@ -5,7 +5,12 @@
 // (640×360), pixelated.
 import { PALETTES } from '../../content/palettes/index.ts';
 import { finaleSceneDef, type FinaleSceneId } from '../../content/sprites/scenes/finale.ts';
-import { bakeSprite, DEFAULT_VARIANT, frameKey, type BakedSprite } from '../../render/sprites/bake.ts';
+import {
+  bakeSprite,
+  DEFAULT_VARIANT,
+  frameKey,
+  type BakedSprite,
+} from '../../render/sprites/bake.ts';
 import { imageToCanvas } from '../../render/sprites/canvas.ts';
 
 /** A baked still: its data URL and size in authored px (320×180). */

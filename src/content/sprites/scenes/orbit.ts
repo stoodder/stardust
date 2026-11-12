@@ -77,17 +77,21 @@ function spaceAt(x: number, y: number): string {
   return dithered(['A', 'B', 'E'], band * 0.6 + (y / 180) * 0.25, x, y);
 }
 
+/** Smoothstep. */
+function ease(t: number): number {
+  return t * t * (3 - 2 * t);
+}
+
 /** Smooth value noise in [0, 1): hashed lattice corners blended bilinearly (`cell` px apart). */
 function smooth(x: number, y: number, cell: number, seed: number): number {
   const gx = Math.floor(x / cell);
   const gy = Math.floor(y / cell);
   const fx = x / cell - gx;
   const fy = y / cell - gy;
-  const s = (t: number): number => t * t * (3 - 2 * t);
-  const a = hash01(gx, gy, seed) + (hash01(gx + 1, gy, seed) - hash01(gx, gy, seed)) * s(fx);
+  const a = hash01(gx, gy, seed) + (hash01(gx + 1, gy, seed) - hash01(gx, gy, seed)) * ease(fx);
   const b =
-    hash01(gx, gy + 1, seed) + (hash01(gx + 1, gy + 1, seed) - hash01(gx, gy + 1, seed)) * s(fx);
-  return a + (b - a) * s(fy);
+    hash01(gx, gy + 1, seed) + (hash01(gx + 1, gy + 1, seed) - hash01(gx, gy + 1, seed)) * ease(fx);
+  return a + (b - a) * ease(fy);
 }
 
 /** The terminator's column at row y: it leans with the globe's curve. */

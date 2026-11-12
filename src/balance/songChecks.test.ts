@@ -13,9 +13,17 @@ const FIN = compileContent(RAW_CONTENT).maps.fin_m01;
 const lasted = (req: RunRequest, sec: number) =>
   fakeRun(req, { ...fakeResult('won', 20), phaseStartTick: [0, -1, 60_000, 60_000 + sec * 60] });
 
-describe('#18 song timing', () => {
-  const [check] = songTimingChecks(FIN, [1]);
+const [check] = songTimingChecks(FIN, [1]);
 
+/** #18 over runs whose Phase 2 lasted `secs[answer]` seconds (null: never reached Dawn). */
+function run(secs: Record<string, number | null>) {
+  return check!.evaluate((r) => {
+    const s = secs[r.build.split('=')[1]!]!;
+    return s === null ? fakeRun(r, fakeResult('lost', 0)) : lasted(r, s);
+  });
+}
+
+describe('#18 song timing', () => {
   it('runs par once per quill_choice on the few seeds, on the finale only', () => {
     expect(check!.needs.map((r) => r.build)).toEqual([
       'flag:quill_choice=keep',
@@ -34,11 +42,6 @@ describe('#18 song timing', () => {
   });
 
   it('fails an anchor outside 126–234 s, an answer past ±30%, or a run with no Dawn', () => {
-    const run = (secs: Record<string, number | null>) =>
-      check!.evaluate((r) => {
-        const s = secs[r.build.split('=')[1]!]!;
-        return s === null ? fakeRun(r, fakeResult('lost', 0)) : lasted(r, s);
-      });
     expect(run({ keep: 250, purge: 250, rewrite: 250 }).failures).toEqual([
       'keep 250 s is outside 126–234 s',
     ]);

@@ -32,8 +32,8 @@ export function dithered(ramp: readonly string[], v: number, x: number, y: numbe
 }
 
 /** A blank still (transparent everywhere). */
-export function sceneGrid(fill = '.'): CharGrid {
-  return grid(SCENE_W, SCENE_H, fill);
+export function sceneGrid(blank = '.'): CharGrid {
+  return grid(SCENE_W, SCENE_H, blank);
 }
 
 /** A copy of a still (to paint a later frame over an earlier one). */

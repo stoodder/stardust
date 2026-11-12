@@ -43,7 +43,10 @@ export const STARDUST_LEGEND = {
 
 /** Each phase's cycle (its three steps, in order) and the shade it sits on. */
 export const CYCLES: Readonly<
-  Record<StardustPhase, { readonly steps: readonly [string, string, string]; readonly shade: string }>
+  Record<
+    StardustPhase,
+    { readonly steps: readonly [string, string, string]; readonly shade: string }
+  >
 > = {
   // The brochure: sparkly pink-gold candy.
   act1: { steps: ['A', 'B', 'C'], shade: 'H' },
@@ -80,7 +83,6 @@ const STONE = [
   '.ggdd.',
   '......',
 ] as const;
-
 
 /** A template painted with a cycle at `step` (0–2): position n takes steps[(n - 1 + step) % 3]. */
 export function painted(

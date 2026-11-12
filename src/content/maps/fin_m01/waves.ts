@@ -261,7 +261,11 @@ export const PHASE_2_WAVES: readonly WaveDef[] = [
     groups: [g('unsung', 1, 'halls', 0), motes(8, 'rift_ne', 4, 0.5)],
   },
   // W20 · Motes down the descent (after a lull: Directive 0's window under Keep)
-  { ...P2, countdownSec: DIRECTIVE_LULL, groups: [motes(10, 'halls', 0, 0.5), fractures(2, 'rift_nw', 3, 2)] },
+  {
+    ...P2,
+    countdownSec: DIRECTIVE_LULL,
+    groups: [motes(10, 'halls', 0, 0.5), fractures(2, 'rift_nw', 3, 2)],
+  },
   // W21 · a Maw, and Rift Moths over the song
   {
     ...P2,

@@ -67,7 +67,8 @@ function blend(c: ChartPixels, x: number, y: number, color: ColorName, a: number
 /** The Long Walk's column inside the colony at row y (north gate to south gate). */
 export function walkX(y: number): number {
   return Math.round(
-    NORTH_GATE.x + ((SOUTH_GATE.x - NORTH_GATE.x) * (y - NORTH_GATE.y)) / (SOUTH_GATE.y - NORTH_GATE.y),
+    NORTH_GATE.x +
+      ((SOUTH_GATE.x - NORTH_GATE.x) * (y - NORTH_GATE.y)) / (SOUTH_GATE.y - NORTH_GATE.y),
   );
 }
 
@@ -148,7 +149,8 @@ function paintGo(c: ChartPixels): void {
     const x = from.x + i;
     // A gentle climb: the trail bows north on its way out.
     const y = Math.round(from.y + (to.y - from.y) * t - Math.sin(t * Math.PI) * 18);
-    const color: ColorName = t < 0.35 ? 'steel.1' : t < 0.7 ? 'steel.2' : t < 0.92 ? 'steel.3' : 'white.0';
+    const color: ColorName =
+      t < 0.35 ? 'steel.1' : t < 0.7 ? 'steel.2' : t < 0.92 ? 'steel.3' : 'white.0';
     if (t < 0.35 && i % 2 === 1) continue;
     put(c, x, y, color);
   }
