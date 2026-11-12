@@ -254,7 +254,7 @@ export function withVeteranPick(
 
 /** One modifier's sim grants: its modifiers and its run rules. */
 export function veteranGrants(id: VeteranModifierId): {
-  readonly modifiers: readonly Modifier<IdSpace>[];
+  readonly modifiers: readonly Modifier[];
   readonly rules: readonly SimRule[];
 } {
   const source = `${VETERAN_SOURCE_PREFIX}${id}`;
