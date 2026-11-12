@@ -556,7 +556,7 @@ The npm scripts that make up the test loop (D002) are defined here. **What each 
 | `format:check` | `prettier --check .` (the formatting half of `lint`, uncached) |
 | `test` | `vitest run`: unit, sim, content, save, balance-harness, and architecture tests |
 | `test:watch` | `vitest` |
-| `sim` | `node --experimental-strip-types tools/sim.ts`: headless balance sims for every map, maps in parallel on worker threads (args: `--map <id>`, `--seeds <n>`, `--build <name>`, `--jobs <n>`, `--report`) |
+| `sim` | `node --experimental-strip-types tools/sim.ts`: headless balance sims for every map, every map's runs shared out over worker threads ([conventions.md § Balance sims](conventions.md#balance-sims-npm-run-sim), *Sim time*) (args: `--map <id>`, `--seeds <n>`, `--build <name>`, `--jobs <n>`, `--report`) |
 | `smoke` | `playwright test --trace off`: browser smoke tests against `npm run preview` |
 | `check:docs` | `node --experimental-strip-types tools/check-docs.ts`: link and docs-index checks |
 | `check` | **The whole gate:** `node --experimental-strip-types tools/gate.ts`. Six phases, one after another: `typecheck`, `lint`, `test`, `build` (with the initial-JS check), `smoke` and `sim` side by side, `check:docs`. It stops after the first phase with a red step, then prints each step's time against its share and the wall time against the budget ([conventions.md § Gate time](conventions.md#gate-time)) |
@@ -598,7 +598,8 @@ stardust/
 ├── tools/
 │   ├── gate.ts                 # npm run check: the gate's steps and their time budget
 │   ├── sim.ts                  # npm run sim: CLI over src/balance/
-│   ├── simWorker.ts            # one sim worker thread (a map at a time)
+│   ├── simWorker.ts            # one sim worker thread (a run at a time)
+│   ├── simPool.ts              # the sim's work queue: every map's runs over the workers
 │   ├── simClock.ts             # the runs' CPU clock (assertion 13)
 │   └── check-docs.ts           # npm run check:docs
 ├── smoke/                      # Playwright specs (*.spec.ts); fixtures.ts (console-error fixture), allowedConsole.ts, hooks.ts (__sd helpers)

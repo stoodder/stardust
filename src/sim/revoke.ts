@@ -45,6 +45,7 @@ import type { Command, RejectReason } from './commands.ts';
 import type { SimConfig } from './config.ts';
 import { tileIndex } from './grid.ts';
 import { poolKill } from './pool.ts';
+import { radioSilent } from './rules.ts'; // T860
 import { emit, type SimState } from './state.ts';
 import type { TickContext } from './tick.ts';
 
@@ -206,12 +207,13 @@ export function slotRevoked(
     readonly scriptModifiers: Readonly<SimState['scriptModifiers']>;
     readonly abilitiesLocked: readonly string[];
   },
-  config: Pick<SimConfig<IdSpace>, 'abilities' | 'companion' | 'content'>,
+  config: Pick<SimConfig<IdSpace>, 'abilities' | 'companion' | 'content' | 'rules'>,
   slot: 1 | 2,
 ): boolean {
   const a = config.abilities;
   const id = slot === 1 ? a.slot1 : a.slot2;
   if (id === null) return false;
+  if (radioSilent(config)) return true; // T860: Radio Silence darkens every slot (sim/rules.ts)
   if (state.revoked.abilities.includes(id) || state.abilitiesLocked.includes(id)) return true;
   if (slot !== 2) return false;
   const def = Object.hasOwn(config.content.abilities, id)

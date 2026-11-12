@@ -1,7 +1,7 @@
 // The harness split into its pieces (T778): `runMap` is `planMap`, a runner, and `judgeMap`, which
 // tools/sim.ts runs on different threads (tools/simPool.test.ts judges records that crossed a
-// thread); and `part` splits a map's checks across balance
-// test files with every check in exactly one part, judged as the whole map judges it.
+// thread); and `part` splits a map's checks across balance test files with every check in exactly
+// one part, judged as the whole map judges it.
 import { describe, expect, it } from 'vitest';
 import type { CompiledContent } from '../content/compiled.ts';
 import { compileContent } from '../content/compile.ts';

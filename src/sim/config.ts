@@ -17,6 +17,7 @@ import { flagConditionHolds } from '../content/flagConditions.ts';
 import { abilityConfigErrors } from './systems/abilities.ts';
 import { unsupportedScript } from './systems/triggers.ts';
 import { gateRefusals } from './gates.ts';
+import { ruleConfigErrors, type SimRule } from './rules.ts'; // T860
 
 /** Where a modifier came from, for the UI's breakdown: `'shop:<id>'`, `'difficulty:story'`, … */
 export type ModifierSource = string;
@@ -198,6 +199,11 @@ export interface SimConfig<K extends IdSpace = LiveIds> {
    * takes this class instead of selecting one (`mostInvested`). Never set in play.
    */
   readonly revokeClass?: K['tower'];
+  /**
+   * Run rules (sim/rules.ts; T860): Radio Silence, Short-Handed, No Protocols, from a veteran
+   * replay or a challenge map. Absent: none.
+   */
+  readonly rules?: readonly SimRule[];
 }
 
 export { MAX_LOADOUT };
@@ -240,6 +246,8 @@ export function validateConfig(cfg: SimConfig<IdSpace>): CompiledMapDef<IdSpace>
   }
   // The companion's slot and ability modifiers (systems/abilities.ts).
   errors.push(...abilityConfigErrors(cfg));
+  // The run's own rules (sim/rules.ts; T860): Short-Handed's limit, Radio Silence, No Protocols.
+  errors.push(...ruleConfigErrors(cfg));
   // Refuse rather than ignore what the sim can't simulate yet (gates.ts), so a run can't
   // silently differ from its config.
   errors.push(...gateRefusals(cfg));

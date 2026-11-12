@@ -109,10 +109,6 @@ function parSteps(): BuildStep[] {
     { wave: 16, build: 'burrow', tile: CORNER },
     { wave: 16, build: 'mindspike', tile: LEDGE_W },
     { wave: 17, upgrade: LEDGE_W },
-    { wave: 17, upgrade: LEDGE_W },
-    { wave: 17, upgrade: CORNER },
-    { wave: 18, upgrade: HALLS_E },
-    { wave: 18, upgrade: INNER },
   ];
 }
 

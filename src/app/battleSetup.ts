@@ -26,6 +26,7 @@ import {
   type LoadoutPick,
   type SaveData,
 } from '../meta/index.ts';
+import { activeVeteranMods, veteranConfig } from '../meta/veteran.ts'; // T860
 import { devFixtures } from './devRegistry.ts';
 import { scriptFlagsOf } from '../story/flags.ts';
 import {
@@ -276,21 +277,27 @@ export function battleConfig(
     const loadout: readonly string[] = pick.towers;
     // Slot 1 never holds what the companion brings (T501): Time Dilation beside QUILL.
     const slot1 = slot1Beside(content, pick.ability, companion, abilityPool(save, off));
-    return {
-      ...base,
-      loadout: [...loadout],
-      // The save's purchases and protocols, then its story's (C4 Purge's armor from A3M5 on).
-      modifiers: [...simulatedSaveModifiers(save), ...simulatedStoryModifiers(mapId, save)],
-      difficulty:
-        save.settings.difficulty === 'story' && simulated('storyDifficulty') ? 'story' : 'standard',
-      // Slot 1 is the Technician's, from the save; slot 2 is the map's companion's.
-      abilities: { slot1, slot2, slot2State },
-      // The save's story flags that map scripts may read (story-runtime.md § Map scripts).
-      scriptFlags: gatedFlagDefaults(map, scriptFlagsOf(save.story.flags)),
-      specsUnlocked: simulated('specs')
-        ? save.unlocks.specs.filter((t) => loadout.includes(t))
-        : [],
-    };
+    // A replay's veteran modifiers (T860; meta/veteran.ts), picked on the briefing.
+    return veteranConfig(
+      {
+        ...base,
+        loadout: [...loadout],
+        // The save's purchases and protocols, then its story's (C4 Purge's armor from A3M5 on).
+        modifiers: [...simulatedSaveModifiers(save), ...simulatedStoryModifiers(mapId, save)],
+        difficulty:
+          save.settings.difficulty === 'story' && simulated('storyDifficulty')
+            ? 'story'
+            : 'standard',
+        // Slot 1 is the Technician's, from the save; slot 2 is the map's companion's.
+        abilities: { slot1, slot2, slot2State },
+        // The save's story flags that map scripts may read (story-runtime.md § Map scripts).
+        scriptFlags: gatedFlagDefaults(map, scriptFlagsOf(save.story.flags)),
+        specsUnlocked: simulated('specs')
+          ? save.unlocks.specs.filter((t) => loadout.includes(t))
+          : [],
+      },
+      activeVeteranMods(save, map),
+    );
   }
   throw new RangeError(`battle: unknown map '${mapId}'`);
 }

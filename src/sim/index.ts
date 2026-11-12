@@ -14,6 +14,14 @@ export {
   type SimConfig,
   type SupportStat,
 } from './config.ts';
+export {
+  hasRule,
+  radioSilent,
+  towerTypeLimit,
+  PROTOCOL_SOURCE_PREFIX,
+  type SimRule,
+  type SimRuleKind,
+} from './rules.ts'; // T860
 export { FEATURE_GATES, modifierFeature, type Feature, type GateOwner } from './gates.ts';
 export { companionAbility, companionSlot, type CompanionSlot } from './companion.ts';
 export {

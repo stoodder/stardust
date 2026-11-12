@@ -29,6 +29,14 @@ import {
   type StoryTransaction,
 } from './storyTransactions.ts';
 import { clampCurrency } from './validate.ts';
+import {
+  earnsVeteranMedal,
+  inTableOrder,
+  VETERAN_MEDAL_ID,
+  veteranBonusPct,
+  veteranRecord,
+  type VeteranModifierId,
+} from './veteran.ts';
 
 /** What a run end reads from the finished battle. */
 export interface RunEndInput {
@@ -50,8 +58,17 @@ export interface RunEndInput {
   readonly skitterkinKilled: number;
   /** The final meter reading (integrity on a defend map). */
   readonly meter: number;
-  /** Σ veteran Stardust bonuses (progression.md § 6). Default 0: veteran modifiers are M3+. */
+  /**
+   * Σ veteran Stardust bonuses as a fraction (progression.md § 6), for a caller without the mods
+   * (tests). `veteranMods` wins when given. Default 0.
+   */
   readonly veteranBonus?: number;
+  /**
+   * The veteran modifiers the run carried (meta/veteran.ts `veteranModsOf` its config; T860). A
+   * replay victory pays their bonus, earns the Veteran medal at +100% or more (not after a
+   * checkpoint retry), and raises the map's `best`. Default none.
+   */
+  readonly veteranMods?: readonly VeteranModifierId[];
   /**
    * The run's `state.stats`, which the story run-end flag rules read (step 2). Without them no
    * rule is applied (unit tests of the other steps).
@@ -193,10 +210,15 @@ export function runEnd(
   // 4. Medals: the sim settled them (D042). A run that used a checkpoint keeps Victory only
   //    (core-loop.md § 2.12); its objectives still count (the replay reproduced them exactly).
   const heldMedals = old?.medals ?? [];
+  // Veteran modifiers ride only replays (they unlock on Victory; meta/veteran.ts).
+  const vetMods = won && wonBefore ? inTableOrder(input.veteranMods ?? []) : [];
+  const vetPct = veteranBonusPct(vetMods);
   const earned =
     input.usedCheckpoint === true
       ? input.earnedMedals.filter((m) => m === VICTORY_MEDAL_ID)
-      : input.earnedMedals;
+      : earnsVeteranMedal(vetMods)
+        ? [...input.earnedMedals, VETERAN_MEDAL_ID]
+        : input.earnedMedals;
   const medals = won ? medalPayout(heldMedals, earned) : [];
   // Optional objectives settle like medals: a win records each newly completed one (T304f).
   const heldObjectives = old?.objectives ?? [];
@@ -219,7 +241,7 @@ export function runEnd(
     stardust: input.mapStardust,
     wavesResolved: input.wavesResolved,
     waveCount: input.waveCount,
-    veteranBonus: input.veteranBonus ?? 0,
+    veteranBonus: input.veteranMods !== undefined ? vetPct / 100 : (input.veteranBonus ?? 0),
     resumedFromWave: input.resumedFromWave ?? null,
   });
   const intel =
@@ -230,8 +252,23 @@ export function runEnd(
     won && !wonBefore && input.memorialTower !== undefined && input.memorialTower !== null
       ? input.memorialTower
       : save.story.memorialTower;
+  // The veteran record (T860): a replay victory with modifiers raises the map's best bonus.
+  const oldVet = veteranRecord(save, input.mapId);
+  const veteran =
+    vetPct > 0
+      ? {
+          veteran: {
+            ...save.veteran,
+            [input.mapId]: {
+              mods: oldVet?.mods ?? vetMods,
+              best: Math.max(oldVet?.best ?? 0, vetPct),
+            },
+          },
+        }
+      : {};
   const folded: SaveData = {
     ...save,
+    ...veteran,
     story: {
       ...save.story,
       flags: { ...save.story.flags, ...flags },

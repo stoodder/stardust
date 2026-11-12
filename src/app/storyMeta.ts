@@ -155,8 +155,9 @@ export function revocationView(t: RevocationTransaction): ResultsRevocation {
 
 /**
  * Whether the save now builds `cfg`'s battle differently (a briefing just committed C3's door, or
- * opened Zibzab's crate): other script flags (`scriptFlagsChanged`) or other modifiers. The router
- * restarts the battle on them.
+ * opened Zibzab's crate, or its veteran picker changed the replay's modifiers): other script flags
+ * (`scriptFlagsChanged`), modifiers, rules, loadout, or abilities. The router restarts the battle
+ * on them.
  */
 export function briefingChangedBattle(cfg: SimConfig<IdSpace>, save: SaveData | null): boolean {
   if (save === null) return false;
@@ -167,7 +168,10 @@ export function briefingChangedBattle(cfg: SimConfig<IdSpace>, save: SaveData | 
   } catch {
     return false;
   }
-  return JSON.stringify(next.modifiers) !== JSON.stringify(cfg.modifiers);
+  // T860: a veteran pick on the briefing changes the rules, the loadout, and slot 1 too.
+  const shape = (c: SimConfig<IdSpace>): string =>
+    JSON.stringify([c.modifiers, c.rules ?? [], c.loadout, c.abilities]);
+  return shape(next) !== shape(cfg);
 }
 
 /** What Zibzab's crate holds for `save`: its tune-ups, else the protocols to pick from (D146). */

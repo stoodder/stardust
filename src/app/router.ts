@@ -76,6 +76,8 @@ import { withResultsChoice } from './resultsFlow.ts';
 import { bearersAtEnd, escortAtEnd } from './resultsStory.ts';
 import type { RunOutcome, ScreenId } from './testHookTypes.ts';
 import { resetCrate, takenPick } from '../ui/screens/crate.ts'; // T714
+import { veteranMedalOffered } from './veteran.ts'; // T860
+import { veteranModsOf } from '../meta/veteran.ts'; // T860
 
 /** The campaign screen's notice when a checkpoint retry couldn't replay to its checkpoint. */
 export const RETRY_FAILED =
@@ -498,7 +500,8 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
           ? null
           : { ms: end.ms - firstLeakAt.ms, ticks: end.tick - firstLeakAt.tick },
       stardust: sim.map.stardust,
-      medals: offeredMedals(sim.map),
+      // The Veteran medal joins the row when the run's modifiers reach +100% (T860).
+      medals: [...offeredMedals(sim.map), ...veteranMedalOffered(sim.config)],
       earnedMedals: earnedMedalIds(s, sim.map),
       objectives: sim.map.objectives.map((o, i) => ({
         id: o.id,
@@ -519,6 +522,7 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
       // Act III part one (T610): what the script revoked, and the turret under the {name} plate.
       revoked: revokedAtEnd(s.revoked, sim.map.events, s.scriptFired),
       memorialTower: memorialAtEnd(sim, hud.nameTag.value),
+      veteran: veteranModsOf(sim.config), // T860: the replay's veteran modifiers
     };
     const summary = recordRun(metaRunEndOf(input, outcome));
     // The finale's run ended (won, lost, or abandoned): nothing is pending any more (D154).

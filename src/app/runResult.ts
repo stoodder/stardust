@@ -30,6 +30,7 @@ import { linesUntilChoice, readThrough } from '../story/runner.ts';
 import type { ResultsMeter } from '../story/counter.ts';
 import { resolveText, type TextContext } from '../story/text.ts';
 import { PERFECT_CORE_MEDAL_ID, VICTORY_MEDAL_ID } from '../sim/index.ts';
+import type { VeteranModifierId } from '../meta/veteran.ts'; // T860
 import type { SpokenLine } from '../ui/state.ts';
 import type {
   MedalResult,
@@ -158,6 +159,11 @@ export interface RunEndInput {
    * `memorialAtEnd`), saved as `memorialTower` on the map's first win. Absent or null: none.
    */
   readonly memorialTower?: TowerId | null;
+  /**
+   * The veteran modifiers the run carried (meta/veteran.ts `veteranModsOf` its config; T860): a
+   * replay victory pays their bonus and, at +100% or more, the Veteran medal. Absent: none.
+   */
+  readonly veteran?: readonly VeteranModifierId[];
 }
 
 /** A choir's Voices at a run's end (the finale): singers still singing, of the run's choir. */
@@ -275,6 +281,7 @@ export function metaRunEndOf(
       : { usedCheckpoint: true, resumedFromWave: input.resumedFromWave }),
     ...(input.revoked === undefined ? {} : { revoked: input.revoked }),
     ...(input.memorialTower === undefined ? {} : { memorialTower: input.memorialTower }),
+    ...(input.veteran === undefined ? {} : { veteranMods: input.veteran }),
   };
 }
 

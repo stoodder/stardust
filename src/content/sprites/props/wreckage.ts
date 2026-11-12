@@ -28,6 +28,12 @@
 //   them under a `feed*` marker): `v6` a thick feed pipe burst in two, its torn ends bleeding the
 //   vats' cold violet slurry into a pool; `v7` a feed junction, its valve wheel sheared off and lying
 //   in the pool, slurry spraying from the bare stem. The salvage stake as on every wreck.
+// - `v8`, `v9` (and theirs): the finale's waymark lanterns (finale.md § FIN *Waymarks*; render picks
+//   them under a `waymark*` marker, T842), the Long Walk's old waymarks knocked down on the road the
+//   Hollow came up: `v8` the stone on its side, its fungus cap split beside it; `v9` the stone
+//   snapped, its top fallen across its foot, the reed cradle crushed. Their `_half` stands the
+//   waymark back up, dark (`prop.waymark`'s shapes, `waymarkStanding`/`waymarkWreck`); clearing it
+//   relights it, `prop.waymark`'s `lit` on the tile (render's).
 // A cleared tile draws its `underWreckage` tile and no prop.
 import { defineSprite } from '../defineSprite.ts';
 import {
@@ -43,6 +49,7 @@ import {
   type CharGrid,
 } from '../helpers.ts';
 import { ENV_VARIANTS } from '../tiles/tileGen.ts';
+import { waymarkStanding, waymarkWreck, type WaymarkInk } from './waymark.ts';
 
 const W = 32;
 const H = 30;
@@ -435,7 +442,7 @@ function outlined(g: CharGrid, debris: CharGrid): void {
 }
 
 /** The wrecks: Act I's drone and cart (`v0`, `v1`), Act II's broken rigs (`v2`, `v3`). */
-type WreckIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+type WreckIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
 const STAKE_AT: Readonly<Record<WreckIndex, readonly [number, number]>> = {
   0: [27, TOP - 6],
@@ -446,13 +453,35 @@ const STAKE_AT: Readonly<Record<WreckIndex, readonly [number, number]>> = {
   5: [27, TOP - 4],
   6: [27, TOP - 5],
   7: [27, TOP - 5],
+  8: [26, TOP - 4],
+  9: [26, TOP - 4],
 };
+
+/** A waymark in the wreck's own legend: grey stone, moss, reeds, its cap dead (v8, v9). */
+const WAYMARK_INK: WaymarkInk = {
+  stone: ['W', 'S', 'T', 'U'],
+  moss: ['H', 'G'],
+  reed: ['Z', 'B'],
+  capDark: ['M', 'A', 'K'],
+  cut: 'K',
+  glow: 'Y',
+  litCut: 'Y',
+  core: 'Y',
+  heart: 'Y',
+  shadow: '.',
+};
+/** Where a waymark stands on the wreck's tile: the stone's foot. */
+const WAYMARK_AT = [14, TOP + 10] as const;
 
 function wreck(v: WreckIndex, state: 'dark' | 'lit' | 'half'): string[] {
   const g = grid(W, H);
   scorch(g, v + 1);
   const d = grid(W, H);
-  if (state === 'half') half(d, v);
+  if (v >= 8) {
+    const [wx, wy] = WAYMARK_AT;
+    if (state === 'half') waymarkStanding(d, WAYMARK_INK, wx, wy, 'dark');
+    else waymarkWreck(d, WAYMARK_INK, wx, wy, v === 8 ? 0 : 1);
+  } else if (state === 'half') half(d, v);
   else if (v === 0) drone(d);
   else if (v === 1) cart(d);
   else if (v === 2) derrick(d);
@@ -533,6 +562,12 @@ export const propWreckage = defineSprite({
     v7_lit: wreck(7, 'lit'),
     v6_half: wreck(6, 'half'),
     v7_half: wreck(7, 'half'),
+    v8: wreck(8, 'dark'),
+    v9: wreck(9, 'dark'),
+    v8_lit: wreck(8, 'lit'),
+    v9_lit: wreck(9, 'lit'),
+    v8_half: wreck(8, 'half'),
+    v9_half: wreck(9, 'half'),
   },
   anims: {
     blink_v0: { frames: ['v0', 'v0_lit'], fps: 2 },
@@ -553,5 +588,9 @@ export const propWreckage = defineSprite({
     blink_v7: { frames: ['v7', 'v7_lit'], fps: 2 },
     idle_v6: { frames: ['v6', 'v6', 'v6', 'v6', 'v6', 'v6', 'v6', 'v6_lit'], fps: 4 },
     idle_v7: { frames: ['v7', 'v7', 'v7', 'v7', 'v7', 'v7', 'v7', 'v7_lit'], fps: 4 },
+    blink_v8: { frames: ['v8', 'v8_lit'], fps: 2 },
+    blink_v9: { frames: ['v9', 'v9_lit'], fps: 2 },
+    idle_v8: { frames: ['v8', 'v8', 'v8', 'v8', 'v8', 'v8', 'v8', 'v8_lit'], fps: 4 },
+    idle_v9: { frames: ['v9', 'v9', 'v9', 'v9', 'v9', 'v9', 'v9', 'v9_lit'], fps: 4 },
   },
 });

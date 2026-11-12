@@ -130,14 +130,32 @@ export type {
   VeteranRecord,
 } from './saveData.ts';
 export {
+  activeVeteranMods,
+  campaignMedalCount,
+  earnsVeteranMedal,
+  GLASS_CORE_INTEGRITY,
+  hasVeteranMedal,
+  inTableOrder,
+  isVeteranModifierId,
+  SHORT_HANDED_MAX,
   VETERAN_BONUS_PCT,
+  VETERAN_COPY,
+  VETERAN_DIM_TEXT,
   VETERAN_MAX_PCT,
   VETERAN_MEDAL_ID,
+  VETERAN_MEDAL_NAME,
   VETERAN_MEDAL_PCT,
   VETERAN_MODIFIER_IDS,
+  VETERAN_SOURCE_PREFIX,
   veteranBonusPct,
+  veteranConfig,
+  veteranGrants,
+  veteranModsOf,
+  veteranOffers,
+  veteranRecord,
+  withVeteranPick,
 } from './veteran.ts';
-export type { VeteranModifierId } from './veteran.ts';
+export type { VeteranMap, VeteranModifierId, VeteranOffer } from './veteran.ts';
 export { DIFFICULTIES, LIVE_KNOWN_IDS, SAVE_VERSION, createNewSave } from './saveData.ts';
 export type { KeyValueStore, SlotId } from './store.ts';
 export type { StoryUnlocks } from './story.ts';
