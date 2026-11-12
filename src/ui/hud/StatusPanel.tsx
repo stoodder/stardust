@@ -1,21 +1,29 @@
 // Top-left: the name plate ("JPT-1 · SPROUT", core-loop §5), the meter (core integrity, or the
 // map's own meter), a Protect map's asset meter under it (T305a), credits, the medal tracker (T202d), and the map's optional objectives under it
-// (T312c).
+// (T312c). On the finale (T832) the meter is Voices (EscortMeter.tsx) and the core's row stays under
+// it as the colony **Gate** (its integrity: the flyers' and Everglow's leaks spend it); at Dawn the
+// panel steps back to the name plate alone (ui/hud/index.tsx `data-dawn`, hud.css).
 import { nextTimeMark } from '../../app/hudText.ts';
 import { hud, type MedalView, type ObjectiveView } from '../state.ts';
 import { AssetMeter } from './AssetMeter.tsx';
-import { EscortMeter } from './EscortMeter.tsx';
+import { alarmMark, EscortMeter } from './EscortMeter.tsx';
 import { Icon } from './Icon.tsx';
 import { useTicker } from './parts.tsx';
 
 /** Integrity at or below this shows the low-integrity alarm (art-direction §9: red at 5). */
 const LOW_INTEGRITY = 5;
 
+/** The core's row on the finale's choir map, under Voices: the colony gate (T832). */
+export const GATE_LABEL = 'Gate';
+
 /** Top-left: the meter (core integrity) and credits. */
 export function StatusPanel() {
   const credits = useTicker(hud.credits.value);
   const integrity = hud.integrity.value;
-  const label = hud.meterLabel.value;
+  const escort = hud.escort.value;
+  // The choir's Voices stands in the core's place; the gate's integrity keeps its row (T832).
+  const gate = escort?.choir === true;
+  const label = gate ? GATE_LABEL : hud.meterLabel.value;
   const leak = hud.leak.value;
   const low = integrity <= LOW_INTEGRITY;
   return (
@@ -26,9 +34,10 @@ export function StatusPanel() {
       {/* An Escort shows its own meter instead of the core's (T305c). */}
       <EscortMeter />
       <div
-        hidden={hud.escort.value !== null}
-        class="hud-meter"
+        hidden={escort !== null && !gate}
+        class={gate ? 'hud-meter hud-gate' : 'hud-meter'}
         role="status"
+        data-testid={gate ? 'gate-meter' : undefined}
         aria-label={`${label} ${integrity}${low ? ', integrity low' : ''}`}
       >
         <Icon id="icon.core" />
@@ -37,11 +46,12 @@ export function StatusPanel() {
           {/* Low integrity: a blinking alarm shape, not only a red number. */}
           {low && (
             <span class="hud-alarm" aria-hidden="true">
-              !
+              {alarmMark(hud.act.value)}
             </span>
           )}
         </span>
-        <span class={low ? 'big num danger' : 'big num'}>{integrity}</span>
+        {/* The gate's row is secondary to Voices: its number in the small size. */}
+        <span class={`${gate ? 'num' : 'big num'}${low ? ' danger' : ''}`}>{integrity}</span>
       </div>
       <AssetMeter />
       <div class="hud-credits" aria-label={`Credits ${hud.credits.value}`}>

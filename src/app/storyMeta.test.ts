@@ -129,8 +129,12 @@ describe("C3 in A3M3's briefing (D141)", () => {
     expect(again.story.flags.held_fire_second_look).toBe(true);
   });
 
-  it("locks and holds C3's and C4's choices only (D141, D146), not every choice that sets a flag", () => {
-    expect(LOCKED_CHOICE_FLAGS).toEqual(['door_choice', 'quill_choice']);
+  it("locks C3's, C4's and C5's choices only (D141, D146, T810), not every choice that sets a flag", () => {
+    expect(LOCKED_CHOICE_FLAGS).toEqual(['door_choice', 'quill_choice', 'ending_choice']);
+    // C5, the finale's last question, waits the same beat (T810).
+    expect(
+      isStoryChoice([{ set: { ending_choice: 'stay' } }, { set: { ending_choice: 'go' } }]),
+    ).toBe(true);
     expect(
       isStoryChoice([{ set: { door_choice: 'convoy' } }, { set: { door_choice: 'warren' } }]),
     ).toBe(true);
