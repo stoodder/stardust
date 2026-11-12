@@ -481,6 +481,7 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
     const resumed = b.host.resumedFrom;
     const usable = usableCheckpoint(b.host.checkpoints, s.tick);
     const remembered = countdown?.start(lifetimeAtStart);
+    const voices = voicesHeld(s);
     const input: RunEndInput = {
       mapId: sim.map.id,
       act: sim.map.act,
@@ -494,7 +495,7 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
       // A choir map's Voices (the finale; T804's choir): Results lists them, not the core. The
       // score is the fewest that sang through the night (`voicesMin`): Dawn wakes every hushed
       // singer, so the choir is always whole again by the card (T810).
-      ...(voicesHeld(s) === null ? {} : { voices: voicesHeld(s)! }),
+      ...(voices === null ? {} : { voices }),
       ...bearersAtEnd(sim),
       // This attempt's kills: a checkpoint retry's replayed ones were filed by the attempt before.
       skitterkinKilled: attemptKills(b.host),

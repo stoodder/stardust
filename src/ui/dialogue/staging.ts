@@ -11,10 +11,12 @@ import { yieldLogLeadInMs, yieldLogLockMs } from './yieldLog.ts';
 import { mailLeadInMs } from '../screens/mail.ts';
 import { nightShiftLeadInMs } from '../screens/nightShift.ts';
 import { waykeeperLeadInMs } from '../screens/waykeeper.ts';
+// T810: C5 at dawn (its stage is in the finale's lazy chunk; ui/screens/epilogueState.ts).
+import { c5LeadInMs } from '../screens/c5.ts';
 
 /** A scene's staging, by kind. */
 export type StagingKind =
-  'rig9_feed' | 'party' | 'yield_log' | 'mail' | 'night_shift' | 'waykeeper';
+  'rig9_feed' | 'party' | 'yield_log' | 'mail' | 'night_shift' | 'waykeeper' | 'c5';
 
 /** Which scenes are staged (a UI-owned table, keyed by scene id; K6). */
 export const SCENE_STAGING: Readonly<Record<string, StagingKind>> = {
@@ -28,6 +30,8 @@ export const SCENE_STAGING: Readonly<Record<string, StagingKind>> = {
   a3_m04_scene_mail: 'mail',
   a3_m04_base_night_shift: 'night_shift',
   a3_m06_debrief: 'waykeeper',
+  // T810: the finale's last question, at first light.
+  fin_m01_scene_c5: 'c5',
 };
 
 /** The staging for `sceneId`, or null for a plain scene. */
@@ -108,6 +112,7 @@ export function stagingLeadInMs(kind: StagingKind, still: boolean): number {
   if (kind === 'mail') return mailLeadInMs(still);
   if (kind === 'night_shift') return nightShiftLeadInMs(still);
   if (kind === 'waykeeper') return waykeeperLeadInMs(still);
+  if (kind === 'c5') return c5LeadInMs(still);
   return 0;
 }
 

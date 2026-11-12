@@ -13,7 +13,9 @@
 // per frame: it only recolors when the shown position moves (or `relight` or `night` asks), and a
 // crossfade's mix and grade are written in place (T501k).
 // T806: a **sky-only** key (`skyOnly`, the finale's sky warming per wave) moves the sky alone; the
-// grade follows the keys that aren't, so it holds. A **lighting set** a map script turns to
+// grade follows the keys that aren't, so it holds. T831: a run of sky-only keys toward another
+// env raises that env's sky from the east edge a step per key (`skyStops`, `eastSkyImage`: the
+// finale's horizon warming over Phase 1), and Dawn's set crossfades to its whole sky. A **lighting set** a map script turns to
 // (`setLighting`, content/lightingSets.ts: Dawn) is a last stop of both, reached from the tick
 // it ran (`state.lightingKey`, `state.lightingTick`) over the set's turn, from wherever the
 // schedule stood (stepped under reduced motion). A map whose script sets one draws even without a
@@ -25,12 +27,14 @@ import type { EnvPaletteId } from '../../content/types.ts';
 import { imageToCanvas } from '../sprites/canvas.ts';
 import { VIEW_H, VIEW_W } from '../scale.ts';
 import {
+  eastSkyImage,
   gradeNumberAt,
   lightAt,
   lightMix,
-  lightStops,
   skyImage,
+  skyStops,
   stopGrades,
+  worldStops,
   type LightMix,
   type LightStop,
 } from '../vfx/lighting.ts';
@@ -41,7 +45,11 @@ import type { ViewContext } from './ViewContext.ts';
 /** The grade and the sky overhang the view by this much, so the camera shake never shows an edge. */
 const OVERHANG_PX = 8;
 
-const skyKey = (env: EnvPaletteId): string => `lighting.sky.${env}`;
+/** A stop's sky texture: its env's, or (a sky-only stop) its env risen from the east (T831). */
+const skyKey = (stop: LightStop): string =>
+  stop.east === undefined
+    ? `lighting.sky.${stop.env}`
+    : `lighting.sky.${stop.env}.east${Math.round(stop.east * 1000)}`;
 
 /**
  * Sundown's say in the scenery's tint (DarknessView): the tint a piece of scenery wears under
@@ -104,9 +112,8 @@ export class LightingView {
     const draws = base !== undefined && (map.lighting.length > 0 || sets.length > 0);
     this.#sets = sets;
     this.#voidBase = map.lighting.length === 0;
-    this.#stops = draws ? [...lightStops(base, map.lighting), ...setStops] : [];
-    const world = map.lighting.filter((k) => k.skyOnly !== true);
-    this.#worldStops = draws ? [...lightStops(base, world), ...setStops] : [];
+    this.#stops = draws ? [...skyStops(base, map.lighting), ...setStops] : [];
+    this.#worldStops = draws ? [...worldStops(base, map.lighting), ...setStops] : [];
     this.#grades = base === undefined ? [] : stopGrades(base, this.#worldStops);
     this.#reducedMotion = reducedMotion;
     const { scene, layers } = ctx;
@@ -115,10 +122,14 @@ export class LightingView {
     if (this.#stops.length === 0) return;
     const w = VIEW_W + 2 * OVERHANG_PX;
     const h = VIEW_H + 2 * OVERHANG_PX;
-    for (const { env } of this.#stops) {
-      const key = skyKey(env);
+    for (const stop of this.#stops) {
+      const key = skyKey(stop);
       if (!scene.textures.exists(key)) {
-        scene.textures.addCanvas(key, imageToCanvas(skyImage(env, w, h)));
+        const img =
+          stop.east === undefined
+            ? skyImage(stop.env, w, h)
+            : eastSkyImage(base!, stop.env, stop.east, w, h); // draws: base set
+        scene.textures.addCanvas(key, imageToCanvas(img));
       }
       const img = new Phaser.GameObjects.Image(scene, -OVERHANG_PX, -OVERHANG_PX, key);
       img.setOrigin(0, 0).setVisible(false);

@@ -27,7 +27,7 @@ export const unsung = defineEnemy({
   faction: 'hollow',
   body: 'void',
   layer: 'ground',
-  hp: 30000,
+  hp: 18000,
   armor: 0,
   speedTilesPerSec: 0.1,
   leak: 3,

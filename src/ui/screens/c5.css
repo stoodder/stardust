@@ -1,0 +1,146 @@
+/* C5's stage (c5Stage.tsx; T810; art-direction.md § Dialogue presentation): first light after the
+   Long Night. The finale's dawn ramp in the master palette's steps (violet night, rose, a low gold
+   band), the sun not yet up; the KFA's off-white form at the top with its clauses in ink; the
+   lines alone at the bottom on a dark panel edged in gold. Generous dark between them (D153).
+   Whole pixels, no rotation. */
+.dlg-stage[data-staging='c5'] {
+  box-sizing: border-box;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding-bottom: 16px;
+  background: var(--sd-ink-0);
+}
+
+/* One line at a time: the form above is the record, so no history column. */
+.dlg-stage[data-staging='c5'] .dlg-history {
+  display: none;
+}
+
+.dlg-stage[data-staging='c5'] .dlg-fullscreen {
+  position: relative;
+  background: var(--panel-fill);
+  box-shadow: 0 0 0 1px var(--sd-gold-1);
+}
+
+.c5 {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Night above, the first light low along the horizon. */
+.c5-sky {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    var(--sd-ink-0) 0,
+    var(--sd-violet-0) 46%,
+    var(--sd-pink-0) 72%,
+    var(--sd-coral-1) 88%,
+    var(--sd-gold-1) 100%
+  );
+  animation: c5-dawn 4s steps(8) both;
+}
+
+/* The sun's glow just under the horizon: a soft gold rim, nothing more. */
+.c5-sun {
+  position: absolute;
+  left: 50%;
+  bottom: -88px;
+  width: 240px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at 50% 50%,
+    rgb(255 222 70 / 30%),
+    rgb(244 126 106 / 12%) 50%,
+    transparent 72%
+  );
+  transform: translateX(-50%);
+}
+
+@keyframes c5-dawn {
+  from {
+    opacity: 0.4;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* The relay's answer: the KFA's form panel (the Inbox's form grammar) at the top center. */
+.c5-form {
+  position: absolute;
+  left: 50%;
+  top: 16px;
+  box-sizing: border-box;
+  width: 336px;
+  padding: 6px 10px 8px;
+  color: var(--sd-ink-1);
+  background: var(--sd-white-0);
+  box-shadow:
+    inset 0 0 0 1px var(--sd-steel-2),
+    0 0 0 1px var(--sd-ink-0);
+  transform: translateX(-50%);
+}
+
+.c5-form-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 4px;
+  margin-bottom: 4px;
+  font-family: var(--font-heading);
+  font-size: 8px;
+  line-height: 8px;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--sd-ink-1);
+}
+
+.c5-form-title {
+  color: var(--sd-steel-1);
+}
+
+.c5-clauses {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.c5-clause {
+  padding-left: 4px;
+  font-family: var(--font-body);
+  font-size: 8px;
+  line-height: 10px;
+  text-transform: none;
+  box-shadow: inset 1px 0 0 var(--sd-steel-3);
+  animation: c5-file 400ms steps(4) both;
+}
+
+@keyframes c5-file {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.c5.still .c5-sky,
+.c5.still .c5-clause {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .c5-sky,
+  .c5-clause {
+    animation: none;
+  }
+}

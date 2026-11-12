@@ -174,7 +174,7 @@ export function drawLampMask(
 }
 
 /** Writes `word` over every pixel of `px` whose centre lies in one of `discs[from..to)`. */
-function stampDiscs(
+export function stampDiscs(
   px: Uint32Array,
   w: number,
   h: number,

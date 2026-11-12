@@ -236,6 +236,11 @@ export const SCRIPT_GROUPS = {
 
 /** Phase 2's build phase between add waves: with ≤ 8 s of spawning, a wave every ~20 s. */
 export const PHASE_2_COUNTDOWN = 12;
+/**
+ * W20's: the add waves wait while the Unsung rises, so Directive 0 (Keep, 20 s in) folds a class
+ * and "Who's there?" restores it between add waves (T821: it stings, it doesn't decide the run).
+ */
+export const DIRECTIVE_LULL = 26;
 /** W19's: the Unsung rises a few seconds after the choir reaches the Halls. */
 export const UNSUNG_COUNTDOWN = 5;
 
@@ -255,8 +260,8 @@ export const PHASE_2_WAVES: readonly WaveDef[] = [
     countdownSec: UNSUNG_COUNTDOWN,
     groups: [g('unsung', 1, 'halls', 0), motes(8, 'rift_ne', 4, 0.5)],
   },
-  // W20 · Motes down the descent
-  { ...P2, groups: [motes(10, 'halls', 0, 0.5), fractures(2, 'rift_nw', 3, 2)] },
+  // W20 · Motes down the descent (after a lull: Directive 0's window under Keep)
+  { ...P2, countdownSec: DIRECTIVE_LULL, groups: [motes(10, 'halls', 0, 0.5), fractures(2, 'rift_nw', 3, 2)] },
   // W21 · a Maw, and Rift Moths over the song
   {
     ...P2,

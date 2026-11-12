@@ -37,6 +37,7 @@ import { YieldLogStage } from './YieldLogStage.tsx'; // T614
 import { MailStage } from '../screens/mailStage.tsx'; // T714
 import { NightShiftStage } from '../screens/nightShiftStage.tsx'; // T714
 import { WaykeeperStage } from '../screens/waykeeperStage.tsx'; // T714
+import { finaleUi } from '../screens/epilogueState.ts'; // T810: C5's stage, lazy
 
 /** How often a moving stage redraws (ms): faster than the quickest anim (12 fps). */
 const STAGE_TICK_MS = 40;
@@ -250,6 +251,11 @@ export function Staging({ staging }: { staging: StagingView }) {
   if (kind === 'mail') return <MailStage from={staging.from} />;
   if (kind === 'night_shift') return <NightShiftStage from={staging.from} />;
   if (kind === 'waykeeper') return <WaykeeperStage from={staging.from} />;
+  if (kind === 'c5') {
+    // The finale's chunk registers it; until then (never, once the finale is loaded) a dark stage.
+    const C5Stage = finaleUi.value?.C5Stage;
+    return C5Stage === undefined ? null : <C5Stage from={staging.from} />;
+  }
   return kind === 'rig9_feed' ? (
     <FeedStage ms={ms} still={still} />
   ) : (
