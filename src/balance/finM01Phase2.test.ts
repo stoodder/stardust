@@ -109,6 +109,29 @@ describe('FIN Phase 2 and Dawn', { timeout: HARNESS_TEST_TIMEOUT_MS * 2 }, () =>
     expect(trickleSec).toBeGreaterThan(SONG_TARGET_SEC); // the kills and the Unsung still count
   });
 
+  it("hitting the Unsung shortens the song, and its forms keep their time floors (D156)", () => {
+    // The same par with the boss's damage worth nothing to the song: a longer Phase 2.
+    const raw = RAW_CONTENT.maps.fin_m01;
+    const deaf = compileContent({
+      ...RAW_CONTENT,
+      maps: { ...RAW_CONTENT.maps, fin_m01: { ...raw, song: { ...raw.song!, restPerBossHp: 0 } } },
+    });
+    const m = deaf.maps.fin_m01;
+    const b = buildFor('flag:quill_choice=keep', m, deaf)!;
+    const flags = flagsFor('flag:quill_choice=keep', m) ?? {};
+    const profile = referenceRunProfile(m, deaf, 'standard', undefined, flags);
+    const unheard = runHeadless(runConfig(deaf, m, b, profile, 1, flags), b);
+    expect(songSeconds(unheard)! - songSeconds(c4.keep)!).toBeGreaterThanOrEqual(5);
+    // Forms 3 and 4 never begin before 60 s and 120 s into Phase 2, on Story either (the most
+    // damage par deals).
+    const story = played('par@story');
+    const p2 = story.at('PhaseChanged', (e) => 'phase' in e && e.phase === 2);
+    const form = (n: number) =>
+      story.at('BossPhase', (e) => 'phase' in e && e.phase === n && e.enemy === 'unsung');
+    expect(form(3) - p2).toBeGreaterThanOrEqual(60 * TICK_HZ);
+    expect(form(4) - p2).toBeGreaterThanOrEqual(120 * TICK_HZ);
+  });
+
   it("Thrum's echo at rest progress 50% when she was cleared; Pebble's line as it arrives", () => {
     const cleared = played('flag:spared_quiet_wave=false');
     const spawned = cleared.log.find(
