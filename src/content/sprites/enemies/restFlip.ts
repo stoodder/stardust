@@ -1,15 +1,16 @@
 // Laid to rest (art-direction §1 principle 6, §7 *Laid to rest*; design/maps.md § 5.5): the one
 // place Hollow pixels ever turn warm. A Hollow body built in the `hollow` legend (`0`–`3` the
 // drained greys, `w` the pale features, `k` the dark, `K` the `ink.0` contour, `V`/`U` unsung
-// violet, `+`/`*` acid eyes) is re-pointed to custom characters (`greyed`), ringed by hand with its
-// pale (inverted) outline (`ringed`), and then flipped to `stardust.sung` gold **from the outline
-// in** (`warmed`, by each pixel's depth from the edge), so a sprite that declares these legends can
-// show the grey body, every step of the flip, and the gold body in one palette. The gold maps the
-// Hollow's dark heart to the brightest white (the hollow filled with light), its greys to the gold
-// ramp (the lit steps on the `e0`/`e1` slots, so a palette whose emissives are gold, `skitterkin`,
-// bakes their glow), its pale faces to warm pink, its contour to `pink.3`, and its outline to
-// `gold.1`, the dark rim any warm actor wears. Thrum's echo (`fx.echo`) and the Unsung's rest
-// (`enemy.unsung_rest`) are built with it.
+// violet, `+`/`*` acid eyes) is re-pointed to custom characters (`greyed`; its acid eyes close to
+// grey, so no acid reaches a warm palette), ringed by hand with its pale (inverted) outline
+// (`ringed`), and then flipped to `stardust.sung` gold **from the outline in** (`warmed`, by each
+// pixel's depth from the edge), so a sprite that declares these legends can show the grey body,
+// every step of the flip, and the gold body in one palette. The gold maps the Hollow's dark heart
+// to the brightest white (the hollow filled with light), its greys to the gold ramp (only its
+// rim-lit step on an emissive slot, `e1`, so a palette whose emissives are gold, `skitterkin`,
+// bakes a glow round its edge and no more), its pale faces to warm pink, its contour to `pink.3`,
+// and its outline to `gold.1`, the dark rim any warm actor wears. Thrum's echo (`fx.echo`) and the
+// Unsung's rest (`enemy.unsung_rest`) are built with it.
 import { at, fromRows, rows } from '../helpers.ts';
 import type { ColorName } from '../../palettes/master.ts';
 import type { CustomChar } from '../types.ts';
@@ -26,8 +27,9 @@ const GREY_OF: Readonly<Record<string, string>> = {
   K: 'K',
   V: 'V',
   U: 'U',
-  '+': 'Y',
-  '*': 'Z',
+  // Its acid eyes close: nothing hungers once it is being laid to rest.
+  '+': 'D',
+  '*': 'D',
 };
 
 /** The drained greys (the `hollow` palette's own colours, kept by custom legend). */
@@ -41,29 +43,26 @@ export const REST_GREY_LEGEND = {
   K: 'ink.0',
   V: 'violet.3',
   U: 'violet.4',
-  Y: 'acid.2',
-  Z: 'acid.3',
 } as const satisfies Partial<Record<CustomChar, ColorName>>;
 
 /** Each grey re-pointed to its gold (`+` and `*` are the palette's `e0`/`e1`: gold, glowing). */
 export const GOLD_OF: Readonly<Record<string, string>> = {
   A: 'W',
   B: 'G',
-  C: '+',
+  C: 'L',
   D: '*',
   E: 'I',
   R: 'F',
   K: 'H',
   V: 'W',
   U: 'W',
-  Y: '*',
-  Z: '*',
 };
 
 /** The sung gold's custom colours (the rest come from a gold-emissive palette's `e0`/`e1`). */
 export const REST_GOLD_LEGEND = {
   W: 'white.1',
   G: 'gold.2',
+  L: 'gold.3',
   F: 'gold.1',
   H: 'pink.3',
   I: 'pink.4',

@@ -2,6 +2,11 @@
 // that boss.ts hands here, and its `layToRest` ending. Its numbers are data
 // (content/enemies/unsung.ts); the split without a merge is bossSplit.ts/bossMerge.ts's, the HP
 // floor bossPhases.ts's, and the rest it feeds song.ts's.
+// - **Held by the song** (a `layToRest` boss and its split's parts, every tick, its invulnerability
+//   included): while the song sings (script phase 2) and it stands inside a song circle (choir.ts
+//   `inSong`), it holds still: it came for the choir, and the song keeps it at the circle's edge.
+//   As Voices fall the circle shrinks and it walks on until it is inside again, so it creeps closer
+//   as the choir is hushed. Its fight is at the Halls mouth, and its damage there feeds the song.
 // - **Laid to rest** (`layToRest`, every tick, whatever its phase): once the song's countdown has
 //   completed (`restPoints` at `restTarget`, p = 1), the boss joins the song: BossEnded
 //   `layToRest`, then LaidToRest (0 points: it scores nothing, as `restAll`), and it is gone (marked
@@ -34,10 +39,11 @@ import type { CompiledBossPhase, CompiledMapDef, CompiledRoute } from '../../con
 import { BOSS_ABILITY_TELL_SEC, BOSS_SURFACE_HUSH_TILES } from '../../content/rules.ts';
 import type { IdSpace, WaveTag } from '../../content/types.ts';
 import { secToTicks } from '../../shared/time.ts';
-import { hushSinger, isChoirSinger } from '../choir.ts';
+import { hushSinger, inSong, isChoirSinger } from '../choir.ts';
 import type { Ally, Enemy } from '../entities.ts';
 import { pointAt, type Point } from '../path.ts';
 import { poolKill } from '../pool.ts';
+import { SONG_PHASE } from '../song.ts';
 import { emit, type SimState } from '../state.ts';
 import { cooldownHeld, evadeBlocked, isInterrupted } from '../systems/status.ts';
 import type { TickContext } from '../tick.ts';
@@ -58,6 +64,18 @@ const addsAt: { wave: number; tags: readonly WaveTag[]; route: CompiledRoute | n
 /** Whether boss phase `p` has a kind this module runs (boss.ts hands it here). */
 export function isUnsungPhase(p: CompiledBossPhase): boolean {
   return p.burrowTo !== null || p.adds !== null || p.phase !== null;
+}
+
+/** Whether `e` is a `layToRest` boss or one of its split's parts (the Unsung's). */
+export function laidToRestBySong(e: Pick<Enemy, 'def' | 'splitFrom'>): boolean {
+  const def = e.splitFrom ?? e.def;
+  return def !== null && def.boss !== null && def.boss.ending === 'layToRest';
+}
+
+/** Held by the song (see the header): a `layToRest` boss or part inside a circle holds still. */
+export function songHold(state: SimState, ctx: TickContext, e: Enemy): void {
+  if (state.phase !== SONG_PHASE || e.burrowed || !laidToRestBySong(e)) return;
+  if (inSong(state, ctx.map, e.x, e.y)) e.paceMul = 0;
 }
 
 /**
@@ -330,8 +348,7 @@ export function bossRestProgress(
   state: Pick<SimState, 'restPoints' | 'restTarget'>,
   e: Pick<Enemy, 'def' | 'splitFrom'>,
 ): number {
-  const def = e.splitFrom ?? e.def;
-  if (def === null || def.boss?.ending !== 'layToRest') return -1;
+  if (!laidToRestBySong(e)) return -1;
   if (!(state.restTarget > 0)) return 0;
   const p = state.restPoints / state.restTarget;
   return p < 1 ? p : 1;

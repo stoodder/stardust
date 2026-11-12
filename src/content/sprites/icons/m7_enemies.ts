@@ -106,7 +106,7 @@ function shrink(frame: readonly string[]): string[] {
 }
 
 /** An icon sprite `id` from `def`'s SE walk, fitted or shrunk, in its palette and legend. */
-function icon<const Id extends string>(id: Id, def: SpriteDef, big: boolean): SpriteDef<Id> {
+export function icon<const Id extends string>(id: Id, def: SpriteDef, big: boolean): SpriteDef<Id> {
   const frame = walkSe(def);
   return defineSprite({
     id,

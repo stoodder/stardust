@@ -1920,8 +1920,11 @@ export type ScriptTrigger<K extends IdSpace = LiveIds> =
   | { readonly forcedInputResolved: string }
   | { readonly tick: number }
   // The finale (T800a seams; each run by the task named in SCRIPT_GATES).
-  /** The choir's leader has reached that marker (the Halls mouth; T806 with T804's choir). */
-  | { readonly choirAt: MarkerId }
+  /**
+   * The choir's leader has reached that marker (the Halls mouth; T806 with T804's choir), and, with
+   * `afterWave`, that wave has also cleared: the later of the two (Phase 2's start, D154; T820).
+   */
+  | { readonly choirAt: MarkerId; readonly afterWave?: number }
   /** That timer (MapDef.timers) has filled (the Deep Bore's breakthrough; T806). */
   | { readonly timerFull: string }
   /** The map's script phase is `phase` or later, `afterSec` (default 0) after it began (T806). */

@@ -72,12 +72,12 @@ interface Lobe {
 const BODY: Lobe = { dx: 0, dy: 0, rx: 17, ry: 11.5 };
 /** The small round heads crowding its crown, back to front. */
 const HEADS: readonly Lobe[] = [
-  { dx: -14, dy: -4.5, rx: 4, ry: 3.5 },
-  { dx: -9, dy: -9.5, rx: 4.5, ry: 3.5 },
-  { dx: -2.5, dy: -11.5, rx: 4.5, ry: 3.5 },
-  { dx: 4.5, dy: -11, rx: 4.5, ry: 3.5 },
-  { dx: 10.5, dy: -8.5, rx: 4, ry: 3.5 },
-  { dx: 15.5, dy: -3, rx: 3.5, ry: 3 },
+  { dx: -14, dy: -4.5, rx: 4.5, ry: 4 },
+  { dx: -8.5, dy: -9.5, rx: 5, ry: 4 },
+  { dx: -1.5, dy: -11.5, rx: 5, ry: 4 },
+  { dx: 5.5, dy: -11, rx: 5, ry: 4 },
+  { dx: 11.5, dy: -8, rx: 4.5, ry: 4 },
+  { dx: 16, dy: -2.5, rx: 4, ry: 3.5 },
 ];
 /** A piece torn loose: one lump and two heads. */
 const PART_BODY: Lobe = { dx: 0, dy: 0, rx: 9, ry: 7 };
@@ -90,7 +90,7 @@ const PART_HEADS: readonly Lobe[] = [
 const BACK = 2;
 const AHEAD = 6;
 const ABOVE = 5;
-const BELOW = 3;
+const BELOW = 2;
 /** The split's chasm widens the canvas by this (its right half lurches away). */
 const CHASM_ROOM = 4;
 
@@ -146,6 +146,8 @@ const FACES: readonly (readonly [number, number])[] = [
   [0.24, 0.92],
 ];
 const FACE = ['.w.', 'wkw', '.w.'] as const;
+/** A crown head's face: a wider pale ring, low on its front (the shape of a Skitterkin's face). */
+const HEAD_FACE = ['.ww.', 'wkkw', '.ww.'] as const;
 
 /** Acid eyes over the hide (0–1 across, 0–1 down the body's box), never a pair, per facing. */
 const EYES: Readonly<Record<Facing, readonly (readonly [number, number, string])[]>> = {
@@ -197,7 +199,8 @@ function hollowAt(
       if (d > 1) continue;
       // The pale lip (broken: a ring the Hollow can't quite draw), then the dark, then the violet.
       if (d > 0.78) plot(g, x, y, (x * 3 + y + step) % 7 === 0 ? 'k' : 'w');
-      else if (d < (song ? 0.42 : 0.3) - (step === 1 ? 0.06 : 0)) plot(g, x, y, d < 0.18 ? 'U' : 'V');
+      else if (d < (song ? 0.42 : 0.3) - (step === 1 ? 0.06 : 0))
+        plot(g, x, y, d < 0.18 ? 'U' : 'V');
       else plot(g, x, y, 'k');
     }
   }
@@ -238,7 +241,17 @@ function unsung(form: Form, stage: number, facing: Facing, step: number, look: L
     }
     centers.push({ x, y, rx, ry });
   }
-  // The seams where its pieces run together: unsung violet glinting through a dark crease.
+  // The great body's own heart isn't the darkest: the hollow (below) is. Its mass sits a step up…
+  for (let y = 0; y < f.h; y++) {
+    for (let x = 0; x < f.w; x++) {
+      const o = own[y]?.[x] ?? -1;
+      const c = at(g, x, y);
+      // …and each little head of its crown is lit a step more (so its pale face reads on it).
+      if (o === 0 && c === '0') plot(g, x, y, '1');
+      else if (o > 0 && (c === '0' || c === '1')) plot(g, x, y, c === '0' ? '1' : '2');
+    }
+  }
+  // The seams where its heads run into the body: a dark crease, unsung violet glinting in it.
   for (let y = 0; y < f.h; y++) {
     for (let x = 0; x < f.w; x++) {
       const o = own[y]?.[x] ?? -1;
@@ -246,7 +259,7 @@ function unsung(form: Form, stage: number, facing: Facing, step: number, look: L
       const r = own[y]?.[x + 1] ?? -1;
       const d = own[y + 1]?.[x] ?? -1;
       if ((r >= 0 && r !== o) || (d >= 0 && d !== o)) {
-        plot(g, x, y, (x + y + step) % 3 === 0 ? 'U' : (x + y) % 2 === 0 ? 'V' : '0');
+        plot(g, x, y, (x + 2 * y + step) % 5 === 0 ? 'U' : (x + y) % 3 === 0 ? 'V' : '0');
       }
     }
   }
@@ -259,8 +272,8 @@ function unsung(form: Form, stage: number, facing: Facing, step: number, look: L
   // Each head of its crown: a pale ring where its face should be (facing us).
   if (facing === 'se') {
     for (const [i, c] of centers.entries()) {
-      if (i === 0 || (form !== 'part' && i % 2 === 0 && i !== 4)) continue;
-      stamp(g, Math.round(c.x + c.rx * 0.2) - 1, Math.round(c.y) - 1, FACE);
+      if (i === 0 || (form !== 'part' && i === 1)) continue; // the back head faces away
+      stamp(g, Math.round(c.x + c.rx * 0.15) - 2, Math.round(c.y), HEAD_FACE);
     }
   }
   // The faces of what it gathered, stuck in its hide: two already, one more per absorb.
@@ -274,8 +287,8 @@ function unsung(form: Form, stage: number, facing: Facing, step: number, look: L
   const hx = main.x + main.rx * (form === 'part' ? 0.3 : 0.28);
   const hy = main.y + main.ry * 0.18;
   const gape = tell && form !== 'song' ? 1.35 : song ? 1.12 : 1;
-  const hrx = main.rx * (form === 'part' ? 0.34 : 0.3) * gape;
-  const hry = main.ry * 0.42 * gape;
+  const hrx = main.rx * (form === 'part' ? 0.36 : 0.34) * gape;
+  const hry = main.ry * 0.38 * gape;
   if (facing === 'se') hollowAt(g, hx, hy, hrx, hry, look, form, step);
   else {
     const x0 = Math.round(main.x - main.rx * 0.1);
@@ -301,28 +314,39 @@ function unsung(form: Form, stage: number, facing: Facing, step: number, look: L
     while (sy < f.h - 1 && at(g, sx, sy) === '.') sy++;
     if (song) {
       const lean = (i + step) % 2 === 0 ? 1 : -1;
-      line(g, sx, sy - 1, sx + lean, sy - 4, '2');
-      plot(g, sx + lean, sy - 5, '3');
+      line(g, sx, sy - 1, sx + lean, sy - 4, '3');
+      plot(g, sx + lean, sy - 5, 'w');
       continue;
     }
     const flip = (i + step) % 3 === 0;
     const dir = flip ? 2 : -2;
-    line(g, sx, sy - 1, sx + dir, sy - 3, puff ? '1' : '2');
-    plot(g, sx + dir + Math.sign(dir), sy - 2, '3');
+    line(g, sx, sy - 1, sx + dir, sy - 3, puff ? '2' : '3');
+    plot(g, sx + dir + Math.sign(dir), sy - 2, 'w');
   }
   // The legs: stubby, too many, popping (half of them still in a tell, a dig, or a puff).
   const nLegs = form === 'part' ? 6 : 13;
-  const legLeft = Math.round(main.x - main.rx * 0.85);
-  const legSpan = Math.round(main.rx * 1.7);
+  const legLeft = Math.round(main.x - main.rx * 0.7);
+  const legSpan = Math.round(main.rx * 1.4);
   const still = tell || puff || look === 'dig';
   for (let i = 0; i < nLegs; i++) {
     if (still && i % 2 === 1) continue;
     const lx = legLeft + Math.round((legSpan * (i + 0.5)) / nLegs) + ((i + step) % 3 === 0 ? 1 : 0);
     const foot = f.h - 1 - ((i + step) % 3 === 0 && !still ? 1 : 0);
     let y = foot;
-    while (y > foot - 6 && at(g, lx, y - 1) === '.') y--;
+    while (y > foot - 4 && at(g, lx, y - 1) === '.') y--;
     if (at(g, lx, y - 1) === '.') continue;
     for (let k = y; k <= foot; k++) plot(g, lx, k, k === foot ? '0' : '1');
+  }
+  // Form 3 has been under: turned earth clings to its lower body in clods.
+  if (form === 'burrow' && look !== 'phase') {
+    for (let y = Math.round(main.y + main.ry * 0.3); y < f.h - 1; y++) {
+      for (let x = 0; x < f.w; x++) {
+        const c = at(g, x, y);
+        if ('0123K'.includes(c) && c !== '.' && (x * 5 + y * 3 + step) % 7 < 2) {
+          plot(g, x, y, (x + y) % 3 === 0 ? 'O' : 'N');
+        }
+      }
+    }
   }
   if (tell && (form === 'gather' || form === 'part')) tendrils(g, f, hx, hy, main, step);
   if (tell && form === 'song') hum(g, f, hx, hy, main, step);
@@ -373,7 +397,7 @@ function hum(
   step: number,
 ): void {
   for (let a = 0; a < 2; a++) {
-    const r = main.rx * 0.45 + 3 + a * 4 + step * 2;
+    const r = main.rx * 0.75 + 2 + a * 3 + step * 2;
     for (let k = -6; k <= 6; k++) {
       const th = (k / 6) * 0.9;
       const x = Math.round(hx + Math.cos(th) * r);
@@ -501,7 +525,8 @@ function mound(f: Frame, step: number, burst: 0 | 1): string[] {
   // Violet cracks through the earth.
   for (let x = Math.round(cx - rx * 0.7); x < Math.round(cx + rx * 0.7); x++) {
     const y = base - 2 - ((x + step) % 4 < 2 ? 0 : 1) - (burst ? 1 : 0);
-    if (at(g, x, y) !== '.' && (x + step) % 5 !== 0) plot(g, x, y, (x + step) % 3 === 0 ? 'U' : 'V');
+    if (at(g, x, y) !== '.' && (x + step) % 5 !== 0)
+      plot(g, x, y, (x + step) % 3 === 0 ? 'U' : 'V');
   }
   if (burst === 1) {
     // Light pouring up out of the split, and clods flung.

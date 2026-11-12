@@ -150,6 +150,8 @@ interface Context {
   readonly specName: (tower: string, spec: 'a' | 'b') => string | null;
   /** Who may walk with you (the finale's pick list; meta `companionChoices`), else empty. */
   readonly companions: readonly CompanionId[];
+  /** The map's own companion when present in slot 2 (no pick list), else null. */
+  readonly fixed: CompanionId | null;
   /** The abilities slot 1 can't hold beside each companion (content/technician.ts). */
   readonly offBeside: Readonly<Partial<Record<CompanionId, readonly string[]>>>;
 }
@@ -339,8 +341,14 @@ export function openLoadout(mapId: string): boolean {
   const pools = loadoutPools(save, [], off);
   // The finale's companion pick (QUILL gone under C4 Purge; the first, Ves'thara, by default).
   const companions = companionChoices(save, map.companion);
+  // A map's one companion, present in slot 2, brings its ability too (A1M5's Bricks beside an
+  // inherited Suppressing Fire); an absent one brings nothing.
+  const fixed =
+    companions.length === 0 && cfg.abilities.slot2State === 'present' ? cfg.companion : null;
   const offBeside: Partial<Record<CompanionId, readonly string[]>> = {};
-  for (const id of companions) offBeside[id] = technicianOffBeside(content.abilities, id);
+  for (const id of fixed === null ? companions : [fixed]) {
+    offBeside[id] = technicianOffBeside(content.abilities, id);
+  }
   const c: Context = {
     mapId,
     save,
@@ -348,6 +356,7 @@ export function openLoadout(mapId: string): boolean {
     map: loadoutMap(map, cfg.abilities.slot2),
     specName: (tower, spec) => content.towers[tower]?.specs?.[spec].name ?? null,
     companions,
+    fixed,
     offBeside,
   };
   ctx = c;
@@ -360,15 +369,14 @@ export function openLoadout(mapId: string): boolean {
   const offered = owned.map((o) => protocolView(o, map.objective));
   const first = initialPick(save, mapId, defaultPick(save, map.builds.parBuild, off), off);
   const companion = companions.length === 0 ? null : pickedCompanion(save, mapId, companions);
+  const beside = companion ?? fixed;
   const start = {
     ...first,
     // Slot 1 starts off what the companion brings (T501: Time Dilation beside QUILL).
-    ...(companion === null
+    ...(beside === null
       ? {}
-      : {
-          companion,
-          ability: slot1Beside(content, first.ability, companion, pools.abilities),
-        }),
+      : { ability: slot1Beside(content, first.ability, beside, pools.abilities) }),
+    ...(companion === null ? {} : { companion }),
     ...equippedView(save),
   };
   // A core-only protocol carried onto a map with no core is benched for one that acts (D144 S1b).
@@ -393,7 +401,9 @@ export function openLoadout(mapId: string): boolean {
       const def = content.abilities[id]!; // pool abilities are registered (validateSave)
       const from = inheritedFrom(save, id, def.companion);
       // Its own companion on the pick list brings it in slot 2: slot 1 greys it beside them.
-      const brings = companions.find((k) => offBeside[k]?.includes(id) === true);
+      const brings = (fixed === null ? companions : [fixed]).find(
+        (k) => offBeside[k]?.includes(id) === true,
+      );
       return {
         id,
         name: silkText(def.name),
@@ -494,13 +504,13 @@ function typed(c: Context, pick: LoadoutPickView): LoadoutPick {
 }
 
 /**
- * Whether `ability` greys in slot 1 for the pick's companion (T501; content/technician.ts): the
- * companion brings it in slot 2 ("QUILL brings it"). Never without a pick list.
+ * Whether `ability` greys in slot 1 for the pick's companion, or the map's own present one (T501;
+ * content/technician.ts): the companion brings it in slot 2 ("QUILL brings it").
  */
 export function abilityGreyed(pick: Pick<LoadoutPickView, 'companion'>, ability: string): boolean {
   const c = ctx;
-  if (c === null || pick.companion === undefined || pick.companion === null) return false;
-  const k = c.companions.find((id) => id === pick.companion);
+  if (c === null) return false;
+  const k = c.fixed ?? c.companions.find((id) => id === pick.companion);
   return k !== undefined && (c.offBeside[k]?.includes(ability) ?? false);
 }
 

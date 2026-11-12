@@ -152,8 +152,9 @@ describe('the loadout screen (app side)', () => {
       'Heads up: this shift needs an answer to Armor, and nothing here has one. Rivet (T3) or ' +
         'Thumper or Grapple Harpoon or Prism Spire or Gloop Spitter would.',
     ]);
-    expect(savePick({ ...pick, ability: 'suppressing_fire' })).toEqual({ ok: true });
-    const preset = { towers: ['sprinkler'], ability: 'suppressing_fire' };
+    // Not Suppressing Fire: Bricks walks A1M2 and brings it in slot 2 (T501; loadoutCompanion.test.ts).
+    expect(savePick({ ...pick, ability: 'scanner_sweep' })).toEqual({ ok: true });
+    const preset = { towers: ['sprinkler'], ability: 'scanner_sweep' };
     expect(activeSave()?.loadouts).toEqual({
       last: preset,
       byMap: { a1_m02: preset },
@@ -163,7 +164,7 @@ describe('the loadout screen (app side)', () => {
     // The battle plays it.
     const cfg = battleConfig('a1_m02', 0, activeSave());
     expect(cfg.loadout).toEqual(['sprinkler']);
-    expect(cfg.abilities.slot1).toBe('suppressing_fire');
+    expect(cfg.abilities.slot1).toBe('scanner_sweep');
     // The screen opens on it next time.
     openLoadout('a1_m02');
     expect(loadout.value?.initial).toEqual({ ...preset, protocols: [], protocolPicks: {} });

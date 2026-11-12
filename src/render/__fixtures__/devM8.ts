@@ -15,6 +15,8 @@
 //   slows it; full, a breakthrough surge), Phase 2 when the choir reaches the Halls (checkpoint
 //   `halls`, the Bore stopped, the Unsung), Directive 0 20 s in under Keep (a revocation, "Who's
 //   there?", the restore, Time Dilation locked), Thrum's echo at p = 50% if cleared, and Dawn.
+//   The Unsung (W3; T808) is held at the Halls by the song, cues each of its four forms
+//   (`bossPhase` 1–4), and is laid to rest at Dawn.
 import { mapDefinersFor } from '../../content/define.ts';
 import type { MapDef } from '../../content/types.ts';
 import type { DevIds } from './devBattle.ts';
@@ -225,6 +227,12 @@ export const phasesMap = dev.defineMap({
       actions: [{ restAll: true }, { setPhase: 3 }, { setLighting: 'dawn' }],
     },
     { id: 'won', on: { phase: 3, afterSec: 8 }, actions: [{ endMap: 'won' }] },
+    // The Unsung's cues, one per form (T808): each the tick after its phase begins (the rise is
+    // phase 3's: BossPhase 3 comes with it).
+    { id: 'unsung_rises', on: { bossPhase: 1 }, actions: [{ cue: 'dev_phases_cue_unsung_1' }] },
+    { id: 'unsung_splits', on: { bossPhase: 2 }, actions: [{ cue: 'dev_phases_cue_unsung_2' }] },
+    { id: 'unsung_burrows', on: { bossPhase: 3 }, actions: [{ cue: 'dev_phases_cue_unsung_3' }] },
+    { id: 'unsung_song', on: { bossPhase: 4 }, actions: [{ cue: 'dev_phases_cue_unsung_4' }] },
   ],
   referenceProfile: PROFILE,
   parBuild: {

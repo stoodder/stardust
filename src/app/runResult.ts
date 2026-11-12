@@ -132,6 +132,11 @@ export interface RunEndInput {
    */
   readonly script?: RunScript;
   /**
+   * A choir map's Voices at the end (the finale; `state.choir`: singers still singing, of the
+   * run's choir): Results lists them in Core integrity's place. Absent on other maps.
+   */
+  readonly voices?: RunVoices;
+  /**
    * That checkpoint's label (the finale's `'halls'`: "Retry from the Halls"), or null/absent for
    * a wave checkpoint.
    */
@@ -153,6 +158,12 @@ export interface RunEndInput {
    * `memorialAtEnd`), saved as `memorialTower` on the map's first win. Absent or null: none.
    */
   readonly memorialTower?: TowerId | null;
+}
+
+/** A choir's Voices at a run's end (the finale): singers still singing, of the run's choir. */
+export interface RunVoices {
+  readonly n: number;
+  readonly total: number;
 }
 
 /** An optional objective as the run left it. */
@@ -486,6 +497,7 @@ export function runResultOf(
     ...checkpointPlaces(input, outcome),
     ...(input.remembered === undefined ? {} : { remembered: input.remembered }),
     escort: input.escort ?? null,
+    ...(input.voices === undefined ? {} : { voices: input.voices }),
     meter: meterOf(input),
     // The debrief's choice (C2) is app/resultsFlow.ts's `withResultsChoice`, over the save in play.
     choice: null,
@@ -534,7 +546,7 @@ export function meterOf(input: Pick<RunEndInput, 'escort' | 'bearers'>): Results
 /** One of the card's stat rows under the headline: "Waves survived 12 / 12". */
 export interface ResultsStat {
   /** The row's id (its smoke test id is `results-<id>`). */
-  readonly id: 'waves' | 'integrity' | 'escort' | 'asset';
+  readonly id: 'waves' | 'integrity' | 'escort' | 'asset' | 'voices';
   readonly label: string;
   readonly value: string;
   /** A quieter aside after the value (" · lost 11"), or null. */
@@ -550,7 +562,7 @@ export interface ResultsStat {
 export function resultsStats(
   r: Pick<
     RunResult,
-    'wavesSurvived' | 'waveCount' | 'integrity' | 'maxIntegrity' | 'escort' | 'asset'
+    'wavesSurvived' | 'waveCount' | 'integrity' | 'maxIntegrity' | 'escort' | 'asset' | 'voices'
   >,
 ): ResultsStat[] {
   const out: ResultsStat[] = [
@@ -561,8 +573,11 @@ export function resultsStats(
       note: null,
     },
   ];
-  const { escort, asset } = r;
-  if (escort === null) {
+  const { escort, asset, voices } = r;
+  if (voices !== undefined) {
+    // A choir map (the finale): its Voices stand where the core would (T809).
+    out.push({ id: 'voices', label: 'Voices', value: `${voices.n} / ${voices.total}`, note: null });
+  } else if (escort === null) {
     out.push({
       id: 'integrity',
       label: 'Core integrity',

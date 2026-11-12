@@ -14,7 +14,8 @@
 // - [timers]: timer ids are snake_case, each fills in > 0 s, its boss bonus is ≥ 0, and some
 //   `startTimer` starts it; `startTimer`, `setTimerRate` (a share in [0, 1]), and the
 //   `{ timerFull }` trigger name a timer of the map.
-// - [script] (the finale's parts): `choirAt` names a marker on a map with a choir;
+// - [script] (the finale's parts): `choirAt` names a marker on a map with a choir (and its
+//   `afterWave`, if any, a wave of the map);
 //   `restProgressPct` is a share in (0, 1] and `restAll` and `spawnEcho` need a song; the
 //   `{ phase }` trigger and the `phaseAtLeast` atom name a whole phase ≥ 1 that the map reaches
 //   (phase 1 from the start, a later one by some `setPhase`), with `afterSec` ≥ 0; `setPhase`
@@ -258,6 +259,10 @@ function validateFinaleScripts(issues: Issues, def: MapDef<IdSpace>, where: stri
       if (def.choir === undefined) issues.add('script', w, 'choirAt needs a choir (MapDef.choir)');
       if (def.markers?.[t.choirAt] === undefined) {
         issues.add('script', w, `unknown marker '${t.choirAt}'`);
+      }
+      const aw = t.afterWave;
+      if (aw !== undefined && !(Number.isInteger(aw) && aw >= 1 && aw <= def.waves.length)) {
+        issues.add('script', `${w}.afterWave`, `afterWave ${aw} must name a wave of the map`);
       }
     }
     if ('timerFull' in t) timer(t.timerFull, w);

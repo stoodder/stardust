@@ -70,6 +70,8 @@ export interface RunResult {
    * (app/runResult.ts `resultsStats`), and a `meter` counter shows its line.
    */
   readonly escort: RunEscort | null;
+  /** A choir map's Voices at the end (the finale): listed in Core integrity's place. Absent: none. */
+  readonly voices?: { readonly n: number; readonly total: number };
   /**
    * The map's meter as the run ended, for the `meter` counter's line (Act III; core-loop.md
    * § 6.2): an Escort's or a Holdout's Evacuated count (A3M6's Sheltered), from `escort`; A3M5's

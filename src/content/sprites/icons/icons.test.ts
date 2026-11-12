@@ -44,7 +44,16 @@ describe('icon sprites (art-direction §5)', () => {
     const ids = new Set<string>(SPRITES.map((s) => s.id));
     // Render-only actors never appear in a wave preview or the build bar. A youngling is a
     // Nibbler with the `youngling` wave modifier drawn small, so its preview is the Nibbler's.
-    const renderOnly = new Set(['enemy.hauler_young', 'enemy.youngling']);
+    // The Unsung's later forms, its split parts and its rest are one unit's looks (T841): its icon.
+    const renderOnly = new Set([
+      'enemy.hauler_young',
+      'enemy.youngling',
+      'enemy.unsung_split',
+      'enemy.unsung_part',
+      'enemy.unsung_burrow',
+      'enemy.unsung_song',
+      'enemy.unsung_rest',
+    ]);
     for (const s of SPRITES) {
       const m = /^(tower|enemy)\.([a-z_]+)$/.exec(s.id);
       // A fleeing body (`enemy.<id>_fleeing`, T440a) is its unit's look while it runs: the unit's icon.

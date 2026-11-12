@@ -95,19 +95,15 @@ describe('the finale dev maps', () => {
       afterTicks: 1200,
     });
     expect(map.events.find((e) => e.id === 'won')?.on).toEqual({ phase: 3, afterTicks: 480 });
-    expect(refused('dev_phases')).toEqual([
-      "a boss ending 'layToRest' (unsung) is not simulated until T808",
-      "a phase's HP floor (unsung) is not simulated until T808",
-      'a burrow toward the choir (unsung) is not simulated until T808',
-      "a phase's adds (unsung) is not simulated until T808",
-    ]);
+    expect(refused('dev_phases')).toEqual([]); // T808 (tools/devUnsung.test.ts)
   });
 
   it('are not in DEV_CONTENT until their tasks register them', () => {
     const registry: Readonly<Record<string, unknown>> = DEV_CONTENT.maps;
     expect(registry.dev_song).toBe(songMap); // T805
     expect(registry.dev_voices).toBe(voicesMap); // T804
-    const registered = new Set(['dev_song', 'dev_voices']);
+    expect(registry.dev_phases).toBe(phasesMap); // T808
+    const registered = new Set(['dev_song', 'dev_voices', 'dev_phases']);
     for (const id of Object.keys(DEV_M8_MAPS).filter((m) => !registered.has(m))) {
       expect(Object.hasOwn(DEV_CONTENT.maps, id), id).toBe(false);
     }

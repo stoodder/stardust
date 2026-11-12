@@ -62,6 +62,9 @@ export interface SpeakerDef {
   readonly blip: BlipId | null;
 }
 
+/** Act III and the finale after it (a look that comes with Act III stays for the finale). */
+const ACT3_ON: Condition = { any: [{ act: 3 }, { act: 'finale' }] };
+
 /** A1M5's party (act1.md § A1M5): every portrait in a hat, the whole map (D154 addendum, T809). */
 const PARTY: Condition = { mapIs: 'a1_m05' };
 
@@ -199,7 +202,8 @@ export const SPEAKERS = {
     variants: [
       // The finale's Dawn: her threads re-lit (the gold mote at her shoulder), from Phase 3 on.
       { variant: 'dawn', when: AFTER_DAWN },
-      { variant: 'touched_deep', when: { act: 3 } },
+      // Act III's deeper fray carries into the finale until Dawn.
+      { variant: 'touched_deep', when: ACT3_ON },
       // Touched from A2M5's pivot on (she kneels and becomes the wall; D138), and every map after.
       // On A2M5 it is this run's pivot (T569: `pivotWave` is set as it runs, live in the battle and
       // final on Results), so a replay starts her untouched until the pivot comes round again.
@@ -241,7 +245,7 @@ export const SPEAKERS = {
     frame: 'portrait',
     portrait: 'portrait.goldie',
     variants: [
-      { variant: 'act3', when: { act: 3 } },
+      { variant: 'act3', when: ACT3_ON },
       { variant: 'party_hat', when: PARTY },
     ],
     blip: 'blip.goldie',

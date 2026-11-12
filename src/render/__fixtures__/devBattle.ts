@@ -77,6 +77,7 @@ import { gmawMap } from './devM7.ts'; // T708
 import { boreMap } from './devPhases.ts'; // T806
 import { songMap } from './devM8.ts'; // T805
 import { voicesMap } from './devM8.ts'; // T804
+import { phasesMap } from './devM8.ts'; // T808
 import { blackbudget } from '../../content/enemies/blackbudget.ts'; // T703
 import { choir } from '../../content/towers/choir.ts'; // T607
 import { harmony } from '../../content/links/harmony.ts'; // T607
@@ -90,6 +91,7 @@ import { auditor } from '../../content/enemies/auditor.ts';
 import { gathering_maw } from '../../content/enemies/gathering_maw.ts';
 import { gathering_maw_part } from '../../content/enemies/gathering_maw_part.ts';
 import { unsung } from '../../content/enemies/unsung.ts'; // T800a (devM8.ts)
+import { unsung_part } from '../../content/enemies/unsung_part.ts'; // T808 (devM8.ts)
 import { gunship } from '../../content/enemies/gunship.ts';
 import { liability } from '../../content/enemies/liability.ts';
 import { shareholder_value } from '../../content/enemies/shareholder_value.ts';
@@ -321,6 +323,7 @@ const DEV_ENTITIES = {
     gathering_maw_part,
     // The finale's dev maps (devM8.ts; T800a): the Unsung (T808).
     unsung,
+    unsung_part, // T808
   }),
   // Bricks's real Suppressing Fire, so slot 2, its aiming, and its sounds run here (T207b), and
   // QUILL's Time Dilation for dev_sky (T312a).
@@ -1521,6 +1524,7 @@ export const DEV_CONTENT: RawContent<DevIds> = {
     dev_bore: boreMap, // T806 (devPhases.ts: the Deep Bore, Phase 2's checkpoint, Dawn's light)
     dev_song: songMap, // T805 (devM8.ts: rest inside the song, scatter and re-form outside, Dawn)
     dev_voices: voicesMap, // T804 (devM8.ts: the choir's walk, its halts, hushed singers, Voices)
+    dev_phases: phasesMap, // T808 (devM8.ts: the finale in miniature, the Unsung's four forms)
   }),
   links: {
     // Conductive is the live content's link (its partners are the real Zapcoil and Sprinkler).

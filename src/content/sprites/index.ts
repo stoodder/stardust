@@ -232,7 +232,8 @@ import { towerSproing, towerSproingHead } from './towers/sproing.ts';
 import { fxPuddle } from './fx/puddle.ts';
 import { M7_ALLIES, M7_UNIT_FX, M7_UNITS } from './enemies/m7.ts';
 import { M7_UNIT_ICONS } from './icons/m7_enemies.ts';
-import { M8_PLACEHOLDERS } from './placeholders/m8.ts'; // T800a
+import { M8_ALLIES, M8_UNIT_FX, M8_UNITS } from './enemies/m8.ts'; // T841
+import { M8_UNIT_ICONS } from './icons/m8_enemies.ts'; // T841
 import { iconStampLicenseRevoked, iconStampUplinkRevoked } from './icons/revoked.ts';
 import { towerBloom, towerBloomHead } from './towers/bloom.ts';
 import { towerChoir, towerChoirHead } from './towers/choir.ts';
@@ -378,8 +379,8 @@ export const SPRITES = [
   enemyExpediter,
   // M7's units (T740a: enemies/m7.ts).
   ...M7_UNITS,
-  // The finale's placeholders until T841 (placeholders/m8.ts).
-  ...M8_PLACEHOLDERS,
+  // M8's units (T841: enemies/m8.ts): the Unsung in every form.
+  ...M8_UNITS,
   allyBricks,
   // M5's escort: the refugees and Pebble among them (T540a).
   allyRefugee,
@@ -389,6 +390,8 @@ export const SPRITES = [
   allyChampion,
   // M7's allies (T740a): the leapers, the bearers, the militia.
   ...M7_ALLIES,
+  // M8's choir (T841): the singers, Pebble leading, Old Thrum.
+  ...M8_ALLIES,
   projectileRivetTracer,
   projectileThumperShell,
   projectileThumperBomblet,
@@ -411,6 +414,8 @@ export const SPRITES = [
   fxUnravelMote,
   // M7's overlays (T740a): the Jammed static, C4 Purge's open panel.
   ...M7_UNIT_FX,
+  // M8's unit effects (T841): Thrum's echo, the song's motes, the Deep Bore's drill head.
+  ...M8_UNIT_FX,
   // M7's Big Glorp puddle (T740b).
   fxPuddle,
   iconTowerRivet,
@@ -466,6 +471,7 @@ export const SPRITES = [
   iconEnemyExpediter,
   // M7's unit icons (T740a), the towers' and System Reboot's (T740b).
   ...M7_UNIT_ICONS,
+  ...M8_UNIT_ICONS, // T841
   ...M7_TOWER_ICONS,
   iconAbilityUnderfoot,
   iconStampLicenseRevoked,

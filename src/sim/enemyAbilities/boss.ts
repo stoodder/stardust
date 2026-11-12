@@ -26,8 +26,8 @@
 // - M7 (T708): a `split` phase splits the boss into its parts as the phase's invulnerability ends
 //   (bossSplit.ts); a split-born unit (a part, or the boss merged again) runs bossMerge.ts instead
 //   of these steps. A phase's `gather` runs in the gathering pass (gather.ts).
-// - The finale (T808; unsung.ts): a `layToRest` boss is laid to rest once the song's countdown
-//   completes, whatever its phase; a phase with `burrowTo`, `adds`, or a phase-scoped `phase`
+// - The finale (T808; unsung.ts): a `layToRest` boss (and its split's parts) holds still inside the
+//   song; it is laid to rest once the song's countdown completes, whatever its phase; a phase with `burrowTo`, `adds`, or a phase-scoped `phase`
 //   runs there instead of the dig and sneeze steps here.
 // Young are born in the boss's wave with its tags (brood.ts). A leaving boss is moved by leave.ts.
 // Chitterbloom: (1) 100–60% sneezes 2 Nibblers every 5 s; (2) 60–25% burrows twice for 3 s and
@@ -47,7 +47,7 @@ import { jettisonStep } from './jettison.ts'; // T707
 import { splitBornStep } from './bossMerge.ts'; // T708
 import { bossSplitStep, isSplitBorn } from './bossSplit.ts'; // T708
 import { shieldBrokenStep } from './shieldBroken.ts';
-import { isUnsungPhase, layToRestStep, unsungStep } from './unsung.ts'; // T808
+import { isUnsungPhase, layToRestStep, songHold, unsungStep } from './unsung.ts'; // T808
 
 export const BOSS_ABILITY_TELL_TICKS = secToTicks(BOSS_ABILITY_TELL_SEC);
 
@@ -97,6 +97,7 @@ function bossTellBlocked(boss: Readonly<Enemy>, next: BossAbility | null): boole
 
 /** One tick of a live boss that isn't leaving. */
 export function bossStep(state: SimState, ctx: TickContext, boss: Enemy, def: CompiledBoss): void {
+  songHold(state, ctx, boss); // T808: the song holds the Unsung (and its parts) where it stands
   if (isSplitBorn(boss)) {
     splitBornStep(state, boss); // T708: a split boss's parts and its merge (bossMerge.ts)
     return;

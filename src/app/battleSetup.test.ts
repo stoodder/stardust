@@ -93,7 +93,9 @@ describe('battleSetup from a save', () => {
     });
     const cfg = battleConfig(DEFAULT_MAP_ID, 1, save);
     expect(cfg.loadout).toEqual(['sprinkler', 'rivet']);
-    expect(cfg.abilities.slot1).toBe('suppressing_fire');
+    // Bricks walks A1M1 and brings Suppressing Fire in slot 2, so slot 1 gives way (T501).
+    expect(cfg.companion).toBe('bricks');
+    expect(cfg.abilities.slot1).toBe('orbital_strike');
     expect(() => createSim(cfg)).not.toThrow();
     // No choice left (one ability): the skip rule brings everything owned, preset or not.
     save.unlocks.revokedAbilities = ['suppressing_fire'];

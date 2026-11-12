@@ -486,6 +486,8 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
         ? {}
         : { asset: { name: sim.map.asset.name, value: s.asset, max: s.maxAsset } }),
       ...escortAtEnd(sim),
+      // A choir map's Voices (the finale; T804's choir): Results lists them, not the core.
+      ...(s.choir.singers > 0 ? { voices: { n: s.choir.voices, total: s.choir.singers } } : {}),
       ...bearersAtEnd(sim),
       // This attempt's kills: a checkpoint retry's replayed ones were filed by the attempt before.
       skitterkinKilled: attemptKills(b.host),

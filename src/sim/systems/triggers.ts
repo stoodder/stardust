@@ -23,7 +23,7 @@
 // buildable tile; sim/openTile.ts). The finale's parts (T800a) dispatch to their slots
 // (sim/choir.ts, song.ts, phases.ts, timers.ts, echo.ts, revoke.ts) and stay refused until the
 // task SCRIPT_GATES names fills each; T806's run: the triggers `choirAt` (the choir's leader has
-// passed a marker), `timerFull`, and `{ phase, afterSec }` (the script phase reached, that long
+// passed a marker; with `afterWave`, once that wave has cleared too: T820), `timerFull`, and `{ phase, afterSec }` (the script phase reached, that long
 // after it began), and the actions `setPhase`, `checkpoint`, `setLighting`, `startTimer`, and
 // `setTimerRate` (sim/phases.ts, sim/timers.ts); T807's: `restoreTowerClass` (from an event only)
 // and `lockAbility` (a phase lock; `setPhase` ends it as the phase rises) in sim/revoke.ts, and
@@ -165,7 +165,12 @@ function reached(state: SimState, ctx: TickContext, on: CompiledScriptTrigger<Id
   if ('objectiveCompleted' in on) return objectiveDoneNow(state, ctx.map, on.objectiveCompleted);
   // The finale (T800a slots; refused until their tasks: SCRIPT_GATES).
   if ('restProgressPct' in on) return restProgress(state) >= on.restProgressPct;
-  if ('choirAt' in on) return choirAt(state, ctx.map, on.choirAt);
+  if ('choirAt' in on) {
+    // With `afterWave`, the later of the choir at the marker and that wave cleared (T820).
+    const w = on.afterWave;
+    if (w !== undefined && state.schedule.resolved[w - 1] !== true) return false;
+    return choirAt(state, ctx.map, on.choirAt);
+  }
   if ('timerFull' in on) return timerFull(state, ctx.map, on.timerFull);
   if ('phase' in on) return phaseReached(state, on.phase, on.afterTicks);
   return false; // refused by createSim (unsupportedScript)
