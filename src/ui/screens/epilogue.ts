@@ -111,29 +111,33 @@ export function creditsBlockAt(ms: number): number {
   return Math.min(CREDITS.length - 1, Math.floor(Math.max(0, ms) / CREDITS_BLOCK_MS));
 }
 
-/** The epilogue stills' frame and their scale on the 640×360 stage. */
+/** The epilogue stills' resting frame (T843's; the stage draws them at dawn.ts `STILL_SCALE`). */
 export const FINAL_STILL_FRAME = 'still';
-export const FINAL_STILL_SCALE = 2;
 
 /**
  * The final image by ending (bible.md § 10): Stay, the HUD's old status line reading PERIMETER
  * STATUS: OPEN over Wayside at dawn; Go, Tumble IV from orbit, QUILL's relay over the valley at
- * dusk. `still` is T843's epilogue still (a `scene.*` id, frame `still`, 320×180 drawn at 2×,
- * full-bleed); until it is painted the layer draws a placeholder (a dawn sky; the planet's limb and
- * the relay). The Stay line is DOM over either. `label` is the screen reader's account.
+ * dusk. The still is T843's (`ENDING_STILL`, frame `still`, 320×180 drawn at 2×, full-bleed; the
+ * orbit's relay blinks on its `blink` anim, held `still` under reduced motion); the Stay line is
+ * DOM over it. `label` is the screen reader's account.
  */
-export const FINAL_IMAGES: Readonly<
-  Record<EndingChoice, { readonly still: string; readonly label: string }>
-> = {
-  stay: {
-    still: 'scene.wayside',
-    label: 'Wayside at dawn. The old status line reads: Perimeter status: open.',
-  },
-  go: {
-    still: 'scene.orbit',
-    label: 'Tumble IV from orbit at dusk. A relay blinks over the valley.',
-  },
+export const FINAL_IMAGES: Readonly<Record<EndingChoice, { readonly label: string }>> = {
+  stay: { label: 'Wayside at dawn. The old status line reads: Perimeter status: open.' },
+  go: { label: 'Tumble IV from orbit at dusk. A relay blinks over the valley.' },
 };
+
+/**
+ * The orbit's frame `ms` into the final image: its `blink` anim (`frames` at `fps`, looping), or
+ * `still` under reduced motion or without the anim.
+ */
+export function stillFrameAt(
+  anim: { readonly frames: readonly string[]; readonly fps: number } | undefined,
+  ms: number,
+  still: boolean,
+): string {
+  if (still || anim === undefined || anim.frames.length === 0) return FINAL_STILL_FRAME;
+  return anim.frames[Math.floor((Math.max(0, ms) * anim.fps) / 1000) % anim.frames.length]!;
+}
 
 /** The old HUD status line in the Stay image (bible.md § 10, Ending A). */
 export const PERIMETER_OPEN = 'PERIMETER STATUS: OPEN';

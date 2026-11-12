@@ -153,6 +153,8 @@ import { propPreserveSign } from './props/preserve_sign.ts';
 import { propEmergencyLamp } from './props/emergency_lamp.ts';
 import { M7_PROPS } from './props/m7.ts';
 import { M8_PROPS } from './props/m8.ts'; // T842
+import { propGiftStone } from './props/gift_stone.ts'; // T843
+import { iconStardust } from './icons/stardust.ts'; // T843
 import { tileHush } from './tiles/hush.ts';
 import { tileRift } from './tiles/rift.ts';
 import { tileApron } from './tiles/apron.ts';
@@ -296,6 +298,8 @@ export const SPRITES = [
   ...M7_PROPS,
   // M8's finale props and A3M3's tunnel mouths (T842: props/m8.ts).
   ...M8_PROPS,
+  // Act III's gift stone, set down in the world (T843: props/gift_stone.ts).
+  propGiftStone,
   tileHush,
   tileRift,
   towerRivet,
@@ -480,6 +484,7 @@ export const SPRITES = [
   iconStampLicenseRevoked,
   iconStampUplinkRevoked,
   iconCredits,
+  iconStardust, // T843: the Stardust currency icon by phase
   iconCore,
   iconLock,
   iconRefugee,

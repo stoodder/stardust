@@ -18,6 +18,7 @@ import {
   creditsMs,
   epilogueBeats,
   FINAL_IMAGES,
+  stillFrameAt,
 } from '../ui/screens/epilogue.ts';
 import { endingScreen } from '../ui/screens/epilogueState.ts';
 import { stagingOf } from '../ui/dialogue/staging.ts';
@@ -199,8 +200,13 @@ describe('the epilogue (bible.md § 10)', () => {
     expect(counterFlipped(COUNTER_ZERO_MS)).toBe(true);
     expect(creditsMs(true)).toBeGreaterThan(0);
     expect(creditsMs(false)).toBeGreaterThan(creditsMs(true) / 4);
-    expect(FINAL_IMAGES.stay.still).toBe('scene.wayside');
-    expect(FINAL_IMAGES.go.still).toBe('scene.orbit');
+    expect(Object.keys(FINAL_IMAGES)).toEqual(['stay', 'go']);
+    // The orbit's relay blinks on T843's anim; held still under reduced motion.
+    const blink = { frames: ['still', 'blink_1'], fps: 4 };
+    expect(stillFrameAt(blink, 0, false)).toBe('still');
+    expect(stillFrameAt(blink, 250, false)).toBe('blink_1');
+    expect(stillFrameAt(blink, 250, true)).toBe('still');
+    expect(stillFrameAt(undefined, 250, false)).toBe('still');
   });
 
   it('"Watch the epilogue": the epilogue again, Esc allowed, then back', async () => {

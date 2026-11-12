@@ -1,9 +1,13 @@
 /// <reference lib="dom" />
 import { mkdirSync } from 'node:fs';
 import type { Page } from '@playwright/test';
-import { SPRITES } from '../src/content/sprites/index.ts';
+import { SPRITES as REGISTRY } from '../src/content/sprites/index.ts';
+import { FINALE_SCENE_SPRITES } from '../src/content/sprites/scenes/finale.ts';
 import { expect, test } from './fixtures.ts';
 import { outPath } from './out.ts';
+
+/** What the gallery shows: the registry, then the finale's lazy stills (app/gallery.ts). */
+const SPRITES = [...REGISTRY, ...FINALE_SCENE_SPRITES];
 
 /**
  * The gallery's sheets are the milestone art trail (docs/art/tech-spec.md § The sprite gallery):

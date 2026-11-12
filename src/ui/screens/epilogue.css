@@ -171,131 +171,16 @@
   transform: translateX(-50%);
 }
 
-/* The placeholders until T843's stills: no words, only light. */
-.end-ph {
-  position: absolute;
-  inset: 0;
-}
-
-.end-final.stay .end-ph {
-  background: linear-gradient(
-    var(--sd-violet-1) 0,
-    var(--sd-pink-1) 34%,
-    var(--sd-coral-2) 54%,
-    var(--sd-orange-3) 68%,
-    var(--sd-gold-3) 76%
-  );
-}
-
-.end-ph-sun {
-  position: absolute;
-  left: 50%;
-  top: 200px;
-  width: 96px;
-  height: 96px;
-  border-radius: 50%;
-  background: var(--sd-gold-4);
-  transform: translateX(-50%);
-}
-
-.end-ph-ridge {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 256px;
-  bottom: 0;
-  background: var(--sd-ink-1);
-  clip-path: polygon(0 20%, 30% 8%, 52% 18%, 70% 4%, 100% 14%, 100% 100%, 0 100%);
-}
-
-.end-final.go .end-ph {
-  background:
-    radial-gradient(ellipse 200px 120px at 50% 30%, rgb(20 44 134 / 40%), transparent),
-    var(--sd-ink-0);
-}
-
-/* The planet's limb across the bottom, its terminator lit rose and gold at dusk. */
-.end-ph-planet {
-  position: absolute;
-  left: -160px;
-  top: 232px;
-  width: 960px;
-  height: 960px;
-  border-radius: 50%;
-  background: var(--sd-violet-0);
-  box-shadow:
-    inset 0 2px 0 var(--sd-gold-3),
-    inset 0 6px 0 var(--sd-coral-2),
-    0 0 0 2px rgb(255 88 180 / 25%);
-}
-
-/* QUILL's relay: a teal light over the valley, blinking. */
-.end-ph-relay {
-  position: absolute;
-  left: 318px;
-  top: 96px;
-  width: 4px;
-  height: 4px;
-  background: var(--sd-teal-4);
-  box-shadow: 0 0 0 1px var(--sd-teal-2);
-  animation: end-blink 2s steps(1) infinite;
-}
-
-@keyframes end-blink {
-  50% {
-    opacity: 0.3;
-  }
-}
-
-/* Six notes rising from the valley to the relay, one after another. */
-.end-ph-note {
-  position: absolute;
-  top: 224px;
-  width: 2px;
-  height: 2px;
-  background: var(--sd-gold-3);
-  opacity: 0;
-  animation: end-note 3.6s steps(24) infinite;
-}
-
-@keyframes end-note {
-  0% {
-    opacity: 0;
-    transform: none;
-  }
-
-  15% {
-    opacity: 1;
-  }
-
-  100% {
-    opacity: 0;
-    transform: translateY(-120px);
-  }
-}
-
 .end-epilogue.still .end-card,
 .end-epilogue.still .end-counter,
-.end-epilogue.still .end-final,
-.end-epilogue.still .end-ph-relay {
-  animation: none;
-}
-
-.end-epilogue.still .end-ph-note {
-  opacity: 1;
+.end-epilogue.still .end-final {
   animation: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .end-card,
   .end-counter,
-  .end-final,
-  .end-ph-relay,
-  .end-ph-note {
+  .end-final {
     animation: none;
-  }
-
-  .end-ph-note {
-    opacity: 1;
   }
 }

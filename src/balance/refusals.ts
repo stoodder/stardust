@@ -69,8 +69,8 @@ export const HARNESS_GATES: Readonly<Record<HarnessFeature, string | null>> = Ob
   holdFireRuns: null,
   // The jam-limit check (#10; balance/jamLimit.ts) landed with the jamming core (D146: T702).
   jamLimit: null,
-  // The finale's Phase 2 length per C4 (#18; D154: T821).
-  songTiming: 'T821',
+  // The finale's Phase 2 length per C4 (#18; balance/songChecks.ts) landed with its waves (T821).
+  songTiming: null,
 });
 
 /**

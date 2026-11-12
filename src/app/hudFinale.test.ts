@@ -19,6 +19,7 @@ import {
   phaseBanner,
 } from '../ui/hud/finaleState.ts';
 import { hud } from '../ui/state.ts';
+import { BattleInteraction } from '../render/input/BattleInteraction.ts';
 import { battleConfig } from './battleSetup.ts';
 import { createHost, type Host } from './host.ts';
 import { choirMeterView, bindEscortMeter } from './hudEscort.ts';
@@ -128,7 +129,7 @@ describe('the finale HUD on fin_m01 (T832)', () => {
     expect(phaseBanner.value).toMatchObject({ kicker: PHASE_ONE_KICKER, title: 'Wave 1' });
   });
 
-  it('Phase 2: the countdown from N in the Bore\'s place; Dawn: the counter at 0', () => {
+  it("Phase 2: the countdown from N in the Bore's place; Dawn: the counter at 0", () => {
     const host = finale();
     offs.push(bindFinaleHud(host, 5000));
     host.enqueue({ type: 'callWave' });
@@ -203,7 +204,7 @@ describe('the finale HUD on fin_m01 (T832)', () => {
 describe("Directive 0's dark slot (T832)", () => {
   it('a phase lock darkens its slot as Directive 0, not a revocation', () => {
     const host = finale();
-    offs.push(bindRevoked(host, { armed: null, aiming: null, arm() {}, aimAbility() {} } as never));
+    offs.push(bindRevoked(host, new BattleInteraction()));
     expect(revokedHud.value.slots).toEqual([]);
     lockAbility(mut(host.sim), 'time_dilation', true);
     host.fastForward(0);

@@ -7,13 +7,15 @@
 // lines said and on screen; the stage (dawnStage.tsx) draws. Silent. Unskippable the first time
 // (content/dialogue/resultsFlow.ts `unskippableFirst`). Reduced motion cuts between frames.
 
-/** The Dawn still and its frames, in the order they come (T843). */
-export const DAWN_STILL = 'scene.dawn';
-export type DawnFrame = 'dawn' | 'mote' | 'visor';
+import type { DAWN_FRAMES, FinaleSceneId } from '../../content/sprites/scenes/finale.ts';
+
+/** The Dawn still (T843's, 320×180 at 2×) and its frames, in the order they come. */
+export const DAWN_STILL: FinaleSceneId = 'scene.dawn';
+export type DawnFrame = (typeof DAWN_FRAMES)[number];
 
 /**
  * The narrator lines that turn the still: a fragment of each, as written in the scene's data
- * (dawn.test.ts holds them to it).
+ * (app/ending.test.ts holds them to it).
  */
 export const DAWN_CUES: readonly { readonly frame: DawnFrame; readonly says: string }[] = [
   { frame: 'mote', says: 'One gold mote rises' },
@@ -27,6 +29,9 @@ export const DAWN_LEAD_IN_STILL_MS = 600;
 export function dawnLeadInMs(still: boolean): number {
   return still ? DAWN_LEAD_IN_STILL_MS : DAWN_LEAD_IN_MS;
 }
+
+/** The stills' scale on the 640×360 stage (game px per still px). */
+export const STILL_SCALE = 2;
 
 /** How long one frame crossfades into the next (ms; a cut under reduced motion). */
 export const DAWN_FADE_MS = 900;

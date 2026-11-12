@@ -15,6 +15,8 @@
 import { ENV_PALETTE_IDS } from '../content/palettes/env.ts';
 import { PALETTES } from '../content/palettes/index.ts';
 import { SPRITES, type SpriteId } from '../content/sprites/index.ts';
+// The finale's stills: out of SPRITES (the boot atlas), shown here as cards all the same (T843).
+import { FINALE_SCENE_SPRITES } from '../content/sprites/scenes/finale.ts';
 import { tetherDir } from '../content/sprites/fx/link_tether.ts';
 import { groundShadowFor } from '../content/sprites/shadows.ts';
 import type { EnvPaletteId, SpriteDef } from '../content/sprites/types.ts';
@@ -80,7 +82,10 @@ function secondVariant(b: BakedSprite): string | undefined {
   return palettes.includes('act3') ? 'act3' : palettes[0];
 }
 
-const DEFS: ReadonlyMap<string, SpriteDef> = new Map(SPRITES.map((d) => [d.id, d as SpriteDef]));
+/** Every sprite the gallery shows: the registry, then the finale's lazy stills. */
+const GALLERY_SPRITES: readonly SpriteDef[] = [...SPRITES, ...FINALE_SCENE_SPRITES];
+
+const DEFS: ReadonlyMap<string, SpriteDef> = new Map(GALLERY_SPRITES.map((d) => [d.id, d]));
 
 /** A frame made by mirroring (`walk_sw_0`, `nw_fire`): its source frame is on show already. */
 function isMirrorFrame(b: BakedSprite, name: string): boolean {
@@ -1184,7 +1189,7 @@ class SheetPacker {
 
 function render(root: HTMLElement): void {
   const t0 = performance.now();
-  const baked = bakeAll(SPRITES, PALETTES);
+  const baked = bakeAll(GALLERY_SPRITES, PALETTES);
   const bakeMs = performance.now() - t0;
   const byId = new Map(baked.map((b) => [b.id, b]));
   const frames = baked.flatMap((b) => b.frames.filter((f) => !f.key.endsWith('@glow')));

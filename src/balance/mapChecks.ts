@@ -14,6 +14,7 @@ import {
 } from './parChecks.ts';
 import { holdoutBand } from './holdout.ts';
 import { jamLimitChecks } from './jamLimit.ts';
+import { songTimingChecks } from './songChecks.ts';
 import { parBand } from './rules.ts';
 
 /**
@@ -34,6 +35,7 @@ export function mapChecks<K extends IdSpace>(
     ...noCounterChecks(map, few, leftOut),
     ...parFairnessChecks(map, every, few, band),
     ...jamLimitChecks(map, every), // #10 on a map that sends jammers (T702)
+    ...songTimingChecks(map, few), // #18 on a map with a song (the finale; T821)
     ...altBuildChecks(map, few),
     ...variantChecks(map, few, band),
     ...freeChoiceChecks(map, few, band),

@@ -65,20 +65,33 @@ export const ESCORT_EXTRA_H = 20;
 export const LEAK_EXTRA_H = 56;
 /** What a Holdout's meter adds: its "of N" row only (no lost row; T631). */
 export const HOLDOUT_EXTRA_H = 10;
+/** What the finale's choir meter adds over an Escort's: the gate's row under it (T832). */
+export const GATE_ROW_H = 12;
+
+/**
+ * The finale's clock (T832; ui/hud/FinaleClock.tsx): top centre under the boss bar, the boss
+ * bar's 160 px and its padding, the countdown's 16 px figures tall.
+ */
+export const FINALE_CLOCK_RECT: Rect = { x: (UI_W - 168) / 2, y: 49, w: 168, h: 26 };
 
 /**
  * The corner blocks with the status panel grown by `objectives` tracker rows (T312c), on a
  * Protect map the asset meter's row (T431), and while the map is an Escort its meter's two extra
- * rows (T531), on a Holdout its one (`'holdout'`, T631), and the wave panel grown by QUILL's leak
- * line while one shows (`leak`, T631).
+ * rows (T531), on a Holdout its one (`'holdout'`, T631), on the finale's choir the Escort's two and
+ * the gate's (`'choir'`, T832), and the wave panel grown by QUILL's leak line while one shows
+ * (`leak`, T631); and the finale's clock while it shows (`clock`, T832).
  */
 export function hudCorners(
   objectives: number,
   asset: boolean | 'bearers' = false,
-  escort: boolean | 'holdout' = false,
+  escort: boolean | 'holdout' | 'choir' = false,
   leak = false,
   lockedSlots = 0,
+  clock = false,
 ): readonly Rect[] {
+  if (clock) {
+    return [...hudCorners(objectives, asset, escort, leak, lockedSlots), FINALE_CLOCK_RECT];
+  }
   if (objectives <= 0 && asset === false && escort === false && !leak && lockedSlots <= 0) {
     return HUD_CORNERS;
   }
@@ -87,7 +100,14 @@ export function hudCorners(
   // QUILL's leak line (A3M2's lockout, T631) hangs up to five lines under ACCESS RESTRICTED.
   const wavesNow = leak ? { ...waves, h: waves.h + LEAK_EXTRA_H } : waves;
   const rows = objectives > 0 ? objectives * OBJECTIVE_ROW_H + 2 : 0;
-  const meter = escort === 'holdout' ? HOLDOUT_EXTRA_H : escort ? ESCORT_EXTRA_H : 0;
+  const meter =
+    escort === 'holdout'
+      ? HOLDOUT_EXTRA_H
+      : escort === 'choir'
+        ? ESCORT_EXTRA_H + GATE_ROW_H
+        : escort
+          ? ESCORT_EXTRA_H
+          : 0;
   // The bearers' meter (A3M5, T731) has its "Home n / total" row under the asset's.
   const assetH = asset === false ? 0 : ASSET_ROW_H + (asset === 'bearers' ? BEARER_ROW_H : 0);
   const extra = assetH + meter;

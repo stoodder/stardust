@@ -21,13 +21,15 @@ import {
   creditsOffsetPx,
   epilogueBeats,
   FINAL_IMAGES,
-  FINAL_STILL_FRAME,
   PERIMETER_OPEN,
   STAGE_PX,
+  stillFrameAt,
   type EpilogueBeat,
 } from './epilogue.ts';
 import { endingScreen, type EpilogueView, type MemoCardView } from './epilogueState.ts';
-import { finaleStill, STILL_SCALE } from './epilogueStills.ts';
+import { ENDING_STILL, finaleSceneDef } from '../../content/sprites/scenes/finale.ts';
+import { finaleSceneSprite } from '../dialogue/finaleSceneArt.ts';
+import { STILL_SCALE } from './dawn.ts';
 import { Letter } from './Inbox.tsx';
 import { STORY_CHOICE_LOCK_MS } from '../../app/dialogue.ts';
 import './epilogue.css';
@@ -137,7 +139,11 @@ function Epilogue({ view }: { view: EpilogueView }) {
   useEffect(() => {
     root.current?.focus();
   }, []);
-  const moving = beat?.kind === 'counter' || beat?.kind === 'credits';
+  // The counter and the roll move on a clock; so does the orbit's relay blink.
+  const moving =
+    beat?.kind === 'counter' ||
+    beat?.kind === 'credits' ||
+    (beat?.kind === 'final' && beat.ending === 'go' && !still);
   const ms = useClock(at.from, moving);
   // The counter's flip cues the music (once): the jingle in a major key, many voices.
   if (beat?.kind === 'counter' && counterFlipped(ms) && !flipped.current) {
@@ -211,7 +217,7 @@ function Beat({
     case 'credits':
       return <Credits ms={ms} still={still} />;
     case 'final':
-      return <FinalImage ending={beat.ending} />;
+      return <FinalImage ending={beat.ending} ms={ms} still={still} />;
     default:
       return assertNever(beat);
   }
@@ -247,26 +253,26 @@ function Credits({ ms, still }: { ms: number; still: boolean }) {
   );
 }
 
-/** The final image by ending: T843's still when painted, else a placeholder; Stay's line over it. */
-function FinalImage({ ending }: { ending: 'stay' | 'go' }) {
-  const def = FINAL_IMAGES[ending];
-  const still = finaleStill(def.still, FINAL_STILL_FRAME);
+/** The final image by ending: T843's still, full-bleed; Stay's status line over it. */
+function FinalImage({ ending, ms, still }: { ending: 'stay' | 'go'; ms: number; still: boolean }) {
+  const id = ENDING_STILL[ending];
+  const anim = finaleSceneDef(id).anims?.['blink'];
+  const blink = anim !== undefined && 'frames' in anim ? anim : undefined;
+  const art = finaleSceneSprite(id, stillFrameAt(blink, ms, still));
   return (
     <div
-      class={`end-final ${ending}${still === null ? ' placeholder' : ''}`}
+      class={`end-final ${ending}`}
       role="img"
-      aria-label={def.label}
+      aria-label={FINAL_IMAGES[ending].label}
       data-testid="epilogue-final"
       data-ending={ending}
     >
-      {still === null ? (
-        <Placeholder ending={ending} />
-      ) : (
+      {art !== null && (
         <img
           class="end-final-still"
-          src={still.url}
-          width={still.w * STILL_SCALE}
-          height={still.h * STILL_SCALE}
+          src={art.url}
+          width={art.w * STILL_SCALE}
+          height={art.h * STILL_SCALE}
           alt=""
           aria-hidden="true"
         />
@@ -276,31 +282,6 @@ function FinalImage({ ending }: { ending: 'stay' | 'go' }) {
           {silkText(PERIMETER_OPEN)}
         </p>
       )}
-    </div>
-  );
-}
-
-/** Until T843's stills: Stay, a dawn sky over a low ridge; Go, the planet's limb and the relay. */
-function Placeholder({ ending }: { ending: 'stay' | 'go' }) {
-  if (ending === 'stay') {
-    return (
-      <div class="end-ph" aria-hidden="true">
-        <span class="end-ph-sun" />
-        <span class="end-ph-ridge" />
-      </div>
-    );
-  }
-  return (
-    <div class="end-ph" aria-hidden="true">
-      <span class="end-ph-planet" />
-      <span class="end-ph-relay" />
-      {[0, 1, 2, 3, 4, 5].map((n) => (
-        <span
-          key={n}
-          class="end-ph-note"
-          style={{ animationDelay: `${n * 600}ms`, left: `${304 + n * 6}px` }}
-        />
-      ))}
     </div>
   );
 }

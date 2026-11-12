@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   EDGE,
   ESCORT_EXTRA_H,
+  FINALE_CLOCK_RECT,
+  GATE_ROW_H,
   HOLDOUT_EXTRA_H,
   HUD_CORNERS,
   LEAK_EXTRA_H,
@@ -205,5 +207,22 @@ describe('hudCorners and placePanel in Act III (T631)', () => {
     const dear = placePanel(300, 300, 96, 120, node, footer, undefined, undefined, 6);
     expect(overFooter(cheap)).toBe(true);
     expect(overFooter(dear)).toBe(false);
+  });
+});
+
+describe('hudCorners on the finale (T832)', () => {
+  it("grows the status panel by the choir's rows and the gate's", () => {
+    const [panel] = hudCorners(0, false, 'choir');
+    expect(panel!.h).toBe(HUD_CORNERS[0]!.h + ESCORT_EXTRA_H + GATE_ROW_H);
+  });
+
+  it('keeps the tower panel off the clock while it shows', () => {
+    const corners = hudCorners(1, false, 'choir', false, 0, true);
+    expect(corners).toContain(FINALE_CLOCK_RECT);
+    expect(corners).toHaveLength(HUD_CORNERS.length + 1);
+    expect(hudCorners(0, false, false, false, 0, true).at(-1)).toBe(FINALE_CLOCK_RECT);
+    // Centred on the screen, under the boss bar (its bar at 39, its flags to 47).
+    expect(FINALE_CLOCK_RECT.x * 2 + FINALE_CLOCK_RECT.w).toBe(UI_W);
+    expect(FINALE_CLOCK_RECT.y).toBeGreaterThan(47);
   });
 });

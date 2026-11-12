@@ -87,6 +87,15 @@ const sameClock = (a: FinaleClockView | null, b: FinaleClockView | null): boolea
     a.full === b.full &&
     a.label === b.label);
 
+/** Quiets every finale signal (another map, or the battle gone). */
+function reset(): void {
+  finaleClock.value = null;
+  finalePhase.value = 0;
+  choirHalted.value = false;
+  nextHeld.value = false;
+  phaseBanner.value = null;
+}
+
 /**
  * Wires the finale's HUD signals to a battle (bind it before a resumed run's replay, as bindHud
  * is, so the countdown's N comes back the same). `lifetime`: the save's Pests Processed as the
@@ -95,13 +104,6 @@ const sameClock = (a: FinaleClockView | null, b: FinaleClockView | null): boolea
 export function bindFinaleHud(host: Host<IdSpace>, lifetime: number): () => void {
   const { sim } = host;
   const map = sim.map;
-  const reset = (): void => {
-    finaleClock.value = null;
-    finalePhase.value = 0;
-    choirHalted.value = false;
-    nextHeld.value = false;
-    phaseBanner.value = null;
-  };
   reset();
   if (!phasedMap(map)) return reset;
   const countdown = map.song === null ? null : trackCountdown(host);

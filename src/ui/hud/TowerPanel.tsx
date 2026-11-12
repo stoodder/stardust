@@ -22,6 +22,7 @@ import {
   towerPanelHeight,
 } from './layout.ts';
 import { alignPulse } from './pulse.ts';
+import { finaleClock } from './finaleState.ts';
 import { revokedHud } from './revokedState.ts';
 import { Key, Credits, Glyph, HOLD_GLYPH, SPARE_GLYPH } from './parts.tsx';
 
@@ -130,9 +131,16 @@ export function TowerPanel({ t }: { t: SelectedTowerView }) {
   const corners = hudCorners(
     objectiveRows(hud.objectives.value),
     hud.asset.value === null ? false : hud.asset.value.bearers === undefined ? true : 'bearers',
-    hud.escort.value === null ? false : hud.escort.value.holdout === true ? 'holdout' : true,
+    hud.escort.value === null
+      ? false
+      : hud.escort.value.holdout === true
+        ? 'holdout'
+        : hud.escort.value.choir === true
+          ? 'choir'
+          : true,
     revokedHud.value.previewHidden && revokedHud.value.leakLine !== null,
     hud.lockedAbilities.value.length,
+    finaleClock.value !== null, // T832
   );
   const { left, top } = placePanel(t.x, t.y, PANEL_W, h, others, corners);
   const credits = hud.credits.value;
