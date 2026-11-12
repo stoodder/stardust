@@ -211,6 +211,8 @@ const MAKES_SOUND: Readonly<Record<SimEventType, boolean>> = {
   TowerJammed: true,
   TowerUnjammed: true,
   JamInterrupted: true,
+  // A ring a counter turned (T777): the fizzle every cancelled tell plays.
+  JamFizzled: true,
   // System Reboot's cast says it (ABILITY_SOUNDS `reboot`).
   Rebooted: false,
   TakeoverTell: true,
@@ -709,6 +711,9 @@ export function createEventSounds(
           return;
         case 'JamInterrupted':
           stopLaser(out, e.uid);
+          out.push(sfx(JAM_SOUNDS.interrupted));
+          return;
+        case 'JamFizzled':
           out.push(sfx(JAM_SOUNDS.interrupted));
           return;
         // "Shareholder Value": Hostile Takeover's laser charging, the plating let go, and each

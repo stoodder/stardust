@@ -379,6 +379,7 @@ export function createRunTracker<K extends IdSpace>(
           case 'TowerJammed':
           case 'TowerUnjammed':
           case 'JamInterrupted':
+          case 'JamFizzled':
           case 'Rebooted':
           case 'TakeoverTell':
           case 'Jettisoned':

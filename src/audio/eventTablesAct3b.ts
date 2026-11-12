@@ -7,11 +7,12 @@ import type { CueId } from './music/index.ts';
 import type { SfxId } from './sfx/index.ts';
 
 /**
- * Jamming (enemies.md § 4; JamTell, TowerJammed, TowerUnjammed, JamInterrupted): each jammer's tell
- * by its kind (the Auditor's adding-machine `ring`, the Silencer's creeping `tendril`), a tower
- * jamming (static, powering down; rate-limited, so a ring catching four towers is one crackle) and
- * coming back (a small power-on blip), and an interrupted tell's fizzle (Stasis's answer always
- * sounds the same, as an Aelari tell's does). While any tower is Jammed, `static` crackles every
+ * Jamming (enemies.md § 4; JamTell, TowerJammed, TowerUnjammed, JamInterrupted, JamFizzled): each
+ * jammer's tell by its kind (the Auditor's adding-machine `ring`, the Silencer's creeping
+ * `tendril`), a tower jamming (static, powering down; rate-limited, so a ring catching four towers
+ * is one crackle) and coming back (a small power-on blip), and an interrupted tell's fizzle
+ * (Stasis's answer always sounds the same, as an Aelari tell's does; a ring a counter turned,
+ * JamFizzled, plays it too). While any tower is Jammed, `static` crackles every
  * `staticEverySec` of sim time (fieldSounds.ts; one voice however many). An interrupted Hostile
  * Takeover also cuts its laser dead (`stops`). System Reboot's sound is its cast (ABILITY_SOUNDS);
  * its Rebooted, and each TowerUnjammed under it, ride the cast.

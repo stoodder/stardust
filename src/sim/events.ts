@@ -749,6 +749,12 @@ export type SimEvent<K extends IdSpace = LiveIds> =
   | { readonly type: 'TowerUnjammed'; readonly uid: number }
   /** A jammer's tell was interrupted by Stasis or Unnerved (T702): its period restarts. */
   | { readonly type: 'JamInterrupted'; readonly uid: number }
+  /**
+   * An Auditor's ring landed on nothing because a counter turned it (T777): it jammed nothing, the
+   * jam limit had room, and a tower in its reach was jam-immune (enemyAbilities/jamRing.ts
+   * `landRing`). Render's FIZZLED over the Auditor; audio's `tell_fizzle`.
+   */
+  | { readonly type: 'JamFizzled'; readonly uid: number }
   /** System Reboot ran (T702): `towers` were unjammed (empty: none were), all now immune. */
   | { readonly type: 'Rebooted'; readonly towers: readonly number[] }
   /** Hostile Takeover's laser began (T707): `towers` are its targets, jammed as it ends. */

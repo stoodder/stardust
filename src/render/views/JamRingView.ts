@@ -3,8 +3,7 @@
 // and an orange ring growing out to it, redrawn each frame into one Graphics on the vfx layer
 // (over the towers it reaches). The jams themselves show as JamView's static and arc. A ring
 // draws through its whole tell (a tower built in its reach after a System Reboot can still be
-// jammed); one that lands on nothing, JamView fizzles on its landing tick (D151; jamLook.ts
-// `ringLanded`).
+// jammed); one a counter turned, JamView fizzles on its landing tick (D151; JamFizzled, T777).
 // Allocation-free per frame: the scratch points are module-level, the Graphics redraws in place.
 import type * as Phaser from 'phaser';
 import type { IdSpace } from '../../content/types.ts';

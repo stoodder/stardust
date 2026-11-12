@@ -26,9 +26,11 @@
 //   stays jam-immune past the landing, a System Reboot in the tell), a Takeover laser the moment
 //   every tower it picked is (`lasersDoomed`). Its targets are fixed and immunity only counts down
 //   with the tell, so doomed is read from the state each frame and holds once true. A ring has no
-//   fixed targets (a tower built in reach after a Reboot isn't immune), so it fizzles only on its
-//   landing tick (`ringLanded`) and only if it jammed nothing (no TowerJammed from it). Under
-//   reduced motion the puff holds its size and fades.
+//   fixed targets (a tower built in reach after a Reboot isn't immune), so it fizzles only when the
+//   sim says a counter turned it on its landing tick (JamFizzled, T777: it jammed nothing, the jam
+//   limit had room, and a tower in reach was jam-immune); a ring that lands on nothing for another
+//   reason (nothing in reach, the limit full, its towers already Jammed) doesn't. Under reduced
+//   motion the puff holds its size and fades.
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
 import type { SpriteId } from '../../content/sprites/index.ts';
 import { JAM_MAX_SEC } from '../../content/rules.ts';
@@ -155,13 +157,4 @@ export function lasersDoomed(
     }
   }
   return standing > 0;
-}
-
-/**
- * Whether a ring seen `left` ticks from landing has landed `elapsed` ticks later (it stopped
- * telling then: the sim counts its tell down to the landing tick, sim/enemyAbilities/jamRing.ts).
- * One that stops earlier was dropped (out of reach, standing down) or interrupted, not landed.
- */
-export function ringLanded(left: number, elapsed: number): boolean {
-  return left > 0 && left <= elapsed;
 }

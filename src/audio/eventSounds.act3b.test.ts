@@ -100,6 +100,10 @@ describe('jamming (T750)', () => {
     ]);
   });
 
+  it('fizzles a ring a counter turned (T777) like any cancelled tell', () => {
+    expect(ids(play(sounds(), [{ type: 'JamFizzled', uid: 1 }]))).toEqual(['sfx:tell_fizzle']);
+  });
+
   it("boots System Reboot on its cast; its Rebooted rides the cast's sound", () => {
     expect(ABILITY_SOUNDS.system_reboot?.cast).toBe('reboot');
     const s = sounds();

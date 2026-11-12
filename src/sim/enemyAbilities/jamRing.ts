@@ -14,15 +14,21 @@
 //   jam limit has room (sim/jam.ts `jamRoom`; the rest land on nothing), and the period starts
 //   over (landing to landing). JamTell `ring` lists the towers in reach as the ring starts (the
 //   ones it would jam now); a tower built, sold, or made immune during the tell counts at its end.
+// - **The fizzle** (T777; D150, D151): a ring that lands on nothing because a counter turned it
+//   (it jammed nothing, the limit had room, and a tower in reach was jam-immune: a jam's end, System
+//   Reboot, a Rally Chorus) emits JamFizzled on its landing tick, render's FIZZLED and audio's
+//   `tell_fizzle`. One that lands on nothing for any other reason (nothing in reach any more, the
+//   jam limit full, every tower in reach already Jammed) or is dropped on its landing tick emits
+//   nothing: no counter worked (`landRing`).
 // - **Interrupts** (§ 2.4; the gather rule): while `isInterrupted` holds (Stasis, Unnerved), a
 //   ring can't start or go on: one under way is cancelled (JamInterrupted) and the full period
 //   restarts from zero. A unit out of reach (leaving, burrowed, Phased) or standing down drops its
 //   ring quietly and restarts. Lulled stretches the wait before the ring ×1.5 (`cooldownHeld`),
 //   never the ring.
-// - No allocation but the JamTell event's tower list, on a ring's start.
+// - No allocation but the JamTell event's tower list, on a ring's start, and a JamFizzled event.
 import type { CompiledJam } from '../../content/compiled.ts';
 import type { Enemy } from '../entities.ts';
-import { canJam, JAM_FIRST_READY_TICKS, jamRoom, jamTower } from '../jam.ts';
+import { canJam, isJammed, JAM_FIRST_READY_TICKS, jamImmune, jamRoom, jamTower } from '../jam.ts';
 import { emit, type SimState } from '../state.ts';
 import { cooldownHeld, isInterrupted } from '../systems/status.ts';
 import type { TickContext } from '../tick.ts';
@@ -75,6 +81,34 @@ function anyInRing(state: SimState, e: Readonly<Enemy>, j: CompiledJam): boolean
   return false;
 }
 
+/** How a ring's landing went: it jammed some tower, a counter turned it, or it landed on nothing. */
+export type RingLanding = 'jammed' | 'fizzled' | 'nothing';
+
+/**
+ * Lands `e`'s ring now (see the header): jams every tower in reach a jam may land on, in slot
+ * order, while the jam limit has room. It **fizzled** (T777) only when it jammed nothing, the limit
+ * had room, and some live tower in reach was jam-immune (`jamImmune`: a jam's end, System Reboot,
+ * a Rally Chorus), so the counter turned it; nothing in reach, the limit full, or every tower in
+ * reach already Jammed is `nothing`.
+ */
+export function landRing(state: SimState, e: Readonly<Enemy>, j: CompiledJam): RingLanding {
+  const pool = state.towers;
+  let jammed = false;
+  let immune = false;
+  for (let i = 0; i < pool.used; i++) {
+    const t = pool.items[i]!; // i < used ≤ items.length
+    if (!t.alive || t.def === null || !inJamReach(e, t, j)) continue;
+    if (!canJam(t)) {
+      if (!isJammed(t) && jamImmune(t)) immune = true;
+      continue;
+    }
+    // The jam limit: the rest of the ring lands on nothing (and no counter turned it).
+    if (jamRoom(state) <= 0) return jammed ? 'jammed' : 'nothing';
+    if (jamTower(state, t, j.durationTicks, e.uid) > 0) jammed = true;
+  }
+  return jammed ? 'jammed' : immune ? 'fizzled' : 'nothing';
+}
+
 /** Drops a ring under way (no event) and restarts the period. */
 function restart(e: Enemy, j: CompiledJam): void {
   e.jamTicks = periodTicksOf(j);
@@ -99,13 +133,7 @@ export function ringStep(state: SimState, e: Enemy, j: CompiledJam): void {
       e.paceMul = 0; // it holds still through its ring (movement reads this tick's)
       return;
     }
-    const pool = state.towers;
-    for (let i = 0; i < pool.used; i++) {
-      const t = pool.items[i]!; // i < used ≤ items.length
-      if (!canJam(t) || !inJamReach(e, t, j)) continue;
-      if (jamRoom(state) <= 0) break; // the jam limit: the rest of the ring lands on nothing
-      jamTower(state, t, j.durationTicks, e.uid);
-    }
+    if (landRing(state, e, j) === 'fizzled') emit(state, { type: 'JamFizzled', uid: e.uid });
     restart(e, j);
     return;
   }
