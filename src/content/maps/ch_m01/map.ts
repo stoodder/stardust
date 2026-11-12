@@ -32,7 +32,7 @@ export const map = defineMapLayout({
     tagline: "Only the warrens' towers deploy.",
     rules: [{ kind: 'towerFaction', faction: 'skitterkin' }],
   },
-  startCredits: 1700,
+  startCredits: 2000,
   coreIntegrity: 20,
   // A challenge pays Intel for its medals, never Stardust.
   stardust: 0,

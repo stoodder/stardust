@@ -34,29 +34,27 @@ const raise = (wave: number, tower: TowerId, tile: GridPos): BuildStep[] => [
 
 function parSteps(): BuildStep[] {
   return [
-    { wave: 1, build: 'gloop', tile: RING_W },
-    { wave: 1, build: 'gloop', tile: RING_NE },
+    // The setup: a Gloop on each side of the trunk, the Den where the north road comes in, a
+    // Sproing Pad by the gate.
+    ...raise(1, 'gloop', RING_W),
+    ...raise(1, 'gloop', RING_NE),
     { wave: 1, build: 'burrow', tile: RING_NW },
     { wave: 1, build: 'sproing', tile: GATE },
-    { wave: 1, upgrade: RING_W },
-    { wave: 1, upgrade: RING_NE },
-    { wave: 2, build: 'gloop', tile: CORNER },
-    { wave: 2, upgrade: RING_W },
-    { wave: 3, upgrade: RING_NE },
-    { wave: 3, upgrade: RING_NW },
-    { wave: 4, upgrade: GATE },
-    { wave: 4, build: 'sproing', tile: SOUTH },
-    { wave: 5, upgrade: CORNER },
-    { wave: 5, build: 'burrow', tile: RIFT_NW },
-    { wave: 6, upgrade: RING_NW },
-    { wave: 7, upgrade: SOUTH },
-    { wave: 8, upgrade: GATE },
-    { wave: 8, upgrade: CORNER },
-    { wave: 8, upgrade: RIFT_NW },
+    { wave: 1, build: 'gloop', tile: CORNER },
+    { wave: 2, upgrade: RING_NW },
+    { wave: 2, upgrade: CORNER },
+    { wave: 3, build: 'sproing', tile: SOUTH },
+    { wave: 3, upgrade: GATE },
+    { wave: 4, upgrade: CORNER },
+    { wave: 4, upgrade: RING_NW },
+    ...raise(5, 'gloop', RIFT_SW),
+    { wave: 6, upgrade: SOUTH },
+    { wave: 6, build: 'burrow', tile: RIFT_NW },
+    { wave: 7, upgrade: GATE },
+    { wave: 7, upgrade: RIFT_NW },
+    { wave: 8, upgrade: SOUTH },
     ...raise(9, 'gloop', FENCE),
-    { wave: 10, upgrade: SOUTH },
     { wave: 10, upgrade: RIFT_NW },
-    ...raise(11, 'gloop', RIFT_SW),
   ];
 }
 
