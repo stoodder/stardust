@@ -18,8 +18,8 @@ const RIFT_SW: GridPos = [6, 8];
 const CORNER: GridPos = [9, 10];
 /** Beside the gate. */
 const GATE: GridPos = [4, 12];
-/** West of the last leg, under the Moths' lane. */
-const GATE_N: GridPos = [3, 9];
+/** South of the long run east, under the Moths' lane as it comes in. */
+const SOUTH: GridPos = [13, 9];
 /** Between the north road's turn and the basin's ring. */
 const RING_NE: GridPos = [13, 3];
 /** Over the north fence, beside the north road. */
@@ -45,16 +45,16 @@ function parSteps(): BuildStep[] {
     { wave: 3, upgrade: RING_NE },
     { wave: 3, upgrade: RING_NW },
     { wave: 4, upgrade: GATE },
-    { wave: 4, build: 'sproing', tile: GATE_N },
+    { wave: 4, build: 'sproing', tile: SOUTH },
     { wave: 5, upgrade: CORNER },
     { wave: 5, build: 'burrow', tile: RIFT_NW },
     { wave: 6, upgrade: RING_NW },
-    { wave: 7, upgrade: GATE_N },
+    { wave: 7, upgrade: SOUTH },
     { wave: 8, upgrade: GATE },
     { wave: 8, upgrade: CORNER },
     { wave: 8, upgrade: RIFT_NW },
     ...raise(9, 'gloop', FENCE),
-    { wave: 10, upgrade: GATE_N },
+    { wave: 10, upgrade: SOUTH },
     { wave: 10, upgrade: RIFT_NW },
     ...raise(11, 'gloop', RIFT_SW),
   ];
