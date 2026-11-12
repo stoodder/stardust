@@ -10,13 +10,16 @@
 // - **Being cleared** (the queue's head): the beacon lit (`v<n>_lit`), then half cleared
 //   (`v<n>_half`) for the second half of the drone's work; DroneView draws the drone.
 // - **Cleared:** the wreck goes, and the tile's live tile (its `underWreckage`: a pad, high ground,
-//   a hidden power node) is drawn in its place, once; then `onRedraw` (BattleScene: the lighting
+//   a hidden power node; under a decor marker, its prop: the finale's waymark lantern relights,
+//   `light` once then `lit`, T831) is drawn in its place, once; then `onRedraw` (BattleScene: the lighting
 //   view's `relight`) puts the dusk grade back over it and tints its new scenery (D135).
 // Allocation-free per frame: every marker is made up front (one per wreckage tile), and the queue
 // is compared against the last frame's copy.
-import type * as Phaser from 'phaser';
+import * as Phaser from 'phaser';
+import { imageToCanvas } from '../sprites/canvas.ts';
+import { poolImage } from '../vfx/glowPixels.ts';
 import type { CompiledMapDef } from '../../content/compiled.ts';
-import type { IdSpace } from '../../content/types.ts';
+import type { IdSpace, TowerId } from '../../content/types.ts';
 import { liveTileAt, type WreckageView as DroneQueue } from '../../sim/index.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
 import { prefersReducedMotion } from '../motion.ts';
@@ -29,6 +32,8 @@ import type { ViewContext } from './ViewContext.ts';
 
 /** The wreck's sprite (T311b) and its frames: v<n>, v<n>_lit, v<n>_half, anim blink_v<n>. */
 export const WRECKAGE_SPRITE = 'prop.wreckage' as const;
+/** The finale's waymark lantern (T842): a cleared waymark's tile relights it (T831). */
+const WAYMARK_SPRITE = 'prop.waymark' as const;
 /** Frames in the idle wink anim (`idle_v<n>`). */
 const IDLE_FRAMES = 8;
 /** A tile joining the queue: a ring grows from it. */
@@ -65,6 +70,8 @@ export class WreckageView {
   readonly #map: CompiledMapDef<IdSpace>;
   readonly #fx: TransientFx;
   readonly #onRedraw: () => void;
+  /** The save's memorial class (T831): a cleared tile's redraw keeps the memorial's (T842). */
+  readonly #memorialTower: TowerId | null;
   readonly #tiles: WreckTile[] = [];
 
   /**
@@ -77,8 +84,10 @@ export class WreckageView {
     props: ReadonlyMap<number, Phaser.GameObjects.Sprite>,
     fx: TransientFx,
     onRedraw: () => void = () => {},
+    memorialTower: TowerId | null = null,
   ) {
     this.#ctx = ctx;
+    this.#memorialTower = memorialTower;
     this.#map = map;
     this.#fx = fx;
     this.#onRedraw = onRedraw;
@@ -177,6 +186,29 @@ export class WreckageView {
     p.setTexture(f.texture, f.frame);
   }
 
+  /**
+   * A cleared waymark's lantern relights (T831): `light` once, then `lit` breathing (`lit` at once
+   * under reduced motion), with a little pool of its warm light on the ground (`decal`, additive).
+   */
+  #relight(w: WreckTile, prop: Phaser.GameObjects.Sprite): void {
+    const { scene, sprites, layers, origin } = this.#ctx;
+    if (!prefersReducedMotion()) {
+      const variant = propVariant(WAYMARK_SPRITE, this.#map.env);
+      prop.play(sprites.anim(WAYMARK_SPRITE, 'light', variant));
+      prop.chain(sprites.anim(WAYMARK_SPRITE, 'lit', variant));
+    }
+    if (!scene.textures.exists(LANTERN_POOL_KEY)) {
+      scene.textures.addCanvas(
+        LANTERN_POOL_KEY,
+        imageToCanvas(poolImage(LANTERN_POOL_TILES, 'gold.3').img),
+      );
+    }
+    gridToScreen(w.col + 0.5, w.row + 0.5, origin, pos);
+    const pool = scene.make.image({}, false).setTexture(LANTERN_POOL_KEY);
+    pool.setPosition(Math.round(pos.x), Math.round(pos.y)).setBlendMode(Phaser.BlendModes.ADD);
+    layers.decal.add(pool);
+  }
+
   /** The drone cleared tile `w`: the wreck goes and its live tile is drawn in its place. */
   #clear(w: WreckTile): void {
     w.shown = Shown.Cleared;
@@ -186,12 +218,29 @@ export class WreckageView {
     const live = liveTileAt(map, { queue: [], cleared: [w.index] }, w.index);
     const tiles = map.tiles.slice();
     tiles[w.index] = live;
-    // The map's terraces too, so a cleared tile at a terrace's foot keeps its cliff face (T312b).
-    const grid: GroundGrid = { cols: map.cols, rows: map.rows, tiles, terraces: map.terraces };
-    drawCell(this.#ctx, map.env, w.col, w.row, dressTile(grid, w.col, w.row), w.index);
+    // The map's terraces too, so a cleared tile at a terrace's foot keeps its cliff face (T312b);
+    // its markers, env and id, so a decor marker stands on it in its act's look (T831: the
+    // finale's waymark relights) and the memorial keeps the save's class.
+    const grid: GroundGrid = {
+      cols: map.cols,
+      rows: map.rows,
+      tiles,
+      terraces: map.terraces,
+      markers: map.markers,
+      env: map.env,
+      id: map.id,
+      memorialTower: this.#memorialTower,
+    };
+    const look = dressTile(grid, w.col, w.row);
+    const prop = drawCell(this.#ctx, map.env, w.col, w.row, look, w.index);
+    if (prop !== null && look.prop?.sprite === WAYMARK_SPRITE) this.#relight(w, prop);
     this.#onRedraw();
   }
 }
+
+/** The lantern's pool of warm light on the ground round it (tiles, strength). */
+const LANTERN_POOL_TILES = 0.8;
+const LANTERN_POOL_KEY = 'decal.lantern_pool';
 
 /** Whether the head's clearing is in its second half of work (after the flight in). */
 function progressHalf(progress: number, fly: number, total: number): boolean {

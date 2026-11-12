@@ -1,0 +1,293 @@
+// The campaign's close on screen (T810; design/core-loop.md § 6.8; the timeline is epilogue.ts):
+// over everything, one thing at a time on a dark stage (D153). Sterling's farewell memo as a card
+// on its letterhead, with one way on; then (after C5, a scene) the epilogue: each card alone,
+// centered, in the narrator's plain voice; the counter (PESTS PROCESSED: 0, then REMEMBERED: {n} in
+// gold); the credits rolling up; and the final image by ending (Stay: the old status line reads
+// PERIMETER STATUS: OPEN; Go: Tumble IV from orbit). A click or Enter, Space, or → moves on one
+// beat; Esc skips nothing the first time and closes "Watch the epilogue". The stage is a modal:
+// Tab stays on it, and keys stop here. Part of the finale's lazy chunk (app/acts/fin.ts).
+import { useEffect, useRef, useState } from 'preact/hooks';
+import { closeEndingScreen, endingCue } from '../../app/ending.ts';
+import { prefersReducedMotion } from '../motion.ts';
+import { silkText } from '../silk.ts';
+import { CREDITS, creditsText } from './credits.ts';
+import {
+  beatMs,
+  COUNTER_ZERO,
+  counterFlipped,
+  creditsBlockAt,
+  creditsOffsetPx,
+  epilogueBeats,
+  FINAL_IMAGES,
+  FINAL_STILL_FRAME,
+  PERIMETER_OPEN,
+  STAGE_PX,
+  type EpilogueBeat,
+} from './epilogue.ts';
+import { endingScreen, type EpilogueView, type MemoCardView } from './epilogueState.ts';
+import { finaleStill, STILL_SCALE } from './epilogueStills.ts';
+import { Letter } from './Inbox.tsx';
+import { STORY_CHOICE_LOCK_MS } from '../../app/dialogue.ts';
+import './epilogue.css';
+
+/** Keys that move the epilogue on one beat. */
+const NEXT_KEYS = new Set(['Enter', 'NumpadEnter', 'Space', 'ArrowRight']);
+
+/** The ending layer: whatever app/ending.ts has on show, or nothing. */
+export function EndingLayer() {
+  const view = endingScreen.value;
+  if (view === null) return null;
+  return view.kind === 'memo' ? (
+    <MemoCard key={view.memo.id} view={view} />
+  ) : (
+    <Epilogue key="epilogue" view={view} />
+  );
+}
+
+/** Keeps Tab on `el` and its controls, and keys from the game's listener. */
+function holdKeys(e: KeyboardEvent): void {
+  if (e.key === 'Tab') {
+    const root = e.currentTarget instanceof HTMLElement ? e.currentTarget : null;
+    const items = root === null ? [] : [...root.querySelectorAll<HTMLElement>('button')];
+    e.preventDefault();
+    (items.find((b) => b !== document.activeElement) ?? items[0] ?? root)?.focus();
+  }
+  e.stopPropagation();
+}
+
+/**
+ * Sterling's farewell (`memo_fin_01`) on its letterhead, alone, then Continue. The button waits a
+ * beat (the story choice's 700 ms), so the Enter that left the card doesn't also leave the memo.
+ */
+function MemoCard({ view }: { view: MemoCardView }) {
+  const [ready, setReady] = useState(false);
+  const button = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    button.current?.focus();
+    const id = setTimeout(() => setReady(true), STORY_CHOICE_LOCK_MS);
+    return () => clearTimeout(id);
+  }, []);
+  return (
+    <div class="end-stage end-memo" data-testid="ending-memo">
+      <section
+        class="end-memo-card"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Memo"
+        onKeyDown={holdKeys}
+      >
+        <div class="end-memo-letter">
+          <Letter memo={view.memo} />
+        </div>
+        <button
+          ref={button}
+          type="button"
+          class="sd-button sd-button-primary end-memo-go"
+          aria-disabled={ready ? undefined : 'true'}
+          onClick={() => {
+            if (ready) closeEndingScreen();
+          }}
+        >
+          Continue
+        </button>
+      </section>
+    </div>
+  );
+}
+
+/** Milliseconds since `from`, redrawn every `tickMs` while `live`. */
+function useClock(from: number, live: boolean, tickMs = 50): number {
+  const [, redraw] = useState(0);
+  useEffect(() => {
+    if (!live) return undefined;
+    const id = setInterval(() => redraw((n) => n + 1), tickMs);
+    return () => clearInterval(id);
+  }, [from, live, tickMs]);
+  return performance.now() - from;
+}
+
+/** The epilogue: its beats one at a time, then the close goes on. */
+function Epilogue({ view }: { view: EpilogueView }) {
+  const still = prefersReducedMotion();
+  const beats = epilogueBeats(view);
+  const [at, setAt] = useState({ i: 0, from: performance.now() });
+  const root = useRef<HTMLDivElement>(null);
+  const flipped = useRef(false);
+  const closed = useRef(false);
+  const beat = beats[at.i];
+  /** Ends the epilogue once (its last beat, or Esc on "Watch the epilogue"). */
+  const close = (): void => {
+    if (closed.current) return;
+    closed.current = true;
+    endingCue('epilogue_end');
+    closeEndingScreen();
+  };
+  const advance = (): void => {
+    if (at.i + 1 >= beats.length) close();
+    else setAt({ i: at.i + 1, from: performance.now() });
+  };
+  // Each beat moves on by itself when its time is up.
+  useEffect(() => {
+    if (beat === undefined) return undefined;
+    const id = setTimeout(advance, beatMs(beat, view, still));
+    return () => clearTimeout(id);
+  }, [at]);
+  useEffect(() => {
+    root.current?.focus();
+  }, []);
+  const moving = beat?.kind === 'counter' || beat?.kind === 'credits';
+  const ms = useClock(at.from, moving);
+  // The counter's flip cues the music (once): the jingle in a major key, many voices.
+  if (beat?.kind === 'counter' && counterFlipped(ms) && !flipped.current) {
+    flipped.current = true;
+    endingCue('counter_flip');
+  }
+  const onKey = (e: KeyboardEvent): void => {
+    if (NEXT_KEYS.has(e.code) && !e.repeat) {
+      e.preventDefault();
+      advance();
+    } else if (e.code === 'Escape' && !e.repeat) {
+      e.preventDefault();
+      // The first time through, nothing skips; "Watch the epilogue" closes.
+      if (!view.first) close();
+    }
+    holdKeys(e);
+  };
+  return (
+    <div
+      ref={root}
+      class={`end-stage end-epilogue${still ? ' still' : ''}`}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Epilogue"
+      tabIndex={-1}
+      data-testid="epilogue"
+      data-beat={beat?.kind}
+      data-index={at.i}
+      onClick={advance}
+      onKeyDown={onKey}
+    >
+      {beat !== undefined && <Beat key={at.i} beat={beat} view={view} ms={ms} still={still} />}
+    </div>
+  );
+}
+
+function Beat({
+  beat,
+  view,
+  ms,
+  still,
+}: {
+  beat: EpilogueBeat;
+  view: EpilogueView;
+  ms: number;
+  still: boolean;
+}) {
+  switch (beat.kind) {
+    case 'card': {
+      const card = view.cards[beat.index];
+      return (
+        <p class="end-card" role="status" data-testid="epilogue-card" data-slot={card?.slot}>
+          {card?.text}
+        </p>
+      );
+    }
+    case 'counter': {
+      const flipped = counterFlipped(ms);
+      const text = flipped ? (view.remembered ?? '') : COUNTER_ZERO;
+      return (
+        <p
+          class={`end-counter${flipped ? ' flipped' : ''}`}
+          role="status"
+          data-testid="epilogue-counter"
+          data-flipped={flipped ? 'true' : 'false'}
+        >
+          {silkText(text)}
+        </p>
+      );
+    }
+    case 'credits':
+      return <Credits ms={ms} still={still} />;
+    case 'final':
+      return <FinalImage ending={beat.ending} />;
+  }
+}
+
+/** The roll: up from under the stage (a block at a time under reduced motion). */
+function Credits({ ms, still }: { ms: number; still: boolean }) {
+  const blocks = still ? [CREDITS[creditsBlockAt(ms)]!] : CREDITS;
+  const style = still ? undefined : { transform: `translateY(${STAGE_PX - creditsOffsetPx(ms)}px)` };
+  return (
+    <div class="end-credits" data-testid="epilogue-credits">
+      <p class="sd-visually-hidden" role="status">
+        {creditsText()}
+      </p>
+      <div class={`end-roll${still ? ' block' : ''}`} style={style} aria-hidden="true">
+        {blocks.map((b, i) => (
+          <div key={`${b.heading ?? ''}${i}`} class={b.heading === null ? 'end-roll-block title' : 'end-roll-block'}>
+            {b.heading !== null && <p class="end-roll-head">{b.heading}</p>}
+            {b.lines.map((l) => (
+              <p key={l} class="end-roll-line">
+                {l}
+              </p>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** The final image by ending: T843's still when painted, else a placeholder; Stay's line over it. */
+function FinalImage({ ending }: { ending: 'stay' | 'go' }) {
+  const def = FINAL_IMAGES[ending];
+  const still = finaleStill(def.still, FINAL_STILL_FRAME);
+  return (
+    <div
+      class={`end-final ${ending}${still === null ? ' placeholder' : ''}`}
+      role="img"
+      aria-label={def.label}
+      data-testid="epilogue-final"
+      data-ending={ending}
+    >
+      {still === null ? (
+        <Placeholder ending={ending} />
+      ) : (
+        <img
+          class="end-final-still"
+          src={still.url}
+          width={still.w * STILL_SCALE}
+          height={still.h * STILL_SCALE}
+          alt=""
+          aria-hidden="true"
+        />
+      )}
+      {ending === 'stay' && (
+        <p class="end-status" aria-hidden="true">
+          {silkText(PERIMETER_OPEN)}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** Until T843's stills: Stay, a dawn sky over a low ridge; Go, the planet's limb and the relay. */
+function Placeholder({ ending }: { ending: 'stay' | 'go' }) {
+  if (ending === 'stay') {
+    return (
+      <div class="end-ph" aria-hidden="true">
+        <span class="end-ph-sun" />
+        <span class="end-ph-ridge" />
+      </div>
+    );
+  }
+  return (
+    <div class="end-ph" aria-hidden="true">
+      <span class="end-ph-planet" />
+      <span class="end-ph-relay" />
+      {[0, 1, 2, 3, 4, 5].map((n) => (
+        <span key={n} class="end-ph-note" style={{ animationDelay: `${n * 600}ms`, left: `${304 + n * 6}px` }} />
+      ))}
+    </div>
+  );
+}

@@ -25,6 +25,7 @@ import { activeSave, browserKeyValueStore, initSaves, loadDevSave } from './save
 import { hasBattleMap } from './battleSetup.ts';
 import { loadDevFixtures } from './devRegistry.ts';
 import { ensureAllActs } from './actContent.ts';
+import { loadFinaleScreens } from './finaleScreens.ts';
 import { gateRouter } from './contentGate.ts';
 import { loadBattleRenderer } from './battleRenderer.ts';
 import { initSettings } from './settings.ts';
@@ -90,6 +91,7 @@ export async function boot(): Promise<void> {
   await Promise.all([
     upFront ? ensureAllActs() : null,
     upFront ? loadBattleRenderer() : null,
+    upFront ? loadFinaleScreens() : null, // T810
     devFixtures ? loadDevFixtures() : null,
   ]);
   const devSave = params.save !== null && loadDevSave(params.save);

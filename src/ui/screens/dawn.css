@@ -1,0 +1,137 @@
+/* The First Dawn's stage (dawnStage.tsx; T810; art-direction.md § Finale and § Dialogue
+   presentation): T843's still full-bleed, its frames crossfading (cut under reduced motion); the
+   lines one at a time at the bottom on a dark panel edged in gold. The placeholder, until the still
+   is painted: the finale's dawn ramp in the master palette's steps, a dark ridge with the Halls'
+   mouth, the sun's rim, Ishael's mote, and a silhouette whose visor lifts. Whole pixels. */
+.dlg-stage[data-staging='dawn'] {
+  box-sizing: border-box;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding-bottom: 12px;
+  background: var(--sd-ink-0);
+}
+
+.dlg-stage[data-staging='dawn'] .dlg-history {
+  display: none;
+}
+
+.dlg-stage[data-staging='dawn'] .dlg-fullscreen {
+  position: relative;
+  background: var(--panel-fill);
+  box-shadow: 0 0 0 1px var(--sd-gold-2);
+}
+
+.dawn {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.dawn-still {
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  transition: opacity 900ms steps(9);
+}
+
+.dawn-still.on {
+  opacity: 1;
+}
+
+/* The placeholder sunrise: night at the top, rose and gold low, the sun's rim on the ridge. */
+.dawn-sky {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    var(--sd-violet-0) 0,
+    var(--sd-violet-1) 28%,
+    var(--sd-pink-1) 50%,
+    var(--sd-coral-2) 64%,
+    var(--sd-orange-3) 74%,
+    var(--sd-gold-3) 80%
+  );
+}
+
+.dawn-sun {
+  position: absolute;
+  left: 50%;
+  top: 196px;
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  background: var(--sd-gold-4);
+  box-shadow: 0 0 0 8px rgb(255 222 70 / 30%);
+  transform: translateX(-50%);
+}
+
+/* The ridge over the Halls, dark against the light, with the mouth's gold seam. */
+.dawn-ridge {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 236px;
+  bottom: 0;
+  background: var(--sd-ink-1);
+  clip-path: polygon(0 18%, 22% 6%, 40% 14%, 50% 0, 60% 14%, 78% 4%, 100% 16%, 100% 100%, 0 100%);
+  box-shadow: inset 0 2px 0 var(--sd-gold-2);
+}
+
+/* Ishael's mote: one gold point, larger than the rest, beside where Ves'thara stands. */
+.dawn-mote {
+  position: absolute;
+  left: 236px;
+  top: 172px;
+  width: 4px;
+  height: 4px;
+  background: var(--sd-white-1);
+  box-shadow: 0 0 0 2px var(--sd-gold-3);
+  opacity: 0;
+  transition: opacity 900ms steps(9);
+}
+
+.dawn-mote.on {
+  opacity: 1;
+}
+
+/* The silhouette against the sun: a helmet and shoulders; the visor up is a lit slit. */
+.dawn-figure {
+  position: absolute;
+  left: 50%;
+  top: 182px;
+  width: 36px;
+  height: 56px;
+  background: var(--sd-ink-0);
+  border-radius: 18px 18px 4px 4px;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity 900ms steps(9);
+}
+
+.dawn-figure.on {
+  opacity: 1;
+}
+
+.dawn-visor {
+  position: absolute;
+  left: 8px;
+  top: 12px;
+  width: 20px;
+  height: 2px;
+  background: var(--sd-gold-4);
+}
+
+.dawn.still .dawn-still,
+.dawn.still .dawn-mote,
+.dawn.still .dawn-figure {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dawn-still,
+  .dawn-mote,
+  .dawn-figure {
+    transition: none;
+  }
+}

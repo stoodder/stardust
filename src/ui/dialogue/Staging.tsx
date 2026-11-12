@@ -251,10 +251,11 @@ export function Staging({ staging }: { staging: StagingView }) {
   if (kind === 'mail') return <MailStage from={staging.from} />;
   if (kind === 'night_shift') return <NightShiftStage from={staging.from} />;
   if (kind === 'waykeeper') return <WaykeeperStage from={staging.from} />;
-  if (kind === 'c5') {
-    // The finale's chunk registers it; until then (never, once the finale is loaded) a dark stage.
-    const C5Stage = finaleUi.value?.C5Stage;
-    return C5Stage === undefined ? null : <C5Stage from={staging.from} />;
+  if (kind === 'dawn' || kind === 'c5') {
+    // T810: the finale's chunk registers them (it is always in before its scenes play).
+    const ui = finaleUi.value;
+    const Stage = ui === null ? null : kind === 'dawn' ? ui.DawnStage : ui.C5Stage;
+    return Stage === null ? null : <Stage from={staging.from} />;
   }
   return kind === 'rig9_feed' ? (
     <FeedStage ms={ms} still={still} />

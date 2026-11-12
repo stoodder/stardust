@@ -315,7 +315,7 @@ export const map = defineMapLayout({
     // Paced to Phase 1's waves: a leg a wave (`walkWaves`), walked over most of a Standard wave,
     // so she passes the memorial in W9 and reaches the Halls mouth in W18 whatever the countdowns.
     pace: 0.08,
-    haltTiles: 1.5,
+    haltTiles: 2.5,
     walkWaves: PHASE_1_WAVES,
     // The choir is lost once 15 singers are hushed, whatever its size by flag (T821): every cell
     // has the same room in singers (20 → floor 6, warren 28 → 14, convoy 16 → 2; Thrum +1).

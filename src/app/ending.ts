@@ -25,6 +25,7 @@ import {
 import { ensureActs } from './actContent.ts';
 import { dialogueEnabled, playScene } from './dialogue.ts';
 import { endingPlaceholder } from './finaleFlow.ts';
+import { loadFinaleScreens } from './finaleScreens.ts';
 import { markMemoRead, memoView, textContext } from './inbox.ts';
 import { logError } from './log.ts';
 import { activeSave } from './save.ts';
@@ -225,7 +226,7 @@ export function watchEpilogue(): Promise<void> {
   if (save === null || save.story.flags.ending_choice === undefined) {
     return Promise.reject(new Error('ending: the epilogue waits for C5'));
   }
-  return ensureActs('finale').then(
+  return Promise.all([ensureActs('finale'), loadFinaleScreens()]).then(
     () =>
       new Promise<void>((resolve) => {
         show(epilogueView(epilogueFlags(save, null), save, false), resolve);

@@ -11,6 +11,7 @@ import type { StoryAct } from '../content/dialogue/types.ts';
 import { frontierOf, type SaveData } from '../meta/index.ts';
 import { actsLoaded, ensureActs, preloadActs, whenIdle } from './actContent.ts';
 import { battleRendererLoaded, loadBattleRenderer } from './battleRenderer.ts';
+import { finaleScreensLoaded, loadFinaleScreens } from './finaleScreens.ts';
 import { DEFAULT_MAP_ID } from './battleSetup.ts';
 import { assertNever } from '../shared/types.ts';
 import { logError } from './log.ts';
@@ -50,20 +51,30 @@ function preloadRenderer(): void {
 }
 
 /**
- * Runs `go` once the acts through `acts` (and, for a battle, the renderer) have loaded: at once,
- * synchronously, when they already have. Then preloads the next act and the renderer.
+ * Runs `go` once the acts through `acts` (and, for a battle, the renderer; with the finale, its
+ * screens, T810) have loaded: at once, synchronously, when they already have. Then preloads the
+ * next act and the renderer.
  */
 function gated<T>(acts: StoryAct, battle: boolean, go: () => Promise<T>): Promise<T> {
+  const screens = actRank(acts) >= actRank('finale');
   const after = (): void => {
     preloadActs(actAtRank(actRank(acts) + 1), reportLoadError);
     preloadRenderer();
   };
-  if (actsLoaded(acts) && (!battle || battleRendererLoaded())) {
+  if (
+    actsLoaded(acts) &&
+    (!battle || battleRendererLoaded()) &&
+    (!screens || finaleScreensLoaded())
+  ) {
     const out = go();
     after();
     return out;
   }
-  return Promise.all([ensureActs(acts), battle ? loadBattleRenderer() : null]).then(() => {
+  return Promise.all([
+    ensureActs(acts),
+    battle ? loadBattleRenderer() : null,
+    screens ? loadFinaleScreens() : null,
+  ]).then(() => {
     const out = go();
     after();
     return out;

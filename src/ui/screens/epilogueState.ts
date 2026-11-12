@@ -49,12 +49,14 @@ export type EndingScreenView = MemoCardView | EpilogueView;
 /** The ending screen on show (app/ending.ts sets and clears it). */
 export const endingScreen = signal<EndingScreenView | null>(null);
 
-/** The finale chunk's components: the ending layer and the C5 scene's stage. */
+/** The finale chunk's components: the ending layer, and the Dawn and C5 scenes' stages. */
 export interface FinaleUi {
   /** Draws `endingScreen` over every screen (the overlay mounts it once registered). */
   readonly EndingLayer: ComponentType;
   /** C5's stage (staging `c5`), from its staging's start (performance.now()). */
   readonly C5Stage: ComponentType<{ readonly from: number }>;
+  /** The First Dawn's stage (staging `dawn`, before the finale's card). */
+  readonly DawnStage: ComponentType<{ readonly from: number }>;
 }
 
 /** The finale's components once its chunk has loaded (null before). */

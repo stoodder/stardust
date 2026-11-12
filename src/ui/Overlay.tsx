@@ -13,6 +13,7 @@ import { Results } from './screens/Results.tsx';
 import { Settings } from './screens/Settings.tsx';
 import { Title } from './screens/Title.tsx';
 import { campaign, runResult } from './screens/state.ts';
+import { finaleUi } from './screens/epilogueState.ts'; // T810: the campaign's close, lazy
 import { hud, screen } from './state.ts';
 
 /** The overlay's root component: the current screen, and a scene holding input over it. */
@@ -21,8 +22,15 @@ export function Overlay() {
     <>
       <Screen />
       <SceneLayer />
+      <EndingSlot />
     </>
   );
+}
+
+/** The campaign's close over everything (T810), once the finale's chunk has registered it. */
+function EndingSlot() {
+  const Layer = finaleUi.value?.EndingLayer;
+  return Layer === undefined ? null : <Layer />;
 }
 
 /** The current screen. */
