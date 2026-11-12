@@ -1949,3 +1949,17 @@ The finale, its ending, the post-game and the polish are built (tasks.md § M8).
 - The SEAL fallback band is 96 px, not the 64 px logged earlier: the comms panel is up to 86 px tall.
 
 **The declutter pass (D153).** A voice guard is now a test (`smoke/declutter.spec.ts` against `smoke/declutter-before/`): no gameplay-critical readout behind a "more", and no character or story element loses area. Under it: the star-map panel tucks medals behind a toggle and no longer hides nodes; the loadout folds links and protocol effects; briefings give each line its own speaker's face and fold the answering-tower lists; floating text merges and goes quiet at Dawn; Results says each fact once.
+
+### D156 — 2026-11-12 — M8 review round 1: rulings
+
+Three reviewers (story and emotional impact, gameplay and correctness, UX/feel and art) played the finale, the close and the post-game. The art trail was approved, as consistent with M7, and the declutter was judged calmer with the voice kept. The rulings:
+- **The finale scores its gate too.** On a choir map with a core, the margin is the lower of Voices % and the gate's %, as on Protect maps. Par had ended with the gate at 5/32, which the harness never saw.
+- **No single-wave walls on the choir.** D028's gradual-loss rule applies to hushes (the allowance is the hush allowance); W17's converging Motes are spread so the first hush comes around W13.
+- **Directive 0 must survive a human's rebuild.** After "Who's there?", play resumes paused with QUILL's word to rebuild, and a harness variant rebuilding 15 s late must still win, for par and for the Mindspike-free build.
+- **The Unsung's forms have time floors**, so damaging it never makes Phase 2 harder, and hitting it shortens the phase. Every alt must win on Story in the weakest cells, and par and every alt run across all 24 flag combinations.
+- **The finale takes wave checkpoints in Phase 1** (W5, W10, W15), so a closed tab resumes and a late loss doesn't restart from wave 1.
+- **The post-game is QUILL's sim deck: none of it is real, and nobody is counted.** Endless is renamed (Ending A's title belongs to the ending), and Skitterkin and Chitterbloom leave its roster: after "Remember them.", the player is never asked to shoot the people they walked home.
+- **The first "REMEMBERED" is the epilogue's flip.** The finale's Results card reads "PESTS PROCESSED: 0", the counter as Dawn left it, on the dawn gradient. The epilogue's backdrop warms from plum to gold across the cards.
+- **A script cue plays only when its scene's condition holds** (each QUILL answer heard its own Phase 2 line only by luck of order).
+- Veteran bonuses pay only when a replay beats its stored best.
+Details and owners: the M8 review round 1 resolutions (orchestrator's scratchpad).
