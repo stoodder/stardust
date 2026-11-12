@@ -5,7 +5,9 @@
 // cloaked unit's footsteps, a Capacitor Bank's hum climbing as it charges (and collapsing when the
 // charge fizzles), a beam's hum climbing with its ramp (and held once it caps), the night's air at
 // Sundown, the salvage drone flying and working, the Jammed static while any tower is jammed, and
-// a hidden Black Budget's shimmer (in place of the footsteps). It also keeps where the Hollow units stand,
+// a hidden Black Budget's shimmer (in place of the footsteps), the Deep Bore drilling while its
+// timer runs, and the Unsung's surfacing tell (the ground churning under the singers; T850). It
+// also keeps where the Hollow units stand,
 // for their quiet (`quietAt`, HOLLOW_QUIET), and whether a Hum Choir stands (`choirLive`, the
 // music's harmony line). Timing is in sim ticks, so a paused battle is quiet.
 // It reads only public sim state (the same fields render reads), and never touches it.
@@ -25,8 +27,11 @@ import { CHARGE_SOUNDS, CLOAK_SOUNDS, HOLLOW_QUIET } from './eventTablesAct2.ts'
 import { BEAM_SOUNDS, DARK_SOUNDS } from './eventTablesAct2b.ts';
 import { ENEMY_BURROW_SOUNDS } from './eventTablesAct3.ts';
 import { ENEMY_CLOAK_SOUNDS, JAM_SOUNDS } from './eventTablesAct3b.ts';
+import { SURFACE_TELL_SOUNDS, TIMER_SOUNDS } from './eventTablesFin.ts';
 import { sfx, type SoundCall } from './eventSounds.ts';
 import type { SfxId } from './sfx/index.ts';
+
+const NO_TIMERS: NonNullable<FieldState['timers']> = [];
 
 /** A boss's tell is the last BOSS_ABILITY_TELL_SEC of its ability timer (sim/enemyAbilities/boss.ts). */
 const TELL_TICKS = secToTicks(BOSS_ABILITY_TELL_SEC);
@@ -96,6 +101,14 @@ export interface FieldState {
   readonly wreckage: { readonly queue: readonly number[]; readonly progressTicks: number };
   /** Sundown's darkness, 0–1 (absent: none). */
   readonly dark?: number;
+  /** The map's secondary timers (the Deep Bore; T806), absent or empty without any. */
+  readonly timers?: readonly {
+    readonly running: boolean;
+    readonly full: boolean;
+    readonly ratePct: number;
+  }[];
+  /** The Bore's highest fill so far, whole percent (`stats.boreProgress`; the drill's pitch). */
+  readonly stats?: { readonly boreProgress: number };
 }
 
 /**
@@ -212,6 +225,12 @@ export function createFieldSounds(clearTicks: number): FieldSounds {
   let head = -1;
   let workAt = -1;
   let choir = false;
+  /** When the Bore's drill grinds next (sim tick); -1: no timer running last frame. */
+  let drillAt = -1;
+  const drillEvery = Math.max(1, Math.round(TIMER_SOUNDS.everySec * TICK_HZ));
+  /** Bosses whose surfacing tell has sounded this dig (by uid), and this frame's. */
+  let churning = new Set<number>();
+  let nextChurning = new Set<number>();
   return {
     hollowLive: () => hollowN > 0,
     choirLive: () => choir,
@@ -245,6 +264,17 @@ export function createFieldSounds(clearTicks: number): FieldSounds {
           if (id !== null) out.push(sfx(id));
         }
         nextBurrowed.set(e.uid, e.burrowed);
+        // A burrowing boss's surfacing tell (the Unsung under the singers): once per dig.
+        const churn = SURFACE_TELL_SOUNDS[e.def.id];
+        if (
+          churn !== undefined &&
+          e.burrowed &&
+          e.abilityTicks > 0 &&
+          e.abilityTicks <= TELL_TICKS
+        ) {
+          if (!churning.has(e.uid)) out.push(sfx(churn));
+          nextChurning.add(e.uid);
+        }
         // A boss's spawn: its tell as it starts, its sneeze as the tell runs out in the same phase.
         if (e.def.boss !== null) {
           const s = bossSounds(e.def.id);
@@ -263,6 +293,20 @@ export function createFieldSounds(clearTicks: number): FieldSounds {
           out.push(sfx(HUDDLE_SOUND));
         }
         if (!e.leaving && Object.hasOwn(ENEMY_LOOPS, e.def.id)) present.add(e.def.id);
+      }
+      const ch = churning;
+      churning = nextChurning;
+      nextChurning = ch;
+      nextChurning.clear();
+      // The Deep Bore drilling while its timer runs, a step higher for each fifth of its fill.
+      let drilling = false;
+      for (const t of state.timers ?? NO_TIMERS)
+        if (t.running && !t.full && t.ratePct > 0) drilling = true;
+      if (!drilling) drillAt = -1;
+      else if (state.tick >= drillAt) {
+        const fill = state.stats?.boreProgress ?? 0;
+        out.push(sfx(TIMER_SOUNDS.drill, Math.floor(fill / TIMER_SOUNDS.pctPerStep)));
+        drillAt = state.tick + drillEvery;
       }
       const b = burrowed;
       burrowed = nextBurrowed;

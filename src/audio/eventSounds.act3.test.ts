@@ -46,9 +46,12 @@ describe("Act III's sound dials (T613)", () => {
     for (const act of [1, 2] as const) {
       expect(run(byAct[act], [{ type: 'MapLost' }]), String(act)).toEqual(['cue:lose']);
     }
-    for (const act of [1, 2, 'finale'] as const) {
+    for (const act of [1, 2] as const) {
       expect(run(byAct[act], [{ type: 'MapWon' }]), String(act)).toEqual(['cue:win']);
     }
+    // The finale's win is the song's last line landing home; its loss hums it unfinished (T850).
+    expect(run(byAct.finale, [{ type: 'MapWon' }])).toEqual(['cue:fin_win']);
+    expect(run(byAct.finale, [{ type: 'MapLost' }])).toEqual(['cue:lose_hush']);
   });
 
   it('lets the Hollow die silently in Act III, and only the Hollow', () => {

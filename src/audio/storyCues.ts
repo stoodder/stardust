@@ -65,6 +65,11 @@ export interface LineCue {
  *   Pebble an octave under her.
  * - The SEAL (act3.md § A3M3, `a3_m03_cue_seal`): Bricks's and Pebble's hums are the door hum
  *   itself (`door_hum`, struck while the SEAL waits), so their lines play no blip and no cue.
+ * - The finale (finale.md § FIN; music/fin.ts): Pebble at the memorial hums Bricks's half
+ *   phrase low (`memorial_hum`); at the mouth of the Halls her six notes, the choir coming in on
+ *   the last (`halls_hum`), before the hymn; for Thrum's echo, her six notes with her
+ *   grandmother's voice answering in tenths that land on C (`echo_hum`); and in the Dawn scene,
+ *   "Everyone sings it." is the jingle in C major, sung (`dawn_sung`).
  */
 export const LINE_CUES: readonly LineCue[] = [
   {
@@ -114,6 +119,39 @@ export const LINE_CUES: readonly LineCue[] = [
     cue: null,
     quietMs: 3000,
     musicDuck: 0.12,
+  },
+  // The finale (T850; music/fin.ts).
+  {
+    scene: 'fin_m01_cue_memorial',
+    speaker: 'pebble',
+    text: "(hum, low) That's Bricks's. That's yours.",
+    cue: 'memorial_hum',
+    quietMs: 3000,
+    musicDuck: 0.3,
+  },
+  {
+    scene: 'fin_m01_cue_phase2',
+    speaker: 'pebble',
+    text: '(hum, six notes, loud)',
+    cue: 'halls_hum',
+    quietMs: 4000,
+    musicDuck: 0.2,
+  },
+  {
+    scene: 'fin_m01_cue_echo',
+    speaker: 'pebble',
+    text: 'Grandmother. (hum, six notes) She heard.',
+    cue: 'echo_hum',
+    quietMs: 4000,
+    musicDuck: 0.25,
+  },
+  {
+    scene: 'fin_m01_scene_dawn',
+    speaker: 'narrator',
+    text: '(The hushed ones wake. The jingle comes round again, in a major key. Everyone sings it.)',
+    cue: 'dawn_sung',
+    quietMs: 0,
+    musicDuck: 0.2,
   },
 ];
 

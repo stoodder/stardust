@@ -72,7 +72,17 @@ import {
   PUDDLE_SOUND,
   TAKEOVER_SOUNDS,
 } from './eventTablesAct3b.ts';
-import { LOSE_CUE, WAVE_CLEAR_CUE, type CueId } from './music/index.ts';
+import {
+  BOSS_MOMENT_SOUNDS,
+  CHOIR_SOUNDS,
+  DAWN_SOUND,
+  DIRECTIVE_SOUNDS,
+  SINGER_ALLY,
+  SONG_SOUNDS,
+  TIMER_SOUNDS,
+  WAYMARK_SOUNDS,
+} from './eventTablesFin.ts';
+import { LOSE_CUE, WAVE_CLEAR_CUE, WIN_CUE, type CueId } from './music/index.ts';
 import { loadedSfx, type SfxId } from './sfx/index.ts';
 
 export {
@@ -226,22 +236,24 @@ const MAKES_SOUND: Readonly<Record<SimEventType, boolean>> = {
   BearerHome: true,
   // The wave's horn covers a script group walking in (A3M5's W10 surge).
   ScriptGroupSpawned: false,
-  // The finale's events (declared by T800a): silent until T850 sorts their sounds.
-  PhaseChanged: false,
-  ChoirHalted: false,
-  SingerHushed: false,
-  LaidToRest: false,
-  Scattered: false,
-  Reformed: false,
-  TimerFull: false,
+  // The finale's (T850; eventTablesFin.ts). PhaseChanged is heard for its books (the song's
+  // phase) and plays nothing: the music follows the phase (director.ts PHASE_THEME).
+  PhaseChanged: true,
+  ChoirHalted: true,
+  SingerHushed: true,
+  LaidToRest: true,
+  Scattered: true,
+  Reformed: true,
+  TimerFull: true,
+  // Dawn's light is DawnBroke's sound.
   LightingSet: false,
-  ClassRestored: false,
-  AbilityLocked: false,
-  EchoArrived: false,
-  DawnBroke: false,
-  BossRisen: false, // T808: silent until T850
-  BossSurfaced: false,
-  BossAdds: false,
+  ClassRestored: true,
+  AbilityLocked: true,
+  EchoArrived: true,
+  DawnBroke: true,
+  BossRisen: true,
+  BossSurfaced: true,
+  BossAdds: true,
 };
 
 /** The sim event types the binder hands to `EventSounds.sounds` (the rest are always silent). */
@@ -273,6 +285,8 @@ export interface EnemyLookup {
   quietAt(x: number, y: number): boolean;
   /** The id of the tower with `uid` (its TOWER_SOUNDS row), or null if unknown. */
   tower?(uid: number): string | null;
+  /** The map marker on tile (col, row), or null (a waymark's wreckage: WAYMARK_SOUNDS). */
+  markerAt?(col: number, row: number): string | null;
 }
 const NO_ENEMIES: EnemyLookup = { splits: () => false, faction: () => null, quietAt: () => false };
 
@@ -383,6 +397,26 @@ export function createEventSounds(
   };
   /** Whether a refugee has reached safety yet this battle (FIRST_SHELTERED_CUE). */
   let sheltered = false;
+  /** The map's script phase (PhaseChanged): the song's (SONG_SOUNDS `phase`) holds deaths back. */
+  let phase = 0;
+  /**
+   * Hollow deaths this frame waiting on the song's verdict, by uid: laid to rest or scattered
+   * (their own sounds), else, at the frame's end, their death sound where they fell.
+   */
+  const verdicts = new Map<number, { id: SfxId; x: number; y: number; pitch: number }>();
+  /** Units laid to rest this frame (each the next SONG_SOUNDS stagger step), and in the battle. */
+  let restNow = 0;
+  let rested = 0;
+  /** Waymark lanterns relit this battle (each the next WAYMARK_SOUNDS step). */
+  let lanterns = 0;
+  /** Each boss's enemy id by uid (from its BossPhase), for BOSS_MOMENT_SOUNDS. */
+  const bosses = new Map<number, string>();
+  const bossMoment = (uid: number) => {
+    const enemy = bosses.get(uid);
+    return enemy !== undefined && Object.hasOwn(BOSS_MOMENT_SOUNDS, enemy)
+      ? BOSS_MOMENT_SOUNDS[enemy]
+      : undefined;
+  };
   const mapId = dials.map;
   const firstShelteredCue =
     mapId !== undefined && Object.hasOwn(FIRST_SHELTERED_CUE, mapId)
@@ -456,7 +490,11 @@ export function createEventSounds(
           return;
         case 'EnemyDied': {
           const id = deathSound(e.enemy);
-          if (id !== null) at(out, id, e.x, e.y, ENEMY_POP_PITCH[e.enemy] ?? 0);
+          const pitch = ENEMY_POP_PITCH[e.enemy] ?? 0;
+          // In the song's phase a Hollow death waits for its verdict (rest or scatter) this frame.
+          if (id !== null && phase === SONG_SOUNDS.phase && enemies.faction(e.enemy) === 'hollow') {
+            verdicts.set(e.uid, { id, x: e.x, y: e.y, pitch });
+          } else if (id !== null) at(out, id, e.x, e.y, pitch);
           // A boss beaten with no BossEnded (the Gathering Maw's merged body): its sting.
           const beaten = Object.hasOwn(BOSS_SOUNDS, e.enemy)
             ? BOSS_SOUNDS[e.enemy]?.beaten
@@ -512,7 +550,7 @@ export function createEventSounds(
           // Act III's win has no jingle (its `winJingle` dial; the jingle stops playing), and its
           // loss hums the song's last notes, unfinished (LOSE_CUE by the jingle dial).
           if (e.type === 'MapLost') out.push({ kind: 'cue', id: LOSE_CUE[dials.jingle] });
-          else if (dials.winJingle !== false) out.push({ kind: 'cue', id: 'win' });
+          else if (dials.winJingle !== false) out.push({ kind: 'cue', id: WIN_CUE[dials.jingle] });
           return;
         case 'HoldFireChanged':
           out.push(sfx(e.on ? FIRE_CONTROL_SOUNDS.on : FIRE_CONTROL_SOUNDS.off));
@@ -547,6 +585,7 @@ export function createEventSounds(
         }
         // The boss (D073): its arrival, each later phase, and its ending with the sting.
         case 'BossPhase': {
+          bosses.set(e.uid, e.enemy);
           const s = bossSounds(e.enemy);
           const own = s.phases?.[e.phase];
           const id = e.phase <= 1 ? s.arrive : own === undefined ? s.phase : own;
@@ -560,9 +599,17 @@ export function createEventSounds(
           if (!ended && s.endCue !== null) out.push({ kind: 'cue', id: s.endCue });
           return;
         }
-        case 'WreckageCleared':
+        case 'WreckageCleared': {
           out.push(sfx(DRONE_SOUNDS.cleared));
+          // A waymark lantern relit: it catches, a note further up "Ev-er-glow" each time.
+          const marker = enemies.markerAt?.(e.tile[0], e.tile[1]) ?? null;
+          if (marker !== null && marker.startsWith(WAYMARK_SOUNDS.prefix)) {
+            const steps = WAYMARK_SOUNDS.steps;
+            const pitch = steps[Math.min(lanterns++, steps.length - 1)]!; // clamped to length
+            out.push(sfx(WAYMARK_SOUNDS.lit, pitch, WAYMARK_SOUNDS.afterSec));
+          }
           return;
+        }
         // Act II (T450). The Aelari: shields ripple and shatter, pulses and blinks tell, fire,
         // and fizzle when Stasis cuts the tell short (one fizzle for both).
         case 'ShieldHit':
@@ -588,7 +635,8 @@ export function createEventSounds(
           out.push(sfx(HUSH_SOUNDS.tell));
           return;
         case 'Hushed':
-          out.push(sfx(HUSH_SOUNDS.hushed));
+          // A singer hushed is the choir's sound (SingerHushed follows), not the refugee's.
+          if (e.victimAlly !== SINGER_ALLY) out.push(sfx(HUSH_SOUNDS.hushed));
           return;
         case 'SkittishBolt':
           out.push(sfx(HUSH_SOUNDS.bolt));
@@ -735,7 +783,7 @@ export function createEventSounds(
         }
         // The Gathering Maw tears into parts and slides back together.
         case 'BossSplit':
-          out.push(sfx(BOSS_SPLIT_SOUNDS.split));
+          out.push(sfx(bossMoment(e.uid)?.split ?? BOSS_SPLIT_SOUNDS.split));
           return;
         case 'BossMerged':
           out.push(sfx(BOSS_SPLIT_SOUNDS.merge));
@@ -755,6 +803,69 @@ export function createEventSounds(
           const steps = BEARER_SOUNDS.steps;
           const pitch = steps[bearersHome++ % steps.length]!; // modulo length
           out.push(sfx(BEARER_SOUNDS.note, pitch, bearersNow++ * BEARER_SOUNDS.staggerSec));
+          return;
+        }
+        // The finale (T850; eventTablesFin.ts). The script phase: the song's holds deaths back.
+        case 'PhaseChanged':
+          phase = e.phase;
+          return;
+        // The song's verdicts: laid to rest (the next of the six notes, in gold) or scattered.
+        case 'LaidToRest': {
+          verdicts.delete(e.uid);
+          const steps = SONG_SOUNDS.restSteps;
+          const pitch = steps[rested++ % steps.length]!; // modulo length
+          const k = Math.min(restNow++, SONG_SOUNDS.restMaxStagger);
+          out.push(sfx(SONG_SOUNDS.rest, pitch, k * SONG_SOUNDS.restStaggerSec));
+          return;
+        }
+        case 'Scattered':
+          verdicts.delete(e.uid);
+          out.push(sfx(SONG_SOUNDS.scatter));
+          return;
+        case 'Reformed':
+          out.push(sfx(SONG_SOUNDS.reform));
+          return;
+        // The choir: a singer hushed, Pebble halting and walking on, Thrum's echo home.
+        case 'SingerHushed':
+          out.push(sfx(CHOIR_SOUNDS.hushed));
+          return;
+        case 'ChoirHalted':
+          out.push(sfx(e.on ? CHOIR_SOUNDS.halt : CHOIR_SOUNDS.walk));
+          return;
+        case 'EchoArrived':
+          out.push(sfx(CHOIR_SOUNDS.echo));
+          return;
+        // The Deep Bore breaking through (its drilling is the field's).
+        case 'TimerFull': {
+          const id = Object.hasOwn(TIMER_SOUNDS.full, e.id) ? TIMER_SOUNDS.full[e.id] : undefined;
+          if (id !== undefined) out.push(sfx(id));
+          return;
+        }
+        // Directive 0's glitch (its stamps are TowerRevoked's) and "Not Everglow."
+        case 'AbilityLocked':
+          if (e.on) out.push(sfx(DIRECTIVE_SOUNDS.locked));
+          return;
+        case 'ClassRestored':
+          out.push(sfx(DIRECTIVE_SOUNDS.restored));
+          return;
+        case 'DawnBroke':
+          out.push(sfx(DAWN_SOUND));
+          return;
+        // The Unsung's moments: rising again, surfacing among the singers (or dug out), the call.
+        case 'BossRisen': {
+          const id = bossMoment(e.uid)?.risen;
+          if (id !== undefined) out.push(sfx(id));
+          return;
+        }
+        case 'BossSurfaced': {
+          const m = bossMoment(e.uid);
+          const id = e.dugOut ? m?.dugOut : m?.surfaced;
+          if (id !== undefined) out.push(sfx(id));
+          return;
+        }
+        case 'BossAdds': {
+          const id = bossMoment(e.uid)?.adds;
+          if (id !== undefined) out.push(sfx(id));
           return;
         }
         // The HUD's notice plays the rejection buzz (it also covers rejections the HUD makes).
@@ -781,23 +892,8 @@ export function createEventSounds(
         // M7's silent ones (T750): the Reboot (its cast says it) and a script group (the horn).
         case 'Rebooted':
         case 'ScriptGroupSpawned':
-        // The finale's (declared by T800a): silent until T850 gives them sounds.
-        case 'PhaseChanged':
-        case 'ChoirHalted':
-        case 'SingerHushed':
-        case 'LaidToRest':
-        case 'Scattered':
-        case 'Reformed':
-        case 'TimerFull':
+        // The finale's silent one (T850): Dawn's light is DawnBroke's sound.
         case 'LightingSet':
-        case 'ClassRestored':
-        case 'AbilityLocked':
-        case 'EchoArrived':
-        case 'DawnBroke':
-        // The Unsung's (T808): silent until T850 gives them sounds.
-        case 'BossRisen':
-        case 'BossSurfaced':
-        case 'BossAdds':
           return;
         default:
           assertNever(e);
@@ -805,6 +901,10 @@ export function createEventSounds(
     },
     endFrame(out) {
       flushPlink(out);
+      // A Hollow death in the song's phase with no verdict fell for good: its own sound.
+      for (const d of verdicts.values()) at(out, d.id, d.x, d.y, d.pitch);
+      verdicts.clear();
+      restNow = 0;
       const cue = pendingClear && !ended ? WAVE_CLEAR_CUE[dials.jingle] : null;
       if (cue !== null) out.push({ kind: 'cue', id: cue });
       if (pendingForfeit && !ended) out.push(sfx('medal_forfeit'));

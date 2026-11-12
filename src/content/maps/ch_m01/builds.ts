@@ -17,8 +17,8 @@ const RIFT_NW: GridPos = [6, 4];
 const LANE_E: GridPos = [19, 10];
 /** Inside the south-west corner of the spiral, under the Moths' lane. */
 const CORNER: GridPos = [9, 10];
-/** West of the last leg, by the gate. */
-const GATE_W: GridPos = [3, 9];
+/** Between the east ring (column 16) and the basin's east side. */
+const RING_E: GridPos = [15, 5];
 /** Beside the gate. */
 const GATE: GridPos = [4, 12];
 /** South of the long run east, under the Moths' lane as it comes in. */
@@ -55,8 +55,8 @@ function parSteps(): BuildStep[] {
     { wave: 6, upgrade: GATE },
     { wave: 6, upgrade: SOUTH },
     { wave: 7, upgrade: RING_NW },
-    ...raise(8, 'gloop', GATE_W),
-    ...raise(9, 'sproing', FENCE),
+    ...raise(8, 'gloop', RING_E),
+    { wave: 9, build: 'sproing', tile: FENCE },
   ];
 }
 

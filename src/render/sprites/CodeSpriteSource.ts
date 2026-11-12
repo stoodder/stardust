@@ -1,9 +1,12 @@
 // The code-generated SpriteSource: bakes every sprite definition the renderer draws (ATLAS_SPRITES)
 // at boot, packs the frames into atlas pages, and registers them with Phaser as canvas textures,
-// frames, and animations.
+// frames, and animations. A lazy chunk's sprites (the finale's, T871: sprites/registry.ts) get
+// pages of their own when `sync` runs (BattleScene's create, before anything draws).
 import type * as Phaser from 'phaser';
 import { PALETTES } from '../../content/palettes/index.ts';
 import { SPRITES, type SpriteId } from '../../content/sprites/index.ts';
+import { liveSprites, spritesVersion } from '../../content/sprites/registry.ts';
+import type { SpriteDef } from '../../content/sprites/types.ts';
 import type { Point } from '../../content/sprites/types.ts';
 import { packShelves } from './atlas.ts';
 import {
@@ -25,15 +28,19 @@ export const PAGE_PREFIX = 'sprites.';
 /** Where BootScene stores the source in the game registry. */
 export const SPRITE_SOURCE_KEY = 'spriteSource';
 
+/** Whether the atlas holds a sprite: every one but the portraits (T766). */
+function inAtlas(def: SpriteDef): boolean {
+  return categoryOf(def.id) !== 'portrait';
+}
+
 /**
- * The sprites the atlas holds: every one but the portraits (T766). Portraits are drawn only in the
- * DOM (ui/dialogue/Portrait.tsx, ui/hud/Icon.tsx bake one on demand) and the gallery bakes its own,
- * so baking them at boot cost ~600 frames (12% of the atlas's pixels) and painting every portrait
- * (definePortrait paints on first read) for nothing.
+ * The sprites the boot atlas holds: the core registry's, but the portraits (T766; they are a lazy
+ * chunk now, T871, so none is in it). Portraits are drawn only in the DOM (ui/dialogue/Portrait.tsx,
+ * ui/hud/Icon.tsx bake one on demand) and the gallery bakes its own, so baking them at boot cost
+ * ~600 frames (12% of the atlas's pixels) and painting every portrait (definePortrait paints on
+ * first read) for nothing.
  */
-export const ATLAS_SPRITES: readonly (typeof SPRITES)[number][] = SPRITES.filter(
-  (def) => categoryOf(def.id) !== 'portrait',
-);
+export const ATLAS_SPRITES: readonly SpriteDef[] = (SPRITES as readonly SpriteDef[]).filter(inAtlas);
 
 /** The parts of a Phaser scene `register` uses (a `Phaser.Scene` is one; tests pass a fake). */
 export interface SpriteScene {
@@ -61,17 +68,45 @@ export class CodeSpriteSource implements SpriteSource {
   readonly #anims = new Set<string>();
   readonly #baked = new Map<string, BakedSprite>();
   readonly #mounts = new Map<string, Point>();
+  /** The ids baked so far, and the scene and page count `sync` adds pages with. */
+  readonly #defs = new Set<string>();
+  #scene: SpriteScene | null = null;
+  #pages = 0;
+  #version = -1;
 
   load(scene: Phaser.Scene): Promise<void> {
     this.register(scene);
     return Promise.resolve();
   }
 
-  /** Synchronous `load`: bakes, packs, and registers everything with the scene's game. */
+  /**
+   * Synchronous `load`: bakes, packs, and registers every registered atlas sprite (the core ones,
+   * and any lazy chunk's that has loaded) with the scene's game.
+   */
   register(scene: SpriteScene): void {
-    const baked = bakeAll(ATLAS_SPRITES, PALETTES);
+    this.#scene = scene;
+    this.sync();
+  }
+
+  /**
+   * Bakes the atlas sprites registered since the last bake (a lazy chunk's: the finale's, T871)
+   * into new pages. Cheap when nothing new is registered. Runs before a battle draws (BattleScene's
+   * create), so no lookup meets an unbaked sprite; a lookup that does bakes them then.
+   */
+  sync(): void {
+    const scene = this.#scene;
+    if (scene === null || this.#version === spritesVersion()) return;
+    this.#version = spritesVersion();
+    const defs = liveSprites().filter((d) => inAtlas(d) && !this.#defs.has(d.id));
+    if (defs.length > 0) this.#addPages(scene, defs);
+  }
+
+  /** Bakes `defs` into pages of their own and registers them, their frames, and their anims. */
+  #addPages(scene: SpriteScene, defs: readonly SpriteDef[]): void {
+    const baked = bakeAll(defs, PALETTES);
     for (const b of baked) this.#baked.set(b.id, b);
-    for (const def of ATLAS_SPRITES) {
+    for (const def of defs) {
+      this.#defs.add(def.id);
       const m = mountOf(def);
       if (m !== null) this.#mounts.set(def.id, m);
     }
@@ -105,8 +140,10 @@ export class CodeSpriteSource implements SpriteSource {
       const canvas = canvases[i];
       if (canvas !== undefined) drawImageAt(canvas, page, 0, 0);
     });
+    const first = this.#pages;
+    this.#pages += canvases.length;
     const textures = canvases.map((canvas, i) => {
-      const key = `${PAGE_PREFIX}${i}`;
+      const key = `${PAGE_PREFIX}${first + i}`;
       const tex = scene.textures.addCanvas(key, canvas);
       if (tex === null) throw new Error(`sprites: texture '${key}' already exists`);
       return { key, tex };
@@ -136,33 +173,42 @@ export class CodeSpriteSource implements SpriteSource {
   }
 
   glowFrame(spriteId: SpriteId, frame: string, variant = DEFAULT_VARIANT): FrameRef | null {
+    if (!this.#baked.has(spriteId)) this.sync();
     return this.#where.get(glowKey(frameKey(spriteId, variant, frame))) ?? null;
   }
 
   anim(spriteId: SpriteId, anim: string, variant = DEFAULT_VARIANT): string {
     const key = animKey(spriteId, variant, anim);
+    if (!this.#anims.has(key)) this.sync();
     if (!this.#anims.has(key)) throw new Error(`sprites: unknown anim '${key}'`);
     return key;
   }
 
   meta(spriteId: SpriteId): { w: number; h: number; anchor: Point } {
+    if (!this.#baked.has(spriteId)) this.sync();
     const b = this.#baked.get(spriteId);
     if (b === undefined) throw new Error(`sprites: unknown sprite '${spriteId}'`);
     return b.meta;
   }
 
   frameAnchor(spriteId: SpriteId, frame: string): Point {
+    if (!this.#baked.has(spriteId)) this.sync();
     const a = this.#anchors.get(frameKey(spriteId, DEFAULT_VARIANT, frame));
     if (a === undefined) throw new Error(`sprites: unknown frame '${spriteId}:${frame}'`);
     return a;
   }
 
   mount(spriteId: SpriteId): Point | null {
+    if (!this.#baked.has(spriteId)) this.sync();
     return this.#mounts.get(spriteId) ?? null;
   }
 
   #ref(key: string): FrameRef {
-    const r = this.#where.get(key);
+    let r = this.#where.get(key);
+    if (r === undefined) {
+      this.sync();
+      r = this.#where.get(key);
+    }
     if (r === undefined) throw new Error(`sprites: unknown frame '${key}'`);
     return r;
   }

@@ -1,4 +1,9 @@
-// Sprite registry: every sprite definition, in gallery order.
+// Sprite registry: the core sprite definitions, in gallery order: everything the initial JS holds
+// and the boot atlas bakes. The finale's sprites (sprites/finale.ts) and the portraits
+// (sprites/portraits/index.ts) are lazy chunks, registered when they load (sprites/registry.ts,
+// the live registry the game reads); their ids are in `SpriteId` all the same (T871).
+import type { FINALE_SPRITES } from './finale.ts';
+import type { PORTRAIT_SPRITES } from './portraits/index.ts';
 import { allyBricks } from './allies/bricks.ts';
 import { allyPebble } from './allies/pebble.ts';
 import { allyRefugee } from './allies/refugee.ts';
@@ -152,7 +157,7 @@ import { propWarrenHome } from './props/warren_home.ts';
 import { propPreserveSign } from './props/preserve_sign.ts';
 import { propEmergencyLamp } from './props/emergency_lamp.ts';
 import { M7_PROPS } from './props/m7.ts';
-import { M8_PROPS } from './props/m8.ts'; // T842
+import { propTunnelMouth } from './props/tunnel_mouth.ts'; // T842 (the finale's props: finale.ts)
 import { propGiftStone } from './props/gift_stone.ts'; // T843
 import { STARDUST_ICONS } from './icons/stardust.ts'; // T843
 import { tileHush } from './tiles/hush.ts';
@@ -172,19 +177,6 @@ import { towerSprinkler, towerSprinklerHead } from './towers/sprinkler.ts';
 import { towerThumper, towerThumperHead } from './towers/thumper.ts';
 import { towerSkyhook, towerSkyhookHead } from './towers/skyhook.ts';
 import { towerZapcoil, towerZapcoilHead } from './towers/zapcoil.ts';
-import { portraitBramble } from './portraits/bramble.ts';
-import { portraitBricks } from './portraits/bricks.ts';
-import { portraitGerald } from './portraits/gerald.ts';
-import { portraitGoldie } from './portraits/goldie.ts';
-import { portraitKip } from './portraits/kip.ts';
-import { portraitPebble } from './portraits/pebble.ts';
-import { portraitPlayer } from './portraits/player.ts';
-import { portraitPrim } from './portraits/prim.ts';
-import { portraitQuill } from './portraits/quill.ts';
-import { portraitSterling } from './portraits/sterling.ts';
-import { portraitThrum } from './portraits/thrum.ts';
-import { portraitVesthara } from './portraits/vesthara.ts';
-import { portraitZibzab } from './portraits/zibzab.ts';
 import { iconEnemyGlassWitch } from './icons/glass_witch.ts';
 import {
   iconEnemyVeilwalker,
@@ -235,8 +227,6 @@ import { towerSproing, towerSproingHead } from './towers/sproing.ts';
 import { fxPuddle } from './fx/puddle.ts';
 import { M7_ALLIES, M7_UNIT_FX, M7_UNITS } from './enemies/m7.ts';
 import { M7_UNIT_ICONS } from './icons/m7_enemies.ts';
-import { M8_ALLIES, M8_UNIT_FX, M8_UNITS } from './enemies/m8.ts'; // T841
-import { M8_UNIT_ICONS } from './icons/m8_enemies.ts'; // T841
 import { iconStampLicenseRevoked, iconStampUplinkRevoked } from './icons/revoked.ts';
 import { towerBloom, towerBloomHead } from './towers/bloom.ts';
 import { towerChoir, towerChoirHead } from './towers/choir.ts';
@@ -296,8 +286,8 @@ export const SPRITES = [
   propEmergencyLamp,
   // M7's props for A3M4–A3M6 (T740c: props/m7.ts).
   ...M7_PROPS,
-  // M8's finale props and A3M3's tunnel mouths (T842: props/m8.ts).
-  ...M8_PROPS,
+  // A3M3's tunnel mouths (T842; the finale's props are lazy: finale.ts).
+  propTunnelMouth,
   // Act III's gift stone, set down in the world (T843: props/gift_stone.ts).
   propGiftStone,
   tileHush,
@@ -386,8 +376,6 @@ export const SPRITES = [
   enemyExpediter,
   // M7's units (T740a: enemies/m7.ts).
   ...M7_UNITS,
-  // M8's units (T841: enemies/m8.ts): the Unsung in every form.
-  ...M8_UNITS,
   allyBricks,
   // M5's escort: the refugees and Pebble among them (T540a).
   allyRefugee,
@@ -397,8 +385,6 @@ export const SPRITES = [
   allyChampion,
   // M7's allies (T740a): the leapers, the bearers, the militia.
   ...M7_ALLIES,
-  // M8's choir (T841): the singers, Pebble leading, Old Thrum.
-  ...M8_ALLIES,
   projectileRivetTracer,
   projectileThumperShell,
   projectileThumperBomblet,
@@ -421,8 +407,6 @@ export const SPRITES = [
   fxUnravelMote,
   // M7's overlays (T740a): the Jammed static, C4 Purge's open panel.
   ...M7_UNIT_FX,
-  // M8's unit effects (T841): Thrum's echo, the song's motes, the Deep Bore's drill head.
-  ...M8_UNIT_FX,
   // M7's Big Glorp puddle (T740b).
   fxPuddle,
   iconTowerRivet,
@@ -478,7 +462,6 @@ export const SPRITES = [
   iconEnemyExpediter,
   // M7's unit icons (T740a), the towers' and System Reboot's (T740b).
   ...M7_UNIT_ICONS,
-  ...M8_UNIT_ICONS, // T841
   ...M7_TOWER_ICONS,
   iconAbilityUnderfoot,
   iconStampLicenseRevoked,
@@ -519,20 +502,13 @@ export const SPRITES = [
   uiStarNode,
   uiStarPips,
   uiStarMarker,
-  portraitPlayer,
-  portraitBricks,
-  portraitQuill,
-  portraitSterling,
-  portraitZibzab,
-  portraitGoldie,
-  portraitKip,
-  portraitPrim,
-  portraitGerald,
-  portraitVesthara,
-  portraitPebble,
-  portraitBramble,
-  portraitThrum,
 ] as const;
 
-/** Every sprite id. */
-export type SpriteId = (typeof SPRITES)[number]['id'];
+/**
+ * Every sprite id: the core registry's, the finale's, and the portraits' (the lazy ones are types
+ * here only; sprites/registry.ts holds what has loaded).
+ */
+export type SpriteId =
+  | (typeof SPRITES)[number]['id']
+  | (typeof FINALE_SPRITES)[number]['id']
+  | (typeof PORTRAIT_SPRITES)[number]['id'];

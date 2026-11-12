@@ -310,11 +310,41 @@ export const FIN_WIN: Song = {
   bars: 3,
   loop: false,
   tracks: [
-    { layer: 'lead', instrument: 'hum', stepsPerToken: 4, gain: 0.66, pattern: 'D5 E5 D5 - | C5 - - - | - - . .' },
-    { layer: 'lead', instrument: 'glass', stepsPerToken: 4, gain: 0.26, pattern: '. . . . | G5 C6 E6 - | - - . .' },
-    { layer: 'choir', instrument: 'hum', stepsPerToken: 4, gain: 0.36, pattern: 'A4 G4 B4 - | G4 - - - | - - . .' },
-    { layer: 'choir', instrument: 'hum', stepsPerToken: 4, gain: 0.32, pattern: 'F4 E4 F4 - | E4 - - - | - - . .' },
-    { layer: 'base', instrument: 'pad', stepsPerToken: 4, gain: 0.5, pattern: 'D3 C3 G2 - | C3 - - - | - - . .' },
+    {
+      layer: 'lead',
+      instrument: 'hum',
+      stepsPerToken: 4,
+      gain: 0.66,
+      pattern: 'D5 E5 D5 - | C5 - - - | - - . .',
+    },
+    {
+      layer: 'lead',
+      instrument: 'glass',
+      stepsPerToken: 4,
+      gain: 0.26,
+      pattern: '. . . . | G5 C6 E6 - | - - . .',
+    },
+    {
+      layer: 'choir',
+      instrument: 'hum',
+      stepsPerToken: 4,
+      gain: 0.36,
+      pattern: 'A4 G4 B4 - | G4 - - - | - - . .',
+    },
+    {
+      layer: 'choir',
+      instrument: 'hum',
+      stepsPerToken: 4,
+      gain: 0.32,
+      pattern: 'F4 E4 F4 - | E4 - - - | - - . .',
+    },
+    {
+      layer: 'base',
+      instrument: 'pad',
+      stepsPerToken: 4,
+      gain: 0.5,
+      pattern: 'D3 C3 G2 - | C3 - - - | - - . .',
+    },
   ],
 };
 
@@ -332,7 +362,15 @@ export const MEMORIAL_HUM: Song = {
   bpm: 60,
   bars: 1,
   loop: false,
-  tracks: [{ layer: 'lead', instrument: 'hum', stepsPerToken: 2, gain: 0.7, pattern: 'G3 C4 E4 - - - . .' }],
+  tracks: [
+    {
+      layer: 'lead',
+      instrument: 'hum',
+      stepsPerToken: 2,
+      gain: 0.7,
+      pattern: 'G3 C4 E4 - - - . .',
+    },
+  ],
 };
 
 /**
@@ -345,10 +383,34 @@ export const HALLS_HUM: Song = {
   bars: 2,
   loop: false,
   tracks: [
-    { layer: 'lead', instrument: 'hum', stepsPerToken: 2, gain: 0.85, pattern: `${PEBBLE_SIX} | - - - - . . . .` },
-    { layer: 'choir', instrument: 'hum', stepsPerToken: 2, gain: 0.32, pattern: '. . . . . . E4 - | - - - - - - . .' },
-    { layer: 'choir', instrument: 'hum', stepsPerToken: 2, gain: 0.32, pattern: '. . . . . . A3 - | - - - - - - . .' },
-    { layer: 'base', instrument: 'pad', stepsPerToken: 2, gain: 0.35, pattern: '. . . . . . A2 - | - - - - - - . .' },
+    {
+      layer: 'lead',
+      instrument: 'hum',
+      stepsPerToken: 2,
+      gain: 0.85,
+      pattern: `${PEBBLE_SIX} | - - - - . . . .`,
+    },
+    {
+      layer: 'choir',
+      instrument: 'hum',
+      stepsPerToken: 2,
+      gain: 0.32,
+      pattern: '. . . . . . E4 - | - - - - - - . .',
+    },
+    {
+      layer: 'choir',
+      instrument: 'hum',
+      stepsPerToken: 2,
+      gain: 0.32,
+      pattern: '. . . . . . A3 - | - - - - - - . .',
+    },
+    {
+      layer: 'base',
+      instrument: 'pad',
+      stepsPerToken: 2,
+      gain: 0.35,
+      pattern: '. . . . . . A2 - | - - - - - - . .',
+    },
   ],
 };
 
@@ -363,9 +425,27 @@ export const ECHO_HUM: Song = {
   bars: 2,
   loop: false,
   tracks: [
-    { layer: 'lead', instrument: 'hum', stepsPerToken: 2, gain: 0.7, pattern: `${PEBBLE_SIX} | - - . . . . . .` },
-    { layer: 'lead', instrument: 'hum', stepsPerToken: 2, gain: 0.42, pattern: '. E3 A3 C4 - D4 B3 C4 | - - - - . . . .' },
-    { layer: 'lead', instrument: 'glass', stepsPerToken: 2, gain: 0.24, pattern: '. . . . . . . . | E5 G5 C6 - - - . .' },
+    {
+      layer: 'lead',
+      instrument: 'hum',
+      stepsPerToken: 2,
+      gain: 0.7,
+      pattern: `${PEBBLE_SIX} | - - . . . . . .`,
+    },
+    {
+      layer: 'lead',
+      instrument: 'hum',
+      stepsPerToken: 2,
+      gain: 0.42,
+      pattern: '. E3 A3 C4 - D4 B3 C4 | - - - - . . . .',
+    },
+    {
+      layer: 'lead',
+      instrument: 'glass',
+      stepsPerToken: 2,
+      gain: 0.24,
+      pattern: '. . . . . . . . | E5 G5 C6 - - - . .',
+    },
   ],
 };
 

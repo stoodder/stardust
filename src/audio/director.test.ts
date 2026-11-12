@@ -94,7 +94,10 @@ describe('battle music', () => {
     expect(thin.choir).toBeLessThan(full.choir);
     expect(thin.choir).toBeGreaterThan(VOICES_FLOOR);
     // Dawn: everyone sings.
-    expect(battleMusic({ ...fin, phase: 3, voices: 0.3 }).layers).toMatchObject({ lead: 1, choir: 1 });
+    expect(battleMusic({ ...fin, phase: 3, voices: 0.3 }).layers).toMatchObject({
+      lead: 1,
+      choir: 1,
+    });
     // The map's end silences it as any other.
     expect(battleMusic({ ...fin, phase: 3, voices: 1, outcome: 'won' }).level).toBe(0);
   });

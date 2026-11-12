@@ -10,7 +10,7 @@ import { nextFrames, shot, waitForReady } from './hooks.ts';
 
 const FLOW = 'fin-keep';
 
-test("FIN under Keep: Directive 0, \"Who's there?\", the class restored through Dawn", async ({
+test('FIN under Keep: Directive 0, "Who\'s there?", the class restored through Dawn', async ({
   page,
 }) => {
   test.setTimeout(300_000);
