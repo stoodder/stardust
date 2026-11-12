@@ -163,6 +163,7 @@ export const PHASE_1: readonly WaveDef[] = [
       moths(3, 'sky_e', 4, 0.8),
       moths(3, 'sky_w', 8, 0.8),
       motes(10, 'halls', 6, 0.5),
+      maws(1, 'rift_field', 16),
       fractures(2, 'halls', 12, 3),
     ],
   },

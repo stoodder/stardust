@@ -1,7 +1,8 @@
 // Lighting sets (design/maps.md § 7; T806): the light a map script's `setLighting` action turns to
 // at a story moment, apart from the wave-paced schedule (MapDef.lighting). The finale's one is
 // Dawn: from the tick `setLighting: 'dawn'` runs, the world eases to the `finale` env's dawn
-// ramps over 8 s of sim time (render/views/LightingView.ts: the sky and the grade; stepped under
+// ramps over 8 s of sim time (render/views/LightingView.ts: the sky, and the grade too except on
+// a song map, whose Dawn lights the world additively instead (SongNightView); stepped under
 // reduced motion), and a Sundown darkness lifts to 0 over the same 8 s (sim/darkness.ts, so what
 // is lit on screen stays what the sim treats as lit, D137). The sim keeps the key and the tick it
 // ran (`state.lightingKey`, `state.lightingTick`; `LightingSet`), so a replay or a resumed run
@@ -10,7 +11,7 @@ import { secToTicks } from '../shared/time.ts';
 import type { EnvPaletteId } from './types.ts';
 
 export interface LightingSetDef {
-  /** The env palette the light turns to (its sky and its grade). */
+  /** The env palette the light turns to (its sky, and its grade except on a song map). */
   readonly env: EnvPaletteId;
   /** How long the turn takes, in seconds of sim time (any darkness lifts over the same span). */
   readonly easeSec: number;

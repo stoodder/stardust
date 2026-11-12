@@ -21,14 +21,12 @@ export interface FinCell {
 export const FIN_CELLS: readonly FinCell[] = (['convoy', 'warren'] as const).flatMap((door) =>
   (['keep', 'purge', 'rewrite'] as const).flatMap((quill) =>
     [true, false].flatMap((spared) =>
-      (['returned', 'sold'] as const).map(
-        (dust): FinCell => ({
-          door_choice: door,
-          quill_choice: quill,
-          spared_quiet_wave: spared,
-          stardust_choice: dust,
-        }),
-      ),
+      (['returned', 'sold'] as const).map((dust): FinCell => ({
+        door_choice: door,
+        quill_choice: quill,
+        spared_quiet_wave: spared,
+        stardust_choice: dust,
+      })),
     ),
   ),
 );
