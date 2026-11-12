@@ -11,6 +11,11 @@ export interface RevokedHud {
   readonly previewHidden: boolean;
   /** The leak line slot (T621's lines, T631's look): shown under ACCESS RESTRICTED. */
   readonly leakLine: string | null;
+  /**
+   * Radio Silence (T860; sim/rules.ts `noAbilities`): the dark slots read "Radio Silence", not
+   * "Locked out". Absent: false.
+   */
+  readonly silenced?: boolean;
 }
 
 export const NOTHING_REVOKED: RevokedHud = {

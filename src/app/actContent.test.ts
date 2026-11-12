@@ -7,6 +7,8 @@ import { SPEECH_SFX } from '../audio/sfx/blips.ts';
 import { actOfMapId, actRank, LAZY_ACTS, STORY_ACTS } from '../content/acts/index.ts';
 import { CAMPAIGN_PLAN_IDS } from '../content/campaign.ts';
 import { CODEX_ENTRIES, CODEX_IDS } from '../content/codex/index.ts';
+import { epilogueCards, epilogueFor, registerEpilogueCards } from '../content/dialogue/epilogue.ts';
+import { EPILOGUE_CARDS } from '../content/dialogue/fin/epilogue.ts';
 import { MAP_DIALOGUE } from '../content/dialogue/index.ts';
 import { mapAct } from '../content/dialogue/rules.ts';
 import { MEMO_IDS, MEMO_LIST } from '../content/memos/index.ts';
@@ -14,6 +16,7 @@ import { DEV_SAVES } from '../meta/__fixtures__/devSaves.ts';
 import { createNewSave } from '../meta/saveData.ts';
 import { actLoaded, actsLoaded, loadedActs, registerActChunk } from './actContent.ts';
 import { ALL_ACT_CHUNKS } from './acts/all.ts';
+import { FINALE_CHUNK } from './acts/fin.ts';
 import { battleActs, savedAct } from './contentGate.ts';
 
 describe('the lazy acts', () => {
@@ -91,5 +94,20 @@ describe('the acts a screen needs (app/contentGate.ts)', () => {
     for (const m of CAMPAIGN_PLAN_IDS) expect(actOfMapId(m)).toBe(mapAct(m));
     expect(actOfMapId('dev_range')).toBeNull();
     expect(STORY_ACTS.map(actRank)).toEqual([0, 1, 2, 3]);
+  });
+});
+
+describe("the epilogue's cards, behind the finale's edge", () => {
+  it("come with the finale's chunk; before it, epilogueFor throws rather than show none", () => {
+    const stay = { ending_choice: 'stay' } as const;
+    try {
+      registerEpilogueCards([]);
+      expect(() => epilogueFor(stay)).toThrow(/finale's chunk/);
+      registerActChunk(FINALE_CHUNK);
+      expect(epilogueCards()).toEqual(EPILOGUE_CARDS);
+      expect(epilogueFor(stay).at(-1)?.slot).toBe('final');
+    } finally {
+      registerActChunk(FINALE_CHUNK);
+    }
   });
 });

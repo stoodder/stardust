@@ -10,7 +10,7 @@
 // next wave starts.
 import type { IdSpace } from '../content/types.ts';
 import type { BattleInteraction } from '../render/input/BattleInteraction.ts';
-import { previewHidden, slotRevoked } from '../sim/index.ts';
+import { previewHidden, radioSilent, slotRevoked } from '../sim/index.ts';
 import { NOTHING_REVOKED, revokedHud } from '../ui/hud/revokedState.ts';
 import type { Host } from './host.ts';
 
@@ -23,6 +23,7 @@ function sync(host: Host<IdSpace>, leakLine: string | null): void {
     slots,
     previewHidden: previewHidden(state),
     leakLine,
+    silenced: radioSilent(config), // T860: the veteran rule darkens the slots
   };
 }
 
@@ -66,8 +67,12 @@ export function setLeakLine(text: string | null): void {
   revokedHud.value = { ...revokedHud.value, leakLine: text };
 }
 
+/** What a slot dark under Radio Silence says (T860; a veteran rule, not Directive 0's lock). */
+export const RADIO_SILENCE_TEXT = 'Radio Silence';
+
 /** The notice for a press on a revoked build slot or ability slot. */
-export function revokedText(kind: 'tower' | 'uplink' | 'lockout'): string {
+export function revokedText(kind: 'tower' | 'uplink' | 'lockout' | 'silence'): string {
   if (kind === 'tower') return 'License revoked';
+  if (kind === 'silence') return RADIO_SILENCE_TEXT;
   return kind === 'uplink' ? 'Uplink revoked' : 'Locked out';
 }

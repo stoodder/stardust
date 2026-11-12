@@ -9,6 +9,7 @@
 import { CAMPAIGN_PLAN_IDS } from '../campaign.ts';
 import { registerCodex } from '../codex/index.ts';
 import type { CodexEntryDef, CodexLaterVersions } from '../codex/types.ts';
+import { registerEpilogueCards, type EpilogueCardDef } from '../dialogue/epilogue.ts';
 import { registerMapDialogue } from '../dialogue/index.ts';
 import type { MapDialogue, StoryAct } from '../dialogue/types.ts';
 import { mapAct } from '../dialogue/rules.ts';
@@ -54,6 +55,8 @@ export interface ActStory {
   readonly codexVersions: CodexLaterVersions;
   /** Its memos, in delivery order. */
   readonly memos: readonly MemoDef[];
+  /** The epilogue's cards (the finale's only: dialogue/epilogue.ts `registerEpilogueCards`). */
+  readonly epilogue?: readonly EpilogueCardDef[];
 }
 
 /** Adds `story`'s parts to the registries (again: replaces them, so it's idempotent). */
@@ -62,4 +65,5 @@ export function registerActStory(story: ActStory): void {
   registerMapDialogue(rank, story.dialogue);
   registerCodex(rank, story.codex, story.codexVersions);
   registerMemos(rank, story.memos);
+  if (story.epilogue !== undefined) registerEpilogueCards(story.epilogue);
 }

@@ -108,6 +108,7 @@ import { QUIET_DEATH_FRAMES } from './deathLook.ts';
 import { EnemyDress, type RimMode } from './EnemyDress.ts';
 import { fleeTempo, glanceFacing, glancing } from './fleeLook.ts';
 import { mawBody } from './gatherLook.ts';
+import { isUnsungBody, unsungBody } from './unsungLook.ts'; // T830
 import { glitches, hollowGlitch, type HollowGlitch } from './hollowLook.ts';
 import {
   HEAVY_TINT,
@@ -297,6 +298,41 @@ function animSetFor(sprites: SpriteSource, scene: Phaser.Scene, id: SpriteId): A
   };
   byId.set(id, set);
   return set;
+}
+
+/** The body as drawn at one moment (EnemyView.snapshot; T830). */
+export interface BodySnapshot {
+  texture: string;
+  frame: string;
+  flipX: boolean;
+  originX: number;
+  originY: number;
+  /** Screen px, and its sort depth. */
+  x: number;
+  y: number;
+  depth: number;
+  flying: boolean;
+  /** The anim playing (its key ends in the facing), or null. */
+  anim: string | null;
+  /** Its body sprite. */
+  id: string | null;
+}
+
+/** A blank snapshot to fill (one per holder, reused). */
+export function blankSnapshot(): BodySnapshot {
+  return {
+    texture: '',
+    frame: '',
+    flipX: false,
+    originX: 0,
+    originY: 0,
+    x: 0,
+    y: 0,
+    depth: 0,
+    flying: false,
+    anim: null,
+    id: null,
+  };
 }
 
 export class EnemyView implements PooledView {
@@ -524,6 +560,32 @@ export class EnemyView implements PooledView {
   /** The drawn body's depth (front-most wins a hover). */
   get depth(): number {
     return this.#body.depth;
+  }
+
+  /** The body's sprite now (a grown Maw's or the Unsung's form; null while unused). T830. */
+  get bodyId(): string | null {
+    return this.#id;
+  }
+
+  /**
+   * The body as drawn now, into `out` (T830: SongView's gold flip of a unit laid to rest copies
+   * it); false while it isn't drawn (unplaced, hidden, or burrowed under the mound).
+   */
+  snapshot(out: BodySnapshot): boolean {
+    const b = this.#body;
+    if (Number.isNaN(this.#x) || !b.visible || b.frame === null) return false;
+    out.texture = b.texture.key;
+    out.frame = b.frame.name;
+    out.flipX = b.flipX;
+    out.originX = b.displayOriginX;
+    out.originY = b.displayOriginY;
+    out.x = b.x;
+    out.y = b.y;
+    out.depth = b.depth;
+    out.flying = this.#flying;
+    out.anim = b.anims.currentAnim?.key ?? null;
+    out.id = this.#id;
+    return true;
   }
 
   /**
@@ -950,9 +1012,11 @@ export class EnemyView implements PooledView {
       this.#barHpPx = -1;
       this.#syncBar();
     }
-    if (canGather(e.def)) {
+    // T830: the Unsung's body follows its boss phase (unsungLook.ts `unsungBody`).
+    const unsung = isUnsungBody(this.#baseBody);
+    if (unsung || canGather(e.def)) {
       // T708: a boss phase's gather too (the Gathering Maw)
-      const id = spriteId(mawBody(this.#baseBody, e));
+      const id = spriteId(unsung ? unsungBody(e) : mawBody(this.#baseBody, e));
       if (id !== this.#id) {
         this.#id = id;
         this.#set = animSetFor(this.#ctx.sprites, this.#ctx.scene, id);

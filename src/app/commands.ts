@@ -16,7 +16,13 @@ import {
   peekerTile,
   slotAimsAtPath,
 } from '../render/input/tileFacts.ts';
-import { abilityReady, isBuildableTile, slotRevoked, type Command } from '../sim/index.ts';
+import {
+  abilityReady,
+  isBuildableTile,
+  radioSilent,
+  slotRevoked,
+  type Command,
+} from '../sim/index.ts';
 import { dialogue as dialogueView } from '../ui/dialogue/state.ts';
 import { hud, speed as speedSignal } from '../ui/state.ts';
 import { PRIORITY_LABEL } from '../ui/hud/words.ts';
@@ -255,7 +261,15 @@ export function pressAbility(slot: 1 | 2): void {
   const state = host.sim.state;
   // T606: a revoked slot (the Orbital Strike's uplink; QUILL's under its lockout) is dark.
   if (slotRevoked(state, host.sim.config, slot)) {
-    showNotice(revokedText(state.revoked.abilities.includes(id) ? 'uplink' : 'lockout'));
+    showNotice(
+      revokedText(
+        radioSilent(host.sim.config) // T860: a veteran rule, not a lock
+          ? 'silence'
+          : state.revoked.abilities.includes(id)
+            ? 'uplink'
+            : 'lockout',
+      ),
+    );
     return;
   }
   if (!abilityReady(state, slot)) {

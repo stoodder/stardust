@@ -94,7 +94,11 @@ export function veteranPickerView(
     mapId: id,
     rows,
     total,
-    medal: { held: hasVeteranMedal(medals), reached: total >= VETERAN_MEDAL_PCT, at: VETERAN_MEDAL_PCT },
+    medal: {
+      held: hasVeteranMedal(medals),
+      reached: total >= VETERAN_MEDAL_PCT,
+      at: VETERAN_MEDAL_PCT,
+    },
     best: record?.best ?? 0,
   };
 }

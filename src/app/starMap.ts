@@ -33,6 +33,7 @@ import { battleConfig } from './battleSetup.ts';
 import { medalViews, objectiveViews, threatIntel } from './hudViews.ts';
 import { logError } from './log.ts';
 import { activeSave, updateActiveSave } from './save.ts';
+import { campaignMedalCount, hasVeteranMedal } from '../meta/veteran.ts'; // T860
 
 export { STAR_MAP_SEEN_ID };
 

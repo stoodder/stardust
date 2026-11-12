@@ -26,6 +26,8 @@
 // - **The Gathering Maw** (T740a, on T708's sim): a part walking together in its merge's tell
 //   (`mergeTelling`) is `tell`; the merged Maw (`isMergedBoss`, phase 3, enraged) is `panic`; its
 //   phase-1 gather tell is the Maw's (`gatherTelling`, below).
+// - **The Unsung** (T830, on T808's sim): its body is its phase's form (unsungLook.ts); the Song's
+//   call for its Silencers (`addsCalling`) is `tell`, its hum pouring out of the hollow.
 // - **Heavy** (it has hushed someone, T440a): `heavy`, the swollen walk with the victim inside.
 // - Else `walk`.
 // **Fray** (T501d, T530a; art-direction §4): an Aelari construct's walk has two hurt copies, and
@@ -39,6 +41,7 @@
 // invulnerable meanwhile.
 import {
   activeBlink,
+  addsCalling,
   activePulse,
   bossNextAbility,
   bossTelling,
@@ -208,6 +211,8 @@ export function poseFacts(e: PoseEnemy, out: MutablePoseFacts): MutablePoseFacts
     // The Gathering Maw (T740a): a part's merge tell, and the merged Maw's rage.
     if (out.telling === null && mergeTelling(live)) out.telling = 'tell';
     if (isMergedBoss(live)) out.panic = true;
+    // The Unsung's Song (T830): through its Silencers' call its hum pours out of the hollow.
+    if (out.telling === null && addsCalling(live)) out.telling = 'tell';
   } else if (def.burrow !== null && burrowTelling(live, def.burrow)) {
     out.telling = 'dig';
   }

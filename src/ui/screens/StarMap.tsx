@@ -38,6 +38,7 @@ import { campaign, lastStarMapMarker, rememberStarMapMarker } from './state.ts';
 import { starMapChart } from './starMapChart.ts';
 import './screens.css';
 import './starMap.css';
+import '../hud/veteranPicker.css'; // T860: the veteran pip
 
 /** The node panel's width (art-direction § 10). */
 const PANEL_W = 176;
@@ -156,6 +157,10 @@ function Node({
       </button>
       {node.state === 'won' && (
         <Glyph id="ui.star_pips" frame={String(Math.min(3, node.medals))} class="sd-star-pips" />
+      )}
+      {/* T860: the Veteran medal's pip, beside the medal pips (the label says it too). */}
+      {node.state === 'won' && node.veteran && (
+        <span class="sd-star-veteran" aria-hidden="true" data-testid="star-veteran" />
       )}
       <span
         class={`sd-star-plate${plate ? ' sd-star-plate-on' : ''}${node.state === 'won' ? ' sd-star-plate-low' : ''}`}

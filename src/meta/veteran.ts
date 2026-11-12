@@ -16,7 +16,12 @@
 //   forfeits it as it does Perfect Core and the Challenge), +1 Intel the first time.
 import type { CompanionId, MapId, ObjectiveKind } from '../content/types.ts';
 import type { IdSpace } from '../content/types.ts';
-import { PROTOCOL_SOURCE_PREFIX, type Modifier, type SimConfig, type SimRule } from '../sim/index.ts';
+import {
+  PROTOCOL_SOURCE_PREFIX,
+  type Modifier,
+  type SimConfig,
+  type SimRule,
+} from '../sim/index.ts';
 import { abilityPool, towerPool } from './pools.ts';
 import { isMapWon } from './progress.ts';
 import type { SaveData, VeteranRecord } from './saveData.ts';

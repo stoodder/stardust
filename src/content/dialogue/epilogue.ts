@@ -3,9 +3,10 @@
 // card per slot, in slot order, over the credits: each slot's first card whose `when` matches the
 // save's flags. The cards' words are T811's, in `fin/epilogue.ts` (`EPILOGUE_CARDS`); the slots and
 // the flags each may read are here, so content validation (content/validateEpilogue.ts) can prove
-// every flag combination resolves every slot that must show a card.
+// every flag combination resolves every slot that must show a card. The cards are the finale's, so
+// they load with its chunk (content/acts/fin.ts, which registers them here; T802): nothing here
+// imports them, and `epilogueFor` throws until they're registered rather than show no cards.
 import { FLAGS, type FlagValueOf } from './flags.ts';
-import { EPILOGUE_CARDS } from './fin/epilogue.ts';
 
 /** The flags an epilogue card may read (bible.md § 10's conditions), in the ledger's order. */
 export const EPILOGUE_FLAGS = [
@@ -107,17 +108,35 @@ export function epilogueMatches(
   return Object.entries(card.when).every(([f, v]) => isEpilogueFlag(f) && readFlag(flags, f) === v);
 }
 
+const registered: EpilogueCardDef[] = [];
+
+/** Registers the epilogue's cards (the finale's chunk does: content/acts `registerActStory`). */
+export function registerEpilogueCards(cards: readonly EpilogueCardDef[]): void {
+  registered.length = 0;
+  registered.push(...cards);
+}
+
+/** The registered cards: empty until the finale's chunk has loaded (app/actContent.ts). */
+export function epilogueCards(): readonly EpilogueCardDef[] {
+  return registered;
+}
+
 /**
  * The cards the epilogue shows over `flags`: per slot in `slots` order, the first of `cards` in it
- * that matches (a slot with none shows nothing).
+ * that matches (a slot with none shows nothing). `cards` defaults to the registered ones, and
+ * throws while none are (the finale's chunk hasn't loaded), so a screen can't show no epilogue.
  */
 export function epilogueFor(
   flags: Readonly<Partial<Record<EpilogueFlag, unknown>>>,
-  cards: readonly EpilogueCardDef[] = EPILOGUE_CARDS,
+  cards?: readonly EpilogueCardDef[],
   slots: readonly EpilogueSlotDef[] = EPILOGUE_SLOTS,
 ): EpilogueCardDef[] {
+  const list = cards ?? registered;
+  if (list.length === 0) {
+    throw new Error("epilogueFor: no epilogue cards registered (the finale's chunk hasn't loaded)");
+  }
   return slots.flatMap((s) => {
-    const card = cards.find((c) => c.slot === s.id && epilogueMatches(c, flags));
+    const card = list.find((c) => c.slot === s.id && epilogueMatches(c, flags));
     return card === undefined ? [] : [card];
   });
 }

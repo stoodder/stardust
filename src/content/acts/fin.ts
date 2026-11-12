@@ -1,7 +1,8 @@
 // The finale's story content, one lazy chunk with its sounds (app/acts/fin.ts; content/acts/index.ts
 // says what an act holds): the walk's scenes and barks, the Journal's last pages, Sterling's
-// farewell. Nothing of the finale is in the initial JS.
+// farewell, the epilogue's cards. Nothing of the finale is in the initial JS.
 import { FINALE_CODEX } from '../codex/finale.ts';
+import { EPILOGUE_CARDS } from '../dialogue/fin/epilogue.ts';
 import { barks as finM01Barks } from '../dialogue/fin/fin_m01/barks.ts';
 import { scenes as finM01Scenes } from '../dialogue/fin/fin_m01/scenes.ts';
 import { FINALE_MEMOS } from '../memos/finale.ts';
@@ -14,4 +15,5 @@ export const FINALE_STORY: ActStory = {
   codex: FINALE_CODEX,
   codexVersions: {},
   memos: FINALE_MEMOS,
+  epilogue: EPILOGUE_CARDS,
 };

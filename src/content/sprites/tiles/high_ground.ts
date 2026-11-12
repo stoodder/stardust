@@ -24,9 +24,10 @@ function maskBottom(x: number): number {
  * grating round the plate, hazard-striped along its lip, on an open trestle of legs and cross
  * braces, the ground showing through); `watchtower` the colony's old watchtower (A2M6, T540c:
  * coursed ferrocrete faces with a slit window on each and a door on the lit face, a battlement rim
- * of merlons round the plate).
+ * of merlons round the plate); `halls` a Halls-mouth ledge (the finale, T842: the Spires' dark rock,
+ * a lit lip, strata, and the Halls' natural seams running through its faces in sung gold).
  */
-export type HighGroundLook = 'v0' | 'ledge' | 'outcrop' | 'catwalk' | 'watchtower';
+export type HighGroundLook = 'v0' | 'ledge' | 'outcrop' | 'catwalk' | 'watchtower' | 'halls';
 
 /** A built block (catwalk, watchtower): the plate kept, its grass margin and faces replaced. */
 function builtGrid(look: 'catwalk' | 'watchtower'): string[] {
@@ -108,6 +109,15 @@ function highGroundGrid(look: HighGroundLook = 'v0'): string[] {
       const y = e + k;
       let ch = left ? 'c' : 'b';
       if (look === 'outcrop') ch = left ? 'b' : 'a';
+      if (look === 'halls') {
+        // The Spires' dark rock: lit lip, strata along the slope, the foot in shadow.
+        ch = left ? 'B' : 'A';
+        if ((k === 3 || k === 6) && (x + k) % 5 < 3) ch = 'C';
+        if (k === 1) ch = left ? 'Q' : 'B';
+        if (k === ELEVATION_PX || x === 0 || x === TILE_W - 1) ch = 'C';
+        plot(g, x, y, ch);
+        continue;
+      }
       // Strata: dashed bands following the slope (three on a ledge); the left face is lit.
       const strata = look === 'ledge' ? k === 2 || k === 4 || k === 6 : k === 3 || k === 6;
       if (strata && look !== 'outcrop') ch = (x + k) % 5 < 3 ? (left ? 'b' : 'a') : ch;
@@ -124,7 +134,7 @@ function highGroundGrid(look: HighGroundLook = 'v0'): string[] {
       // A rocky lip, and cracks running down the faces.
       if (hash01(x, 3, 13) < 0.3) plot(g, x, e + 1, 'e');
       if (x % 7 === 2) for (let k = 2; k < ELEVATION_PX; k++) plot(g, x + (k % 2), e + k, 'a');
-    } else {
+    } else if (look === 'outcrop') {
       // Thread-glass woven through the rock: two families of 1 px threads crossing on the faces
       // (along each face's slope), bright knots where they cross.
       for (let k = 2; k < ELEVATION_PX; k++) {
@@ -140,6 +150,21 @@ function highGroundGrid(look: HighGroundLook = 'v0'): string[] {
     stamp(g, 0, 15, ['G.', 'HG', 'IH']);
     stamp(g, 30, 15, ['.G', 'GH', 'HI']);
     stamp(g, 14, TILE_H + ELEVATION_PX - 4, ['.G.', 'GIH']);
+  } else if (look === 'halls') {
+    // The Halls' natural seams, sung gold, running through both faces (a pink fleck where they
+    // meet), so the ledge reads as the Halls' own rock.
+    for (const [x0, y0, dir] of [
+      [2, 13, 1],
+      [18, 21, -1],
+    ] as const) {
+      let y = y0;
+      for (let x = x0; x < x0 + 12; x++) {
+        if (x % 3 === 0) y += dir > 0 ? 1 : -1;
+        const e = maskBottom(x);
+        if (e < 0 || y <= e + 1 || y >= e + ELEVATION_PX) continue;
+        plot(g, x, y, x % 4 === 1 ? 'E' : x === x0 + 6 ? 'F' : 'D');
+      }
+    }
   } else if (look === 'ledge') {
     // Rubble at the foot of the near corner.
     stamp(g, 12, TILE_H + ELEVATION_PX - 3, ['.d.cd', 'dcb.b']);
@@ -168,6 +193,13 @@ export const tileHighGround = defineSprite({
     W: 'grime.3',
     X: 'grime.2',
     Y: 'grime.1',
+    // The Halls-mouth ledge (T842): the Spires' dark rock, and its sung-gold seams.
+    A: 'ink.3',
+    B: 'ink.4',
+    C: 'ink.2',
+    D: 'gold.2',
+    E: 'gold.3',
+    F: 'pink.3',
   },
   frames: {
     v0: highGroundGrid('v0'),
@@ -175,5 +207,6 @@ export const tileHighGround = defineSprite({
     outcrop: highGroundGrid('outcrop'),
     catwalk: highGroundGrid('catwalk'),
     watchtower: highGroundGrid('watchtower'),
+    halls: highGroundGrid('halls'),
   },
 });

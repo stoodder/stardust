@@ -1,7 +1,8 @@
 // Power node (`+`, design/maps.md §3): a buildable pad wired into the colony grid. Emissive
 // conduits in the act's accent (`e0`/`e1`, art-direction §8 Tile readability) run in from the
 // tile's corners across the plate to a socket at its heart; a slow pulse flows inward along them.
-// In A1M2 it is the pump station's tap. Act II's maps draw the `conduit` frames (below).
+// In A1M2 it is the pump station's tap. Act II's maps draw the `conduit` frames, the finale's Halls
+// the `seam` frames (below).
 import { defineSprite } from '../defineSprite.ts';
 import { diamond, inTileMask, plot, rows, type CharGrid } from '../helpers.ts';
 import { PAD_LEGEND, padGrid } from './pad.ts';
@@ -120,6 +121,40 @@ function conduitGrid(phase: number): string[] {
   return rows(g);
 }
 
+/**
+ * The finale's natural seam (T842; design/maps.md § 4: "natural stardust seams (warm gold: sung)"):
+ * the same plate, set on a seam of sung stardust that breaks the rock along the grid's y axis, a
+ * jagged vein of gold, pink where it runs thickest, a dark lip under it, a glint creeping along it
+ * each frame; at the heart, where the plate's socket would be, a knot of the seam's gold crystal.
+ */
+function seamGrid(phase: number): string[] {
+  const g: CharGrid = padGrid();
+  const run: (readonly [number, number])[] = [];
+  for (let x = 3; x < 29; x++) {
+    const y = Math.round(7.5 - (x - 15.5) / 2 + (x % 5 === 2 ? 1 : x % 7 === 4 ? -1 : 0) - 0.5);
+    if (inTileMask(x, y) && inTileMask(x, y + 1)) run.push([x, y]);
+  }
+  run.forEach(([x, y], i) => {
+    plot(g, x, y + 1, 'F');
+    const glint = (i - phase * 3 + 48) % 12;
+    plot(g, x, y, glint === 0 ? 'C' : glint === 1 ? 'B' : i % 6 === 3 ? 'E' : 'A');
+  });
+  // prettier-ignore
+  const knot = [
+    '.CB.',
+    'BBEA',
+    'ABAF',
+    '.FF.',
+  ];
+  knot.forEach((r, dy) => {
+    for (let dx = 0; dx < r.length; dx++) {
+      const ch = r.charAt(dx);
+      if (ch !== '.') plot(g, 14 + dx, 5 + dy, ch);
+    }
+  });
+  return rows(g);
+}
+
 export const tilePowerNode = defineSprite({
   id: 'tile.power_node',
   size: { w: 32, h: 16 },
@@ -133,6 +168,12 @@ export const tilePowerNode = defineSprite({
     U: 'violet.3',
     V: 'violet.4',
     W: 'white.1',
+    // The finale's seam (T842): sung gold, its pink heart, the dark lip under it.
+    A: 'gold.2',
+    B: 'gold.3',
+    C: 'gold.4',
+    E: 'pink.3',
+    F: 'ink.1',
   },
   frames: {
     v0: nodeGrid(0),
@@ -143,9 +184,14 @@ export const tilePowerNode = defineSprite({
     conduit_1: conduitGrid(1),
     conduit_2: conduitGrid(2),
     conduit_3: conduitGrid(3),
+    seam_0: seamGrid(0),
+    seam_1: seamGrid(1),
+    seam_2: seamGrid(2),
+    seam_3: seamGrid(3),
   },
   anims: {
     pulse: { frames: ['v0', 'pulse_1', 'pulse_2', 'pulse_3'], fps: 4 },
     conduit: { frames: ['conduit_0', 'conduit_1', 'conduit_2', 'conduit_3'], fps: 4 },
+    seam: { frames: ['seam_0', 'seam_1', 'seam_2', 'seam_3'], fps: 4 },
   },
 });
