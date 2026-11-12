@@ -2,12 +2,13 @@
 // game loads Act II, Act III, the finale, and the battle renderer only as a screen needs them
 // (app/contentGate.ts), so the Title loads none of the later acts, and an Act I campaign never
 // loads Act III or the finale. `&lazy=1` makes a test boot load as a player's game does (a test
-// boot otherwise holds every act up front for its hooks).
+// boot otherwise holds every act up front for its hooks). The portraits are a chunk of their own
+// (T871): boot fetches them at once, and every screen but the Title waits for them.
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 import { shot, waitForReady } from './hooks.ts';
 
-const CHUNKS = ['a2', 'a3', 'fin', 'BattleScene'] as const;
+const CHUNKS = ['a2', 'a3', 'fin', 'BattleScene', 'portraits'] as const;
 type Chunk = (typeof CHUNKS)[number];
 
 /** Records which lazy chunks the page fetches (by Vite's chunk file names: `assets/a2-<hash>.js`). */
@@ -35,7 +36,7 @@ test('lazy content: the Title loads no later act; idle time preloads Act II and 
   // Ahead of need, in idle time: the next act a new game reaches, and the battle renderer.
   await expect
     .poll(() => [...chunks].toSorted(), { timeout: 10_000 })
-    .toEqual(['BattleScene', 'a2']);
+    .toEqual(['BattleScene', 'a2', 'portraits']);
   await settle(page);
   expect([...chunks].toSorted()).toEqual(['BattleScene', 'a2']);
 });
@@ -77,5 +78,9 @@ test("lazy content: the finale's battle loads its chunk before its first frame",
   await waitForReady(page);
   expect(chunks.has('fin')).toBe(true);
   expect(chunks.has('BattleScene')).toBe(true);
+  expect(chunks.has('portraits')).toBe(true);
   expect(await page.evaluate(() => globalThis.__sd!.state() !== null)).toBe(true);
+  // The finale's sprites (T871) are baked into an atlas page of their own as the battle starts:
+  // the Halls mouth stands at the top of the road and the choir waits at the gate.
+  await shot(page, 'lazy-content', 2, 'finale-lazy-atlas');
 });

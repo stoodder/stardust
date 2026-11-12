@@ -164,9 +164,9 @@ function eyesUp(rows: readonly string[]): number {
 }
 
 describe('the fleeing runners (art-direction §6, §8 Skittish)', () => {
-  const fleeing = ALL_SPRITES.filter((s) => s.id.startsWith('enemy.') && s.id.endsWith('_fleeing')).map(
-    (s) => s.id,
-  );
+  const fleeing = ALL_SPRITES.filter(
+    (s) => s.id.startsWith('enemy.') && s.id.endsWith('_fleeing'),
+  ).map((s) => s.id);
 
   it('draws a fleeing body for each Skitterkin that runs in Act II', () => {
     expect(fleeing.toSorted()).toEqual(

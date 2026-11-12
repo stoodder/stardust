@@ -6,8 +6,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PALETTES } from '../../content/palettes/index.ts';
 import { FINALE_SPRITES } from '../../content/sprites/finale.ts';
-import { SPRITES } from '../../content/sprites/index.ts';
-import { liveSprites, registerSprites } from '../../content/sprites/registry.ts';
+import { SPRITES, type SpriteId } from '../../content/sprites/index.ts';
+import { hasSprite, liveSprites, registerSprites } from '../../content/sprites/registry.ts';
 import type { SpriteDef } from '../../content/sprites/types.ts';
 import { bakeAll } from './bake.ts';
 import {
@@ -43,6 +43,23 @@ afterEach(() => {
 });
 
 const ids = (list: readonly { id: string }[]): string[] => list.map((d) => d.id);
+
+/** A probe's id, once registered (the source takes registry ids). */
+function registered(id: string): SpriteId {
+  if (!isRegistered(id)) throw new Error(`'${id}' is not registered`);
+  return id;
+}
+
+function isRegistered(id: string): id is SpriteId {
+  return hasSprite(id);
+}
+
+/** A copy of `fx.shadow` under another id: a stand-in for a lazy chunk's sprite. */
+function probe(id: string): SpriteDef {
+  const base = SPRITES.find((d) => d.id === 'fx.shadow');
+  if (base === undefined) throw new Error('no fx.shadow');
+  return { ...base, id };
+}
 
 /** What `register` bakes here: every registered sprite but the portraits (tests register all). */
 const atlasLive = (): SpriteDef[] => liveSprites().filter((d) => !d.id.startsWith('portrait.'));
@@ -195,19 +212,18 @@ describe('CodeSpriteSource', () => {
     source.sync(); // nothing new: no page
     expect(pages).toHaveLength(booted);
 
-    const base = SPRITES.find((d) => d.id === 'fx.shadow');
-    if (base === undefined) throw new Error('no fx.shadow');
-    const probe = { ...base, id: 'fx.t871_probe' } as SpriteDef;
-    registerSprites([probe]);
+    const def = probe('fx.t871_probe');
+    registerSprites([def]);
     const before = added.length;
     source.sync();
     expect(pages.slice(booted)).toEqual([`${PAGE_PREFIX}${booted}`]);
     expect(added.slice(before).every((k) => k.startsWith('fx.t871_probe#'))).toBe(true);
     expect(added.length).toBeGreaterThan(before);
     // A lookup finds it (and one before `sync` would have baked it then).
-    const frame = Object.keys(base.frames)[0] ?? '';
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the probe's id, registered above
-    expect(source.frame('fx.t871_probe' as never, frame).texture).toBe(`${PAGE_PREFIX}${booted}`);
+    const frame = Object.keys(def.frames)[0] ?? '';
+    expect(source.frame(registered('fx.t871_probe'), frame).texture).toBe(
+      `${PAGE_PREFIX}${booted}`,
+    );
   });
 
   it('bakes on a lookup that meets a sprite registered since the last sync', () => {
@@ -234,11 +250,13 @@ describe('CodeSpriteSource', () => {
     const source = new CodeSpriteSource();
     source.register(scene);
     const booted = pages.length;
-    const base = SPRITES.find((d) => d.id === 'fx.shadow');
-    if (base === undefined) throw new Error('no fx.shadow');
-    registerSprites([{ ...base, id: 'fx.t871_probe2' } as SpriteDef]);
-    const frame = Object.keys(base.frames)[0] ?? '';
-    expect(source.frame('fx.t871_probe2' as never, frame).texture).toBe(`${PAGE_PREFIX}${booted}`);
-    expect(() => source.frame('fx.nope' as never, frame)).toThrow(/unknown frame/);
+    const def = probe('fx.t871_probe2');
+    registerSprites([def]);
+    const frame = Object.keys(def.frames)[0] ?? '';
+    expect(source.frame(registered('fx.t871_probe2'), frame).texture).toBe(
+      `${PAGE_PREFIX}${booted}`,
+    );
+    // A frame that is still missing after the sync throws.
+    expect(() => source.frame('fx.shadow', 'no_such_frame')).toThrow(/unknown frame/);
   });
 });

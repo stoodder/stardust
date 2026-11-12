@@ -40,7 +40,9 @@ function inAtlas(def: SpriteDef): boolean {
  * ~600 frames (12% of the atlas's pixels) and painting every portrait (definePortrait paints on
  * first read) for nothing.
  */
-export const ATLAS_SPRITES: readonly SpriteDef[] = (SPRITES as readonly SpriteDef[]).filter(inAtlas);
+export const ATLAS_SPRITES: readonly SpriteDef[] = (SPRITES as readonly SpriteDef[]).filter(
+  inAtlas,
+);
 
 /** The parts of a Phaser scene `register` uses (a `Phaser.Scene` is one; tests pass a fake). */
 export interface SpriteScene {

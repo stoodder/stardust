@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import type { CompiledContent } from '../content/compiled.ts';
 import type { ChallengeRuleDef, IdSpace } from '../content/types.ts';
 import { fixtureConfig } from './__fixtures__/sim.ts';
-import { createSim, type SimConfig } from './index.ts';
+import { createSim, type Modifier, type SimConfig } from './index.ts';
 import {
   allCloaked,
   challengeConfig,
@@ -97,11 +97,13 @@ describe('challenge rules (T862)', () => {
     expect(sim.state.maxIntegrity).toBe(CHALLENGE_GLASS_CORE_INTEGRITY);
     // Glass Core holds on Story (the lowest `set` wins over Story's 30).
     const story = createSim({ ...onChallenge([{ kind: 'glassCore' }]), difficulty: 'story' });
-    const storySet = { kind: 'economy', stat: 'coreIntegrity', set: 30, source: 'difficulty' };
-    const withStory = createSim({
-      ...onChallenge([{ kind: 'glassCore' }]),
-      modifiers: [storySet as SimConfig<IdSpace>['modifiers'][number]],
-    });
+    const storySet: Modifier<IdSpace> = {
+      kind: 'economy',
+      stat: 'coreIntegrity',
+      set: 30,
+      source: 'difficulty:story',
+    };
+    const withStory = createSim({ ...onChallenge([{ kind: 'glassCore' }]), modifiers: [storySet] });
     expect(story.state.maxIntegrity).toBe(CHALLENGE_GLASS_CORE_INTEGRITY);
     expect(withStory.state.maxIntegrity).toBe(CHALLENGE_GLASS_CORE_INTEGRITY);
   });

@@ -155,9 +155,11 @@ function artErrors(): readonly string[] {
   artVersion = spritesVersion();
   artCache ??= [
     ...validateSprites(liveSprites(), PALETTE_IDS).map((e) => `[sprites] ${e}`),
-    ...validatePalettes({ palettes: PALETTES, envIds: ENV_PALETTE_IDS, sprites: liveSprites() }).map(
-      (e) => `[palettes] ${e}`,
-    ),
+    ...validatePalettes({
+      palettes: PALETTES,
+      envIds: ENV_PALETTE_IDS,
+      sprites: liveSprites(),
+    }).map((e) => `[palettes] ${e}`),
   ];
   return artCache;
 }

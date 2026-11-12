@@ -56,12 +56,7 @@ function preloadRenderer(): void {
  * screens, T810; but for the Title, the portraits, T871: it draws no face) have loaded: at once,
  * synchronously, when they already have. Then preloads the next act and the renderer.
  */
-function gated<T>(
-  acts: StoryAct,
-  battle: boolean,
-  go: () => Promise<T>,
-  faces = true,
-): Promise<T> {
+function gated<T>(acts: StoryAct, battle: boolean, go: () => Promise<T>, faces = true): Promise<T> {
   const screens = actRank(acts) >= actRank('finale');
   const after = (): void => {
     preloadActs(actAtRank(actRank(acts) + 1), reportLoadError);

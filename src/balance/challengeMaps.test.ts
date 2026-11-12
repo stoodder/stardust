@@ -11,6 +11,7 @@ import { RAW_CONTENT } from '../content/registry.ts';
 import type { IdSpace } from '../content/types.ts';
 import { veteranGrants, veteranModsOf } from '../meta/veteran.ts';
 import { challengeConfig, createSim, radioSilent, type SimConfig } from '../sim/index.ts';
+import type { RunRecord } from './checks.ts';
 import { campaignMapIds, challengeMapIds, monotonicCheck, type MapReport } from './harness.ts';
 import { referenceRunProfile, runConfig } from './profile.ts';
 
@@ -27,7 +28,15 @@ function parConfig(mapId: string, story = false): SimConfig<IdSpace> {
 /** A bare report for the monotonic check (#3 reads par's margins). */
 function report(mapId: string, marginPct: number): MapReport {
   const map = content.maps[mapId]!;
-  const run = { build: 'par', seed: 1, repeat: false, marginPct } as unknown;
+  const run: RunRecord = {
+    build: 'par',
+    seed: 1,
+    repeat: false,
+    error: null,
+    result: null,
+    marginPct,
+    ms: 0,
+  };
   return {
     mapId,
     act: map.act,
@@ -35,7 +44,7 @@ function report(mapId: string, marginPct: number): MapReport {
     band: null,
     ok: true,
     checks: [],
-    runs: [run as MapReport['runs'][number]],
+    runs: [run],
     notChecked: [],
     ms: 0,
   };
