@@ -3,8 +3,11 @@ import {
   battleMusic,
   countdownTick,
   crossedLowIntegrity,
+  heldMusic,
   PAUSED_LEVEL,
   screenMusic,
+  VOICES_FLOOR,
+  voicesLevel,
   type BattleMood,
 } from './director.ts';
 
@@ -53,16 +56,69 @@ describe('battle music', () => {
     });
   });
 
-  it("plays each act's theme, and falls back to Act I's for acts without one yet", () => {
+  it("plays each act's theme, and falls back to Act I's for acts without one", () => {
     expect(battleMusic({ ...MOOD, act: 2 }).theme).toBe('act2_battle');
     expect(battleMusic({ ...MOOD, act: 3 }).theme).toBe('act3_battle');
-    expect(battleMusic({ ...MOOD, act: 'finale' }).theme).toBe('act1_battle');
+    expect(battleMusic({ ...MOOD, act: 'finale' }).theme).toBe('fin_walk');
+    expect(battleMusic({ ...MOOD, act: 'challenge' }).theme).toBe('act1_battle');
   });
 
   it("brings in the Hum Choir's harmony line while a Choir stands, and drops it at the map's end", () => {
     expect(battleMusic({ ...MOOD, choir: true }).layers.choir).toBe(1);
     expect(battleMusic({ ...MOOD, choir: false }).layers.choir).toBe(0);
     expect(battleMusic({ ...MOOD, choir: true, outcome: 'won' }).layers.choir).toBe(0);
+  });
+
+  it("follows the finale's script phase: the Long Walk, the hymn, Dawn (T850)", () => {
+    const fin: BattleMood = { ...MOOD, act: 'finale', waveCount: 26, voices: 1 };
+    expect(battleMusic({ ...fin, phase: 0 }).theme).toBe('fin_walk');
+    expect(battleMusic({ ...fin, phase: 1 }).theme).toBe('fin_walk');
+    expect(battleMusic({ ...fin, phase: 2 }).theme).toBe('choir_hymn');
+    expect(battleMusic({ ...fin, phase: 3 }).theme).toBe('dawn_major');
+    // A dev map of the finale's act follows it too; another act's map ignores the phase.
+    expect(battleMusic({ ...MOOD, act: 3, phase: 2 }).theme).toBe('act3_battle');
+  });
+
+  it('swells the singers with the Voices: the procession in Phase 1, the choir in the hymn', () => {
+    const fin: BattleMood = { ...MOOD, act: 'finale', waveCount: 26, wave: 25, waveActive: true };
+    // Phase 1: the procession's hum is the lead, at the Voices; the choir layer is a Hum Choir's.
+    const walk = battleMusic({ ...fin, phase: 1, voices: 0.5, choir: true }).layers;
+    expect(walk).toEqual({ base: 1, drums: 1, lead: voicesLevel(0.5), choir: 1 });
+    // The last waves don't bring in a lead on a choir map: the singers are the lead.
+    expect(battleMusic({ ...fin, phase: 1, voices: 1 }).layers.lead).toBe(1);
+    // Phase 2: Pebble leads, the choir behind her follows the Voices.
+    const full = battleMusic({ ...fin, phase: 2, voices: 1 }).layers;
+    const thin = battleMusic({ ...fin, phase: 2, voices: 0.3 }).layers;
+    expect(full).toMatchObject({ lead: 1, choir: 1 });
+    expect(thin.lead).toBe(1);
+    expect(thin.choir).toBeLessThan(full.choir);
+    expect(thin.choir).toBeGreaterThan(VOICES_FLOOR);
+    // Dawn: everyone sings.
+    expect(battleMusic({ ...fin, phase: 3, voices: 0.3 }).layers).toMatchObject({ lead: 1, choir: 1 });
+    // The map's end silences it as any other.
+    expect(battleMusic({ ...fin, phase: 3, voices: 1, outcome: 'won' }).level).toBe(0);
+  });
+
+  it('moves the singers in steps, from a floor to full', () => {
+    expect(voicesLevel(0)).toBe(VOICES_FLOOR);
+    expect(voicesLevel(1)).toBe(1);
+    expect(voicesLevel(2)).toBe(1);
+    expect(voicesLevel(-1)).toBe(VOICES_FLOOR);
+    const steps = new Set(Array.from({ length: 101 }, (_, i) => voicesLevel(i / 100)));
+    for (const l of steps) expect(Math.round(l * 20) / 20).toBeCloseTo(l, 9);
+  });
+
+  it('plays the post-game title after the finale, and holds Dawn under the epilogue', () => {
+    expect(screenMusic('title', true)).toMatchObject({
+      theme: 'title_dawn',
+      layers: { base: 1, lead: 1, choir: 1 },
+    });
+    expect(screenMusic('results', true).theme).toBeNull();
+    expect(heldMusic('dawn_major')).toEqual({
+      theme: 'dawn_major',
+      layers: { base: 1, drums: 1, lead: 1, choir: 1 },
+      level: 1,
+    });
   });
 
   it('plays the title theme on the title, and nothing on Results', () => {

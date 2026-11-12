@@ -1,6 +1,6 @@
 // FIN waves: docs/story/campaign/finale.md § FIN, Waves. This file holds Phase 1, the Descent
-// (W1–18, T820); Phase 2's add waves (W19–26) and the Unsung follow in T821, appended after
-// `PHASE_1` (see the end of the file). Routes: `halls` (the Halls mouth (11,0) down the choir's
+// (W1–18, T820, retuned by T821), then Phase 2's add waves (W19–26) with the Unsung (T821;
+// `PHASE_2_WAVES`). Routes: `halls` (the Halls mouth (11,0) down the choir's
 // road to the gate: the Hollow meet the choir head on), `rift_field` (the west rift field, onto
 // the road's west bend: ahead of the choir until she passes its mouth in W14, behind her after),
 // `bore_road` (the east Bore road along row 3 onto the Halls descent, ahead of her throughout),

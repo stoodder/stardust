@@ -36,17 +36,18 @@ export const map = defineMapLayout({
   coreIntegrity: 20,
   // A challenge pays Intel for its medals, never Stardust.
   stardust: 0,
-  threatIntel: ['clustered', 'splitting', 'gathering', 'armored', 'flying', 'phasing', 'burrowing'],
-  // The warrens answer all three: the Gloop (splash), the Sproing Pad (air), the Den and Underfoot
-  // (burrowed).
-  requiredCounters: ['splash', 'air', 'burrowed'],
-  // No Digger Gets Home: no Undertow reaches the gate.
+  threatIntel: ['clustered', 'splitting', 'gathering', 'armored', 'flying', 'phasing'],
+  // The Gloop answers the crowds (splash) and the Sproing Pad the sky (air): the two jobs only the
+  // warrens' homes can share out here. (No Undertows: against diggers the Pad out-bonks the Den,
+  // so a burrowed counter would only ask for more Pads.)
+  requiredCounters: ['splash', 'air'],
+  // Grounded: no Rift Moth reaches the gate (the Pads' job, in reach of the Gloops once pinned).
   medals: {
     challenge: {
-      id: 'nothing_underfoot',
-      name: 'Nothing Underfoot',
-      description: 'Let no Undertow reach the gate.',
-      condition: { leaks: { enemy: 'undertow' }, lte: 0 },
+      id: 'grounded',
+      name: 'Grounded',
+      description: 'Let no Rift Moth reach the gate.',
+      condition: { leaks: { enemy: 'riftmoth' }, lte: 0 },
     },
   },
   companion: { id: 'bramble', state: 'present' },

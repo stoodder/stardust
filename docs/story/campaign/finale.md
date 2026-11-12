@@ -71,11 +71,11 @@ The one-map finale, `fin_m01`, from the end of the Long Night to the First Dawn.
 | No burrow answer (par without its Dens or Dread) | 35: the Unsung's two digs surface among the singers (Fork 2's pinned cost, ≥ 10 under par) |
 | No air / no jam / no splash | lost in Phase 1: W14 / W18 / W17 (no splash with the full catalog: W24) |
 | None | lost W2 |
-| Phase 2 length (#18) | Keep 180 s, Purge 232 s (1.28×), Rewrite 152 s (0.84×); the trickle alone ends it in ~208 s under Keep |
+| Phase 2 length (#18) | Keep 180 s, Purge 232 s (1.28×), Rewrite 152 s (0.84×); the trickle alone ends it in 200 s under Keep |
 | Phase 1 / whole map, par at 1× | 13.8 min / ~17.9 min |
-| Directive 0 (Keep par) | 20 s into Phase 2: the Mindspikes fold (3,375 refunded), Time Dilation locks, "Who's there?" waits (the sim frozen); pressed, the class is back and par rebuilds it; a 15 s slower rebuild costs at most 2 singers more |
+| Directive 0 (Keep par) | 20 s into Phase 2: the Mindspikes fold, refunded in full, Time Dilation locks, "Who's there?" waits (the sim frozen); pressed, the class is back and par rebuilds it (3,600 refunded and spent again); a rebuild 15 s slower costs no singer (W20 waits in the lull) |
 | Thrum's echo (cleared) | spawns as rest progress crosses 50%, rises inside the song at once; Pebble's line the tick after |
-| Laid to Rest | not par's: ~65% of par's Phase 2 kills land inside the song (the ledge Mindspikes reach the Halls' approaches outside it) |
+| Laid to Rest | not par's: about two thirds of par's Phase 2 kills land inside the song (the ledge Mindspikes reach the Halls' approaches outside it) |
 | #13 | slowest run 1.3 s CPU |
 
 The Descent is all void, and Psionic (×1.5 against void, through armor) is about twice the damage per credit of anything else, so every winning build carries the Mindspike: a Thumper, Zapcoil, Gloop, or Lantern road (with gate Skyhooks) loses in W14–W18 even on Story. Moving some of W12–W18's pressure from void swarms to Everglow ground units is T874's.

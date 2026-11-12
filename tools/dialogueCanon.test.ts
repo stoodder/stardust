@@ -33,6 +33,7 @@ const COMPLETE = [
   'a3_m04',
   'a3_m05',
   'a3_m06',
+  'fin_m01', // T821 (no pending checks: its alts and cells pass)
 ];
 
 function actFile(act: string): string {

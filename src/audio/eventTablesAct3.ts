@@ -28,12 +28,14 @@ export const RIFT_SOUNDS = {
 
 /**
  * Burrowing by enemy (fieldSounds.ts), ahead of BURROW_SOUNDS: a Hollow burrower (the Undertow)
- * sinks and rises like water closing, never the Digger's comic dig.
+ * sinks and rises like water closing, never the Digger's comic dig; the Unsung (T850) digs toward
+ * the choir, and its surfacing is BossSurfaced's sound (eventTablesFin.ts), so `surface` is null.
  */
 export const ENEMY_BURROW_SOUNDS: Readonly<
-  Partial<Record<string, { readonly dig: SfxId; readonly surface: SfxId }>>
+  Partial<Record<string, { readonly dig: SfxId; readonly surface: SfxId | null }>>
 > = {
   undertow: { dig: 'undertow_sink', surface: 'undertow_rise' },
+  unsung: { dig: 'unsung_dig', surface: null },
 };
 
 /**

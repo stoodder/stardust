@@ -221,16 +221,22 @@ export const BOSS_SOUNDS: Readonly<Partial<Record<string, BossSounds>>> = {
     end: 'gmaw_strain',
     endCue: null,
   },
-  // The Unsung (T800a's stub): the Gathering Maw's voices until T850 gives it its own (`unsung_*`).
+  // The Unsung (T850; sfx/fin.ts): many wrong voices rising from the Halls humming G–C–E (phase
+  // 1, the gather); its split (phase 2) and its rising again (phase 3) are BossSplit's and
+  // BossRisen's (eventTablesFin.ts BOSS_MOMENT_SOUNDS); phase 4, the Song, its voices bending
+  // toward the tune; laid to rest, they slide into a C major chord. No sting: Dawn's music and
+  // the light (DawnBroke) follow it.
   unsung: {
-    arrive: 'gmaw_arrive',
-    phase: 'gmaw_strain',
+    arrive: 'unsung_arrive',
+    phase: 'unsung_song',
     spawnTell: null,
     spawn: null,
-    end: 'gmaw_strain',
+    end: 'unsung_rest',
     endCue: null,
+    phases: { 2: null, 3: null },
   },
-  // Its split's parts (T808): the Gathering Maw's parts' voices until T850.
+  // Its split's parts (T808): born mid-fight with no BossPhase; they keep the Gathering Maw's
+  // parts' voices (a part laid to rest rings the song's chime, eventTablesFin.ts).
   unsung_part: {
     arrive: 'gmaw_arrive',
     phase: 'gmaw_strain',
@@ -283,6 +289,9 @@ export const ENEMY_LOOPS: Readonly<
   silencer: { id: 'hollow_hum', everySec: 9 },
   gathering_maw: { id: 'hollow_hum', everySec: 9 },
   gathering_maw_part: { id: 'hollow_hum', everySec: 9 },
+  // The finale's (T850): the Unsung and its parts hum the jingle wrong like every Hollow unit.
+  unsung: { id: 'hollow_hum', everySec: 9 },
+  unsung_part: { id: 'hollow_hum', everySec: 9 },
   liability: { id: 'liability_stomp', everySec: 1.1 },
   gunship: { id: 'gunship_rotor', everySec: 0.4 },
   associate: { id: 'associate_hum', everySec: 1.6 },

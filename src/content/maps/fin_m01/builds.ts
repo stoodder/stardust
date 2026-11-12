@@ -1,6 +1,6 @@
 // FIN balance-harness builds: docs/story/campaign/finale.md § FIN, Par build. The map is judged on
-// Voices % (the Escort chain's end; maps.md § 6.1). Phase 1 (W1–18) is T820's; T821 extends
-// each build into Phase 2 (its steps after W18) and tunes the whole map to par 48.
+// Voices % of the 20-strong choir (the Escort chain's end; maps.md § 6.1 and § 5.5). Phase 1 is
+// T820's, Phase 2 and the whole map's tune T821's (par 55: 9 singers hushed).
 //
 // The flags: the convoy first (a run with no door set mans the militia's posts and walks the
 // smaller choir), then the warren; C1, C2, and C4 each change the choir, the song, or the Bore, so

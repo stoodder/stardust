@@ -13,9 +13,12 @@ const RING_NW: GridPos = [10, 3];
 const RING_W: GridPos = [9, 6];
 /** Between the north rift and the west ring. */
 const RIFT_NW: GridPos = [6, 4];
-const RIFT_SW: GridPos = [6, 8];
+/** East of the bowl, under the Moths' lane as it comes in. */
+const LANE_E: GridPos = [19, 10];
 /** Inside the south-west corner of the spiral, under the Moths' lane. */
 const CORNER: GridPos = [9, 10];
+/** West of the last leg, by the gate. */
+const GATE_W: GridPos = [3, 9];
 /** Beside the gate. */
 const GATE: GridPos = [4, 12];
 /** South of the long run east, under the Moths' lane as it comes in. */
@@ -34,27 +37,26 @@ const raise = (wave: number, tower: TowerId, tile: GridPos): BuildStep[] => [
 
 function parSteps(): BuildStep[] {
   return [
-    // The setup: a Gloop on each side of the trunk, the Den where the north road comes in, a
-    // Sproing Pad by the gate.
+    // The setup (the bank is deep): a Gloop each side of the trunk, a Sproing Pad where the north
+    // road comes in and the Den beside it, a Pad by the gate and one under the Moths' lane.
     ...raise(1, 'gloop', RING_W),
-    ...raise(1, 'gloop', RING_NE),
+    ...raise(1, 'gloop', CORNER),
+    { wave: 1, build: 'sproing', tile: RING_NE },
+    { wave: 1, upgrade: RING_NE },
     { wave: 1, build: 'burrow', tile: RING_NW },
     { wave: 1, build: 'sproing', tile: GATE },
-    { wave: 1, build: 'gloop', tile: CORNER },
-    { wave: 2, upgrade: RING_NW },
-    { wave: 2, upgrade: CORNER },
-    { wave: 3, build: 'sproing', tile: SOUTH },
+    { wave: 1, build: 'sproing', tile: SOUTH },
+    { wave: 2, upgrade: RING_NE },
     { wave: 3, upgrade: GATE },
-    { wave: 4, upgrade: CORNER },
+    { wave: 4, upgrade: SOUTH },
     { wave: 4, upgrade: RING_NW },
-    ...raise(5, 'gloop', RIFT_SW),
+    ...raise(4, 'gloop', RIFT_NW),
+    ...raise(5, 'sproing', LANE_E),
+    { wave: 6, upgrade: GATE },
     { wave: 6, upgrade: SOUTH },
-    { wave: 6, build: 'burrow', tile: RIFT_NW },
-    { wave: 7, upgrade: GATE },
-    { wave: 7, upgrade: RIFT_NW },
-    { wave: 8, upgrade: SOUTH },
-    ...raise(9, 'gloop', FENCE),
-    { wave: 10, upgrade: RIFT_NW },
+    { wave: 7, upgrade: RING_NW },
+    ...raise(8, 'gloop', GATE_W),
+    ...raise(9, 'sproing', FENCE),
   ];
 }
 
@@ -74,11 +76,9 @@ export const builds = defineBuilds({
   marginBand: { minPct: 50, maxPct: 70 },
   parBuild: { loadout: ['gloop', 'burrow', 'sproing', 'choir'], steps: parSteps() },
   noCounterBuilds: {
-    // No Gloop: the Den and the Choir in its place.
-    splash: { loadout: ['burrow', 'sproing', 'choir'], steps: swapped({ gloop: 'burrow' }) },
+    // No Gloop: Sproing Pads in its place (they bonk one at a time).
+    splash: { loadout: ['burrow', 'sproing', 'choir'], steps: swapped({ gloop: 'sproing' }) },
     // No Sproing Pad: Gloops in its place (ground only).
     air: { loadout: ['gloop', 'burrow', 'choir'], steps: swapped({ sproing: 'gloop' }) },
-    // No Den, no Underfoot: Gloops in its place.
-    burrowed: { loadout: ['gloop', 'sproing', 'choir'], steps: swapped({ burrow: 'gloop' }) },
   },
 });

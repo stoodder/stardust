@@ -1,7 +1,7 @@
 // FIN · Clearing the Way: layout and rules (docs/story/campaign/finale.md § FIN; the song's rules
 // design/maps.md § 5.5). The Long Walk at night, from the A1M1 gate on the south edge north over
-// Okonkwo's Gap to the mouth of the Deep Halls. This file is Phase 1, the Descent (T820); Phase 2
-// (the Unsung) and Phase 3 (Dawn) add their song, waves, and events in T821 (see `PHASE_2`).
+// Okonkwo's Gap to the mouth of the Deep Halls, in three phases: the Descent (T820), the Unsung,
+// and Dawn (T821: the song's numbers, `PHASE_2_EVENTS`, the hush allowance, the scripted win).
 //
 // **The road** (`halls`, 44 tiles from the Halls to the gate) is the choir's: Pebble leads it from
 // the gate (8,13) up the colony's lane, east along row 10, up the east bend, west along row 7 (the
@@ -76,8 +76,7 @@ export const PHASE_1_WAVES = 18;
 /**
  * Phase 2's start (D154; maps.md § 5.5): the later of W18 cleared and the choir at the Halls mouth
  * (`afterWave`). It checkpoints ("Retry from the Halls") and stops the Bore, which fixes the
- * Unsung's HP bonus. T821 adds Phase 2's own events (the Unsung, Directive 0, the echo, Dawn) after
- * these, keyed to `{ phase: 2, afterSec }` and the song.
+ * Unsung's HP bonus. Phase 2's own events follow it (`PHASE_2_EVENTS`); the Unsung is W19.
  */
 export const PHASE_2: ScriptedEvent = {
   id: 'halls',
@@ -315,6 +314,7 @@ export const map = defineMapLayout({
     // Paced to Phase 1's waves: a leg a wave (`walkWaves`), walked over most of a Standard wave,
     // so she passes the memorial in W9 and reaches the Halls mouth in W18 whatever the countdowns.
     pace: 0.08,
+    // Halts while ground Hollow are within 2.5 tiles ahead (T821; par halts ~3% of the walk).
     haltTiles: 2.5,
     walkWaves: PHASE_1_WAVES,
     // The choir is lost once 15 singers are hushed, whatever its size by flag (T821): every cell
@@ -328,8 +328,9 @@ export const map = defineMapLayout({
     returned: { when: { flag: 'stardust_choice', eq: 'returned' }, count: 2, auraRadius: 1 },
   },
   // The Leaving Song (maps.md § 5.5): its circle round Pebble from the start (a light in the dark;
-  // render's), rest and scatter in Phase 2 only. T821 tunes `restTarget`, the trickle, and the
-  // boss's rest to the ~3 min countdown at Keep (#18).
+  // render's), rest and scatter in Phase 2 only. Tuned to ~3 min at Keep (#18; T821): the trickle
+  // is most of it, so the kills (all in by ~150 s) can't skew each C4 answer's length past ±30% of
+  // Keep's, and alone it still ends the phase in 200 s under Keep.
   song: {
     baseRadius: 2.5,
     restTarget: 1400,
@@ -345,8 +346,9 @@ export const map = defineMapLayout({
   // The Deep Bore (maps.md § 5.5): fills over Phase 1 (Purge: 75% speed), +5% Unsung HP per 10%;
   // full, it breaks through at the Halls mouth.
   timers: { deep_bore: { fillSec: 1320, bossHpPerTenth: 0.05 } },
-  // The colonist militia (maps.md § 5.4), only under the convoy: A3M6's posts' numbers (low DPS,
-  // long range, ground only), beside the walk's last legs.
+  // The colonist militia (maps.md § 5.4), only under the convoy (low DPS, long range, ground only),
+  // beside the walk's last legs. Weaker than A3M6's (2.5 a shot, T821): at 4 they were worth ~4
+  // singers to the convoy alone, the whole gap to the warren's cell.
   allies: MILITIA.map((post) => ({
     kind: 'militia' as const,
     post,

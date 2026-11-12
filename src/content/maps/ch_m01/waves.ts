@@ -47,12 +47,12 @@ export const waves = defineWaves([
   // W3 · the first Undertow, out of the basin, behind Motes on the north road
   {
     countdownSec: COUNTDOWN,
-    groups: [motes(10, 'north', OPEN, 0.35), g('undertow', 1, 'spiral', OPEN + 2)],
+    groups: [motes(10, 'north', OPEN, 0.35), g('fracture', 1, 'spiral', OPEN + 2)],
   },
   // W4 · Rift Moths, and Motes on the north road
   {
     countdownSec: COUNTDOWN,
-    groups: [moths(3, OPEN, 3), motes(18, 'north', OPEN + 8, 0.2)],
+    groups: [moths(3, OPEN, 3), motes(24, 'north', OPEN + 8, 0.15)],
   },
   // W5 · a Maw leading Motes down the north road; an Undertow out of the basin
   {
@@ -60,7 +60,7 @@ export const waves = defineWaves([
     groups: [
       g('maw', 1, 'north', OPEN),
       motes(6, 'north', OPEN + 1, 0.35),
-      g('undertow', 1, 'spiral', OPEN + 8),
+      motes(24, 'rift_n', OPEN + 10, 0.12),
     ],
   },
   // W6 · a Fracture through the east rift (it opens); Rift Moths
@@ -72,9 +72,9 @@ export const waves = defineWaves([
   {
     countdownSec: COUNTDOWN,
     groups: [
-      g('undertow', 2, 'spiral', OPEN, 5),
-      g('undertow', 2, 'north', OPEN + 8, 4),
-      motes(12, 'rift_n', OPEN + 14, 0.25),
+      g('fracture', 2, 'spiral', OPEN, 3),
+      moths(4, OPEN + 6, 2.5),
+      motes(24, 'rift_n', OPEN + 14, 0.12),
     ],
   },
   // W8 · two Maws, and the sky
@@ -82,9 +82,9 @@ export const waves = defineWaves([
     countdownSec: COUNTDOWN,
     groups: [
       g('maw', 1, 'north', OPEN),
-      motes(6, 'north', OPEN + 1, 0.35),
+      motes(14, 'north', OPEN + 1, 0.15),
       g('maw', 1, 'rift_e', OPEN + 12),
-      moths(5, OPEN + 18, 2.5),
+      moths(7, OPEN + 18, 2),
     ],
   },
   // W9 · Fractures and Undertows through both rifts
@@ -92,8 +92,7 @@ export const waves = defineWaves([
     countdownSec: COUNTDOWN,
     groups: [
       g('fracture', 2, 'rift_n', OPEN, 5),
-      g('undertow', 2, 'rift_e', OPEN + 10, 5),
-      g('undertow', 2, 'north', OPEN + 14, 5),
+      motes(18, 'rift_e', OPEN + 10, 0.15),
       moths(2, OPEN + 18, 3),
     ],
   },
@@ -102,8 +101,8 @@ export const waves = defineWaves([
     countdownSec: COUNTDOWN,
     groups: [
       moths(5, OPEN, 2.5),
-      motes(12, 'north', OPEN + 6, 0.35),
-      motes(10, 'rift_n', OPEN + 14, 0.35),
+      motes(22, 'north', OPEN + 6, 0.15),
+      motes(22, 'rift_n', OPEN + 14, 0.15),
     ],
   },
   // W11 · Maws and Undertows together
@@ -112,7 +111,7 @@ export const waves = defineWaves([
     groups: [
       g('maw', 2, 'north', OPEN, 6),
       motes(8, 'north', OPEN + 1, 0.35),
-      g('undertow', 4, 'rift_n', OPEN + 8, 3),
+      motes(20, 'spiral', OPEN + 8, 0.15),
       g('fracture', 1, 'rift_e', OPEN + 16),
     ],
   },
@@ -121,7 +120,7 @@ export const waves = defineWaves([
     countdownSec: COUNTDOWN,
     groups: [
       g('fracture', 2, 'rift_n', OPEN, 5),
-      g('undertow', 2, 'north', OPEN + 8, 5),
+      motes(16, 'north', OPEN + 8, 0.15),
       moths(3, OPEN + 14, 3),
       g('maw', 1, 'rift_e', OPEN + 18),
       motes(6, 'rift_e', OPEN + 19, 0.35),

@@ -10,6 +10,7 @@ export {
   battleMusic,
   countdownTick,
   crossedLowIntegrity,
+  heldMusic,
   screenMusic,
   type BattleMood,
   type MusicIntent,

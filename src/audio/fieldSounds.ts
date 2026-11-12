@@ -241,7 +241,8 @@ export function createFieldSounds(clearTicks: number): FieldSounds {
         const was = burrowed.get(e.uid);
         if (was !== undefined && was !== e.burrowed) {
           const b = ENEMY_BURROW_SOUNDS[e.def.id] ?? BURROW_SOUNDS;
-          out.push(sfx(e.burrowed ? b.dig : b.surface));
+          const id = e.burrowed ? b.dig : b.surface;
+          if (id !== null) out.push(sfx(id));
         }
         nextBurrowed.set(e.uid, e.burrowed);
         // A boss's spawn: its tell as it starts, its sneeze as the tell runs out in the same phase.
