@@ -86,6 +86,8 @@ export interface RunSummary {
    * finale's Phase 2 runs from `[2]` to `[3]` (Dawn; harness #18, T821).
    */
   readonly phaseStartTick: readonly number[];
+  /** Classes the script restored ("Who's there?"; T821), in order: no longer in `revoked`. */
+  readonly restored: readonly string[];
   /** Credits left at the end (unspent). */
   readonly credits: number;
   /** The last wave started when the map was lost, or null. */
@@ -148,6 +150,8 @@ export function createRunTracker<K extends IdSpace>(
   let lostAtWave: number | null = null;
   /** The tick each script phase began (index = phase; T821); −1 for one never reached. */
   const phaseStartTick: number[] = [0];
+  /** Classes the script restored, in order (`ClassRestored`; T821). */
+  const restored: string[] = [];
 
   const violate = (what: string): void => {
     if (violations.length < MAX_VIOLATIONS) violations.push(`tick ${state.tick}: ${what}`);
@@ -287,6 +291,9 @@ export function createRunTracker<K extends IdSpace>(
           case 'MapLost':
             lostAtWave = state.wave;
             break;
+          case 'ClassRestored': // T821: the class a revoke took, though "Who's there?" gave it back
+            restored.push(e.tower);
+            break;
           case 'PhaseChanged': // T821: the finale's Phase 2 length (harness #18)
             while (phaseStartTick.length < e.phase) phaseStartTick.push(-1);
             phaseStartTick[e.phase] = state.phaseTick;
@@ -399,7 +406,6 @@ export function createRunTracker<K extends IdSpace>(
           case 'Reformed':
           case 'TimerFull':
           case 'LightingSet':
-          case 'ClassRestored':
           case 'AbilityLocked':
           case 'EchoArrived':
           case 'DawnBroke':
@@ -533,6 +539,7 @@ export function createRunTracker<K extends IdSpace>(
         choirSize: state.choir.singers,
         choirBase: choirBaseOf(map),
         phaseStartTick: [...phaseStartTick],
+        restored: [...restored],
         credits: state.credits,
         lostAtWave,
         stats: {

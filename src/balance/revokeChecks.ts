@@ -72,9 +72,9 @@ export function revokeVariantChecks<K extends IdSpace>(
       (rec) => {
         const r = rec.result;
         if (r?.outcome !== 'won') return describeRun(rec);
-        if (r.revoked.towers[0] !== tower) {
-          return `the cue took ${r.revoked.towers[0] ?? 'nothing'}, not ${tower}`;
-        }
+        // A restored class ("Who's there?", the finale) left `revoked` but was taken (T821).
+        const took = r.revoked.towers[0] ?? r.restored[0];
+        if (took !== tower) return `the cue took ${took ?? 'nothing'}, not ${tower}`;
         return rec.marginPct >= FORGIVING_FLOOR_PCT
           ? null
           : `margin ${fmtPct(rec.marginPct)} is under the floor ${FORGIVING_FLOOR_PCT}`;

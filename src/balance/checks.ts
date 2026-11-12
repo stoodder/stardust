@@ -161,6 +161,9 @@ export function flagsFor<K extends IdSpace>(
   map: CompiledMapDef<K>,
 ): ScriptFlags | null {
   const build = splitMeta(label).build;
+  // A revocation variant runs under the flag its cue waits for (the finale's Directive 0: Keep;
+  // T821), so the cue fires and takes the forced class.
+  if (build.startsWith('revoke:')) return gatedFlagDefaults(map, revokeCueFlags(map));
   // A flag that gates a refugee group (A3M3's door) takes its first variant (T605).
   if (!build.startsWith('flag:') && !build.startsWith('flags:')) return gatedFlagDefaults(map);
   const pairs = build.slice(build.indexOf(':') + 1).split(',');
@@ -172,6 +175,19 @@ export function flagsFor<K extends IdSpace>(
     set[value.flag] = value.value;
   }
   return gatedFlagDefaults(map, set);
+}
+
+/**
+ * The story flag a map's revoking cue waits for (an event with `revokeTowerClass` and a plain
+ * `{ flag, eq }` `when`: the finale's Directive 0 under Keep), or none (A3M2's cue always fires).
+ */
+function revokeCueFlags<K extends IdSpace>(map: CompiledMapDef<K>): ScriptFlags {
+  for (const ev of map.events) {
+    if (!ev.actions.some((a) => 'revokeTowerClass' in a)) continue;
+    const w = ev.when;
+    if (w !== null && 'flag' in w && 'eq' in w) return { [w.flag]: w.eq };
+  }
+  return {};
 }
 
 /** The `flagVariants` entry an 'x=v' pair names (x a script flag, v one of its values), or null. */

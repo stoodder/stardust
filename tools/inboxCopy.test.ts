@@ -28,6 +28,12 @@ const actDoc = (id: string): string =>
         ? ACT2
         : ACT1;
 
+/** Ves'thara's margin notes quoted outside act2.md: the Act III gifts' (T769), in act3.md. */
+const MARGIN_HOME: Readonly<Record<string, string>> = {
+  codex_hum_choir: ACT3,
+  codex_stasis_bloom: ACT3,
+};
+
 /** `doc` holds `text` (a boolean check, so a miss prints the text, not the whole doc). */
 function expectQuoted(doc: string, text: string): void {
   expect(doc.includes(text), `the doc doesn't quote: ${text}`).toBe(true);
@@ -153,7 +159,8 @@ describe('codex lines the docs quote', () => {
     for (const e of margins) {
       const note = e.versions.margin?.text ?? '';
       expect(note.startsWith(prefix), e.id).toBe(true);
-      expectQuoted(ACT2, `("${note.slice(prefix.length, -1)}")`);
+      // Act II's in act2.md; the Act III gifts' (T769) in act3.md § A3M1.
+      expectQuoted(MARGIN_HOME[e.id] ?? ACT2, `("${note.slice(prefix.length, -1)}")`);
     }
     expectQuoted(STYLE, CODEX.codex_brood_hauler?.versions.margin?.text ?? '-');
   });
@@ -207,9 +214,26 @@ describe("the Field Journal's lines the docs quote (Act III, T611)", () => {
     ['codex_okonkwos_gap', 'original', 'On the old charts it had a number.'],
     ['codex_okonkwos_gap', 'original', "The colony calls it Okonkwo's Gap now."],
     ['codex_amended_survey', 'original', 'It is fifteen years late. He filed it anyway.'],
+    // The gifts A3M1 opens (T769).
+    ['codex_scuttle_den', 'original', 'Nest Mound'],
+    ['codex_scuttle_den', 'original', 'those are not decorations, they are an occupancy indicator'],
+    [
+      'codex_scuttle_den',
+      'corrected',
+      'Families shelter inside, and the lanterns are lit for them.',
+    ],
+    ['codex_scuttle_den', 'corrected', 'When they do, someone inside counts them.'],
+    ['codex_hum_choir', 'original', 'Legal has checked: it does not.'],
+    ['codex_stasis_bloom', 'original', 'Zibzab stood in it once. He does not say for how long.'],
   ] as const)('%s (%s) holds act3.md\'s "%s"', (id, version, line) => {
     expectQuoted(ACT3, `"${line}`);
     expect(journalText(id, version)).toContain(line);
+  });
+
+  it("notes the Hum Choir's record in QUILL's words, as act3.md § A3M1 quotes them (T769)", () => {
+    const line = 'Legal compared the tunes. It did not compare the dates.';
+    expectQuoted(ACT3, `"${line}"`);
+    expect(CODEX.codex_hum_choir?.versions.annotated?.text).toContain(line);
   });
 
   it("quotes the QUILL directives exactly as A3M2's confession scene gives them", () => {

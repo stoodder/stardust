@@ -6,6 +6,7 @@
 // boot: devRegistry.ts).
 import { CAMPAIGN, CAMPAIGN_PLAN } from '../content/campaign.ts';
 import { MAPS } from '../content/maps/index.ts';
+import { RAW_CONTENT } from '../content/registry.ts';
 import type { MapId } from '../content/types.ts';
 import { devFixtures } from './devRegistry.ts';
 import {
@@ -321,7 +322,7 @@ export function loadoutOffered(mapId: string): boolean {
   // The finale's companion pick is a choice of its own (meta `companionChoices`; QUILL gone under Purge).
   return (
     isSystemUnlocked(save, 'loadout', devUnlocks) &&
-    companionChoices(save, MAPS[mapId].companion).length > 1
+    companionChoices(save, RAW_CONTENT.maps[mapId].companion).length > 1
   );
 }
 

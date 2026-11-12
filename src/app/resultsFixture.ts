@@ -5,7 +5,7 @@
 // pay, and a story choice taken on its card changes nothing (unless `commitChoice`, which writes
 // that choice as a real card does; the run is still never filed).
 import { SCENES, type Scene } from '../content/dialogue/index.ts';
-import { MAPS } from '../content/maps/index.ts';
+import { RAW_CONTENT } from '../content/registry.ts';
 import type { MapId, WaveTag } from '../content/types.ts';
 import { runEnd, type SaveData } from '../meta/index.ts';
 import type { FlagRuleStats } from '../story/flags.ts';
@@ -60,7 +60,7 @@ function statsOf(f: ResultsFixture): FlagRuleStats {
 }
 
 function isMapId(id: string): id is MapId {
-  return Object.hasOwn(MAPS, id);
+  return Object.hasOwn(RAW_CONTENT.maps, id);
 }
 
 /**
@@ -130,7 +130,7 @@ function choirOf(
 /** The run's facts: the map's own when it's registered, else a 10-wave map paying nothing. */
 function inputOf(f: ResultsFixture, save: SaveData | null): RunEndInput {
   const won = f.outcome === 'won';
-  const map = isMapId(f.map) ? MAPS[f.map] : undefined;
+  const map = isMapId(f.map) ? RAW_CONTENT.maps[f.map] : undefined;
   const waveCount = map?.waves.length ?? 10;
   // The map's objective names Perfect Core plain "Perfect" on an Escort, as the battle does, and
   // on a Protect map whose bearers walk (A3M5; its compiled escort).

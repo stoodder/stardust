@@ -5,6 +5,7 @@
 // the same seed with the picks applied (app/battleSetup.ts).
 import type { IdSpace, MapId } from '../content/types.ts';
 import { MAPS } from '../content/maps/index.ts';
+import { RAW_CONTENT } from '../content/registry.ts';
 import { isCampaignMapId } from '../content/dialogue/rules.ts';
 import {
   earnsVeteranMedal,
@@ -70,7 +71,7 @@ export function veteranPickerView(
 ): VeteranPickerView | null {
   const id = campaignMap(mapId);
   if (save === null || id === null) return null;
-  const offers = veteranOffers(save, MAPS[id]);
+  const offers = veteranOffers(save, RAW_CONTENT.maps[id]);
   if (offers.length === 0) return null;
   const record = veteranRecord(save, id);
   const picked = record?.mods ?? [];

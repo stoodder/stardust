@@ -6,6 +6,7 @@ import type { DeepReadonly } from '../shared/types.ts';
 import type { Command } from './commands.ts';
 import { copyCommand } from './commands.ts';
 import { validateConfig, type SimConfig } from './config.ts';
+import { challengeConfig } from './rules.ts';
 import type { SimEvent } from './events.ts';
 import { applyRunModifiers } from './economy.ts';
 import { gateRefugeeGroups } from './escort.ts';
@@ -36,7 +37,9 @@ export interface Sim<K extends IdSpace = LiveIds> {
 }
 
 /** Creates a sim at tick 0, in the map's setup phase. Throws a RangeError on an invalid config. */
-export function createSim<K extends IdSpace = LiveIds>(cfg: SimConfig<K>): Sim<K> {
+export function createSim<K extends IdSpace = LiveIds>(input: SimConfig<K>): Sim<K> {
+  // A challenge map's rules join the config first (sim/rules.ts; T862): `config` is the run's own.
+  const cfg = challengeConfig(input);
   // The sim runs on string ids internally; the id space K only types the API's edges.
   const wide: SimConfig<IdSpace> = cfg;
   const map = validateConfig(wide);

@@ -13,15 +13,18 @@
 // Two kinds of text live here, as in act2.ts:
 // - **New entries** (`ACT3_CODEX`), in map order. A3M1: the Maw; the Leaving Song (with the
 //   Skitterkin's own name for themselves, races.md); Old Thrum if C1 was spared, or "the small
-//   ones' walk" if it was cleared (each gated on `spared_quiet_wave`). A3M2: the Compliance Drone,
-//   the Expediter, the Buffer Protocol and Clean Exit (Everglow's record beside the Journal's
-//   correction), QUILL's directives, and Director Joy Sterling (her staff profile beside its
-//   correction: the Pest Field Guide never had an entry for her, so her original arrives with the
-//   correction). A3M3: the Undertow, Okonkwo's Gap, the Amended Survey. A3M4: the Silencer, the
+//   ones' walk" if it was cleared (each gated on `spared_quiet_wave`); then the three gifts A3M1
+//   opens, each once owned (T769): the Scuttle Den (the Pest Field Guide's record beside the
+//   Journal's correction), the Hum Choir (Everglow's record under QUILL's note and Ves'thara's
+//   margin), and the Stasis Bloom (the Journal's own entry under her margin). A3M2: the
+//   Compliance Drone, the Expediter, the Buffer Protocol and Clean Exit (Everglow's record beside
+//   the Journal's correction), QUILL's directives, and Director Joy Sterling (her staff profile
+//   beside its correction: the Pest Field Guide never had an entry for her, so her original
+//   arrives with the correction). A3M3: the Undertow, Okonkwo's Gap, the Amended Survey. A3M4: the Silencer, the
 //   Liability-Class Enforcer, System Reboot, the Gloop Spitter, and Bricks's pension form
 //   (Form P-19). A3M5: the Auditor, the Maintenance Associate, "Shareholder Value", the Sproing
 //   Pad, and Kip's ledger. A3M6: the Asset Recovery Gunship, the Black Budget Operative, and the
-//   Gathering Maw. The two Skitterkin gifts unlock when owned, whichever door brought the Gloop.
+//   Gathering Maw. Part two's Skitterkin gifts unlock when owned, whichever door brought the Gloop.
 // - **Corrections of earlier entries** (`ACT3_CODEX_VERSIONS`, their `corrected` version): A3M1's
 //   Brood Hauler, Elder, and Bramble (the Act I *Matriarch Chitterbloom*, whose title keeps
 //   Everglow's codename: campaign.md § 7); A3M4's Gerald; A3M6's Everglow Gardens (Dome Row) and
@@ -37,6 +40,9 @@
 // correction unlocks once its subject is met and its map is won (`mapAtLeast`), like any later
 // version (story-runtime.md § Other story systems).
 import type { CodexEntryDef, CodexLaterVersions } from './types.ts';
+
+/** Ves'thara's margin notes (style-guide.md § 6.2), as act2.ts writes them. */
+const HER_HAND = "[In the margin, in Ves'thara's hand: ";
 
 const FROM_A3M1 = { mapAtLeast: 'a3_m01' } as const;
 const FROM_A3M2 = { mapAtLeast: 'a3_m02' } as const;
@@ -117,6 +123,96 @@ export const ACT3_CODEX: readonly CodexEntryDef[] = [
           'sky sang the Leaving Song that day. Skitterkin do not count their dead. They remember ' +
           'them. Her name was Thrum.',
         when: { all: [FROM_A3M1, { flag: 'spared_quiet_wave', eq: false }] },
+      },
+    },
+  },
+
+  // The three gifts A3M1 opens (T769), each unlocked once owned, whichever map brings it: the
+  // Scuttle Den (A3M1's briefing), the Hum Choir (A3M1's debrief if C1 was spared, else A3M4),
+  // the Stasis Bloom (attuned after A3M1).
+  {
+    // Pebble's briefing gift (act3.md § A3M1): "Her friends will dig for you. They dig very fast."
+    // The Pest Field Guide's record arrives with the gift; the Journal's correction once A3M1 is won.
+    id: 'codex_scuttle_den',
+    title: 'Scuttle Den',
+    kind: 'tower',
+    subject: { tower: 'burrow' },
+    versions: {
+      original: {
+        text:
+          'Nest Mound. A lump of dirt, moss and woven grass where Nibblers breed. Look for the ' +
+          'tiny lanterns in the doorways: those are not decorations, they are an occupancy ' +
+          'indicator. One mound can hold a dozen pests, and they come out to defend it, fast ' +
+          'and in numbers. Do not stand on it. Handling tip: one Thumper round down the front ' +
+          'door. Bounty: ★★★ per mound.',
+      },
+      corrected: {
+        text:
+          'A warren home. Families shelter inside, and the lanterns are lit for them. The young ' +
+          'adults run out to defend it, hold on to whatever comes close, then run home to rest. ' +
+          'They can follow anything underground. Nothing out there can hurt them, and they ' +
+          'always come home. When they do, someone inside counts them. Pebble asked them to dig ' +
+          'for you. They dig very fast.',
+        when: FROM_A3M1,
+      },
+    },
+  },
+  {
+    // The Choir's hum carries the Leaving Song (towers.md § Hum Choir; A3M1's scene: "Melody
+    // match: 'Everglow Bright.'"). Everglow's record with QUILL's note and Ves'thara's margin under
+    // it (a record with notes and no correction shows them in the Journal too).
+    id: 'codex_hum_choir',
+    title: 'Hum Choir',
+    kind: 'tower',
+    subject: { tower: 'choir' },
+    versions: {
+      original: {
+        text:
+          'Humming (nuisance). Elderly pests that sit in a ring and hum, sometimes all night. ' +
+          'Residents of Dome 3 call the tune catchy, and some say it sounds like our own jingle, ' +
+          "'Everglow Bright.' Legal has checked: it does not. The humming is non-linguistic " +
+          '(Survey 2346, Okonkwo). Handling tip: earplugs, then a Thumper. Bounty: ★★',
+      },
+      annotated: {
+        text:
+          "[QUILL: Melody match: 'Everglow Bright.' I ran it again for this entry. Same result. " +
+          'Legal compared the tunes. It did not compare the dates. The hum is older. Towers ' +
+          "inside the ring hit harder, and a jam on them ends sooner. I don't have a policy for " +
+          'that. I am glad of it anyway.]',
+        when: FROM_A3M1,
+      },
+      margin: {
+        text:
+          `${HER_HAND}They do not sing to your machines. They sing so that no one walks alone, ` +
+          'and your machines stand near enough to hear. Where someone is singing, the quiet ' +
+          'does not stay long.]',
+        when: FROM_A3M1,
+      },
+    },
+  },
+  {
+    // Ves'thara attunes it (progression.md § Xenotech; upgrades/copy.ts `attune_bloom`); Zibzab's
+    // tune-up line: "I stood in it. Once." Her margin: the Concord's law (races.md § Aelari).
+    id: 'codex_stasis_bloom',
+    title: 'Stasis Bloom',
+    kind: 'tower',
+    subject: { tower: 'bloom' },
+    versions: {
+      original: {
+        text:
+          "Still glass: Aelari threads grown low, like a garden bed. Ves'thara attuned it. " +
+          'Anything that comes into its field moves slower, and every few seconds the field ' +
+          'goes still: whatever is in it stops for a moment, and anything it had begun is broken ' +
+          'off. It cannot reach what has burrowed or slipped out of sight. Zibzab stood in it ' +
+          'once. He does not say for how long.',
+      },
+      margin: {
+        text:
+          `${HER_HAND}It is an old pattern. My people set it around the ones being sung, so ` +
+          'that nothing would walk in before the song was finished. No one will set one around ' +
+          'me. I mind that less than I did. I did not weave this. I mended it. The Concord ' +
+          'allows that much.]',
+        when: FROM_A3M1,
       },
     },
   },

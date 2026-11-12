@@ -85,7 +85,16 @@ const ACT2_LISTS = {
 
 /** Act III's entries by the map whose *Codex* line lists them (story/campaign/act3.md; T611). */
 const ACT3_LISTS = {
-  a3_m01: ['codex_maw', 'codex_leaving_song', 'codex_thrum', 'codex_small_ones_walk'],
+  // Then the three gifts A3M1 opens (T769), each unlocked once owned, whichever map brings it.
+  a3_m01: [
+    'codex_maw',
+    'codex_leaving_song',
+    'codex_thrum',
+    'codex_small_ones_walk',
+    'codex_scuttle_den',
+    'codex_hum_choir',
+    'codex_stasis_bloom',
+  ],
   a3_m02: [
     'codex_compliance',
     'codex_expediter',
@@ -161,6 +170,11 @@ const LATER_VERSIONS: Readonly<Record<string, Partial<Record<CodexVersion, Campa
   codex_buffer_protocol: { corrected: 'a3_m02' },
   codex_clean_exit: { corrected: 'a3_m02' },
   codex_sterling: { corrected: 'a3_m02' },
+  // The gifts A3M1 opens (T769): the Den's record beside its correction; the Choir's record under
+  // QUILL's note and Ves'thara's margin; the Bloom's under her margin.
+  codex_scuttle_den: { corrected: 'a3_m01' },
+  codex_hum_choir: { annotated: 'a3_m01', margin: 'a3_m01' },
+  codex_stasis_bloom: { margin: 'a3_m01' },
   // Part two's corrections of earlier entries (T711): Gerald after his last delivery; Dome Row
   // (Everglow Gardens) and Zibzab once the domes are open.
   codex_gerald: { corrected: 'a3_m04' },
@@ -288,6 +302,9 @@ describe('the codex content', () => {
       'codex_glass_witch',
       'codex_lumenglass',
       'codex_aelari',
+      // Act III's (T769): the Choir and the Bloom, A3M1's gifts, from A3M1 (LATER_VERSIONS).
+      'codex_hum_choir',
+      'codex_stasis_bloom',
     ]);
     expect(Object.keys(CODEX.codex_brood_hauler!.versions)).toEqual([
       'original',

@@ -22,6 +22,13 @@ export {
   type SimRule,
   type SimRuleKind,
 } from './rules.ts'; // T860
+export {
+  allCloaked,
+  challengeConfig,
+  towerFactionRule,
+  CHALLENGE_SOURCE_PREFIX,
+  CHALLENGE_GLASS_CORE_INTEGRITY,
+} from './rules.ts'; // T862: challenge maps
 export { FEATURE_GATES, modifierFeature, type Feature, type GateOwner } from './gates.ts';
 export { companionAbility, companionSlot, type CompanionSlot } from './companion.ts';
 export {

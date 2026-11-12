@@ -12,7 +12,7 @@ import { MAPS } from '../../content/maps/index.ts';
 import { MEMO_IDS } from '../../content/memos/index.ts';
 import { STAR_MAP_SEEN_ID } from '../../content/starMap.ts';
 import { PROTOCOLS, UPGRADES } from '../../content/upgrades/index.ts';
-import type { EnemyId, MapId, MedalId, ProtocolId, TowerId } from '../../content/types.ts';
+import type { EnemyId, MedalId, ProtocolId, TowerId } from '../../content/types.ts';
 import type { CallsignId } from '../../content/dialogue/profile.ts';
 import { tagIndexAfter } from '../../story/tags.ts';
 import { withIssuedTowers } from '../issued.ts';

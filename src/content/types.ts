@@ -33,10 +33,11 @@ export type AbilityId = Extract<keyof typeof ABILITIES, string>;
 export type MapId = Extract<keyof typeof MAPS | LazyMapKey, string>;
 /**
  * The maps a lazy act chunk registers (content/registry.ts `registerActMaps`; architecture.md § 5,
- * *Lazy chunks*): absent from `RAW_CONTENT.maps` until their chunk loads. One `keyof typeof` per
- * registry, imported as a type only so nothing of theirs reaches the initial JS.
+ * *Lazy chunks*): absent from `RAW_CONTENT.maps` until their chunk loads. The keys of every lazy
+ * registry (`keyof` their intersection: an empty one adds no `never`), each imported as a type
+ * only so nothing of theirs reaches the initial JS.
  */
-type LazyMapKey = keyof typeof CHALLENGE_MAPS | keyof typeof ENDLESS_MAPS;
+type LazyMapKey = keyof (typeof CHALLENGE_MAPS & typeof ENDLESS_MAPS);
 
 /** The ids one set of registries defines. Cross-kind references are typed through this. */
 export interface IdSpace {

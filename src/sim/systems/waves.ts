@@ -23,6 +23,8 @@ import { countTags } from '../fireControl.ts';
 import { placeOnRoute } from '../path.ts';
 import { poolAlloc } from '../pool.ts';
 import { factionArmorFlat, withFactionArmor } from '../factionArmor.ts';
+import { allCloaked } from '../rules.ts'; // T862: a challenge map's every-unit cloak
+import { cloakedCompiledEnemy } from '../../content/challenge.ts'; // T862
 import { emit, takeUid, type SimState } from '../state.ts';
 import type { TickContext } from '../tick.ts';
 import { timerBossHpPct } from '../timers.ts'; // T806: a stopped timer's boss bonus
@@ -212,16 +214,20 @@ const WAVE_MODIFIERS = new WeakMap<SimConfig<IdSpace>, WaveModifiers>();
 export function runWaveModifiers(cfg: SimConfig<IdSpace>): WaveModifiers {
   let out = WAVE_MODIFIERS.get(cfg);
   if (out === undefined) {
-    out = waveModifiers(cfg.modifiers, Object.values(cfg.content.enemies));
+    out = waveModifiers(cfg.modifiers, Object.values(cfg.content.enemies), allCloaked(cfg));
     WAVE_MODIFIERS.set(cfg, out);
   }
   return out;
 }
 
-/** Sums the wave modifiers and scales every enemy def (`runWaveModifiers`, uncached). */
+/**
+ * Sums the wave modifiers and scales every enemy def (`runWaveModifiers`, uncached). `cloakAll`
+ * (a challenge map's `allCloaked` rule, sim/rules.ts; T862) cloaks every hostile def too.
+ */
 export function waveModifiers(
   modifiers: readonly Modifier<IdSpace>[],
   defs: readonly CompiledEnemyDef[],
+  cloakAll = false,
 ): WaveModifiers {
   let countdownPct = 0;
   const enemyPct: Record<EnemyStat, number> = { hp: 0, shield: 0, speed: 0 };
@@ -243,10 +249,11 @@ export function waveModifiers(
   const enemies = new Map<string, CompiledEnemyDef>();
   const scaled = enemyPct.hp !== 0 || enemyPct.shield !== 0 || enemyPct.speed !== 0;
   const armor = factionArmorFlat(modifiers);
-  if (scaled || armor !== null) {
+  if (scaled || armor !== null || cloakAll) {
     for (const def of defs) {
       const d = scaled ? scaledEnemy(def, enemyPct) : def;
-      const out = withFactionArmor(d, armor?.get(def.faction) ?? 0);
+      const a = withFactionArmor(d, armor?.get(def.faction) ?? 0);
+      const out = cloakAll ? cloakedCompiledEnemy(a) : a;
       if (out !== def) enemies.set(def.id, out);
     }
   }

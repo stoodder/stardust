@@ -29,6 +29,7 @@ import type {
 import { checkKey, deepFreeze, entriesOf, ticks, type Ctx, type Refs } from './compileHelpers.ts';
 import { compileLinks } from './compileLinks.ts';
 import { compileEnemy } from './compileEnemy.ts';
+import { challengeRefs } from './challenge.ts';
 import { compileMap } from './compileMap.ts';
 import { composeRevisits } from './compileRevisit.ts';
 import { compileTower } from './compileTower.ts';
@@ -159,7 +160,8 @@ export function compileContentWith<K extends IdSpace = LiveIds>(
       of !== undefined && Object.hasOwn(input.maps, of)
         ? (input.maps as Readonly<Record<string, { size: MapDef['size'] }>>)[of]!.size // hasOwn
         : null;
-    const map = compileMap(ctx, refs, def, revisitSize);
+    // A challenge map's groups resolve against its own view of the enemies (challenge.ts; T862).
+    const map = compileMap(ctx, challengeRefs(refs, def), def, revisitSize);
     if (map !== null) maps.set(key, map);
   }
   for (const [i, id] of raw.campaign.entries()) {
