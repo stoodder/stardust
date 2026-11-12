@@ -66,7 +66,7 @@ export const DOME_ROW_INK = sceneInk('everglow', LEGEND);
 const c = (n: ColorName): string => DOME_ROW_INK.char(n);
 
 /** The isometric grid's origin on the still: cell (0, 0)'s top vertex. */
-const ORIGIN = { x: 120, y: 60 } as const;
+const ORIGIN = { x: 136, y: 52 } as const;
 
 /** A cell's top vertex on the still (tile anchor). */
 function cellTop(gx: number, gy: number): { x: number; y: number } {
@@ -76,26 +76,27 @@ function cellTop(gx: number, gy: number): { x: number; y: number } {
 /** A cell's centre on the still (prop, tower and ally anchor). */
 export function cellCentre(gx: number, gy: number): { x: number; y: number } {
   const t = cellTop(gx, gy);
-  return { x: t.x, y: t.y + 8 };
+  return { x: Math.round(t.x), y: Math.round(t.y + 8) };
 }
 
 /** The road runs along grid x at gy = 0; the fence crosses it at gx = GATE_GX (the gate). */
 const GATE_GX = 6;
 /** The domes on the road's far side and the turrets' pads on its near side. */
 const DOMES: readonly (readonly [number, number])[] = [
-  [-4, -2],
-  [-2, -2],
   [0, -2],
   [2, -2],
   [4, -2],
+  [-4, 3],
+  [-2, 3.5],
+  [0, 4],
 ];
 const PADS: readonly (readonly [number, number])[] = [
-  [-2, 2],
-  [1, 2],
-  [4, 2],
+  [-2, 1.5],
+  [1, 1.5],
+  [4, 1.5],
 ];
 /** Bricks's feet, by the gate on the road's far side. */
-export const BRICKS_AT = cellCentre(GATE_GX + 0.3, -1.2);
+export const BRICKS_AT = cellCentre(GATE_GX + 0.4, -1.3);
 /** The Technician on the road, walking down it toward the gate. */
 export const TECHNICIAN_AT = cellCentre(4.4, 0.15);
 /** On `gerald`: the clipboard at the Technician's boots, and Gerald hovering just past it. */

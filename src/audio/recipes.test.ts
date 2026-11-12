@@ -28,6 +28,12 @@ import {
 } from './storyCues.ts';
 import type { ToneLayer } from './types.ts';
 
+/** The prelude's line labelled `label` (T1001), as written. */
+function labelled(label: string): string {
+  const n = SCENES.a1_m01_scene_prelude?.nodes.find((x) => x.label === label);
+  return n?.kind === 'line' ? n.text : '';
+}
+
 const instrumentIds = new Set([...Object.keys(INSTRUMENTS), ...Object.keys(DRUMS)]);
 const drumIds = new Set(Object.keys(DRUMS));
 
@@ -608,10 +614,6 @@ describe("Act III, part two's story sounds (T750)", () => {
     expect(lineSfx('pebble', 'Knock knock! (squeak)')?.sfx).toBe('knock_knock');
     expect(lineSfx('pebble', 'Knock knock!')).toBeNull();
     // The prelude's shuttle (T1001): it rumbles down, and lands, under the PA.
-    const labelled = (label: string): string => {
-      const n = SCENES.a1_m01_scene_prelude!.nodes.find((x) => x.label === label);
-      return n?.kind === 'line' ? n.text : '';
-    };
     expect(lineSfx('pa', labelled('p_descent'))?.sfx).toBe('shuttle_rumble');
     expect(lineSfx('pa', labelled('p_touchdown'))?.sfx).toBe('shuttle_land');
   });
