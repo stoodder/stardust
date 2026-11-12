@@ -43,6 +43,16 @@ function run(
 }
 
 /**
+ * Assertion 13's budget for a run of `ticks`: `RUN_BUDGET_MS` is sized for the finale's run
+ * (about 63,000 ticks, conventions.md § Balance sims), so a longer run (60 Endless waves are about
+ * 123,000) gets the same budget per tick, never less than a finale's.
+ */
+const FINALE_RUN_TICKS = 63_000;
+function budgetFor(ticks: number): number {
+  return RUN_BUDGET_MS * Math.max(1, ticks / FINALE_RUN_TICKS);
+}
+
+/**
  * `go()`'s result with the faster CPU time of two runs: run once, and again only when the first is
  * over `budgetMs` (the sim is deterministic, so both results are the same run).
  */
@@ -71,8 +81,9 @@ describe('Endless on the sim', () => {
       expect(result.outcome).toBe('won');
       expect(held(result)).toBe(60);
       // ~1.0 s on the T861 machine (60 waves, ~123,000 ticks, ~2,000 units); seed 3 since D156's
-      // roster ~1.1–1.2 s where seed 2 had taken 1.4–1.7 s on the same machine.
-      expect(cpuMs).toBeLessThan(RUN_BUDGET_MS);
+      // roster ~1.1–1.2 s where seed 2 had taken 1.4–1.7 s on the same machine. Twice a finale's
+      // length, so twice its budget (`budgetFor`): ~3.9 s.
+      expect(cpuMs).toBeLessThan(budgetFor(result.ticks));
     },
     HARNESS_TEST_TIMEOUT_MS,
   );
@@ -86,7 +97,7 @@ describe('Endless on the sim', () => {
         const { result, cpuMs } = fasterOfTwo(() => run(seed, ENDLESS.waves));
         expect(result.outcome).toBe('lost');
         expect(held(result)).toBeGreaterThanOrEqual(20);
-        expect(cpuMs).toBeLessThan(RUN_BUDGET_MS);
+        expect(cpuMs).toBeLessThan(budgetFor(result.ticks));
       }
       const idle = run(1, ENDLESS.waves, [], 'none').result;
       expect(idle.outcome).toBe('lost');
