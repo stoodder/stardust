@@ -232,7 +232,7 @@ export function Title() {
             {PANEL_TITLE[panel]}
           </h2>
           {panel === 'import' ? (
-            <ImportPanel onCancel={() => open('main')} />
+            <ImportPanel onCancel={() => open('main')} quietLabel />
           ) : (
             <>
               <SlotList
@@ -282,8 +282,14 @@ export function Title() {
         </p>
       )}
       <MuteButton class="sd-title-sound" />
+      {/* After the dawn the line is a remembrance, not a tip: no chip (T803c). */}
       <p class="sd-title-tip" data-testid="title-tip" data-voice="tip">
-        <span class="sd-title-tip-label">Tip</span> {titleTip(slots.value, continueSlot())}
+        {!dawn && (
+          <>
+            <span class="sd-title-tip-label">Tip</span>{' '}
+          </>
+        )}
+        {titleTip(slots.value, continueSlot())}
       </p>
     </main>
   );

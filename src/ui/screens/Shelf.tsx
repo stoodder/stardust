@@ -156,9 +156,14 @@ function OfferRow({
   } else if (r === 'not_stocked' || r === 'pane_locked') {
     wait = arrivalText(offer, save);
   } else if (r === 'not_owned' || r === 'no_specs') {
+    const needs = offer.needs ?? offer.tower ?? '';
+    // An Engineering row already names its turret: it says only that it isn't yours yet.
+    const named = offer.item.kind === 'specs' && offer.item.tower === needs;
     wait =
       r === 'not_owned'
-        ? `Needs the ${towerName(offer.needs ?? offer.tower ?? '')}`
+        ? named
+          ? 'Not owned yet'
+          : `Needs the ${towerName(needs)}`
         : 'Arrives in a later shipment';
   } else if (r === 'maxed') {
     side = <span class="sd-offer-owned">{offer.gift ? 'Given' : 'Owned'}</span>;

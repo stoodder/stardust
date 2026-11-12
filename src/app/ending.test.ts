@@ -326,7 +326,9 @@ describe('Results: Voices held (T821 relay)', () => {
       total: 20,
     });
     expect(voicesHeld({ choir: { singers: 0, voices: 0 }, stats: { voicesMin: 0 } })).toBeNull();
+    // A won card lists no waves (T803e): Voices held is its first row.
     const row = resultsStats({
+      outcome: 'won',
       wavesSurvived: 26,
       waveCount: 26,
       integrity: 20,
@@ -334,7 +336,7 @@ describe('Results: Voices held (T821 relay)', () => {
       escort: null,
       asset: null,
       voices: { n: 13, total: 20 },
-    })[1];
+    })[0];
     expect(row).toEqual({ id: 'voices', label: 'Voices held', value: '13 of 20', note: null });
   });
 });

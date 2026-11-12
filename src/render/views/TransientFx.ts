@@ -910,6 +910,14 @@ export class TransientFx {
         f.active = false;
         f.img.setVisible(false);
       } else {
+        // One already up when the name tag shows under it steps above the tag (T803b).
+        const o = this.#obstacle;
+        if (
+          o !== null &&
+          o.overlaps(f.cx - f.w / 2, f.baseY - FLOAT_ROW_PX, f.cx + f.w / 2, f.baseY)
+        ) {
+          f.y = o.top - 1 + floatRise(Math.min(f.ms, FLOAT_MS));
+        }
         this.#syncFloat(f);
       }
     }

@@ -41,7 +41,8 @@ describe('the Stardust line', () => {
     // No modifiers, or a first clear (they ride replays only): no note.
     expect(veteranNote({ ...replay, veteranPct: 0 })).toBeNull();
     expect(veteranNote({ ...replay, source: 'first_clear' })).toBeNull();
-    expect(stardustLine({ ...replay, veteranPct: undefined })).toEqual({ label: 'Overtime bonus' });
+    const { veteranPct: _bonus, ...plain } = replay;
+    expect(stardustLine(plain)).toEqual({ label: 'Overtime bonus' });
   });
 
   it("wears the act's Stardust icon: the gem in Acts I–II, the gift stone from Act III", () => {

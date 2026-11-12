@@ -431,12 +431,13 @@ section.chamfer,
   color: var(--sd-steel-3);
 }
 
+/* Up to 128 px (T803b: room for a spawn's chip before its groups, inside the corner's 150). */
 .hud-preview {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 2px 5px;
-  max-width: 112px;
+  max-width: 128px;
   margin: 0;
   padding: 0;
   list-style: none;

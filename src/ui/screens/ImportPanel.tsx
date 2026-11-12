@@ -19,8 +19,18 @@ type Step =
   | { readonly kind: 'paste'; readonly error: string | null; readonly busy: boolean }
   | { readonly kind: 'pick'; readonly check: Extract<ImportCheck, { ok: true }> };
 
-/** The import flow, ending on the imported campaign's Shift board. */
-export function ImportPanel({ onCancel }: { onCancel: () => void }) {
+/**
+ * The import flow, ending on the imported campaign's Shift board. `quietLabel`: the field's label
+ * is for screen readers only, where a heading over the panel already says it (the Title's
+ * "Import a shift code"; T803c).
+ */
+export function ImportPanel({
+  onCancel,
+  quietLabel = false,
+}: {
+  onCancel: () => void;
+  quietLabel?: boolean;
+}) {
   const [text, setText] = useState('');
   const [step, setStep] = useState<Step>({ kind: 'paste', error: null, busy: false });
   const [confirm, setConfirm] = useState<1 | 2 | 3 | null>(null);
@@ -48,7 +58,10 @@ export function ImportPanel({ onCancel }: { onCancel: () => void }) {
   if (step.kind === 'paste') {
     return (
       <div class="sd-import">
-        <label class="sd-field-label" for="sd-import-code">
+        <label
+          class={quietLabel ? 'sd-visually-hidden' : 'sd-field-label'}
+          for="sd-import-code"
+        >
           Paste a shift code
         </label>
         <textarea

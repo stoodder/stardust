@@ -408,8 +408,10 @@ describe('"Who\'s there?" reuses the forced input (core-loop.md § 2.11)', () =>
 
 describe("the finale's Results and rewards (finale.md § FIN)", () => {
   it("lists Voices in Core integrity's place on a choir map", () => {
+    // A loss: the waves survived, then the Voices (a win's card lists no waves; T803e).
     const r = {
-      wavesSurvived: 26,
+      outcome: 'lost' as const,
+      wavesSurvived: 20,
       waveCount: 26,
       integrity: 20,
       maxIntegrity: 20,
@@ -425,6 +427,9 @@ describe("the finale's Results and rewards (finale.md § FIN)", () => {
       value: '7 of 10',
     });
     expect(resultsStats(r).map((s) => s.id)).toEqual(['waves', 'integrity']);
+    expect(
+      resultsStats({ ...r, outcome: 'won', voices: { n: 7, total: 10 } }).map((s) => s.id),
+    ).toEqual(['voices']);
   });
 
   it('pays 500 Stardust on the first clear, and Intel 3 (+1 for Waymarks)', () => {

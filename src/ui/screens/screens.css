@@ -388,6 +388,13 @@
   font-family: var(--font-heading);
 }
 
+/* An empty slot with nothing to do on it (Load's list): one slim line (T803c). */
+.sd-slot-empty:not(:has(.sd-slot-actions > *)) {
+  min-height: 12px;
+  padding-block: 1px;
+  background: var(--sd-ink-1);
+}
+
 .sd-slot-label {
   flex: none;
   width: 40px;

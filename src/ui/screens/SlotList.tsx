@@ -51,7 +51,7 @@ export function SlotList({
   return (
     <ul class="sd-slots" aria-label={label}>
       {slots.map((view) => (
-        <li key={view.slot} class="sd-slot">
+        <li key={view.slot} class={view.status === 'empty' ? 'sd-slot sd-slot-empty' : 'sd-slot'}>
           <span class="sd-slot-label">Slot {view.slot}</span>
           <SlotSummary view={view} />
           <span class="sd-slot-actions">{actions(view)}</span>
