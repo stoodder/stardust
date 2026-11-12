@@ -9,13 +9,7 @@ import * as Phaser from 'phaser';
 import { rgbOf } from '../../content/palettes/master.ts';
 import { screenToGrid, type Vec2 } from '../iso.ts';
 import { isSunlit } from '../vfx/songNightPixels.ts';
-import {
-  DAWN_RIM_UNDER,
-  DAWN_RIMS,
-  MAX_DAWN_RIMMED,
-  takesDawnRim,
-  type RimCandidate,
-} from './dawnRimLook.ts';
+import { DAWN_RIM_UNDER, DAWN_RIMS, MAX_DAWN_RIMMED, takesDawnRim } from './dawnRimLook.ts';
 import { isScenery } from './scenery.ts';
 import type { ViewContext } from './ViewContext.ts';
 
@@ -78,9 +72,9 @@ export class DawnRimView {
         cand.alpha = obj.alpha;
         cand.blendMode = obj.blendMode;
         cand.tintMode = obj.tintMode;
-        cand.frameName = String(obj.frame.name);
+        cand.frameName = obj.frame.name;
         cand.scenery = isScenery(obj);
-        if (!takesDawnRim(cand as RimCandidate)) continue;
+        if (!takesDawnRim(cand)) continue;
         screenToGrid(obj.x, obj.y, this.#ctx.origin, at);
         if (!isSunlit(at.x, this.#cols, sunStep)) continue;
         rimmed++;
