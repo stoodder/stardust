@@ -10,6 +10,7 @@ import { c5LeadInMs } from '../../ui/screens/c5.ts';
 import { dawnLeadInMs } from '../../ui/screens/dawn.ts';
 import { registerEnding } from '../ending.ts';
 import { ENDING_PLAYER } from '../endingPlay.ts';
+import './postGame.ts'; // T863: the post-game shell registers itself
 
 registerFinaleUi({
   EndingLayer,

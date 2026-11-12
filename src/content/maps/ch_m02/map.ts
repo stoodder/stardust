@@ -30,7 +30,7 @@ export const map = defineMapLayout({
     tagline: 'Every unit comes in cloaked.',
     rules: [{ kind: 'allCloaked' }],
   },
-  startCredits: 1400,
+  startCredits: 2200,
   coreIntegrity: 20,
   // A challenge pays Intel for its medals, never Stardust.
   stardust: 0,

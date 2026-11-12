@@ -63,7 +63,7 @@ export interface HookEnv {
   results(fixture: ResultsFixture): Promise<void>;
 }
 
-const SPEEDS: ReadonlySet<number> = new Set([0, 1, 2]);
+const SPEEDS: ReadonlySet<number> = new Set([0, 1, 2, 3]);
 
 /** The sim's state as the hooks expose it (plain string ids). */
 function stateOf(sim: Sim<IdSpace>): HookState {

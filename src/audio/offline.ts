@@ -31,8 +31,18 @@ const TAIL_SEC = 0.3;
 export interface SpeechMargin {
   readonly blip: SfxId;
   readonly blipDb: number;
+  /**
+   * The rest of the mix over the line's opening, rendered live-like (each sound made one pump step
+   * ahead, as the game makes it), and the blip's margin over it (the gate's: ≥ 6 dB).
+   */
   readonly restDb: number;
   readonly marginDb: number;
+  /**
+   * The cautious margin (T850, after T766): against the louder of that and the same timeline with
+   * each sound made AHEAD_SEC ahead, where a voice the voice book steals rings on to its
+   * successor's start (up to 3 dB louder than the game makes it). A floor, not the target.
+   */
+  readonly cautiousDb: number;
 }
 
 /** Levels through the full master chain, and the raw mix before the limiter (headroom). */
@@ -58,6 +68,11 @@ const STEP_SEC = PUMP_MS / 1000;
 interface Timed {
   readonly t: number;
   readonly run: (s: Synth, delay: number) => void;
+  /**
+   * A sound (made `playAhead` early in a render that asks for it); otherwise a duck or a hold,
+   * which always runs on its own step.
+   */
+  readonly sound?: true;
 }
 
 /**
@@ -82,18 +97,26 @@ async function renderBuffer(
   opts: SynthOptions,
   timed: readonly Timed[] | null = null,
   ahead = STEP_SEC,
+  playAhead = ahead,
 ): Promise<Float32Array> {
   const ctx = new OfflineAudioContext(1, Math.ceil(seconds * RATE), RATE);
   const synth = new Synth(ctx, opts);
   synth.setVolumes(DEFAULT_VOLUMES);
   build(synth);
   if (timed !== null) {
-    const queue = timed.toSorted((a, b) => a.t - b.t);
-    let next = 0;
+    // Sounds may be made further ahead than the ducks and holds (`playAhead`), each queue in order.
+    const sounds = timed.filter((e) => e.sound === true).toSorted((a, b) => a.t - b.t);
+    const holds = timed.filter((e) => e.sound !== true).toSorted((a, b) => a.t - b.t);
+    let nextSound = 0;
+    let nextHold = 0;
     const step = (): void => {
       const now = ctx.currentTime;
-      for (; next < queue.length && queue[next]!.t < now + ahead; next++) {
-        const e = queue[next]!; // next < length
+      for (; nextHold < holds.length && holds[nextHold]!.t < now + ahead; nextHold++) {
+        const e = holds[nextHold]!; // nextHold < length
+        e.run(synth, Math.max(0, e.t - now));
+      }
+      for (; nextSound < sounds.length && sounds[nextSound]!.t < now + playAhead; nextSound++) {
+        const e = sounds[nextSound]!; // nextSound < length
         e.run(synth, Math.max(0, e.t - now));
       }
       synth.pump();
@@ -239,6 +262,14 @@ const darkLevel = (dark: number): number => 1 - DARK_SOUNDS.duckDepth * dark;
  *   splitting and merging, bearers humming home, Gerald's delivery, Pebble's knock-knock, the
  *   Hollow's hum, and Kip speaking over it. Its ducked render measures Kip's, Pebble's and QUILL's
  *   blips only (each blip is a render of its own; T766).
+ * - **fin**: the finale's Phase 2 at its worst (T850): the hymn with every layer up under Pebble's
+ *   hum at the Halls, the rattle (Rivets, Mindspikes and their echoes, swarmlings, leapers), rest
+ *   chimes three a second and scatters, re-forming, the drill and the Bore breaking through, every
+ *   Unsung sound (rising, splitting, rising again, digging, churning, surfacing, dug out, the Song,
+ *   its call, at rest), singers hushed, the choir halting and walking on, the Voices faltering,
+ *   Directive 0's glitch with two stamps and the class's return, a lantern, the echo, a Silencer's
+ *   tendril and the static, phasing, Dawn's light and its cascade of chimes, and QUILL speaking.
+ *   No Hollow duck: the song lets it go. It measures QUILL's, Pebble's and Ves'thara's blips.
  */
 export const STORMS = {
   act1: {
@@ -522,6 +553,60 @@ export const STORMS = {
     hollow: true,
     margins: ['blip.kip', 'blip.pebble', 'blip.quill'],
   },
+  fin: {
+    theme: 'choir_hymn',
+    cue: 'halls_hum',
+    sounds(at) {
+      for (let i = 1; i * 0.05 < STORM_SEC - 1; i++) {
+        const t = i * 0.05;
+        at(t, 'rivet_shot');
+        if (i % 4 === 2) at(t, 'mindspike_shot');
+        if (i % 8 === 2) at(t + 0.02, 'echo_burst');
+        if (i % 3 === 0) at(t, 'swarm_latch');
+        if (i % 7 === 3) at(t, 'swarm_home');
+        if (i % 4 === 1) at(t, 'leaper_boing');
+        if (i % 3 === 1) at(t, 'rest_chime', [0, 5, 9, 10, 7, 5][i % 6]);
+        if (i % 9 === 5) at(t, 'scatter_hiss');
+        if (i % 20 === 13) at(t, 'scatter_reform');
+        if (i % 30 === 0) at(t, 'bore_drill', 3);
+        if (i % 12 === 7) at(t, 'phase_tell');
+        if (i % 20 === 7) at(t, 'jam_static');
+        if (i % 10 === 1) at(t, 'jammed');
+        if (i % 12 === 7) at(t, 'armor_plink');
+      }
+      at(0.2, 'unsung_arrive');
+      at(0.6, 'jam_tendril');
+      at(1, 'wave_start');
+      at(1, 'hollow_hum');
+      at(1.2, 'bore_breach');
+      at(1.5, 'choir_halt');
+      at(1.8, 'singer_hushed');
+      at(2, 'unsung_split');
+      at(2.4, 'lantern_lit', 5);
+      at(2.7, 'unsung_rise');
+      at(3, 'unsung_dig');
+      at(3.2, 'unsung_churn');
+      at(4.7, 'unsung_surface');
+      at(4.8, 'singer_hushed');
+      at(5, 'directive_glitch');
+      at(5, 'revoke_stamp');
+      at(5.14, 'revoke_stamp');
+      at(5.4, 'unsung_dug_out');
+      at(5.6, 'choir_walk');
+      at(5.8, 'voices_low');
+      at(6, 'class_restored');
+      at(6.3, 'unsung_song');
+      at(6.6, 'unsung_call');
+      at(6.9, 'echo_rise');
+      at(7.2, 'upgrade');
+      at(8, 'unsung_rest');
+      at(8.2, 'dawn_break');
+      for (let k = 0; k < 8; k++) at(8.3 + k * 0.09, 'rest_chime', [0, 5, 9, 10, 7, 5][k % 6]);
+    },
+    line: { at: 7.6, blip: 'blip.quill' },
+    hollow: false,
+    margins: ['blip.quill', 'blip.pebble', 'blip.vesthara'],
+  },
 } as const satisfies Readonly<Record<string, Storm>>;
 export type StormId = keyof typeof STORMS;
 
@@ -557,6 +642,7 @@ function duckedTimeline(storm: Storm, withBlip: boolean): Timed[] {
   const timed: Timed[] = stormPlays(storm, withBlip).map(([t, id, pitch]) => ({
     t,
     run: (s, delay) => s.play(id, { delay, pitch }),
+    sound: true,
   }));
   if (storm.hollow) {
     timed.push({
@@ -606,13 +692,18 @@ function momentDb(samples: Float32Array, from: number, sec = MOMENT_SEC): number
  * at its loudest moment (MOMENT_SEC, stepped every 5 ms) against the rest's level over the line's
  * opening (OPENING_SEC from `at`; an average, so one shot landing on the moment doesn't decide it).
  */
-async function speechMargin(blip: SfxId, rest: Float32Array, at: number): Promise<SpeechMargin> {
+async function speechMargin(
+  blip: SfxId,
+  rests: readonly [live: Float32Array, ahead: Float32Array],
+  at: number,
+): Promise<SpeechMargin> {
   const dur = recipeDuration(SFX[blip]);
   const alone = await renderBuffer(dur + 0.1, (s) => s.play(blip), { rawMaster: true });
   let blipDb = -Infinity;
   for (let t = 0; t + MOMENT_SEC <= dur; t += 0.005) blipDb = Math.max(blipDb, momentDb(alone, t));
-  const restDb = momentDb(rest, at, OPENING_SEC);
-  return { blip, blipDb, restDb, marginDb: blipDb - restDb };
+  const restDb = momentDb(rests[0], at, OPENING_SEC);
+  const cautious = Math.max(restDb, momentDb(rests[1], at, OPENING_SEC));
+  return { blip, blipDb, restDb, marginDb: blipDb - restDb, cautiousDb: blipDb - cautious };
 }
 
 /**
@@ -640,18 +731,23 @@ export async function renderStorm(
     return { out: analyze([out], RATE), raw: analyze([raw], RATE) };
   }
   const full = duckedTimeline(storm, true);
-  // Three independent contexts, rendered at once (each on its own audio thread, so a stepped
+  const restTimeline = duckedTimeline(storm, false);
+  // Four independent contexts, rendered at once (each on its own audio thread, so a stepped
   // render's suspends overlap the others' work; T564b): the mix, its raw master, and the rest of
-  // the mix without the line's blip (the raw graph is linear), measured against every blip.
-  const [out, raw, rest] = await Promise.all([
+  // the mix without the line's blip (the raw graph is linear), live-like and with its sounds made
+  // AHEAD_SEC ahead (the cautious bed; T850), measured against every blip.
+  const [out, raw, rest, restAhead] = await Promise.all([
     renderBuffer(STORM_SEC, music, {}, full),
     renderBuffer(STORM_SEC, music, { rawMaster: true }, full),
-    renderBuffer(STORM_SEC, music, { rawMaster: true }, duckedTimeline(storm, false)),
+    renderBuffer(STORM_SEC, music, { rawMaster: true }, restTimeline),
+    renderBuffer(STORM_SEC, music, { rawMaster: true }, restTimeline, STEP_SEC, AHEAD_SEC),
   ]);
   const blips = [
     storm.line.blip,
     ...(storm.margins ?? BLIP_IDS).filter((b) => b !== storm.line.blip),
   ];
-  const speech = await Promise.all(blips.map((b) => speechMargin(b, rest, storm.line.at)));
+  const speech = await Promise.all(
+    blips.map((b) => speechMargin(b, [rest, restAhead], storm.line.at)),
+  );
   return { out: analyze([out], RATE), raw: analyze([raw], RATE), speech };
 }

@@ -18,6 +18,7 @@ import {
   type StarNodeView,
 } from '../../app/starMap.ts';
 import { activeSave } from '../../app/save.ts';
+import { postGameUi, type PostGameUi } from '../../app/postGameHooks.ts'; // T863
 import {
   NODE_BOX,
   NODE_CLEAR_BOX,
@@ -66,10 +67,12 @@ const NODE_ACCENT: Readonly<Record<StarMapView['act'], string>> = {
  * change).
  */
 let chartCache: { readonly key: string; readonly image: RgbaImage } | null = null;
-function chartImage(view: StarMapView): RgbaImage {
-  const key = `${view.phase}|${JSON.stringify(view.legs)}|${view.changes.join(',')}`;
+function chartImage(view: StarMapView, pg: PostGameUi | null): RgbaImage {
+  // The `dawn` chart wears C5's answer once the finale's chunk has registered its look (T863).
+  const dawn = view.phase === 'dawn' && pg !== null ? pg.dawnLook(view.ending) : null;
+  const key = `${view.phase}|${JSON.stringify(view.legs)}|${view.changes.join(',')}|${dawn === null ? '-' : (view.ending ?? 'none')}`;
   if (chartCache?.key !== key) {
-    chartCache = { key, image: starMapChart(view.phase, view.legs, view.changes) };
+    chartCache = { key, image: starMapChart(view.phase, view.legs, view.changes, dawn) };
   }
   return chartCache.image;
 }
@@ -77,9 +80,10 @@ function chartImage(view: StarMapView): RgbaImage {
 /** The chart, painted 1:1 into its <canvas>. */
 function Chart({ view }: { view: StarMapView }) {
   const canvas = useRef<HTMLCanvasElement | null>(null);
+  const pg = postGameUi.value;
   useLayoutEffect(() => {
-    if (canvas.current !== null) drawImageAt(canvas.current, chartImage(view), 0, 0);
-  }, [view.phase, view.legs, view.changes]);
+    if (canvas.current !== null) drawImageAt(canvas.current, chartImage(view, pg), 0, 0);
+  }, [view.phase, view.legs, view.changes, view.ending, pg]);
   return <canvas class="sd-starmap-canvas" width={640} height={360} ref={canvas} />;
 }
 
@@ -109,6 +113,7 @@ function Node({
   node,
   view,
   selected,
+  open,
   frontier,
   current,
   onSelect,
@@ -117,7 +122,10 @@ function Node({
 }: {
   node: StarNodeView;
   view: StarMapView;
+  /** The roving tab stop (and, unless a post-game entry is open, the selection's brackets). */
   selected: boolean;
+  /** The node panel is open on the selection (false while a post-game entry's panel is). */
+  open: boolean;
   frontier: boolean;
   current: boolean;
   onSelect: () => void;
@@ -125,10 +133,11 @@ function Node({
   buttonRef: (el: HTMLButtonElement | null) => void;
 }) {
   const accent = NODE_ACCENT[view.act];
-  const plate = selected || frontier;
+  const shown = selected && open;
+  const plate = shown || frontier;
   return (
     <li
-      class={`sd-star-node sd-star-${node.state}${selected ? ' sd-star-selected' : ''}`}
+      class={`sd-star-node sd-star-${node.state}${shown ? ' sd-star-selected' : ''}`}
       style={{ left: `${node.x}px`, top: `${node.y}px` }}
       data-node={node.id}
     >
@@ -137,7 +146,7 @@ function Node({
         class="sd-star-button"
         aria-label={node.label}
         aria-current={current ? 'location' : undefined}
-        aria-controls={selected ? 'sd-star-panel' : undefined}
+        aria-controls={shown ? 'sd-star-panel' : undefined}
         tabIndex={selected ? 0 : -1}
         ref={buttonRef}
         onClick={onSelect}
@@ -153,7 +162,7 @@ function Node({
               class={`sd-star-ping sd-star-ping-${i}`}
             />
           ))}
-        {selected && <Glyph id="ui.star_node" frame="focus" class="sd-star-focus" />}
+        {shown && <Glyph id="ui.star_node" frame="focus" class="sd-star-focus" />}
       </button>
       {node.state === 'won' && (
         <Glyph id="ui.star_pips" frame={String(Math.min(3, node.medals))} class="sd-star-pips" />
@@ -291,6 +300,12 @@ export function StarMap() {
     return save === null ? null : starMapView(save);
   }, [camp]);
   const [selected, setSelected] = useState(() => (view === null ? 0 : arrivalIndex(view)));
+  // T863: after the finale the post-game plate leads; its first entry (Endless) is selected on
+  // arrival and its panel stands in the node panel's place. Null while a node is selected.
+  const pg = postGameUi.value;
+  const [post, setPost] = useState<string | null>(() =>
+    view?.postGame === true && pg !== null ? pg.firstEntry() : null,
+  );
   const [panelPos, setPanelPos] = useState<{ left: number; top: number } | null>(null);
   // The region labels the placed panel would sit over: hidden while it's there (T512).
   const [covered, setCovered] = useState<ReadonlySet<string>>(() => new Set());
@@ -362,7 +377,8 @@ export function StarMap() {
   // A region label the panel covers hides (the panel's plate would show it through, half read).
   useLayoutEffect(() => {
     if (panelPos === null || panel.current === null || regions.current === null) return;
-    const p = panel.current.getBoundingClientRect();
+    const open = document.getElementById('sd-pg-panel') ?? panel.current;
+    const p = open.getBoundingClientRect();
     const under = new Set<string>();
     for (const el of regions.current.querySelectorAll<HTMLElement>('[data-region]')) {
       const r = el.getBoundingClientRect();
@@ -373,7 +389,7 @@ export function StarMap() {
     setCovered((prev) =>
       prev.size === under.size && [...under].every((id) => prev.has(id)) ? prev : under,
     );
-  }, [panelPos, selected]);
+  }, [panelPos, selected, post]);
 
   // Esc in the panel returns to its node; on a node it does nothing (falls through).
   useEscape(() => {
@@ -391,6 +407,7 @@ export function StarMap() {
     const n = view.nodes[i];
     if (n === undefined) return;
     arrival.current = false;
+    setPost(null);
     setSelected(i);
     // The node takes the focus now (it's already in the page), so a key pressed next reaches it;
     // the panel's button once the panel has rendered (a teaser has none: stay on the node).
@@ -424,7 +441,7 @@ export function StarMap() {
 
   return (
     <main
-      class={`sd-screen sd-starmap${still ? ' sd-still' : ''}`}
+      class={`sd-screen sd-starmap${still ? ' sd-still' : ''}${view.postGame ? ' sd-starmap-post' : ''}`}
       data-act={view.act}
       data-phase={view.phase}
       aria-labelledby="sd-starmap-heading"
@@ -473,6 +490,17 @@ export function StarMap() {
             {STAR_MAP_ACCESS_NOTICE}
           </p>
         )}
+        {/* T863: the post-game plate (Endless, the challenges, "Watch the epilogue"). */}
+        {view.postGame && pg !== null && (
+          <pg.Layer
+            selected={post}
+            select={(id) => {
+              arrival.current = false;
+              setPost(id);
+            }}
+            arrival={arrival.current && post !== null}
+          />
+        )}
       </div>
       <ol class="sd-star-nodes" aria-label="Shifts">
         {view.nodes.map((n, i) => (
@@ -481,6 +509,7 @@ export function StarMap() {
             node={n}
             view={view}
             selected={i === selected}
+            open={post === null}
             frontier={n.id === view.frontier}
             current={n.id === view.marker}
             onSelect={() => select(i, 'panel')}
@@ -505,15 +534,17 @@ export function StarMap() {
           <Glyph id="ui.star_marker" frame="idle_0" />
         </span>
       )}
-      <Panel
-        key={node.id}
-        node={node}
-        pos={panelPos}
-        panelRef={(el) => {
-          panel.current = el;
-        }}
-        focusButton={arrival.current && selected === arrivalAt && node.state !== 'coming_soon'}
-      />
+      {post === null && (
+        <Panel
+          key={node.id}
+          node={node}
+          pos={panelPos}
+          panelRef={(el) => {
+            panel.current = el;
+          }}
+          focusButton={arrival.current && selected === arrivalAt && node.state !== 'coming_soon'}
+        />
+      )}
       <footer class="sd-starmap-footer">
         <button type="button" class="sd-button" onClick={toTitle}>
           Title

@@ -34,7 +34,7 @@ export const FIN_SFX = {
    * the table to the next of the six notes. Priority 2, so the Hollow's quiet keeps it.
    */
   rest_chime: {
-    gain: 0.3,
+    gain: 0.25,
     priority: 2,
     minGapMs: 60,
     maxVoices: 4,
@@ -63,7 +63,7 @@ export const FIN_SFX = {
    * two wrong notes a semitone apart sliding away under it.
    */
   scatter_hiss: {
-    gain: 0.22,
+    gain: 0.4,
     priority: 2,
     minGapMs: 70,
     maxVoices: 2,
@@ -126,7 +126,7 @@ export const FIN_SFX = {
    * the music dips with it.
    */
   singer_hushed: {
-    gain: 0.32,
+    gain: 0.25,
     priority: 2,
     minGapMs: 120,
     maxVoices: 2,
@@ -324,7 +324,7 @@ export const FIN_SFX = {
    * under a Rivet shot.
    */
   bore_drill: {
-    gain: 0.2,
+    gain: 0.11,
     priority: 1,
     minGapMs: 600,
     maxVoices: 1,

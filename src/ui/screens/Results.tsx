@@ -18,6 +18,7 @@
 // stays on it.
 // Compact by design: everything fits 360 game px of height.
 import { campaignScreenName } from '../../app/starMap.ts';
+import { endlessResult, postGameUi } from '../../app/postGameHooks.ts'; // T863
 import { silkText } from '../silk.ts';
 import { useEffect, useState } from 'preact/hooks';
 import {
@@ -700,6 +701,16 @@ export function Results() {
   const result = runResult.value;
   if (result === null) return null;
   const held = heldCard(result);
+  // T863: an Endless run ends on its score screen (the finale's chunk), in the card's place.
+  const score = endlessResult.value;
+  const Score = postGameUi.value?.EndlessScore ?? null;
+  if (score !== null && Score !== null && score.map === result.mapId) {
+    return (
+      <main class="sd-screen sd-results" inert={sceneBlocks.value} data-act={result.theme}>
+        <Score result={score} />
+      </main>
+    );
+  }
   return (
     // Inert under a scene (the stinger plays over the card as it's dismissed).
     // The map's UI act theme (its presentation dial): Act II's card edges in orange.

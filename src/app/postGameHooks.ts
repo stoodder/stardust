@@ -110,3 +110,38 @@ export function withRunContent(cfg: SimConfig<IdSpace>): SimConfig<IdSpace> {
 export const fastestSpeed = computed<2 | 3>(() =>
   campaign.value !== null && campaign.value.frontier === null ? 3 : 2,
 );
+
+/** The HUD's Endless line for the next wave (T863; design/maps.md § 8, *Counter blocks*). */
+export interface EndlessNextLine {
+  /** The next wave's block's required counters ("Armor"); empty in the warm-up. */
+  readonly needs: readonly string[];
+  /**
+   * In a block's last two waves, what the next block brings: its new counters, else (none new) all
+   * of its counters; null otherwise.
+   */
+  readonly then: readonly string[] | null;
+  /** The line for screen readers. */
+  readonly spoken: string;
+}
+
+const listed = (xs: readonly string[]): string =>
+  xs.length <= 1 ? (xs[0] ?? '') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`;
+
+/** The Endless line for `nextWave` of `run`, or null past the run's last block. */
+export function endlessNextLine(run: EndlessRunView, nextWave: number): EndlessNextLine | null {
+  const at = run.blocks.findIndex((b) => nextWave >= b.first && nextWave <= b.last);
+  const block = run.blocks[at];
+  if (block === undefined) return null;
+  const after = run.blocks[at + 1];
+  const then =
+    after !== undefined && nextWave >= block.last - 1
+      ? after.fresh.length > 0
+        ? after.fresh
+        : after.counters
+      : null;
+  const needs = block.counters;
+  const spoken =
+    (needs.length === 0 ? 'Warm-up block.' : `This block needs ${listed(needs)}.`) +
+    (then === null || then.length === 0 ? '' : ` The next block brings ${listed(then)}.`);
+  return { needs, then: then !== null && then.length === 0 ? null : then, spoken };
+}

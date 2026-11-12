@@ -33,6 +33,7 @@ import { aimOf, priceOf, readyInWaves } from './hudViews.ts';
 import { revokedText } from './revoked.ts'; // T606
 import { crateHere, crateIntercepts } from '../ui/screens/crate.ts'; // T714
 import { activeSave } from './save.ts';
+import { fastestSpeed } from './postGameHooks.ts'; // T863
 import type { Speed } from './testHookTypes.ts';
 
 /** What commands act on: the running battle, or null outside one. */
@@ -70,9 +71,13 @@ export function togglePause(): void {
   setSpeed(speedSignal.value === 0 ? lastRunningSpeed : 0);
 }
 
-/** F: toggle 1× and 2× (and unpause). */
+/**
+ * F: step up through the speeds (and unpause): 1× and 2×, and 3× once the finale is won (T863's
+ * post-game unlock, `fastestSpeed`): paused or 1× → 2× → 3× → 1×.
+ */
 export function toggleFastSpeed(): void {
-  setSpeed(speedSignal.value === 2 ? 1 : 2);
+  const s = speedSignal.value;
+  setSpeed(s === 0 || s === 1 ? 2 : s < fastestSpeed.value ? 3 : 1);
 }
 
 /** Arms a build slot's tower (null disarms). Arming drops the selection. */

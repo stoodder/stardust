@@ -19,6 +19,7 @@ interface SpeechMargin {
   readonly blipDb: number;
   readonly restDb: number;
   readonly marginDb: number;
+  readonly cautiousDb: number;
 }
 
 function isSpeechMargin(m: unknown): m is SpeechMargin {
@@ -332,6 +333,31 @@ test('audio: every sound, cue, and theme renders at a sane level', async ({ page
     expect(peak(quiet), quiet).toBeLessThan(peak('sfx:rivet_shot'));
   }
   expect(peak('sfx:takeover_laser')).toBeLessThan(peak('sfx:strike_boom'));
+  // The finale (T850): the Long Walk sits back like Act III's beds; the hymn and Dawn are the
+  // song, as loud as Act II's theme at most; the sung lines and the song's end are voices, never
+  // louder than a sting; the Bore's drill and a re-forming unit sit under a Rivet shot; the
+  // choir faltering sits under the core's klaxon it replaces; the glitch under the strike's boom.
+  expect(peak('theme:fin_walk')).toBeLessThanOrEqual(peak('theme:act2_battle') - 3);
+  for (const song of ['theme:choir_hymn', 'theme:dawn_major', 'theme:title_dawn']) {
+    expect(peak(song), song).toBeLessThanOrEqual(peak('theme:act2_battle'));
+  }
+  for (const cue of [
+    'cue:fin_win',
+    'cue:dawn_sung',
+    'cue:memorial_hum',
+    'cue:halls_hum',
+    'cue:echo_hum',
+  ]) {
+    expect(peak(cue), cue).toBeLessThanOrEqual(peak('cue:bright_sting') + 1);
+  }
+  for (const quiet of ['sfx:bore_drill', 'sfx:scatter_reform']) {
+    expect(peak(quiet), quiet).toBeLessThan(peak('sfx:rivet_shot'));
+  }
+  expect(peak('sfx:voices_low')).toBeLessThan(peak('sfx:low_integrity'));
+  expect(peak('sfx:directive_glitch')).toBeLessThan(peak('sfx:strike_boom'));
+  console.log(
+    `finale: hymn ${peak('theme:choir_hymn').toFixed(1)}, dawn ${peak('theme:dawn_major').toFixed(1)}, walk ${peak('theme:fin_walk').toFixed(1)}, fin_win ${peak('cue:fin_win').toFixed(1)}, rest_chime ${peak('sfx:rest_chime').toFixed(1)}, scatter_hiss ${peak('sfx:scatter_hiss').toFixed(1)} dB`,
+  );
   // Blips sit back (D135): a lone blip peaks at −10 dBFS or under, well under the strike's boom.
   const blips = Object.keys(report).filter((n) => n.startsWith('sfx:blip.'));
   expect(blips.length).toBeGreaterThanOrEqual(14);
@@ -343,9 +369,12 @@ test('audio: every sound, cue, and theme renders at a sane level', async ({ page
  * the Witch fight, A2M5–A2M6's dusk (T550), Act III's rush, Maws, and door (T650), and A3M5's
  * platform with A3M6's road (T750).
  */
-const STORM_IDS = ['act1', 'act2', 'act2_dusk', 'act3', 'act3b'] as const;
+const STORM_IDS = ['act1', 'act2', 'act2_dusk', 'act3', 'act3b', 'fin'] as const;
 /** A storm that measures only its own speakers' blips (offline.ts `margins`; T766: each is a render). */
-const FEW_MARGINS: Readonly<Partial<Record<(typeof STORM_IDS)[number], number>>> = { act3b: 3 };
+const FEW_MARGINS: Readonly<Partial<Record<(typeof STORM_IDS)[number], number>>> = {
+  act3b: 3,
+  fin: 3,
+};
 
 for (const storm of STORM_IDS) {
   test(`audio: the ${storm} storm keeps 3 dB of headroom, and speech stays on top of it`, async ({
@@ -369,7 +398,7 @@ for (const storm of STORM_IDS) {
     for (const name of Object.keys(report)) {
       for (const m of speech(name)) {
         rows.push(
-          `${name.padEnd(24)} ${m.blip.padEnd(18)} ${m.blipDb.toFixed(1).padStart(6)} dB over the rest's ${m.restDb.toFixed(1).padStart(6)} dB: ${m.marginDb.toFixed(1).padStart(5)} dB`,
+          `${name.padEnd(24)} ${m.blip.padEnd(18)} ${m.blipDb.toFixed(1).padStart(6)} dB over the rest's ${m.restDb.toFixed(1).padStart(6)} dB: ${m.marginDb.toFixed(1).padStart(5)} dB (cautious ${m.cautiousDb.toFixed(1).padStart(5)})`,
         );
       }
     }
@@ -390,5 +419,8 @@ for (const storm of STORM_IDS) {
     const margins = speech(`storm:${storm}:ducked`);
     expect(margins.length).toBeGreaterThanOrEqual(FEW_MARGINS[storm] ?? 14);
     for (const m of margins) expect(m.marginDb, m.blip).toBeGreaterThanOrEqual(6);
+    // The cautious floor (T850, after T766): against the bed rendered with every sound made 0.5 s
+    // ahead (stolen voices ringing on), louder than the game plays it, a blip still clears it.
+    for (const m of margins) expect(m.cautiousDb, m.blip).toBeGreaterThanOrEqual(4.5);
   });
 }

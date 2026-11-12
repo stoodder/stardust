@@ -1,0 +1,197 @@
+/* The post-game shell (T863; art-direction.md § 10, *After the finale*): the plate under the Sector
+   map's header (in the notices' column, so a notice stacks above it), its rows, "Watch the
+   epilogue", the selected row's panel beside the plate in the node panel's grammar, and the
+   Endless score screen in the results card's place. Calm: one accent edge, no glow, no motion. */
+
+.sd-pg {
+  position: relative;
+  margin-top: 4px;
+}
+
+.sd-pg-plate {
+  box-sizing: border-box;
+  width: 136px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 5px 6px 6px;
+  border: 1px solid var(--accent);
+  background: rgb(13 10 24 / 92%);
+  clip-path: polygon(
+    3px 0,
+    calc(100% - 3px) 0,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    0 calc(100% - 3px),
+    0 3px
+  );
+  font-family: var(--font-heading);
+  text-align: left;
+}
+
+.sd-pg-heading {
+  margin: 0;
+  font-size: 8px;
+  font-weight: normal;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.sd-pg-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sd-pg-row {
+  box-sizing: border-box;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  width: 100%;
+  margin: 0;
+  padding: 2px 3px;
+  border: 1px solid transparent;
+  background: none;
+  font: inherit;
+  line-height: 9px;
+  text-align: left;
+  text-transform: uppercase;
+  color: var(--sd-white-1);
+  cursor: pointer;
+}
+
+.sd-pg-row:hover,
+.sd-pg-row:focus-visible {
+  border-color: var(--sd-ink-4);
+  outline: none;
+}
+
+.sd-pg-row-on {
+  border-color: var(--accent);
+  background: var(--sd-ink-2);
+}
+
+.sd-pg-kind {
+  flex: none;
+  color: var(--sd-steel-3);
+}
+
+.sd-pg-name {
+  color: var(--sd-gold-4);
+}
+
+/* A challenge cleared: the cleared glyph's diamond, small, at the row's end. */
+.sd-pg-diamond {
+  flex: none;
+  width: 3px;
+  height: 3px;
+  margin-left: auto;
+  background: var(--sd-gold-3);
+  transform: rotate(45deg);
+}
+
+.sd-pg-epilogue {
+  align-self: flex-start;
+  margin-top: 2px;
+}
+
+/* The panel: beside the plate, its top level with the plate's. */
+.sd-pg-panel {
+  left: 142px;
+  top: 0;
+}
+
+.sd-pg-cleared {
+  color: var(--sd-gold-3);
+}
+
+.sd-pg-seed {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  text-transform: uppercase;
+  color: var(--sd-steel-3);
+}
+
+.sd-pg-seed-input {
+  box-sizing: border-box;
+  width: 64px;
+  height: 14px;
+  padding: 1px 3px;
+  border: 1px solid var(--sd-ink-4);
+  background: var(--sd-ink-0);
+  font: inherit;
+  color: var(--sd-white-1);
+}
+
+.sd-pg-seed-input:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.sd-pg-seed-input[aria-invalid='true'] {
+  border-color: var(--sd-coral-3);
+}
+
+.sd-pg-best,
+.sd-pg-top,
+.sd-pg-note {
+  font-family: var(--font-body);
+  line-height: 9px;
+  color: var(--sd-white-0);
+}
+
+.sd-pg-top,
+.sd-pg-note {
+  color: var(--sd-steel-3);
+}
+
+/* Quiet campaign pips once every node is cleared: the new things lead (D153). */
+.sd-starmap-post .sd-star-pips,
+.sd-starmap-post .sd-star-veteran {
+  opacity: 0.6;
+}
+
+/* ---- The Endless score screen ---- */
+
+.sd-pg-score-seed {
+  margin: 0;
+  font-family: var(--font-heading);
+  text-transform: uppercase;
+  color: var(--sd-steel-3);
+}
+
+.sd-pg-records {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 200px;
+  margin: 2px 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-heading);
+  text-transform: uppercase;
+}
+
+.sd-pg-records li {
+  display: flex;
+  justify-content: space-between;
+  padding: 1px 4px;
+  color: var(--sd-steel-3);
+}
+
+.sd-pg-records .sd-pg-this {
+  background: var(--sd-ink-2);
+  color: var(--sd-gold-4);
+}
+
+.sd-pg-record-seed {
+  color: inherit;
+}

@@ -190,6 +190,10 @@ export function Title() {
     setConfirming(null);
   };
   const act = (r: SaveResult): void => setMessage(r.ok ? null : r.message);
+  // T863: the Continue slot is past the finale, so the Title wakes at dawn too (its theme and a
+  // first light from the east; the tip already reads "Remember them.").
+  const last = slots.value.find((v) => v.slot === continueSlot());
+  const dawn = last?.status === 'ok' && last.frontier === null;
   // Esc (T212): a Delete confirm says Keep; a panel goes back to the main buttons.
   useEscape(() => {
     if (confirming !== null) {
@@ -203,8 +207,10 @@ export function Title() {
 
   return (
     <main
-      class={`sd-screen sd-title${panel === 'main' ? '' : ' sd-title-paneled'}`}
+      class={`sd-screen sd-title${panel === 'main' ? '' : ' sd-title-paneled'}${dawn ? ' sd-title-dawn' : ''}`}
       aria-labelledby="sd-title-heading"
+      data-act={dawn ? 'finale' : undefined}
+      data-testid="title"
     >
       <div class="sd-title-brand">
         <span class="sd-title-chevron" aria-hidden="true">

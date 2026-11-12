@@ -28,8 +28,8 @@ export type ScreenId =
 /** How a finished run ended. */
 export type RunOutcome = 'won' | 'lost';
 
-/** Game speed: paused, 1×, or 2×. */
-export type Speed = 0 | 1 | 2;
+/** Game speed: paused, 1×, 2×, or 3× (the post-game unlock, T863; core-loop.md § 2.8). */
+export type Speed = 0 | 1 | 2 | 3;
 
 export interface ClientPoint {
   readonly x: number;

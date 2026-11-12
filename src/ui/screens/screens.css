@@ -132,6 +132,27 @@
   color: var(--sd-pink-3);
 }
 
+/* After the finale (T863): the first morning washes in from the east over the night backdrop, in
+   hard bands (no smooth gradient on pixel art), and the brand's chevrons take the dawn's gold. */
+.sd-title-dawn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to left,
+    rgb(255 158 72 / 18%) 0 24px,
+    rgb(255 158 72 / 12%) 24px 64px,
+    rgb(255 158 72 / 7%) 64px 128px,
+    rgb(255 158 72 / 3%) 128px 224px,
+    transparent 224px
+  );
+  pointer-events: none;
+}
+
+.sd-title-dawn .sd-title-chevron {
+  color: var(--accent);
+}
+
 /* The logo: Silkscreen at 32 (a multiple of its 8 px grid), with hard 2 px drop shadows. */
 .sd-title-logo {
   margin-top: 6px;
@@ -567,6 +588,24 @@
 .sd-medal-on {
   border-color: var(--sd-gold-4);
   background: var(--sd-gold-3);
+}
+
+/* The Veteran medal's pip (T863): a small gold diamond hung just past the three, so the row's
+   columns don't move. */
+.sd-medals {
+  position: relative;
+}
+
+.sd-medal-veteran {
+  position: absolute;
+  left: calc(100% + 3px);
+  top: 50%;
+  width: 3px;
+  height: 3px;
+  margin-top: -2px;
+  border: 1px solid var(--sd-gold-4);
+  background: var(--sd-gold-3);
+  transform: rotate(45deg);
 }
 
 /* ---- Base tabs ---- */

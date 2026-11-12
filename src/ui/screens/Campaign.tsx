@@ -33,7 +33,7 @@ function ShiftRow({ shift, first }: { shift: ShiftView; first: boolean }) {
       {shift.teaser ? (
         <span class="sd-medals" aria-hidden="true" />
       ) : (
-        <MedalPips earned={shift.medals} />
+        <MedalPips earned={shift.medals} veteran={shift.veteran === true} />
       )}
       <span class="sd-shift-state">{STATE_TEXT[shift.state]}</span>
       {playable ? (

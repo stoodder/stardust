@@ -2,8 +2,11 @@
 // battle's state become sound effects, music layers, and cues; HUD signals (notices, spoken lines
 // and their typewriter, a sung line's cue, a cue that hushes the music, the screen, C2's choice on
 // the Results card or at the base) and UI buttons get their sounds; the settings drive the volumes
-// and mute. Audio is created on the first user gesture, and stays off under `?test=1` unless the
-// URL adds `&audio=1`.
+// and mute. The campaign's close holds Dawn's music under the epilogue (app/ending.ts's cues), and
+// the title after the finale is the post-game's. Audio is created on the first user gesture, and
+// stays off under `?test=1` unless the URL adds `&audio=1`; under `?test=1`, `&listen=<kind>:<id>`
+// plays one theme, cue, or sound effect on the first gesture (and again on L): the owner's listen
+// list.
 import { effect } from '@preact/signals';
 import {
   ABILITY_SOUNDS,
@@ -16,6 +19,7 @@ import {
   createTypeTicker,
   type TypeTicker,
   crossedLowIntegrity,
+  heldMusic,
   SOUND_EVENT_TYPES,
   RADIO_DUCK,
   SPEECH_SFX_DUCK,
@@ -36,6 +40,9 @@ import {
 import { HOLLOW_DUCK, TIDYBOT_SOUNDS } from '../audio/eventTablesAct2.ts';
 import { DARK_SOUNDS, METER_ALARM } from '../audio/eventTablesAct2b.ts';
 import { FORCED_INPUT_SOUNDS } from '../audio/eventTablesAct3.ts';
+import { CHOIR_SOUNDS, SONG_UNDUCKS_FROM_PHASE } from '../audio/eventTablesFin.ts';
+import { ENDING_MUSIC, setEndingCuePlayer, type EndingCue } from './ending.ts';
+import { frontierOf } from '../meta/index.ts';
 import { WAVE_CLEAR_CUE, type CueId } from '../audio/music/index.ts';
 import {
   C2_STINGS,
@@ -130,6 +137,11 @@ function playCalls(calls: SoundCall[]): void {
 }
 
 let lastMusic: MusicIntent | null = null;
+/**
+ * Music held over the screens' own (the epilogue's Dawn from the counter's flip to its end,
+ * app/ending.ts; a listen URL's theme), or null. A battle's frames still drive its own.
+ */
+let heldOver: MusicIntent | null = null;
 function setMusic(m: MusicIntent): void {
   const l = lastMusic;
   if (
@@ -383,6 +395,38 @@ function bindResultsAudio(): () => void {
 }
 
 /**
+ * The music for a screen without a battle: the menus over the backdrop (the intake, Shift board,
+ * Base, Settings, Loadout) keep the title's; after the finale (no frontier left) the title is the
+ * post-game's, `title_dawn`.
+ */
+function screenNow(s: ReturnType<(typeof screen)['peek']>): MusicIntent {
+  const menu =
+    s === 'intake' || s === 'campaign' || s === 'base' || s === 'settings' || s === 'loadout';
+  const save = activeSave();
+  const postGame = save !== null && frontierOf(save) === null;
+  return screenMusic(menu ? 'title' : s === 'battle' ? null : s, postGame);
+}
+
+/**
+ * The close's music cue (app/ending.ts `endingCue`): `counter_flip` holds `dawn_major` over the
+ * screens; `epilogue_end` lets it go back to the screen's own music.
+ */
+export function playEndingCue(cue: EndingCue): void {
+  const theme = ENDING_MUSIC[cue];
+  heldOver = theme === null ? null : heldMusic(theme);
+  const s = screen.peek();
+  if (s !== 'battle') setMusic(heldOver ?? screenNow(s));
+}
+
+/** The listen URL's item (`?test=1&listen=<kind>:<id>`), or null (a player URL never has one). */
+function listenParam(): string | null {
+  const search = typeof window === 'undefined' ? undefined : window.location?.search;
+  if (search === undefined) return null;
+  const q = new URLSearchParams(search);
+  return q.get('test') === '1' ? q.get('listen') : null;
+}
+
+/**
  * Installs the audio for the session: `enabled` false (`?test=1` without `&audio=1`) keeps it
  * silent and creates no AudioContext. `make` builds the engine (tests pass a recorder). Returns
  * the uninstall (tests).
@@ -390,6 +434,7 @@ function bindResultsAudio(): () => void {
 export function installAudio(
   enabled: boolean,
   make: () => AudioEngine = createAudioEngine,
+  listen: string | null = listenParam(),
 ): () => void {
   uninstall?.();
   if (!enabled) {
@@ -444,15 +489,34 @@ export function installAudio(
     // Screens without a battle; a battle's frames drive its own music (bindBattleAudio).
     effect(() => {
       const s = screen.value;
-      // The menus over the backdrop (the intake, Shift board, Base, Settings, Loadout) keep the
-      // title's music.
-      const menu =
-        s === 'intake' || s === 'campaign' || s === 'base' || s === 'settings' || s === 'loadout';
-      if (s !== 'battle') setMusic(screenMusic(menu ? 'title' : s));
+      if (s !== 'battle') setMusic(heldOver ?? screenNow(s));
     }),
   ];
+  // The campaign's close: Dawn comes in at the counter's flip and is held under the credits and
+  // the final image, whatever screen is under them, then lets go (app/ending.ts ENDING_MUSIC).
+  setEndingCuePlayer(playEndingCue);
+  // The owner's listen list (a `?test=1` URL only): its own small chunk, never in a player's JS.
+  let offListen: (() => void) | null = null;
+  let installed = true;
+  if (listen !== null) {
+    void import('./audioListen.ts').then((m) => {
+      if (!installed) return;
+      offListen = m.bindListen(listen, {
+        hold(music) {
+          heldOver = music;
+          setMusic(music);
+        },
+        cue: (id) => engine.cue(id),
+        play: (id) => engine.play(id),
+      });
+    });
+  }
   uninstall = () => {
     for (const off of offs) off();
+    installed = false;
+    offListen?.();
+    setEndingCuePlayer(() => {});
+    heldOver = null;
     setTypeTick(null);
     window.removeEventListener('pointerdown', unlock, true);
     window.removeEventListener('keydown', unlock, true);
@@ -497,6 +561,8 @@ export function bindBattleAudio(host: Host<IdSpace>): () => void {
     splits: (id) => (enemy(id)?.split ?? null) !== null,
     faction: (id) => enemy(id)?.faction ?? null,
     quietAt: (x, y) => field.quietAt(x, y),
+    // The marker on a tile (a waymark lantern's wreckage; eventTablesFin.ts).
+    markerAt: (col, row) => markerAt(sim.map.markers, col, row),
     // A tower the binder didn't see built (a resumed run's replay builds them unheard).
     tower: (uid) => {
       const t = sim.state.towers;
@@ -581,7 +647,9 @@ export function bindBattleAudio(host: Host<IdSpace>): () => void {
     playCalls(calls);
     // The music sits steadily ducked while any Hollow walks (one long dip, not one per hum), and
     // comes back as the map ends, whoever is still on the field (D135).
-    setHollowDuck(s.outcome === 'playing' && field.hollowLive());
+    // On a choir map the song is louder than the quiet: from its phase the Hollow duck lets go.
+    const singing = s.choir.singers > 0 && s.phase >= SONG_UNDUCKS_FROM_PHASE;
+    setHollowDuck(s.outcome === 'playing' && field.hollowLive() && !singing);
     // The music sits back as Sundown's dark deepens, and comes back as the map ends.
     setDarkDuck(s.outcome === 'playing' ? darkDuckLevel(s.dark) : 1);
     // While a forced input waits (the SEAL), the music falls away under its hum.
@@ -609,10 +677,14 @@ export function bindBattleAudio(host: Host<IdSpace>): () => void {
       engine.play('low_integrity', { delay: LOW_ALARM_DELAY_SEC });
     }
     integrity = s.integrity;
-    // The asset's critical band and the Escort's low mark sound the same alarm (T501h).
+    // The asset's critical band and the Escort's low mark sound the same alarm (T501h); on a
+    // choir map the Escort meter is the Voices, and its low mark is the choir faltering (T850:
+    // the finale has no klaxons).
     const assetNow = s.outcome === 'playing' && meterLow('asset');
     const escortNow = s.outcome === 'playing' && meterLow('escort');
-    if ((assetNow && !assetLow) || (escortNow && !escortLow)) {
+    if (escortNow && !escortLow && s.choir.singers > 0) {
+      engine.play(CHOIR_SOUNDS.low, { delay: LOW_ALARM_DELAY_SEC });
+    } else if ((assetNow && !assetLow) || (escortNow && !escortLow)) {
       engine.play(METER_ALARM, { delay: LOW_ALARM_DELAY_SEC });
     }
     assetLow = assetNow;
@@ -629,6 +701,8 @@ export function bindBattleAudio(host: Host<IdSpace>): () => void {
           paused: host.speed === 0,
           choir: field.choirLive(),
           map: sim.map.id,
+          phase: s.phase,
+          ...(s.choir.singers > 0 ? { voices: s.choir.voices / s.choir.singers } : {}),
         }),
       );
     }
@@ -643,6 +717,19 @@ export function bindBattleAudio(host: Host<IdSpace>): () => void {
     setDarkDuck(1);
     setForcedDuck(false);
   };
+}
+
+/** The marker on tile (col, row) of `markers` (a map's), or null. */
+function markerAt(
+  markers: Readonly<Record<string, readonly [number, number]>>,
+  col: number,
+  row: number,
+): string | null {
+  for (const id in markers) {
+    const at = markers[id]!; // a key of markers
+    if (at[0] === col && at[1] === row) return id;
+  }
+  return null;
 }
 
 /** The music's level under Sundown's darkness `dark` (DARK_SOUNDS: in steps, 1 at none). */

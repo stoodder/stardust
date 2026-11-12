@@ -9,11 +9,12 @@ import { alignPulse } from './pulse.ts';
 import { Glyph, HOLD_GLYPH, Key } from './parts.tsx';
 import { revokedHud } from './revokedState.ts'; // T606
 import { nextHeld } from './finaleState.ts'; // T832
+import { endlessNextLine, endlessRun, fastestSpeed } from '../../app/postGameHooks.ts'; // T863
 
 /** Top-right: speed and pause. */
 export function SpeedControls() {
   const s = speed.value;
-  const btn = (value: 0 | 1 | 2, text: string, label: string, key: string) => (
+  const btn = (value: 0 | 1 | 2 | 3, text: string, label: string, key: string) => (
     <button
       type="button"
       class="hud-btn chamfer square"
@@ -30,6 +31,8 @@ export function SpeedControls() {
       {btn(0, 'II', 'Pause', 'Space')}
       {btn(1, '1x', 'Normal speed', 'F')}
       {btn(2, '2x', 'Double speed', 'F')}
+      {/* T863: 3x unlocks once the finale is won (core-loop.md § 2.8). */}
+      {fastestSpeed.value === 3 && btn(3, '3x', 'Triple speed', 'F')}
     </div>
   );
 }
@@ -59,6 +62,10 @@ export function WavePanel() {
   const countdown = hud.countdown.value;
   const bonus = hud.callBonus.value;
   const walking = hud.nextWalking.value;
+  // T863: an Endless run names the next wave's counter block (and, near its end, the next one's).
+  const run = endlessRun.value;
+  const endless = run !== null && run.map === hud.mapId.value;
+  const block = endless && next !== null ? endlessNextLine(run, next.number) : null;
   // T606: QUILL's lockout hides the preview's threats (it never shows anything false).
   const restricted = revokedHud.value.previewHidden;
   const leak = revokedHud.value.leakLine;
@@ -73,9 +80,10 @@ export function WavePanel() {
     <section class="hud-waves chamfer" aria-label="Waves">
       <div class="hud-wave-row">
         <span class="hud-label">Wave</span>
-        <span class="big num" aria-label={`Wave ${wave} of ${count}`}>
+        <span class="big num" aria-label={endless ? `Wave ${wave}` : `Wave ${wave} of ${count}`}>
           {wave}
-          <span class="dim">/{count}</span>
+          {/* Endless runs on with no last wave to count to (T863). */}
+          {!endless && <span class="dim">/{count}</span>}
         </span>
         {callLabel !== null && (
           <button
@@ -155,6 +163,17 @@ export function WavePanel() {
                 </li>
               );
             })}
+          {block !== null && (
+            <li class="hud-endless-block" data-testid="preview-endless" aria-label={block.spoken}>
+              <span class="hud-label">{block.needs.length === 0 ? 'Warm-up' : 'Needs'}</span>
+              {block.needs.length > 0 && <span> {block.needs.join(' ')}</span>}
+              {block.then !== null && (
+                <span class="hud-endless-then">
+                  <span class="hud-label"> Then</span> +{block.then.join(' +')}
+                </span>
+              )}
+            </li>
+          )}
           {/* An Escort's next refugees (D138): a friendly chip, never a threat's. */}
           {walking > 0 && (
             <li

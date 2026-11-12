@@ -71,7 +71,7 @@ import {
 import { assertNever } from '../shared/types.ts';
 import { bountyBoardState } from '../ui/screens/bountyBoard.ts';
 import { logError } from './log.ts';
-import { campaignMedalCount } from '../meta/veteran.ts'; // T860
+import { campaignMedalCount, hasVeteranMedal } from '../meta/veteran.ts'; // T860, T863
 
 function storage(): Storage | null {
   try {
@@ -561,6 +561,7 @@ function campaignView(s: Session): CampaignView {
         index: e.index,
         state: e.state,
         medals: campaignMedalCount(e.medals), // T860: the Veteran medal isn't one of the 3
+        veteran: hasVeteranMedal(e.medals), // T863: the board's veteran pip
         teaser: false,
       })),
       ...teaserRow(),

@@ -43,7 +43,7 @@ describe('the finale close (RESULTS_FLOW.fin_m01)', () => {
       null,
       null,
       null,
-      'screen post_game waits for T863',
+      null,
     ]);
     // The memo and C5's scene are T811's, registered: Sterling's farewell, and C5's choice.
     expect(MEMOS.memo_fin_01?.subject).toBe('Clean Exit Complete!');

@@ -80,6 +80,7 @@ import type { RunOutcome, ScreenId } from './testHookTypes.ts';
 import { resetCrate, takenPick } from '../ui/screens/crate.ts'; // T714
 import { veteranMedalOffered } from './veteran.ts'; // T860
 import { veteranModsOf } from '../meta/veteran.ts'; // T860
+import { recordEndlessEnd } from './postGame.ts'; // T863
 
 /** The campaign screen's notice when a checkpoint retry couldn't replay to its checkpoint. */
 export const RETRY_FAILED =
@@ -530,6 +531,8 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
       veteran: veteranModsOf(sim.config), // T860: the replay's veteran modifiers
     };
     const summary = recordRun(metaRunEndOf(input, outcome));
+    // T863: an Endless run's score joins the save's table (any other run clears the score screen).
+    recordEndlessEnd({ mapId: sim.map.id, seed: sim.config.seed, resolved: s.schedule.resolved });
     // The finale's run ended (won, lost, or abandoned): nothing is pending any more (D154).
     if (persistsCheckpoints(sim.map) && activeSave()?.pendingRun !== undefined) {
       updateActiveSave((save) => withPendingRun(save, null));

@@ -332,6 +332,8 @@ export interface ShiftView {
   readonly state: 'won' | 'open' | 'locked' | 'coming_soon';
   /** Medals earned, of the map's 3. */
   readonly medals: number;
+  /** The Veteran medal is on file (T860): the row's veteran pip (T863). Absent: false. */
+  readonly veteran?: boolean;
   /** The board's last row: the map after Act I, unnamed, dimmed and padlocked (D097 R6, D102). */
   readonly teaser: boolean;
 }

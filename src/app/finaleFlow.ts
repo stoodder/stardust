@@ -21,7 +21,7 @@ export const ENDING_SCREEN_TASKS: Readonly<Record<EndingScreen, string>> = {
 };
 
 /** The ending screens built so far (each task adds its own as it lands). */
-export const BUILT_ENDING_SCREENS: readonly EndingScreen[] = ['epilogue'];
+export const BUILT_ENDING_SCREENS: readonly EndingScreen[] = ['epilogue', 'post_game'];
 
 /**
  * The steps a win of `mapId` plays once its card is dismissed, over the save as run end left it:

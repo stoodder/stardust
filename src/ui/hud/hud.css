@@ -1816,3 +1816,15 @@ section.chamfer,
     transition: none;
   }
 }
+
+/* Endless's counter block in the preview (T863): its own row under the groups, the next block's
+   new counters after "Then" in the act accent. */
+.hud-endless-block {
+  flex-basis: 100%;
+  color: var(--sd-white-1);
+  text-transform: uppercase;
+}
+
+.hud-endless-then {
+  color: var(--accent);
+}
