@@ -10,6 +10,7 @@ import type { ACT2B_SFX } from './act2b.ts';
 import type { ACT2_TOWER_SFX } from './act2towers.ts';
 import type { ACT3_SFX } from './act3.ts';
 import type { ACT3B_SFX } from './act3b.ts';
+import type { FIN_SFX } from './fin.ts';
 import type { AELARI_SFX } from './aelari.ts';
 import { ALLY_SFX } from './allies.ts';
 import { BATTLE_SFX } from './battle.ts';
@@ -36,14 +37,15 @@ const CORE_SFX = {
   ...COMMANDER_SFX,
 } as const satisfies Readonly<Record<string, SfxRecipe>>;
 
-/** Every sound an act chunk brings (app/acts/a2.ts, a3.ts), by group. */
+/** Every sound an act chunk brings (app/acts/a2.ts, a3.ts, fin.ts), by group. */
 type LazySfx = typeof AELARI_SFX &
   typeof HOLLOW_SFX &
   typeof ACT2_SFX &
   typeof ACT2B_SFX &
   typeof ACT2_TOWER_SFX &
   typeof ACT3_SFX &
-  typeof ACT3B_SFX;
+  typeof ACT3B_SFX &
+  typeof FIN_SFX;
 
 /** Every recipe, registered or not, with its literal shape. */
 type AllSfx = typeof CORE_SFX & LazySfx & typeof SPEECH_SFX;
@@ -63,6 +65,7 @@ export const SFX_GROUPS = [
   'act2towers',
   'act3',
   'act3b',
+  'fin',
 ] as const;
 export type SfxGroup = (typeof SFX_GROUPS)[number];
 

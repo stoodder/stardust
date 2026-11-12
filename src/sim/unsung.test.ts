@@ -164,10 +164,11 @@ function risen(state: SimState, ctx: TickContext): Enemy {
 }
 
 describe('the Unsung’s data (enemies.md § 6; D154)', () => {
-  it('30000 HP, four forms; the part is a third of the 75–50% band; tells ≥ 1.5 s', () => {
+  it('18000 HP (T821), four forms; the part a third of the 75–50% band and worth 5; tells ≥ 1.5 s', () => {
     expect([UNSUNG.hp, UNSUNG.armor, UNSUNG.speedTilesPerTick * 60, UNSUNG.bounty]).toEqual([
-      30000, 0, 0.1, 0,
+      18000, 0, 0.1, 0,
     ]);
+    expect(PART.restValue).toBe(5); // a part laid to rest is a beat in the countdown
     expect(UNSUNG.boss!.ending).toBe('layToRest');
     expect(PHASES.map((p) => p.fromPct)).toEqual([1, 0.75, 0.5, 0.25]);
     expect(P1!.gather!.tellTicks).toBeGreaterThanOrEqual(secToTicks(BOSS_MIN_TELL_SEC));

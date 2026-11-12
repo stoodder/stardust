@@ -8,7 +8,7 @@
 //   is the Voices still singing: the director's `lead`). Where a Hum Choir stands it answers with
 //   the couplet's second half, "brighter every day" and "clearing the way".
 // - **The hymn** (Phase 2, `choir_hymn`): the choir sings the whole couplet at the mouth of the
-//   Halls as a funeral hymn, 60 BPM, a bell tolling. The tune is the jingle, in tune; the harmony
+//   Halls as a funeral hymn, 66 BPM, a bell tolling. The tune is the jingle, in tune; the harmony
 //   under it is minor (Em, Am, Dm; a falling lament bass D–C–B–A under "clearing the way") and
 //   every loop ends on A minor under the melody's home note: never home. Pebble leads (`lead`);
 //   the choir behind her (`choir`) swells with the Voices still singing; Pebble's "clearing the
@@ -149,7 +149,7 @@ const HYMN_BASS =
   'E2 A2 - - | D3 B2 A2 - | A2 D3 E3 F3 | E3 - G2 - | E2 A2 - - | D3 B2 A2 - | D3 C3 B2 A2 | A2 - - -';
 
 /**
- * Phase 2's hymn: the couplet at 60 BPM, eight bars, sung over minor harmony.
+ * Phase 2's hymn: the couplet at 66 BPM, eight bars, sung over minor harmony.
  * - **base:** the bass voice, and a bell tolling on bars 1, 3, 5, and 7.
  * - **drums:** a slow heartbeat, one lub-dub a bar, while the add waves walk.
  * - **lead:** Pebble, the melody; and "clearing the way!" rung out over it in bar 7.
@@ -158,7 +158,7 @@ const HYMN_BASS =
  */
 export const CHOIR_HYMN: Song = {
   id: 'choir_hymn',
-  bpm: 60,
+  bpm: 66,
   bars: 8,
   loop: true,
   tracks: [

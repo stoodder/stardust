@@ -147,7 +147,7 @@ describe('FEATURE_GATES and SCRIPT_GATES (T800a rows; D154)', () => {
 describe('the finale content (the Unsung, a stub under its final id)', () => {
   it('compiles its four forms (enemies.md § 6; D154)', () => {
     const u = LIVE.enemies.unsung;
-    expect([u.hp, u.faction, u.body, u.bounty]).toEqual([30000, 'hollow', 'void', 0]);
+    expect([u.hp, u.faction, u.body, u.bounty]).toEqual([18000, 'hollow', 'void', 0]); // T821's tune
     const boss = u.boss!;
     expect(boss.ending).toBe('layToRest');
     expect(boss.phases.map((p) => [p.fromPct, p.floorPct, p.burrowTo])).toEqual([

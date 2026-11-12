@@ -1,10 +1,10 @@
 // The Unsung (design/enemies.md § 6; design's *Unmaking*): the finale's boss, rising from the Deep
-// Halls in Phase 2 (story/campaign/finale.md). HP 30000 (plus the Deep Bore's bonus: +5% per
+// Halls in Phase 2 (story/campaign/finale.md). HP 18000 (T821; plus the Deep Bore's bonus: +5% per
 // tenth filled, MapDef.timers; systems/waves.ts scales its def as it spawns), Hollow, void,
 // bounty 0. Its four forms by HP share:
 // 1. (100–75%) it gathers (the Gathering Maw's wide gather: 2 tiles every 5 s, a 1.5 s tell, at
 //    most 5 absorbs, +10% size each; a singer it reaches is hushed, the choir's rule).
-// 2. (75–50%) it splits into 3 parts (`unsung_part`, each a third of the band: 2500 of 30000) and
+// 2. (75–50%) it splits into 3 parts (`unsung_part`, each a third of the band: 1500 of 18000) and
 //    never merges: once the last part falls, it rises again where that part fell, in phase 3.
 // 3. (50–25%) it phases (Phased 2 s of every 8, a 1.5 s tell) and digs twice toward the choir,
 //    surfacing among the singers and hushing one each time, unless a burrow answer digs it out on
