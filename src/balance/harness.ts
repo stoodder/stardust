@@ -60,8 +60,6 @@ export interface HarnessOptions {
   readonly maxTicks?: number;
   /** The meta catalog profiles are built from (default: the live one; tests pass a fixture's). */
   readonly catalog?: MetaCatalog;
-  /** Run only one part of the map's checks (`partSpecs`: a heavy map's balance tests, T778). */
-  readonly part?: HarnessPart;
 }
 
 export interface CheckResult extends CheckOutcome {
@@ -419,21 +417,6 @@ export function runMap<K extends IdSpace = LiveIds>(
   const run = runnerWith(content, mapId, opts, profileFor);
   return judgeMap(content, plan, run, () => now() - t0);
 }
-  }
-  const all = [...runs.values()];
-  checks.push(...runLevelChecks(map, all));
-  return {
-    mapId,
-    act: map.act,
-    objective: map.objective,
-    band: map.objective === 'holdout' ? holdoutBand(map) : parBand(map.act, map.builds.marginBand),
-    ok: checks.every((c) => c.ok),
-    checks,
-    runs: all,
-    notChecked: [...NOT_CHECKED],
-    ms: now() - t0,
-  };
-}
 
 /**
  * Whether a run must get every one of its build's steps in before the map ends: par and the
@@ -448,8 +431,6 @@ export function mustIssueEveryStep<K extends IdSpace>(
   const { build, meta } = splitMeta(label);
   if (build === 'par') return meta !== 'story';
   if (!build.startsWith('alt:')) return false;
-  // A pending alt (BuildsDef.pendingChecks; T820) may lose before its plan ends.
-  if (map.builds.pendingChecks?.subjects.includes(build) === true) return false;
   const name = build.slice(4);
   const expect = Object.hasOwn(map.builds.altExpectations, name)
     ? map.builds.altExpectations[name]
