@@ -30,7 +30,7 @@ test('the close under Go, then a replay that skips C5', async ({ page }) => {
   await page.waitForTimeout(800);
   await memo.getByRole('button', { name: 'Continue' }).click();
 
-  await answerC5(page, FLOW, 4, 'We go. We give it back.', 'digit');
+  await answerC5(page, FLOW, 4, 'We go. We leave them their road.', 'digit');
   const cards = await watchEpilogueThrough(page, FLOW, 7, 'go');
   expect(cards[0]).toMatch(/^The last freighter lifted at first light/);
   const all = cards.join('\n');

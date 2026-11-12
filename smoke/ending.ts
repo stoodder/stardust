@@ -56,7 +56,7 @@ export async function answerC5(
   page: Page,
   flow: string,
   first: number,
-  answer: 'We stay. We keep the way open.' | 'We go. We give it back.',
+  answer: 'We stay. We keep the way open.' | 'We go. We leave them their road.',
   by: 'click' | 'enter' | 'digit' = 'click',
 ): Promise<void> {
   const stage = page.getByTestId('stage-c5');
@@ -84,7 +84,7 @@ export async function answerC5(
     "We stay. We keep the way open. (Pebble, Ves'thara)",
   );
   await expect(page.getByRole('button', { name: /^We go\./ })).toHaveAccessibleName(
-    'We go. We give it back. (Bramble)',
+    'We go. We leave them their road. (Bramble)',
   );
   await page.waitForTimeout(800); // the story choice's lock
   await nextFrames(page);
