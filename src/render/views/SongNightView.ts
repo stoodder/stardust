@@ -52,7 +52,7 @@ const MAX_CIRCLES = 4;
 const at: Vec2 = { x: 0, y: 0 };
 
 /** What the smoke flows read (`__sd.render()`; renderState.ts). */
-export type SongNightLook = Omit<RenderState['songNight'], 'rims'>;
+export type SongNightLook = Omit<RenderState['songNight'], 'rims' | 'unrimmed'>;
 
 export class SongNightView implements NightTint {
   readonly #ctx: ViewContext;

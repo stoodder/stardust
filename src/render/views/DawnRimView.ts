@@ -55,6 +55,8 @@ export class DawnRimView {
   #shown = 0;
   /** The bodies rimmed this frame (the smoke hooks' count). */
   #rimmed = 0;
+  /** Marked no-rim objects showing this frame, passed over (the smoke hooks' count; C5). */
+  #passed = 0;
 
   constructor(ctx: ViewContext, cols: number) {
     this.#ctx = ctx;
@@ -66,14 +68,21 @@ export class DawnRimView {
     return this.#rimmed;
   }
 
+  /** PlacementView's ghosts and raised highlights showing on the last frame, left unrimmed (C5). */
+  get passedOver(): number {
+    return this.#passed;
+  }
+
   /** One frame, at the sun's step (`SongNightView.sunStep`: ≤ 0 before Dawn or with no night). */
   update(sunStep: number): void {
     if (sunStep <= 0) {
       if (this.#shown > 0 || this.#rimmed > 0) this.#hideFrom(0);
+      this.#passed = 0;
       return;
     }
     let n = 0;
     let rimmed = 0;
+    let passed = 0;
     for (const layer of [this.#ctx.layers.world, this.#ctx.layers.air]) {
       const pool = this.#pool(layer);
       let used = 0;
@@ -90,7 +99,10 @@ export class DawnRimView {
         cand.frameName = obj.frame.name;
         cand.scenery = isScenery(obj);
         cand.noRim = hasNoDawnRim(obj);
-        if (!takesDawnRim(cand)) continue;
+        if (!takesDawnRim(cand)) {
+          if (cand.noRim && obj.visible) passed++;
+          continue;
+        }
         screenToGrid(obj.x, obj.y, this.#ctx.origin, at);
         if (!isSunlit(at.x, this.#cols, sunStep)) continue;
         rimmed++;
@@ -116,6 +128,7 @@ export class DawnRimView {
     }
     this.#shown = n;
     this.#rimmed = rimmed;
+    this.#passed = passed;
   }
 
   reset(): void {

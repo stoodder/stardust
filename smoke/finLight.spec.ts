@@ -148,6 +148,19 @@ test('FIN light: the night, the song, the warming sky, the Bore, and Dawn', asyn
   // The rifts have healed to their old scars behind the sun (T871).
   expect(await cracks()).toMatchObject({ cracks: torn.cracks, openCracks: 0 });
   await shot(page, 'fin-light', 12, 'dawn-end');
+
+  // Dawn rims actors only (M9 review C5): the hover highlight on a raised Halls ledge, and the
+  // placement ghost if it stands free, are PlacementView's, in `world` but never rimmed.
+  expect(end.unrimmed).toBe(0);
+  const ledge = await page.evaluate(() => globalThis.__sd!.tileToClient(10, 2));
+  expect(ledge).not.toBeNull();
+  await page.keyboard.press('Digit1');
+  await page.mouse.move(ledge!.x, ledge!.y); // checked just above
+  await nextFrames(page);
+  const hovered = (await look(page)).night;
+  expect(hovered.unrimmed).toBeGreaterThan(0);
+  expect(hovered.rims).toBe(end.rims);
+  await shot(page, 'fin-light', 12.5, 'dawn-ledge-hover');
 });
 
 test("FIN light: the memorial wreck's name on hover", async ({ page }) => {

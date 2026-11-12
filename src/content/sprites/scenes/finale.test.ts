@@ -200,9 +200,6 @@ describe('the final images', () => {
 });
 
 describe("the Dawn's choir silhouettes (M9 review UA-4: singers at 2×, not spiky beetles)", () => {
-  const solid = (shape: readonly string[], x: number, y: number) => shape[y]?.charAt(x) === 'x';
-  const front = (row: string) => row.lastIndexOf('x');
-
   for (const [kind, shape] of Object.entries(CHOIR_SHAPES)) {
     it(`${kind}: one continuous rim, brighter sunward, a 2 px mouth notch, one ear tuft`, () => {
       // The rim (the sun east of it): one 8-connected line round the outline, no dashes.
@@ -236,7 +233,7 @@ describe("the Dawn's choir silhouettes (M9 review UA-4: singers at 2×, not spik
       for (let x = 0; x < shape[feet]!.length; x++)
         expect(choirLight(shape, x, feet, true)).toBe('ink');
       // The mouth: the face steps back 1 px for exactly 2 rows, once, under the upper jaw.
-      const fronts = shape.map(front);
+      const fronts = shape.map((row) => row.lastIndexOf('x'));
       const widest = Math.max(...fronts);
       const notch = fronts.flatMap((f, y) =>
         y > 0 && f === widest - 1 && fronts.indexOf(widest) < y && fronts.lastIndexOf(widest) > y
@@ -246,10 +243,7 @@ describe("the Dawn's choir silhouettes (M9 review UA-4: singers at 2×, not spik
       expect(notch).toHaveLength(2);
       expect(notch[1]! - notch[0]!).toBe(1);
       // One tuft: the top row is a single run.
-      const top = shape[0]!;
-      const runs = top.split('.').filter((r) => r.length > 0);
-      expect(runs).toHaveLength(1);
-      expect(solid(shape, top.indexOf('x'), 0)).toBe(true);
+      expect(shape[0]!.split('.').filter((r) => r.length > 0)).toHaveLength(1);
     });
   }
 });

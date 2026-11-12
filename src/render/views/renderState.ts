@@ -330,6 +330,8 @@ export interface RenderState {
     readonly litScenery: number;
     /** Actors wearing Dawn's gold and cyan rims now (T901; DawnRimView; 0 before Dawn). */
     readonly rims: number;
+    /** PlacementView's ghosts and raised highlights showing at Dawn now, left unrimmed (C5). */
+    readonly unrimmed: number;
   };
   /** The Deep Bore's rig: its gauge frame, the head's state, the breakthrough (T831; null: none). */
   readonly bore: {

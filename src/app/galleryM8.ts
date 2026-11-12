@@ -2,9 +2,10 @@
 // of the Deep Halls at Dawn, as the finale ends. A strip of the finale's Act III ground dressed by
 // the game's own ground code (`dressTile` and the Halls' looks: the Halls-mouth ledges either side
 // of the road with their gold seams, a power node's natural seam, the Spires' apron and the mouth
-// itself on the north edge, `hallsMouthCell`), the road running up into the mouth, a relit waymark
-// and the memorial wreck beside it. The choir stands at the mouth singing (Pebble leading, Thrum,
-// the singers), and the Unsung, laid to rest, stands gold before the arch.
+// itself on the north edge, `hallsMouthCell`), the road running up into the mouth (its spawn drawn
+// as the road: no rift scar at the mouth), a relit waymark and the memorial wreck beside it. The
+// Unsung, laid to rest, stands gold on the road just below the arch, and the choir (Pebble leading,
+// Thrum, the singers) is fanned down the road south-west of it, singing up at it.
 // The light is Dawn's as the sun lands (art-direction §3 *Finale*): the dawn sky behind, and over
 // the ground the morning's additive light (songNightPixels `sunLightAt`: the rose wash, gold toward
 // the east, the road and the gate lifted gold and the pads teal); every actor wears Dawn's rims,
@@ -73,16 +74,23 @@ const GRID: GroundGrid = {
   routeList: [{ kind: 'path', tiles: [...down(4, 0, 4), ...along(4, 5, 8)] }],
 };
 
-/** The choir at the mouth, singing, and the Unsung laid to rest before the arch. */
+/**
+ * The Unsung laid to rest on the road just south of the arch, and the choir fanned out south-west of
+ * it down the road, singing up at it (M9 review UA-3: clear of the arch, the gate's orb, the power
+ * node's seam and the ledge east of the road).
+ */
 const UNITS: readonly Placed[] = [
-  ['enemy.unsung_rest', 'walk_se_1', 6.9, 2.2],
-  ['ally.pebble_lead', 'sing_ne_0', 4.5, 1.6],
-  ['ally.thrum', 'sing_ne_1', 3.6, 2.4],
-  ['ally.singer', 'sing_ne_0', 4.6, 2.6],
-  ['ally.singer', 'sing_ne_1', 2.7, 3.1],
-  ['ally.singer', 'sing_se_0', 4.3, 3.5],
-  ['ally.singer', 'sing_ne_1', 5.5, 3.4],
+  ['enemy.unsung_rest', 'walk_se_1', 4.5, 2.3],
+  ['ally.pebble_lead', 'sing_ne_0', 4.25, 3.5],
+  ['ally.thrum', 'sing_ne_1', 3.4, 3.9],
+  ['ally.singer', 'sing_ne_0', 4.4, 4.5],
+  ['ally.singer', 'sing_ne_1', 4.0, 5.0],
+  ['ally.singer', 'sing_ne_0', 3.6, 5.5],
+  ['ally.singer', 'sing_ne_1', 5.3, 5.2],
 ];
+
+/** The ground as dressed at the mouth: its spawn drawn as the road (no rift scar at the mouth). */
+const MOUTH_ROAD: GroundGrid = { ...GRID, tiles: GRID.tiles.map((t) => (t === 'S' ? '#' : t)) };
 
 /** A placed sprite's depth: its ground point, scenery a hair behind a unit on the same spot. */
 const foot = (o: Placed): number => (o[2] + o[3]) * 8 + (o[0].startsWith('prop.') ? 0.1 : 0.2);
@@ -161,7 +169,8 @@ export function m8Corner(baked: ReadonlyMap<string, BakedSprite>, zoom: number):
   for (const a of apronCells(grid, ENV)) cell(a.col, a.row, a);
   for (let d = 0; d <= colsN + rowsN - 2; d++) {
     for (let i = Math.max(0, d - rowsN + 1); i <= Math.min(d, colsN - 1); i++) {
-      cell(i, d - i, dressTile(grid, i, d - i));
+      const spawn = grid.tiles[(d - i) * colsN + i] === 'S';
+      cell(i, d - i, dressTile(spawn ? MOUTH_ROAD : grid, i, d - i));
     }
   }
   // Dawn's light over the drawn ground: additive, per pixel, by its grid point.

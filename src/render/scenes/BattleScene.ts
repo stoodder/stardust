@@ -1090,7 +1090,11 @@ export class BattleScene extends Phaser.Scene {
       },
       debris: this.#fx.debrisLive,
       bossBar: this.bossBarFill,
-      songNight: { ...this.#songNight.look(), rims: this.#dawnRims.rimmed }, // T831; T901
+      songNight: {
+        ...this.#songNight.look(),
+        rims: this.#dawnRims.rimmed, // T901
+        unrimmed: this.#dawnRims.passedOver, // C5
+      }, // T831
       bore: this.#bore.look(), // T831
       memorial: { tile: this.#memorial.tile, shown: this.#memorial.shown }, // T831
       song: {
