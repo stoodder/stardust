@@ -139,7 +139,6 @@ function noMindspikeSteps(): BuildStep[] {
     fire(15, 5, [11, 4]),
     { wave: 15, upgrade: LEDGE_W },
     { wave: 15, upgrade: GATE_W },
-    { wave: 15, build: 'thumper', tile: GAP_E },
     { wave: 15, build: 'harpoon', tile: HALLS_E },
     { wave: 15, upgrade: MID_S },
     { wave: 15, build: 'thumper', tile: CORNER },
@@ -149,21 +148,16 @@ function noMindspikeSteps(): BuildStep[] {
     { wave: 15, upgrade: CORNER },
     { wave: 15, upgrade: MID_S },
     fire(15, 18, [6, 7]),
-    { wave: 15, build: 'thumper', tile: RIDGE },
     { wave: 15, build: 'sproing', tile: RIDGE_W },
     { wave: 15, upgrade: LEDGE_W },
     { wave: 15, upgrade: BEND_E },
-    { wave: 15, upgrade: GATE_E },
-    { wave: 15, build: 'harpoon', tile: SEAM_E },
     { wave: 15, upgrade: MID_N },
     // Phase 2 at the Halls mouth (D156): what it earns goes where the Unsung and the adds meet
     // the choir, the descent's ledges, its corner, and the Halls' harpoons.
     { wave: 19, upgrade: LEDGE_E },
     { wave: 19, upgrade: HALLS_E },
-    { wave: 20, upgrade: SEAM_E },
     { wave: 20, upgrade: HALLS_E },
-    { wave: 21, upgrade: SEAM_E },
-    { wave: 21, upgrade: RIDGE_W },
+    { wave: 20, specialize: LEDGE_E, spec: 'a' },
     WHOS_THERE,
   ];
 }

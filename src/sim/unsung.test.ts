@@ -100,6 +100,8 @@ function world(): { state: SimState; ctx: TickContext } {
   }
   pointAt(ROAD, LEAD, state.choir, 0);
   state.phase = SONG_PHASE;
+  // Ten minutes into the song: the forms' time floors (D156) have passed (their own test sets it).
+  state.phaseTick = state.tick - secToTicks(600);
   state.restTarget = SONG.restTarget;
   return { state, ctx };
 }
@@ -185,6 +187,8 @@ describe('the Unsung’s data (enemies.md § 6; D154)', () => {
     expect(P3!.phase!.tellTicks).toBeGreaterThanOrEqual(secToTicks(BOSS_MIN_TELL_SEC));
     expect(P4).toMatchObject({ floorPct: 0.01, adds: { enemy: 'silencer', count: 1 } });
     expect(P4!.adds!.everyTicks).toBe(1200);
+    // Forms 3 and 4 wait for their time (D156): never sooner than 60 s and 120 s into Phase 2.
+    expect(PHASES.map((p) => p.notBeforeTicks)).toEqual([0, 0, secToTicks(60), secToTicks(120)]);
     for (const g of [
       'enemy.boss.layToRest',
       'enemy.boss.floor',
@@ -256,9 +260,11 @@ describe('phase 3: the dig toward the choir (D154 Fork 2)', () => {
     expect(u.burrowed).toBe(false);
     run(state, ctx, TELL - 1, false);
     expect(u.burrowed).toBe(false);
+    const dugInAt = u.dist;
     run(state, ctx, 1, false);
     expect(u.burrowed).toBe(true);
     expect(untargetable(u)).toBe(true);
+    expect(u.digFromDist).toBe(dugInAt);
     expect(u.digToDist).toBeCloseTo(choirDist(state, MAP, u), 12);
     expect(u.digToDist).toBeCloseTo(mid.dist, 9); // the choir walks the boss's own road here
     const out: Point = { x: 0, y: 0 };
@@ -276,9 +282,13 @@ describe('phase 3: the dig toward the choir (D154 Fork 2)', () => {
     expect(of(events, 'SingerHushed')).toEqual([{ type: 'SingerHushed', uid: up[0]!.hushed }]);
     expect(state.choir.voices).toBe(voices - 1);
     const hushed = allies(state).find((a) => a.uid === up[0]!.hushed)!;
-    expect(Math.hypot(hushed.x - u.x, hushed.y - u.y)).toBeLessThanOrEqual(
+    const [ux, uy] = up[0]!.at; // where it came up
+    expect(Math.hypot(hushed.x - ux, hushed.y - uy)).toBeLessThanOrEqual(
       BOSS_SURFACE_HUSH_TILES + 0.41, // the column drifted it back since
     );
+    // The song drove it back to where it dug in, its edge (D156).
+    expect(u.dist).toBeCloseTo(dugInAt, 9);
+    expect(u.digFromDist).toBe(-1);
     expect(u.abilityCount).toBe(1);
     expect(u.abilityTicks).toBe(GAP);
   });
@@ -458,5 +468,45 @@ describe('the hot loop', () => {
     expect(state.enemies.used).toBe(used);
     expect(state.events).toEqual([]);
     expect(u.alive).toBe(true);
+  });
+});
+
+describe("the forms' time floors (D156): damage never brings a form on sooner", () => {
+  it('reached by HP early, the HP holds at the threshold (the hits still feed the song)', () => {
+    const { state, ctx } = world();
+    state.phaseTick = state.tick; // Phase 2 just began
+    const b = boss(state, ctx);
+    b.bossPhase = 3;
+    b.hp = 0.3 * UNSUNG.hp;
+    // 30 s in: form 4 (120 s) can't begin yet, so the HP stops at its threshold.
+    state.tick += secToTicks(30);
+    expect(bossDamage(state, b, 0.2 * UNSUNG.hp)).toBeCloseTo(0.05 * UNSUNG.hp, 6);
+    expect(b.hp).toBeCloseTo(0.25 * UNSUNG.hp, 6);
+    expect(b.bossPhase).toBe(3);
+    applyDamage(state, b, 500, 'kinetic', SRC);
+    expect(b.hp).toBeCloseTo(0.25 * UNSUNG.hp, 6); // held
+    expect(b.songDamage).toBeGreaterThan(0); // the song still hears every hit
+    // Once its time comes, the next hit begins form 4.
+    state.tick = state.phaseTick + P4!.notBeforeTicks;
+    bossDamage(state, b, 1);
+    expect(b.bossPhase).toBe(4);
+  });
+
+  it('risen after the split early, it holds in its rise until form 3 may begin', () => {
+    const { state, ctx } = world();
+    state.phaseTick = state.tick; // Phase 2 just began: form 3 waits 60 s
+    const u = risen(state, ctx);
+    expect(u.bossPhase).toBe(3);
+    const left = state.phaseTick + P3!.notBeforeTicks - state.tick;
+    expect(left).toBeGreaterThan(BOSS_PHASE_INVULNERABLE_TICKS);
+    expect(u.invulnerableTicks).toBeGreaterThanOrEqual(left - 1);
+    expect(immune(u)).toBe(true);
+  });
+
+  it('no other boss has one: their phases begin as soon as their HP share comes', () => {
+    for (const [id, e] of Object.entries(LIVE.enemies)) {
+      if (e.boss === null || id === 'unsung') continue;
+      expect(e.boss.phases.map((p) => p.notBeforeTicks), id).toEqual(e.boss.phases.map(() => 0));
+    }
   });
 });

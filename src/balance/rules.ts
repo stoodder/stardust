@@ -33,6 +33,13 @@ export const LEAK_LEAD_WAVES = 1;
 /** Assertion 5: a no-counter build must lose by this share of the waves (before the final third). */
 export const NO_COUNTER_LOSE_BY_SHARE = 2 / 3;
 
+/**
+ * The late-rebuild variant (D156; balance/revokeChecks.ts): after the script restores a revoked
+ * class (the finale's "Who's there?"), the build issues nothing for this long, as a human who
+ * reads the moment, unpauses, and rebuilds by hand.
+ */
+export const LATE_REBUILD_SEC = 15;
+
 /** Seeds for the "every seed" assertions (1..n); `--seeds` overrides n. */
 export const DEFAULT_SEED_COUNT = 5;
 /** Seeds for the "seeds 1–3" assertions (capped by `--seeds`). */

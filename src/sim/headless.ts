@@ -589,6 +589,12 @@ export interface HeadlessOptions {
   readonly maxTicks?: number;
   /** Check the run's invariants after every tick (conventions.md § Balance sims, #12). Default true. */
   readonly checkInvariants?: boolean;
+  /**
+   * After the script restores a class (ClassRestored: the finale's "Who's there?"), the executor
+   * issues nothing for this many ticks: a human's slower rebuild (the harness's late-rebuild
+   * variant, D156). Default 0: it rebuilds at once.
+   */
+  readonly holdAfterRestoreTicks?: number;
 }
 
 export interface HeadlessResult extends RunSummary {
@@ -633,14 +639,21 @@ export function runHeadless<K extends IdSpace = LiveIds>(
   const tracker = createRunTracker(sim, opts.checkInvariants ?? true);
   const out: SimEvent<K>[] = [];
   let hushes = 0;
+  const hold = opts.holdAfterRestoreTicks ?? 0;
+  let restoredAt = -1;
   const drain = (): void => {
     out.length = 0;
     sim.drainEvents(out);
     tracker.consume(out);
-    for (let i = 0; i < out.length; i++) if (out[i]!.type === 'Hushed') hushes++; // i < length
+    for (let i = 0; i < out.length; i++) {
+      const type = out[i]!.type; // i < length
+      if (type === 'Hushed') hushes++;
+      else if (type === 'ClassRestored' && restoredAt < 0) restoredAt = sim.state.tick;
+    }
   };
   while (sim.state.outcome === 'playing' && sim.state.tick < maxTicks) {
-    exec.beforeTick();
+    const held = restoredAt >= 0 && sim.state.tick - restoredAt < hold;
+    if (!held) exec.beforeTick();
     drain();
     sim.step();
     drain();

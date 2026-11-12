@@ -461,6 +461,11 @@ export interface Enemy extends PoolEntity {
    */
   digToDist: number;
   digHp: number;
+  /**
+   * Where that dig started (the song's edge, where the song held it), −1 when not digging: after
+   * it surfaces among the singers, the song drives it back there (D156).
+   */
+  digFromDist: number;
 }
 
 export const ENEMY_BLANK: Readonly<Enemy> = Object.freeze({
@@ -541,6 +546,7 @@ export const ENEMY_BLANK: Readonly<Enemy> = Object.freeze({
   scatteredOnce: false,
   songDamage: 0,
   digToDist: -1,
+  digFromDist: -1,
   digHp: 0,
 });
 

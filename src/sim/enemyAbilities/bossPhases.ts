@@ -64,6 +64,7 @@ export function enterBossPhase(
           ? p.adds.everyTicks // T808: the Song's first adds one period in
           : 0;
   boss.digToDist = -1; // T808
+  boss.digFromDist = -1; // D156
   if (boss.def!.phase === null) {
     boss.phased = false; // T808: a phase-scoped Phased cycle starts afresh (unsung.ts)
     boss.phaseTicks = 0;

@@ -13,7 +13,7 @@ import { LEAK_LEAD_WAVES, MAX_WAVE_LOSS_PCT } from './rules.ts';
 /**
  * One run: a build label ('par', 'none', 'alwaysCallEarly', 'parNoAbilities', 'spareFleeing',
  * 'holdFireWhile:quiet_wave', 'companion:x', 'flag:x=v', 'flags:x=v,y=w', 'alt:x', 'noCounter:x',
- * 'guard:x'), run on the map's
+ * 'guard:x', 'revoke:x', 'rebuildLate:<label>'), run on the map's
  * reference profile on Standard unless a `@<meta>` suffix says otherwise ('par@story',
  * 'noCounter:armor@fullCatalog', 'par@rnd:orbital_strike_mk2'; `splitMeta`).
  */
@@ -119,6 +119,13 @@ export function assetPctOf(rec: Pick<RunRecord, 'result'>): number | null {
   return (100 * r.asset) / r.maxAsset;
 }
 
+/**
+ * The late-rebuild variant's label prefix ('rebuildLate:par', 'rebuildLate:alt:no_mindspike'):
+ * the build under the revoking cue's flag, rebuilding the restored class LATE_REBUILD_SEC late
+ * (D156; balance/revokeChecks.ts).
+ */
+export const LATE_REBUILD_PREFIX = 'rebuildLate:';
+
 export const runKey = (r: RunRequest): string => `${r.build}#${r.seed}${r.repeat ? '#again' : ''}`;
 
 /**
@@ -168,9 +175,11 @@ export function flagsFor<K extends IdSpace>(
   map: CompiledMapDef<K>,
 ): ScriptFlags | null {
   const build = splitMeta(label).build;
-  // A revocation variant runs under the flag its cue waits for (the finale's Directive 0: Keep;
-  // T821), so the cue fires and takes the forced class.
-  if (build.startsWith('revoke:')) return gatedFlagDefaults(map, revokeCueFlags(map));
+  // A revocation variant, and a late rebuild after the restore (D156), run under the flag its cue
+  // waits for (the finale's Directive 0: Keep; T821), so the cue fires and takes the class.
+  if (build.startsWith('revoke:') || build.startsWith(LATE_REBUILD_PREFIX)) {
+    return gatedFlagDefaults(map, revokeCueFlags(map));
+  }
   // A flag that gates a refugee group (A3M3's door) takes its first variant (T605).
   if (!build.startsWith('flag:') && !build.startsWith('flags:')) return gatedFlagDefaults(map);
   const pairs = build.slice(build.indexOf(':') + 1).split(',');

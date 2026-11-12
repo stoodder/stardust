@@ -4,19 +4,21 @@
 // whatever `mostInvested` would pick. Each must win at the forgiving floor or better: losing any
 // class the build carries is survivable (the refund rebuilds), never a wall. The run proves the
 // forced class is the one revoked. Profile-level, the counter guarantee is static
-// (content/validateBuilds.ts [revocation]).
+// (content/validateBuilds.ts [revocation]). And on a map whose script gives the class back (the
+// finale's "Who's there?"), par and its alts must survive a human's late rebuild (D156).
 import type { CompiledBuild, CompiledContent, CompiledMapDef } from '../content/compiled.ts';
 import type { IdSpace, TowerFaction } from '../content/types.ts';
 import {
   describeRun,
   fmtPct,
+  LATE_REBUILD_PREFIX,
   margins,
   perRun,
   splitMeta,
   wonCount,
   type CheckSpec,
 } from './checks.ts';
-import { FORGIVING_FLOOR_PCT } from './rules.ts';
+import { FORGIVING_FLOOR_PCT, LATE_REBUILD_SEC, parBand } from './rules.ts';
 
 /** The run label of par with the cue forced onto `tower`: 'revoke:rivet'. */
 export const revokeVariantLabel = (tower: string): string => `revoke:${tower}`;
@@ -80,6 +82,48 @@ export function revokeVariantChecks<K extends IdSpace>(
           : `margin ${fmtPct(rec.marginPct)} is under the floor ${FORGIVING_FLOOR_PCT}`;
       },
       (recs) => `${wonCount(recs)}, margins ${margins(recs)}`,
+    ),
+  );
+}
+
+/**
+ * The late-rebuild variant (D156): on a map whose script restores a class it revoked (the
+ * finale's "Who's there?"), par and every alt the map expects to win run under the revoking cue's
+ * flag with the restored class rebuilt LATE_REBUILD_SEC late (`rebuildLate:<label>`), a human's
+ * pace. Each must still win at its own floor: par at its band's, an alt at the forgiving floor.
+ */
+export function lateRebuildChecks<K extends IdSpace>(
+  map: CompiledMapDef<K>,
+  few: readonly number[],
+): CheckSpec[] {
+  const restores = map.events.some((ev) => ev.actions.some((a) => 'restoreTowerClass' in a));
+  if (!restores || revokeFactions(map).length === 0) return [];
+  const b = map.builds;
+  const alts = Object.keys(b.altBuilds).filter(
+    (name) => !Object.hasOwn(b.altExpectations, name) || !b.altExpectations[name]!.outcome,
+  );
+  const band = parBand(map.act, b.marginBand);
+  const subjects: [string, number][] = [
+    ['par', band?.lo ?? FORGIVING_FLOOR_PCT],
+    ...alts.map((name): [string, number] => [`alt:${name}`, FORGIVING_FLOOR_PCT]),
+  ];
+  return subjects.map(([label, floor]) =>
+    perRun(
+      'lateRebuild',
+      `${label} rebuilding the restored class ${LATE_REBUILD_SEC} s late wins at ≥ ${floor}%`,
+      `${LATE_REBUILD_PREFIX}${label}`,
+      few,
+      (rec) => {
+        const r = rec.result;
+        if (r?.outcome !== 'won') return describeRun(rec);
+        if (r.restored.length === 0) return 'the script restored no class';
+        return rec.marginPct >= floor
+          ? null
+          : `margin ${fmtPct(rec.marginPct)} is under the floor ${floor}`;
+      },
+      (recs) => `${wonCount(recs)}, margins ${margins(recs)}`,
+      [],
+      label,
     ),
   );
 }

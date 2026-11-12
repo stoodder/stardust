@@ -5,9 +5,11 @@ import type { CompiledBuild, CompiledContent, CompiledMapDef } from '../content/
 import type { IdSpace, LiveIds, WaveTag } from '../content/types.ts';
 import { LIVE_CATALOG, type MetaCatalog } from '../meta/index.ts';
 import { runHeadless, type ScriptFlags } from '../sim/index.ts';
+import { secToTicks } from '../shared/time.ts';
 import {
   describeRun,
   flagsFor,
+  LATE_REBUILD_PREFIX,
   fmtPct,
   marginOf,
   median,
@@ -35,10 +37,16 @@ import {
   type RunProfile,
 } from './profile.ts';
 import { rndPickChecks } from './rndChecks.ts';
-import { revocableClasses, revokeClassOf, revokeVariantChecks } from './revokeChecks.ts'; // T606
+import {
+  lateRebuildChecks,
+  revocableClasses,
+  revokeClassOf,
+  revokeVariantChecks,
+} from './revokeChecks.ts'; // T606, D156
 import {
   DEFAULT_SEED_COUNT,
   FEW_SEED_COUNT,
+  LATE_REBUILD_SEC,
   MONOTONIC_TOLERANCE_PCT,
   RUN_BUDGET_MS,
   parBand,
@@ -104,6 +112,11 @@ export function buildFor<K extends IdSpace>(
   if (flags === null) return null; // a 'flag:'/'flags:' label naming a value the map doesn't list
   const par = parBuildFor(map, flags);
   label = splitMeta(label).build;
+  // The late-rebuild variant (D156): the build it names, played by the runner's late executor.
+  if (label.startsWith(LATE_REBUILD_PREFIX)) {
+    const inner = label.slice(LATE_REBUILD_PREFIX.length);
+    return inner === 'par' || inner.startsWith('alt:') ? buildFor(inner, map, content) : null;
+  }
   if (label === 'par') return par;
   if (label === 'parNoAbilities') return withoutAbilityCasts(par);
   if (label === 'none' || label === 'alwaysCallEarly' || label === 'spareFleeing') {
@@ -238,6 +251,7 @@ function planWith<K extends IdSpace>(
     ...medalChecks(map, every),
     ...rndPickChecks(map, rndPicks(map, content, catalog), few),
     ...revokeVariantChecks(map, content, few), // T606
+    ...lateRebuildChecks(map, few), // D156
   ];
   const only = opts.build;
   if (only !== undefined) {
@@ -348,9 +362,14 @@ function runnerWith<K extends IdSpace>(
       );
       const cfg = forced === undefined ? plain : { ...plain, revokeClass: forced };
       // A Holdout's run is judged against its Evacuated floor (balance/holdout.ts; T605).
+      // A late-rebuild variant holds the executor after the restore (D156).
+      const late = splitMeta(req.build).build.startsWith(LATE_REBUILD_PREFIX);
       const result = judgeHoldout(
         map,
-        runHeadless(cfg, build, opts.maxTicks === undefined ? {} : { maxTicks: opts.maxTicks }),
+        runHeadless(cfg, build, {
+          ...(opts.maxTicks === undefined ? {} : { maxTicks: opts.maxTicks }),
+          ...(late ? { holdAfterRestoreTicks: secToTicks(LATE_REBUILD_SEC) } : {}),
+        }),
       );
       const marginPct = marginOf(result);
       return { ...base, error: null, result, marginPct, ms: cpuNow() - start };

@@ -22,6 +22,9 @@
 //   BOSS_ABILITY_TELL_SEC (the surfacing tell: the ground churns under the singers). It surfaces
 //   there and hushes the nearest singing singer within BOSS_SURFACE_HUSH_TILES (the choir's hush:
 //   kept, trailing, Voices −1; a singer already in a Hollow unit's tell is passed over).
+//   **Driven back:** up among the singers, the song drives it back at once to where it dug in (the
+//   song's edge, `digFromDist`; D156), so it never stands in the column drawing the towers' fire
+//   while the adds walk past it into the singers (BossSurfaced's `at` is where it came up).
 //   **Dug out:** a burrow answer's hit underground (the Scuttle Den's swarm, Underfoot; damage.ts
 //   `reachesBurrowed`) takes its HP below what it dug in with, and on the next tick it surfaces
 //   where it is, short of the singers, hushing no one (BossSurfaced `dugOut`). Either way the dig
@@ -150,6 +153,7 @@ function digWait(state: SimState, ctx: TickContext, boss: Enemy, durationTicks: 
   boss.burrowed = true;
   boss.abilityTicks = durationTicks;
   boss.digHp = boss.hp;
+  boss.digFromDist = boss.dist;
   boss.digToDist = choirDist(state, ctx.map, boss);
   boss.paceMul = 0;
 }
@@ -179,6 +183,15 @@ function surface(state: SimState, boss: Enemy, dugOut: boolean): void {
   boss.digToDist = -1;
   const hushed = dugOut || !arrived ? 0 : hushNearest(state, boss);
   emit(state, { type: 'BossSurfaced', uid: boss.uid, at: [boss.x, boss.y], dugOut, hushed });
+  // Up among the singers, the song drives it back to its edge, where it dug in (D156): it never
+  // stands in the column, drawing every tower's fire while the adds walk past it.
+  const from = boss.digFromDist;
+  boss.digFromDist = -1;
+  const route = boss.route;
+  if (!dugOut && arrived && from >= 0 && route !== null) {
+    boss.dist = from;
+    boss.seg = pointAt(route, from, boss, 0);
+  }
 }
 
 /** Hushes the nearest singing singer within BOSS_SURFACE_HUSH_TILES of the boss; its uid, or 0. */
