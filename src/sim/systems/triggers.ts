@@ -356,7 +356,7 @@ function unsupportedAction(a: CompiledScriptAction<IdSpace>, where: string, out:
   } else if ('openTile' in a) {
     // T707 opens a tile nothing builds on (sim/openTile.ts); a buildable one waits for M8.
     if (isBuildableTile(a.to)) {
-      out.push(`${where}: action openTile to buildable '${a.to}' is not simulated until M8`);
+      out.push(`${where}: action openTile to buildable '${a.to}' is not simulated`);
     }
   } else if (
     !('unlockTowerClass' in a) &&

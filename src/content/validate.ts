@@ -49,11 +49,10 @@
 // - Maps (validateMap.ts), builds (validateBuilds.ts), and medals and conditions
 //   (validateMedals.ts): see their headers.
 //
-// Feature guards ([feature]): content that needs a system that doesn't exist yet is refused
-// rather than silently mis-simulated: non-Defend objectives (T305; Escort safe exits). M3's new
-// mechanics (flyers, enemy abilities, bosses, wreckage, objectives, the new ability effects) are
-// refused at createSim instead, per feature (sim/gates.ts FEATURE_GATES), so their content can be
-// registered ahead of the task that runs it.
+// Feature guards: content that needs a system that doesn't exist is refused rather than silently
+// mis-simulated. Every system the shipped content uses exists, so the content checks emit no
+// [feature] errors today; the mechanism stays in sim/gates.ts (FEATURE_GATES), refused at
+// createSim per feature, for content registered ahead of the system that runs it.
 import { mergePatch } from './compileHelpers.ts';
 import { validatePalettes } from './palettes/validate.ts';
 import { validateFinalePhases } from './validateFinale.ts'; // T800a

@@ -373,7 +373,7 @@ describe('the jettison (jettison.ts) and its plates (openTile.ts)', () => {
     expect(state.events).toEqual([{ type: 'TileOpened', marker: 'crash', to: 'x' }]);
     expect(unsupportedScript(openMap('x'))).toEqual([]);
     expect(unsupportedScript(openMap('o'))).toEqual([
-      "event 'open': action openTile to buildable 'o' is not simulated until M8",
+      "event 'open': action openTile to buildable 'o' is not simulated",
     ]);
   });
 });

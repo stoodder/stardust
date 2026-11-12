@@ -33,11 +33,22 @@ test('screens: title → Start (Enter) → battle', async ({ page }) => {
   await page.keyboard.press('KeyW');
   await page.evaluate(() => globalThis.__sd?.fastForward(1));
   expect(await page.evaluate(() => globalThis.__sd?.state()?.wave)).toBe(0);
-  // A real modal (D026): the HUD behind it is inert, and Tab stays on the dialog's button.
+  // A real modal (D026): the HUD behind it is inert, and Tab cycles inside the dialog (Clock in
+  // and the medals' "more" toggle, T803e), never out of it; Shift+Tab comes back to Clock in.
   await expect(page.locator('.hud-play')).toHaveAttribute('inert', '');
   const clockIn = briefing.getByRole('button', { name: 'Clock in' });
+  const focusInDialog = () =>
+    page.evaluate(
+      () => document.querySelector('[role="dialog"]')?.contains(document.activeElement) === true,
+    );
+  for (let i = 0; i < 3; i++) {
+    // oxlint-disable-next-line no-await-in-loop -- one Tab, one check
+    await page.keyboard.press('Tab');
+    // oxlint-disable-next-line no-await-in-loop -- one Tab, one check
+    expect(await focusInDialog()).toBe(true);
+  }
+  await clockIn.focus();
   await page.keyboard.press('Tab');
-  await expect(clockIn).toBeFocused();
   await page.keyboard.press('Shift+Tab');
   await expect(clockIn).toBeFocused();
   // Esc closes it whatever has the focus (app/keys.ts routes it), even with nothing focused: a
