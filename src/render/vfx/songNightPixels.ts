@@ -71,17 +71,26 @@ export function sunStep(dawn: number): number {
 /** 4×4 ordered-dither thresholds (0–15). */
 const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5] as const;
 
+/** The sun's front at step `step` (of SUN_STEPS): a pixel whose `sunKeys` key reaches it is lit. */
+export function sunFront(step: number): number {
+  return step <= 0 ? Number.POSITIVE_INFINITY : 1 - (step / SUN_STEPS) * (1 + SUN_SOFT);
+}
+
 /**
- * How far past the sun's front grid point (`gx`, …) stands at step `step` (of SUN_STEPS), on a map
- * `cols` wide, with the pixel's dither `th` (0–15): ≥ 0 is sunlit (that far behind the front, as a
- * share of the sweep), < 0 still in the night. Only the grid x matters: the sun rises in the east.
+ * Where grid x `gx` stands in the sun's sweep, on a map `cols` wide, with a pixel's dither `th`
+ * (0–15; 15 for none): its share of the way from the sweep's west end (0) to its east (1), less up
+ * to SUN_SOFT by the dither, so the front's edge is dithered. Only the grid x matters: the sun
+ * rises in the east.
  */
-export function sunPast(gx: number, cols: number, step: number, th = 15): number {
-  if (step <= 0) return -1;
+export function sunKey(gx: number, cols: number, th = 15): number {
   const span = cols + 2 * SUN_MARGIN_TILES;
   const s = Math.min(1, Math.max(0, (gx + SUN_MARGIN_TILES) / span));
-  const front = 1 - (step / SUN_STEPS) * (1 + SUN_SOFT);
-  return s + (th / 16 - 1) * SUN_SOFT - front;
+  return s + (th / 16 - 1) * SUN_SOFT;
+}
+
+/** How far past the sun's front grid x `gx` stands at step `step` (≥ 0: sunlit). */
+export function sunPast(gx: number, cols: number, step: number, th = 15): number {
+  return sunKey(gx, cols, th) - sunFront(step);
 }
 
 /** Whether grid point (`gx`, `gy`) is sunlit at step `step` (its scenery wears no night). */
@@ -90,9 +99,40 @@ export function isSunlit(gx: number, cols: number, step: number): boolean {
 }
 
 /**
+ * Every pixel's `sunKey` in a `w`×`h` buffer whose (0, 0) sits at screen (`left`, `top`), made
+ * once per map, so a step of the sweep is one comparison a pixel. A pixel where `base` (when
+ * given) is clear (beyond the drawn ground) keys NaN: the sun never lights it and the night never
+ * falls there.
+ */
+export function sunKeys(
+  w: number,
+  h: number,
+  left: number,
+  top: number,
+  origin: IsoOrigin,
+  cols: number,
+  base: Uint32Array | null = null,
+): Float32Array {
+  const keys = new Float32Array(w * h);
+  for (let y = 0; y < h; y++) {
+    const v = (y + 0.5 + top - origin.y) / HALF_H;
+    for (let x = 0; x < w; x++) {
+      const i = y * w + x;
+      if (base !== null && base[i] === MASK_LIT) {
+        keys[i] = Number.NaN;
+        continue;
+      }
+      const u = (x + 0.5 + left - origin.x) / HALF_W;
+      keys[i] = sunKey((u + v) / 2, cols, BAYER4[(y % 4) * 4 + (x % 4)]!); // index < 16
+    }
+  }
+  return keys;
+}
+
+/**
  * Draws the night's mask into `px` (`w`×`h`, as darknessPixels' `drawDarkMask`, whose buffer (0, 0)
- * sits at screen (`left`, `top`)): opaque everywhere but the song's discs and, from Dawn, the
- * ground the sun has reached.
+ * sits at screen (`left`, `top`)): `base` (opaque over the drawn ground; null: opaque everywhere),
+ * cleared over the song's discs and, from Dawn, wherever the sun has reached (`keys`, `sunKeys`).
  */
 export function drawSongNightMask(
   px: Uint32Array,
@@ -103,36 +143,24 @@ export function drawSongNightMask(
   origin: IsoOrigin,
   discs: readonly LightDisc[],
   count: number,
-  cols: number,
+  base: Uint32Array | null,
+  keys: Float32Array,
   step: number,
 ): void {
-  px.fill(MASK_DARK);
+  if (base === null) px.fill(MASK_DARK);
+  else px.set(base);
   stampDiscs(px, w, h, left, top, origin, discs, 0, count, MASK_LIT);
   if (step <= 0) return;
-  for (let y = 0; y < h; y++) {
-    const v = (y + 0.5 + top - origin.y) / HALF_H;
-    for (let x = 0; x < w; x++) {
-      const u = (x + 0.5 + left - origin.x) / HALF_W;
-      const th = BAYER4[(y % 4) * 4 + (x % 4)]!; // index < 16
-      if (sunPast((u + v) / 2, cols, step, th) >= 0) px[y * w + x] = MASK_LIT;
-    }
-  }
+  const front = sunFront(step);
+  for (let i = 0; i < px.length; i++) if (keys[i]! >= front) px[i] = MASK_LIT; // i < length
 }
 
 /**
- * Draws the sunlight into `px` (RGBA words, little-endian as an ImageData's view; additive): clear
- * in the night, the rake's gold just behind the front, the wash over the rest the sun has reached.
+ * Draws the sunlight into `px` (RGBA words, little-endian as an ImageData's view; additive), from
+ * each pixel's `keys` (`sunKeys`): clear in the night, the rake's gold just behind the front, the
+ * wash over the rest the sun has reached.
  */
-export function drawSunMask(
-  px: Uint32Array,
-  w: number,
-  h: number,
-  left: number,
-  top: number,
-  origin: IsoOrigin,
-  cols: number,
-  step: number,
-): void {
+export function drawSunMask(px: Uint32Array, keys: Float32Array, step: number): void {
   px.fill(0);
   if (step <= 0) return;
   const c = rgbOf(SUN_LIGHT);
@@ -140,16 +168,11 @@ export function drawSunMask(
     ((Math.round(255 * a) << 24) | (c.b << 16) | (c.g << 8) | c.r) >>> 0;
   const rake = word(SUN_RAKE_ALPHA);
   const wash = word(SUN_WASH_ALPHA);
+  const front = sunFront(step);
   // Past the end of the sweep the front has left the view: the rake no longer shows.
-  const raking = step < SUN_STEPS;
-  for (let y = 0; y < h; y++) {
-    const v = (y + 0.5 + top - origin.y) / HALF_H;
-    for (let x = 0; x < w; x++) {
-      const u = (x + 0.5 + left - origin.x) / HALF_W;
-      const th = BAYER4[(y % 4) * 4 + (x % 4)]!; // index < 16
-      const past = sunPast((u + v) / 2, cols, step, th);
-      if (past < 0) continue;
-      px[y * w + x] = raking && past < SUN_RAKE ? rake : wash;
-    }
+  const rakeTo = step < SUN_STEPS ? front + SUN_RAKE : front;
+  for (let i = 0; i < px.length; i++) {
+    const k = keys[i]!; // i < length
+    if (k >= front) px[i] = k < rakeTo ? rake : wash;
   }
 }

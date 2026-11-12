@@ -34,9 +34,15 @@ export type CampaignMapId = (typeof CAMPAIGN_PLAN)[number]['id'];
 /** The planned order, ids only. */
 export const CAMPAIGN_PLAN_IDS: readonly CampaignMapId[] = CAMPAIGN_PLAN.map((m) => m.id);
 
-function isRegistered(id: string): id is MapId {
+/**
+ * A registered campaign map's id: a MapId the campaign plan lists. The post-game maps (Endless's
+ * `end_m01`, T861) are MapIds but never campaign maps, so campaign-only helpers take this.
+ */
+export type CampaignMap = Extract<MapId, CampaignMapId>;
+
+function isRegistered(id: CampaignMapId): id is CampaignMap {
   return Object.hasOwn(MAPS, id);
 }
 
 /** The registered campaign maps, in campaign order. */
-export const CAMPAIGN: readonly MapId[] = CAMPAIGN_PLAN_IDS.filter(isRegistered);
+export const CAMPAIGN: readonly CampaignMap[] = CAMPAIGN_PLAN_IDS.filter(isRegistered);

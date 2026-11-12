@@ -4,6 +4,7 @@ import { lumOf, MASK_DARK, MASK_LIT, noDark } from './darknessPixels.ts';
 import {
   drawSongNightMask,
   drawSunMask,
+  sunKeys,
   isSunlit,
   songNightTones,
   sunStep,
@@ -18,6 +19,7 @@ const W = 360;
 const H = 200;
 const origin = { x: 180, y: 10 };
 /** The buffer pixel over grid point (gx, gy). */
+const KEYS = sunKeys(W, H, 0, 0, origin, COLS);
 const pixelAt = (gx: number, gy: number): number =>
   Math.floor((gx + gy) * HALF_H + origin.y) * W + Math.floor((gx - gy) * HALF_W + origin.x);
 
@@ -37,18 +39,33 @@ describe("the finale's night (T831)", () => {
   it('is dark everywhere but the song’s discs before Dawn', () => {
     const px = new Uint32Array(W * H);
     const discs = [{ x: 3, y: 3, radiusSq: 2.5 * 2.5 }];
-    drawSongNightMask(px, W, H, 0, 0, origin, discs, 1, COLS, 0);
+    drawSongNightMask(px, W, H, 0, 0, origin, discs, 1, null, KEYS, 0);
     expect(px[pixelAt(3, 3)]).toBe(MASK_LIT);
     expect(px[pixelAt(3, 5.3)]).toBe(MASK_LIT); // inside, 2.3 tiles off
     expect(px[pixelAt(3, 5.8)]).toBe(MASK_DARK); // outside, 2.8 tiles off
     expect(px[pixelAt(8, 8)]).toBe(MASK_DARK);
     // No disc counted: no hole.
-    drawSongNightMask(px, W, H, 0, 0, origin, discs, 0, COLS, 0);
+    drawSongNightMask(px, W, H, 0, 0, origin, discs, 0, null, KEYS, 0);
     expect(px[pixelAt(3, 3)]).toBe(MASK_DARK);
   });
 });
 
 describe('Dawn: the sun rakes in from the east (T831)', () => {
+  it('never lights or darkens beyond the drawn ground (a clear base)', () => {
+    const base = new Uint32Array(W * H).fill(MASK_DARK);
+    const out = pixelAt(9.5, 5);
+    base[out] = MASK_LIT;
+    const keys = sunKeys(W, H, 0, 0, origin, COLS, base);
+    expect(Number.isNaN(keys[out])).toBe(true);
+    const night = new Uint32Array(W * H);
+    const sun = new Uint32Array(W * H);
+    drawSongNightMask(night, W, H, 0, 0, origin, [], 0, base, keys, SUN_STEPS / 2);
+    drawSunMask(sun, keys, SUN_STEPS / 2);
+    expect(night[out]).toBe(MASK_LIT);
+    expect(sun[out]).toBe(0);
+    expect(sun[pixelAt(9.5, 4)]).not.toBe(0);
+  });
+
   it('quantizes Dawn’s progress to SUN_STEPS', () => {
     expect(sunStep(0)).toBe(0);
     expect(sunStep(0.5)).toBe(SUN_STEPS / 2);
@@ -82,8 +99,8 @@ describe('Dawn: the sun rakes in from the east (T831)', () => {
     const night = new Uint32Array(W * H);
     const sun = new Uint32Array(W * H);
     const step = SUN_STEPS / 2;
-    drawSongNightMask(night, W, H, 0, 0, origin, [], 0, COLS, step);
-    drawSunMask(sun, W, H, 0, 0, origin, COLS, step);
+    drawSongNightMask(night, W, H, 0, 0, origin, [], 0, null, KEYS, step);
+    drawSunMask(sun, KEYS, step);
     const east = pixelAt(9.5, 5);
     const west = pixelAt(0.5, 5);
     expect(night[east]).toBe(MASK_LIT);
@@ -97,7 +114,7 @@ describe('Dawn: the sun rakes in from the east (T831)', () => {
     }
     expect(raked).toBeGreaterThan(0);
     // Risen: the wash everywhere it reached, no rake.
-    drawSunMask(sun, W, H, 0, 0, origin, COLS, SUN_STEPS);
+    drawSunMask(sun, KEYS, SUN_STEPS);
     expect(alpha(sun[west]!)).toBeCloseTo(SUN_WASH_ALPHA, 2);
     expect(alpha(sun[pixelAt(5, 5)]!)).toBeCloseTo(SUN_WASH_ALPHA, 2);
   });

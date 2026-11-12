@@ -6,7 +6,7 @@
 // spec unlock for specs already built, and every ability. devSaves.test.ts validates every one.
 // `devUnlocks` opens gated systems whose maps don't exist yet (D031). It lives here, never in
 // SaveData, so no save or import code can carry it, and the app honours it only under `?test=1`.
-import { CAMPAIGN, type CampaignMapId } from '../../content/campaign.ts';
+import { CAMPAIGN, type CampaignMap, type CampaignMapId } from '../../content/campaign.ts';
 import { CODEX_IDS } from '../../content/codex/index.ts';
 import { MAPS } from '../../content/maps/index.ts';
 import { MEMO_IDS } from '../../content/memos/index.ts';
@@ -116,7 +116,7 @@ function afterA1M1(): SaveData {
 /** The profile the M3 dev saves carry (character creation done, T306). */
 const DEV_PROFILE = { name: 'Dev Tech', pronouns: 'they', callsign: 'sprout' } as const;
 
-function isRegistered(id: string): id is MapId {
+function isRegistered(id: string): id is CampaignMap {
   return CAMPAIGN.some((m) => m === id);
 }
 

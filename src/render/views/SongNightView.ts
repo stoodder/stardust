@@ -29,6 +29,7 @@ import {
   isSunlit,
   SONG_POOL,
   songNightTones,
+  sunKeys,
   sunStep,
   SUN_STEPS,
 } from '../vfx/songNightPixels.ts';
@@ -73,6 +74,8 @@ export class SongNightView implements NightTint {
   #sunPx: Uint32Array | null = null;
   /** The drawn ground's mask with no light in it (dark over the map and its apron, clear beyond). */
   #base: Uint32Array | null = null;
+  /** Each pixel's place in the sun's sweep (`sunKeys`; NaN beyond the drawn ground). */
+  #keys: Float32Array | null = null;
   /** Circles drawn, and the sun's step drawn (−1: nothing drawn yet). */
   #count = -1;
   #step = -1;
@@ -114,6 +117,7 @@ export class SongNightView implements NightTint {
     this.#nightPx = new Uint32Array(this.#nightData.data.buffer);
     this.#sunPx = new Uint32Array(this.#sunData.data.buffer);
     this.#base = baseMask(ground, env, w, h, origin);
+    this.#keys = sunKeys(w, h, -OVERHANG_PX, -OVERHANG_PX, origin, map.cols, this.#base);
     this.#night = new Phaser.GameObjects.Image(scene, -OVERHANG_PX, -OVERHANG_PX, NIGHT_KEY)
       .setOrigin(0, 0)
       .setBlendMode(Phaser.BlendModes.MULTIPLY)
@@ -280,12 +284,10 @@ export class SongNightView implements NightTint {
       this.#ctx.origin,
       this.#discs,
       this.#count,
-      this.#cols,
+      this.#base, // beyond the drawn ground (the sky, the void) the night never falls
+      this.#keys!, // set with the night
       this.#step,
     );
-    // Beyond the drawn ground (the sky, the void) the night never falls.
-    const base = this.#base!;
-    for (let i = 0; i < px.length; i++) if (base[i] === MASK_LIT) px[i] = MASK_LIT;
     this.#nightTex!.getContext().putImageData(data, 0, 0);
     this.#nightTex!.refresh();
   }
@@ -293,18 +295,7 @@ export class SongNightView implements NightTint {
   #drawSun(): void {
     const data = this.#sunData!; // set with the night
     const px = this.#sunPx!;
-    drawSunMask(
-      px,
-      data.width,
-      data.height,
-      -OVERHANG_PX,
-      -OVERHANG_PX,
-      this.#ctx.origin,
-      this.#cols,
-      this.#step,
-    );
-    const base = this.#base!;
-    for (let i = 0; i < px.length; i++) if (base[i] === MASK_LIT) px[i] = 0;
+    drawSunMask(px, this.#keys!, this.#step); // set with the night
     this.#sunTex!.getContext().putImageData(data, 0, 0);
     this.#sunTex!.refresh();
     this.#sunImg!.setVisible(this.#step > 0);

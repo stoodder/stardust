@@ -4,7 +4,8 @@
 // card, the memo, C5 ("We go."), the epilogue (the freighter, Pebble leading the song, the
 // lighthouse, Purge + Go's QUILL), the final image from orbit, then the Sector map. Then
 // `after_fin_go` (C5 answered) wins it again: Dawn now skips with Esc, and Continue goes straight
-// to the star map, with no memo, no C5, and no epilogue. Screenshots in <out>/screens/ending-go/.
+// to the star map, with no memo, no C5, and no epilogue. All of it under reduced motion.
+// Screenshots in <out>/screens/ending-go/.
 import { expect, test } from './fixtures.ts';
 import { answerC5, playDawn, watchEpilogueThrough, winFinale } from './ending.ts';
 import { nextFrames, shot, waitForReady } from './hooks.ts';
@@ -13,6 +14,9 @@ const FLOW = 'ending-go';
 
 test('the close under Go, then a replay that skips C5', async ({ page }) => {
   test.setTimeout(180_000);
+  // Under reduced motion (the Stay flow plays it moving): cuts, no slides, the roll a block at a
+  // time, the relay held still.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/?test=1&dialogue=1&fasttext=1&seed=1&save=after_a3m6_weakest');
   await waitForReady(page);
   await expect(page.getByTestId('star-map')).toBeVisible();
