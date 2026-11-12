@@ -338,8 +338,8 @@ export const map = defineMapLayout({
   song: {
     baseRadius: 2.5,
     restTarget: 1400,
-    restPerSec: 4,
-    restPerBossHp: 0.02,
+    restPerSec: 5.2,
+    restPerBossHp: 0.004,
     multipliers: [
       { flag: 'quill_choice', value: 'rewrite', mul: 1.5 },
       { flag: 'quill_choice', value: 'keep', mul: 1.25 },

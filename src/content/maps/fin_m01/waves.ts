@@ -220,6 +220,7 @@ export const PHASE_1: readonly WaveDef[] = [
       motes(12, 'rift_nw', 8),
       motes(6, 'rift_ne', 12, 0.2),
       motes(8, 'rift_ne', 16, 0.2),
+      motes(12, 'rift_nw', 14, 0.12),
       moths(4, 'sky_e', 6),
       gunships(2, 'sky_n', 10, 4),
       g('blackbudget', 1, 'bore_road', 14),
