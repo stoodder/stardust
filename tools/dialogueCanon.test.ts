@@ -1,6 +1,6 @@
 // Dialogue is canon (D026, D048): every line, choice option, and bark in a map's dialogue must
 // appear word for word in its map's section of its act file (`a1_m02` → story/campaign/act1.md
-// § A1M2, `a2_m01` → act2.md § A2M1, `fin_m01` → finale.md § FIN), and a shared bark in its act's file (by its id's act). The
+// § A1M2, `a2_m01` → act2.md § A2M1, `fin_m01` → finale.md § FIN, `ch_m01` → finale.md § CH1), and a shared bark in its act's file (by its id's act). The
 // other way round, every quoted line in a migrated map's *Story delivery* (from *Briefing* to
 // *Codex*) must be in its dialogue, so none is dropped. Reads the docs from disk, so it lives with
 // the other node-side checks.
@@ -10,6 +10,7 @@ import { describe, expect, it } from 'vitest';
 import { CAMPAIGN_PLAN } from '../src/content/campaign.ts';
 import { SHARED_BARKS } from '../src/content/dialogue/barks/index.ts';
 import { MAP_DIALOGUE } from '../src/content/dialogue/index.ts';
+import { CHALLENGE_MAPS } from '../src/content/maps/challenge.ts';
 import type { Bark, Scene } from '../src/content/dialogue/types.ts';
 
 const ROOT = join(import.meta.dirname, '..');
@@ -44,7 +45,20 @@ function actFile(act: string): string {
 /** Maps whose section isn't `a<act>_m<NN>` → act<act>.md § A<act>M<n>: its file and heading label. */
 const SECTIONS: Readonly<Record<string, { readonly act: string; readonly label: string }>> = {
   fin_m01: { act: 'fin', label: 'FIN' },
+  // The challenge maps' briefings (T862): finale.md § CH1–CH3, after the dawn.
+  ch_m01: { act: 'fin', label: 'CH1' },
+  ch_m02: { act: 'fin', label: 'CH2' },
+  ch_m03: { act: 'fin', label: 'CH3' },
 };
+
+/** A map's display name: its campaign name, or a challenge map's own (`MapDef.challenge.name`). */
+function mapName(mapId: string): string {
+  const campaign = CAMPAIGN_PLAN.find((m) => m.id === mapId)?.name;
+  if (campaign !== undefined) return campaign;
+  const maps: Readonly<Record<string, { readonly challenge?: { readonly name: string } }>> =
+    CHALLENGE_MAPS;
+  return maps[mapId]?.challenge?.name ?? '';
+}
 
 /** Map `mapId`'s act file and section label (`a2_m01` → act 2, `A2M1`; `fin_m01` → finale, `FIN`). */
 function sectionKey(mapId: string): { readonly act: string; readonly label: string } {
@@ -83,8 +97,9 @@ function texts(scenes: readonly Scene[], barks: readonly Bark[]): string[] {
 describe('dialogue is verbatim from its map section of the act file', () => {
   it('every registered map has its section, headed with its campaign name', () => {
     for (const { map } of MAP_DIALOGUE) {
-      const name = CAMPAIGN_PLAN.find((m) => m.id === map)?.name ?? '';
-      expect(section(map).split('\n')[1], map).toBe(`## ${sectionKey(map).label} · ${name}`);
+      expect(section(map).split('\n')[1], map).toBe(
+        `## ${sectionKey(map).label} · ${mapName(map)}`,
+      );
     }
   });
 

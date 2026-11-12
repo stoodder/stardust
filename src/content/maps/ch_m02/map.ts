@@ -27,6 +27,7 @@ export const map = defineMapLayout({
   lights: a2m06.lights ?? [],
   lighting: a2m06.lighting ?? [],
   challenge: {
+    name: 'Lights Out',
     tagline: 'Every unit comes in cloaked.',
     rules: [{ kind: 'allCloaked' }],
   },

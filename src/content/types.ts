@@ -1355,6 +1355,8 @@ export interface MapLayoutDef<K extends IdSpace = LiveIds, Id extends string = s
 
 /** A challenge map's tagline and rules (MapLayoutDef.challenge; design/maps.md § 8; T862). */
 export interface ChallengeDef {
+  /** The map's name on the post-game node and in its canon section ("Skitterkin Only"). */
+  readonly name: string;
   /** The one line the post-game node and the briefing show ("Only the warrens' towers deploy."). */
   readonly tagline: string;
   /** The rules, in the order the briefing names them. Each kind at most once. */

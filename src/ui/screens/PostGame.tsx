@@ -341,6 +341,7 @@ export function EndlessScore({ result }: { result: EndlessResultView }) {
             ? ` · Best on this seed: ${wavesText(result.bestBefore)}.`
             : ''}
       </p>
+      {result.scores.length > 0 && <p class="sd-pg-records-head">Best runs</p>}
       {result.scores.length > 0 && (
         <ol class="sd-pg-records" aria-label="Your records">
           {result.scores.map((r) => (

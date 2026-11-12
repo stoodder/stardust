@@ -26,6 +26,7 @@ export const map = defineMapLayout({
   underWreckage: a2m04.underWreckage ?? {},
   salvage: a2m04.salvage ?? {},
   challenge: {
+    name: 'Glass Core',
     tagline: 'Core integrity 5. Comms down.',
     rules: [{ kind: 'glassCore' }, { kind: 'noAbilities' }],
   },

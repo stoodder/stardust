@@ -3,8 +3,8 @@
 // the valley, and its kind, in the order the post-game plate lists them. A map shows only once its
 // content is registered (the finale's lazy chunk registers them, content/acts/fin.ts), so a
 // challenge map still being built is simply not listed. A challenge's tagline is its own
-// (`MapLayoutDef.challenge.tagline`); Endless's is here. Pure data, imported only from the
-// finale's lazy side (app/postGameView.ts), never from the core.
+// (`MapLayoutDef.challenge.tagline`); Endless's is here. Pure data and small: the core's
+// `mapName` (meta/progress.ts) reads the names, so the loadout screen names a post-game map too.
 
 /** What a post-game map is: Endless (a seed, waves held) or a challenge (medals for Intel). */
 export type PostGameKind = 'endless' | 'challenge';

@@ -21,7 +21,10 @@ function onChallenge(rules: readonly ChallengeRuleDef[]): SimConfig<IdSpace> {
   const map = cfg.content.maps[cfg.mapId]!;
   const content: CompiledContent<IdSpace> = {
     ...cfg.content,
-    maps: { ...cfg.content.maps, [cfg.mapId]: { ...map, challenge: { tagline: 'x', rules } } },
+    maps: {
+      ...cfg.content.maps,
+      [cfg.mapId]: { ...map, challenge: { name: 'x', tagline: 'x', rules } },
+    },
   };
   return { ...cfg, content };
 }

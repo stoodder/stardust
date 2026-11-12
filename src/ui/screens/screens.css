@@ -132,19 +132,20 @@
   color: var(--sd-pink-3);
 }
 
-/* After the finale (T863): the first morning washes in from the east over the night backdrop, in
-   hard bands (no smooth gradient on pixel art), and the brand's chevrons take the dawn's gold. */
+/* After the finale (T863): the first morning rises from the east horizon over the night backdrop,
+   in hard stepped bands (no smooth gradient on pixel art), and the brand's chevrons take the
+   dawn's gold. */
 .sd-title-dawn::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    to left,
-    rgb(255 158 72 / 18%) 0 24px,
-    rgb(255 158 72 / 12%) 24px 64px,
-    rgb(255 158 72 / 7%) 64px 128px,
-    rgb(255 158 72 / 3%) 128px 224px,
-    transparent 224px
+  background: radial-gradient(
+    ellipse 70% 60% at 100% 100%,
+    rgb(255 158 72 / 22%) 0 25%,
+    rgb(255 158 72 / 14%) 25% 45%,
+    rgb(255 158 72 / 8%) 45% 70%,
+    rgb(255 158 72 / 3%) 70% 100%,
+    transparent 100%
   );
   pointer-events: none;
 }

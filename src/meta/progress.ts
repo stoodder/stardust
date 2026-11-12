@@ -8,6 +8,7 @@
 // SaveData.
 import { CAMPAIGN_PLAN, type CampaignMapId } from '../content/campaign.ts';
 import { MAPS } from '../content/maps/index.ts';
+import { POST_GAME_MAPS } from '../content/postGame.ts';
 import { STAR_MAP_AFTER } from '../content/starMap.ts';
 import type { MapId } from '../content/types.ts';
 import type { SaveData } from './saveData.ts';
@@ -60,9 +61,16 @@ export const SYSTEM_UNLOCKS: Readonly<Record<MetaSystem, CampaignMapId>> = {
   xenotech: 'a2_m05',
 };
 
-/** The planned name of a campaign map id, or the id itself for a map outside the plan. */
+/**
+ * The planned name of a campaign map id, a post-game map's name (content/postGame.ts; T863), or the
+ * id itself for any other map.
+ */
 export function mapName(id: string): string {
-  return CAMPAIGN_PLAN.find((m) => m.id === id)?.name ?? id;
+  return (
+    CAMPAIGN_PLAN.find((m) => m.id === id)?.name ??
+    POST_GAME_MAPS.find((m) => m.id === id)?.name ??
+    id
+  );
 }
 
 /** True once `id` has been won in this save (an unregistered id never has). */

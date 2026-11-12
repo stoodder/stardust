@@ -58,6 +58,8 @@ describe('the Sector map at dawn', () => {
     expect(view.phase).toBe('dawn');
     expect(view.ending).toBe('stay');
     expect(view.nodes.every((n) => n.state === 'won')).toBe(true);
+    // The route is walked: no legs cross the colony at dawn.
+    expect(view.legs).toEqual([]);
     const gardens = view.regions.find((r) => r.id === 'gardens');
     expect(gardens).toMatchObject({ text: WAYSIDE_LABEL, struck: 'Everglow Gardens' });
   });

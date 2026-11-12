@@ -95,6 +95,8 @@ test('post-game: the Title at dawn, the Sector map at dawn under Stay, the plate
   await page.getByRole('button', { name: 'Watch the epilogue' }).click();
   const layer = page.getByTestId('epilogue');
   await expect(layer).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByTestId('epilogue-card')).toBeVisible();
+  await page.waitForTimeout(900); // the card fades in
   await shot(page, FLOW, 5, 'epilogue');
   await page.keyboard.press('Escape');
   await expect(layer).toHaveCount(0);

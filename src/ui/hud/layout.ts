@@ -19,6 +19,12 @@ export interface Rect {
   readonly h: number;
 }
 
+/** A rectangle a panel should keep clear of, with its own cost (placePanel; T863). */
+export interface CostedRect extends Rect {
+  /** What covering it costs a placement (default: `placePanel`'s `blockedCost`). */
+  readonly cost?: number;
+}
+
 /** The status panel's height with no objectives: the name plate, meter, credits, and medals. */
 const STATUS_H = 72;
 /** What each objective row adds to it (the first also adds the grid gap above the list). */
@@ -171,7 +177,8 @@ function covers(
  * The first one that covers none of the `others` (the other towers' ground points, or nodes'
  * centres, with `othersBox`, by default the same box) and none of the `blocked` rectangles (the HUD corners, T213) wins;
  * failing that, the cheapest (another box costs 1, a blocked rectangle `blockedCost`, by default
- * 2; the star map's chrome costs more, T631: its buttons under a panel can't be reached). A
+ * 2, or the rectangle's own `cost`; the star map's chrome costs more, T631: its buttons under a
+ * panel can't be reached, and its text-only plates less, T863). A
  * candidate that covers the selected box itself only wins when every one does.
  */
 export function placePanel(
@@ -180,7 +187,7 @@ export function placePanel(
   w: number,
   h: number,
   others: readonly Point[] = [],
-  blocked: readonly Rect[] = [],
+  blocked: readonly CostedRect[] = [],
   box: AnchorBox = TOWER_BOX,
   othersBox: AnchorBox = box,
   blockedCost: number = CORNER_COST,
@@ -207,7 +214,7 @@ export function placePanel(
     const top = clamp(y, EDGE, UI_H - EDGE - h);
     let score = covers(left, top, w, h, self, box) ? 1000 : 0;
     for (const p of others) if (covers(left, top, w, h, p, othersBox)) score++;
-    for (const r of blocked) if (overlapsRect(left, top, w, h, r)) score += blockedCost;
+    for (const r of blocked) if (overlapsRect(left, top, w, h, r)) score += r.cost ?? blockedCost;
     if (score < bestScore) {
       best = { left, top };
       bestScore = score;

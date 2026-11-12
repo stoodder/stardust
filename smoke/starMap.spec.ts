@@ -235,21 +235,39 @@ test('star map: reduced motion holds still; after A2M4 the Long Walk next up at 
   await shot(page, 'starmap', 3, 'after-a2m4-next');
 });
 
-// T863 (T860's note): Orientation Day's node takes a click wherever the Sector map stands, nothing
-// over it (the marker, a neighbour's plate or pips, the chrome) catching the pointer first.
-for (const save of ['after_a1m5_ref', 'after_a2m6', 'after_a3m6_keep', 'after_fin_stay']) {
+// T863 (T860's note): Orientation Day's node takes a click wherever the Sector map stands, unless
+// the open node panel lies over it (a tall panel beside a west node covers the colony: T803c's
+// declutter), and then Home still reaches it. Nothing else (the marker, a neighbour's plate or
+// pips, the chrome) catches the pointer first.
+for (const [i, save] of [
+  'after_a1m5_ref',
+  'after_a2m6',
+  'after_a3m6_keep',
+  'after_fin_stay',
+].entries()) {
   test(`star map: Orientation Day's node takes a click (${save})`, async ({ page }) => {
     await page.goto(`/?test=1&seed=1&save=${save}`);
     await waitForReady(page);
     await expect(heading(page)).toBeVisible();
+    await nextFrames(page);
+    await shot(page, 'starmap', 20 + i, `arrival-${save}`);
     const button = node(page, 'Orientation Day');
     const hit = await button.evaluate((el) => {
       const b = el.getBoundingClientRect();
       const at = document.elementFromPoint(b.x + b.width / 2, b.y + b.height / 2);
-      return at === el || el.contains(at) ? 'ok' : (at?.outerHTML.slice(0, 160) ?? 'nothing');
+      if (at === el || el.contains(at)) return 'ok';
+      return at?.closest('#sd-star-panel') !== null && at !== null
+        ? 'panel'
+        : (at?.outerHTML.slice(0, 160) ?? 'nothing');
     });
-    expect(hit).toBe('ok');
-    await button.click();
+    expect(['ok', 'panel']).toContain(hit);
+    if (hit === 'ok') {
+      await button.click();
+    } else {
+      await nodes(page).first().focus();
+      await page.keyboard.press('Home');
+      await page.keyboard.press('Enter');
+    }
     await expect(page.getByTestId('star-panel')).toContainText('Orientation Day');
   });
 }

@@ -50,10 +50,11 @@
 }
 
 .sd-pg-row {
+  position: relative;
   box-sizing: border-box;
   display: flex;
-  align-items: baseline;
-  gap: 4px;
+  flex-direction: column;
+  gap: 1px;
   width: 100%;
   margin: 0;
   padding: 2px 3px;
@@ -87,12 +88,13 @@
   color: var(--sd-gold-4);
 }
 
-/* A challenge cleared: the cleared glyph's diamond, small, at the row's end. */
+/* A challenge cleared: the cleared glyph's diamond, small, at the row's top right. */
 .sd-pg-diamond {
-  flex: none;
+  position: absolute;
+  top: 4px;
+  right: 4px;
   width: 3px;
   height: 3px;
-  margin-left: auto;
   background: var(--sd-gold-3);
   transform: rotate(45deg);
 }
@@ -120,9 +122,13 @@
   color: var(--sd-steel-3);
 }
 
+.sd-pg-seed .sd-button {
+  white-space: nowrap;
+}
+
 .sd-pg-seed-input {
   box-sizing: border-box;
-  width: 64px;
+  width: 72px;
   height: 14px;
   padding: 1px 3px;
   border: 1px solid var(--sd-ink-4);
@@ -166,6 +172,14 @@
   font-family: var(--font-heading);
   text-transform: uppercase;
   color: var(--sd-steel-3);
+}
+
+.sd-pg-records-head {
+  margin: 4px 0 0;
+  font-family: var(--font-heading);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--accent);
 }
 
 .sd-pg-records {

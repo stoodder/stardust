@@ -20,6 +20,7 @@ import {
 import { activeSave } from '../../app/save.ts';
 import { postGameUi, type PostGameUi } from '../../app/postGameHooks.ts'; // T863
 import {
+  CHART_W,
   NODE_BOX,
   NODE_CLEAR_BOX,
   STAR_MAP_NODES,
@@ -28,7 +29,7 @@ import {
 import { drawImageAt } from '../../render/sprites/canvas.ts';
 import type { RgbaImage } from '../../render/sprites/rasterize.ts';
 import { Icon, baked } from '../hud/Icon.tsx';
-import { placePanel } from '../hud/layout.ts';
+import { placePanel, type CostedRect } from '../hud/layout.ts';
 import { prefersReducedMotion } from '../motion.ts';
 import { silkText } from '../silk.ts';
 import { Banks } from './Banks.tsx';
@@ -49,6 +50,28 @@ const PANEL_W = 176;
  * rather lie over a neighbour's glyph than over a button the player can't reach under it.
  */
 const CHROME_COST = 6;
+/**
+ * The post-game plate's box in chart px (its buttons cost what the footer's do), or none: it is
+ * DOM in the notices' column, so it is measured, at the screen's scale.
+ */
+function plateRect(screen: HTMLElement | null): CostedRect[] {
+  const plate = screen?.querySelector<HTMLElement>('.sd-pg-plate') ?? null;
+  if (screen === null || plate === null) return [];
+  const s = screen.getBoundingClientRect();
+  const p = plate.getBoundingClientRect();
+  const k = s.width / CHART_W;
+  if (k <= 0) return [];
+  return [
+    {
+      x: Math.round((p.left - s.left) / k),
+      y: Math.round((p.top - s.top) / k),
+      w: Math.round(p.width / k),
+      h: Math.round(p.height / k),
+      cost: CHROME_COST,
+    },
+  ];
+}
+
 /** The marker's walk to a newly won node (art-direction § 10). */
 const WALK_MS = 600;
 /** The first-visit notice shows this long, after the sweep. */
@@ -310,6 +333,7 @@ export function StarMap() {
   // The region labels the placed panel would sit over: hidden while it's there (T512).
   const [covered, setCovered] = useState<ReadonlySet<string>>(() => new Set());
   const regions = useRef<HTMLDivElement | null>(null);
+  const screenRef = useRef<HTMLElement | null>(null);
   const [first] = useState(() => view?.firstVisit === true);
   const [noticeOn, setNoticeOn] = useState(first);
   const still = prefersReducedMotion();
@@ -366,13 +390,13 @@ export function StarMap() {
         PANEL_W,
         h,
         others,
-        STAR_MAP_RESERVED,
+        [...STAR_MAP_RESERVED, ...plateRect(screenRef.current)],
         NODE_CLEAR_BOX,
         NODE_BOX,
         CHROME_COST,
       ),
     );
-  }, [view, selected]);
+  }, [view, selected, post]);
 
   // A region label the panel covers hides (the panel's plate would show it through, half read).
   useLayoutEffect(() => {
@@ -446,6 +470,7 @@ export function StarMap() {
       data-phase={view.phase}
       aria-labelledby="sd-starmap-heading"
       data-testid="star-map"
+      ref={screenRef}
     >
       <div class="sd-starmap-chart" role="img" aria-label={STAR_MAP_CHART_LABEL}>
         <Chart view={view} />

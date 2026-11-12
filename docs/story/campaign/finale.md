@@ -79,3 +79,25 @@ The one-map finale, `fin_m01`, from the end of the Long Night to the First Dawn.
 | #13 | slowest run 1.3 s CPU |
 
 The Descent is all void, and Psionic (×1.5 against void, through armor) is about twice the damage per credit of anything else, so every winning build carries the Mindspike: a Thumper, Zapcoil, Gloop, or Lantern road (with gate Skyhooks) loses in W14–W18 even on Story. Moving some of W12–W18's pressure from void swarms to Everglow ground units is T874's.
+
+---
+
+The post-game's challenge maps (design: [maps.md §8](../../design/maps.md#8-post-game-maps)) are the world after the dawn, so their few lines live here. Each has a briefing and nothing else: no radio, cues, or barks. They are playful, in character, and never scold: each names the different way the map wants to be played.
+
+## CH1 · Skitterkin Only
+
+`ch_m01`: the Preserve, and only the warrens' towers deploy. Bramble briefs her own road; Pebble calls the roll.
+
+- *Briefing:* Bramble: "Your machines stay home today. My families hold this road." · Pebble: "Den digs! Gloop spits! Sproing bonks! Choir sings! That is everybody. (squeak)" · Bramble: "You walked our road once. Today, walk it our way."
+
+## CH2 · Lights Out
+
+`ch_m02`: the north wall at sundown, every unit cloaked. Ves'thara names the trick; Goldie, the answer.
+
+- *Briefing:* Ves'thara: "Tonight every one of them wears the dark, Waykeeper. Even the small ones." · Goldie: "Lookouts first, then. You can't weed what you can't see." · Ves'thara: "Light the way, and they will have nowhere to hide."
+
+## CH3 · Glass Core
+
+`ch_m03`: Reclamation Facility 2, a core of 5 and the radio dead. The console states the facts; Zibzab, in person, prices them.
+
+- *Briefing:* Console: "COMMS: OFFLINE. CORE INTEGRITY: 5." · Zibzab: "Price first: no radio, nothing from the sky, and a core that cracks if you frown at it." · Zibzab: "Zibzab believes in you, Technician. Zibzab also sells glue."

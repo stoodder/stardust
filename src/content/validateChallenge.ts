@@ -2,7 +2,7 @@
 // demand of its data. The run applies them (sim/rules.ts `challengeConfig`), so the builds the
 // harness runs must already obey them, or a step would be rejected for a tower the run left home:
 // - `challenge` goes with `act: 'challenge'`, and only there; a challenge map is never a campaign
-//   map; its tagline isn't blank; each rule kind appears at most once.
+//   map; its name and tagline aren't blank; each rule kind appears at most once.
 // - `towerFaction`: every scripted build's loadout is of that faction.
 // - `noAbilities`: no build brings a Technician ability or casts one.
 // - `glassCore`: the map has a core (Defend or Protect).
@@ -26,6 +26,7 @@ export function validateChallenges<K extends IdSpace>(issues: Issues, raw: RawCo
     if (campaign.includes(def.id)) {
       issues.add('challenge', where, 'a challenge map is never a campaign map');
     }
+    if (c.name.trim() === '') issues.add('challenge', `${where}.challenge.name`, 'is blank');
     if (c.tagline.trim() === '') issues.add('challenge', `${where}.challenge.tagline`, 'is blank');
     const kinds = new Set<ChallengeRuleDef['kind']>();
     for (const r of c.rules) {

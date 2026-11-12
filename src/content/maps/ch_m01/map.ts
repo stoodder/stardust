@@ -29,6 +29,7 @@ export const map = defineMapLayout({
   airLanes: a3m01.airLanes ?? [],
   markers: MARKERS,
   challenge: {
+    name: 'Skitterkin Only',
     tagline: "Only the warrens' towers deploy.",
     rules: [{ kind: 'towerFaction', faction: 'skitterkin' }],
   },

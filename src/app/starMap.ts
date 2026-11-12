@@ -271,7 +271,9 @@ export function starMapView(save: SaveData): StarMapView {
     nodes,
     marker,
     frontier,
-    legs,
+    // After the finale every node is cleared and the route is walked: the legs would only cross
+    // the colony as noise, so the dawn chart drops them (T863; the Long Walk's trail stays).
+    legs: frontier === null ? [] : legs,
     regions,
     changes: STAR_MAP_CHANGES.filter((c) => isMapWon(save, c.after)).map((c) => c.change),
     firstVisit: !save.story.seen.includes(STAR_MAP_SEEN_ID),
