@@ -40,7 +40,13 @@ export function YieldLogStage({ from }: { from: number }) {
   const shift = Math.round((scrolled - Math.floor(scrolled)) * YIELD_ROW_PX);
   const height = YIELD_ROWS_VISIBLE * YIELD_ROW_PX;
   return (
-    <div class="yl" role="img" aria-label={yieldLogLabel(yours)} data-testid="stage-yield-log">
+    <div
+      class="yl"
+      role="img"
+      aria-label={yieldLogLabel(yours)}
+      data-testid="stage-yield-log"
+      data-voice="stage"
+    >
       <p class="yl-header" aria-hidden="true" data-testid="yield-log-header">
         {yieldLogHeader(yours)}
       </p>

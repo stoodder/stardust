@@ -15,6 +15,7 @@
 // (his frame, the frames in front, their offset) and following his anim and theirs; it breathes
 // slowly, still under reduced motion.
 import * as Phaser from 'phaser';
+import { holdXray, releaseXray } from './xrayHolders.ts';
 import { STANCE_DROP } from '../../content/sprites/allies/bricks.ts';
 import type { SpriteId } from '../../content/sprites/index.ts';
 import type { AllyKind } from '../../content/types.ts';
@@ -361,6 +362,7 @@ export class AllyView implements PooledView {
         if (this.#xrayFor.size >= XRAY_CACHE_MAX) this.#dropOldestXray();
         key = `overlay.xray.${look}`;
         const { scene } = this.#ctx;
+        holdXray(scene.textures, key);
         if (!scene.textures.exists(key)) {
           const m = frameRgba(scene, b.texture.key, b.frame.name);
           const covers: Cover[] = [];
@@ -403,8 +405,7 @@ export class AllyView implements PooledView {
     for (const [look, key] of this.#xrayFor) {
       if (key === this.#xray.texture.key) continue;
       this.#xrayFor.delete(look);
-      const { textures } = this.#ctx.scene;
-      if (textures.exists(key)) textures.remove(key);
+      releaseXray(this.#ctx.scene.textures, key);
       return;
     }
   }
@@ -413,8 +414,7 @@ export class AllyView implements PooledView {
   #dropXray(): void {
     const { scene } = this.#ctx;
     this.#xray.setTexture('__DEFAULT');
-    for (const key of this.#xrayFor.values())
-      if (scene.textures.exists(key)) scene.textures.remove(key);
+    for (const key of this.#xrayFor.values()) releaseXray(scene.textures, key);
     this.#xrayFor.clear();
     this.#lookLen = 0;
   }

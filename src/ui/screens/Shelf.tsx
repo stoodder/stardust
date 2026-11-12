@@ -149,7 +149,9 @@ function OfferRow({
     const short = r === 'short';
     side = (
       <>
-        <span class={`sd-offer-price ${short ? 'sd-offer-short' : bank}`}>{priceText(offer)}</span>
+        <span class={`sd-offer-price ${short ? 'sd-offer-short' : bank}`} data-critical="price">
+          {priceText(offer)}
+        </span>
         <button
           type="button"
           class={`sd-button sd-button-small${short ? '' : ' sd-button-primary'}`}
@@ -171,7 +173,11 @@ function OfferRow({
           {offer.item.kind === 'upgrade' && <RankPips owned={offer.owned} ranks={offer.ranks} />}
         </p>
         <p class="sd-offer-effect">{effectLine(offer)}</p>
-        {copy !== null && <p class="sd-offer-copy">{copy}</p>}
+        {copy !== null && (
+          <p class="sd-offer-copy" data-voice="shelf-copy">
+            {copy}
+          </p>
+        )}
       </div>
       <div class="sd-offer-side">{side}</div>
     </li>
@@ -266,6 +272,7 @@ export function Shelf({ pane, view, group, lead }: ShelfProps) {
           class={`sd-store-line${said === null ? '' : ` sd-store-${said.tone}`}`}
           role="status"
           data-testid="store-line"
+          data-voice="store-line"
         >
           {said === null ? (
             quiet ? null : (

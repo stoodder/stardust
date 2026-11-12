@@ -27,7 +27,7 @@
 //   never the ring.
 // - No allocation but the JamTell event's tower list, on a ring's start, and a JamFizzled event.
 import type { CompiledJam } from '../../content/compiled.ts';
-import type { Enemy } from '../entities.ts';
+import type { Enemy, Tower } from '../entities.ts';
 import { canJam, isJammed, JAM_FIRST_READY_TICKS, jamImmune, jamRoom, jamTower } from '../jam.ts';
 import { emit, type SimState } from '../state.ts';
 import { cooldownHeld, isInterrupted } from '../systems/status.ts';
@@ -50,6 +50,15 @@ function periodTicksOf(j: CompiledJam): number {
 export function ringTelling(e: Readonly<Enemy>): boolean {
   const j = e.def?.jam ?? null;
   return e.alive && j !== null && j.kind === 'ring' && e.jamTellTicks > 0;
+}
+
+/**
+ * Whether `e`'s ring, telling now, would jam tower `t` if it landed now: live, in reach, and one a
+ * jam may land on (render's jagged bracket over it for the whole tell, art-direction §8; T871).
+ */
+export function ringWouldJam(e: Readonly<Enemy>, t: Readonly<Tower>): boolean {
+  const j = e.def?.jam ?? null;
+  return ringTelling(e) && j !== null && t.alive && canJam(t) && inJamReach(e, t, j);
 }
 
 /** How far the ring has grown (0–1): 0 as the tell starts, 1 as it lands. */

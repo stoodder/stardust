@@ -128,7 +128,9 @@ export function Base() {
       >
         <header class="sd-menu-header">
           <div>
-            <p class="sd-kicker">Everglow · Dome Row Perimeter · Base</p>
+            <p class="sd-kicker" data-voice="kicker">
+              Everglow · Dome Row Perimeter · Base
+            </p>
             <h1 id="sd-base-heading" class="sd-menu-heading">
               Base
             </h1>

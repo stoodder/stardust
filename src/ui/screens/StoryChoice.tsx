@@ -56,7 +56,13 @@ export function StoryChoice({
       role="group"
       aria-label={by}
     >
-      <h2 class="sd-results-stake" tabIndex={-1} ref={focusOnce} data-testid="choice-heading">
+      <h2
+        class="sd-results-stake"
+        tabIndex={-1}
+        ref={focusOnce}
+        data-testid="choice-heading"
+        data-voice="stake"
+      >
         {choice.title === null ? (
           <>
             <span class="sd-visually-hidden">{by}. </span>
@@ -73,6 +79,7 @@ export function StoryChoice({
             <button
               type="button"
               class={ready ? 'sd-button' : 'sd-button sd-choice-locked'}
+              data-voice="choice"
               aria-disabled={ready ? undefined : 'true'}
               aria-describedby={pays === undefined ? undefined : `sd-choice-pays-${i}`}
               onClick={() => {
@@ -104,10 +111,15 @@ export function Remembered({ choice }: { choice: ResultsChoice }) {
   if (text === null || choice.picked === null) return null;
   const answer = choice.options[choice.picked] ?? '';
   return (
-    <div class="sd-choice-answered" data-testid="choice-answered">
+    <div class="sd-choice-answered" data-testid="choice-answered" data-voice="choice">
       {/* The answer as the player said it (C3's shows as their own line in the briefing). */}
       <p class="sd-choice-answer">{silkText(answer)}</p>
-      <p class="sd-choice-remember" role="status" data-testid="choice-remember">
+      <p
+        class="sd-choice-remember"
+        role="status"
+        data-testid="choice-remember"
+        data-voice="remember"
+      >
         {text}
       </p>
     </div>

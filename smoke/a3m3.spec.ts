@@ -16,6 +16,7 @@
 // vitals, the SEAL). At the SEAL the clock holds again: the button shows unarmed and refuses a press
 // until Bricks's "Do it, {name}." (D143 R2), and neither it nor the radio covers the chosen door (R3).
 import type { Page } from '@playwright/test';
+import { overlaps, SEAL_H, SEAL_TOP_BAND, SEAL_W, UI_W } from '../src/ui/hud/layout.ts';
 import { expect, test } from './fixtures.ts';
 import { nextFrames, shot, waitForReady } from './hooks.ts';
 
@@ -252,7 +253,19 @@ async function seal(page: Page, look: boolean, door: 'convoy' | 'warren'): Promi
   const centre = await page.evaluate(([x, y]) => globalThis.__sd!.tileToClient(x, y), at);
   expect(centre).not.toBeNull();
   expect(covers(await button.boundingBox(), centre!, 24)).toBe(false);
-  expect(covers(await page.getByTestId('comms').boundingBox(), centre!, 24)).toBe(false);
+  const radio = await page.getByTestId('comms').boundingBox();
+  expect(covers(radio, centre!, 24)).toBe(false);
+  // T664: the button in the top band it falls back to (SEAL_TOP_BAND, game px; 2 client px each at
+  // 1280×720) would stay clear of the comms panel with the permission line on screen.
+  expect(radio).not.toBeNull();
+  const band = { x: (UI_W - SEAL_W) / 2, y: SEAL_TOP_BAND, w: SEAL_W, h: SEAL_H };
+  const panel = {
+    x: (radio?.x ?? 0) / 2,
+    y: (radio?.y ?? 0) / 2,
+    w: (radio?.width ?? 0) / 2,
+    h: (radio?.height ?? 0) / 2,
+  };
+  expect(overlaps(band, panel)).toBe(false);
   if (look) await shot(page, 'a3m3', 6, 'seal');
   else await shot(page, 'a3m3', 9, 'seal-warren');
   await button.focus();

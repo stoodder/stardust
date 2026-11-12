@@ -270,6 +270,7 @@ export function ChoiceList({ choices }: { choices: readonly ChoiceView[] }) {
           ref={i === 0 ? first : null}
           type="button"
           class="hud-btn chamfer dlg-choice"
+          data-voice="choice"
           data-tone={c.tone}
           aria-disabled={locked ? 'true' : undefined}
           onPointerMove={(e) => {

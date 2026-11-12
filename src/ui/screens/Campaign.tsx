@@ -77,7 +77,7 @@ export function Campaign() {
       <section class="sd-panel sd-menu-panel">
         <header class="sd-menu-header">
           <div>
-            <p class="sd-kicker">
+            <p class="sd-kicker" data-voice="kicker">
               Everglow · Dome Row Perimeter
               {view.slot === null ? ' · Dev save' : ` · Slot ${view.slot}`}
             </p>
@@ -85,7 +85,7 @@ export function Campaign() {
               Shift board
             </h1>
             {view.profile !== null && (
-              <p class="sd-kicker sd-campaign-tech" data-testid="technician">
+              <p class="sd-kicker sd-campaign-tech" data-testid="technician" data-voice="callsign">
                 JPT-1 {silkText(view.profile.name)} · #ED-447
               </p>
             )}

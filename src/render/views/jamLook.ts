@@ -158,3 +158,49 @@ export function lasersDoomed(
   }
   return standing > 0;
 }
+
+/**
+ * The jagged bracket (art-direction §8, *Jammer*: "every tower about to be jammed also shows a
+ * jagged bracket for the whole tell"; T871): four corners round the tower's body, BRACKET_HALF_PX
+ * from its middle, each arm a 1 px sawtooth of BRACKET_JAG's points (along the arm, then out from
+ * the box), over an `ink.0` under-stroke. Its colour is the jammer's tell: the Auditor's
+ * `orange.3`, the Silencer's pale `hollow.4`; Hostile Takeover's reticle is its own (takeoverLook).
+ */
+export const BRACKET_HALF_PX = 11;
+export const BRACKET_JAG: readonly (readonly [number, number])[] = [
+  [0, 0],
+  [2, 1],
+  [4, 0],
+  [6, 1],
+];
+export const BRACKET_COLOR: Readonly<Record<'ring' | 'tendril', ColorName>> = {
+  ring: 'orange.3',
+  tendril: 'hollow.4',
+};
+
+/**
+ * Point `i` of BRACKET_JAG on corner `corner` (0–3: bit 0 right, bit 1 bottom) of a bracket round
+ * (`x`, `y`), on its horizontal arm (`vertical` false) or its vertical one, into `out`.
+ */
+export function bracketPoint(
+  x: number,
+  y: number,
+  corner: number,
+  vertical: boolean,
+  i: number,
+  out: { x: number; y: number },
+): { x: number; y: number } {
+  const sx = corner & 1 ? 1 : -1;
+  const sy = corner & 2 ? 1 : -1;
+  const [along, outward] = BRACKET_JAG[i] ?? [0, 0];
+  const cx = x + sx * BRACKET_HALF_PX;
+  const cy = y + sy * BRACKET_HALF_PX;
+  if (vertical) {
+    out.x = cx + sx * outward;
+    out.y = cy - sy * along;
+  } else {
+    out.x = cx - sx * along;
+    out.y = cy + sy * outward;
+  }
+  return out;
+}

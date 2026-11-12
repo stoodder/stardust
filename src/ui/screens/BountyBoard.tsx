@@ -12,7 +12,7 @@ export function BountyBoardPane({ view }: BasePaneProps) {
   const rows = bountyRows(view.pestsProcessed, you, view.bountyBoard.kipAway);
   return (
     <div class="sd-bounty">
-      <header class="sd-bounty-head">
+      <header class="sd-bounty-head" data-voice="bounty-head">
         <p class="sd-bounty-title">{BOUNTY_COPY.title}</p>
         <p class="sd-bounty-period">{BOUNTY_COPY.period}</p>
       </header>
@@ -22,7 +22,9 @@ export function BountyBoardPane({ view }: BasePaneProps) {
             <span class="sd-bounty-rank">#{r.rank}</span>
             <span class="sd-bounty-who">
               <span class="sd-bounty-name">{silkText(r.name)}</span>
-              <span class="sd-bounty-note">{silkText(r.note)}</span>
+              <span class="sd-bounty-note" data-voice="bounty-note">
+                {silkText(r.note)}
+              </span>
             </span>
             <span class="sd-bounty-score">
               {formatCount(r.score)}
@@ -31,7 +33,9 @@ export function BountyBoardPane({ view }: BasePaneProps) {
           </li>
         ))}
       </ol>
-      <p class="sd-bounty-foot">{BOUNTY_COPY.footer}</p>
+      <p class="sd-bounty-foot" data-voice="bounty-foot">
+        {BOUNTY_COPY.footer}
+      </p>
     </div>
   );
 }

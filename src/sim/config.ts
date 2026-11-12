@@ -235,6 +235,10 @@ export function validateConfig(cfg: SimConfig<IdSpace>): CompiledMapDef<IdSpace>
   if (slot2 !== null && !Object.hasOwn(cfg.content.abilities, slot2)) {
     errors.push(`abilities.slot2: unknown ability '${slot2}'`);
   }
+  // One ability can't fill both slots (T871, from T807's seams: the companion's slot is its own).
+  if (slot1 !== null && slot1 === slot2) {
+    errors.push(`abilities: '${slot1}' fills both slots`);
+  }
   const specSeen = new Set<string>();
   for (const id of cfg.specsUnlocked) {
     if (!Object.hasOwn(cfg.content.towers, id)) errors.push(`specsUnlocked: unknown tower '${id}'`);

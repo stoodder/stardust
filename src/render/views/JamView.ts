@@ -1,5 +1,7 @@
 // The jams' view (T702's minimal one, polished by T730a; jamLook.ts has the rules): each
-// Silencer's creeping tendril toward the tower it picked, and on each Jammed tower T740a's
+// Silencer's creeping tendril toward the tower it picked, a jagged bracket on every tower a
+// Silencer or an Auditor is about to jam for the whole tell (T871; jamLook.ts `bracketPoint`), and
+// on each Jammed tower T740a's
 // `fx.jam_static` crackling over it (the tower itself draws in its steel `+jammed` variant:
 // TowerView) and its countdown ring round its base; and System Reboot's pops: each tower it freed
 // flashes white (`flashTower`, TowerView's upgrade flash) under a teal power-on column and ring,
@@ -17,10 +19,20 @@ import type * as Phaser from 'phaser';
 import type { IdSpace } from '../../content/types.ts';
 import type { Bus } from '../../shared/bus.ts';
 import type { DeepReadonly } from '../../shared/types.ts';
-import { takeoverTelling, type Enemy, type SimEvent, type Tower } from '../../sim/index.ts';
+import {
+  ringTelling,
+  ringWouldJam,
+  takeoverTelling,
+  type Enemy,
+  type SimEvent,
+  type Tower,
+} from '../../sim/index.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
 import {
   ARC_COLOR,
+  BRACKET_COLOR,
+  BRACKET_JAG,
+  bracketPoint,
   FIZZLE_BODY_LIFT_PX,
   FIZZLE_BOSS_LIFT_PX,
   FIZZLE_COLOR,
@@ -68,6 +80,8 @@ const TIP = hexOf(TENDRIL_TIP);
 const ARC = hexOf(ARC_COLOR);
 const TEAL = hexOf(REBOOT_COLOR);
 const WHITE = hexOf('white.1');
+const BRACKET_RING = hexOf(BRACKET_COLOR.ring);
+const BRACKET_TENDRIL = hexOf(BRACKET_COLOR.tendril);
 const STEPS = 8;
 const WAVE_PX = 1.5;
 /** The tendril reaches the tower's body, this high above its tile's centre. */
@@ -118,6 +132,7 @@ export class JamView {
   #nextColumn = 0;
   #tells = 0;
   #jammed = 0;
+  #brackets = 0;
   #columnsShown = 0;
   /** The jammers whose tell is doomed (already fizzled), last frame's and this frame's. */
   #doomed = new Int32Array(FIZZLE_SLOTS);
@@ -215,6 +230,7 @@ export class JamView {
     const enemies = state.enemies;
     this.#fizzleInterrupted(enemies);
     let tells = 0;
+    let brackets = 0;
     this.#tipN = 0;
     this.#nextDoomedN = 0;
     for (let i = 0; i < enemies.used; i++) {
@@ -229,6 +245,16 @@ export class JamView {
       }
       const jam = e.def?.jam ?? null;
       if (jam === null) continue;
+      // An Auditor's ring: a jagged bracket on every tower it would jam, for the whole tell.
+      if (ringTelling(e)) {
+        for (let k = 0; k < state.towers.used; k++) {
+          const t = state.towers.items[k]!; // k < used ≤ items.length
+          if (!ringWouldJam(e, t)) continue;
+          this.#drawBracket(g, t, BRACKET_RING);
+          brackets++;
+        }
+        continue;
+      }
       // A ring fizzles only when the sim says a counter turned it (JamFizzled).
       if (jam.kind !== 'tendril' || e.jamTarget === 0 || e.jamTellTicks <= 0) continue;
       const t = findTower(state.towers, e.jamTarget);
@@ -246,6 +272,8 @@ export class JamView {
       }
       tells++;
       this.#drawTendril(g, e, t, reach, still, state.tick);
+      this.#drawBracket(g, t, BRACKET_TENDRIL);
+      brackets++;
       if (this.#tipN < FIZZLE_SLOTS) {
         const k = this.#tipN++;
         this.#tipUid[k] = e.uid;
@@ -278,6 +306,28 @@ export class JamView {
     this.#columnsShown = this.#drawColumns(g, towers, dt, still);
     this.#tells = tells;
     this.#jammed = jammed;
+    this.#brackets = brackets;
+  }
+
+  /** The jagged bracket round tower `t`'s body, in `color` over an ink under-stroke. */
+  #drawBracket(g: Phaser.GameObjects.Graphics, t: DeepReadonly<Tower>, color: number): void {
+    gridToScreen(t.x, t.y, this.#ctx.origin, b);
+    const x = Math.round(b.x);
+    const y = Math.round(b.y - this.#liftPx(t.col, t.row) - TOWER_BODY_PX);
+    for (let pass = 0; pass < 2; pass++) {
+      g.lineStyle(pass === 0 ? 3 : 1, pass === 0 ? UNDER : color, pass === 0 ? 0.8 : 1);
+      for (let c = 0; c < 4; c++) {
+        for (let arm = 0; arm < 2; arm++) {
+          bracketPoint(x, y, c, arm === 1, 0, p0);
+          for (let i = 1; i < BRACKET_JAG.length; i++) {
+            bracketPoint(x, y, c, arm === 1, i, p1);
+            g.lineBetween(p0.x, p0.y, p1.x, p1.y);
+            p0.x = p1.x;
+            p0.y = p1.y;
+          }
+        }
+      }
+    }
   }
 
   /** Whether `uid`'s tell was doomed (and fizzled) as of last frame. */
@@ -461,9 +511,22 @@ export class JamView {
     this.#statics.push({ sprite, uid: 0, still: false });
   }
 
-  /** What shows now (the smoke flow's check): tendrils, towers with static, Reboot columns. */
-  get shown(): { readonly tells: number; readonly jammed: number; readonly columns: number } {
-    return { tells: this.#tells, jammed: this.#jammed, columns: this.#columnsShown };
+  /**
+   * What shows now (the smoke flow's check): tendrils, towers with static, Reboot columns, and the
+   * jagged brackets on towers about to be jammed (T871).
+   */
+  get shown(): {
+    readonly tells: number;
+    readonly jammed: number;
+    readonly columns: number;
+    readonly brackets: number;
+  } {
+    return {
+      tells: this.#tells,
+      jammed: this.#jammed,
+      columns: this.#columnsShown,
+      brackets: this.#brackets,
+    };
   }
 
   reset(): void {
@@ -479,6 +542,7 @@ export class JamView {
     this.#interruptedN = 0;
     this.#tells = 0;
     this.#jammed = 0;
+    this.#brackets = 0;
     this.#columnsShown = 0;
   }
 }

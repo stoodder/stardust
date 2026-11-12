@@ -50,7 +50,9 @@ function Prompt({ line }: { line: LineView }) {
       <Portrait line={line} talking={false} />
       <div class="dlg-words">
         <NamePlate line={line} />
-        <span class="dlg-text">{plainText(line.text)}</span>
+        <span class="dlg-text" data-voice="line">
+          {plainText(line.text)}
+        </span>
       </div>
     </div>
   );
@@ -62,7 +64,7 @@ function Controls({ view, step }: { view: SceneView; step: SceneStep }) {
     <>
       {view.choices !== null && <ChoiceList choices={view.choices} />}
       {view.remember !== null && (
-        <p class="dlg-remember" role="status">
+        <p class="dlg-remember" data-voice="remember" role="status">
           {view.remember}
         </p>
       )}
@@ -75,9 +77,14 @@ function Controls({ view, step }: { view: SceneView; step: SceneStep }) {
 
 /** A transcript row: the plate and the words (no portrait). */
 export function TranscriptLine({ line }: { line: LineView }) {
-  if (line.frame === 'caption') return <p class="dlg-caption past">{plainText(line.text)}</p>;
+  if (line.frame === 'caption')
+    return (
+      <p class="dlg-caption past" data-voice="transcript">
+        {plainText(line.text)}
+      </p>
+    );
   return (
-    <p class="dlg-past">
+    <p class="dlg-past" data-voice="transcript">
       {line.name !== '' && (
         <span class="dlg-name" style={{ color: plateColor(line.color) }}>
           {line.name}

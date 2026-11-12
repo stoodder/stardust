@@ -1,7 +1,7 @@
 /// <reference lib="dom" />
 import { mkdirSync } from 'node:fs';
 import type { Page } from '@playwright/test';
-import { SPRITES as REGISTRY } from '../src/content/sprites/index.ts';
+import { ALL_SPRITES as REGISTRY } from '../src/content/sprites/all.ts';
 import { FINALE_SCENE_SPRITES } from '../src/content/sprites/scenes/finale.ts';
 import { expect, test } from './fixtures.ts';
 import { outPath } from './out.ts';

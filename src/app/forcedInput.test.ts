@@ -33,7 +33,7 @@ import {
  */
 function fakeWorld(held = false) {
   let pending: (() => void) | null = null;
-  let pendingStart: (() => void) | null = null;
+  let pendingStart: ((agoMs?: number) => void) | null = null;
   let now = 1000;
   let nextId = 1;
   const timers = new Map<number, { at: number; fn: () => void; every: number | null }>();
@@ -101,11 +101,11 @@ function fakeWorld(held = false) {
       pending = null;
       p?.();
     },
-    /** The permission line's scene starts on the panel. */
-    start: () => {
+    /** The permission line's scene starts on the panel (or started `agoMs` before). */
+    start: (agoMs?: number) => {
       const p = pendingStart;
       pendingStart = null;
-      p?.();
+      p?.(agoMs);
     },
   };
 }
@@ -312,6 +312,25 @@ describe('startSeal: permission first (D143 R2: "Do it, {name}." before the pres
     expect(seal.permittedAt).toBe(11_000 + PERMISSION_FALLBACK_MS);
     seal.stop();
     expect(w.timers()).toBe(0);
+  });
+
+  it('a permission scene that began before the screen showed counts from its own start (T664)', () => {
+    const w = fakeWorld(true);
+    const seal = startSeal('a3_m03', 'seal', w.deps);
+    // The scene had been on the panel 3 s when the screen showed.
+    w.start(3000);
+    w.advance(PERMISSION_FALLBACK_MS - 3000 - 1);
+    expect(seal.permittedAt).toBeNull();
+    w.advance(1);
+    expect(seal.permittedAt).toBe(1000 + PERMISSION_FALLBACK_MS - 3000);
+    // Started longer ago than the fallback: permitted at once.
+    const w2 = fakeWorld(true);
+    const late = startSeal('a3_m03', 'seal', w2.deps);
+    w2.start(PERMISSION_FALLBACK_MS + 5000);
+    w2.advance(0);
+    expect(late.permittedAt).toBe(1000);
+    seal.stop();
+    late.stop();
   });
 
   it('a permission scene that never starts arms it PERMISSION_BACKSTOP_MS after the show', () => {

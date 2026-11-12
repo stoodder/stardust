@@ -141,10 +141,16 @@ export interface SealDeps {
   playWaitLine(map: string, input: string): void;
   /**
    * Calls `then` once the press is permitted (the permission line typed; at once without one),
-   * and `started` once that line's scene starts on the panel (at once without one). Returns the
-   * cancel, which also lets the permission line leave the panel (the press).
+   * and `started` once that line's scene starts on the panel (at once without one), with how long
+   * ago it started (it may have begun before the screen showed; T664). Returns the cancel, which
+   * also lets the permission line leave the panel (the press).
    */
-  awaitPermission(map: string, input: string, then: () => void, started: () => void): () => void;
+  awaitPermission(
+    map: string,
+    input: string,
+    then: () => void,
+    started: (agoMs?: number) => void,
+  ): () => void;
   /** Strikes `input`'s hum once (content/forcedInputs.ts; none for an input with none). */
   hum(input: string): void;
   /** Issues the press. */
@@ -276,8 +282,9 @@ export function startSeal(map: string, input: string, deps: SealDeps = defaultDe
   };
   // The backstop from the show, until the permission scene starts: then its own wait from there.
   fallbackIn(PERMISSION_BACKSTOP_MS);
-  const started = (): void => {
-    if (permittedAt === null) fallbackIn(PERMISSION_FALLBACK_MS);
+  // Counted from the scene's own start, even when it began before the screen showed (T664).
+  const started = (agoMs = 0): void => {
+    if (permittedAt === null) fallbackIn(Math.max(0, PERMISSION_FALLBACK_MS - agoMs));
   };
   const cancelPermission = deps.awaitPermission(map, input, permit, started);
 

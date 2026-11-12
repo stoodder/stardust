@@ -156,6 +156,7 @@ export function MailStage({ from }: { from: number }) {
       role="img"
       aria-label={mailLabel(out)}
       data-testid="stage-mail"
+      data-voice="stage"
       data-out={out}
     >
       <div class="ml-desk" aria-hidden="true">

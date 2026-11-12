@@ -54,7 +54,8 @@ test('jam: the tendril tell, the Jammed Choir, and System Reboot clearing it', a
   await page.evaluate(() => globalThis.__sd!.fastForward(60)); // halfway: the tendril half-grown
   await nextFrames(page);
   let look = await page.evaluate(() => globalThis.__sd!.render()!.jams);
-  expect(look).toMatchObject({ tells: 1, jammed: 0, tellsSeen: 1 });
+  // A jagged bracket on the tower it is about to jam, for the whole tell (T871).
+  expect(look).toMatchObject({ tells: 1, jammed: 0, tellsSeen: 1, brackets: 1 });
   const target = await page.evaluate(() => {
     const st = globalThis.__sd!.state()!;
     const e = st.enemies.items.find((x) => x.alive && x.jamTarget !== 0)!;
@@ -68,7 +69,7 @@ test('jam: the tendril tell, the Jammed Choir, and System Reboot clearing it', a
   await page.evaluate(() => globalThis.__sd!.fastForward(30));
   await nextFrames(page);
   look = await page.evaluate(() => globalThis.__sd!.render()!.jams);
-  expect(look).toMatchObject({ tells: 0, jammed: 1, jamsSeen: 1, drawnJammed: 1 });
+  expect(look).toMatchObject({ tells: 0, jammed: 1, jamsSeen: 1, drawnJammed: 1, brackets: 0 });
   await shot(page, 'jam', 2, 'jammed');
 
   // System Reboot (slot 1, no target): the jam clears at once, with a teal pop on the Choir.

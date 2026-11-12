@@ -8,10 +8,12 @@
 //   the map starts; then W2's countdown radio is his dark silence too. Fast-forward runs ahead of
 //   the radio's real-time holds (T720's note), so each moment is played at 1× before it's checked.
 // - **Gerald's status line** (`a3_m04_w08`) in its teal readout, and **Purge's QUILL** in a panel:
-//   the status bar blinking through a silence (`a1_m01_base_dev_status`).
+//   the status bar blinking through Night Shift's silence (`a3_m04_base_night_shift`; QUILL's
+//   Purge look holds from A3M4 on, so a replay of an earlier map keeps that map's QUILL: T777).
 // Screenshots in <out>/screens/t713/.
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
+import { nextUntil } from './ending.ts';
 import { shot, waitForReady } from './hooks.ts';
 
 const comms = (page: Page) => page.getByTestId('comms');
@@ -108,15 +110,21 @@ test("A3M4: Bricks's dark silences, Gerald's status line, Purge's blinking bar",
   await shot(page, 't713', 4, 'gerald-status');
 });
 
-test("Purge's QUILL: the status bar blinks through a silence", async ({ page }) => {
+test("Purge's QUILL: the status bar blinks through Night Shift's silence", async ({ page }) => {
   test.setTimeout(60_000);
-  // Plain text speed: the silence holds its whole 4 s.
+  // Plain text speed: the silence holds its whole 2 s.
   await page.goto('/?test=1&dialogue=1&seed=1&save=after_a3m4_purge');
   await waitForReady(page);
   await page.evaluate(() => globalThis.__sd!.goto('base'));
-  await page.evaluate(() => globalThis.__sd!.dialogue.play('a1_m01_base_dev_status'));
+  await page.evaluate(() => globalThis.__sd!.dialogue.play('a3_m04_base_night_shift'));
   const portrait = page.getByTestId('scene').locator('.dlg-portrait');
-  await expect(portrait).toHaveAttribute('data-frame', 'purge.neutral');
+  // Through Ves'thara's and Pebble's lines to QUILL's silence.
+  await nextUntil(
+    page,
+    async () => ((await portrait.getAttribute('data-frame')) ?? '').startsWith('purge.'),
+    12,
+  );
+  await expect(portrait).toHaveAttribute('data-frame', /^purge\.neutral/);
   await expect(portrait).toHaveAttribute('data-frame', 'purge.neutral_talk', { timeout: 3000 });
   await shot(page, 't713', 5, 'purge-status-blink');
 });

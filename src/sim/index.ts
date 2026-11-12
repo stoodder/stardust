@@ -52,7 +52,7 @@ export { phaseTelling } from './enemyAbilities/phase.ts';
 export { projectedAura } from './enemyAbilities/shieldAura.ts';
 export { projectedHaste } from './enemyAbilities/hasteAura.ts';
 export { healRate, projectedHeal, type HealUnits } from './enemyAbilities/healAura.ts'; // T703
-export { ringGrowth, ringTelling } from './enemyAbilities/jamRing.ts'; // T707
+export { ringGrowth, ringTelling, ringWouldJam } from './enemyAbilities/jamRing.ts'; // T707; T871
 export { tendrilTelling } from './enemyAbilities/jamTendril.ts'; // balance fixtures (M7 review)
 export { hangarTelling } from './enemyAbilities/hangar.ts'; // T707
 export { takeoverTelling } from './enemyAbilities/takeover.ts'; // T707

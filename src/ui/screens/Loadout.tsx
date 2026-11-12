@@ -115,7 +115,7 @@ function TowerCard(props: {
             {t.jailbroken === true && <span class="sd-lo-jb"> · Jailbroken</span>}
           </span>
           {t.answers.length > 0 && (
-            <span class="sd-lo-chips">
+            <span class="sd-lo-chips" data-critical="tower-counters">
               {t.answers.map((a) => (
                 <span key={a.counter} class={`sd-lo-chip${a.required ? ' sd-lo-chip-need' : ''}`}>
                   {a.via === null ? a.label : `${a.label} · ${a.via}`}
@@ -234,7 +234,11 @@ function AbilityPicker(props: {
               )}
               {/* Its companion walks with you and brings it in slot 2 (T501). */}
               {off && a.brings !== undefined && (
-                <span class="sd-lo-locked-why sd-lo-brings" data-testid="loadout-brings">
+                <span
+                  class="sd-lo-locked-why sd-lo-brings"
+                  data-testid="loadout-brings"
+                  data-voice="brings"
+                >
                   {' '}
                   · {a.brings.reason}
                 </span>
@@ -281,6 +285,7 @@ function CompanionPicker(props: {
           class={`sd-lo-ability sd-lo-companion-card${k.id === picked ? ' sd-lo-on' : ''}`}
           aria-checked={k.id === picked}
           data-testid="loadout-companion"
+          data-voice="companion"
           data-companion={k.id}
           tabIndex={k.id === picked || (picked === null && i === 0) ? 0 : -1}
           onClick={() => props.onPick(k.id)}
@@ -515,14 +520,14 @@ export function Loadout() {
       <section class="sd-panel sd-menu-panel sd-lo-panel">
         <header class="sd-menu-header">
           <div>
-            <p class="sd-kicker">
+            <p class="sd-kicker" data-voice="kicker">
               {view.shift === null ? view.mapName : `Shift ${view.shift} · ${view.mapName}`}
             </p>
             <h1 id="sd-loadout-heading" class="sd-menu-heading">
               Loadout
             </h1>
           </div>
-          <dl class="sd-lo-intel">
+          <dl class="sd-lo-intel" data-critical="threats">
             <div>
               <dt>Threats</dt>
               <dd>
@@ -540,7 +545,7 @@ export function Loadout() {
             {view.counters.some((c) => c.required) && (
               <div>
                 <dt>Needs an answer to</dt>
-                <dd class="sd-lo-need">
+                <dd class="sd-lo-need" data-critical="counters">
                   {view.counters
                     .filter((c) => c.required)
                     .map((c) => c.label)

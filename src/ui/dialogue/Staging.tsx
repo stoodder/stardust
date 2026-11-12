@@ -141,6 +141,7 @@ function FeedStage({ ms, still }: { ms: number; still: boolean }) {
       role="img"
       aria-label="Rig 9, camera 2, live: static, a shape for half a second, then no signal"
       data-testid="stage-feed"
+      data-voice="stage"
       data-seen={seen.current.join(' ')}
     >
       <Frame id={FEED_SPRITE} frame={frame} class="dlg-feed-crt" />
@@ -155,7 +156,7 @@ function RecordCounter({ ms, still }: { ms: number; still: boolean }) {
   const from = Math.max(0, total - (run?.pestsProcessed ?? 0));
   const shown = still ? total : from + countUpValue(total - from, ms, COUNTER_TICK_MS);
   return (
-    <div class="dlg-record" data-testid="stage-record">
+    <div class="dlg-record" data-testid="stage-record" data-voice="counter">
       <span class="dlg-record-kicker">Quarterly results</span>
       <span class="dlg-record-line" aria-label={`Pests processed: ${formatCount(total)}`}>
         <span class="dlg-record-label" aria-hidden="true">
@@ -213,7 +214,12 @@ function Cannon({
   const burstLeft = (MUZZLE.x - BURST_ANCHOR.x) * CANNON_SCALE;
   const burstTop = (MUZZLE.y - BURST_ANCHOR.y) * CANNON_SCALE;
   return (
-    <div class={`dlg-cannon ${side}`} aria-hidden="true" data-testid="stage-cannon">
+    <div
+      class={`dlg-cannon ${side}`}
+      aria-hidden="true"
+      data-testid="stage-cannon"
+      data-voice="stage"
+    >
       <Frame id={CANNON_SPRITE} frame={cannon} class="dlg-cannon-body" scale={CANNON_SCALE} />
       <div class="dlg-burst" style={{ left: `${burstLeft}px`, top: `${burstTop}px` }}>
         <Frame id={CONFETTI_SPRITE} frame={burst} class="dlg-burst-frame" scale={CANNON_SCALE} />

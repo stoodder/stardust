@@ -1011,28 +1011,38 @@ const typedWaiters = new Map<string, (() => void)[]>();
 /** Times the last line on the panel typing out. */
 let typedTimer: ReturnType<typeof setTimeout> | null = null;
 
-/** The comms scenes whose first line has shown on the panel this battle (or that were dropped). */
-const startedScenes = new Set<string>();
+/**
+ * The comms scenes whose first line has shown on the panel this battle (or that were dropped), and
+ * when (`performance.now()`).
+ */
+const startedScenes = new Map<string, number>();
 /** Who waits for a scene's first line to show (`whenSceneStarted`). */
-const startedWaiters = new Map<string, (() => void)[]>();
+const startedWaiters = new Map<string, ((agoMs: number) => void)[]>();
 
 /** Scene `id`'s first line has shown (or it went unplayed): its waiters go on. */
 function markStarted(id: string): void {
   if (startedScenes.has(id)) return;
-  startedScenes.add(id);
+  startedScenes.set(id, performance.now());
   const waiters = startedWaiters.get(id);
   startedWaiters.delete(id);
-  for (const w of waiters ?? []) w();
+  for (const w of waiters ?? []) w(0);
 }
 
 /**
  * Runs `then` once comms scene `id`'s first line shows on the panel this battle, or at once when
  * it already has, when it was dropped unplayed, or when dialogue is off (D144 S5: the SEAL's
- * fallback counts from the permission cue's start, not from the button's show). Returns the cancel.
+ * fallback counts from the permission cue's start, not from the button's show). `agoMs` is how
+ * long ago it started (T664: a scene that began before the SEAL showed counts from its own start;
+ * 0 when it starts now, was dropped, or dialogue is off). Returns the cancel.
  */
-export function whenSceneStarted(id: string, then: () => void): () => void {
-  if (!enabled || startedScenes.has(id) || typedScenes.has(id)) {
-    then();
+export function whenSceneStarted(id: string, then: (agoMs: number) => void): () => void {
+  const at = startedScenes.get(id);
+  if (at !== undefined) {
+    then(Math.max(0, performance.now() - at));
+    return () => {};
+  }
+  if (!enabled || typedScenes.has(id)) {
+    then(0);
     return () => {};
   }
   const list = startedWaiters.get(id) ?? [];
@@ -1911,6 +1921,10 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
     clearCommsTimer();
     commsQueue.length = 0;
     commsNow = null;
+    // T664: nothing waits on a scene of a battle that has ended.
+    startedWaiters.clear();
+    typedWaiters.clear();
+    lingering.clear();
     lingerOn = null;
     commsEnding = false;
     mapOver = false;

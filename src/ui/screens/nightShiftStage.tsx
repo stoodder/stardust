@@ -63,6 +63,7 @@ export function NightShiftStage({ from }: { from: number }) {
       role="img"
       aria-label={nightShiftLabel(light)}
       data-testid="stage-night-shift"
+      data-voice="stage"
       data-light={light}
     >
       <div class="ns-room" aria-hidden="true">

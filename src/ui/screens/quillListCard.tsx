@@ -11,7 +11,12 @@ import './quillList.css';
 /** The card: the entries (the header is the briefing line's). */
 export function QuillListCard({ entries }: { entries: readonly string[] }) {
   return (
-    <section class="ql chamfer" aria-label="QUILL's list" data-testid="quill-list">
+    <section
+      class="ql chamfer"
+      aria-label="QUILL's list"
+      data-testid="quill-list"
+      data-voice="quill-list"
+    >
       <ol class="ql-entries">
         {entries.map((e) => {
           const { label, words } = directiveParts(e);

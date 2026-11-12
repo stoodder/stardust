@@ -94,7 +94,7 @@ function Card({ view }: { view: CrateView }) {
         data-kind={view.kind}
         onKeyDown={trapTab}
       >
-        <div class="cr-lid" aria-hidden="true">
+        <div class="cr-lid" data-voice="sticker" aria-hidden="true">
           <span class="cr-lid-brand">Zibzab</span>
           <span class="cr-sticker">{STICKER}</span>
         </div>
@@ -107,7 +107,7 @@ function Card({ view }: { view: CrateView }) {
           Zibzab's crate
         </h2>
         {quote !== null && (
-          <p class="cr-quote" data-testid="crate-quote">
+          <p class="cr-quote" data-testid="crate-quote" data-voice="quote">
             <span class="cr-quote-plate" style={{ color: plateColor(SPEAKERS.zibzab.color) }}>
               {SPEAKERS.zibzab.name}
             </span>

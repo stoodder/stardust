@@ -38,6 +38,7 @@ export function StatusPanel() {
         class={gate ? 'hud-meter hud-gate' : 'hud-meter'}
         role="status"
         data-testid={gate ? 'gate-meter' : undefined}
+        data-critical="integrity"
         aria-label={`${label} ${integrity}${low ? ', integrity low' : ''}`}
       >
         <Icon id="icon.core" />
@@ -54,7 +55,7 @@ export function StatusPanel() {
         <span class={`${gate ? 'num' : 'big num'}${low ? ' danger' : ''}`}>{integrity}</span>
       </div>
       <AssetMeter />
-      <div class="hud-credits" aria-label={`Credits ${hud.credits.value}`}>
+      <div class="hud-credits" data-critical="credits" aria-label={`Credits ${hud.credits.value}`}>
         <Icon id="icon.credits" />
         <span class="hud-label">Credits</span>
         <span class="big num gold">{credits}</span>
@@ -81,6 +82,7 @@ function NamePlate() {
     <p
       class={`hud-plate${text.length > PLATE_TIGHT_CHARS ? ' tight' : ''}`}
       data-testid="callsign-plate"
+      data-voice="callsign"
     >
       {text}
     </p>

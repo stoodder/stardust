@@ -66,6 +66,8 @@ test('takeover: the Auditor’s ring', async ({ page }) => {
   await page.evaluate(() => globalThis.__sd!.fastForward(70)); // most of the way out
   await nextFrames(page);
   expect(await look(page)).toMatchObject({ rings: 1, ringsSeen: 1 });
+  // A jagged bracket on every tower in its reach it would jam (T871).
+  expect(await page.evaluate(() => globalThis.__sd!.render()!.jams.brackets)).toBeGreaterThan(0);
   await shot(page, 'takeover', 1, 'ring');
   await page.evaluate(() => globalThis.__sd!.fastForward(60)); // landed
   await nextFrames(page);

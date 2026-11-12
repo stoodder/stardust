@@ -112,6 +112,7 @@ export function Portrait({ line, talking }: { line: LineView; talking: boolean }
   return (
     <span
       class={`dlg-portrait${p.icon ? ' icon' : ''}${p.dark ? ' dark' : ''}`}
+      data-voice="portrait"
       style={style}
       aria-hidden="true"
       data-frame={frame ?? ''}

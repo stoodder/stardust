@@ -124,6 +124,22 @@ describe('portraits and frames', () => {
     // Night Shift (the base: nobody's radio): "no line; its status bar blinks".
     const silence = lineView({ speaker: 'quill', text: '', durationSec: 2 }, purge, TEXT, null);
     expect(silence.portrait).toMatchObject({ variant: 'purge', dark: false, blink: true });
+    // A replay of an earlier map keeps that map's QUILL (T777): A1M5's party hat and the tell.
+    const party = lineView(
+      { speaker: 'quill', expression: 'policy', text: 'Hm.' },
+      ctxOn('a1_m05', { quill_choice: 'purge' }),
+      TEXT,
+      ['quill'],
+    );
+    expect(party.portrait).toMatchObject({ variant: 'party_hat', policy: true });
+    expect(
+      lineView(
+        { speaker: 'quill', text: 'Hm.' },
+        ctxOn('a3_m04', { quill_choice: 'purge' }),
+        TEXT,
+        ['quill'],
+      ).portrait,
+    ).toMatchObject({ variant: 'purge' });
     // Keep and Rewrite: the smile, the tell, and a silence at rest.
     for (const choice of ['keep', 'rewrite'] as const) {
       const ctx = ctxOn('a3_m05', { quill_choice: choice });

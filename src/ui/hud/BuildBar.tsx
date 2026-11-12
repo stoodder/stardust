@@ -98,7 +98,7 @@ export function BuildBar() {
   const slots = hud.slots.value;
   const sale = hud.sale.value;
   return (
-    <nav class="hud-build" aria-label="Build">
+    <nav class="hud-build" data-critical="build" aria-label="Build">
       {/* Clearance Sale (core-loop §3.2): the discount and the purchases it has left. */}
       {sale !== null && (
         <span class="hud-sale chamfer" role="status" data-testid="sale-tag">

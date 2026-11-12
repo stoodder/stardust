@@ -47,7 +47,9 @@ export function PauseMenu() {
             {QUIT_LABEL[quitDestination()]()}
           </button>
         </div>
-        <p class="sd-pause-note">Leaving files the shift as an incident. Pests still count!</p>
+        <p class="sd-pause-note" data-voice="note">
+          Leaving files the shift as an incident. Pests still count!
+        </p>
       </section>
     </div>
   );

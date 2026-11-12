@@ -84,6 +84,13 @@ export const builds = defineBuilds({
     },
   },
   altBuilds: {
+    // Thumper, Rivet, Zapcoil, Lookout: the air held without a Skyhook (T770). Par's Thumpers,
+    // Rivets where its Skyhooks and Den stand (a Rivet shoots the Moths too), a Zapcoil where its
+    // Prism stands; the Lookout stays home.
+    rivet_air: {
+      loadout: ['thumper', 'rivet', 'zapcoil', 'lookout'],
+      steps: swapped({ burrow: 'rivet', prism: 'zapcoil', skyhook: 'rivet' }),
+    },
     // Thumper, Skyhook, Rivet, Lookout: par's Thumpers and Skyhooks, Rivets where its Den and
     // Prism stand. The Lookout stays home (nothing on the map is cloaked).
     rivets: {

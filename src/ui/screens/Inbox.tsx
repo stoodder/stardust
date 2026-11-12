@@ -131,7 +131,7 @@ export function listKeys(e: KeyboardEvent, pick: (index: number) => void, count:
  */
 function Form({ memo }: { memo: MemoView }) {
   return (
-    <article class="sd-memo sd-form" aria-labelledby="sd-memo-subject">
+    <article class="sd-memo sd-form" data-voice="memo" aria-labelledby="sd-memo-subject">
       <header class="sd-memo-head sd-form-head">
         <span class="sd-memo-brand">Kepler Frontier Authority</span>
         <dl class="sd-memo-fields">
@@ -191,6 +191,7 @@ export function Letter({ memo }: { memo: MemoView }) {
   return (
     <article
       class={look === 'full' ? 'sd-memo' : `sd-memo worn${automated ? ' automated' : ''}`}
+      data-voice="memo"
       aria-labelledby="sd-memo-subject"
       data-letterhead={look}
       data-automated={automated || undefined}

@@ -212,7 +212,7 @@ export function Title() {
       data-act={dawn ? 'finale' : undefined}
       data-testid="title"
     >
-      <div class="sd-title-brand">
+      <div class="sd-title-brand" data-voice="kicker">
         <span class="sd-title-chevron" aria-hidden="true">
           ››
         </span>
@@ -221,7 +221,7 @@ export function Title() {
           ‹‹
         </span>
       </div>
-      <h1 id="sd-title-heading" class="sd-title-logo">
+      <h1 id="sd-title-heading" class="sd-title-logo" data-voice="logo">
         Stardust
       </h1>
       {panel === 'main' ? (
@@ -282,7 +282,7 @@ export function Title() {
         </p>
       )}
       <MuteButton class="sd-title-sound" />
-      <p class="sd-title-tip" data-testid="title-tip">
+      <p class="sd-title-tip" data-testid="title-tip" data-voice="tip">
         <span class="sd-title-tip-label">Tip</span> {titleTip(slots.value, continueSlot())}
       </p>
     </main>

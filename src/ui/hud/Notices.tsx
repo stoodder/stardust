@@ -194,6 +194,7 @@ export function WaveBannerView() {
         key={`p${p.id}`}
         class="hud-wave-banner phase"
         data-testid="phase-banner"
+        data-voice="banner"
         aria-hidden="true"
       >
         <span class="hud-phase-kicker">{p.kicker}</span>

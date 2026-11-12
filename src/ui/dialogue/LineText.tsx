@@ -123,10 +123,11 @@ function HollowText({ text, shown }: { text: string; shown: number }) {
  * caller passes the typewriter (so its click can finish it).
  */
 export function LineText({ line, typed }: { line: LineView; typed: Typewriter }) {
-  if (line.silence) return <span class="dlg-text dlg-silence" />;
+  if (line.silence) return <span class="dlg-text dlg-silence" data-voice="line" />;
   return (
     <span
       class={`dlg-text${line.frame === 'distorted' ? ' dlg-hollow' : ''}${line.frame === 'icon' ? ' dlg-status' : ''}`}
+      data-voice="line"
     >
       <span class="dlg-sr">{plainText(line.text)}</span>
       <span aria-hidden="true">

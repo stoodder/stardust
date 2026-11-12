@@ -251,11 +251,13 @@ function Panel({
         {node.state === 'coming_soon' && <span class="sd-lock" aria-hidden="true" />}
         {starStateText(node.state)}
       </p>
-      <p class="sd-star-tagline">{node.tagline}</p>
+      <p class="sd-star-tagline" data-voice="tagline">
+        {node.tagline}
+      </p>
       {brief !== null && (
         <>
           <hr class="sd-star-rule" />
-          <ul class="sd-star-threats" aria-label="Threat intel">
+          <ul class="sd-star-threats" data-critical="threats" aria-label="Threat intel">
             {brief.threats.map((t) => (
               <li key={t.id} title={t.tip ?? undefined}>
                 {t.glyph !== null && <Icon id={t.glyph} />}
@@ -265,7 +267,7 @@ function Panel({
             ))}
           </ul>
           {brief.required.map((r) => (
-            <p key={r} class="sd-star-required">
+            <p key={r} class="sd-star-required" data-critical="counters">
               Required: {r}
             </p>
           ))}
@@ -472,7 +474,7 @@ export function StarMap() {
       data-testid="star-map"
       ref={screenRef}
     >
-      <div class="sd-starmap-chart" role="img" aria-label={STAR_MAP_CHART_LABEL}>
+      <div class="sd-starmap-chart" data-voice="chart" role="img" aria-label={STAR_MAP_CHART_LABEL}>
         <Chart view={view} />
         <span class="sd-starmap-scan" aria-hidden="true" />
         {sweeping && <span class="sd-starmap-sweep" aria-hidden="true" data-testid="star-sweep" />}
@@ -482,6 +484,7 @@ export function StarMap() {
           <span
             key={r.id}
             data-region={r.id}
+            data-voice="region"
             class={`sd-star-region sd-star-region-${r.id}${covered.has(r.id) ? ' sd-star-region-covered' : ''}`}
             style={{ left: `${r.x}px`, top: `${r.y}px` }}
           >
@@ -491,7 +494,7 @@ export function StarMap() {
         ))}
       </div>
       <header class="sd-starmap-header sd-star-chrome">
-        <p class="sd-kicker">
+        <p class="sd-kicker" data-voice="kicker">
           Everglow · Perimeter Ops
           {camp.slot === null ? ' · Dev save' : ` · Slot ${camp.slot}`}
         </p>
@@ -499,7 +502,7 @@ export function StarMap() {
           Sector map
         </h1>
         {camp.profile !== null && (
-          <p class="sd-kicker sd-campaign-tech" data-testid="technician">
+          <p class="sd-kicker sd-campaign-tech" data-testid="technician" data-voice="callsign">
             JPT-1 {silkText(camp.profile.name)} · #ED-447
           </p>
         )}
@@ -511,7 +514,7 @@ export function StarMap() {
       <div class="sd-starmap-notices">
         <MenuNotice />
         {noticeOn && (
-          <p class="sd-star-notice" role="status" data-testid="star-notice">
+          <p class="sd-star-notice" role="status" data-testid="star-notice" data-voice="notice">
             {STAR_MAP_ACCESS_NOTICE}
           </p>
         )}

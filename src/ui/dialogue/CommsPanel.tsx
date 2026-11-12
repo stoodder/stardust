@@ -16,7 +16,11 @@ import './dialogue.css';
 export function NamePlate({ line }: { line: LineView }) {
   if (line.name === '') return null;
   return (
-    <span class={`dlg-name dlg-frame-${line.frame}`} style={{ color: plateColor(line.color) }}>
+    <span
+      class={`dlg-name dlg-frame-${line.frame}`}
+      data-voice="speaker"
+      style={{ color: plateColor(line.color) }}
+    >
       {line.frame === 'pa' && <span class="dlg-pa-icon" aria-hidden="true" />}
       {line.name}
     </span>

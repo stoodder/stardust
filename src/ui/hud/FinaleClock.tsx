@@ -18,6 +18,7 @@ export function FinaleClock() {
       role="status"
       aria-live="off"
       data-testid="finale-clock"
+      data-critical="finale-clock"
       data-kind={c.kind}
       data-fill={c.fill}
       aria-label={`${c.label} ${c.value}`}

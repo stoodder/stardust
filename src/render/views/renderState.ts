@@ -142,6 +142,8 @@ export interface RenderState {
     readonly jammed: number;
     /** System Reboot's power-on columns showing now (T730a). */
     readonly columns: number;
+    /** Jagged brackets on towers a Silencer or an Auditor is about to jam, now (T871). */
+    readonly brackets: number;
     /** Towers drawn in their steel `+jammed` variant now (T730a). */
     readonly drawnJammed: number;
     readonly tellsSeen: number;

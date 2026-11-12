@@ -72,7 +72,7 @@ function MemoCard({ view }: { view: MemoCardView }) {
     return () => clearTimeout(id);
   }, []);
   return (
-    <div class="end-stage end-memo" data-testid="ending-memo">
+    <div class="end-stage end-memo" data-testid="ending-memo" data-voice="memo">
       <section
         class="end-memo-card"
         role="dialog"
@@ -195,7 +195,13 @@ function Beat({
     case 'card': {
       const card = view.cards[beat.index];
       return (
-        <p class="end-card" role="status" data-testid="epilogue-card" data-slot={card?.slot}>
+        <p
+          class="end-card"
+          role="status"
+          data-testid="epilogue-card"
+          data-voice="epilogue-card"
+          data-slot={card?.slot}
+        >
           {card?.text}
         </p>
       );
@@ -208,6 +214,7 @@ function Beat({
           class={`end-counter${flipped ? ' flipped' : ''}`}
           role="status"
           data-testid="epilogue-counter"
+          data-voice="counter"
           data-flipped={flipped ? 'true' : 'false'}
         >
           {silkText(text)}
@@ -230,7 +237,7 @@ function Credits({ ms, still }: { ms: number; still: boolean }) {
     ? undefined
     : { transform: `translateY(${STAGE_PX - creditsOffsetPx(ms)}px)` };
   return (
-    <div class="end-credits" data-testid="epilogue-credits">
+    <div class="end-credits" data-testid="epilogue-credits" data-voice="credits">
       <p class="sd-visually-hidden" role="status">
         {creditsText()}
       </p>
@@ -265,6 +272,7 @@ function FinalImage({ ending, ms, still }: { ending: 'stay' | 'go'; ms: number; 
       role="img"
       aria-label={FINAL_IMAGES[ending].label}
       data-testid="epilogue-final"
+      data-voice="final-image"
       data-ending={ending}
     >
       {art !== null && (

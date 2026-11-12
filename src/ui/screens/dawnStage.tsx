@@ -21,6 +21,7 @@ export function DawnStage(_props: { readonly from: number }) {
       role="img"
       aria-label={dawnLabel(frame)}
       data-testid="stage-dawn"
+      data-voice="stage"
       data-frame={frame}
     >
       {DAWN_FRAMES.map((f) => {

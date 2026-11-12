@@ -337,9 +337,11 @@ export const SEAL_BOTTOM = 40;
 export const AVOID_MARGIN = 4;
 /**
  * The SEAL button's top when lifting it clear of the doors would leave no room (D144 S8): the top
- * band, under the comms panel (which sits at the top centre while a forced input waits).
+ * band, under the comms panel (which sits at the top centre while a forced input waits: 4 px down
+ * and up to 86 px tall, a cue line over a portrait line, as A3M3's permission shows it), with a
+ * 6 px gap. smoke/a3m3.spec.ts pins it: the button in this band clears the panel (T664).
  */
-export const SEAL_TOP_BAND = 64;
+export const SEAL_TOP_BAND = 96;
 
 /** Whether two boxes overlap (touching edges don't). */
 export function overlaps(a: Rect, b: Rect): boolean {

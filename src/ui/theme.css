@@ -82,6 +82,33 @@
   --accent-2: var(--sd-pink-3);
   --accent-dim: var(--sd-teal-1);
 
+  /* Spacing and density (T803, the declutter pass; art-direction §9 *Density*), in game px. The
+     scale is the one the screens already use (1, 2, 4, 6, 8, 12); the roles name what a gap is
+     for, so a decluttered screen spaces its groups the same way as the next one. */
+  --space-hair: 1px;
+  --space-xs: 2px;
+  --space-s: 4px;
+  --space-m: 6px;
+  --space-l: 8px;
+  --space-xl: 12px;
+  /* Between items in a row (chips, icons, a label and its number). */
+  --gap-inline: var(--space-s);
+  /* Between lines or rows in a list. */
+  --gap-stack: var(--space-xs);
+  /* Between a panel's groups (the threats, the medals, the actions). */
+  --gap-section: var(--space-l);
+  /* A panel's inset. */
+  --pad-panel: var(--space-m);
+  /* Body copy (Silkscreen at 8 px) and its line. */
+  --line-copy: 10px;
+  /* Copy longer than this many lines goes behind a "more" (Disclosure.tsx), unless it's the voice. */
+  --copy-lines-max: 2;
+  /* Secondary text (a number's unit, a note, a toggle at rest) and quieter still. */
+  --text-secondary: var(--sd-steel-3);
+  --text-quiet: var(--sd-steel-2);
+  /* A disclosure's open fade (none under reduced motion). */
+  --disclosure-ms: 120ms;
+
   /* Not used for display: these references make Vite ship the fonts' OFL license texts with the
      build (art-direction § Fonts). */
   --font-licenses: url('@fontsource/silkscreen/LICENSE'), url('@fontsource/pixelify-sans/LICENSE');

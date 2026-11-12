@@ -41,6 +41,7 @@ function CompanionFace({ c, absent }: { c: CompanionView; absent: boolean }) {
       class="hud-companion"
       style={{ '--frame': plateColor(c.color), width: `${FACE_PX}px`, height: `${FACE_PX}px` }}
       data-testid="companion-face"
+      data-voice="companion"
       title={c.name}
       aria-hidden="true"
     >
@@ -287,7 +288,7 @@ export function AbilityBar() {
   const aimed = slots.find((a) => a.slot === hud.aimingAbility.value && a.aim !== 'none');
   if (slots.length === 0 && locked.length === 0) return null;
   return (
-    <nav class="hud-abilities" aria-label="Abilities">
+    <nav class="hud-abilities" data-critical="abilities" aria-label="Abilities">
       {slots.map((a, i) => (
         <AbilitySlot key={a.slot} a={a} cd={cds[i]} />
       ))}

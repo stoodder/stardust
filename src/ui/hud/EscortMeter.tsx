@@ -80,6 +80,7 @@ export function EscortMeter() {
       class={m.holdout ? 'hud-escort holdout' : choir ? 'hud-escort choir' : 'hud-escort'}
       role="status"
       data-testid="escort-meter"
+      data-critical="escort"
       data-low={m.low}
       data-holdout={m.holdout || undefined}
       data-choir={choir || undefined}

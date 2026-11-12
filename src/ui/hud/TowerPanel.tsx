@@ -111,6 +111,7 @@ function JamRow({ jam, immune }: { jam: number; immune: number }) {
       class={jammed ? 'hud-jam jammed' : 'hud-jam immune'}
       role="timer"
       data-testid="jam-row"
+      data-critical="jam"
       aria-label={jammed ? `Jammed, ${jam} s left` : `Immune to jamming, ${immune} s left`}
     >
       {jammed ? <Icon id={JAMMED_ICON} /> : <span class="hud-jam-dot" aria-hidden="true" />}
@@ -169,7 +170,7 @@ export function TowerPanel({ t }: { t: SelectedTowerView }) {
         <JamRow jam={t.jamSec ?? 0} immune={t.jamImmuneSec ?? 0} />
       )}
       {t.statsLines.map((l, i) => (
-        <p key={`s${i}`} class="hud-stats">
+        <p key={`s${i}`} class="hud-stats" data-critical="tower-stats">
           {l}
         </p>
       ))}
@@ -197,6 +198,7 @@ export function TowerPanel({ t }: { t: SelectedTowerView }) {
         <button
           type="button"
           class={upgradeClass}
+          data-critical="upgrade"
           ref={(el) => alignPulse(el)}
           aria-disabled={max || poor}
           aria-label={

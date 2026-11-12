@@ -6,6 +6,10 @@ import { JAM_MAX_SEC } from '../../content/rules.ts';
 import { secToTicks } from '../../shared/time.ts';
 import { fadeAlpha, STEPPED_ALPHA } from '../vfx/fxTiming.ts';
 import {
+  BRACKET_COLOR,
+  BRACKET_HALF_PX,
+  BRACKET_JAG,
+  bracketPoint,
   FIZZLE_HOLD_MS,
   FIZZLE_TEXT_MS,
   jamArc,
@@ -63,5 +67,27 @@ describe('jamLook (T702, T730a)', () => {
     expect(FIZZLE_HOLD_MS).toBeGreaterThanOrEqual(800);
     expect(fadeAlpha((FIZZLE_HOLD_MS - 1) / FIZZLE_TEXT_MS)).toBe(1);
     expect(fadeAlpha(FIZZLE_HOLD_MS / FIZZLE_TEXT_MS)).toBeLessThan(1);
+  });
+});
+
+describe('the jagged bracket (T871)', () => {
+  it('puts each corner BRACKET_HALF_PX out and saws its arms inward, 1 px out from the box', () => {
+    const p = { x: 0, y: 0 };
+    // Top-left corner, its horizontal arm: from the corner rightward, the jag above the box.
+    expect(bracketPoint(100, 50, 0, false, 0, p)).toEqual({
+      x: 100 - BRACKET_HALF_PX,
+      y: 50 - BRACKET_HALF_PX,
+    });
+    expect(bracketPoint(100, 50, 0, false, 1, p)).toEqual({
+      x: 100 - BRACKET_HALF_PX + 2,
+      y: 50 - BRACKET_HALF_PX - 1,
+    });
+    // Bottom-right corner, its vertical arm: upward from the corner, the jag right of the box.
+    const last = BRACKET_JAG.length - 1;
+    expect(bracketPoint(100, 50, 3, true, last, p)).toEqual({
+      x: 100 + BRACKET_HALF_PX + 1,
+      y: 50 + BRACKET_HALF_PX - 6,
+    });
+    expect(BRACKET_COLOR).toEqual({ ring: 'orange.3', tendril: 'hollow.4' });
   });
 });

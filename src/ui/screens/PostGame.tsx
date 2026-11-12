@@ -131,7 +131,7 @@ function ChallengeBody({
     <>
       {brief !== null && (
         <>
-          <ul class="sd-star-threats" aria-label="Threat intel">
+          <ul class="sd-star-threats" data-critical="threats" aria-label="Threat intel">
             {brief.threats.map((t) => (
               <li key={t.id} title={t.tip ?? undefined}>
                 {t.glyph !== null && <Icon id={t.glyph} />}
@@ -140,7 +140,7 @@ function ChallengeBody({
             ))}
           </ul>
           {brief.required.map((r) => (
-            <p key={r} class="sd-star-required">
+            <p key={r} class="sd-star-required" data-critical="counters">
               Required: {r}
             </p>
           ))}
@@ -210,7 +210,9 @@ function EntryPanel({
           {entry.cleared ? 'Cleared' : 'New'}
         </p>
       )}
-      <p class="sd-star-tagline">{entry.tagline}</p>
+      <p class="sd-star-tagline" data-voice="tagline">
+        {entry.tagline}
+      </p>
       <hr class="sd-star-rule" />
       {entry.kind === 'endless' ? (
         <EndlessBody entry={entry} startRef={ref} />
@@ -256,7 +258,7 @@ export function PostGameLayer({ selected, select, arrival }: PostGameLayerProps)
   return (
     <div class="sd-pg" data-testid="post-game">
       <section class="sd-pg-plate" aria-labelledby="sd-pg-heading">
-        <h2 id="sd-pg-heading" class="sd-pg-heading">
+        <h2 id="sd-pg-heading" class="sd-pg-heading" data-voice="heading">
           {POST_GAME_HEADING}
         </h2>
         <ul class="sd-pg-list">
@@ -330,7 +332,7 @@ export function EndlessScore({ result }: { result: EndlessResultView }) {
       data-testid="endless-score"
     >
       <p class="sd-results-kicker">Endless · {name}</p>
-      <h1 id="sd-results-heading" class="sd-results-heading">
+      <h1 id="sd-results-heading" class="sd-results-heading" data-voice="stamp">
         {heldHeadline(result.held, null)}
       </h1>
       <p class="sd-pg-score-seed" data-testid="endless-score-seed">

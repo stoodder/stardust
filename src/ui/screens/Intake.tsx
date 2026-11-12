@@ -157,7 +157,7 @@ const ARRIVAL_OPTIONS: readonly ChoiceOption<ArrivalReason>[] = ARRIVAL_ORDER.ma
 function Badge({ name }: { name: string }) {
   const shown = cleanName(name);
   return (
-    <figure class="sd-intake-badge" aria-label="ID badge preview">
+    <figure class="sd-intake-badge" data-voice="badge" aria-label="ID badge preview">
       <div class="sd-intake-photo">
         <Icon id="portrait.player" frame="neutral" class="sd-intake-portrait" />
         <figcaption class="sd-intake-photo-note">{INTAKE_COPY.badgePhoto}</figcaption>
@@ -213,7 +213,9 @@ export function Intake() {
       <section class="sd-panel sd-menu-panel sd-intake-panel">
         <header class="sd-menu-header">
           <div>
-            <p class="sd-kicker">{INTAKE_COPY.kicker}</p>
+            <p class="sd-kicker" data-voice="kicker">
+              {INTAKE_COPY.kicker}
+            </p>
             <h1 id="sd-intake-heading" class="sd-menu-heading">
               {INTAKE_COPY.heading}
             </h1>
@@ -225,7 +227,7 @@ export function Intake() {
             <dd class="sd-dim">{INTAKE_COPY.grade}</dd>
           </dl>
         </header>
-        <p class="sd-intake-intro">
+        <p class="sd-intake-intro" data-voice="intro">
           {mode?.kind === 'existing' ? INTAKE_COPY.introExisting : INTAKE_COPY.intro}
         </p>
         <form class="sd-intake-form" noValidate onSubmit={onSubmit}>
@@ -332,12 +334,19 @@ export function Intake() {
                 <dd class="sd-dim">{INTAKE_COPY.callsignValue}</dd>
               </dl>
               <Badge name={form.name} />
-              <p class="sd-intake-note" aria-live="polite" data-testid="file-note">
+              <p
+                class="sd-intake-note"
+                aria-live="polite"
+                data-testid="file-note"
+                data-voice="file-note"
+              >
                 {form.pronouns === null
                   ? INTAKE_COPY.notePending
                   : previewText(SAMPLE_NOTE, form.pronouns)}
               </p>
-              <p class="sd-intake-small">{INTAKE_COPY.smallPrint}</p>
+              <p class="sd-intake-small" data-voice="small-print">
+                {INTAKE_COPY.smallPrint}
+              </p>
             </div>
           </div>
           {failure !== null && (

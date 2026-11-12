@@ -54,6 +54,7 @@ export function WaykeeperStage({ from }: { from: number }) {
       role="img"
       aria-label={waykeeperLabel(turned)}
       data-testid="stage-waykeeper"
+      data-voice="stage"
       data-turned={turned ? 'true' : 'false'}
     >
       <div class="wk-plate" aria-hidden="true">

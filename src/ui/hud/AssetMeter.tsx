@@ -26,6 +26,7 @@ export function AssetMeter() {
       class="hud-meter hud-asset"
       role="status"
       data-testid="asset-meter"
+      data-critical="asset"
       data-damage={a.damage}
       aria-label={`${a.name} ${a.value} of ${a.max}${low ? ', low' : ''}${a.bearers === undefined ? '' : `. Carried home ${a.bearers.home} of ${a.bearers.total}`}`}
     >

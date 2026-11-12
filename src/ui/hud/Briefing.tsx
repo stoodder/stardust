@@ -32,7 +32,12 @@ import { VeteranPicker, veteranOpen } from './VeteranPicker.tsx'; // T860: a rep
  */
 function IntelStrip({ intel }: { intel: ThreatIntelView }) {
   return (
-    <section class="hud-intel" aria-label="Threat intel" data-testid="threat-intel">
+    <section
+      class="hud-intel"
+      aria-label="Threat intel"
+      data-testid="threat-intel"
+      data-critical="threats"
+    >
       <ul class="hud-intel-threats">
         <li class="hud-label">Threats</li>
         {intel.threats.map((t) => (
@@ -44,7 +49,7 @@ function IntelStrip({ intel }: { intel: ThreatIntelView }) {
         ))}
       </ul>
       {intel.required.map((r) => (
-        <p key={r.counter} class="hud-intel-required">
+        <p key={r.counter} class="hud-intel-required" data-critical="counters">
           <span class="hud-intel-req">Required: {r.label}</span>
           <span class="hud-intel-answers">
             {r.answers.length === 0 ? 'Nothing owned answers it yet' : r.answers.join(', ')}
@@ -161,7 +166,7 @@ export function Briefing({ view }: { view: SceneView }) {
             )}
             {view.choices !== null && <ChoiceList choices={view.choices} />}
             {view.remember !== null && (
-              <p class="dlg-remember" role="status">
+              <p class="dlg-remember" data-voice="remember" role="status">
                 {view.remember}
               </p>
             )}
@@ -218,7 +223,13 @@ function BriefingRow({ line }: { line: LineView }) {
   return (
     <p class={line.frame === 'caption' ? 'hud-briefing-line caption' : 'hud-briefing-line'}>
       <NamePlate line={line} />
-      {line.silence ? <Held /> : <span class="dlg-text">{plainText(line.text)}</span>}
+      {line.silence ? (
+        <Held />
+      ) : (
+        <span class="dlg-text" data-voice="line">
+          {plainText(line.text)}
+        </span>
+      )}
     </p>
   );
 }
@@ -230,7 +241,7 @@ function BriefingRow({ line }: { line: LineView }) {
  */
 function Held() {
   return (
-    <span class="dlg-text dlg-silence-held">
+    <span class="dlg-text dlg-silence-held" data-voice="line">
       <span aria-hidden="true">…</span>
       <span class="dlg-sr">(silence)</span>
     </span>

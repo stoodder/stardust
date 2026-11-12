@@ -20,6 +20,7 @@ export function C5Stage(_props: { readonly from: number }) {
       role="img"
       aria-label={c5Label(clauses.length)}
       data-testid="stage-c5"
+      data-voice="stage"
       data-clauses={clauses.length}
     >
       <span class="c5-sky" aria-hidden="true" />

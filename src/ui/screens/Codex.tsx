@@ -37,7 +37,7 @@ function noteClass(version: CodexNoteView['version']): string {
 function EarlierNote({ id, n }: { id: string; n: CodexNoteView }) {
   return (
     <>
-      <p class={noteClass(n.version)}>
+      <p class={noteClass(n.version)} data-voice="margin">
         <GlyphText text={n.text} />
       </p>
       {n.smallPrint !== null && (
@@ -93,7 +93,7 @@ function Entry({ entry, title }: { entry: CodexEntryView; title: string }) {
   // A single note version says so in the kicker (side by side, each version is labelled).
   const annotated = !sideBySide && (entry.versions[0]?.record ?? null) !== null;
   return (
-    <article class="sd-codex-entry" aria-labelledby="sd-codex-title">
+    <article class="sd-codex-entry" data-voice="journal" aria-labelledby="sd-codex-title">
       <header class="sd-codex-head">
         <div class="sd-codex-photo">
           {entry.picture === null ? (

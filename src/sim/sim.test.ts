@@ -82,6 +82,10 @@ describe('createSim', () => {
       // @ts-expect-error -- an unknown ability id is a type error too
       bad({ abilities: { slot1: null, slot2: 'nope', slot2State: 'present' } }),
     ).toMatch(/abilities.slot2: unknown ability 'nope'/);
+    // One ability in both slots (T871).
+    expect(
+      bad({ abilities: { slot1: 'fx_strike', slot2: 'fx_strike', slot2State: 'present' } }),
+    ).toMatch(/abilities: 'fx_strike' fills both slots/);
     // Compiled content can't have a waveless map (the validator refuses one); build it by hand.
     const waveless = { ...FIXTURE_CONTENT.maps.fx_map, waves: [] };
     expect(bad({ content: { ...FIXTURE_CONTENT, maps: { fx_map: waveless } } })).toMatch(

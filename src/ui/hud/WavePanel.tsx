@@ -80,7 +80,11 @@ export function WavePanel() {
     <section class="hud-waves chamfer" aria-label="Waves">
       <div class="hud-wave-row">
         <span class="hud-label">Wave</span>
-        <span class="big num" aria-label={endless ? `Wave ${wave}` : `Wave ${wave} of ${count}`}>
+        <span
+          class="big num"
+          data-critical="wave"
+          aria-label={endless ? `Wave ${wave}` : `Wave ${wave} of ${count}`}
+        >
           {wave}
           {/* Endless runs on with no last wave to count to (T863). */}
           {!endless && <span class="dim">/{count}</span>}
@@ -108,7 +112,7 @@ export function WavePanel() {
         )}
       </div>
       {next !== null && (
-        <ul class="hud-preview" aria-label={`Next: wave ${next.number}`}>
+        <ul class="hud-preview" data-critical="preview" aria-label={`Next: wave ${next.number}`}>
           <li class="hud-label">Next</li>
           {/* QUILL's lockout (T606, T631): the threats hidden behind ACCESS RESTRICTED and a
               struck blank where the icons were; its leak line under it, in its color. */}
@@ -122,7 +126,12 @@ export function WavePanel() {
           )}
           {restricted && <li class="hud-restricted-blank" aria-hidden="true" />}
           {restricted && leak !== null && (
-            <li class="hud-leak-line" data-testid="preview-leak" aria-label={`QUILL: ${leak}`}>
+            <li
+              class="hud-leak-line"
+              data-testid="preview-leak"
+              data-voice="leak-line"
+              aria-label={`QUILL: ${leak}`}
+            >
               <span class="hud-leak-who">QUILL </span>
               {leak}
             </li>

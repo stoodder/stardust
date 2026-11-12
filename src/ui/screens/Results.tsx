@@ -104,6 +104,7 @@ function Counter({ counter, shown }: { counter: ResultsCounter; shown: number })
         class="sd-results-counter-shown"
         aria-hidden={done ? undefined : 'true'}
         data-testid="results-counter"
+        data-voice="counter"
       >
         <span class="sd-results-counter-label">{counter.label}</span>
         {n !== null && (
@@ -140,7 +141,7 @@ function Counter({ counter, shown }: { counter: ResultsCounter; shown: number })
  */
 function Debrief({ lines }: { lines: readonly SpokenLine[] }) {
   return (
-    <ul class="sd-results-debrief" aria-label="Debrief">
+    <ul class="sd-results-debrief" data-voice="debrief" aria-label="Debrief">
       {lines.map((l, i) =>
         l.text === '' ? (
           <li
@@ -392,7 +393,12 @@ function StoryAsides({ rewards }: { rewards: RunRewards }) {
         ) : null,
       )}
       {rewards.memos.map((m) => (
-        <p key={m.id} class="sd-results-pay-aside sd-results-memo" data-testid="results-memo">
+        <p
+          key={m.id}
+          class="sd-results-pay-aside sd-results-memo"
+          data-testid="results-memo"
+          data-voice="memo"
+        >
           New memo: {silkText(m.subject)}
         </p>
       ))}
@@ -530,7 +536,7 @@ function OnwardButton({ won }: { won: boolean }) {
 /** A story stamp (core-loop.md § 6.2): red, askew, over the headline's right. Never pays. */
 function Stamp({ text, index }: { text: string; index: number }) {
   return (
-    <p class="sd-results-stamp" style={{ top: `${20 + index * 18}px` }}>
+    <p class="sd-results-stamp" data-voice="stamp" style={{ top: `${20 + index * 18}px` }}>
       <span class="sd-visually-hidden">Stamped: </span>
       {silkText(text)}
     </p>
@@ -568,14 +574,16 @@ function Body({ result }: { result: RunResult }) {
       // A real modal (D138): Tab stays on the card, like the pause menu.
       onKeyDown={trapTab}
     >
-      <p class="sd-results-kicker">{header.kicker}</p>
-      <h1 id="sd-results-heading" class="sd-results-heading">
+      <p class="sd-results-kicker" data-voice="kicker">
+        {header.kicker}
+      </p>
+      <h1 id="sd-results-heading" class="sd-results-heading" data-voice="heading">
         {headline}
       </h1>
       {result.stamps.map((t, i) => (
         <Stamp key={t} text={t} index={i} />
       ))}
-      <dl class="sd-results-stats">
+      <dl class="sd-results-stats" data-critical="outcome">
         {/* An Escort's meter stands in Core integrity's place (core-loop.md § 6.2). */}
         {stats.map((row) => (
           <div key={row.id} data-testid={`results-${row.id}`}>
@@ -677,6 +685,7 @@ function HeldBody({ result, card }: { result: RunResult; card: HeldCard }) {
       aria-describedby="sd-results-held-line"
       onKeyDown={trapTab}
       data-testid="results-held"
+      data-voice="stamp"
     >
       <h1 id="sd-results-heading" class="sd-results-heading sd-results-held-heading">
         {card.headline}
