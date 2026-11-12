@@ -1,7 +1,7 @@
-// The finale's story/meta seams (T800b; D154): C5's signature (`resolveC5`, refusing `'unbuilt'`
-// with T810's name until its body lands), and the dev saves into and out of the finale: every C4
-// answer and both choir extremes after A3M6, and `after_fin_{stay,go}` (C5 made by its documented
-// effect while T810 is unbuilt; each equals A3M6's save until the finale is registered).
+// The finale's story/meta seams (T800b; D154): C5 (`resolveC5`, its body T810's), and the dev
+// saves into and out of the finale: every C4 answer and both choir extremes after A3M6, and
+// `after_fin_{stay,go}` (C5 made by `resolveC5`; each equals A3M6's save until the finale is
+// registered).
 import { describe, expect, it } from 'vitest';
 import { CAMPAIGN } from '../content/campaign.ts';
 import { FIN_CHOIR_CELLS } from '../content/upgrades/reference.ts';
@@ -24,7 +24,7 @@ function finaleWon() {
   return save;
 }
 
-describe('resolveC5 (bible.md § 9, C5; T810 builds its body)', () => {
+describe('resolveC5 (bible.md § 9, C5; T810)', () => {
   it("answers with the ending_choice flag's values, in the ledger's order", () => {
     expect(C5_CHOICES).toEqual(['stay', 'go']);
     expect(C5).toEqual({ map: 'fin_m01', task: 'T810' });
@@ -38,11 +38,19 @@ describe('resolveC5 (bible.md § 9, C5; T810 builds its body)', () => {
     expect(resolveC5(save, 'stay')).toMatchObject({ ok: false, reason: 'invalid' });
   });
 
-  it("refuses 'unbuilt' naming T810 once due, and leaves an answered save as it is", () => {
-    const r = resolveC5(finaleWon(), 'go');
-    if (r.ok) return; // T810 has landed: its own tests take over.
-    expect(r.reason).toBe('unbuilt');
-    expect(r.message).toContain('T810');
+  it('once due, sets ending_choice and nothing else, once; an answered save is left as it is', () => {
+    for (const c5 of C5_CHOICES) {
+      const before = finaleWon();
+      const r = resolveC5(before, c5);
+      if (!r.ok) throw new Error(r.message);
+      expect(r.applied).toEqual({ kind: 'c5', choice: c5 });
+      expect(r.save.story.flags).toEqual({ ...before.story.flags, ending_choice: c5 });
+      expect({ ...r.save, story: { ...r.save.story, flags: before.story.flags } }).toEqual(before);
+      // The input is untouched, and a second answer changes nothing (never re-asked).
+      expect(before.story.flags.ending_choice).toBeUndefined();
+      const again = resolveC5(r.save, c5 === 'stay' ? 'go' : 'stay');
+      expect(again).toEqual({ ok: true, save: r.save, applied: null });
+    }
     const answered = build('after_a3m6_rewrite');
     answered.story.flags.ending_choice = 'stay';
     expect(resolveC5(answered, 'go')).toEqual({ ok: true, save: answered, applied: null });
