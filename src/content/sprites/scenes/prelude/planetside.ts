@@ -87,7 +87,8 @@ export function paintCloud(
     const depth = (baseY - y) / 6;
     if (depth < 0.45) return y === baseY ? c('act1.sky.1') : c('act1.sky.2');
     if (lit > 0.55) return c('white.1');
-    if (lit > -0.05 || depth > 1.6) return dithered([c('act1.sky.2'), c('white.0')], 0.4 + lit, x, y);
+    if (lit > -0.05 || depth > 1.6)
+      return dithered([c('act1.sky.2'), c('white.0')], 0.4 + lit, x, y);
     return c('act1.sky.2');
   });
 }

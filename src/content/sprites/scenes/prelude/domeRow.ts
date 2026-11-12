@@ -83,7 +83,6 @@ export function cellCentre(gx: number, gy: number): { x: number; y: number } {
 const GATE_GX = 6;
 /** The domes on the road's far side and the turrets' pads on its near side. */
 const DOMES: readonly (readonly [number, number])[] = [
-  [-1, -2],
   [1.5, -2],
   [4, -2],
   [-5, 3],
@@ -97,9 +96,9 @@ const PADS: readonly (readonly [number, number])[] = [
   [3, 1.5],
 ];
 /** Bricks's feet, by the gate on the road's far side. */
-export const BRICKS_AT = cellCentre(GATE_GX + 0.4, -1.3);
+export const BRICKS_AT = cellCentre(GATE_GX + 1.3, -1.1);
 /** The Technician on the road, walking down it toward the gate. */
-export const TECHNICIAN_AT = cellCentre(5, 0.1);
+export const TECHNICIAN_AT = cellCentre(4, 0.1);
 /** On `gerald`: the clipboard at the Technician's boots, and Gerald hovering just past it. */
 export const CLIPBOARD_AT = { x: TECHNICIAN_AT.x + 3, y: TECHNICIAN_AT.y + 3 } as const;
 export const GERALD_AT = { x: TECHNICIAN_AT.x - 8, y: TECHNICIAN_AT.y + 16 } as const;
@@ -239,7 +238,8 @@ function paintBackdrop(g: CharGrid): void {
   let x = top.x;
   for (let y = footY(top.x); y > 30; y--) {
     x += y % 3 === 0 ? 1 : 0;
-    for (let dx = -1; dx <= 1; dx++) plot(g, x + dx, y, dx === 0 ? c('act1.path.4') : c('act1.path.2'));
+    for (let dx = -1; dx <= 1; dx++)
+      plot(g, x + dx, y, dx === 0 ? c('act1.path.4') : c('act1.path.2'));
   }
 }
 
@@ -249,41 +249,41 @@ function paintBackdrop(g: CharGrid): void {
  */
 // prettier-ignore
 const BRICKS_STILL = [
-  '............CC',
-  '...........CCC',
-  '....BB....CCC.',
-  '...BBBB..CCC..',
-  '...BBBB.CCC...',
-  '..BBBBBBCCC...',
-  '.BBBBBBBBBB...',
-  'BBBBBBBBBB....',
-  'BB.BBBBBB.B...',
-  'BB.BBBBBB.B...',
-  'B..BBBBBB.....',
-  '...BBBBBB.....',
+  '..........CCCC',
+  '.........CCCC.',
+  '....BBB.CCCC..',
+  '...BBBBBCCC...',
+  '...BBBBBCC....',
+  '..BBBBBBBBB...',
+  '.BBBBBBBBBBB..',
+  '.BBBBBBBBBBB..',
+  '.BBBBBBBBB.BB.',
+  'BB.BBBBBBB.BB.',
+  'BB.BBBBBBB.BB.',
+  'B..BBBBBBB..B.',
+  '...BBBBBBB....',
   '...BBB.BBB....',
-  '...BB...BB....',
-  '...BB...BB....',
-  '..BBB...BBB...',
+  '...BBB.BBB....',
+  '..BBBB.BBBB...',
 ];
 // prettier-ignore
 const BRICKS_WAVE = [
-  '............CC',
-  'B..........CCC',
-  'BB..BB....CCC.',
-  'BB.BBBB..CCC..',
-  '.B.BBBB.CCC...',
-  '.BBBBBBBCCC...',
-  '.BBBBBBBBBB...',
-  '..BBBBBBBB....',
-  '...BBBBBB.B...',
-  '...BBBBBB.B...',
-  '...BBBBBB.....',
-  '...BBBBBB.....',
+  'B.........CCCC',
+  'BB.......CCCC.',
+  '.B..BBB.CCCC..',
+  '.B.BBBBBCCC...',
+  '.BBBBBBBCC....',
+  '..BBBBBBBBB...',
+  '..BBBBBBBBBB..',
+  '..BBBBBBBBBB..',
+  '...BBBBBBB.BB.',
+  '...BBBBBBB.BB.',
+  '...BBBBBBB.BB.',
+  '...BBBBBBB..B.',
+  '...BBBBBBB....',
   '...BBB.BBB....',
-  '...BB...BB....',
-  '...BB...BB....',
-  '..BBB...BBB...',
+  '...BBB.BBB....',
+  '..BBBB.BBBB...',
 ];
 
 /** Stamps the silhouette with its feet's centre at (x, y): ink, rimmed by the sun on the west. */
@@ -307,8 +307,11 @@ function paintBricks(g: CharGrid, x: number, y: number, wave: boolean): void {
         if (ring) plot(g, ox + sx, oy + sy, c('ink.0'));
         continue;
       }
-      // The rim: the afternoon sun from the west catches his edges on that side and on top.
-      const rim = !solid(sx - 1, sy) || (!solid(sx, sy - 1) && sy < 8);
+      // The rim: the afternoon sun from the west catches his outline's west edge (each row's
+      // first pixel) and the tops of his head, hand and cannon.
+      const row = src[sy] ?? '';
+      const west = sx === row.search(/[^.]/);
+      const rim = (west && sy < 13) || (!solid(sx, sy - 1) && sy < 5);
       const body = ch === 'C' ? c('ink.2') : c('ink.1');
       plot(g, ox + sx, oy + sy, rim ? (ch === 'C' ? c('steel.3') : c('act1.light')) : body);
     }
@@ -400,7 +403,7 @@ function paintGeraldShot(g: CharGrid): void {
   // The clipboard at the Technician's boots, his shadow on the road under him, then the drone,
   // hovering off already, satchel open.
   paintClipboard(g);
-  for (let dx = -4; dx <= 4; dx++) plot(g, GERALD_AT.x + dx, GERALD_AT.y + 9, c('act1.path.1'));
+  for (let dx = -3; dx <= 3; dx++) plot(g, GERALD_AT.x + dx, GERALD_AT.y + 5, c('act1.grass.0'));
   stampSprite(g, DOME_ROW_INK, enemyGerald, 'walk_se_0', GERALD_AT.x, GERALD_AT.y);
 }
 

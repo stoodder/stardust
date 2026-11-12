@@ -215,8 +215,8 @@ function paintScreen(g: CharGrid): void {
     return d <= 2 ? 'P' : 'T';
   });
   fill(g, x - 3, y - 3, x + w + 2, y + h + 2, (px, py) => {
-    const edge = px === x - 3 || px === x + w + 2 || py === y - 3 || py === y + h + 2;
-    if (edge) return 'k';
+    const bezel = px === x - 3 || px === x + w + 2 || py === y - 3 || py === y + h + 2;
+    if (bezel) return 'k';
     if (py === y + h + 1) return 'N';
     return py < y ? 'G' : 'F';
   });

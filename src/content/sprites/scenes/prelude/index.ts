@@ -4,6 +4,9 @@
 // the prelude's lazy chunk imports this module. The gallery shows them as cards (app/gallery.ts).
 import type { SpriteDef } from '../../types.ts';
 import { defineSprite } from '../../defineSprite.ts';
+import { sceneFreighter } from './freighter.ts';
+import { scenePreludeAd } from './preludeAd.ts';
+import { sceneViewport } from './viewport.ts';
 
 /**
  * A placeholder still: one flat ink fill per frame, painted on first read. Each art owner replaces
@@ -32,10 +35,7 @@ function placeholder<const Id extends string>(
   });
 }
 
-// TODO(T1002): real art.
-export const scenePreludeAd = placeholder('scene.prelude_ad', ['ad', 'small_print']);
-export const sceneFreighter = placeholder('scene.freighter', ['cabin']);
-export const sceneViewport = placeholder('scene.viewport', ['ad_on', 'ad_off']);
+export { scenePreludeAd, sceneFreighter, sceneViewport };
 // TODO(T1003): real art (the descent is 320×300; the stage pans 0 → 120 px down).
 export const sceneDescent = placeholder('scene.descent', ['still'], 300);
 export const sceneTouchdown = placeholder('scene.touchdown', ['one', 'zero']);
@@ -54,7 +54,12 @@ export const PRELUDE_STILLS = [
 /** A prelude still's id. */
 export type PreludeStillId = (typeof PRELUDE_STILLS)[number]['id'];
 
-/** Each still's frames, in cue order (seams.md's cue table). */
+/**
+ * Each still's cue frames, in cue order (seams.md's cue table). A still may carry more frames than
+ * its cues: an anim named after a cue frame (`scene.prelude_ad`'s `ad` and `small_print`, the
+ * sparkles' 2 fps twinkle) plays while that frame shows, and holds its first frame under reduced
+ * motion.
+ */
 export const PRELUDE_FRAMES: Readonly<Record<PreludeStillId, readonly string[]>> = {
   'scene.prelude_ad': ['ad', 'small_print'],
   'scene.freighter': ['cabin'],

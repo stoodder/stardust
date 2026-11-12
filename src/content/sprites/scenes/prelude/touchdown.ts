@@ -15,7 +15,14 @@ import { propBillboard } from '../../props/billboard.ts';
 import { propPeeker } from '../../props/peeker.ts';
 import type { ColorName } from '../../../palettes/master.ts';
 import { copyGrid, defineScene, dithered, fill, SCENE_H, SCENE_W, sceneGrid } from '../sceneKit.ts';
-import { crestNear, paintCloud, paintRig, paintSky, paintSpires, paintTerraces } from './planetside.ts';
+import {
+  crestNear,
+  paintCloud,
+  paintRig,
+  paintSky,
+  paintSpires,
+  paintTerraces,
+} from './planetside.ts';
 import { sceneInk, stampSprite } from './stamp.ts';
 
 /*
@@ -97,7 +104,12 @@ function paintBackdrop(g: CharGrid): void {
   // The grass toward us, darkening into the foreground's shadow (the line panel sits on it).
   fill(g, 0, HORIZON, SCENE_W - 1, SCENE_H - 1, (x, y) => {
     const t = Math.max(0, (y - GRASS_Y) / (SCENE_H - GRASS_Y));
-    let ch = dithered([c('act1.grass.0'), c('act1.grass.1'), c('act1.grass.2')], 1 - t ** 1.3, x, y);
+    let ch = dithered(
+      [c('act1.grass.0'), c('act1.grass.1'), c('act1.grass.2')],
+      1 - t ** 1.3,
+      x,
+      y,
+    );
     // Tufts: lit blades, a few pink blooms.
     const h = hash01(x >> 1, y, 23);
     if (h < 0.05 * (1 - t)) ch = c('act1.grass.3');
@@ -172,14 +184,23 @@ function paintShuttle(g: CharGrid): void {
     // Panel lines.
     if ((x + 7) % 13 === 0 && v < 0.5) return c('steel.3');
     const lit = -v * 0.9 - u * 0.25;
-    return dithered([c('steel.2'), c('steel.3'), c('steel.4'), c('white.0'), c('white.1')], 0.45 + lit, x, y);
+    return dithered(
+      [c('steel.2'), c('steel.3'), c('steel.4'), c('white.0'), c('white.1')],
+      0.45 + lit,
+      x,
+      y,
+    );
   });
   // The cockpit's glass, dark, with the sky's glint.
   fill(g, 0, 76, 26, 84, (x, y) => {
     const u = (x - 6) / 20;
     const v = (y - 82) / 7;
     if (u * u + v * v > 1 || y > 83) return null;
-    return y === 76 + Math.floor(x / 9) ? c('act1.sky.2') : x < 14 && y < 80 ? c('teal.2') : c('teal.0');
+    return y === 76 + Math.floor(x / 9)
+      ? c('act1.sky.2')
+      : x < 14 && y < 80
+        ? c('teal.2')
+        : c('teal.0');
   });
   // The hatch: open, warm inside, its door folded down as the ramp.
   for (let y = HATCH.y0; y <= HATCH.y1; y++) {
@@ -266,7 +287,12 @@ function paintCard(g: CharGrid, digit: string, flipped: boolean): void {
     for (let px = x; px < x + w; px++) {
       const edge = px === x || px === x + w - 1 || py === y || py === y + h - 1;
       const hinge = py === y + Math.floor(h / 2);
-      plot(g, px, py, edge ? c('ink.0') : hinge ? c('ink.0') : py < y + h / 2 ? c('ink.1') : c('steel.1'));
+      plot(
+        g,
+        px,
+        py,
+        edge ? c('ink.0') : hinge ? c('ink.0') : py < y + h / 2 ? c('ink.1') : c('steel.1'),
+      );
     }
   }
   const dx = x + Math.floor((w - 9) / 2);
@@ -305,7 +331,8 @@ function paintDust(g: CharGrid, x: number, y: number): void {
     [-30, -13, -4],
     [-38, -20, -10],
   ] as const) {
-    for (let px = x + dx0; px <= x + dx1; px++) if ((px + dy) % 5 !== 0) plot(g, px, y + dy, c('white.0'));
+    for (let px = x + dx0; px <= x + dx1; px++)
+      if ((px + dy) % 5 !== 0) plot(g, px, y + dy, c('white.0'));
   }
 }
 

@@ -144,19 +144,13 @@ function paintGlass(g: CharGrid): void {
     (x, y) => {
       if (!inGlass(x, y)) return null;
       const d = limbDistance(PLANET, x, y);
-      switch (limbBand(d)) {
-        case 'space':
-          // The cyan air glows a little way off the limb.
-          return d < 6 && bayer(x, y) < (6 - d) / 8 ? 'N' : spaceAt(x, y);
-        case 'air_high':
-          return 'N';
-        case 'air':
-          return d > 1 ? 'L' : 'M';
-        case 'rim':
-          return 'P';
-        default:
-          return groundAt(x, y, -d);
-      }
+      const band = limbBand(d);
+      // The cyan air glows a little way off the limb.
+      if (band === 'space') return d < 6 && bayer(x, y) < (6 - d) / 8 ? 'N' : spaceAt(x, y);
+      if (band === 'air_high') return 'N';
+      if (band === 'air') return d > 1 ? 'L' : 'M';
+      if (band === 'rim') return 'P';
+      return groundAt(x, y, -d);
     },
   );
   // The two moons (art-direction § 3): the big one white, shaded steel; the small one pink.
