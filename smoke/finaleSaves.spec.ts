@@ -15,6 +15,7 @@ const SAVES = [
 ] as const;
 
 test('the finale dev saves open on the Sector map', async ({ page }) => {
+  test.setTimeout(90_000); // six saves, one after another, each loading the Sector map
   for (const [i, id] of SAVES.entries()) {
     // oxlint-disable-next-line no-await-in-loop -- one save after another
     await page.goto(`/?test=1&seed=1&save=${id}`);

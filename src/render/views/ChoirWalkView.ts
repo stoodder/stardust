@@ -51,8 +51,10 @@ import { facingOf, hasAnim, type Facing } from './spriteInfo.ts';
 import type { ViewContext } from './ViewContext.ts';
 import { ViewPool, type PooledView } from './ViewPool.ts';
 
-/** Old Thrum walks this far (px) to Pebble's right. */
-const THRUM_SIDE_PX = 9;
+/** Old Thrum walks this far (px) to Pebble's right and a step behind her (up the screen), sorted
+ * behind her, so the leader always shows in front of the big old shell. */
+const THRUM_SIDE_PX = 14;
+const THRUM_BACK_PX = 4;
 /** Song circles drawn at once: the leader's and each Returned's (2), with room to spare. */
 const MAX_RINGS = 4;
 /** The window path's points (the road's corners within `haltTiles`, and its two ends). */
@@ -92,6 +94,7 @@ class MemberView implements PooledView {
   #tick = -1;
   #moving = false;
   #side = 0;
+  #back = 0;
   #uid = 0;
   hushed = false;
   /** Drawn in the gate queue this frame. */
@@ -115,6 +118,7 @@ class MemberView implements PooledView {
     this.#sprite = memberSprite(a);
     // Thrum beside Pebble; each walking singer a little to the side by uid (the refugees' lanes).
     this.#side = a.kind === 'thrum' ? THRUM_SIDE_PX : a.pebble ? 0 : refugeeLanePx(uid, false);
+    this.#back = a.kind === 'thrum' ? THRUM_BACK_PX : 0;
     this.#facing = facing;
     this.#pose = 'sing';
     this.#x = Number.NaN;
@@ -162,10 +166,10 @@ class MemberView implements PooledView {
     this.#y = gy;
     gridToScreen(gx, gy, this.#ctx.origin, pos);
     const x = Math.round(pos.x + (queued ? 0 : this.#side));
-    const y = Math.round(pos.y);
+    const y = Math.round(pos.y) - this.#back;
     this.at.x = x;
     this.at.y = y;
-    this.#body.setPosition(x, y).setDepth(worldDepth(pos.y, 'enemy', this.#uid));
+    this.#body.setPosition(x, y).setDepth(worldDepth(pos.y - this.#back, 'enemy', this.#uid));
   }
 
   release(): void {
