@@ -48,7 +48,7 @@ function seams(): (readonly [number, number])[][] {
     [-12, 7],
   ] as const) {
     const run: (readonly [number, number])[] = [];
-    let dy = y0;
+    let dy: number = y0;
     for (let x = 2; x < W - 2; x++) {
       const r = hash01(x, seed, 9);
       if (r < 0.25) dy -= 1;

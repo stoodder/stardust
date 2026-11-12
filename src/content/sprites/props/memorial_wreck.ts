@@ -18,12 +18,11 @@
 import { defineSprite } from '../defineSprite.ts';
 import { grid, hash01, plot, rows, stamp, type CharGrid } from '../helpers.ts';
 import { STANDARD_LEGEND } from '../legend.ts';
-import type { SpriteDef } from '../types.ts';
+import type { FrameDef, GridFrame, SpriteDef } from '../types.ts';
 import { patchList } from '../validate.ts';
 import { PALETTES } from '../../palettes/index.ts';
 import { rgbOf, type ColorName } from '../../palettes/master.ts';
 import { luminance } from '../../palettes/color.ts';
-import type { TowerId } from '../../types.ts';
 import { BASE_ANCHOR, BASE_MOUNT } from '../towers/base.ts';
 import { towerBloom, towerBloomHead } from '../towers/bloom.ts';
 import { towerChoir, towerChoirHead } from '../towers/choir.ts';
@@ -42,10 +41,36 @@ import { towerSproing, towerSproingHead } from '../towers/sproing.ts';
 import { towerThumper, towerThumperHead } from '../towers/thumper.ts';
 import { towerZapcoil, towerZapcoilHead } from '../towers/zapcoil.ts';
 
-/** Each tower class's base and head sprites: the art its wreck is made from. */
-export const MEMORIAL_SOURCES: Readonly<
-  Record<TowerId, { readonly base: SpriteDef; readonly head: SpriteDef }>
-> = {
+/**
+ * A tower class with a wreck: every `TowerId` (the test holds the two lists equal; the type is
+ * spelled out here, not taken from the tower registry, so the sprite registry doesn't import it).
+ */
+export type MemorialClass =
+  | 'rivet'
+  | 'thumper'
+  | 'sprinkler'
+  | 'skyhook'
+  | 'zapcoil'
+  | 'lookout'
+  | 'harpoon'
+  | 'crane'
+  | 'prism'
+  | 'mindspike'
+  | 'lantern'
+  | 'burrow'
+  | 'choir'
+  | 'bloom'
+  | 'gloop'
+  | 'sproing';
+
+/** A tower's base and head sprites: the art its wreck is made from. */
+interface WreckSource {
+  readonly base: SpriteDef;
+  readonly head: SpriteDef;
+}
+
+/** Each tower class's base and head sprites. */
+export const MEMORIAL_SOURCES: Readonly<Record<MemorialClass, WreckSource>> = {
   rivet: { base: towerRivet, head: towerRivetHead },
   thumper: { base: towerThumper, head: towerThumperHead },
   sprinkler: { base: towerSprinkler, head: towerSprinklerHead },
@@ -65,11 +90,15 @@ export const MEMORIAL_SOURCES: Readonly<
 };
 
 /** The class whose wreck stands when the save names none (Bricks's first turret was a Rivet). */
-export const MEMORIAL_FALLBACK: TowerId = 'rivet';
+export const MEMORIAL_FALLBACK: MemorialClass = 'rivet';
 
-/** The memorial wreck's frame for the save's `memorialTower` (null or absent: the fallback). */
-export function memorialWreckFrame(tower: TowerId | null | undefined): TowerId {
-  return tower ?? MEMORIAL_FALLBACK;
+function isMemorialClass(id: string): id is MemorialClass {
+  return Object.hasOwn(MEMORIAL_SOURCES, id);
+}
+
+/** The memorial wreck's frame for the save's `memorialTower` (null, absent or unknown: the fallback). */
+export function memorialWreckFrame(tower: string | null | undefined): MemorialClass {
+  return tower !== null && tower !== undefined && isMemorialClass(tower) ? tower : MEMORIAL_FALLBACK;
 }
 
 const W = 40;
@@ -119,11 +148,15 @@ export function deadChar(color: ColorName): string {
   return NEUTRAL[k] ?? 'F';
 }
 
+function isGrid(f: FrameDef): f is GridFrame {
+  return Array.isArray(f);
+}
+
 /** A frame of `def` resolved to a full grid (patches applied, mirrors flipped). */
 function resolve(def: SpriteDef, name: string): string[][] {
   const f = def.frames[name];
   if (f === undefined) throw new Error(`${def.id}: no frame '${name}'`);
-  if (Array.isArray(f)) return (f as readonly string[]).map((r) => [...r]);
+  if (isGrid(f)) return f.map((r) => [...r]);
   if ('mirrorOf' in f) return resolve(def, f.mirrorOf).map((r) => r.reverse());
   const g = resolve(def, f.from);
   for (const p of patchList(f)) {
@@ -159,7 +192,7 @@ function headArt(head: SpriteDef): { g: string[][]; top: number } {
   return { g, top: Math.max(0, top) };
 }
 
-function wreck(tower: TowerId): string[] {
+function wreck(tower: MemorialClass): string[] {
   const { base, head } = MEMORIAL_SOURCES[tower];
   const g: CharGrid = grid(W, H);
   const seed = [...tower].reduce((a, c) => a * 31 + c.charCodeAt(0), 7) % 997;
@@ -233,9 +266,9 @@ function wreck(tower: TowerId): string[] {
   return rows(g);
 }
 
-const FRAMES = Object.fromEntries(
-  (Object.keys(MEMORIAL_SOURCES) as TowerId[]).map((t) => [t, wreck(t)]),
-) as Readonly<Record<TowerId, string[]>>;
+const FRAMES: Readonly<Record<string, readonly string[]>> = Object.fromEntries(
+  (Object.keys(MEMORIAL_SOURCES) as MemorialClass[]).map((t) => [t, wreck(t)]),
+);
 
 export const propMemorialWreck = defineSprite({
   id: 'prop.memorial_wreck',
