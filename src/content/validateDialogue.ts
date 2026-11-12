@@ -87,11 +87,18 @@ export interface DialogueContent {
   readonly known?: ReadonlySet<string>;
 }
 
+/**
+ * The registered dialogue (every act's, once each has registered: app/actContent.ts; tests and the
+ * Node tools register them all first). `known` is read when validation runs, never at import, so a
+ * registration after this module loads still counts.
+ */
 export const LIVE_DIALOGUE: DialogueContent = {
   maps: MAP_DIALOGUE,
   shared: SHARED_BARKS,
   tags: NAME_TAGS,
-  known: new Set([...Object.keys(SCENES), ...Object.keys(BARKS)]),
+  get known() {
+    return new Set([...Object.keys(SCENES), ...Object.keys(BARKS)]);
+  },
 };
 
 let cache: readonly string[] | null = null;

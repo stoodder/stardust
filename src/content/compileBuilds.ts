@@ -62,6 +62,7 @@ export function compileBuilds<K extends IdSpace>(
     noCounterLoseByWave: def.noCounterLoseByWave ?? null,
     teachMap: def.teachMap === true,
     counterExemptions: def.counterExemptions ?? [],
+    pendingChecks: def.pendingChecks ?? null,
     referenceProfileByFlag,
   };
 }

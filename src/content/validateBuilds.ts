@@ -241,6 +241,32 @@ export function validateBuilds(
     }
   }
 
+  // [builds-range]: pending checks (T820) name a task, a reason, and real subjects: an alt build,
+  // or a #14 cell (`flag:<flag>=<value>`, a listed value).
+  const pending = def.pendingChecks;
+  if (pending !== undefined) {
+    const w = `${where}.pendingChecks`;
+    if (!/^T\d{3}[a-z]?$/.test(pending.task)) {
+      issues.add('builds-range', `${w}.task`, `'${pending.task}' must name a task (T821)`);
+    }
+    if (pending.reason.trim() === '') issues.add('builds-range', `${w}.reason`, 'needs a reason');
+    if (pending.subjects.length === 0) issues.add('builds-range', `${w}.subjects`, 'lists none');
+    for (const subject of pending.subjects) {
+      const alt = /^alt:(.+)$/.exec(subject)?.[1];
+      const cell = /^flag:([a-z_]+)=(.+)$/.exec(subject);
+      const known =
+        alt !== undefined
+          ? Object.hasOwn(def.altBuilds ?? {}, alt)
+          : cell !== null &&
+            ((def.flagVariants ?? {}) as Record<string, readonly unknown[] | undefined>)[
+              cell[1]!
+            ]?.some((v) => String(v) === cell[2]) === true;
+      if (!known) {
+        issues.add('builds-range', `${w}.subjects`, `'${subject}' is no alt build or #14 cell`);
+      }
+    }
+  }
+
   if (def.teachMap === true && !introducesCounter) {
     issues.add(
       'builds-range',

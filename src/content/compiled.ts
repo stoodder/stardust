@@ -5,6 +5,7 @@
 // the whole tree is deep-frozen.
 import type {
   CounterExemption,
+  PendingChecks,
   Act,
   AllyKind,
   AltBuildExpectation,
@@ -793,6 +794,8 @@ export interface CompiledBuilds<K extends IdSpace = LiveIds> {
   readonly teachMap: boolean;
   /** BuildsDef.counterExemptions (default none). */
   readonly counterExemptions: readonly CounterExemption[];
+  /** BuildsDef.pendingChecks (T820), or null. */
+  readonly pendingChecks: PendingChecks | null;
   /** BuildsDef.referenceProfileByFlag, each cell's par build compiled (null: the map's). */
   readonly referenceProfileByFlag: readonly CompiledFlagProfile<K>[];
 }
