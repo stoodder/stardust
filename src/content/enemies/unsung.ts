@@ -42,7 +42,7 @@ export const unsung = defineEnemy({
         gather: {
           everySec: 5,
           tellSec: 1.5,
-          radiusTiles: 2.4,
+          radiusTiles: 2,
           maxAbsorbs: 5,
           growPct: 0.1,
           leakPerAbsorb: 0,
