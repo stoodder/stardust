@@ -31,6 +31,7 @@ export function loadBattleRenderer(): Promise<void> {
 
 /** The loaded battle renderer. Throws before `loadBattleRenderer` has resolved. */
 export function battleRenderer(): Renderer {
-  if (renderer === null) throw new Error('battle: the renderer has not loaded (loadBattleRenderer)');
+  if (renderer === null)
+    throw new Error('battle: the renderer has not loaded (loadBattleRenderer)');
   return renderer;
 }

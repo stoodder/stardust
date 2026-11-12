@@ -25,6 +25,7 @@ import { activeSave, browserKeyValueStore, initSaves, loadDevSave } from './save
 import { hasBattleMap } from './battleSetup.ts';
 import { loadDevFixtures } from './devRegistry.ts';
 import { ensureAllActs } from './actContent.ts';
+import { gateRouter } from './contentGate.ts';
 import { initSettings } from './settings.ts';
 import { createTestHooks, installTestHooks } from './testHooks.ts';
 import type { BootParams } from './testHookTypes.ts';
@@ -73,8 +74,14 @@ export async function boot(): Promise<void> {
   initSaves(browserKeyValueStore());
   // The dev fixtures (the dev battles and saves) stay out of the initial JS: a dev URL (`?test=1`,
   // or `?map=` naming no live map) loads their chunk first (devRegistry.ts; D150).
-  // The story's later acts are lazy chunks (app/actContent.ts; T802).
-  await ensureAllActs();
+  // The story's later acts are lazy chunks (app/actContent.ts; T802), each loaded before a screen
+  // that needs it (the router's gate, app/contentGate.ts). A dev server validates all the content
+  // (it needs every act), and a test boot holds them all up front, since its hooks reach any of it
+  // (an audio render, a results fixture, a scene by id); `&lazy=1` loads as a player's game does.
+  // oxlint-disable-next-line typescript/no-unnecessary-condition -- undefined outside Vite
+  const devServer = import.meta.env === undefined || import.meta.env.DEV;
+  const lazy = new URLSearchParams(window.location.search).get('lazy') === '1';
+  if (devServer || (params.test && !lazy)) await ensureAllActs();
   if (params.test || (params.map !== null && !hasBattleMap(params.map))) await loadDevFixtures();
   const devSave = params.save !== null && loadDevSave(params.save);
   if (params.save !== null && !devSave) logError(`boot: unknown dev save '${params.save}'`);
@@ -101,7 +108,8 @@ export async function boot(): Promise<void> {
     scene: [new BootScene(resolveSceneReady), new BackdropScene()],
   });
   const frames = meterFrames(game);
-  const router: Router = createRouter(game, { mapId: params.map, seed: params.seed });
+  const defaults = { mapId: params.map, seed: params.seed };
+  const router: Router = gateRouter(createRouter(game, defaults), defaults);
   setNavigator(router);
   const startInBattle = params.map !== null || params.skipIntro;
   // A dev save (`?test=1&save=<id>`) opens on its Shift board.

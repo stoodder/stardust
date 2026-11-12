@@ -60,6 +60,8 @@ export interface HarnessOptions {
   readonly maxTicks?: number;
   /** The meta catalog profiles are built from (default: the live one; tests pass a fixture's). */
   readonly catalog?: MetaCatalog;
+  /** Run only one part of the map's checks (`partSpecs`: a heavy map's balance tests, T778). */
+  readonly part?: HarnessPart;
 }
 
 export interface CheckResult extends CheckOutcome {
