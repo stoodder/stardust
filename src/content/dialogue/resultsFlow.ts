@@ -14,7 +14,10 @@
 //   never change rewards;
 // - `ending`: the campaign's close once a **win**'s card is dismissed (the finale only, D154):
 //   Sterling's memo as a card, C5, the epilogue over the credits, then the post-game star map; a
-//   later win, C5 answered, goes straight to the post-game star map (app/finaleFlow.ts).
+//   later win, C5 answered, goes straight to the post-game star map (app/finaleFlow.ts, played by
+//   app/ending.ts);
+// - `unskippableFirst`: flow scenes Esc can't skip until the save has seen them (the Dawn scene, as
+//   Night Shift: `PlayOptions.noSkip`; every line still moves on with Next).
 // A scene listed here plays only once it is registered (content/dialogue/index.ts), so a map's
 // flow can be wired before its dialogue lands.
 import type { CampaignMapId } from '../campaign.ts';
@@ -84,6 +87,8 @@ export interface ResultsFlow {
   readonly stamps?: readonly ResultsStamp[];
   /** The campaign's close once the card is dismissed (the finale only). */
   readonly ending?: EndingFlow;
+  /** Its scenes Esc doesn't skip the first time (unseen in the save; the finale's Dawn). */
+  readonly unskippableFirst?: readonly SceneId[];
 }
 
 /** Every map's results flow (a map with none plays straight to its card). */
@@ -132,6 +137,8 @@ export const RESULTS_FLOW: Readonly<Partial<Record<CampaignMapId, ResultsFlow>>>
   // farewell memo as a card, C5, the epilogue over the credits, and the post-game star map.
   fin_m01: {
     beforeResults: ['fin_m01_scene_dawn'],
+    // Dawn's beats land whole the first time (D154 tone rule); a replay may skip them.
+    unskippableFirst: ['fin_m01_scene_dawn'],
     ending: {
       first: [
         { memo: 'memo_fin_01' },

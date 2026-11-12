@@ -1,7 +1,7 @@
 // Act III part two on the Sector map and its Results cards (T712; core-loop.md § 1.1 and § 6.2,
 // art-direction.md § 10). (1) The night chart across M7's maps on the dev saves: after A3M4,
 // *Unsung* next up by the plant, its vats burning; after A3M5, *Let Them In* next up on Dome Row,
-// the plant gone dark; after A3M6, the finale teased ("Coming soon", its tagline, no Start), Dome
+// the plant gone dark; after A3M6, the finale next up (its node and Start), Dome
 // Row open and warm, the Deep Halls labelled, and the callsign Waykeeper on file. (2) The cards:
 // A3M5's "Carried: {n} of {total}." beside its Bearers row and its plain "Perfect"; A3M6's
 // Sheltered row; the report auto-filed. (3) A scene played over the Sector map covers its node
@@ -15,7 +15,7 @@ const node = (page: Page, name: string) =>
     name: new RegExp(`^Shift \\d+, ${name}, `),
   });
 
-test('act three, part two, on the Sector map: Unsung, Let Them In, then the finale teased', async ({
+test('act three, part two, on the Sector map: Unsung, Let Them In, then the finale next up', async ({
   page,
 }) => {
   // After A3M4: Unsung next up, the marker on Empty Slot.
@@ -51,20 +51,19 @@ test('act three, part two, on the Sector map: Unsung, Let Them In, then the fina
   await nextFrames(page);
   await shot(page, 'act3-sector-two', 2, 'after-a3m5');
 
-  // After A3M6 (M7's last screen): the finale teased, its node taking the arrival focus.
+  // After A3M6: the finale next up, its node taking the arrival focus.
   await page.goto('/?test=1&seed=1&save=after_a3m6');
   await waitForReady(page);
   await expect(map).toHaveAttribute('data-phase', 'act3');
   await expect(node(page, 'Let Them In')).toHaveAttribute('aria-current', 'location');
   const teaser = node(page, 'Clearing the Way');
   await expect(teaser).toHaveAccessibleName(
-    'Shift 18, Clearing the Way, The Long Walk to the Deep Halls. Coming soon. Walk them home. ' +
-      'The choir sings the jingle as a funeral hymn, and your counter counts down to zero.',
+    'Shift 18, Clearing the Way, The Long Walk to the Deep Halls. Next up. 0 of 3 medals.',
   );
-  await expect(teaser).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Start Clearing the Way' })).toBeFocused();
   const panel = page.getByRole('region', { name: 'Clearing the Way' });
-  await expect(panel).toContainText('Coming soon');
-  await expect(panel.getByRole('button')).toHaveCount(0);
+  await expect(panel).not.toContainText('Coming soon');
+  await expect(panel.getByRole('button', { name: 'Start Clearing the Way' })).toBeVisible();
   await expect(page.locator('[data-region="deep_halls"]')).toHaveText('The Deep Halls');
   // The panel stands clear of the teaser's name plate.
   const plate = await page
