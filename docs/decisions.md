@@ -1976,6 +1976,6 @@ Round 2 verified round 1's fixes in play: each QUILL answer hears its own line, 
 - One disclosure style: a trailing ▸.
 Gate-time and architecture follow-ups that change no behaviour are logged in tasks.md (T878).
 
-### D158 — 2026-11-12 — The credits name the game's maker
+### D158 — 2026-11-12 — The credits name the game's makers
 
 The owner asked to be credited by name, and for Claude to be credited beside them. The roll now opens, under the title, with **A game by: Rick Allen, and Claude, by Anthropic** (`src/ui/screens/credits.ts`), ahead of the cast; the separate "Built with" block is gone. The rest of the roll is unchanged and still ends on "And you" over "Thank you for playing.". Also logged in this session: round 2's art fixer added the song's light reaching one tile past its circle, a full outline on held split parts, the rifts going out at Dawn's start (replacing T871's healing behind the sun's front), and a laid-to-rest boss's bar stepping out at once (D157's art items as built; art-direction.md).
