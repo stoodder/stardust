@@ -9,8 +9,10 @@
 // - Bursts: fx.explosion at a shell's impact (or a death); a Cluster Thumper's bomblets pop with
 //   the small fx.bomblet_burst.
 // - Ground decals (a strike's flash and scorch), floating numbers and callouts in the 3×5 pixel
-//   font (none within KEEP_CLEAR_TILES of a clickable or a lift, D134: vfx/keepClear.ts), and
-//   the camera shake (a strike's 2 px, a leak's 1 px; skipped under reduced motion).
+//   font (none within KEEP_CLEAR_TILES of a clickable or a lift, D134: vfx/keepClear.ts; one pop
+//   per unit, T803b: a number merges into its target's young one, a callout already up nearby
+//   isn't drawn twice, both start above Bricks's name tag, and none rises after the finale's Dawn),
+//   and the camera shake (a strike's 2 px, a leak's 1 px; skipped under reduced motion).
 // - Debris (T430a): pooled 1 and 2 px palette pixels with a velocity, gravity, and a stepped fade
 //   (art-direction § Particles: at most 0.8 s each, far under the 512 cap): an Aelari unit's
 //   shatter and a broken shield's shards, the stardust
@@ -49,7 +51,16 @@ import {
   floatTextTexture,
   PULSE_COLOR,
 } from '../vfx/overlayTextures.ts';
-import { FLOAT_ROW_PX, stackFloat, type FloatSlot } from '../vfx/floatStack.ts';
+import {
+  amountText,
+  floatAmount,
+  FLOAT_ROW_PX,
+  SAME_CALLOUT_TILES,
+  SAME_TARGET_TILES,
+  stackFloat,
+  withinTiles,
+  type FloatSlot,
+} from '../vfx/floatStack.ts';
 import type { KeepClear } from '../vfx/keepClear.ts';
 import { imageToCanvas } from '../sprites/canvas.ts';
 import { SPLAT_DROP_COLORS, SPLAT_DROPS, SPLAT_MS, SPLAT_RING, splatImage } from './gloopLook.ts';
@@ -117,9 +128,27 @@ interface Decal {
   img: Phaser.GameObjects.Image;
 }
 
+/**
+ * A plate drawn over the world that floaters rise clear of (Bricks's name tag, NameTagView): a
+ * number or callout that would cover it starts just above it instead (T803b).
+ */
+export interface FloatObstacle {
+  /** Whether the plate, as drawn now, overlaps the screen box (left, top)–(right, bottom). */
+  overlaps(left: number, top: number, right: number, bottom: number): boolean;
+  /** The plate's top edge on screen (px), as drawn now. */
+  readonly top: number;
+}
+
+/** A number merges into one of its own still this young (the first half of its rise; T803b). */
+const MERGE_MS = FLOAT_MS / 2;
+
 /** A floating number rising from a point. */
 interface Float extends FloatSlot {
   active: boolean;
+  /** Its words and colour, and its signed amount (null for a callout): what a merge reads. */
+  text: string;
+  color: ColorName;
+  amount: number | null;
   /** A callout newer floaters don't take over while it's up (FIZZLED: jamLook.ts). */
   keep: boolean;
   ms: number;
@@ -256,6 +285,10 @@ export class TransientFx {
   #shakeMs = -1;
   /** The spots floaters keep clear of (a clickable, a lift; the scene's), or none. */
   #keepClear: KeepClear | null = null;
+  /** A plate floaters rise clear of (Bricks's name tag), or none. */
+  #obstacle: FloatObstacle | null = null;
+  /** No floater rises any more (the finale's Dawn: the battle is over; T803b). */
+  #textMuted = false;
   /** Which shake runs: the strike's 2 px or a leak's 1 px. */
   #shakeSmall = false;
   /** Shell bursts skipped by the per-tile cap since the view was made (the smoke flow's check). */
@@ -302,6 +335,9 @@ export class TransientFx {
       layers.overlay.add(img);
       this.#floats.push({
         active: false,
+        text: '',
+        color: 'white.1',
+        amount: null,
         keep: false,
         ms: 0,
         durationMs: FLOAT_MS,
@@ -644,11 +680,79 @@ export class TransientFx {
     return k.covers(cx - w / 2, baseY - risePx - FLOAT_ROW_PX, cx + w / 2, baseY);
   }
 
+  /** A plate floaters rise clear of (Bricks's name tag; the scene's), or none. */
+  setFloatObstacle(obstacle: FloatObstacle | null): void {
+    this.#obstacle = obstacle;
+  }
+
+  /**
+   * Stops every floater for the rest of the battle, the ones up included: from the finale's Dawn
+   * no number or callout rises over the sunrise (T803b; D153).
+   */
+  muteText(): void {
+    this.#textMuted = true;
+    for (const f of this.#floats) {
+      f.active = false;
+      f.img.setVisible(false);
+    }
+  }
+
   /** How many floaters are up (tests' view of them). */
   get floatsUp(): number {
     let n = 0;
     for (const f of this.#floats) if (f.active) n++;
     return n;
+  }
+
+  /** The words of the floaters up, oldest slot first (tests' view of them). */
+  get floatTexts(): readonly string[] {
+    const out: string[] = [];
+    for (const f of this.#floats) if (f.active) out.push(f.text);
+    return out;
+  }
+
+  /**
+   * One pop per unit (T803b): a number where one of its own (same colour, same sign, the same
+   * target) is still young adds to it and pops again; a callout with the same words already up
+   * nearby isn't drawn twice. True when the new floater was absorbed.
+   */
+  #absorb(text: string, color: ColorName, x: number, y: number): boolean {
+    const amount = floatAmount(text);
+    for (const f of this.#floats) {
+      if (!f.active || f.color !== color) continue;
+      if (amount === null) {
+        if (f.text === text && withinTiles(f.gx, f.gy, x, y, SAME_CALLOUT_TILES)) return true;
+        continue;
+      }
+      if (
+        f.amount === null ||
+        Math.sign(f.amount) !== Math.sign(amount) ||
+        f.ms >= MERGE_MS ||
+        !withinTiles(f.gx, f.gy, x, y, SAME_TARGET_TILES)
+      ) {
+        continue;
+      }
+      f.amount += amount;
+      f.text = amountText(f.amount);
+      const key = floatTextTexture(this.ctx.scene, f.text, color);
+      f.img.setTexture(key);
+      f.w = this.ctx.scene.textures.getFrame(key)?.width ?? f.w;
+      f.ms = 0;
+      this.#syncFloat(f);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * The baseline for a floater `w` wide at (cx, baseY), rising FLOAT_RISE_PX, clear of the
+   * obstacle plate: unchanged when it doesn't cover the plate, else just above the plate.
+   */
+  #overObstacle(cx: number, baseY: number, w: number): number {
+    const o = this.#obstacle;
+    if (o === null) return baseY;
+    const top = baseY - FLOAT_RISE_PX - FLOAT_ROW_PX;
+    return o.overlaps(cx - w / 2, top, cx + w / 2, baseY) ? Math.min(baseY, o.top - 1) : baseY;
   }
 
   /**
@@ -665,8 +769,9 @@ export class TransientFx {
     ms = FLOAT_MS,
     keep = false,
   ): void {
-    // Nothing rises over what the player can reach (D134 K2).
-    if (this.#keepClear?.near(x, y) === true) return;
+    // Nothing rises over what the player can reach (D134 K2), nor after Dawn (T803b).
+    if (this.#textMuted || this.#keepClear?.near(x, y) === true) return;
+    if (this.#absorb(text, color, x, y)) return;
     for (let k = 0; k < MAX_FLOATS; k++) {
       const q = this.#floats[this.#nextFloat]!; // index < MAX_FLOATS
       if (!q.active || !q.keep) break;
@@ -681,7 +786,12 @@ export class TransientFx {
     const wasActive = f.active;
     f.active = false;
     const cx = Math.round(pos.x);
-    const baseY = stackFloat(this.#floats, cx, Math.round(pos.y - liftPx), w);
+    const baseY = stackFloat(
+      this.#floats,
+      cx,
+      this.#overObstacle(cx, Math.round(pos.y - liftPx), w),
+      w,
+    );
     if (baseY === null || this.#overClear(cx, baseY, w, FLOAT_RISE_PX)) {
       f.active = wasActive;
       return;
@@ -695,6 +805,9 @@ export class TransientFx {
     f.gy = y;
     f.cx = cx;
     f.w = w;
+    f.text = text;
+    f.color = color;
+    f.amount = floatAmount(text);
     f.ms = 0;
     f.durationMs = ms;
     f.keep = keep;

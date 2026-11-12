@@ -80,7 +80,13 @@ export function amountText(n: number): string {
 }
 
 /** Whether grid points (ax, ay) and (bx, by) are within `tiles` of each other. */
-export function withinTiles(ax: number, ay: number, bx: number, by: number, tiles: number): boolean {
+export function withinTiles(
+  ax: number,
+  ay: number,
+  bx: number,
+  by: number,
+  tiles: number,
+): boolean {
   const dx = ax - bx;
   const dy = ay - by;
   return dx * dx + dy * dy <= tiles * tiles;

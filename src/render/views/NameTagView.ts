@@ -3,8 +3,9 @@
 // layer, so no tower or unit hides it. Above the pause plate when that tower holds fire. The app
 // says which tower carries it and the name (`tagStep`'s effects, app/dialogue.ts); this view only
 // follows that tower's art. It hides while it would cover a spot kept clear (D134 K2: an armed
-// clickable or Pebble's lift, vfx/keepClear.ts) and comes back when the spot clears. A texture per
-// name, registered once; nothing allocates per frame.
+// clickable or Pebble's lift, vfx/keepClear.ts) and comes back when the spot clears. Floating
+// numbers and callouts start above it rather than over the name (TransientFx's FloatObstacle;
+// T803b). A texture per name, registered once; nothing allocates per frame.
 import type * as Phaser from 'phaser';
 import type { Vec2 } from '../iso.ts';
 import { imageToCanvas } from '../sprites/canvas.ts';
@@ -56,6 +57,26 @@ export class NameTagView {
   /** The plate's text as drawn ('' while none shows). */
   get text(): string {
     return this.#plate.visible ? this.#text : '';
+  }
+
+  /** The plate's top edge on screen (px; NaN while none shows): floaters start above it. */
+  get top(): number {
+    return this.#plate.visible ? this.#y - this.#plate.height : Number.NaN;
+  }
+
+  /**
+   * Whether the plate, as drawn now, overlaps the screen box (left, top)–(right, bottom): a floater
+   * that would cover the tag starts above it instead (TransientFx's FloatObstacle; T803b).
+   */
+  overlaps(left: number, top: number, right: number, bottom: number): boolean {
+    if (!this.#plate.visible) return false;
+    const half = this.#plate.width / 2;
+    return (
+      left < this.#x + half &&
+      this.#x - half < right &&
+      top < this.#y &&
+      this.#y - this.#plate.height < bottom
+    );
   }
 
   /** The plate's height in px (0 while none shows): what a pointer over the tower clears. */
