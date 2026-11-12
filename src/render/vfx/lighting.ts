@@ -34,6 +34,11 @@ export const SKY_SHARE = 0.42;
 export interface LightStop {
   readonly wave: number;
   readonly env: EnvPaletteId;
+  /**
+   * A sky-only stop's eastern dawn (T831): how far `env`'s sky has risen from the east edge
+   * (0–1 of EAST_REACH, `eastSkyImage`) over the map's own; absent, `env`'s whole sky.
+   */
+  readonly east?: number;
 }
 
 export interface Rgb {
@@ -45,6 +50,41 @@ export interface Rgb {
 /** The schedule's stops: the map's env at wave 0 (before wave 1), then each key. */
 export function lightStops(env: EnvPaletteId, keys: readonly LightingKeyDef[]): LightStop[] {
   return [{ wave: 0, env }, ...keys.map((k) => ({ wave: k.wave, env: k.env }))];
+}
+
+/**
+ * The sky's stops (T831; the finale's eastern sky, D154's T701 ruling): `lightStops`, but a
+ * sky-only key toward another env than the map's is that env's sky risen from the east, the k-th
+ * such key of n at `east` k/n, so a run of them warms the horizon a step at a time; a sky-only key
+ * on the map's own env is its plain sky (the night held). Every other key shows its env's sky.
+ */
+export function skyStops(
+  env: EnvPaletteId,
+  keys: readonly { readonly wave: number; readonly env: EnvPaletteId; readonly skyOnly?: boolean }[],
+): LightStop[] {
+  const rising = keys.filter((k) => k.skyOnly === true && k.env !== env).length;
+  let k = 0;
+  const out: LightStop[] = [{ wave: 0, env }];
+  for (const key of keys) {
+    if (key.skyOnly === true && key.env !== env) {
+      out.push({ wave: key.wave, env: key.env, east: ++k / rising });
+    } else out.push({ wave: key.wave, env: key.env });
+  }
+  return out;
+}
+
+/**
+ * The grade's stops (T806): `lightStops` without the sky-only keys, so the world's light holds
+ * while the sky moves.
+ */
+export function worldStops(
+  env: EnvPaletteId,
+  keys: readonly { readonly wave: number; readonly env: EnvPaletteId; readonly skyOnly?: boolean }[],
+): LightStop[] {
+  return lightStops(
+    env,
+    keys.filter((k) => k.skyOnly !== true),
+  );
 }
 
 /**
@@ -272,6 +312,58 @@ export function skyImage(env: EnvPaletteId, w: number, h: number): RgbaImage {
     }
   }
   const img = { w, h, data };
+  for (const moon of SKY_MOONS) drawMoon(img, moon);
+  return img;
+}
+
+/**
+ * How far a fully risen eastern dawn (`east` 1) reaches across the sky: this share of its width
+ * from the east (right) edge, and this share of the sky's height up from its horizon (the sky's
+ * foot). Dawn itself (the lighting set) is the whole sky.
+ */
+export const EAST_REACH = { x: 0.55, y: 0.85 } as const;
+
+/**
+ * `base`'s sky with `env`'s risen over it from the east (T831; finale.md: "the eastern sky warms",
+ * art-direction §3 *Finale*): an ellipse centred on the sky's foot at its right (east) edge, its
+ * radii `east` × EAST_REACH, inside which `env`'s bands rise hottest at the centre (its last band,
+ * the dawn's gold, at the horizon) and coolest at the rim (its first), each seam dithered, the rim
+ * dithered into `base`'s night. The moons stay over it. `east` 0 is `base`'s sky.
+ */
+export function eastSkyImage(
+  base: EnvPaletteId,
+  env: EnvPaletteId,
+  east: number,
+  w: number,
+  h: number,
+): RgbaImage {
+  const img = skyImage(base, w, h);
+  const level = Math.min(1, Math.max(0, east));
+  if (level <= 0) return img;
+  const bands: readonly ColorName[] = ENV_SKY[env];
+  const colors = bands.map((b) => rgbOf(b));
+  const n = colors.length;
+  const skyH = Math.round(h * SKY_SHARE);
+  const rx = Math.max(1, level * EAST_REACH.x * w);
+  const ry = Math.max(1, level * EAST_REACH.y * skyH);
+  const data = img.data;
+  for (let y = 0; y < h; y++) {
+    const dy = (y - skyH) / ry;
+    if (Math.abs(dy) > 1.1) continue;
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      if (data[i + 3] === 0) continue; // below the sky's fade: the void stays
+      const dx = (x - w) / rx;
+      // Each seam dithers over a tenth of the radius.
+      const jitter = (BAYER4[(y % 4) * 4 + (x % 4)]! / 16 - 0.5) * 0.1; // index < 16
+      const d = Math.sqrt(dx * dx + dy * dy) + jitter;
+      if (d >= 1) continue;
+      const c = colors[Math.min(n - 1, Math.max(0, n - 1 - Math.floor(d * n)))]!; // < n
+      data[i] = c.r;
+      data[i + 1] = c.g;
+      data[i + 2] = c.b;
+    }
+  }
   for (const moon of SKY_MOONS) drawMoon(img, moon);
   return img;
 }

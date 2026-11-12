@@ -60,9 +60,11 @@ import {
   metaRunEndOf,
   offeredMedals,
   runResultOf,
+  voicesHeld,
   type RunEndInput,
 } from './runResult.ts';
-import { flowScenes, playInOrder, setAfterResults } from './runFlow.ts';
+import { flowScenes, playInOrder, setAfterResults, unskippable } from './runFlow.ts';
+import { endingSteps } from './finaleFlow.ts';
 import {
   grantBriefingGifts,
   memorialAtEnd,
@@ -489,8 +491,10 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
         ? {}
         : { asset: { name: sim.map.asset.name, value: s.asset, max: s.maxAsset } }),
       ...escortAtEnd(sim),
-      // A choir map's Voices (the finale; T804's choir): Results lists them, not the core.
-      ...(s.choir.singers > 0 ? { voices: { n: s.choir.voices, total: s.choir.singers } } : {}),
+      // A choir map's Voices (the finale; T804's choir): Results lists them, not the core. The
+      // score is the fewest that sang through the night (`voicesMin`): Dawn wakes every hushed
+      // singer, so the choir is always whole again by the card (T810).
+      ...(voicesHeld(s) === null ? {} : { voices: voicesHeld(s)! }),
       ...bearersAtEnd(sim),
       // This attempt's kills: a checkpoint retry's replayed ones were filed by the attempt before.
       skitterkinKilled: attemptKills(b.host),
@@ -671,6 +675,12 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
       const shown = battle;
       const before = flow?.before ?? flowScenes(result.mapId, result.outcome, 'before');
       const after = flow?.after ?? flowScenes(result.mapId, result.outcome, 'after');
+      // The save as the run left it: which close a won finale plays (C5 unanswered: the first),
+      // and which flow scenes Esc can't skip yet (Dawn, the first time; T810).
+      const save = activeSave();
+      const won = result.outcome === 'won';
+      const steps = save === null ? [] : endingSteps(result.mapId, won, save);
+      const seen = save?.story.seen ?? [];
       return new Promise<void>((resolve, reject) => {
         playInOrder(
           before,
@@ -680,13 +690,14 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
               resolve();
               return;
             }
-            setAfterResults(after, record);
+            setAfterResults(after, record, steps);
             // The first payday is spent by being shown (D097), never by an abandoned run or the
             // results fixture.
             if (record && result.rewards?.firstPayday === true) markFirstPaydayShown();
             router.goto('results').then(resolve, reject);
           },
           record,
+          (scene) => unskippable(result.mapId, scene, seen),
         );
       });
     },

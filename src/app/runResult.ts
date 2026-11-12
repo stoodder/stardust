@@ -133,8 +133,9 @@ export interface RunEndInput {
    */
   readonly script?: RunScript;
   /**
-   * A choir map's Voices at the end (the finale; `state.choir`: singers still singing, of the
-   * run's choir): Results lists them in Core integrity's place. Absent on other maps.
+   * A choir map's Voices (the finale): the fewest singers singing at once through the run
+   * (`stats.voicesMin`; Dawn wakes the hushed, so the choir is whole by the card), of the run's
+   * choir. Results lists them in Core integrity's place as "Voices held". Absent on other maps.
    */
   readonly voices?: RunVoices;
   /**
@@ -166,10 +167,23 @@ export interface RunEndInput {
   readonly veteran?: readonly VeteranModifierId[];
 }
 
-/** A choir's Voices at a run's end (the finale): singers still singing, of the run's choir. */
+/** A choir's Voices held through a run (the finale): its fewest singing, of the run's choir. */
 export interface RunVoices {
   readonly n: number;
   readonly total: number;
+}
+
+/**
+ * A run's Voices held, from its sim state as it ended: the fewest singers singing at once
+ * (`stats.voicesMin`), never the whole choir Dawn woke at the end, of the run's choir. Null on a
+ * map with no choir.
+ */
+export function voicesHeld(s: {
+  readonly choir: { readonly singers: number; readonly voices: number };
+  readonly stats: { readonly voicesMin: number };
+}): RunVoices | null {
+  if (s.choir.singers <= 0) return null;
+  return { n: Math.min(s.stats.voicesMin, s.choir.voices), total: s.choir.singers };
 }
 
 /** An optional objective as the run left it. */
@@ -582,8 +596,14 @@ export function resultsStats(
   ];
   const { escort, asset, voices } = r;
   if (voices !== undefined) {
-    // A choir map (the finale): its Voices stand where the core would (T809).
-    out.push({ id: 'voices', label: 'Voices', value: `${voices.n} / ${voices.total}`, note: null });
+    // A choir map (the finale): its Voices stand where the core would (T809), as what the player
+    // held through the night ("Voices held 14 of 20"), never the choir Dawn woke whole (T810).
+    out.push({
+      id: 'voices',
+      label: 'Voices held',
+      value: `${voices.n} of ${voices.total}`,
+      note: null,
+    });
   } else if (escort === null) {
     out.push({
       id: 'integrity',

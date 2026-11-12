@@ -420,7 +420,10 @@ describe("the finale's Results and rewards (finale.md § FIN)", () => {
       'waves',
       'voices',
     ]);
-    expect(resultsStats({ ...r, voices: { n: 7, total: 10 } })[1]?.value).toBe('7 / 10');
+    expect(resultsStats({ ...r, voices: { n: 7, total: 10 } })[1]).toMatchObject({
+      label: 'Voices held',
+      value: '7 of 10',
+    });
     expect(resultsStats(r).map((s) => s.id)).toEqual(['waves', 'integrity']);
   });
 
