@@ -1781,9 +1781,9 @@ export interface CounterExemption {
    * Required on every entry (D150): the balance unit test that pins what the counter's absence
    * costs on this map in the harness's place, as a repo path (`src/balance/a3m5Jam.test.ts`).
    * [builds-range] checks its shape (it runs in the browser); tools/counterExemptions.test.ts
-   * checks that the file exists and asserts the cost through balance/counterCost.ts's
-   * `expectCounterCost` for this map and counter: par's margin over the no-counter build's, at
-   * least COUNTER_COST_MIN_POINTS (T775).
+   * checks that the file exists and asserts the cost for this map and counter through
+   * `expectCounterCost` (balance/__fixtures__/counterCost.ts): par's margin over the no-counter
+   * build's, at least COUNTER_COST_MIN_POINTS (T775).
    */
   readonly pinnedBy: string;
 }

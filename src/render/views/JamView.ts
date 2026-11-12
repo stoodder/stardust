@@ -17,12 +17,7 @@ import type * as Phaser from 'phaser';
 import type { IdSpace } from '../../content/types.ts';
 import type { Bus } from '../../shared/bus.ts';
 import type { DeepReadonly } from '../../shared/types.ts';
-import {
-  takeoverTelling,
-  type Enemy,
-  type SimEvent,
-  type Tower,
-} from '../../sim/index.ts';
+import { takeoverTelling, type Enemy, type SimEvent, type Tower } from '../../sim/index.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
 import {
   ARC_COLOR,

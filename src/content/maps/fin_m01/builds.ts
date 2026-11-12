@@ -94,6 +94,13 @@ const GATE_SKYHOOKS: readonly BuildStep[] = [
   { wave: 15, upgrade: GATE_W },
 ];
 
+/** The alts' last Mindspike, on the east gold seam under the Bore road (W15–W17: the Halls' run). */
+const SEAM_SPIKE: readonly BuildStep[] = [
+  { wave: 15, build: 'mindspike', tile: SEAM_E },
+  { wave: 16, upgrade: SEAM_E },
+  { wave: 17, upgrade: SEAM_E },
+];
+
 /** Par's Phase 1 (finale.md § FIN, Par build). */
 function parSteps(): BuildStep[] {
   return [
@@ -186,13 +193,13 @@ export const builds = defineBuilds({
     // for the air, and Thumpers where par digs its Dens (no burrow answer but Dread's tell).
     cluster: {
       loadout: ['mindspike', 'choir', 'skyhook', 'thumper'],
-      steps: byWave([...swapped({ sproing: 'skyhook', burrow: 'thumper' }), ...GATE_SKYHOOKS]),
+      steps: byWave([...swapped({ sproing: 'skyhook', burrow: 'thumper' }), ...GATE_SKYHOOKS, ...SEAM_SPIKE]),
     },
     // Mindspike, Hum Choir, Skyhook, Stasis Bloom: the same road, with Blooms holding the Silencers'
     // and the Unsung's tells where par digs its Dens.
     stasis: {
       loadout: ['mindspike', 'choir', 'skyhook', 'bloom'],
-      steps: byWave([...swapped({ sproing: 'skyhook', burrow: 'bloom' }), ...GATE_SKYHOOKS]),
+      steps: byWave([...swapped({ sproing: 'skyhook', burrow: 'bloom' }), ...GATE_SKYHOOKS, ...SEAM_SPIKE]),
     },
   },
 });

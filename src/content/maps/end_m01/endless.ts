@@ -1,7 +1,9 @@
 // Endless mode's generator rules (design/maps.md § 8): the data src/sim/endless.ts reads to build a
 // seed's waves on END_M01 after its authored warm-up (waves.ts). The generator's rules, in short:
 // - **Threat budget** (maps.md § 6.2): wave w's budget is `firstWaveThreat × growth^(w − 1)`,
-//   strictly rising forever; the generator fills each wave to its budget from the roster.
+//   strictly rising forever; the generator fills each wave to its budget from the roster. Growth
+//   is 1.07, under the campaign's 8–12% a wave: the blocks carry the variety, and at 1.08 a
+//   seed's 60 waves cost ~1.7 s of the 2 s CPU budget (assertion 13; tools/endlessRun.test.ts).
 // - **Counter blocks:** waves come in blocks of `blockWaves`. Each generated block names its
 //   required counters (`countersPerBlock`, at most 3, rules.ts MAX_REQUIRED_COUNTERS), drawn from
 //   the categories open by then (`categoryFrom`) so that every category has a unit that demands it
@@ -9,9 +11,10 @@
 //   and no block repeats the one before. The block's units carry only its categories (or none);
 //   other units are spice, at most the soft share of a wave (rules.ts SOFT_THREAT_MAX_SHARE), and
 //   the spice of a block's last two waves tells the next block's new category.
-// - **Bosses:** wave `firstBossWave`, then every `bossEvery`-th wave, sends a boss from `bosses` (the first boss is always the
-//   first listed; after it, a seeded rotation through them all), and its block requires what the
-//   boss and its brood demand. The wave after a boss waits for the fight to end.
+// - **Bosses:** wave `firstBossWave`, then every `bossEvery`-th wave, sends a boss from `bosses`
+//   (the first listed first; after it, a seeded rotation through them all, never one twice in a
+//   row) down the road, and its block requires what the boss and its brood demand. The wave after
+//   a boss waits for the fight to end.
 // This file is data only: content never imports the sim (architecture.md § 4), so the type lives
 // here and the generator imports it.
 import type { CounterId, EnemyId } from '../../types.ts';
@@ -61,7 +64,7 @@ export const ENDLESS: EndlessDef = {
   firstWaveThreat: 600,
   growth: 1.07,
   // The warm-up, then one counter, two, and three from the fourth block (W16–W20) on. A boss's
-  // own categories can raise its block's count (Chitterbloom's first block is armor and splash).
+  // own categories can raise its block's count (Chitterbloom's brood brings splash to its armor).
   countersPerBlock: [0, 1, 2, 3],
   // Act I's answers first (armor, air, splash), then shields; detection, burrowing, and jamming
   // once the third block (W11–W15) is past.
@@ -101,7 +104,9 @@ export const ENDLESS: EndlessDef = {
   ],
   firstBossWave: 20,
   bossEvery: 10,
-  // Chitterbloom first (the colony's oldest pest, back at Dome Row), then the Glass Witch and the
+  // The first boss at W20, once a build has had three blocks to grow (at W10 the reference build,
+  // five towers in, lost to Chitterbloom on every seed tried). Chitterbloom first (the colony's
+  // oldest pest, back at Dome Row), then the Glass Witch and the
   // Gathering Maw with it in a seeded rotation. Not "Shareholder Value" (its jettison needs the
   // crash-site markers A3M5 has), the Sunderglass Penitent (it pivots: its faction stops after
   // it), or the Unsung (it is laid to rest only by the Leaving Song).

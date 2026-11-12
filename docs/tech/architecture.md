@@ -579,11 +579,27 @@ The npm scripts that make up the test loop (D002) are defined here. **What each 
 
 **Lazy chunks** (T802). Three kinds of code load after boot, each a dynamic import: the dev fixtures (`app/devRegistry.ts`, above); **the story's later acts**, one chunk each for Act II, Act III, and the finale (`app/acts/a2.ts`, `a3.ts`, `fin.ts`: the act's maps' scenes and barks, its codex entries and its versions of earlier entries, its memos, from `content/acts/<act>.ts`, and its sound groups, `audio/sfx/index.ts` `SFX_GROUPS`); and **the battle renderer** (`render/scenes/BattleScene.ts` and every view it draws, `app/battleRenderer.ts`). Act I, the shared bark pools, the speakers, the core sounds, and the portraits (painted on first use, T766) are in the initial JS. The registries (`content/dialogue/index.ts`, `codex/index.ts`, `memos/index.ts`, `audio/sfx/index.ts`) hold what is registered and are updated in place, always in campaign (registry) order whatever order the acts arrive in; a registry read must happen at call time, never at import (`validateDialogue.ts`'s `known` is a getter for this). Loading is cumulative (`app/actContent.ts` `ensureActs(act)` loads every act up to it). **The gate** (`app/contentGate.ts` wraps the router, so the UI and the test hooks both go through it): no screen shows before what it can reach has loaded. A menu needs the acts through the save in play's frontier (`savedAct`); a battle, its loadout screen, a checkpoint retry, the finale's resume, and a run's Results need the acts through the one after the later of the save's act and the map's (`battleActs`: a run's end may deliver the next act's opening), every act for a dev map, and (a battle) the renderer. A call whose content is in goes through synchronously; otherwise it waits for the chunks. After each call the next act and the renderer load in idle time (`requestIdleCallback`), so a player never waits in practice. A sound whose act hasn't loaded plays nothing (`loadedSfx`). **Who loads everything up front:** a dev server (`import.meta.env.DEV`: `validate()` reads every act), a test boot (`?test=1`: its hooks reach any content; `&lazy=1` loads as a player's game does, `smoke/lazyContent.spec.ts`), Vitest (`tools/vitestSetup.ts`), and `npm run sim` (`tools/sim.ts`, `simWorker.ts`), each by registering `app/acts/all.ts` (`ALL_ACT_CHUNKS`), which the game never imports. **Adding content:** a later act's map registers its dialogue in its act file (`content/acts/a2.ts`, `a3.ts`, `fin.ts`); a new sound file for a later act is a group in `audio/sfx/index.ts` (`SFX_GROUPS`, the `LazySfx` type) and its act chunk's `sfx`. Anything the finale alone uses belongs behind its edge: import it only from `content/acts/fin.ts` or `app/acts/fin.ts`, never from code in the initial JS.
 
-### Deploy to GitHub Pages (once a remote exists, D001 #10)
+### Deploy to GitHub Pages
 
-1. Add `.github/workflows/deploy.yml`, triggered on push of tags `m*` (and manual dispatch): `npm ci`, `npx playwright install --with-deps chromium`, `npm run check`, then `actions/upload-pages-artifact` with `dist/` and `actions/deploy-pages`.
-2. Enable Pages with source "GitHub Actions". With `base: './'` the site works at `https://<user>.github.io/stardust/` without config changes.
-3. Saves are per-origin localStorage, so moving the host later orphans saves unless players use export/import. Document that in the release notes when it happens.
+The game is a static site, served by GitHub Pages at `https://<owner>.github.io/stardust/` (D001 #10). The owner's side is the [owner recipe](#owner-recipe-deploying-a-release) below.
+
+**The workflow** (`.github/workflows/deploy.yml`, T875) runs on a push of a tag `m*` (a GitHub release `m<N>` creates one; [CLAUDE.md](../../CLAUDE.md) step 8) and by hand (`workflow_dispatch`). Two jobs, one deploy at a time (concurrency group `pages`; a newer run waits, never cancels one mid-publish):
+- `build` (`contents: read`, 45 min cap): Node 22, `npm ci`, `npx playwright install --with-deps chromium` (Playwright's own browser: neither `SMOKE_CHROME` nor `CHROME_PATH` is set there), then **the whole gate**, `npm run check`, then `actions/configure-pages` and `actions/upload-pages-artifact` with `dist/`. The whole gate, not a subset, because a release ships only a tree whose gate is green on a clean machine, and because the artifact is the gate's own `dist/`, the build every smoke flow just played (the subpath boot included, below). A manual run takes a `gate` input: `full` (the default) or `fast`, `npm run check:fast` with no specs (every step but smoke), for redeploying a tree whose gate already passed when a runner's smoke flakes.
+- `deploy` (`pages: write`, `id-token: write` only): `actions/deploy-pages` to the `github-pages` environment; the run's summary links the site.
+
+**Subpaths.** `vite.config.ts` sets `base: './'`, so every URL in the build is relative: the entry script and its `modulepreload`s, the lazy chunks (Vite resolves a dynamic import's file against `import.meta.url`: the acts, `finUi`, the battle renderer, the dev fixtures), the CSS's font files, and `gallery.html`'s. One build works at `/` (`npm run preview`, the smoke server) and at `/stardust/`, with no build flag. App code never writes an absolute `/…` URL (none does: boot reads only `location.search`). **`smoke/subpath.spec.ts`** guards it: it serves the gate's `dist/` (or `SMOKE_DIST`) with `vite preview --base /stardust/` on a free port (`SMOKE_SUBPATH_PORT` pins one) and boots the Title (its fonts, its idle preloads of Act II and the renderer), a `?test=1&save=` campaign into a battle, the finale's map (its act and `finUi` chunks), and the sprite gallery; a request outside `/stardust/` fails the test. Pages redirects `/stardust` to `/stardust/`; the preview server doesn't, so the spec always uses the trailing slash. The site also serves `gallery.html` and the dev fixtures' chunk (reachable only with `?test=1`), as the smoke build does.
+
+**Saves** are per-origin localStorage, so moving the host later orphans saves unless players use export/import. Say so in the release notes when it happens.
+
+#### Owner recipe: deploying a release
+
+*Once:*
+1. **Settings → Pages → Build and deployment → Source: GitHub Actions.**
+2. **Settings → Environments → `github-pages` → Deployment branches and tags:** add a rule for tags matching `m*`. Pages makes this environment allowing only `main`, which refuses a tag's deploy ("not allowed to deploy to github-pages due to environment protection rules"). The environment appears once step 1 is done.
+
+*Each milestone:* **Releases → Draft a new release → Choose a tag:** type `m<N>`, "Create new tag on publish", target `main` → **Publish release**. The new tag starts **Deploy** (the Actions tab): the whole gate (about 15 minutes on GitHub's runner), then the deploy. The site is at `https://<owner>.github.io/stardust/`.
+
+*By hand* (a redeploy, or when a release's run didn't start): **Actions → Deploy → Run workflow**, pick `main` or a tag, gate `full` (or `fast` to skip smoke when the tree's gate already passed).
 
 ---
 
@@ -596,6 +612,7 @@ stardust/
 ├── package.json
 ├── tsconfig.json  tsconfig.base.json  tsconfig.pure.json  tsconfig.app.json  tsconfig.node.json
 ├── vite.config.ts      playwright.config.ts
+├── .github/workflows/deploy.yml  # GitHub Pages deploy on tags m* (§5)
 ├── .oxlintrc.json      .prettierrc.json    .prettierignore    .editorconfig
 ├── tools/
 │   ├── gate.ts                 # npm run check: the gate's steps and their time budget

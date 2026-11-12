@@ -6,21 +6,25 @@
 // The rules are content (`ENDLESS`, src/content/maps/end_m01/endless.ts, whose header says them in
 // short); this file applies them:
 // - **Budget.** Wave w's threat budget is `firstWaveThreat × growth^(w−1)` (maps.md § 6.2's threat,
-//   `unitThreat`), multiplied up wave by wave (no Math.pow in sim code). Each generated wave lands
-//   within `BUDGET_BAND` of its budget, and each wave without a boss carries more threat than the
-//   one before without a boss: escalation is strictly monotone. A boss wave is a spike: its boss
-//   plus an escort of at least half the budget.
+//   counting what a splitter's death releases: `threatWithBrood`), multiplied up wave by wave (no
+//   Math.pow in sim code). Each generated wave lands within `BUDGET_BAND` of its budget (topped up
+//   with the block's plain units when its own are coarse), and each wave without a boss carries
+//   more threat than the one before without a boss: escalation is strictly monotone. A boss wave
+//   is a spike: its boss, on the road, plus an escort of at least half the budget.
 // - **Blocks.** Block 0 is the map's authored warm-up. Each later block draws its required counters
 //   (`EndlessBlock.counters`, ≤ 3) from every set the rules allow, weighted toward the categories
 //   the run hasn't met for longest, so blocks rotate through all seven and a loadout that skips
 //   one meets it sooner or later. A block's core units carry no category outside the block, and
-//   every category in it has a unit that demands it (`witness`); a block never repeats the one
+//   every category in it has a unit that demands it (`witnessed`); a block never repeats the one
 //   before, and brings at most one category the run hasn't met yet (a boss may bring its own).
+//   `answeringLoadout` finds four towers that answer a block.
 // - **Waves.** One featured group per required counter (a unit demanding it), sometimes a filler
 //   group from the block's core, the boss on a boss wave, and in a block's last two waves a spice
 //   group (≤ SOFT_THREAT_MAX_SHARE of the wave) from the next block's new category: the shift is
-//   telegraphed on the field as well as in the HUD's preview (`endlessBlockAt`). Ground Hollow
-//   take the road or an open rift lane; flyers an air lane; everything else the road.
+//   telegraphed on the field as well as in the HUD's preview (`endlessBlockAt`). A group's unit is
+//   drawn among those a group of 3–`maxGroupCount` fits, the heavier likelier, so waves grow in
+//   weight more than in numbers. Ground Hollow take the road or an open rift lane; flyers an air
+//   lane; everything else the road. Each wave draws from its own RNG stream (`wave:<n>`).
 // - **Score.** A run's score is the waves it held (`endlessWavesHeld`): waves fully resolved
 //   before the core fell. The save keeps one best record per seed (meta/endless.ts).
 import type {
@@ -726,7 +730,9 @@ export function endlessBlockAt(plan: EndlessPlan, wave: number): EndlessBlock | 
 }
 
 /** A run's score: the waves it held (every wave resolved, its last unit killed or leaked). */
-export function endlessWavesHeld(state: Pick<SimState, 'schedule'>): number {
+export function endlessWavesHeld(state: {
+  readonly schedule: Pick<SimState['schedule'], 'resolved'>;
+}): number {
   let n = 0;
   for (const r of state.schedule.resolved) if (r) n++;
   return n;

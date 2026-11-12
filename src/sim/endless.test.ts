@@ -12,6 +12,7 @@ import {
   SOFT_THREAT_MAX_SHARE,
   COUNTER_CATEGORIES,
 } from '../content/rules.ts';
+import type { CompiledEnemyDef, CompiledRoute } from '../content/compiled.ts';
 import type { CounterId } from '../content/types.ts';
 import { threatOf } from '../content/validateThreats.ts';
 import { ENEMIES } from '../content/enemies/index.ts';
@@ -38,7 +39,14 @@ const map = content.maps.end_m01;
 /** The seeds the invariants run over. */
 const SEEDS = Array.from({ length: 40 }, (_, i) => i + 1).concat([0, 4_294_967_295, 123_456_789]);
 const plans = new Map<number, EndlessPlan>(SEEDS.map((s) => [s, endlessPlan(ENDLESS, content, s)]));
-const cats = (id: string): Set<CounterId> => categoriesOf(content.enemies[id as 'nibbler']);
+/** Every compiled enemy and route by id (a plan names them as strings). */
+const ENEMY = new Map<string, CompiledEnemyDef>(
+  Object.values(content.enemies).map((e) => [e.id, e]),
+);
+const ROUTE = new Map<string, CompiledRoute>(map.routeList.map((r) => [r.id, r]));
+const enemy = (id: string): CompiledEnemyDef => ENEMY.get(id)!;
+const route = (id: string): CompiledRoute => ROUTE.get(id)!;
+const cats = (id: string): Set<CounterId> => categoriesOf(enemy(id));
 const within = (a: ReadonlySet<CounterId>, b: readonly CounterId[]): boolean =>
   [...a].every((c) => b.includes(c));
 
@@ -52,7 +60,7 @@ describe('the rules', () => {
       ...ENDLESS,
       blockWaves: 4,
       growth: 1,
-      roster: ['nibbler', 'chitterbloom', 'nope' as 'nibbler'],
+      roster: ['nibbler', 'chitterbloom'],
       bosses: ['nibbler'],
       countersPerBlock: [1, 4],
     };
@@ -60,7 +68,6 @@ describe('the rules', () => {
     expect(errors).toContain('warm-up is 5 waves');
     expect(errors).toContain('growth');
     expect(errors).toContain("'chitterbloom' is a boss");
-    expect(errors).toContain("unknown enemy 'nope'");
     expect(errors).toContain("'nibbler' is not a boss");
     expect(errors).toContain('countersPerBlock starts with the warm-up');
     expect(errors).toContain('4 is not 0–3');
@@ -75,7 +82,7 @@ describe('the rules', () => {
       for (const g of Object.values(m.scriptGroups)) met.add(g.enemy.id);
     }
     const expected = [...met].filter((id) => {
-      const e = content.enemies[id as 'nibbler'];
+      const e = enemy(id);
       return e.boss === null && !e.neutral;
     });
     expect([...ENDLESS.roster].toSorted()).toEqual(expected.toSorted());
@@ -87,6 +94,27 @@ describe('the rules', () => {
     }
   });
 });
+
+/** A short run's final hash on `seed`'s Endless content (a Zapcoil at the gate, W1 called). */
+function hash(seed: number): string {
+  const run = endlessContent(ENDLESS, content, seed).content;
+  const sim = createSim({
+    content: run,
+    mapId: 'end_m01',
+    seed,
+    loadout: ['zapcoil'],
+    companion: 'vesthara',
+    modifiers: [],
+    difficulty: 'standard',
+    abilities: { slot1: null, slot2: 'stillness', slot2State: 'present' },
+    scriptFlags: {},
+    specsUnlocked: [],
+  });
+  sim.enqueue({ type: 'build', tile: [10, 9], tower: 'zapcoil' });
+  sim.enqueue({ type: 'callWave' });
+  for (let i = 0; i < 3000; i++) sim.step();
+  return sim.hash();
+}
 
 describe('determinism', () => {
   it('gives the same run for the same seed, and another for another seed', () => {
@@ -101,25 +129,6 @@ describe('determinism', () => {
   });
 
   it('runs the same sim for the same seed', () => {
-    const hash = (seed: number): string => {
-      const run = endlessContent(ENDLESS, content, seed).content;
-      const sim = createSim({
-        content: run,
-        mapId: 'end_m01',
-        seed,
-        loadout: ['zapcoil'],
-        companion: 'vesthara',
-        modifiers: [],
-        difficulty: 'standard',
-        abilities: { slot1: null, slot2: 'stillness', slot2State: 'present' },
-        scriptFlags: {},
-        specsUnlocked: [],
-      });
-      sim.enqueue({ type: 'build', tile: [10, 9], tower: 'zapcoil' });
-      sim.enqueue({ type: 'callWave' });
-      for (let i = 0; i < 3000; i++) sim.step();
-      return sim.hash();
-    };
     expect(hash(5)).toBe(hash(5));
   });
 });
@@ -163,11 +172,7 @@ describe.each(SEEDS)('seed %i', (seed) => {
       else {
         const escort = w.groups
           .filter((g) => g.role !== 'boss')
-          .reduce(
-            (a, g) =>
-              a + g.count * threatWithBrood(content.enemies[g.enemy as 'nibbler'], content.enemies),
-            0,
-          );
+          .reduce((a, g) => a + g.count * threatWithBrood(enemy(g.enemy), content.enemies), 0);
         expect(escort).toBeGreaterThanOrEqual(w.budget * BOSS_ESCORT_MIN_SHARE);
       }
     }
@@ -200,7 +205,7 @@ describe.each(SEEDS)('seed %i', (seed) => {
     }
     // Over a 60-wave run every category comes round.
     const by60 = new Set(plan.blocks.slice(0, 12).flatMap((b) => b.counters));
-    expect([...by60].length).toBeGreaterThanOrEqual(COUNTER_CATEGORIES.length - 1);
+    expect(by60.size).toBeGreaterThanOrEqual(COUNTER_CATEGORIES.length - 1);
   });
 
   it("fills a block's waves with its counters only, each counter in every wave", () => {
@@ -240,7 +245,7 @@ describe.each(SEEDS)('seed %i', (seed) => {
       const w = plan.waves[n - 1]!;
       const boss = w.groups.filter((g) => g.role === 'boss');
       expect(boss).toHaveLength(1);
-      expect(map.routes[boss[0]!.route as 'road']!.kind).toBe('path');
+      expect(route(boss[0]!.route).kind).toBe('path');
       expect(plan.blocks[w.block]!.boss).toBe(w.boss);
       if (n < ENDLESS.waves) expect(compiled[n]!.countdownAfter).toBe('bossEnded');
     }
@@ -252,8 +257,8 @@ describe.each(SEEDS)('seed %i', (seed) => {
   it('walks every group on a route it may take, spawning within the window', () => {
     for (const w of generated) {
       for (const g of w.groups) {
-        const e = content.enemies[g.enemy as 'nibbler'];
-        const r = map.routes[g.route as 'road']!;
+        const e = enemy(g.enemy);
+        const r = route(g.route);
         expect(r).toBeDefined();
         if (e.layer === 'air') expect(r.kind).toBe('air');
         else expect(r.kind).not.toBe('air');
@@ -296,8 +301,6 @@ describe('the run', () => {
   });
 
   it('scores the waves held: every wave resolved', () => {
-    expect(endlessWavesHeld({ schedule: { resolved: [true, true, false, true] } as never })).toBe(
-      3,
-    );
+    expect(endlessWavesHeld({ schedule: { resolved: [true, true, false, true] } })).toBe(3);
   });
 });

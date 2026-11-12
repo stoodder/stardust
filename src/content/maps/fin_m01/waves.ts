@@ -196,7 +196,7 @@ export const PHASE_1: readonly WaveDef[] = [
     ...CALL,
     groups: [
       motes(16, 'halls', 0, 0.4),
-      fractures(4, 'rift_ne', 4, 2),
+      fractures(5, 'rift_ne', 4, 2),
       maws(3, 'halls', 10, 4),
       silencers(3, 'halls', 16, 4),
       motes(12, 'rift_nw', 8),
@@ -212,8 +212,9 @@ export const PHASE_1: readonly WaveDef[] = [
     groups: [
       motes(10, 'halls', 0),
       maws(2, 'halls', 4, 4),
-      fractures(3, 'rift_nw', 2, 3),
+      fractures(2, 'rift_nw', 2, 3),
       silencers(2, 'rift_ne', 6, 4),
+      fractures(1, 'rift_ne', 14),
       maws(1, 'rift_ne', 12),
       moths(4, 'sky_n', 4),
       moths(4, 'sky_w', 8),

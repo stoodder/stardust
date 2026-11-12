@@ -26,6 +26,7 @@ import { REFUGEES } from '../content/maps/a3_m06/map.ts';
 import { REFERENCE_PROFILES, REFERENCE_STORY_PRICING } from '../content/upgrades/reference.ts';
 import { escortMaxLost } from '../sim/escort.ts';
 import { ALT_ROAD_LEFT_MIN, a3m6Beats, beatProblems, TICK_HZ } from './__fixtures__/a3m6Beats.ts';
+import { expectCounterCost } from './__fixtures__/counterCost.ts';
 import { flagsFor } from './checks.ts';
 import { runMap } from './harness.ts';
 import { HARNESS_TEST_TIMEOUT_MS } from './rules.ts';
@@ -68,6 +69,13 @@ describe('A3M6 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
     const blind = a3m6Beats(content, 'noCounter:detection');
     expect(blind.outcome).toBe('lost');
     expect(rec('par').marginPct).toBeGreaterThanOrEqual(10); // a loss's margin is 0
+    expectCounterCost({
+      map: 'a3_m06',
+      counter: 'detection',
+      par: rec('par').marginPct,
+      without: rec('noCounter:detection').marginPct,
+      minPoints: 10,
+    });
     // Nothing Repossessed is out of its reach (an Operative reached the gate), and more Operatives
     // reach the gate than par's in both their waves.
     const par = a3m6Beats(content, 'par');

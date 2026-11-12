@@ -21,6 +21,7 @@ import { PADS } from '../content/maps/a3_m05/builds.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
 import { secToTicks } from '../shared/time.ts';
 import { runA3m5 } from './__fixtures__/a3m5.ts';
+import { expectCounterCost } from './__fixtures__/counterCost.ts';
 import { shiftedContent } from './__fixtures__/shifts.ts';
 import { validate } from '../content/validate.ts';
 import type { CounterExemption } from '../content/types.ts';
@@ -41,7 +42,13 @@ describe('A3M5 jamming', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
 
   it('costs the reference no-jam build the hub’s bearers, Declined, and more of W14', () => {
     expect(par.outcome).toBe('won');
-    expect(margin(par) - margin(noJam)).toBeGreaterThanOrEqual(40);
+    expectCounterCost({
+      map: 'a3_m05',
+      counter: 'jam',
+      par: margin(par),
+      without: margin(noJam),
+      minPoints: 40,
+    });
     // The hunts with Silencers: par loses at most two bearers in each, no-jam at least four.
     for (const w of [13, 15]) {
       const lost = (r: typeof par): number =>

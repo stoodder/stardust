@@ -12,7 +12,7 @@ export function endlessScores(save: Pick<SaveData, 'endless'>): EndlessScore[] {
   return (save.endless ?? [])
     .map((s, i) => ({ s, i }))
     .toSorted((a, b) => b.s.wave - a.s.wave || a.i - b.i)
-    .map(({ s }) => ({ ...s }));
+    .map(({ s }) => ({ seed: s.seed, wave: s.wave }));
 }
 
 /** The best waves held on `seed`, or null before a run on it. */
@@ -40,10 +40,16 @@ export function withEndlessScore(save: SaveData, seed: number, wave: number): Sa
   const at = table.findIndex((s) => s.seed === seed);
   if (at >= 0) {
     if (table[at]!.wave >= wave) return save; // at < length
-    return { ...save, endless: table.map((s, i) => (i === at ? { seed, wave } : { ...s })) };
+    return {
+      ...save,
+      endless: table.map((s, i) => (i === at ? { seed, wave } : { seed: s.seed, wave: s.wave })),
+    };
   }
   if (table.length < ENDGAME_LIMITS.endlessScores) {
-    return { ...save, endless: [...table.map((s) => ({ ...s })), { seed, wave }] };
+    return {
+      ...save,
+      endless: [...table.map((s) => ({ seed: s.seed, wave: s.wave })), { seed, wave }],
+    };
   }
   // Full: the lowest record goes (the oldest of the lowest), if the new one beats it.
   let low = 0;
@@ -51,6 +57,9 @@ export function withEndlessScore(save: SaveData, seed: number, wave: number): Sa
   if (table[low]!.wave >= wave) return save;
   return {
     ...save,
-    endless: [...table.filter((_, i) => i !== low).map((s) => ({ ...s })), { seed, wave }],
+    endless: [
+      ...table.filter((_, i) => i !== low).map((s) => ({ seed: s.seed, wave: s.wave })),
+      { seed, wave },
+    ],
   };
 }
