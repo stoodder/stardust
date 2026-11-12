@@ -33,6 +33,7 @@
 // - **The colony gate** is the core: Everglow units, flyers, and the Heavy Hollow walk on to it and
 //   leak there (core integrity 30: the air exam's meter, so no-air loses on it).
 import { defineMapLayout } from '../../define.ts';
+import { WHOS_THERE_INPUT } from '../../forcedInputs.ts';
 import type { GridPos, ScriptedEvent } from '../../types.ts';
 
 /** The choir's road, from the Halls (11,0) to the colony gate (8,13). */
@@ -55,6 +56,19 @@ export const WAYMARKS = ['waymark_1', 'waymark_2', 'waymark_3', 'waymark_4'] as 
 /** Waymarks: relit before this wave starts (W18, the Halls mouth: still the Descent). */
 export const WAYMARKS_BY_WAVE = 18;
 
+/** Singers the choir can lose to hushes before the map is lost (`ChoirDef.maxHushed`; T821). */
+export const MAX_HUSHED = 14;
+
+/** Directive 0 (Keep): this long into Phase 2, as the choir steps into the Halls (D154). */
+export const DIRECTIVE_0_SEC = 20;
+/** The C4 line (log / holding / "not nothing"): this long into Phase 2. */
+export const C4_LINE_SEC = 8;
+/** Dawn's light lands, and the map is won, this long into Phase 3. */
+export const DAWN_SEC = 8;
+const KEEP = { flag: 'quill_choice', eq: 'keep' } as const;
+/** Thrum's echo's id (`spawnEcho`, `echoArrived`). */
+export const THRUM_ECHO = 'thrum';
+
 /** The last wave of Phase 1 (the Descent); Phase 2 starts once it has cleared. */
 export const PHASE_1_WAVES = 18;
 
@@ -76,6 +90,58 @@ export const PHASE_2: ScriptedEvent = {
 };
 
 /**
+ * Phase 2 and Dawn (T821; finale.md § FIN, *Where it plays*). The Unsung walks in as W19 (waves.ts).
+ * - The C4 line a few seconds in: one trigger, each scene gated by its answer.
+ * - Directive 0 (Keep) 20 s in: QUILL revokes the most-invested class (refunded), Time Dilation
+ *   goes dark for the phase, and "Who's there?" waits (the forced input arms after the cue's last
+ *   line); the press restores the class.
+ * - Thrum's echo at rest progress 50% if she was cleared; Pebble's "She heard" as it reaches the
+ *   song.
+ * - Dawn at rest progress 100%: every Hollow unit laid to rest and the hushed singers awake
+ *   (`restAll`), Phase 3, the light; the map is won as it lands, DAWN_SEC later (`winBy: 'script'`).
+ */
+export const PHASE_2_EVENTS: readonly ScriptedEvent[] = [
+  {
+    id: 'c4_line',
+    on: { phase: 2, afterSec: C4_LINE_SEC },
+    actions: [
+      { cue: 'fin_m01_cue_log' },
+      { cue: 'fin_m01_cue_holding' },
+      { cue: 'fin_m01_cue_not_nothing' },
+    ],
+  },
+  {
+    id: 'directive0',
+    on: { phase: 2, afterSec: DIRECTIVE_0_SEC },
+    when: KEEP,
+    actions: [
+      { cue: 'fin_m01_cue_directive0' },
+      { revokeTowerClass: { select: 'mostInvested' }, refundPct: 100 },
+      { lockAbility: 'time_dilation', on: true },
+      { forceInput: { id: WHOS_THERE_INPUT } },
+    ],
+  },
+  {
+    id: 'not_everglow',
+    on: { forcedInputResolved: WHOS_THERE_INPUT },
+    actions: [{ cue: 'fin_m01_cue_not_everglow' }, { restoreTowerClass: 'lastRevoked' }],
+  },
+  {
+    id: 'echo',
+    on: { restProgressPct: 0.5 },
+    when: { flag: 'spared_quiet_wave', eq: false },
+    actions: [{ spawnEcho: THRUM_ECHO }],
+  },
+  { id: 'she_heard', on: { echoArrived: THRUM_ECHO }, actions: [{ cue: 'fin_m01_cue_echo' }] },
+  {
+    id: 'dawn',
+    on: { restProgressPct: 1 },
+    actions: [{ restAll: true }, { setPhase: 3 }, { setLighting: 'dawn' }],
+  },
+  { id: 'won', on: { phase: 3, afterSec: DAWN_SEC }, actions: [{ endMap: 'won' }] },
+];
+
+/**
  * The militia's three posts (manned under `convoy`), where the walk's last legs need them: the west
  * bend over the rift field's mouth, the row-4 run, and the Halls corner.
  */
@@ -90,9 +156,9 @@ export const map = defineMapLayout({
   env: 'act3',
   objective: 'choir',
   meterLabel: 'voices',
-  // D154 (addendum, T820): the floor is 30% of the run's choir, rounded up (20 → 6, warren 28 → 9,
-  // convoy 16 → 5).
-  minVoicesPct: 0.3,
+  // Won by Dawn's hold (`endMap` 8 s into Phase 3), never by the waves resolving: the Unsung's
+  // wave resolves as it is laid to rest, and Dawn has no waves.
+  winBy: 'script',
   size: { cols: 22, rows: 14 },
   // prettier-ignore
   tiles: [
@@ -211,6 +277,7 @@ export const map = defineMapLayout({
     'burrowing',
     'cloaked',
     'healer_aura',
+    'boss',
   ],
   requiredCounters: ['air', 'jam', 'splash'],
   // Laid to Rest (finale.md § FIN, Medals): in Phase 2, at least 90% of the Hollow destroyed are
@@ -248,6 +315,9 @@ export const map = defineMapLayout({
     pace: 0.08,
     haltTiles: 1.5,
     walkWaves: PHASE_1_WAVES,
+    // The choir is lost once 15 singers are hushed, whatever its size by flag (T821): every cell
+    // has the same room in singers (20 → floor 6, warren 28 → 14, convoy 16 → 2; Thrum +1).
+    maxHushed: MAX_HUSHED,
     groups: [
       { when: { flag: 'door_choice', eq: 'warren' }, singers: 8 },
       { when: CONVOY, singers: -4 },
@@ -300,7 +370,11 @@ export const map = defineMapLayout({
     {
       id: 'breakthrough',
       on: { timerFull: 'deep_bore' },
-      actions: [{ spawnWave: 'breakthrough_motes' }, { spawnWave: 'breakthrough_maws' }],
+      actions: [
+        { cue: 'fin_m01_cue_breakthrough' },
+        { spawnWave: 'breakthrough_motes' },
+        { spawnWave: 'breakthrough_maws' },
+      ],
     },
     // W9: the choir passes the memorial (Pebble's hum, Bricks's silence); W9 sends nothing for 10 s.
     {
@@ -309,5 +383,6 @@ export const map = defineMapLayout({
       actions: [{ cue: 'fin_m01_cue_memorial' }],
     },
     PHASE_2,
+    ...PHASE_2_EVENTS,
   ],
 });

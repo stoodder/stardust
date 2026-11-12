@@ -234,5 +234,64 @@ export const SCRIPT_GROUPS = {
   breakthrough_maws: maws(3, 'halls', 4),
 } as const;
 
-// Phase 2's add waves (W19–26, T821) append here: `[...PHASE_1, ...PHASE_2_WAVES]`.
-export const waves = defineWaves([...PHASE_1]);
+/** Phase 2's build phase between add waves: with ≤ 8 s of spawning, a wave every ~20 s. */
+export const PHASE_2_COUNTDOWN = 12;
+/** W19's: the Unsung rises a few seconds after the choir reaches the Halls. */
+export const UNSUNG_COUNTDOWN = 5;
+
+/**
+ * Phase 2's add waves on a fixed cadence: each belongs to script phase 2 (`inPhase`: W19 waits for
+ * it, and none starts after Dawn) and is never called early, so the phase keeps its clock under
+ * early calls too. They come down from the Halls and the rift lanes onto the descent, into the
+ * song, so they are laid to rest there; the Rift Moths fly the air lanes past it and scatter.
+ */
+const P2 = { countdownSec: PHASE_2_COUNTDOWN, noCall: true, inPhase: 2 } as const;
+
+/** Phase 2, the Unsung (W19–26). */
+export const PHASE_2_WAVES: readonly WaveDef[] = [
+  // W19 · the Unsung rises from the Halls
+  {
+    ...P2,
+    countdownSec: UNSUNG_COUNTDOWN,
+    groups: [g('unsung', 1, 'halls', 0), motes(8, 'rift_ne', 4, 0.5)],
+  },
+  // W20 · Motes down the descent
+  { ...P2, groups: [motes(10, 'halls', 0, 0.5), fractures(2, 'rift_nw', 3, 2)] },
+  // W21 · a Maw, and Rift Moths over the song
+  {
+    ...P2,
+    groups: [maws(1, 'halls', 0), motes(8, 'rift_nw', 2, 0.5), moths(3, 'sky_n', 4)],
+  },
+  // W22 · Fractures, and a Silencer up the Bore road
+  {
+    ...P2,
+    groups: [fractures(3, 'halls', 0, 2), silencers(1, 'bore_road', 2), motes(8, 'rift_ne', 4, 0.5)],
+  },
+  // W23 · rifts both sides
+  {
+    ...P2,
+    groups: [motes(8, 'rift_ne', 0, 0.4), motes(8, 'rift_nw', 2, 0.4), maws(1, 'halls', 4)],
+  },
+  // W24 · Fractures, and Rift Moths from the east
+  {
+    ...P2,
+    groups: [fractures(3, 'halls', 0, 2), moths(3, 'sky_e', 2), motes(10, 'bore_road', 4, 0.4)],
+  },
+  // W25 · Maws and a Silencer
+  {
+    ...P2,
+    groups: [maws(2, 'halls', 0, 3), silencers(1, 'rift_nw', 3), motes(10, 'rift_ne', 4, 0.4)],
+  },
+  // W26 · the last of the Halls
+  {
+    ...P2,
+    groups: [
+      motes(14, 'halls', 0, 0.4),
+      fractures(3, 'rift_nw', 2, 2),
+      maws(1, 'rift_ne', 5),
+      moths(3, 'sky_w', 4),
+    ],
+  },
+];
+
+export const waves = defineWaves([...PHASE_1, ...PHASE_2_WAVES]);

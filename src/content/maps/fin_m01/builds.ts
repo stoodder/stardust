@@ -10,6 +10,7 @@
 import { defineBuilds } from '../../define.ts';
 import { REFERENCE_PROFILES, REFERENCE_VARIANTS } from '../../upgrades/reference.ts';
 import type { BuildStep, GridPos, TowerId } from '../../types.ts';
+import { WHOS_THERE_INPUT } from '../../forcedInputs.ts';
 import { WAYMARKS } from './map.ts';
 
 // The pads, from the Halls down to the gate.
@@ -51,6 +52,13 @@ const LANTERNS: readonly GridPos[] = [
   [4, 6],
   [9, 3],
 ];
+/**
+ * "Who's there?" (Keep: Directive 0's forced input, 20 s into Phase 2): every build's last step
+ * presses it the tick it is asked (the map forces an input, so validation wants the press last;
+ * under the other answers it is never asked and never issued).
+ */
+const WHOS_THERE: BuildStep = { wave: 19, scriptInput: WHOS_THERE_INPUT };
+
 /** Relight all four in the opening build phase (Waymarks; the drone takes 6 s each). */
 const RELIGHT: readonly BuildStep[] = LANTERNS.map((tile) => ({ wave: 1, clear: tile }));
 
@@ -109,6 +117,7 @@ function parSteps(): BuildStep[] {
     { wave: 16, build: 'burrow', tile: CORNER },
     { wave: 16, build: 'mindspike', tile: LEDGE_W },
     { wave: 17, upgrade: LEDGE_W },
+    WHOS_THERE,
   ];
 }
 
@@ -217,6 +226,7 @@ export const builds = defineBuilds({
         { wave: 16, upgrade: LEDGE_W },
         { wave: 17, specialize: LEDGE_E, spec: 'b' },
         { wave: 18, upgrade: HALLS_E },
+        WHOS_THERE,
       ],
     },
     // Sproing, Scuttle Den, Gloop, Prism; System Reboot (slot 1) carries the jam (finale.md § FIN):
@@ -262,6 +272,7 @@ export const builds = defineBuilds({
         { wave: 17, upgrade: HALLS_E },
         { wave: 17, upgrade: BEND_E },
         { wave: 18, upgrade: RIDGE },
+        WHOS_THERE,
       ]),
     },
   },

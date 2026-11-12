@@ -367,6 +367,7 @@ describe('restAll (Dawn)', () => {
     state.events.length = 0;
     restAll(state, ctx);
     expect(state.events).toEqual([
+      { type: 'DawnBroke' }, // Dawn (T821): it also wakes the hushed singers
       { type: 'LaidToRest', uid: walking.uid, at: [walking.x, walking.y], points: 0 },
       { type: 'LaidToRest', uid: scattered.uid, at: [scattered.x, scattered.y], points: 0 },
     ]);
