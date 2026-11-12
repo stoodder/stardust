@@ -258,55 +258,44 @@ export const PHASE_2_WAVES: readonly WaveDef[] = [
   {
     ...P2,
     countdownSec: UNSUNG_COUNTDOWN,
-    groups: [g('unsung', 1, 'halls', 0), motes(8, 'rift_ne', 4, 0.5)],
+    groups: [g('unsung', 1, 'halls', 0), motes(6, 'rift_ne', 4, 0.6)],
   },
   // W20 · Motes down the descent (after a lull: Directive 0's window under Keep)
   {
     ...P2,
     countdownSec: DIRECTIVE_LULL,
-    groups: [motes(10, 'halls', 0, 0.5), fractures(2, 'rift_nw', 3, 2)],
+    groups: [motes(8, 'halls', 0, 0.6), fractures(1, 'rift_nw', 3)],
   },
   // W21 · a Maw, and Motes from the west rift
-  {
-    ...P2,
-    groups: [maws(1, 'halls', 0), motes(8, 'rift_nw', 2, 0.5)],
-  },
+  { ...P2, groups: [maws(1, 'halls', 0), motes(6, 'rift_nw', 2, 0.6)] },
   // W22 · Fractures, and a Silencer up the Bore road
   {
     ...P2,
     groups: [
-      fractures(3, 'halls', 0, 2),
+      fractures(2, 'halls', 0, 3),
       silencers(1, 'bore_road', 2),
-      motes(8, 'rift_ne', 4, 0.5),
+      motes(6, 'rift_ne', 4, 0.6),
     ],
   },
   // W23 · rifts both sides
   {
     ...P2,
-    groups: [motes(8, 'rift_ne', 0, 0.4), motes(8, 'rift_nw', 2, 0.4), maws(1, 'halls', 4)],
+    groups: [motes(6, 'rift_ne', 0, 0.6), motes(6, 'rift_nw', 2, 0.6), maws(1, 'halls', 4)],
   },
   // W24 · Fractures, and Rift Moths over the song (they scatter past it)
   {
     ...P2,
-    groups: [
-      fractures(3, 'halls', 0, 2),
-      moths(3, 'sky_n', 2),
-      motes(10, 'bore_road', 4, 0.4),
-    ],
+    groups: [fractures(2, 'halls', 0, 3), moths(3, 'sky_n', 2), motes(6, 'halls', 4, 0.6)],
   },
-  // W25 · Maws and a Silencer
+  // W25 · a Maw and a Silencer
   {
     ...P2,
-    groups: [maws(2, 'halls', 0, 3), silencers(1, 'rift_nw', 3), motes(10, 'rift_ne', 4, 0.4)],
+    groups: [maws(1, 'halls', 0), silencers(1, 'rift_nw', 3), motes(6, 'rift_ne', 4, 0.6)],
   },
   // W26 · the last of the Halls
   {
     ...P2,
-    groups: [
-      motes(10, 'halls', 0, 0.5),
-      fractures(2, 'halls', 6, 2),
-      maws(1, 'rift_ne', 5),
-    ],
+    groups: [motes(8, 'halls', 0, 0.6), fractures(2, 'halls', 6, 3), maws(1, 'rift_ne', 5)],
   },
 ];
 

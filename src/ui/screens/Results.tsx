@@ -52,6 +52,7 @@ import { prefersReducedMotion } from '../motion.ts';
 import type { SpokenLine } from '../state.ts';
 import { resultsCounter, type ResultsCounter } from '../../story/counter.ts';
 import {
+  counterIsHeadline,
   handoverLine,
   medalMarks,
   resultsHeader,
@@ -550,8 +551,11 @@ function Body({ result }: { result: RunResult }) {
     result.remembered ?? rewards?.lifetimePests ?? result.pestsProcessed,
     result.meter,
   );
-  // A meter line that only repeats its stat row goes (D143 R13: "Evacuated" once).
-  const counter = full !== null && counterRepeatsStat(full, stats) ? null : full;
+  // The finale's win: REMEMBERED: {n} is the headline (T810), so its counter line goes; and a meter
+  // line that only repeats its stat row goes (D143 R13: "Evacuated" once).
+  const remembered = full !== null && counterIsHeadline(result.counter, result.outcome);
+  const headline = remembered ? full.line : header.headline;
+  const counter = remembered || (full !== null && counterRepeatsStat(full, stats)) ? null : full;
   const asking = result.choice !== null && result.choice.picked === null;
   const counted = useCountUp(counter?.n ?? 0);
   return (
@@ -565,7 +569,7 @@ function Body({ result }: { result: RunResult }) {
     >
       <p class="sd-results-kicker">{header.kicker}</p>
       <h1 id="sd-results-heading" class="sd-results-heading">
-        {header.headline}
+        {headline}
       </h1>
       {result.stamps.map((t, i) => (
         <Stamp key={t} text={t} index={i} />

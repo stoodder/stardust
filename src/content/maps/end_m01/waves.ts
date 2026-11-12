@@ -1,11 +1,10 @@
 // END_M01's warm-up: the five waves every Endless seed opens with, before the generator's first
-// counter block (src/sim/endless.ts; ENDLESS in endless.ts). Plain Skitterkin down the old road,
-// on the threat curve's first steps (ENDLESS.firstWaveThreat 600, ×1.07 a wave: 600, 642, 687,
-// 735, 786; sim/endless.test.ts holds each within 5%, each above the one before), so a post-game player builds up while
-// the colony's oldest pests say hello. The block demands no counter; W5's two Bunchlings (14% of
-// its threat, under the soft cap) tell of the splash block that follows (sim/endless.ts: every
-// seed's first block is Chitterbloom's, armor and splash). Countdowns are Endless's default (20 s,
-// rules.ts).
+// counter block (src/sim/endless.ts; ENDLESS in endless.ts). Plain Skitterkin down the old road on
+// the threat curve's first steps (ENDLESS.firstWaveThreat 600, ×1.07 a wave: 600, 642, 687, 735,
+// 786; sim/endless.test.ts holds each within 5% and above the one before), so a post-game player
+// builds up while the colony's oldest pests say hello. The block demands no counter; W5's one
+// Bunchling (7% of its threat by the validator's count, under the soft cap) is a taste of what
+// splits. Countdowns are Endless's default (20 s, rules.ts).
 import { defineWaves } from '../../define.ts';
 
 const ROUTE = 'road';

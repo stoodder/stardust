@@ -528,7 +528,11 @@ function planWave(
   const t = (d: Draft): number => ctx.threat.get(d.enemy.id)!;
   const sum = (): number => drafts.reduce((a, d) => a + d.count * t(d), 0);
   const adjustable = drafts.filter((d) => d.role === 'featured' || d.role === 'filler');
-  const lo = isBossWave ? budget * BUDGET_BAND.below : Math.max(budget * BUDGET_BAND.below, floor);
+  // A boss wave: at least its budget's floor, and an escort of at least BOSS_ESCORT_MIN_SHARE.
+  const bossThreat = bossId === null ? 0 : ctx.threat.get(bossId)!;
+  const lo = isBossWave
+    ? Math.max(budget * BUDGET_BAND.below, bossThreat + BOSS_ESCORT_MIN_SHARE * budget)
+    : Math.max(budget * BUDGET_BAND.below, floor);
   const hi = isBossWave ? Infinity : budget * BUDGET_BAND.above;
   for (;;) {
     const now = sum();

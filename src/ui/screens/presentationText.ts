@@ -61,6 +61,15 @@ export function resultsHeader(
   };
 }
 
+/**
+ * Whether the card's headline is its counter line instead of Everglow's cheer: the finale's win
+ * (T810; finale.md § FIN, *Dawn*: "The results screen reads REMEMBERED: {n}"), where the system has
+ * nothing left to say. The counter line then doesn't repeat under it.
+ */
+export function counterIsHeadline(style: CounterStyle, outcome: RunOutcome): boolean {
+  return style === 'remembered' && outcome === 'won';
+}
+
 /** The marks on a medal or objective row: a first-time one, and one not earned this run. */
 export interface MedalMarks {
   /** Beside a first-time medal or objective: "NEW!" (Acts I–II), "New" (Act III, the finale). */

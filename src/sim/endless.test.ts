@@ -115,8 +115,8 @@ describe('determinism', () => {
         scriptFlags: {},
         specsUnlocked: [],
       });
-      sim.apply({ type: 'build', tile: [10, 9], tower: 'zapcoil' });
-      sim.apply({ type: 'callWave' });
+      sim.enqueue({ type: 'build', tile: [10, 9], tower: 'zapcoil' });
+      sim.enqueue({ type: 'callWave' });
       for (let i = 0; i < 3000; i++) sim.step();
       return sim.hash();
     };
