@@ -519,7 +519,7 @@ export function createRunTracker<K extends IdSpace>(
         maxLost: escortMaxLost(state, map),
         voices: state.choir.voices,
         choirSize: state.choir.singers,
-        choirBase: map.choir !== null && map.choir.maxHushed !== null ? map.choir.singers : 0,
+        choirBase: (map.choir?.maxHushed ?? null) !== null ? map.choir!.singers : 0,
         credits: state.credits,
         lostAtWave,
         stats: {

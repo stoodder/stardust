@@ -345,7 +345,7 @@ export function minVoicesOf(
   map: Pick<CompiledMapDef<IdSpace>, 'choir' | 'minVoices' | 'minVoicesPct'>,
 ): number | null {
   if (map.choir === null) return null;
-  const k = map.choir.maxHushed;
+  const k = map.choir.maxHushed ?? null;
   if (k !== null) {
     // A hush allowance (T821): the run's choir − maxHushed, so every flag cell has the same room.
     const n = state.choir.singers - k;

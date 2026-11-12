@@ -980,8 +980,11 @@ export interface CompiledChoir {
   readonly haltTiles: number;
   /** ChoirDef.walkWaves (T820): the waves the walk spans; absent or 0, it walks on time alone. */
   readonly walkWaves?: number;
-  /** ChoirDef.maxHushed (T821): the hush allowance, or null (the map's minVoices/minVoicesPct). */
-  readonly maxHushed: number | null;
+  /**
+   * ChoirDef.maxHushed (T821): the hush allowance; absent or null, the map's minVoices/minVoicesPct
+   * set the floor.
+   */
+  readonly maxHushed?: number | null;
   readonly groups: readonly {
     readonly when: { readonly flag: ScriptFlagId; readonly eq: FlagValue };
     readonly singers: number;

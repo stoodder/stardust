@@ -4,13 +4,17 @@
 // it is registered, and only while dialogue plays (`?test=1` turns it off unless `&dialogue=1`,
 // the radio's rule).
 // Every win plays them; Esc or Skip skips one (style-guide.md § 4: full-screen scenes are
-// skippable). A flow scene's line can play the colony jingle as it shows (the flow's `jingles`:
-// the PA's minor shift change that closes Act II, T512); a skipped line never plays it.
+// skippable), except a flow's `unskippableFirst` scene the save hasn't seen (the finale's Dawn).
+// A flow scene's line can play the colony jingle as it shows (the flow's `jingles`: the PA's minor
+// shift change that closes Act II, T512); a skipped line never plays it. After the card and its
+// after-scenes, a won finale plays the campaign's close (`ending`, app/ending.ts; T810).
 import { effect } from '@preact/signals';
 import { sceneById, type Scene } from '../content/dialogue/index.ts';
 import { RESULTS_FLOW, resultsFlow, type FlowJingle } from '../content/dialogue/resultsFlow.ts';
+import type { EndingStep } from '../content/dialogue/resultsFlow.ts';
 import { dialogue, type SceneView } from '../ui/dialogue/state.ts';
 import { dialogueEnabled, playScene } from './dialogue.ts';
+import { playEnding } from './ending.ts';
 import type { RunOutcome } from './testHookTypes.ts';
 
 /** When a flow scene plays: before the results card, or after it's dismissed. */
@@ -40,6 +44,14 @@ export function flowScenes(
     const scene = lookup(id);
     return scene === undefined ? [] : [scene];
   });
+}
+
+/**
+ * Whether Esc may not skip `scene` in `mapId`'s flow: one of its `unskippableFirst` the save
+ * hasn't seen (`seen`, the save's `story.seen`; the finale's Dawn the first time).
+ */
+export function unskippable(mapId: string, scene: Scene, seen: readonly string[]): boolean {
+  return (resultsFlow(mapId).unskippableFirst ?? []).includes(scene.id) && !seen.includes(scene.id);
 }
 
 /** Every flow's jingles that `scenes` carry (content/dialogue/resultsFlow.ts `jingles`). */
@@ -92,9 +104,14 @@ function watchJingles(jingles: readonly FlowJingle[]): void {
  * Plays `scenes` full-screen, one after another, then runs `done` (at once when there are none
  * or dialogue is off). A scene that has nothing to say ends at once and the next plays. `record`
  * false (the results fixture) saves nothing they do, not even that they were seen. Their flow's
- * jingles play as their lines show.
+ * jingles play as their lines show. A scene `noSkip` holds Esc doesn't skip (`unskippable`).
  */
-export function playInOrder(scenes: readonly Scene[], done: () => void, record = true): void {
+export function playInOrder(
+  scenes: readonly Scene[],
+  done: () => void,
+  record = true,
+  noSkip: (scene: Scene) => boolean = () => false,
+): void {
   if (scenes.length === 0 || !dialogueEnabled()) {
     done();
     return;
@@ -107,11 +124,12 @@ export function playInOrder(scenes: readonly Scene[], done: () => void, record =
   };
   // Queued together: the dialogue plays a held scene's followers in order (app/dialogue.ts).
   scenes.forEach((scene, i) => {
+    const held = noSkip(scene) ? { noSkip: true } : {};
     playScene(
       scene,
       i === scenes.length - 1
-        ? { mode: 'fullscreen', onEnd: end, record }
-        : { mode: 'fullscreen', record },
+        ? { mode: 'fullscreen', onEnd: end, record, ...held }
+        : { mode: 'fullscreen', record, ...held },
     );
   });
 }
@@ -119,14 +137,22 @@ export function playInOrder(scenes: readonly Scene[], done: () => void, record =
 /** The scenes to play once the results card on screen is dismissed, and whether they save. */
 let afterResults: readonly Scene[] = [];
 let afterRecord = true;
+/** The campaign's close after them (a won finale's `ending` steps; app/finaleFlow.ts). */
+let ending: readonly EndingStep[] = [];
 
 /**
- * Sets what plays once the card on screen is dismissed (the router, as Results shows); `record`
- * false for the results fixture's card, whose scenes save nothing.
+ * Sets what plays once the card on screen is dismissed (the router, as Results shows): its
+ * after-scenes, then the campaign's close (`steps`, a won finale's: app/finaleFlow.ts
+ * `endingSteps`); `record` false for the results fixture's card, whose scenes save nothing.
  */
-export function setAfterResults(scenes: readonly Scene[], record = true): void {
+export function setAfterResults(
+  scenes: readonly Scene[],
+  record = true,
+  steps: readonly EndingStep[] = [],
+): void {
   afterResults = scenes;
   afterRecord = record;
+  ending = steps;
 }
 
 /** Whether scenes wait for the card on screen to be dismissed. */
@@ -135,11 +161,17 @@ export function afterResultsPending(): boolean {
 }
 
 /**
- * Leaves the results card: plays its after-scenes (once: they're cleared first), then `go` (the
- * way on the player picked: Continue, Retry, Change loadout, Title).
+ * Leaves the results card: plays its after-scenes (once: they're cleared first), then the
+ * campaign's close when the card set one (app/ending.ts: a first win's whatever the way on, a
+ * replay's only `onward`), then `go` (the way on the player picked: Continue, Retry, Change
+ * loadout, Title) unless the close ended on the post-game star map. `onward`: the way on is
+ * Continue (navigation.ts `afterWin`).
  */
-export function leaveResults(go: () => void): void {
+export function leaveResults(go: () => void, onward = false): void {
   const scenes = afterResults;
+  const steps = ending;
+  const record = afterRecord;
   afterResults = [];
-  playInOrder(scenes, go, afterRecord);
+  ending = [];
+  playInOrder(scenes, () => playEnding(steps, { record, onward }, go), record);
 }
