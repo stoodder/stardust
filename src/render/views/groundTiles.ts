@@ -8,7 +8,8 @@ import { CLIFF_VARIANTS, type CliffEdge } from '../../content/sprites/tiles/clif
 import { VERGE_VARIANTS, type VergeEdge } from '../../content/sprites/tiles/verge.ts';
 import { GRIME_VARIANTS } from '../../content/sprites/tiles/grime.ts';
 import type { HighGroundLook } from '../../content/sprites/tiles/high_ground.ts';
-import type { DressingLayerDef, GridPos, MarkerId, TileChar } from '../../content/types.ts';
+import type { DressingLayerDef, GridPos, MarkerId, TileChar, TowerId } from '../../content/types.ts';
+import { memorialWreckFrame } from '../../content/sprites/props/memorial_wreck.ts';
 import { assertNever } from '../../shared/types.ts';
 import { DEFAULT_VARIANT } from '../sprites/bake.ts';
 import { riftCrackTiles } from './riftCrack.ts';
@@ -93,6 +94,11 @@ export interface GroundGrid {
    * `PERCH_MAPS`). Absent: none.
    */
   readonly id?: string;
+  /**
+   * The save's `memorialTower` (the class Bricks's A3M3 tag was on): the finale's `memorial_wreck`
+   * marker draws that class's wreck (`memorialWreckFrame`). Absent or null: the fallback class.
+   */
+  readonly memorialTower?: TowerId | null;
 }
 
 /** Each grid's route steps (tile index pairs, low × 65536 + high), built once per grid. */
@@ -152,7 +158,7 @@ export function kerbEdges(g: GroundGrid, col: number, row: number): VergeEdge[] 
 }
 
 /** A wreck's look (`prop.wreckage`'s base frames; `wreckageFrame`). */
-export type WreckLook = 'v0' | 'v1' | 'v2' | 'v3' | 'v4' | 'v5' | 'v6' | 'v7';
+export type WreckLook = 'v0' | 'v1' | 'v2' | 'v3' | 'v4' | 'v5' | 'v6' | 'v7' | 'v8' | 'v9';
 
 /** True on an Act II map (by its env: its decor takes Act II's looks; art-direction §3, §6). */
 export function isActTwo(env: string | undefined): boolean {
@@ -221,6 +227,16 @@ export const DECOR_MARKERS: Readonly<Record<MarkerId, SpriteId>> = {
   hangar: 'prop.hangar',
   barricade: 'prop.barricade',
   zibzab_crate: 'prop.crate',
+  // M8 (finale.md § FIN, act3.md § A3M3; T842): the Deep Bore's rig on its marker (its drill head
+  // and gauge are render's, T831), the memorial wreck (the save's class, `memorialWreckFrame`), the
+  // Long Walk's waymarks relit (a waymark's tile is wreckage until cleared: `wreckageFrame`'s `v8`/
+  // `v9`), and A3M3's tunnel mouths at its refugees' edges. The Halls' mouth stands on the apron
+  // (`hallsMouthCell`), its ledges and seams are tile looks (`isHalls`).
+  bore_rig: 'prop.bore_rig',
+  memorial_wreck: 'prop.memorial_wreck',
+  waymark: 'prop.waymark',
+  convoy_mouth: 'prop.tunnel_mouth',
+  warren_mouth: 'prop.tunnel_mouth',
 };
 
 /**
@@ -234,6 +250,8 @@ function markerFrame(id: MarkerId): string | null {
   if (id === 'dome_window') return 'window';
   if (id === 'dome_1') return 'open'; // A3M6's Dome 1, open beside the gate (T740c)
   if (id === 'zibzab_crate') return 'open';
+  if (id === 'convoy_mouth') return 'convoy';
+  if (id === 'warren_mouth') return 'warren';
   if (id.startsWith('barricade')) return /_y(_|$)/.test(id) ? 'y' : 'x';
   const n = Number(/_(\d+)$/.exec(id)?.[1] ?? 0);
   // The first run of relocation fencing carries Everglow's sign; numbered runs are plain.
@@ -264,6 +282,10 @@ const DECOR_LOOKS: Readonly<Partial<Record<SpriteId, { frame: string; anim: stri
   'prop.hangar': { frame: 'shut_0', anim: 'idle' },
   // Pebble on the Peeker's rock, looking out, blinking, bouncing (A3M6, T730b).
   'prop.pebble_rock': { frame: 'perch_0', anim: 'perch' },
+  // M8 (T842): a relit waymark breathes; the Bore's gauge stands empty until render fills it.
+  'prop.waymark': { frame: 'lit', anim: 'lit' },
+  'prop.bore_rig': { frame: 'g0', anim: null },
+  'prop.halls_mouth': { frame: 'v0', anim: 'glint' },
 };
 
 /**
@@ -477,6 +499,8 @@ function decorAt(g: GroundGrid, col: number, row: number): MarkerDecor | 'bare' 
       return 'bare';
     const sprite = decorSprite(id);
     if (sprite === 'prop.wall') return { sprite, frame: wallFrame(g, id, col, row) };
+    if (sprite === 'prop.memorial_wreck')
+      return { sprite, frame: memorialWreckFrame(g.memorialTower) };
     if (sprite !== undefined) return { sprite, frame: markerFrame(id) };
   }
   return null;
@@ -522,7 +546,9 @@ export function envVariant(env: string): string {
  * snapped derrick) or `v3` (a burst pump house), each with a crew log on its stake (T440c). A tile
  * under an `intake_hopper*` marker (A2M4's Intake Manifest, T540c) is a wrecked intake hopper,
  * `v4` (toppled) or `v5` (buckled and split), whatever the act; under a `feed*` marker (A3M5's
- * vat-feed lines, Cut the Feed; T740c), a burst feed line, `v6` (a pipe in two) or `v7` (a junction).
+ * vat-feed lines, Cut the Feed; T740c), a burst feed line, `v6` (a pipe in two) or `v7` (a junction);
+ * under a `waymark*` marker (the finale's waymark lanterns; T842), a knocked-down waymark, `v8` (on
+ * its side) or `v9` (snapped).
  */
 export function wreckageFrame(
   col: number,
@@ -535,6 +561,7 @@ export function wreckageFrame(
     for (const [id, [c, r]] of Object.entries(markers)) {
       if (c === col && r === row && id.startsWith('intake_hopper')) return odd ? 'v5' : 'v4';
       if (c === col && r === row && id.startsWith('feed')) return odd ? 'v7' : 'v6';
+      if (c === col && r === row && id.startsWith('waymark')) return odd ? 'v9' : 'v8';
     }
   }
   if (isActTwo(env)) return odd ? 'v3' : 'v2';
@@ -544,13 +571,49 @@ export function wreckageFrame(
 /**
  * The high-ground block's look on tile (col, row): an `outcrop*` marker's thread-glass (A2M2), a
  * `catwalk*` marker's plant catwalk (A2M4), a `watchtower*` marker's old watchtower (A2M6), an Act
- * II map's canyon ledge (A2M1), else Act I's grassy block.
+ * II map's canyon ledge (A2M1), a Halls-mouth ledge on the Halls' map (`isHalls`, the finale; T842),
+ * else Act I's grassy block.
  */
 export function highGroundLook(g: GroundGrid, col: number, row: number): HighGroundLook {
   if (markerOn(g, 'outcrop', col, row)) return 'outcrop';
   if (markerOn(g, 'catwalk', col, row)) return 'catwalk';
   if (markerOn(g, 'watchtower', col, row)) return 'watchtower';
+  if (isHalls(g)) return 'halls';
   return isActTwo(g.env) ? 'ledge' : 'v0';
+}
+
+/** The marker where the choir stops at the Halls (the finale): its map is the Halls' map. */
+const HALLS_MARKER: MarkerId = 'halls_mouth';
+
+/**
+ * True on the map at the mouth of the Deep Halls (one with a `halls_mouth` marker: the finale; T842):
+ * its high ground is the Halls-mouth ledges, its power nodes the Halls' natural gold seams, and its
+ * north edge the Halls' mouth and the Spires (`hallsMouthCell`, `spiresDecor`).
+ */
+export function isHalls(g: GroundGrid): boolean {
+  return g.markers?.[HALLS_MARKER] !== undefined;
+}
+
+/**
+ * The apron cell the Halls' mouth stands on (`prop.halls_mouth`), or null off the Halls' map: just
+ * beyond the north-edge spawn nearest the `halls_mouth` marker, so the road runs off the edge into
+ * the mouth and the Hollow come up out of it (finale.md § FIN: the north spawn is the Halls mouth).
+ * Its face runs along the grid's x axis, so only a spawn on row 0 can take it.
+ */
+export function hallsMouthCell(g: GroundGrid): { readonly col: number; readonly row: number } | null {
+  const at = g.markers?.[HALLS_MARKER];
+  if (at === undefined) return null;
+  let best: { col: number; row: number } | null = null;
+  let bestD = Infinity;
+  for (let col = 0; col < g.cols; col++) {
+    if (g.tiles[col] !== 'S') continue;
+    const d = Math.hypot(col - at[0], at[1]);
+    if (d < bestD) {
+      bestD = d;
+      best = { col, row: -1 };
+    }
+  }
+  return best;
 }
 
 /** The marker the dark creeps in from (A2M1's north-east edge, toward the Halls). */
@@ -722,7 +785,11 @@ function dressBase(g: GroundGrid, col: number, row: number): TileDressing {
       return { ground: grass, prop: null, block: { sprite: 'tile.high_ground', frame } };
     }
     case '+':
-      // Act II's power node is a stardust conduit (A2M1, A2M2).
+      // The Halls' power nodes are its natural seams of sung gold (the finale; T842); Act II's is a
+      // stardust conduit (A2M1, A2M2).
+      if (isHalls(g)) {
+        return { ground: { sprite: 'tile.power_node', frame: 'seam_0', anim: 'seam' }, prop: null };
+      }
       return isActTwo(g.env)
         ? { ground: { sprite: 'tile.power_node', frame: 'conduit_0', anim: 'conduit' }, prop: null }
         : { ground: { sprite: 'tile.power_node', frame: 'v0', anim: 'pulse' }, prop: null };
@@ -731,7 +798,12 @@ function dressBase(g: GroundGrid, col: number, row: number): TileDressing {
     case undefined: {
       // A decor marker's prop; else sparse decor, so blocked ground reads as neither pad nor path.
       // A view marker's tile (the Peeker's rock) stays bare: its view draws what stands there.
-      const decor = t === undefined ? null : decorAt(g, col, row);
+      // A waymark's tile is wreckage until the drone clears it; then its marker relights it.
+      const marked = t === undefined ? null : decorAt(g, col, row);
+      const decor =
+        t === 'x' && marked !== null && marked !== 'bare' && marked.sprite === 'prop.waymark'
+          ? null
+          : marked;
       let sprite: SpriteId | null = decor === 'bare' || decor === null ? null : decor.sprite;
       if (decor === null) {
         if (t === 'x') sprite = 'prop.wreckage';
@@ -818,6 +890,13 @@ const OWN_PALETTE: ReadonlySet<SpriteId> = new Set<SpriteId>([
   'prop.barricade',
   'prop.pebble_rock',
   'prop.crate',
+  // M8's (T842): the Halls' mouth, the waymarks, the memorial wreck (its own dead ramp), the Deep
+  // Bore's rig, and A3M3's tunnel mouths.
+  'prop.halls_mouth',
+  'prop.waymark',
+  'prop.memorial_wreck',
+  'prop.bore_rig',
+  'prop.tunnel_mouth',
 ]);
 
 /**
@@ -901,6 +980,24 @@ function nightDecor(g: GroundGrid): ReadonlyMap<string, Prop> {
   return m;
 }
 
+/**
+ * The Halls' apron dressing (the finale; T842): the Spires under the Long Night, far north of the
+ * colony, so no billboard and no Dome Row: crystal and rocks in the dark on the north edges, and the
+ * Halls' mouth itself on ring 1 beyond the Halls spawn (`hallsMouthCell`).
+ */
+function spiresDecor(g: GroundGrid): ReadonlyMap<string, Prop> {
+  const m = new Map<string, Prop>();
+  const mouth = hallsMouthCell(g);
+  for (const k of [0.15, 0.3, 0.75, 0.9]) {
+    const c = Math.round(g.cols * k);
+    if (mouth !== null && Math.abs(c - mouth.col) <= 2) continue;
+    m.set(`${c},-2`, prop(k < 0.5 ? 'prop.flora' : 'prop.rock', k < 0.5 ? 'crystal' : 'night'));
+  }
+  m.set(`-2,${Math.round(g.rows * 0.3)}`, prop('prop.flora', 'crystal'));
+  m.set(`-2,${Math.round(g.rows * 0.6)}`, prop('prop.rock', 'night'));
+  return m;
+}
+
 const DECOR_BY_ENV: Readonly<Record<string, (g: GroundGrid) => ReadonlyMap<string, Prop>>> = {
   act1: colonyDecor,
   'act2.gold': frontierDecor,
@@ -938,7 +1035,9 @@ export function apronCells(g: GroundGrid, env: string): ApronCell[] {
       }
     }
   }
-  const decor = DECOR_BY_ENV[env]?.(g) ?? new Map<string, Prop>();
+  const decor = isHalls(g) ? spiresDecor(g) : (DECOR_BY_ENV[env]?.(g) ?? new Map<string, Prop>());
+  const mouth = hallsMouthCell(g);
+  const mouthKey = mouth === null ? null : `${mouth.col},${mouth.row}`;
   const out: ApronCell[] = [];
   for (let d = -2 * R; d <= g.cols + g.rows - 2 + 2 * R; d++) {
     for (let col = -R; col < g.cols + R; col++) {
@@ -955,7 +1054,12 @@ export function apronCells(g: GroundGrid, env: string): ApronCell[] {
         frame: road === undefined ? `r${ring}` : `road_${road}_r${ring}`,
       };
       let p: Prop | null = null;
-      if (road === undefined && !gaps.has(key)) {
+      if (key === mouthKey) {
+        p = { sprite: 'prop.halls_mouth', frame: 'v0', anim: 'glint' };
+      } else if (mouth !== null && ring === 2 && Math.abs(col - mouth.col) <= 2 && row < 0) {
+        // Clear of the mouth's rock: no brush on the apron behind it.
+        p = null;
+      } else if (road === undefined && !gaps.has(key)) {
         if (ring === 1) {
           const alongX = row === -1 || row === g.rows;
           const alongY = col === -1 || col === g.cols;

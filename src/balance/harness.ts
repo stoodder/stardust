@@ -387,13 +387,11 @@ export function judgeMap<K extends IdSpace>(
 
   const checks: CheckResult[] = [];
   const pending = map.builds.pendingChecks;
-  // Checks pending by id too (a refused map-level one, as the finale's #18 is; T820).
-  const pendingIds: readonly unknown[] =
-    pending !== null && 'checks' in pending && Array.isArray(pending.checks) ? pending.checks : [];
   for (const s of plan.specs) {
     const { ok, summary, failures } = s.evaluate(get);
     const isPending =
-      pending !== null && (pending.subjects.includes(s.subject) || pendingIds.includes(s.id));
+      pending !== null &&
+      (pending.subjects.includes(s.subject) || pending.checks?.includes(s.id) === true);
     if (!ok && pending !== null && isPending) {
       checks.push({
         id: s.id,

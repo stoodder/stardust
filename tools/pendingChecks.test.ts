@@ -34,7 +34,7 @@ describe('pending harness checks', () => {
   it.each(pending.map((m) => [m.id, m.pendingChecks!.task] as const))(
     '%s (pending %s: its subjects and its checks by id) is not marked finished',
     (id, task) => {
-      const p = RAW_CONTENT.maps[id as keyof typeof RAW_CONTENT.maps].pendingChecks!;
+      const p = pending.find((m) => m.id === id)!.pendingChecks!;
       expect(p.subjects.length + (p.checks ?? []).length).toBeGreaterThan(0);
       expect(completeMaps()).not.toContain(id);
       const board = readFileSync(join(ROOT, 'tasks.md'), 'utf8');

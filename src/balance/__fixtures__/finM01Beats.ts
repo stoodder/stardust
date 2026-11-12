@@ -8,7 +8,6 @@
 import { compileContent } from '../../content/compile.ts';
 import type { CompiledBuild, CompiledContent } from '../../content/compiled.ts';
 import { RAW_CONTENT } from '../../content/registry.ts';
-import type { RawContent } from '../../content/types.ts';
 import { createBuildExecutor, createSim, type SimEvent } from '../../sim/index.ts';
 import { flagsFor } from '../checks.ts';
 import { buildFor } from '../harness.ts';
@@ -52,7 +51,7 @@ export function withStandInW19(): CompiledContent {
     groups: [{ enemy: 'mote' as const, count: 1, route: 'halls' }],
   };
   const maps = { ...RAW_CONTENT.maps, fin_m01: { ...raw, waves: [...raw.waves, w19] } };
-  return compileContent({ ...RAW_CONTENT, maps } as RawContent);
+  return compileContent({ ...RAW_CONTENT, maps });
 }
 
 /** Plays `label` (a harness label; `@story` for Story) on fin_m01 in `c`, logging its beats. */
