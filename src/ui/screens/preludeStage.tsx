@@ -11,6 +11,12 @@ import {
   preludeStillDef,
   type PreludeStillId,
 } from '../../content/sprites/scenes/prelude/index.ts';
+import {
+  CRAWL,
+  CRAWL_LOOP_W,
+  scenePreludeCrawl,
+} from '../../content/sprites/scenes/prelude/preludeAd.ts';
+import { SCENE_W } from '../../content/sprites/scenes/sceneKit.ts';
 import type { FramesAnim } from '../../content/sprites/types.ts';
 import { dialogue } from '../dialogue/state.ts';
 import { stillArt } from '../dialogue/stillArt.ts';
@@ -64,18 +70,53 @@ function Still({
   const art = stillArt(preludeStillDef(s.still), drawnFrame(s, now - s.at, still));
   if (art === null) return null;
   const pan = s.still === PRELUDE_PAN.still ? panOffset(PRELUDE_PAN, now - s.at, still) : 0;
+  const crawl = s.still === 'scene.prelude_ad' && s.frame === 'small_print' && !still;
   return (
-    <img
-      class={`prelude-still${fresh ? ' in' : ''}`}
-      src={art.url}
-      width={art.w * PRELUDE_SCALE}
-      height={art.h * PRELUDE_SCALE}
-      style={{ top: `${-pan * PRELUDE_SCALE}px` }}
-      alt=""
+    <>
+      <img
+        class={`prelude-still${fresh ? ' in' : ''}`}
+        src={art.url}
+        width={art.w * PRELUDE_SCALE}
+        height={art.h * PRELUDE_SCALE}
+        style={{ top: `${-pan * PRELUDE_SCALE}px` }}
+        alt=""
+        aria-hidden="true"
+        data-still={s.still}
+        data-frame={s.frame}
+        data-pan={pan}
+      />
+      {crawl && <Crawl />}
+    </>
+  );
+}
+
+/** How fast the small print scrolls (still px a second): too fast to read. */
+const CRAWL_PX_PER_S = 90;
+
+/**
+ * The small print scrolling across the ad's foot: one loop of its words repeated over the band
+ * and panned left a whole still pixel at a time, seamlessly (not under reduced motion: the frame's
+ * own band holds).
+ */
+function Crawl() {
+  const art = stillArt(scenePreludeCrawl, 'strip');
+  if (art === null) return null;
+  const loop = CRAWL_LOOP_W * PRELUDE_SCALE;
+  const ms = Math.round((CRAWL_LOOP_W * 1000) / CRAWL_PX_PER_S);
+  return (
+    <div
+      class="prelude-crawl"
       aria-hidden="true"
-      data-still={s.still}
-      data-frame={s.frame}
-      data-pan={pan}
+      data-testid="prelude-crawl"
+      style={{
+        top: `${CRAWL.y * PRELUDE_SCALE}px`,
+        width: `${SCENE_W * PRELUDE_SCALE}px`,
+        height: `${CRAWL.h * PRELUDE_SCALE}px`,
+        backgroundImage: `url(${art.url})`,
+        backgroundSize: `${loop}px ${CRAWL.h * PRELUDE_SCALE}px`,
+        '--crawl-loop': `${-loop}px`,
+        animation: `prelude-crawl ${ms}ms steps(${CRAWL_LOOP_W}) infinite`,
+      }}
     />
   );
 }
@@ -87,6 +128,16 @@ function moving(s: Shown | undefined, ms: number, still: boolean): boolean {
   if (s.still === PRELUDE_PAN.still && ms < PRELUDE_PAN.ms) return true;
   const a = animOf(s.still, s.frame);
   return a !== null && (a.loop !== false || ms < (a.frames.length * 1000) / a.fps);
+}
+
+/**
+ * The still the intake rises over as the prelude closes (`PreludeUi.backdrop`): Dome Row's last
+ * frame, Gerald hovering off and the clipboard at the Technician's boots, at the stage's scale.
+ */
+export function preludeBackdrop(): { url: string; w: number; h: number } | null {
+  const art = stillArt(preludeStillDef('scene.dome_row'), 'gerald');
+  if (art === null) return null;
+  return { url: art.url, w: art.w * PRELUDE_SCALE, h: art.h * PRELUDE_SCALE };
 }
 
 /** The stage, `from` its staging's start (the still follows the lines; the pan, the clock). */

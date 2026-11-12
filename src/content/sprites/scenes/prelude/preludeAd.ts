@@ -5,11 +5,14 @@
 // DAY! on two pink ribbons, a sunlit white dome with a lettuce window on green terraces of pink
 // clay, a NOW HIRING! starburst, sparkles everywhere. Frames:
 // - `ad`, `ad_1`: the ad, its sparkles twinkling (anim `ad`, 2 fps).
-// - `small_print`, `small_print_1`: the same with the small-print crawl across its foot, a glyph
-//   further on each step (anim `small_print`, 2 fps). LETTUCE NOT FOR EXPORT is in it.
+// - `small_print`, `small_print_1`: the same with the small-print crawl across its foot, its
+//   sparkles twinkling (anim `small_print`, 2 fps). LETTUCE NOT FOR EXPORT is in it. On the stage
+//   the crawl scrolls: `scenePreludeCrawl`, one loop of its words, is panned over the band in whole
+//   pixels (preludeStage.tsx), held under reduced motion.
 import { textPixels, textWidth } from '../../font3x5.ts';
 import type { CharGrid } from '../../helpers.ts';
 import { plot } from '../../helpers.ts';
+import { defineSprite } from '../../defineSprite.ts';
 import { copyGrid, defineScene, dithered, fill, SCENE_W, sceneGrid } from '../sceneKit.ts';
 
 /*
@@ -363,20 +366,27 @@ function paintWordmark(g: CharGrid): void {
   }
 }
 
+/** The crawl's words' advance (a glyph and its gap) and one loop of them (px). */
+const GLYPH_ADVANCE = 4;
+export const CRAWL_LOOP_W = SMALL_PRINT.length * GLYPH_ADVANCE;
+
 /**
- * The small-print crawl: a teal band across the ad's foot, white words on it (font3x5), `shift`
- * glyphs further on than the first step.
+ * The small-print crawl: a teal band `w` px wide from `y`, white words on it (font3x5) from x = 0,
+ * looping.
  */
-export function paintCrawl(g: CharGrid, shift: number): void {
-  const { y, h } = CRAWL;
-  fill(g, 0, y, SCENE_W - 1, y + h - 1, (_x, yy) =>
-    yy === y ? 'N' : yy === y + h - 1 ? 'Y' : 'L',
-  );
-  const text = SMALL_PRINT.repeat(3);
-  const start = -(shift * 4) - 2;
-  for (const p of textPixels(text, start, y + 3)) {
-    if (p.x >= 0 && p.x < SCENE_W) plot(g, p.x, p.y, 'G');
+function paintCrawlBand(g: CharGrid, w: number, y: number): void {
+  const { h } = CRAWL;
+  for (let yy = y; yy < y + h; yy++)
+    for (let x = 0; x < w; x++) plot(g, x, yy, yy === y ? 'N' : yy === y + h - 1 ? 'Y' : 'L');
+  const text = SMALL_PRINT.repeat(Math.ceil(w / CRAWL_LOOP_W) + 1);
+  for (const p of textPixels(text, 0, y + 3)) {
+    if (p.x >= 0 && p.x < w) plot(g, p.x, p.y, 'G');
   }
+}
+
+/** The small-print crawl across the ad's foot (where its loop starts). */
+export function paintCrawl(g: CharGrid): void {
+  paintCrawlBand(g, SCENE_W, CRAWL.y);
 }
 
 /** Every frame of the ad. */
@@ -407,7 +417,7 @@ function paintAd(): Record<string, CharGrid> {
   }
   for (const beat of [0, 1] as const) {
     const sp = copyGrid(frames[beat === 0 ? 'ad' : 'ad_1']!);
-    paintCrawl(sp, beat * 2);
+    paintCrawl(sp);
     frames[beat === 0 ? 'small_print' : 'small_print_1'] = sp;
   }
   return frames;
@@ -422,5 +432,30 @@ export const scenePreludeAd = defineScene({
     // The sparkles twinkle (2 fps); under the small print the crawl steps on with them.
     ad: { frames: ['ad', 'ad_1'], fps: 2 },
     small_print: { frames: ['small_print', 'small_print_1'], fps: 2 },
+  },
+});
+
+/**
+ * One loop of the small-print crawl (`strip`: CRAWL_LOOP_W × CRAWL.h): the stage repeats it across
+ * the band and pans it in whole pixels while the small print is up, so it scrolls without a seam.
+ * Not a still of its own (it isn't in PRELUDE_STILLS): it's drawn over `scene.prelude_ad`.
+ */
+let crawlStrip: Readonly<Record<string, readonly string[]>> | null = null;
+
+export const scenePreludeCrawl = defineSprite({
+  id: 'scene.prelude_crawl',
+  size: { w: CRAWL_LOOP_W, h: CRAWL.h },
+  anchor: { x: 0, y: CRAWL.h },
+  palette: 'act1',
+  outline: 'none',
+  legend: AD_LEGEND,
+  get frames() {
+    if (crawlStrip !== null) return crawlStrip;
+    const g: CharGrid = Array.from({ length: CRAWL.h }, () =>
+      Array.from({ length: CRAWL_LOOP_W }, () => '.'),
+    );
+    paintCrawlBand(g, CRAWL_LOOP_W, 0);
+    crawlStrip = { strip: g.map((r) => r.join('')) };
+    return crawlStrip;
   },
 });

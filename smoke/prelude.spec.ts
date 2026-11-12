@@ -70,6 +70,27 @@ async function stepOnce(
   return key;
 }
 
+/**
+ * Whether the Skip is really on show (Playwright's `toBeVisible` counts `opacity: 0` as visible):
+ * its own and every ancestor's opacity multiplied, its visibility, and what's hit at its centre.
+ */
+async function skipOnShow(
+  page: Page,
+): Promise<{ opacity: number; hit: boolean; visible: boolean }> {
+  return page.getByTestId('scene-skip').evaluate((el) => {
+    let opacity = 1;
+    for (let n: Element | null = el; n !== null; n = n.parentElement)
+      opacity *= Number(getComputedStyle(n).opacity);
+    const r = el.getBoundingClientRect();
+    const at = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+    return {
+      opacity,
+      hit: at !== null && el.contains(at),
+      visible: getComputedStyle(el).visibility === 'visible',
+    };
+  });
+}
+
 async function startShift(page: Page): Promise<void> {
   await page.goto(URL);
   await waitForReady(page);
@@ -81,9 +102,15 @@ test('prelude: Start shift plays every shot in order, then the intake rises', as
   test.setTimeout(240_000);
   await startShift(page);
   await expect(sceneDialog(page)).toBeVisible();
-  // The Skip for the whole scene, top right, always on show; Tab reaches it from Next.
+  // The Skip for the whole scene, top right, always on show (from the first frame, over the
+  // lead-in's ad alone); Tab reaches it from Next.
   const skip = page.getByTestId('scene-skip');
   await expect(skip).toBeVisible();
+  const first = await skipOnShow(page);
+  expect(first.opacity).toBeGreaterThan(0.9);
+  expect(first.hit).toBe(true);
+  expect(first.visible).toBe(true);
+  await shot(page, FLOW, 0, 'first-frame-skip');
   const box = await skip.boundingBox();
   const vp = page.viewportSize()!;
   expect(box!.x).toBeGreaterThan(vp.width / 2);
@@ -116,12 +143,17 @@ test('prelude: Start shift plays every shot in order, then the intake rises', as
   }
   expect(seen).toEqual(SHOTS);
   expect(panned).toBe(true);
-  // The intake rises off the last line, the form to fill.
+  // The intake rises off the last line, the form to fill, over Dome Row's dimmed still; the name
+  // field has the focus.
   await expect(intake(page)).toBeVisible();
   await expect(intake(page)).toHaveClass(/sd-intake-rise/);
   await expect(stage(page)).toHaveCount(0);
+  await expect(intake(page).locator('.sd-intake-backdrop')).toHaveCount(1);
+  await expect(page.locator('#sd-intake-name')).toBeFocused();
+  await page.waitForTimeout(150);
+  await shot(page, FLOW, seen.length + 1, 'intake-rising');
   await page.waitForTimeout(700);
-  await shot(page, FLOW, seen.length + 1, 'intake');
+  await shot(page, FLOW, seen.length + 2, 'intake');
 });
 
 test('prelude: Skip and Esc go straight to the intake; the second Start shift skips it', async ({
@@ -141,10 +173,14 @@ test('prelude: Skip and Esc go straight to the intake; the second Start shift sk
   await expect(intake(page)).toBeVisible();
   await expect(stage(page)).toHaveCount(0);
 
-  // A fresh page: Esc past the lock skips the whole prelude too.
+  // A fresh page: Esc past the lock skips the whole prelude too, and a double tap's second Esc
+  // doesn't back out of the intake as it rises.
   await startShift(page);
   await page.waitForTimeout(LOCK_WAIT_MS);
   await page.keyboard.press('Escape');
+  await expect(intake(page)).toBeVisible();
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(200);
   await expect(intake(page)).toBeVisible();
   await expect(stage(page)).toHaveCount(0);
 });
@@ -179,10 +215,14 @@ test('prelude: Settings → Watch the arrival replays it over Settings; Esc retu
   await settings.getByRole('button', { name: 'Watch the arrival' }).click();
   await expect(stage(page)).toBeVisible();
   await page.waitForTimeout(LOCK_WAIT_MS);
+  // Still in the lead-in (the ad alone): the Skip is on show.
+  expect((await skipOnShow(page)).opacity).toBeGreaterThan(0.9);
   await shot(page, FLOW, 21, 'replay');
   await page.keyboard.press('Escape');
   await expect(stage(page)).toHaveCount(0);
   await expect(settings).toBeVisible();
+  // The focus is back on the button that started it.
+  await expect(settings.getByRole('button', { name: 'Watch the arrival' })).toBeFocused();
   // Nothing was saved: the Title still offers a new campaign only.
   await settings.getByRole('button', { name: 'Back' }).click();
   await expect(page.getByRole('button', { name: 'Start shift' })).toBeVisible();

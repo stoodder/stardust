@@ -9,6 +9,11 @@ import type { ComponentType } from 'preact';
 export interface PreludeUi {
   /** The prelude's stage (staging `prelude`), from its staging's start (performance.now()). */
   readonly PreludeStage: ComponentType<{ readonly from: number }>;
+  /**
+   * The still the intake rises over (Dome Row with Gerald and the clipboard, where the form lands),
+   * at the stage's 2×: its image URL and drawn size, or null if it couldn't be drawn.
+   */
+  readonly backdrop: () => { readonly url: string; readonly w: number; readonly h: number } | null;
 }
 
 /** The prelude's components once its chunk has loaded (null before). */

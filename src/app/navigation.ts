@@ -126,12 +126,17 @@ export function startGame(): SaveResult {
   return newGame(slot);
 }
 
+/** Whether the prelude is loading or playing (from New game or Watch the arrival). */
+let preludePlaying = false;
+
 /**
  * Title → New game → a slot: the prelude (T1001, once per new campaign; app/prelude.ts), the
  * intake (character creation, T306), then a new campaign there, into its first map's briefing.
  * The save is created when the form is signed.
  */
 export function newGame(slot: SlotId): SaveResult {
+  // A second Start shift while the prelude's chunk loads (or it plays) is the same press again.
+  if (preludePlaying) return { ok: true };
   if (intakeBeforeNewGame()) {
     if (!slotEmpty(slot))
       return { ok: false, message: `Slot ${slot} is taken. Pick an empty one!` };
@@ -139,13 +144,17 @@ export function newGame(slot: SlotId): SaveResult {
     if (preludeBeforeIntake()) {
       // Held as seen from its start: Back from the intake and Start shift again skip it.
       holdPreludeSeen(true);
-      run('prelude', (r) =>
-        playPrelude({ toIntake: true })
+      run('prelude', (r) => {
+        preludePlaying = true;
+        return playPrelude({ toIntake: true })
           .catch((err: unknown) => {
             logError('navigation: the prelude failed to load', err);
           })
-          .then(() => r.goto('intake')),
-      );
+          .then(() => {
+            preludePlaying = false;
+            return r.goto('intake');
+          });
+      });
     } else {
       run('intake', (r) => r.goto('intake'));
     }
@@ -264,9 +273,18 @@ export function openSettings(): void {
  * Skip ends it, back on Settings. No save needed.
  */
 export function watchArrival(): void {
-  playPrelude({ toIntake: false }).catch((err: unknown) => {
-    logError('navigation: the prelude failed to load', err);
-  });
+  if (preludePlaying) return;
+  preludePlaying = true;
+  // The focus goes back where it was (the button) as the replay closes.
+  const from = typeof document === 'undefined' ? null : document.activeElement;
+  playPrelude({ toIntake: false })
+    .catch((err: unknown) => {
+      logError('navigation: the prelude failed to load', err);
+    })
+    .finally(() => {
+      preludePlaying = false;
+      if (from !== null && from instanceof HTMLElement && from.isConnected) from.focus();
+    });
 }
 
 /** Settings → Back. */

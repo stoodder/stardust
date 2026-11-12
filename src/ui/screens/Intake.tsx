@@ -10,7 +10,7 @@
 import { useLayoutEffect, useRef, useState } from 'preact/hooks';
 import type { TargetedKeyboardEvent } from 'preact';
 import { cancelIntake, submitIntake } from '../../app/navigation.ts';
-import { intakeRises } from './preludeState.ts';
+import { intakeRises, preludeUi } from './preludeState.ts';
 import {
   ARRIVAL_ORDER,
   BLANK_INTAKE,
@@ -182,6 +182,9 @@ function Badge({ name }: { name: string }) {
   );
 }
 
+/** The intake's rise off the prelude (ms; Intake.css `.sd-intake-rise`). */
+const INTAKE_RISE_MS = 600;
+
 /** The intake form. */
 export function Intake() {
   const mode = intakeMode();
@@ -191,12 +194,19 @@ export function Intake() {
   const [failure, setFailure] = useState<string | null>(null);
   const nameRef = useRef<HTMLInputElement | null>(null);
   const arrivalRef = useRef<HTMLDivElement | null>(null);
-  // Off the prelude's last line (T1001), the form rises into place over the dimmed still, once.
+  // Off the prelude's last line (T1001), the form rises into place over the dimmed still, once,
+  // and the name field takes the focus from the scene's Next.
   const [rises] = useState(() => intakeRises.peek());
+  const [backdrop] = useState(() => (rises ? (preludeUi.peek()?.backdrop() ?? null) : null));
+  const shownAt = useRef(performance.now());
   useLayoutEffect(() => {
     intakeRises.value = false;
-  }, []);
+    if (rises) nameRef.current?.focus();
+  }, [rises]);
   useEscape(() => {
+    // While it rises, Esc is swallowed: the second tap of a double Esc that skipped the prelude
+    // doesn't back out to the Title.
+    if (rises && performance.now() - shownAt.current < INTAKE_RISE_MS) return true;
     cancelIntake();
     return true;
   });
@@ -225,6 +235,16 @@ export function Intake() {
       class={`sd-screen sd-menu sd-intake${rises ? ' sd-intake-rise' : ''}`}
       aria-labelledby="sd-intake-heading"
     >
+      {backdrop !== null && (
+        <img
+          class="sd-intake-backdrop"
+          src={backdrop.url}
+          width={backdrop.w}
+          height={backdrop.h}
+          alt=""
+          aria-hidden="true"
+        />
+      )}
       <section class="sd-panel sd-menu-panel sd-intake-panel">
         <header class="sd-menu-header">
           <div>

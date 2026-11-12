@@ -246,10 +246,34 @@
   text-transform: uppercase;
 }
 
-/* Off the prelude's last line (T1001): the form rises into place over the still's dark, in whole
-   pixels (nine steps), once. A cut under reduced motion. */
+/* Off the prelude's last line (T1001): the form rises into place over Dome Row's dimmed still
+   (where the form lands at the Technician's boots), in whole pixels (nine steps), once, the still
+   fading to the menu's sky as it comes. A cut under reduced motion. Its time: Intake.tsx
+   INTAKE_RISE_MS. */
 .sd-intake-rise {
+  isolation: isolate;
   animation: sd-intake-dark 600ms steps(6) both;
+}
+
+.sd-intake-backdrop {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: -1;
+  image-rendering: pixelated;
+  filter: brightness(0.35);
+  pointer-events: none;
+  animation: sd-intake-backdrop 600ms steps(6) both;
+}
+
+@keyframes sd-intake-backdrop {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
 }
 
 .sd-intake-rise .sd-intake-panel {
@@ -278,5 +302,9 @@
   .sd-intake-rise,
   .sd-intake-rise .sd-intake-panel {
     animation: none;
+  }
+
+  .sd-intake-backdrop {
+    display: none;
   }
 }

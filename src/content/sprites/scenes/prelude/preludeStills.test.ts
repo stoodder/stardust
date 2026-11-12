@@ -11,7 +11,7 @@ import { isCustomChar, STANDARD_LEGEND } from '../../legend.ts';
 import type { SpriteDef } from '../../types.ts';
 import { validateSprites } from '../../validate.ts';
 import { technicianBack, TECHNICIAN_HELM } from '../technicianBack.ts';
-import { CRAWL, SMALL_PRINT } from './preludeAd.ts';
+import { CRAWL, CRAWL_LOOP_W, scenePreludeCrawl, SMALL_PRINT } from './preludeAd.ts';
 import { FREIGHTER_SCREEN } from './freighter.ts';
 import {
   PRELUDE_FRAMES,
@@ -171,8 +171,24 @@ describe('the ad (shot 1)', () => {
         expect(p.y).toBeLessThan(CRAWL.y + CRAWL.h);
       }
     }
-    // The words step on between beats.
-    expect(crawlBand('small_print')).not.toBe(crawlBand('small_print_1'));
+    // The beats differ only in their sparkles: the crawl's scroll is the strip's pan on the stage.
+    expect(crawlBand('small_print')).toBe(crawlBand('small_print_1'));
+  });
+
+  it("scrolls the crawl without a seam: one loop of its words, the band's own start", () => {
+    expect(validateSprites([scenePreludeCrawl], PALETTE_IDS)).toEqual([]);
+    expect(ALL_SPRITES.some((s) => (s.id as string) === scenePreludeCrawl.id)).toBe(false);
+    const strip = rowsOf(scenePreludeCrawl, 'strip');
+    expect(strip.length).toBe(CRAWL.h);
+    expect(CRAWL_LOOP_W).toBe(SMALL_PRINT.length * 4);
+    for (const row of strip) expect(row.length).toBe(CRAWL_LOOP_W);
+    expect(strip.join('').includes('.')).toBe(false);
+    // Its first screenful is the band the ad's frame shows, so the pan starts where the still is.
+    const band = rowsOf(scenePreludeAd, 'small_print').slice(CRAWL.y, CRAWL.y + CRAWL.h);
+    for (let y = 0; y < CRAWL.h; y++) expect(band[y]).toBe(strip[y]?.slice(0, W));
+    // The loop's ends meet: it ends on blank band, so repeated it reads on without a jump.
+    const words = strip.map((r) => r.slice(-6)).join('');
+    expect(words.includes('G')).toBe(false);
   });
 });
 

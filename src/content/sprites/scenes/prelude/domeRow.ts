@@ -95,8 +95,11 @@ const PADS: readonly (readonly [number, number])[] = [
   [0, 1.5],
   [3, 1.5],
 ];
-/** Bricks's feet, by the gate on the road's far side. */
-export const BRICKS_AT = cellCentre(GATE_GX + 1.3, -1.1);
+/**
+ * Bricks's feet, past the gate on the road's far side, on open grass a few pixels clear of the
+ * fence (its rail runs above his head), so his raised hand reads against the grass.
+ */
+export const BRICKS_AT = cellCentre(GATE_GX + 2.25, -1);
 /** The Technician on the road, walking down it toward the gate. */
 export const TECHNICIAN_AT = cellCentre(4, 0.1);
 /** On `gerald`: the clipboard at the Technician's boots, and Gerald hovering just past it. */
@@ -245,62 +248,84 @@ function paintBackdrop(g: CharGrid): void {
 
 /**
  * Bricks, a silhouette (the briefing introduces him): very large, broad-shouldered, a long cannon
- * on his right shoulder, feet planted; `B` body, `C` the cannon. `wave` raises his free hand.
+ * on his right shoulder, feet planted; `B` body, `C` the cannon, `S` the barrel's steel glint.
+ * `wave` raises his free hand high above his head, out to the side: `A` the arm (rimmed by the
+ * sun on its west edge), `H` the open hand, lit cream all over.
  */
 /** Bricks's two shapes (exported for the tests: 14–16 px tall, the wave's hand above his head). */
 // prettier-ignore
 export const BRICKS_STILL = [
-  '..........CCCC',
-  '.........CCCC.',
-  '....BBB.CCCC..',
-  '...BBBBBCCC...',
-  '...BBBBBCC....',
-  '..BBBBBBBBB...',
-  '.BBBBBBBBBBB..',
-  '.BBBBBBBBBBB..',
-  '.BBBBBBBBB.BB.',
-  'BB.BBBBBBB.BB.',
-  'BB.BBBBBBB.BB.',
-  'B..BBBBBBB..B.',
-  '...BBBBBBB....',
-  '...BBB.BBB....',
-  '...BBB.BBB....',
-  '..BBBB.BBBB...',
+  '...........CSC',
+  '..........CSC.',
+  '.....BBB.CSC..',
+  '....BBBBBCS...',
+  '....BBBBBCC...',
+  '...BBBBBBBBB..',
+  '..BBBBBBBBBBB.',
+  '..BBBBBBBBBBB.',
+  '..BBBBBBBBB.BB',
+  '.BB.BBBBBBB.BB',
+  '.BB.BBBBBBB.BB',
+  '.B..BBBBBBB..B',
+  '....BBBBBBB...',
+  '....BBB.BBB...',
+  '....BBB.BBB...',
+  '...BBBB.BBBB..',
 ];
 // prettier-ignore
 export const BRICKS_WAVE = [
-  'B.........CCCC',
-  'BB.......CCCC.',
-  '.B..BBB.CCCC..',
-  '.B.BBBBBCCC...',
-  '.BBBBBBBCC....',
-  '..BBBBBBBBB...',
-  '..BBBBBBBBBB..',
-  '..BBBBBBBBBB..',
-  '...BBBBBBB.BB.',
-  '...BBBBBBB.BB.',
-  '...BBBBBBB.BB.',
-  '...BBBBBBB..B.',
-  '...BBBBBBB....',
-  '...BBB.BBB....',
-  '...BBB.BBB....',
-  '..BBBB.BBBB...',
+  'HH.........CSC',
+  'HH........CSC.',
+  '.A...BBB.CSC..',
+  '.AA.BBBBBCS...',
+  '..A.BBBBBCC...',
+  '..AABBBBBBBB..',
+  '...ABBBBBBBBB.',
+  '...BBBBBBBBBB.',
+  '....BBBBBBB.BB',
+  '....BBBBBBB.BB',
+  '....BBBBBBB.BB',
+  '....BBBBBBB..B',
+  '....BBBBBBB...',
+  '....BBB.BBB...',
+  '....BBB.BBB...',
+  '...BBBB.BBBB..',
 ];
+/** The column of a shape the feet's centre stands on. */
+const BRICKS_FEET_COL = 7;
+
+/**
+ * Where Bricks's raised hand and arm land on the still (`A` and `H` of the wave), for the tests:
+ * they must stand clear of the fence and lit against the grass.
+ */
+export function bricksArmPixels(): { x: number; y: number; hand: boolean }[] {
+  const out: { x: number; y: number; hand: boolean }[] = [];
+  const oy = BRICKS_AT.y - BRICKS_WAVE.length + 1;
+  BRICKS_WAVE.forEach((row, sy) => {
+    for (let sx = 0; sx < row.length; sx++) {
+      const ch = row.charAt(sx);
+      if (ch === 'A' || ch === 'H')
+        out.push({ x: BRICKS_AT.x - BRICKS_FEET_COL + sx, y: oy + sy, hand: ch === 'H' });
+    }
+  });
+  return out;
+}
 
 /** Stamps the silhouette with its feet's centre at (x, y): ink, rimmed by the sun on the west. */
 function paintBricks(g: CharGrid, x: number, y: number, wave: boolean): void {
   const src = wave ? BRICKS_WAVE : BRICKS_STILL;
   const h = src.length;
-  const ox = x - 6;
+  const w = Math.max(...src.map((r) => r.length));
+  const ox = x - BRICKS_FEET_COL;
   const oy = y - h + 1;
   const solid = (sx: number, sy: number): boolean => {
     const ch = src[sy]?.charAt(sx) ?? '.';
     return ch !== '.' && ch !== '';
   };
   // The ground shadow, east of his feet.
-  for (let dx = -1; dx <= 9; dx++) plot(g, x + dx, y + 1, c('act1.grass.0'));
+  for (let dx = -2; dx <= 8; dx++) plot(g, x + dx, y + 1, c('act1.grass.0'));
   for (let sy = -1; sy <= h; sy++) {
-    for (let sx = -1; sx <= 14; sx++) {
+    for (let sx = -1; sx <= w; sx++) {
       const ch = src[sy]?.charAt(sx) ?? '.';
       if (ch === '.' || ch === '') {
         const ring =
@@ -309,12 +334,15 @@ function paintBricks(g: CharGrid, x: number, y: number, wave: boolean): void {
         continue;
       }
       // The rim: the afternoon sun from the west catches his outline's west edge (each row's
-      // first pixel) and the tops of his head, hand and cannon.
+      // first pixel) and the tops of his head and cannon; the raised hand is lit all over.
       const row = src[sy] ?? '';
       const west = sx === row.search(/[^.]/);
-      const rim = (west && sy < 13) || (!solid(sx, sy - 1) && sy < 5);
-      const body = ch === 'C' ? c('ink.2') : c('ink.1');
-      plot(g, ox + sx, oy + sy, rim ? (ch === 'C' ? c('steel.3') : c('act1.light')) : body);
+      const top = !solid(sx, sy - 1) && sy < 5;
+      let color: ColorName;
+      if (ch === 'H') color = 'act1.light';
+      else if (ch === 'C' || ch === 'S') color = top ? 'steel.4' : ch === 'S' ? 'steel.3' : 'ink.2';
+      else color = (west && sy < 13) || top ? 'act1.light' : 'ink.1';
+      plot(g, ox + sx, oy + sy, c(color));
     }
   }
 }

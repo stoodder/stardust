@@ -18,7 +18,7 @@ import { activeSave, closeSession, initSaves } from './save.ts';
 
 // The stage's chunk draws nothing here: registering a stub stands in for its import.
 vi.mock(import('./acts/preludeUi.ts'), () => {
-  registerPreludeUi({ PreludeStage: () => null });
+  registerPreludeUi({ PreludeStage: () => null, backdrop: () => null });
   return {};
 });
 
@@ -97,6 +97,19 @@ describe('the route: New game → the prelude → the intake', () => {
     expect(intakeRises.value).toBe(true);
     // Nothing was saved: the save is made as the form is signed.
     expect(activeSave()).toBeNull();
+  });
+
+  it('takes a second Start shift while its chunk loads as the same press (no race)', async () => {
+    expect(newGame(1)).toEqual({ ok: true });
+    // Pressed again before the stage's chunk has loaded: nothing more happens.
+    expect(newGame(1)).toEqual({ ok: true });
+    await settle();
+    expect(scene()?.sceneId).toBe(PRELUDE_SCENE);
+    expect(went).toEqual([]);
+    vi.advanceTimersByTime(PRELUDE_LOCK_MS);
+    skipScene();
+    await settle();
+    expect(went).toEqual(['intake']);
   });
 
   it('holds it as seen: Back to the Title and Start shift again goes straight to the intake', async () => {

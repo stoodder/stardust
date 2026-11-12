@@ -4,7 +4,7 @@
 // descent's walkers going one way, and the dark the line panel sits on. Plus the builders they
 // share: the stamp's frame resolution and outline, and sceneKit's tall stills.
 import { describe, expect, it } from 'vitest';
-import { luminance } from '../../../palettes/color.ts';
+import { contrastRatio, luminance } from '../../../palettes/color.ts';
 import { PALETTES } from '../../../palettes/index.ts';
 import { rgbOf, type ColorName } from '../../../palettes/master.ts';
 import { enemyGerald } from '../../enemies/gerald.ts';
@@ -19,6 +19,7 @@ import {
   BRICKS_AT,
   BRICKS_STILL,
   BRICKS_WAVE,
+  bricksArmPixels,
   DOME_ROW_INK,
   GERALD_AT,
   sceneDomeRow,
@@ -202,9 +203,10 @@ describe('scene.dome_row', () => {
       expect(shape.length).toBeGreaterThanOrEqual(14);
       expect(shape.length).toBeLessThanOrEqual(16);
     }
-    // On the wave a hand stands in the top row, left of his head.
-    expect(BRICKS_WAVE[0]?.indexOf('B')).toBe(0);
+    // On the wave a hand stands in the top row, left of his head (two rows above it).
+    expect(BRICKS_WAVE[0]?.indexOf('H')).toBe(0);
     expect(BRICKS_STILL[0]?.indexOf('B')).toBe(-1);
+    expect(BRICKS_WAVE[2]?.indexOf('B')).toBeGreaterThan(2);
     const [x0, y0, x1, y1] = diffBox(sceneDomeRow, 'still', 'wave') ?? [0, 0, 0, 0];
     expect(x0).toBeGreaterThanOrEqual(BRICKS_AT.x - 8);
     expect(x1).toBeLessThanOrEqual(BRICKS_AT.x + 8);
@@ -214,6 +216,43 @@ describe('scene.dome_row', () => {
     expect(['ink.1', 'ink.2']).toContain(
       colorAt(sceneDomeRow, 'wave', BRICKS_AT.x, BRICKS_AT.y - 7),
     );
+  });
+
+  it('makes the wave read at 2×: a big change, the lit hand clear of the fence against grass', () => {
+    // At least ~20 still pixels change (the arm up, the hanging arm gone), so the narrated beat
+    // shows at a 2× window.
+    const a = rowsOf(sceneDomeRow, 'still');
+    const b = rowsOf(sceneDomeRow, 'wave');
+    let changed = 0;
+    for (let y = 0; y < SCENE_H; y++)
+      for (let x = 0; x < SCENE_W; x++) if (a[y]?.[x] !== b[y]?.[x]) changed++;
+    expect(changed).toBeGreaterThanOrEqual(20);
+    // The arm and hand, with a pixel's margin, sit over open grass on `still`: no fence (its
+    // steel posts, wires and orange tags) or anything else behind them.
+    const arm = bricksArmPixels();
+    expect(arm.filter((p) => p.hand).length).toBeGreaterThanOrEqual(4);
+    const xs = arm.map((p) => p.x);
+    const ys = arm.filter((p) => p.hand).map((p) => p.y);
+    // (The box: the hand's rows down to the head's, from left of the hand to the arm's root.)
+    const bx0 = Math.min(...xs) - 1;
+    const by0 = Math.min(...ys) - 1;
+    const bx1 = Math.max(...xs) - 1;
+    const by1 = Math.max(...ys) + 3;
+    for (let y = by0; y <= by1; y++) {
+      for (let x = bx0; x <= bx1; x++) {
+        expect(colorAt(sceneDomeRow, 'still', x, y)?.startsWith('act1.grass'), `${x},${y}`).toBe(
+          true,
+        );
+      }
+    }
+    // The hand is lit cream, inked round, at better than the 3:1 non-text contrast to the grass.
+    for (const p of arm.filter((q) => q.hand))
+      expect(colorAt(sceneDomeRow, 'wave', p.x, p.y)).toBe('act1.light');
+    const hand = luminance(rgbOf('act1.light'));
+    const grass = meanLum(sceneDomeRow, 'still', bx0, by0, bx1, by1);
+    expect(contrastRatio(hand, grass)).toBeGreaterThan(3);
+    // And all of him stands above the line panel.
+    expect(BRICKS_AT.y + 1).toBeLessThan(LINE_PANEL_TOP);
   });
 
   it('on `gerald`, stamps Gerald 1:1 by the Technician with the clipboard, and changes nothing else', () => {

@@ -16,9 +16,18 @@
   display: none;
 }
 
-/* The lead-in: the ad alone, the empty line panel held back until its first line. */
+/* The lead-in: the ad alone, the empty line panel's chrome and its Next held back until the first
+   line (Next stays focused, and shows if the keyboard is in use: Enter cuts the lead-in short).
+   The Skip, inside the panel for the Tab trap, is on show from the first frame. */
 .dlg-stage[data-staging='prelude']
   .dlg-fullscreen:not(:has(.dlg-line, .dlg-caption, .dlg-choices)) {
+  background: transparent;
+  box-shadow: none;
+}
+
+.dlg-stage[data-staging='prelude']
+  .dlg-fullscreen:not(:has(.dlg-line, .dlg-caption, .dlg-choices))
+  .dlg-actions:not(:has(:focus-visible)) {
   opacity: 0;
 }
 
@@ -61,6 +70,25 @@
 
   to {
     opacity: 1;
+  }
+}
+
+/* The small print scrolling over the ad's foot (preludeStage.tsx `Crawl`): its loop repeated
+   across the band, panned left one still pixel per step; the animation is set inline. */
+.prelude-crawl {
+  position: absolute;
+  left: 0;
+  image-rendering: pixelated;
+  background-repeat: repeat-x;
+}
+
+@keyframes prelude-crawl {
+  from {
+    background-position-x: 0;
+  }
+
+  to {
+    background-position-x: var(--crawl-loop);
   }
 }
 
