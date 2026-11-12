@@ -24,6 +24,8 @@ import {
   type HarnessOptions,
   type MapReport,
 } from '../src/balance/harness.ts';
+import { ALL_ACT_CHUNKS } from '../src/app/acts/all.ts';
+import { registerActChunk } from '../src/app/actContent.ts';
 import { compileContent } from '../src/content/compile.ts';
 import { RAW_CONTENT } from '../src/content/registry.ts';
 import { cpuClockMs } from './simClock.ts';
@@ -90,6 +92,8 @@ async function runParallel(ids: readonly string[], data: SimWorkerData): Promise
   return ids.map((id) => reports.get(id)!); // every id was run, or a worker threw
 }
 
+// Every act's content, so validation sees all of it (the game loads them an act at a time; T802).
+for (const chunk of ALL_ACT_CHUNKS) registerActChunk(chunk);
 const content = compileContent(RAW_CONTENT);
 const opts: HarnessOptions & { readonly mapId?: string } = {
   ...(values.map === undefined ? {} : { mapId: values.map }),

@@ -5,6 +5,8 @@
 import { performance } from 'node:perf_hooks';
 import { parentPort, workerData } from 'node:worker_threads';
 import { runMap, type HarnessOptions, type MapReport } from '../src/balance/harness.ts';
+import { ALL_ACT_CHUNKS } from '../src/app/acts/all.ts';
+import { registerActChunk } from '../src/app/actContent.ts';
 import { compileContent } from '../src/content/compile.ts';
 import { RAW_CONTENT } from '../src/content/registry.ts';
 import { cpuClockMs } from './simClock.ts';
@@ -39,6 +41,8 @@ const opts: HarnessOptions = {
   now: () => performance.now(),
   cpuNow: cpuClockMs,
 };
+// Every act's content, so validation sees all of it (the game loads them an act at a time; T802).
+for (const chunk of ALL_ACT_CHUNKS) registerActChunk(chunk);
 const content = compileContent(RAW_CONTENT);
 
 port.on('message', (mapId: string) => {
