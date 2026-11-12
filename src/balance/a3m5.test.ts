@@ -1,6 +1,7 @@
-// A3M5's tuning (T721, retuned by T760 and the M7 review, D150; act3.md § A3M5, As tuned). Par wins
-// at 15/22 (68.2%, the lower of the core and the bearers' 9/12), level with A3M4's 68.2: W2's teach
-// wave no longer drains a player without the Bulkhead, and the map stays the act's hardest in what a
+// A3M5's tuning (T721, retuned by T760, the M7 review, D150, and T874 for the Head Start the
+// reference carries from A3M3 on; act3.md § A3M5, As tuned). Par wins at 14/22 (63.6%, the lower of
+// the core and the bearers' 9/12), level with A3M4's 63.6: W2's teach wave doesn't drain a player
+// with no Bulkhead to absorb its leaks, and the map stays the act's hardest in what a
 // player sees (without its casts par ends at 25; a3m5Shifts.test.ts holds its casts ±2 s, and
 // a3m5Human.test.ts a human caster in their place, D151). The core
 // pays for the vats' surges, the asset for the hunts out of the sluice (W13's biggest group and
@@ -27,13 +28,13 @@ import { HARNESS_TEST_TIMEOUT_MS } from './rules.ts';
 const content = compileContent(RAW_CONTENT);
 const map = content.maps.a3_m05;
 const PAR_ASSET = 9;
-const PAR_CORE = 15;
+const PAR_CORE = 14;
 
 describe('A3M5 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
   const report = runMap(content, 'a3_m05', { seeds: 1 });
   const rec = (build: string) => report.runs.find((r) => r.build === build && !r.repeat)!;
 
-  it('passes every harness check as tuned, par at 15/22 (bearers 9/12), Cut the Feed', () => {
+  it('passes every harness check as tuned, par at 14/22 (bearers 9/12), Cut the Feed', () => {
     expect(report.checks.filter((k) => !k.ok).map((k) => `${k.id} ${k.subject}`)).toEqual([]);
     const par = rec('par').result!;
     expect(par.outcome).toBe('won');
@@ -121,28 +122,31 @@ describe('A3M5 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
 });
 
 describe('A3M5 W2, the healer teach (D150)', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
-  it("doesn't drain a player without the Bulkhead: par on Head Start loses ≤ 4 core by W4", () => {
-    // W2's second drones walk in 8 s after the first, once the yard has had the Associate alone.
+  it("doesn't drain the reference's Head Start player: par loses ≤ 4 core by W4", () => {
+    // W2's second drones (two) walk in 12 s after the first, once the yard has had the Associate.
     const w2 = map.waves[1]!;
     expect(w2.groups.map((g) => [g.enemy.id, g.count, g.delayTicks / TICK_HZ])).toEqual([
       ['compliance', 3, 0],
       ['associate', 1, 3],
-      ['compliance', 3, 8],
+      ['compliance', 2, 12],
     ]);
     const ref = map.builds.referenceProfile;
-    expect(ref.protocols).toEqual(['emergency_bulkhead']);
-    const headStart: ProfileDef = { ...ref, protocols: ['head_start'] };
-    const r = runA3m5(content, 'par', {
-      profile: {
-        difficulty: 'standard',
-        modifiers: profileModifiers(headStart, content),
-        specs: headStart.specs,
-      },
-    });
+    expect(ref.protocols).toEqual(['head_start']);
+    const r = runA3m5(content, 'par');
     expect(r.outcome).toBe('won');
     expect(22 - r.startOf[4]!.integrity).toBeLessThanOrEqual(4);
-    // Head Start ends at 12/22 (54.5%), in the band: the Bulkhead's absorbed leaks are three.
-    expect(r.integrity).toBe(PAR_CORE - 3);
+    expect(r.integrity).toBe(PAR_CORE);
+    // With the Bulkhead instead (a player who swaps it in), its absorbed leaks lift par.
+    const bulkhead: ProfileDef = { ...ref, protocols: ['emergency_bulkhead'] };
+    const b = runA3m5(content, 'par', {
+      profile: {
+        difficulty: 'standard',
+        modifiers: profileModifiers(bulkhead, content),
+        specs: bulkhead.specs,
+      },
+    });
+    expect(b.outcome).toBe('won');
+    expect(b.integrity).toBeGreaterThan(PAR_CORE);
   });
 });
 

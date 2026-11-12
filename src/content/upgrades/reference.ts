@@ -124,7 +124,7 @@ const A3M4: ProfileDef = {
 const A3M4_WARREN: ProfileDef = { ...A3M4, towers: [...A3M4.towers, 'gloop'] };
 /**
  * A3M5: Pebble's Sproing Pad (a briefing gift), the Stasis Bloom attuned (3 Intel: 13) and
- * Mindspike tune 1. Protect with a core, so the Bulkhead is on (as A3M2). Par's slot 1 is System Reboot,
+ * Mindspike tune 1. Head Start stays on (the player's from A3M3 on; T874). Par's slot 1 is System Reboot,
  * but C4 Rewrite takes QUILL offline and locks it, so that cell runs Suppressing Fire (inherited in
  * A3M4's mail) instead (core-loop.md § 6.11); Keep's Time Dilation and Purge's armor change no row.
  */
@@ -132,8 +132,6 @@ const A3M5: ProfileDef = {
   ...A3M4,
   towers: [...A3M4.towers, 'sproing', 'bloom'],
   shop: { ...A3M4.shop, tune_mindspike: 1 },
-  protocols: ['emergency_bulkhead'],
-  unequippedProtocols: ['head_start'],
 };
 const A3M5_WARREN: ProfileDef = { ...A3M5, towers: [...A3M5.towers, 'gloop'] };
 const REWRITE = { technicianAbility: 'suppressing_fire' } as const;

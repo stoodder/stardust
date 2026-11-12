@@ -141,6 +141,11 @@ describe('the one boss bar across a split', () => {
       depthLiftPx: MERGED_DEPTH_LIFT_PX,
       partLane: false,
     });
+    // A part driven off keeps the rank and lane it walked in (T777): no sideways snap as it turns.
+    const before = gmawSpread(parts[0]!, pool, { alongTiles: 0, depthLiftPx: 0, partLane: false });
+    const off = [unit(30, 4.4, { leaving: true }), parts[1]!, parts[2]!];
+    expect(gmawSpread(off[0]!, { used: 3, items: off })).toEqual(before);
+    expect(gmawSpread(parts[1]!, { used: 3, items: off }).alongTiles).toBeCloseTo(0);
     // A part walks its lane by rank and sorts over the tower base it stands in front of.
     expect(gmawSpread(parts[0]!, pool)).toMatchObject({
       depthLiftPx: PART_DEPTH_LIFT_PX,

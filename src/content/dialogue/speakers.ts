@@ -164,7 +164,9 @@ export const SPEAKERS = {
       { variant: 'damaged', when: QUILL_DAMAGED },
       {
         variant: 'purge',
-        when: { flag: 'quill_choice', eq: 'purge' },
+        // From A3M4 on only (T777): a replay of an earlier map keeps that map's QUILL (A1M5's
+        // party hat, the `policy` flash).
+        when: { all: [{ flag: 'quill_choice', eq: 'purge' }, { mapAtLeast: 'a3_m04' }] },
         silence: 'blink',
         noPolicy: true,
       },

@@ -81,7 +81,8 @@ const scratch: Spread = { alongTiles: 0, depthLiftPx: 0, partLane: false };
 /**
  * A split part's extra spread along its travel (tiles: its distance from the mean of its split's
  * live parts, × (SPREAD_TO_TILES / SPLIT_SPREAD_TILES − 1)), its lane, and its sort lift
- * (PART_DEPTH_LIFT_PX), or the merged Maw's (MERGED_DEPTH_LIFT_PX); zeros for any other unit.
+ * (PART_DEPTH_LIFT_PX), or the merged Maw's (MERGED_DEPTH_LIFT_PX); zeros for any other unit. A
+ * part that starts leaving keeps them (the rank it walked in).
  * Into `out` (a shared scratch by default); one pass over the pool for a part, none otherwise.
  */
 export function gmawSpread(
@@ -92,14 +93,15 @@ export function gmawSpread(
   out.alongTiles = 0;
   out.depthLiftPx = isMergedBoss(e) ? MERGED_DEPTH_LIFT_PX : 0;
   out.partLane = false;
-  if (!isSplitPart(e) || e.leaving) return out;
+  // A leaving part (driven off) keeps its rank and lane, so it doesn't snap sideways (T871).
+  if (!isSplitPart(e)) return out;
   out.partLane = true;
   out.depthLiftPx = PART_DEPTH_LIFT_PX;
   let n = 0;
   let sum = 0;
   for (let i = 0; i < enemies.used; i++) {
     const q = enemies.items[i]!; // i < used ≤ items.length
-    if (!isSplitPart(q) || q.leaving || q.ownerUid !== e.ownerUid) continue;
+    if (!isSplitPart(q) || q.ownerUid !== e.ownerUid) continue;
     n++;
     sum += q.dist;
   }

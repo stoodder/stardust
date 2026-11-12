@@ -395,15 +395,15 @@ const ACT_THREE_PREP: Readonly<Record<ActThreeMap, readonly PurchaseItem[]>> = {
 
 /**
  * The protocol the reference equips on each Act III map (one slot; reference.ts): Head Start on
- * A3M1's Escort, A3M3's Holdout, A3M4's Defend (carried on from A3M3, T771) and A3M6's Escort, the
- * Bulkhead on A3M2's Defend and A3M5's Protect.
+ * A3M1's Escort and from A3M3 on (A3M3's Holdout benches the Bulkhead, and the player carries Head
+ * Start on: T771, T874), the Bulkhead on A3M2's Defend.
  */
 const ACT_THREE_PROTOCOL: Readonly<Record<ActThreeMap, ProtocolId>> = {
   a3_m01: 'head_start',
   a3_m02: 'emergency_bulkhead',
   a3_m03: 'head_start',
   a3_m04: 'head_start',
-  a3_m05: 'emergency_bulkhead',
+  a3_m05: 'head_start',
   a3_m06: 'head_start',
 };
 
