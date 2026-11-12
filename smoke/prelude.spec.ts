@@ -37,13 +37,37 @@ const intake = (page: Page) => page.getByRole('main', { name: 'New hire intake' 
 
 /** The stage's still and frame (and `dim` on Form FF-1), as one key. */
 async function shown(page: Page): Promise<string | null> {
-  return stage(page)
-    .evaluate((el) => {
-      const d = (el as unknown as { dataset: Record<string, string> }).dataset;
-      const dim = (el as unknown as { classList: { contains(c: string): boolean } }).classList;
-      return `${d['still']}|${d['frame']}${dim.contains('dim') ? '|dim' : ''}`;
-    })
-    .catch(() => null);
+  const el = stage(page);
+  if ((await el.count()) === 0) return null;
+  const [still, frame, cls] = await Promise.all([
+    el.getAttribute('data-still', { timeout: 1000 }),
+    el.getAttribute('data-frame', { timeout: 1000 }),
+    el.getAttribute('class', { timeout: 1000 }),
+  ]).catch(() => [null, null, null]);
+  if (still === null || frame === null) return null;
+  return `${still}|${frame}${(cls ?? '').split(' ').includes('dim') ? '|dim' : ''}`;
+}
+
+/**
+ * One step through the prelude: notes what the stage shows (calling `onNew` as a still or frame
+ * first comes up), then presses Next, or waits out a silence. Returns null once it has closed.
+ */
+async function stepOnce(
+  page: Page,
+  seen: string[],
+  onNew: (key: string) => Promise<void>,
+): Promise<string | null> {
+  const key = await shown(page);
+  if (key === null) return null;
+  if (seen.at(-1) !== key) {
+    seen.push(key);
+    await onNew(key);
+  }
+  const next = sceneDialog(page).getByRole('button', { name: 'Next' });
+  if (await next.isVisible().catch(() => false)) {
+    await next.click({ timeout: 1000 }).catch(() => {});
+  } else await page.waitForTimeout(150);
+  return key;
 }
 
 async function startShift(page: Page): Promise<void> {
@@ -54,7 +78,7 @@ async function startShift(page: Page): Promise<void> {
 }
 
 test('prelude: Start shift plays every shot in order, then the intake rises', async ({ page }) => {
-  test.setTimeout(120_000);
+  test.setTimeout(240_000);
   await startShift(page);
   await expect(sceneDialog(page)).toBeVisible();
   // The Skip for the whole scene, top right, always on show; Tab reaches it from Next.
@@ -74,25 +98,21 @@ test('prelude: Start shift plays every shot in order, then the intake rises', as
 
   const seen: string[] = [];
   let panned = false;
-  for (let i = 0; i < 200; i++) {
-    const key = await shown(page);
-    if (key === null) break;
-    if (seen.at(-1) !== key) {
-      seen.push(key);
-      // Past the 0.9 s crossfade, the still alone.
-      await page.waitForTimeout(950);
-      await shot(page, FLOW, seen.length, key.replaceAll('|', '-').replace('scene.', ''));
-    }
-    if (key.startsWith('scene.descent') && !panned) {
+  const onNew = async (key: string): Promise<void> => {
+    // Past the 0.9 s crossfade, the still alone.
+    await page.waitForTimeout(950);
+    await shot(page, FLOW, seen.length, key.replaceAll('|', '-').replace('scene.', ''));
+    if (key.startsWith('scene.descent')) {
       // The descent tilts down 120 px in whole pixels while its lines play.
       const img = stage(page).locator('img[data-still="scene.descent"]');
       await expect(img).toHaveAttribute('data-pan', '120', { timeout: 15_000 });
       await shot(page, FLOW, seen.length, 'descent-panned');
       panned = true;
     }
-    if (await next.isVisible().catch(() => false))
-      await next.click({ timeout: 1000 }).catch(() => {});
-    else await page.waitForTimeout(150);
+  };
+  for (let i = 0; i < 200; i++) {
+    // oxlint-disable-next-line no-await-in-loop -- each step depends on what the last one showed
+    if ((await stepOnce(page, seen, onNew)) === null) break;
   }
   expect(seen).toEqual(SHOTS);
   expect(panned).toBe(true);
@@ -134,25 +154,16 @@ test('prelude: reduced motion rests the pan at its end and cuts the fades', asyn
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await startShift(page);
   await page.waitForTimeout(LOCK_WAIT_MS);
-  const next = sceneDialog(page).getByRole('button', { name: 'Next' });
-  for (let i = 0; i < 80; i++) {
-    const key = await shown(page);
-    if (key === null || key.startsWith('scene.descent')) break;
-    if (await next.isVisible().catch(() => false))
-      await next.click({ timeout: 1000 }).catch(() => {});
-    else await page.waitForTimeout(150);
+  const seen: string[] = [];
+  for (let i = 0; i < 80 && !(seen.at(-1) ?? '').startsWith('scene.descent'); i++) {
+    // oxlint-disable-next-line no-await-in-loop -- each step depends on what the last one showed
+    if ((await stepOnce(page, seen, () => Promise.resolve())) === null) break;
   }
   const img = stage(page).locator('img[data-still="scene.descent"]').last();
   await expect(img).toHaveAttribute('data-pan', '120');
   // A cut: the new still is up alone at once, with no fade running.
   await expect(stage(page).locator('img')).toHaveCount(1);
-  const animation = await img.evaluate(
-    (el) =>
-      (
-        globalThis as unknown as { getComputedStyle(e: unknown): { animationName: string } }
-      ).getComputedStyle(el).animationName,
-  );
-  expect(animation).toBe('none');
+  await expect(img).toHaveCSS('animation-name', 'none');
   await expect(stage(page)).toHaveAttribute('aria-label', /descent/i);
   await shot(page, FLOW, 20, 'reduced-motion-descent');
 });

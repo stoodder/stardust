@@ -22,10 +22,11 @@ vi.mock(import('./acts/preludeUi.ts'), () => {
   return {};
 });
 
+const none = (): Promise<void> => Promise.resolve();
+
 /** A router that only records where it was sent. */
 function fakeRouter(): { router: Router; went: string[] } {
   const went: string[] = [];
-  const none = (): Promise<void> => Promise.resolve();
   const router: Router = {
     battle: null,
     goto: (id) => {
@@ -49,7 +50,10 @@ const scene = () => dialogue.scene.value;
 
 /** Lets the chunk's import and the route's promises settle. */
 async function settle(): Promise<void> {
-  for (let i = 0; i < 5; i++) await vi.advanceTimersByTimeAsync(0);
+  for (let i = 0; i < 5; i++) {
+    // oxlint-disable-next-line no-await-in-loop -- each tick lets the next promise in the chain run
+    await vi.advanceTimersByTimeAsync(0);
+  }
 }
 
 let went: string[];

@@ -317,7 +317,9 @@ export function walkerPoints(): { x: number; y: number }[] {
       if (hash01(Math.round(s), i, 71) < 0.12) continue;
       const t = s / len;
       const wob = Math.round((hash01(Math.round(s), i, 72) - 0.5) * 2);
-      out.push({ x: Math.round(x0 + (x1 - x0) * t) + wob, y: Math.round(y0 + (y1 - y0) * t) });
+      const y = Math.round(y0 + (y1 - y0) * t);
+      // Each walker is 2 px wide and stands a row above its shadow: keep it on the still.
+      if (y < DESCENT_H - 2) out.push({ x: Math.round(x0 + (x1 - x0) * t) + wob, y });
     }
   }
   return out;
