@@ -149,7 +149,7 @@ export const EPILOGUE_CARDS: readonly EpilogueCardDef[] = [
   {
     slot: 'you',
     when: { arrival_reason: 'family', ending_choice: 'go' },
-    text: 'Your family\'s residency came through. They live somewhere safe now, by a lake. You send them pictures of something nice.',
+    text: "Your family's residency came through. They live somewhere safe now, by a lake. You send them pictures of something nice.",
   },
   {
     slot: 'you',

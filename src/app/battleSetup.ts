@@ -163,7 +163,10 @@ export interface FixedLoadout {
  * The companion `save` brings on `map` (meta `pickedCompanion` over `companionChoices`: QUILL
  * leaves the finale's list under C4 Purge), or null on a map without a pick list.
  */
-export function companionPicked(save: SaveData | null, map: CompiledMapDef<IdSpace>): CompanionId | null {
+export function companionPicked(
+  save: SaveData | null,
+  map: CompiledMapDef<IdSpace>,
+): CompanionId | null {
   const choices = companionChoices(save, map.companion);
   return save === null ? (choices[0] ?? null) : pickedCompanion(save, map.id, choices);
 }
@@ -269,8 +272,7 @@ export function battleConfig(
     // without the abilities the map locks under the save's flags (A3M5's System Reboot under C4
     // Rewrite; meta/storyInPlay.ts).
     const off = abilitiesOffOn(map, save);
-    const pick =
-      fixed ?? resolveLoadout(save, mapId, defaultPick(save, par, off), off);
+    const pick = fixed ?? resolveLoadout(save, mapId, defaultPick(save, par, off), off);
     const loadout: readonly string[] = pick.towers;
     // Slot 1 never holds what the companion brings (T501): Time Dilation beside QUILL.
     const slot1 = slot1Beside(content, pick.ability, companion, abilityPool(save, off));

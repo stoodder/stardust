@@ -147,7 +147,16 @@ function checkPendingRun(
   ) {
     return null;
   }
-  const run: PendingRun = { map, seed, loadout, companion, checkpoint, log, killsBefore, configHash: hash };
+  const run: PendingRun = {
+    map,
+    seed,
+    loadout,
+    companion,
+    checkpoint,
+    log,
+    killsBefore,
+    configHash: hash,
+  };
   if (r['retriedFrom'] === undefined) return run;
   // A retry before it resumed from an earlier (or the same) checkpoint of the run.
   const retried = checkCheckpoint(c, r['retriedFrom'], `${path}.retriedFrom`);

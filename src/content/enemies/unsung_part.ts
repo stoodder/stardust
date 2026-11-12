@@ -6,7 +6,7 @@
 // to rest (song.ts), outside it falls for good (it never scatters), and once the last is gone the
 // Unsung rises again where it fell, in phase 3 (bossMerge.ts `riseAfterSplit`; T808).
 // As built (T808): it dies at 0 HP like a unit (its boss `ending` is only a `bossEnd` action's).
-// Sprites: the Unsung's placeholder until T841 draws the parts under their own ids.
+// Sprites: T841's `enemy.unsung_part`, under the Unsung's icon.
 import { defineEnemy } from '../define.ts';
 
 export const unsung_part = defineEnemy({
@@ -24,5 +24,5 @@ export const unsung_part = defineEnemy({
   traits: [],
   tells: ['boss', 'hollow'],
   boss: { phases: [{ fromPct: 1 }], ending: 'driveOff', endAtPct: 0 },
-  sprites: { body: 'enemy.unsung', icon: 'icon.enemy.unsung' },
+  sprites: { body: 'enemy.unsung_part', icon: 'icon.enemy.unsung' },
 });

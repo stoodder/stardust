@@ -63,19 +63,24 @@ describe('starMapView, Act III part two', () => {
     expect(view.changes).toEqual(['plant_dark']);
   });
 
-  it('after A3M6: the finale teased ("Coming soon", its tagline, no briefing), Dome Row open', () => {
+  it('after A3M6: the finale open (registered by T820), its briefing and Waymarks, Dome Row won', () => {
     const view = starMapView(DEV_SAVES.after_a3m6.build());
     expect(view.phase).toBe('act3');
     expect(view.act).toBe('3');
     expect(view.marker).toBe('a3_m06');
     expect(view.frontier).toBe('fin_m01');
-    const teaser = view.nodes.at(-1)!;
-    expect(teaser).toMatchObject({ id: 'fin_m01', state: 'coming_soon', brief: null, index: 18 });
-    expect(teaser.label).toBe(
-      'Shift 18, Clearing the Way, The Long Walk to the Deep Halls. Coming soon. Walk them home. ' +
-        'The choir sings the jingle as a funeral hymn, and your counter counts down to zero.',
+    const next = view.nodes.at(-1)!;
+    expect(next).toMatchObject({ id: 'fin_m01', state: 'open', index: 18 });
+    expect(next.brief?.medals.map((m) => m.id)).toEqual([
+      'victory',
+      'perfect_core',
+      'laid_to_rest',
+    ]);
+    expect(next.brief?.objectives.map((o) => o.name)).toEqual(['Waymarks']);
+    expect(next.label).toBe(
+      'Shift 18, Clearing the Way, The Long Walk to the Deep Halls. Next up. 0 of 3 medals.',
     );
-    // The leg from the marker to the teaser wears the accent; every earlier leg is steel.
+    // The leg from the marker to the finale wears the accent; every earlier leg is steel.
     expect(view.legs.at(-1)?.accent).toBe(true);
     expect(view.legs.slice(0, -1).every((l) => !l.accent)).toBe(true);
     expect(view.regions.map((r) => r.id)).toContain('deep_halls');

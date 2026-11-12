@@ -17,9 +17,16 @@ const STYLE = flat(read('docs/story/style-guide.md'));
 const ACT1 = flat(read('docs/story/campaign/act1.md'));
 const ACT2 = flat(read('docs/story/campaign/act2.md'));
 const ACT3 = flat(read('docs/story/campaign/act3.md'));
-/** A memo's act file, by its id (`memo_a2_01` → act2.md). */
+const FIN = flat(read('docs/story/campaign/finale.md'));
+/** A memo's act file, by its id (`memo_a2_01` → act2.md, `memo_fin_01` → finale.md). */
 const actDoc = (id: string): string =>
-  id.startsWith('memo_a3_') ? ACT3 : id.startsWith('memo_a2_') ? ACT2 : ACT1;
+  id.startsWith('memo_fin_')
+    ? FIN
+    : id.startsWith('memo_a3_')
+      ? ACT3
+      : id.startsWith('memo_a2_')
+        ? ACT2
+        : ACT1;
 
 /** `doc` holds `text` (a boolean check, so a miss prints the text, not the whole doc). */
 function expectQuoted(doc: string, text: string): void {

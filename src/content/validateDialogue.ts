@@ -571,7 +571,11 @@ function validateCondition(
     issues.add('dialogue-cond', where, `phaseAtLeast ${cond.phaseAtLeast} is not a phase (1 on)`);
   }
   if ('inputResolved' in cond && !Object.hasOwn(FORCED_INPUTS, cond.inputResolved)) {
-    issues.add('dialogue-cond', where, `inputResolved '${cond.inputResolved}' is not a forced input`);
+    issues.add(
+      'dialogue-cond',
+      where,
+      `inputResolved '${cond.inputResolved}' is not a forced input`,
+    );
   }
   if (('phaseAtLeast' in cond || 'inputResolved' in cond) && slot?.kind === 'base') {
     issues.add('dialogue-cond', where, 'a script test reads a run; a base topic has none');

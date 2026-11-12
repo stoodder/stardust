@@ -9,8 +9,8 @@
 // builds another config (a purchase or a setting changed since) is refused with RESUME_REFUSED,
 // and the pending run is dropped. Any end of the finale run (won, lost, abandoned) drops it, and so
 // does a fresh start of the finale. Other maps keep their checkpoints in memory only.
-import type { CompanionId, IdSpace, MapId } from '../content/types.ts';
-import type { PendingRun, SaveData } from '../meta/index.ts';
+import type { IdSpace } from '../content/types.ts';
+import { LIVE_KNOWN_IDS, type PendingRun, type SaveData } from '../meta/index.ts';
 import { CAMPAIGN } from '../content/campaign.ts';
 import { fnv1a32 } from '../shared/hash.ts';
 import type { CommandLogEntry, SimConfig } from '../sim/index.ts';
@@ -44,10 +44,16 @@ export function persistsCheckpoints(map: { readonly id: string; readonly act: un
 function stableJson(x: unknown): string {
   return JSON.stringify(x, (_key, value: unknown) => {
     if (value === null || typeof value !== 'object' || Array.isArray(value)) return value;
-    const out: Record<string, unknown> = {};
-    for (const k of Object.keys(value).sort()) out[k] = (value as Record<string, unknown>)[k];
-    return out;
+    return Object.fromEntries(
+      Object.entries(value).toSorted(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)),
+    );
   });
+}
+
+/** Whether a run's log names live ids only (a build's tower is the one id a command carries). */
+function isLiveLog(log: readonly CommandLogEntry<IdSpace>[]): log is readonly CommandLogEntry[] {
+  const towers: readonly string[] = LIVE_KNOWN_IDS.towers;
+  return log.every((e) => e.cmd.type !== 'build' || towers.includes(e.cmd.tower));
 }
 
 /**
@@ -72,19 +78,30 @@ export function pendingRunOf(
   log: readonly CommandLogEntry<IdSpace>[],
   killsBefore: number,
   retriedFrom: Checkpoint | null,
-): PendingRun {
+): PendingRun | null {
   const { label, wave, tick, commandCount } = checkpoint;
+  // The save names live ids only: a dev map's run (or a dev tower) isn't one to keep.
+  const known = LIVE_KNOWN_IDS;
+  const map = known.maps.find((m) => m === cfg.mapId);
+  const towers = cfg.loadout.flatMap((t) => known.towers.filter((o) => o === t));
+  const slot1 = cfg.abilities.slot1;
+  const ability = slot1 === null ? null : (known.abilities.find((a) => a === slot1) ?? null);
+  const prefix = log.slice(0, commandCount);
+  if (
+    map === undefined ||
+    towers.length !== cfg.loadout.length ||
+    (slot1 !== null && ability === null) ||
+    !isLiveLog(prefix)
+  ) {
+    return null;
+  }
   return {
-    map: cfg.mapId as MapId,
+    map,
     seed: cfg.seed,
-    loadout: {
-      towers: [...cfg.loadout] as PendingRun['loadout']['towers'],
-      ability: cfg.abilities.slot1 as PendingRun['loadout']['ability'],
-    },
+    loadout: { towers, ability },
     companion: cfg.companion,
     checkpoint: { ...(label === undefined ? {} : { label }), wave, tick, commandCount },
-    // The log is plain data (sim commands), as validateEndgame checks it field by field.
-    log: log.slice(0, commandCount) as PendingRun['log'],
+    log: [...prefix],
     killsBefore,
     configHash: configHash(cfg),
     ...(retriedFrom === null
@@ -119,7 +136,7 @@ export function pendingResume(save: SaveData): PendingResume | 'changed' | null 
     cfg = battleConfig(run.map, run.seed, save, {
       towers: run.loadout.towers,
       ability: run.loadout.ability,
-      companion: run.companion as CompanionId | null,
+      companion: run.companion,
     });
   } catch {
     return 'changed';
@@ -130,7 +147,7 @@ export function pendingResume(save: SaveData): PendingResume | 'changed' | null 
     cfg,
     resume: {
       checkpoint,
-      log: run.log as readonly CommandLogEntry<IdSpace>[],
+      log: run.log,
       retriedFrom: run.retriedFrom ?? null,
       killsBefore: run.killsBefore,
     },

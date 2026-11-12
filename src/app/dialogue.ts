@@ -51,14 +51,7 @@ import {
   type SpeakerId,
   SPEAKER_IDS,
 } from '../content/dialogue/types.ts';
-import type {
-  AllyKind,
-  CompanionId,
-  EnemyId,
-  IdSpace,
-  MapDef,
-  TowerId,
-} from '../content/types.ts';
+import type { AllyKind, CompanionId, EnemyId, IdSpace, MapDef, TowerId } from '../content/types.ts';
 import { quillOffline, resolveC4, setDoorChoice, type SaveData } from '../meta/index.ts';
 import { baseStoryContext } from '../meta/story.ts';
 import { escortMaxLost, isBossWave } from '../sim/index.ts';
@@ -1501,8 +1494,7 @@ export function presentSpeakers(
     if (!out.includes(id)) out.push(id);
   };
   const c = map.companion;
-  const walking =
-    c === null ? null : 'pick' in c ? picked : c.state === 'present' ? c.id : null;
+  const walking = c === null ? null : 'pick' in c ? picked : c.state === 'present' ? c.id : null;
   if (walking !== null) {
     add(walking === 'bramble' ? 'chitterbloom' : walking);
     if (walking === 'bramble') add('vesthara');

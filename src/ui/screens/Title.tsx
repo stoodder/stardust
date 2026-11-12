@@ -59,7 +59,9 @@ function MainButtons({ open, act }: { open: (p: Panel) => void; act: (r: SaveRes
       {hasSaves ? (
         <button
           type="button"
-          class={pending ? 'sd-button sd-title-start' : 'sd-button sd-button-primary sd-title-start'}
+          class={
+            pending ? 'sd-button sd-title-start' : 'sd-button sd-button-primary sd-title-start'
+          }
           disabled={!canContinue}
           // Focused on arrival, so Enter continues (after the resume, when one waits).
           ref={pending ? null : focusOnce}

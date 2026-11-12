@@ -145,7 +145,7 @@ describe('configHash and the pending run', () => {
     expect(configHash({ ...cfg, seed: SEED + 1 })).not.toBe(h);
     expect(configHash({ ...cfg, difficulty: 'story' })).not.toBe(h);
     expect(configHash({ ...cfg, scriptFlags: { quill_choice: 'keep' } })).not.toBe(h);
-    expect(configHash({ ...cfg, loadout: [...cfg.loadout].reverse() })).not.toBe(h);
+    expect(configHash({ ...cfg, loadout: cfg.loadout.toReversed() })).not.toBe(h);
     // Key order doesn't matter, only values.
     const { seed, mapId, ...rest } = cfg;
     expect(configHash({ mapId, ...rest, seed })).toBe(h);
@@ -156,7 +156,14 @@ describe('configHash and the pending run', () => {
     const save = activeSave()!;
     const cfg = battleConfig(MAP, SEED, save);
     const log: Log = [{ tick: 40, cmd: { type: 'callWave' } }];
-    const run = pendingRunOf(cfg, { label: 'halls', wave: 5, tick: 90, commandCount: 1 }, log, 3, null);
+    const run = pendingRunOf(
+      cfg,
+      { label: 'halls', wave: 5, tick: 90, commandCount: 1 },
+      log,
+      3,
+      null,
+    );
+    if (run === null) throw new Error('A2M2 is a live map: its run persists');
     expect(run).toMatchObject({ map: MAP, seed: SEED, killsBefore: 3, companion: cfg.companion });
     expect(run.checkpoint).toEqual({ label: 'halls', wave: 5, tick: 90, commandCount: 1 });
     expect(Object.hasOwn(run, 'retriedFrom')).toBe(false);
@@ -172,15 +179,18 @@ describe('configHash and the pending run', () => {
     expect(configHash(again.cfg)).toBe(run.configHash);
     expect(again.resume).toMatchObject({ retriedFrom: null, killsBefore: 3 });
     // A retry before it: the reload keeps where that retry resumed from.
-    const retried = pendingRunOf(
-      cfg,
-      { wave: 10, tick: 900, commandCount: 1 },
-      log,
-      0,
-      { wave: 5, tick: 90, commandCount: 1 },
-    );
+    const retried = pendingRunOf(cfg, { wave: 10, tick: 900, commandCount: 1 }, log, 0, {
+      wave: 5,
+      tick: 90,
+      commandCount: 1,
+    });
+    if (retried === null) throw new Error('A2M2 is a live map: its run persists');
     expect(retried.retriedFrom).toEqual({ wave: 5, tick: 90, commandCount: 1 });
     expect(validateSave(JSON.parse(JSON.stringify(withPendingRun(save, retried)))).ok).toBe(true);
+    // A dev map's run isn't one a save can keep.
+    expect(
+      pendingRunOf(battleConfig('dev_bore', 1), { wave: 1, tick: 9, commandCount: 0 }, [], 0, null),
+    ).toBeNull();
     // Dropping it leaves no field behind.
     expect(Object.hasOwn(withPendingRun(withRun, null), 'pendingRun')).toBe(false);
   });
@@ -218,7 +228,7 @@ describe('through the router: the closed tab resumes the same run', () => {
   }
 
   it(
-    'replays to the checkpoint and on to the straight run\'s end, hash for hash, all medals open',
+    "replays to the checkpoint and on to the straight run's end, hash for hash, all medals open",
     async () => {
       const run = straightRun();
       await persistAndClose();

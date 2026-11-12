@@ -113,6 +113,17 @@ const ACT3_LISTS = {
   a3_m06: ['codex_gunship', 'codex_blackbudget', 'codex_gathering_maw'],
 } as const;
 
+/** The finale's entries (story/campaign/finale.md § FIN, *Codex*; T811: codex/finale.ts). */
+const FIN_LISTS = {
+  fin_m01: [
+    'codex_unsung',
+    'codex_deep_halls',
+    'codex_deep_bore',
+    'codex_long_walk',
+    'codex_last_page',
+  ],
+} as const;
+
 /**
  * Entries unlocked by something other than their map's win (their maps' objectives: act2.md §
  * A2M1, Crew Logs; § A2M4, Intake Manifest).
@@ -155,6 +166,11 @@ const LATER_VERSIONS: Readonly<Record<string, Partial<Record<CodexVersion, Campa
   codex_gerald: { corrected: 'a3_m04' },
   codex_everglow_gardens: { corrected: 'a3_m06' },
   codex_zibzab: { corrected: 'a3_m06' },
+  // The finale's Everglow records beside their corrections, once the map is won (T811).
+  codex_unsung: { corrected: 'fin_m01' },
+  codex_deep_halls: { corrected: 'fin_m01' },
+  codex_deep_bore: { corrected: 'fin_m01' },
+  codex_long_walk: { corrected: 'fin_m01' },
 };
 
 const sprites = SPRITES as readonly SpriteDef[];
@@ -165,6 +181,7 @@ describe('the codex content', () => {
       ...Object.values(ACT1_LISTS).flat(),
       ...Object.values(ACT2_LISTS).flat(),
       ...Object.values(ACT3_LISTS).flat(),
+      ...Object.values(FIN_LISTS).flat(),
     ]);
     expect(new Set(CODEX_IDS).size).toBe(CODEX_IDS.length);
     for (const id of CODEX_IDS) {
@@ -217,7 +234,7 @@ describe('the codex content', () => {
   );
 
   it('names real subjects, and an entry without one unlocks once its own map is won', () => {
-    for (const [map, ids] of Object.entries({ ...ACT1_LISTS, ...ACT2_LISTS, ...ACT3_LISTS })) {
+    for (const [map, ids] of Object.entries({ ...ACT1_LISTS, ...ACT2_LISTS, ...ACT3_LISTS, ...FIN_LISTS })) {
       for (const id of ids) {
         const e = CODEX[id]!;
         const when = e.versions.original?.when;

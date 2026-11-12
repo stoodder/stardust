@@ -164,7 +164,8 @@ export function evaluateCondition(cond: Condition, ctx: StoryContext): boolean {
     const script = runScriptOf(ctx);
     return script !== undefined && script.phase >= cond.phaseAtLeast;
   }
-  if ('inputResolved' in cond) return runScriptOf(ctx)?.resolved.includes(cond.inputResolved) ?? false;
+  if ('inputResolved' in cond)
+    return runScriptOf(ctx)?.resolved.includes(cond.inputResolved) ?? false;
   const v = ctx.run?.ruleFlags[cond.thisRun];
   return v !== undefined && v === cond.eq;
 }

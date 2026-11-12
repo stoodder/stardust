@@ -8,18 +8,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryStore } from '../meta/index.ts';
 import { loadout } from '../ui/screens/loadoutView.ts';
 import { battleConfig } from './battleSetup.ts';
-import {
-  abilityGreyed,
-  openLoadout,
-  pickAbility,
-  pickCompanion,
-  savePick,
-} from './loadout.ts';
+import { abilityGreyed, openLoadout, pickAbility, pickCompanion, savePick } from './loadout.ts';
 import { activeSave, initSaves, loadDevSave, updateActiveSave } from './save.ts';
 
 vi.mock('../content/registry.ts', async (importOriginal) => {
   const real = await importOriginal<typeof import('../content/registry.ts')>();
-  const a3m6 = real.RAW_CONTENT.maps.a3_m06!; // registered
+  const a3m6 = real.RAW_CONTENT.maps.a3_m06;
   return {
     ...real,
     RAW_CONTENT: {
@@ -52,7 +46,12 @@ describe('the companion pick on the loadout screen', () => {
     expect(openLoadout(MAP)).toBe(true);
     const view = loadout.value!;
     expect(view.companions?.map((k) => k.id)).toEqual(['vesthara', 'bramble', 'zibzab', 'quill']);
-    expect(view.companions?.map((k) => k.name)).toEqual(["Ves'thara", 'Bramble', 'Zibzab', 'QUILL']);
+    expect(view.companions?.map((k) => k.name)).toEqual([
+      "Ves'thara",
+      'Bramble',
+      'Zibzab',
+      'QUILL',
+    ]);
     expect(view.companions?.map((k) => k.ability)).toEqual([
       'Stillness',
       'Underfoot',

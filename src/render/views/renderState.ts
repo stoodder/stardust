@@ -310,6 +310,20 @@ export interface RenderState {
     readonly reformsSeen: number;
   };
   /**
+   * UnsungView (T808): dig marks, surfacing tells, and adds' calls showing now; the rest strip
+   * under the boss bar (px of 160; −1: none shows); surfacings (dug out among them) and rises this
+   * battle.
+   */
+  readonly unsung: {
+    readonly digs: number;
+    readonly surfaceTells: number;
+    readonly calls: number;
+    readonly restPx: number;
+    readonly surfacesSeen: number;
+    readonly dugOutSeen: number;
+    readonly risesSeen: number;
+  };
+  /**
    * The boss bar's shield strip fill (px of 160; −1: none shows, or the boss has no shield) and
    * its end mark (px; −1: none), where the Penitent kneels (review R6).
    */

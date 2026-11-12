@@ -6,6 +6,7 @@ import type { CampaignMapId } from '../campaign.ts';
 import { ACT1_CODEX } from './act1.ts';
 import { ACT2_CODEX, ACT2_CODEX_VERSIONS } from './act2.ts';
 import { ACT3_CODEX, ACT3_CODEX_VERSIONS } from './act3.ts';
+import { FINALE_CODEX } from './finale.ts';
 import {
   CODEX_VERSIONS,
   type CodexEntryDef,
@@ -47,7 +48,7 @@ export function withLaterVersions(
 
 /** Every codex entry, in codex order, with every act's versions. */
 export const CODEX_ENTRIES: readonly CodexEntryDef[] = withLaterVersions(
-  [...ACT1_CODEX, ...ACT2_CODEX, ...ACT3_CODEX],
+  [...ACT1_CODEX, ...ACT2_CODEX, ...ACT3_CODEX, ...FINALE_CODEX],
   CODEX_LATER_VERSIONS,
 );
 
@@ -60,25 +61,16 @@ export const CODEX: Readonly<Record<CodexId, CodexEntryDef>> = Object.fromEntrie
 export const CODEX_IDS: readonly CodexId[] = CODEX_ENTRIES.map((e) => e.id);
 
 /**
- * The finale's Field Journal entries, as finale.md's *Codex* row names them: reserved ids (T800b)
- * before their task (`task`) writes them into a codex list. `'original'` is a new entry (with both
- * versions where it opens on Everglow's record beside the Journal's correction, as A3M2's Buffer
- * Protocol does); `'corrected'` is a correction of an entry already registered. planned.test.ts
- * checks each id's form, that a correction names a registered entry, and that a landed row has
- * its version.
+ * Field Journal entries an act file names whose text hasn't landed: reserved ids (T800b), each with
+ * the task (`task`) that writes it into a codex list. `'original'` is a new entry; `'corrected'` is
+ * a correction of an entry already registered. planned.test.ts checks each id's form, that a
+ * correction names a registered entry, and that a landed row has its version. Empty: the finale's
+ * five (the Unsung, the Deep Halls, the Deep Bore, the Long Walk, the last page) landed with T811
+ * (codex/finale.ts), and each row went as its entry did.
  */
 export const PLANNED_CODEX: readonly {
   readonly id: CodexId;
   readonly map: CampaignMapId;
   readonly version: 'original' | 'corrected';
   readonly task: string;
-}[] = [
-  { id: 'codex_unsung', map: 'fin_m01', version: 'original', task: 'T811' },
-  { id: 'codex_deep_halls', map: 'fin_m01', version: 'original', task: 'T811' },
-  { id: 'codex_deep_bore', map: 'fin_m01', version: 'original', task: 'T811' },
-  // "The Long Walk corrected": no entry holds the Long Walk yet, so it is new, opening on
-  // Everglow's record (a seasonal migration) beside the Journal's correction.
-  { id: 'codex_long_walk', map: 'fin_m01', version: 'original', task: 'T811' },
-  // The Journal's last page: REMEMBERED: {n} (the lifetime Pests Processed the countdown ran from).
-  { id: 'codex_last_page', map: 'fin_m01', version: 'original', task: 'T811' },
-];
+}[] = [];

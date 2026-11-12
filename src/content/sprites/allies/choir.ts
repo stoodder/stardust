@@ -1,8 +1,7 @@
 // The finale's choir (design/maps.md § 5.5; story/campaign/finale.md; art-direction §6 *Choir
 // singers*): the Skitterkin walking their dead home to the Deep Halls, singing the colony jingle as
 // a funeral hymn. All three are in `skitterkin.ally` (their default palette, so render draws them in
-// `default`), and every singing pose carries a little gold **note** (the `e0`/`e1` emissives, so it
-// glows) bobbing over the head: the choir mostly walks up the screen, away from the camera, where
+// `default`), and every singing pose carries a little gold **note** bobbing over the head: the choir mostly walks up the screen, away from the camera, where
 // no open mouth shows, and the note is what says "singing" from behind.
 // - **`ally.singer`**: a colonist Skitterkin, round and big-eyed like the refugees, no bundle now;
 //   `walk_<facing>` (2 frames, 6 fps) singing as it walks, its mouth open and its tuft bouncing;
@@ -29,8 +28,12 @@ import type { AnimDef } from '../types.ts';
 type Facing = 'se' | 'ne';
 type Stamp = readonly [number, number, readonly string[]];
 
-/** A note: its stem and its head, in the gold emissives (it glows). */
-const NOTE = ['.*', '.+', '++'] as const;
+/**
+ * A note: its stem and its head in gold (custom legend, not the emissives: a glow round so small a
+ * shape reads as a plate behind it, not light).
+ */
+const NOTE = ['.Z', '.Y', 'YY'] as const;
+const NOTE_LEGEND = { Y: 'gold.3', Z: 'gold.4' } as const;
 
 /** The four facings of `look` over 2 frames at `fps` (SE and NE authored, SW and NW mirrored). */
 function anims2(look: string, fps: number): Record<string, AnimDef> {
@@ -146,7 +149,7 @@ export const allySinger = defineSprite({
   palette: 'skitterkin.ally',
   outline: 'auto',
   glow: { slots: ['e0', 'e1'], radius: 1 },
-  legend: { ...HUSH_LEGEND, P: 'pink.2' },
+  legend: { ...HUSH_LEGEND, ...NOTE_LEGEND, P: 'pink.2' },
   frames: {
     ...frames2('walk', (f, s) => singer(f, s, 'walk')),
     ...frames2('sing', (f, s) => singer(f, s, 'sing')),
@@ -230,6 +233,7 @@ export const allyPebbleLead = defineSprite({
   outline: 'auto',
   glow: { slots: ['e0', 'e1'], radius: 1 },
   legend: {
+    ...NOTE_LEGEND,
     P: 'pink.3',
     C: 'white.1',
     Q: 'teal.3',
@@ -346,6 +350,7 @@ export const allyThrum = defineSprite({
     M: 'green.3',
     N: 'green.4',
     P: 'pink.3',
+    ...NOTE_LEGEND,
   },
   frames: {
     ...frames2('walk', (f, s) => thrum(f, s, 'walk')),

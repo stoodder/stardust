@@ -27,7 +27,11 @@ export interface CountdownModel {
  * (`killsAtStart`, the sim's count then) not yet filed (`killsBefore`: a checkpoint retry's
  * replayed kills were filed by the attempt that reached it; app/checkpoints.ts `attemptKills`).
  */
-export function countdownStart(lifetime: number, killsAtStart: number, killsBefore: number): number {
+export function countdownStart(
+  lifetime: number,
+  killsAtStart: number,
+  killsBefore: number,
+): number {
   return Math.max(0, lifetime) + Math.max(0, killsAtStart - killsBefore);
 }
 

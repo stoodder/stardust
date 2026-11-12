@@ -185,7 +185,7 @@ describe('the choir (allies/choir.ts)', () => {
       expect(sprite(id).palette, id).toBe('skitterkin.ally');
   });
 
-  it('carries a glowing note in every singing frame (it reads from behind), none when hushed or halted', () => {
+  it('carries a gold note in every singing frame (it reads from behind), none when hushed or halted', () => {
     const singing: [string, string][] = [
       ['ally.singer', 'walk'],
       ['ally.singer', 'sing'],
@@ -198,15 +198,15 @@ describe('the choir (allies/choir.ts)', () => {
       for (const f of ['se', 'ne'])
         for (const s of [0, 1]) {
           const rows = grid(id, `${look}_${f}_${s}`);
-          // The note (an e1 stem over e0s), in the top five rows.
-          expect(count(rows.slice(0, 5), '*+'), `${id} ${look}_${f}_${s}`).toBeGreaterThanOrEqual(
+          // The note (custom gold), in the top five rows.
+          expect(count(rows.slice(0, 5), 'YZ'), `${id} ${look}_${f}_${s}`).toBeGreaterThanOrEqual(
             3,
           );
         }
     for (const f of ['se', 'ne'])
       for (const s of [0, 1]) {
-        expect(count(grid('ally.singer', `hushed_${f}_${s}`), '*+')).toBe(0);
-        expect(count(grid('ally.pebble_lead', `halt_${f}_${s}`).slice(0, 4), '*+')).toBe(0);
+        expect(count(grid('ally.singer', `hushed_${f}_${s}`), 'YZ*+')).toBe(0);
+        expect(count(grid('ally.pebble_lead', `halt_${f}_${s}`), 'YZ')).toBe(0);
       }
   });
 

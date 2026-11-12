@@ -17,7 +17,8 @@
 // T808's numbers where the docs give none (D154's addenda): the parts' share, the phasing cycle,
 // the dig's 4 s (2.5 s travel, then the 1.5 s surfacing tell), and the 0.1 tiles/s pace; FIN's
 // balance (T821) tunes them. `leak` 3 never applies (a leaking boss drains everything). Sprites:
-// placeholders under their final ids (T841).
+// T841's; the body is the first form's, and render picks each form's by its phase
+// (sprites/enemies/unsung.ts `UNSUNG_FORM_SPRITE`; growth `_g1`–`_g5` by absorbs; `_rest`).
 import { defineEnemy } from '../define.ts';
 
 export const unsung = defineEnemy({

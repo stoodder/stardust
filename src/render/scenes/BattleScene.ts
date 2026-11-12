@@ -138,6 +138,7 @@ import { FieldTintView } from '../views/FieldTintView.ts';
 import { LightingView } from '../views/LightingView.ts';
 import { TimerBarView } from '../views/TimerBarView.ts'; // T806
 import { SongView } from '../views/SongView.ts'; // T805
+import { UnsungView } from '../views/UnsungView.ts'; // T808
 import { DarknessView } from '../views/DarknessView.ts';
 import { WorldGlowView } from '../views/WorldGlowView.ts';
 import { SweepView } from '../views/SweepView.ts';
@@ -282,6 +283,7 @@ export class BattleScene extends Phaser.Scene {
   #timerBars!: TimerBarView;
   /** The Leaving Song's rest flip and gold motes, the scatter's violet motes (T805). */
   #song!: SongView;
+  #unsung!: UnsungView; // T808: the Unsung's dig marks, its call, the rest strip
   #huddles!: HuddleView;
   /** Aelari shields: the ripple, the pulse tell and ring (T403). */
   #shields!: ShieldView;
@@ -494,6 +496,7 @@ export class BattleScene extends Phaser.Scene {
     this.#bossBar = new BossBarView(ctx, prefersReducedMotion);
     this.#timerBars = new TimerBarView(ctx, map.timers); // T806
     this.#song = new SongView(ctx, prefersReducedMotion); // T805
+    this.#unsung = new UnsungView(ctx, prefersReducedMotion); // T808
     this.#huddles = new HuddleView(ctx, prefersReducedMotion, pulseOn);
     this.#shields = new ShieldView(ctx, this.#fx, prefersReducedMotion);
     // T530a: views that mark a unit find its body as EnemyView draws it (unitAnchor.ts).
@@ -670,6 +673,7 @@ export class BattleScene extends Phaser.Scene {
       this.#phases.bind(bus),
       this.#jams.bind(bus, () => sim.state.towers), // T702
       this.#song.bind(bus, () => sim.state.enemies), // T805
+      this.#unsung.bind(bus), // T808
       this.#leapers.bind(bus, () => sim.state.enemies), // T704
       this.#rings.bind(bus), // T707
       this.#takeover.bind(bus, () => sim.state.enemies), // T707; T730a: the jettison's burst
@@ -720,6 +724,7 @@ export class BattleScene extends Phaser.Scene {
       this.#bossBar.reset();
       this.#timerBars.reset(); // T806
       this.#song.reset(); // T805
+      this.#unsung.reset(); // T808
       this.#huddles.reset();
       this.#shields.reset();
       this.#auras.reset();
@@ -790,6 +795,7 @@ export class BattleScene extends Phaser.Scene {
     this.#bossBar.update(dt, state.enemies);
     this.#timerBars.update(state.timers); // T806
     this.#song.update(dt); // T805
+    this.#unsung.update(state); // T808
     this.#huddles.update(state.enemies);
     this.#shields.update(dt, state.enemies);
     this.#auras.update(state.enemies, state.tick);
@@ -1024,6 +1030,12 @@ export class BattleScene extends Phaser.Scene {
         scattersSeen: this.#song.scattersSeen,
         reformsSeen: this.#song.reformsSeen,
       }, // T805
+      unsung: {
+        ...this.#unsung.shown,
+        surfacesSeen: this.#unsung.surfacesSeen,
+        dugOutSeen: this.#unsung.dugOutSeen,
+        risesSeen: this.#unsung.risesSeen,
+      }, // T808
       bossShield: this.#bossBar.shieldPx,
       bossEnd: this.#bossBar.endPx,
       bossCells: this.#bossBar.segments, // T731

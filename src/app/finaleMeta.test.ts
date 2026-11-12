@@ -75,7 +75,7 @@ afterEach(() => {
 });
 
 describe('checkpoint labels (core-loop.md § 2.12; finale.md: "Retry from the Halls")', () => {
-  it('checkpointOf keeps the sim\'s label; a wave checkpoint has none', () => {
+  it("checkpointOf keeps the sim's label; a wave checkpoint has none", () => {
     const log = [{ tick: 3 }, { tick: 9 }, { tick: 12 }];
     expect(checkpointOf({ wave: 18, tick: 10, label: 'halls' }, log)).toEqual({
       label: 'halls',
@@ -83,7 +83,11 @@ describe('checkpoint labels (core-loop.md § 2.12; finale.md: "Retry from the Ha
       tick: 10,
       commandCount: 2,
     });
-    expect(checkpointOf({ wave: 5, tick: 10 }, log)).toEqual({ wave: 5, tick: 10, commandCount: 2 });
+    expect(checkpointOf({ wave: 5, tick: 10 }, log)).toEqual({
+      wave: 5,
+      tick: 10,
+      commandCount: 2,
+    });
     expect(Object.hasOwn(checkpointOf({ wave: 5, tick: 10 }, log), 'label')).toBe(false);
   });
 
@@ -112,9 +116,9 @@ describe('checkpoint labels (core-loop.md § 2.12; finale.md: "Retry from the Ha
     });
     // A win offers no retry; a resumed run names where it picked up only when labelled.
     expect(checkpointPlaces({ checkpointWave: 10 }, 'won')).toEqual({});
-    expect(
-      checkpointPlaces({ resumedFromWave: 18, resumedFromLabel: 'halls' }, 'won'),
-    ).toEqual({ resumedPlace: 'the Halls' });
+    expect(checkpointPlaces({ resumedFromWave: 18, resumedFromLabel: 'halls' }, 'won')).toEqual({
+      resumedPlace: 'the Halls',
+    });
     expect(checkpointPlaces({ resumedFromWave: 5, resumedFromLabel: null }, 'won')).toEqual({});
   });
 });
@@ -131,42 +135,38 @@ describe('the Halls retry through the router (dev_bore)', () => {
     if (!until()) throw new Error(`not done by tick ${host().sim.state.tick}`);
   };
 
-  it(
-    'cues "The Halls", offers "Retry from the Halls" after a loss, and resumes in Phase 2',
-    async () => {
-      router = createRouter(game, { mapId: 'dev_bore', seed: 1 });
-      await router.goto('battle');
-      startAutoplay(host(), 'par');
-      step(() => host().sim.state.phase >= 2);
-      const halls = host().checkpoints.at(-1)!;
-      expect(halls.label).toBe('halls');
-      // The HUD's cue isn't bound here (no HUD); its text is the capitalized place.
-      const hash = host().sim.hash();
-      host().fastForward(60 * 3);
-      await router.endRun('lost');
-      const card = runResult.value!;
-      expect(card.retryFromWave).toBe(halls.wave);
-      expect(card.retryLabel).toBe('Retry from the Halls');
+  it('cues "The Halls", offers "Retry from the Halls" after a loss, and resumes in Phase 2', async () => {
+    router = createRouter(game, { mapId: 'dev_bore', seed: 1 });
+    await router.goto('battle');
+    startAutoplay(host(), 'par');
+    step(() => host().sim.state.phase >= 2);
+    const halls = host().checkpoints.at(-1)!;
+    expect(halls.label).toBe('halls');
+    // The HUD's cue isn't bound here (no HUD); its text is the capitalized place.
+    const hash = host().sim.hash();
+    host().fastForward(60 * 3);
+    await router.endRun('lost');
+    const card = runResult.value!;
+    expect(card.retryFromWave).toBe(halls.wave);
+    expect(card.retryLabel).toBe('Retry from the Halls');
 
-      await router.retryFromCheckpoint();
-      expect(screen.value).toBe('battle');
-      const h = host();
-      expect(h.resumedFrom).toEqual(halls);
-      expect(h.sim.state.phase).toBe(2);
-      expect(h.sim.hash()).toBe(hash);
-      expect(speed.value).toBe(0);
-      expect(hud.notice.value?.text).toBe(resumedNotice(halls.wave, 'the Halls'));
+    await router.retryFromCheckpoint();
+    expect(screen.value).toBe('battle');
+    const h = host();
+    expect(h.resumedFrom).toEqual(halls);
+    expect(h.sim.state.phase).toBe(2);
+    expect(h.sim.hash()).toBe(hash);
+    expect(speed.value).toBe(0);
+    expect(hud.notice.value?.text).toBe(resumedNotice(halls.wave, 'the Halls'));
 
-      // Won from there: the card says it resumed from the Halls.
-      startAutoplay(h, 'par');
-      step(() => h.sim.state.outcome !== 'playing');
-      await router.flushResults();
-      expect(runResult.value?.outcome).toBe('won');
-      expect(runResult.value?.resumedPlace).toBe('the Halls');
-      expect(runResult.value?.retryLabel).toBeUndefined();
-    },
-    60_000,
-  );
+    // Won from there: the card says it resumed from the Halls.
+    startAutoplay(h, 'par');
+    step(() => h.sim.state.outcome !== 'playing');
+    await router.flushResults();
+    expect(runResult.value?.outcome).toBe('won');
+    expect(runResult.value?.resumedPlace).toBe('the Halls');
+    expect(runResult.value?.retryLabel).toBeUndefined();
+  }, 60_000);
 });
 
 describe('the Phase 2 countdown (maps.md § 5.5: N × (1 − p))', () => {
@@ -187,7 +187,7 @@ describe('the Phase 2 countdown (maps.md § 5.5: N × (1 − p))', () => {
     expect(countdownModel(1000, 5, 0).shown).toBe(0); // no target reads as done
   });
 
-  it('the tracker records Phase 2\'s kills, and models only Phase 2 (dev_bore)', () => {
+  it("the tracker records Phase 2's kills, and models only Phase 2 (dev_bore)", () => {
     const h = createHost(createSim(battleConfig('dev_bore', 1)), { now: () => 0, speed: 0 });
     const t = trackCountdown(h);
     startAutoplay(h, 'par');
@@ -203,16 +203,23 @@ describe('the Phase 2 countdown (maps.md § 5.5: N × (1 − p))', () => {
   });
 });
 
+/** A new save with C4 answered `flag`. */
+function keep(flag: 'keep' | 'purge' | 'rewrite'): SaveData {
+  const s = createNewSave();
+  s.story.flags = { quill_choice: flag };
+  return s;
+}
+
 describe('the companion pick (core-loop.md § 3.1; finale.md § FIN)', () => {
   const PICK = { pick: ['vesthara', 'bramble', 'zibzab', 'quill'] } as const;
-  const keep = (flag: 'keep' | 'purge' | 'rewrite'): SaveData => {
-    const s = createNewSave();
-    s.story.flags = { quill_choice: flag };
-    return s;
-  };
 
   it('offers the list in order; QUILL is gone under Purge', () => {
-    expect(companionChoices(keep('keep'), PICK)).toEqual(['vesthara', 'bramble', 'zibzab', 'quill']);
+    expect(companionChoices(keep('keep'), PICK)).toEqual([
+      'vesthara',
+      'bramble',
+      'zibzab',
+      'quill',
+    ]);
     expect(companionChoices(keep('rewrite'), PICK)).toEqual(PICK.pick);
     expect(companionChoices(keep('purge'), PICK)).toEqual(['vesthara', 'bramble', 'zibzab']);
     expect(companionChoices(null, PICK)).toEqual(PICK.pick);
@@ -316,7 +323,9 @@ describe('speaker rules (T809)', () => {
     };
     expect(variantIn('vesthara', ended)).toBe('dawn');
     // A replay of the finale starts before Dawn, the scene seen or not.
-    expect(variantIn('vesthara', { ...live(1), seen: ['fin_m01_scene_dawn'] })).toBe('touched_deep');
+    expect(variantIn('vesthara', { ...live(1), seen: ['fin_m01_scene_dawn'] })).toBe(
+      'touched_deep',
+    );
     // The post-game: no run, off the finale.
     const after: StoryContext = { ...base, map: 'a3_m06', seen: ['fin_m01_scene_dawn'] };
     expect(variantIn('vesthara', after)).toBe('dawn');
@@ -328,9 +337,12 @@ describe('speaker rules (T809)', () => {
     expect(variantIn('quill', live(2))).toBeNull();
     expect(variantIn('quill', live(2, [WHOS_THERE_INPUT]))).toBe('damaged');
     expect(variantIn('quill', live(3, [WHOS_THERE_INPUT]))).toBe('damaged');
-    const rewrite = { ...live(2, [WHOS_THERE_INPUT]), flags: { quill_choice: 'rewrite' } };
-    expect(variantIn('quill', rewrite as StoryContext)).toBeNull();
-    const purge = { ...live(2), flags: { quill_choice: 'purge' } } as StoryContext;
+    const rewrite: StoryContext = {
+      ...live(2, [WHOS_THERE_INPUT]),
+      flags: { quill_choice: 'rewrite' },
+    };
+    expect(variantIn('quill', rewrite)).toBeNull();
+    const purge: StoryContext = { ...live(2), flags: { quill_choice: 'purge' } };
     expect(variantIn('quill', purge)).toBe('purge');
     // The epilogue reads the ended run's script.
     const ended: StoryContext = {
@@ -354,7 +366,12 @@ describe("who's on the finale's radio (presentSpeakers)", () => {
     choir: { leader: 'pebble' },
   } as const;
   it("QUILL, the pick, Ves'thara whoever walks, and the choir's Pebble", () => {
-    expect(presentSpeakers(FIN, false, 'zibzab')).toEqual(['quill', 'zibzab', 'vesthara', 'pebble']);
+    expect(presentSpeakers(FIN, false, 'zibzab')).toEqual([
+      'quill',
+      'zibzab',
+      'vesthara',
+      'pebble',
+    ]);
     expect(presentSpeakers(FIN, false, 'vesthara')).toEqual(['quill', 'vesthara', 'pebble']);
     expect(presentSpeakers(FIN, false, 'bramble')).toEqual([
       'quill',
@@ -374,7 +391,7 @@ describe("who's on the finale's radio (presentSpeakers)", () => {
 });
 
 describe('"Who\'s there?" reuses the forced input (core-loop.md § 2.11)', () => {
-  it('labels the button, waits on Directive 0\'s cue, and hums nothing', () => {
+  it("labels the button, waits on Directive 0's cue, and hums nothing", () => {
     expect(forcedInputDef(WHOS_THERE_INPUT)).toEqual({
       label: "Who's there?",
       permission: 'directive0',
@@ -390,7 +407,7 @@ describe('"Who\'s there?" reuses the forced input (core-loop.md § 2.11)', () =>
 });
 
 describe("the finale's Results and rewards (finale.md § FIN)", () => {
-  it('lists Voices in Core integrity\'s place on a choir map', () => {
+  it("lists Voices in Core integrity's place on a choir map", () => {
     const r = {
       wavesSurvived: 26,
       waveCount: 26,

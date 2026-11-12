@@ -314,6 +314,7 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
             host.killsBefore,
             host.resumedFrom,
           );
+          if (run === null) return;
           const w = updateActiveSave((s) => withPendingRun(s, run));
           if (!w.ok) logError(`resume: ${w.message}`);
         });
@@ -613,18 +614,18 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
     },
     resumePending() {
       const save = activeSave();
-      const pending = save === null ? null : pendingResume(save);
-      if (save === null || pending === null) {
+      const waiting = save === null ? null : pendingResume(save);
+      if (save === null || waiting === null) {
         return Promise.reject(new Error('router: no pending run to resume'));
       }
-      if (pending === 'changed') {
+      if (waiting === 'changed') {
         // The save builds another run now: drop it, and say so on the Shift board.
         updateActiveSave((s) => withPendingRun(s, null));
         return showMenu('campaign').then(() => {
           menuNotice.value = RESUME_REFUSED;
         });
       }
-      const { cfg, resume } = pending;
+      const { cfg, resume } = waiting;
       return launch({ mapId: cfg.mapId, seed: cfg.seed }, cfg, false, resume);
     },
     flushResults() {

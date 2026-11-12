@@ -33,5 +33,7 @@ export const FORCED_INPUTS: Readonly<Record<string, ForcedInputDef>> = {
 
 /** The forced input `id`'s def (an unlisted id: its id in capitals, no hum). */
 export function forcedInputDef(id: string): ForcedInputDef {
-  return Object.hasOwn(FORCED_INPUTS, id) ? FORCED_INPUTS[id]! : { label: id.toUpperCase(), hum: null }; // hasOwn
+  return Object.hasOwn(FORCED_INPUTS, id)
+    ? FORCED_INPUTS[id]!
+    : { label: id.toUpperCase(), hum: null }; // hasOwn
 }

@@ -81,11 +81,12 @@ describe('REFERENCE_PROFILES, Act II part two (M5)', () => {
     const ahead = purchasable({ ...LIVE_PURCHASE_RULES, aheadOfTask: ['burrow'] });
     // Every Act III row owns the Den: each map's own and each of its flag cells (A3M4's warren,
     // A3M5's three: T721).
-    const act3 = Object.values(RAW_CONTENT.maps).filter((m) => /^a3_m0\d$/.test(m.id));
+    // The finale's row owns it too (registered by T820).
+    const act3 = Object.values(RAW_CONTENT.maps).filter((m) => /^(a3_m0\d|fin_m01)$/.test(m.id));
     const cells = (m: (typeof act3)[number]): number => m.referenceProfileByFlag?.length ?? 0;
     expect(ahead.length).toBe(act3.reduce((n, m) => n + 1 + cells(m), 0));
     for (const e of ahead)
-      expect(e).toMatch(/a3_m0\d\.referenceProfile.*'burrow' waits for its task/);
+      expect(e).toMatch(/(a3_m0\d|fin_m01)\.referenceProfile.*'burrow' waits for its task/);
     expect(ahead.filter((e) => e.includes('referenceProfileByFlag[0]'))).toHaveLength(
       act3.filter((m) => cells(m) > 0).length,
     );
@@ -157,7 +158,10 @@ describe('REFERENCE_PROFILES, Act III part one (M6, T600b)', () => {
     expect(
       errors
         .map(
-          (e) => /maps\.(a3_m0\d)\.referenceProfile(?:ByFlag\[\d\]\.profile)?: spends/.exec(e)?.[1],
+          (e) =>
+            /maps\.(a3_m0\d|fin_m01)\.referenceProfile(?:ByFlag\[\d\]\.profile)?: spends/.exec(
+              e,
+            )?.[1],
         )
         .filter((m) => m === undefined || m <= 'a3_m05'),
     ).toEqual([
@@ -172,6 +176,8 @@ describe('REFERENCE_PROFILES, Act III part one (M6, T600b)', () => {
       'a3_m05',
       'a3_m05',
     ]);
+    // The finale's row (registered by T820) owns the Bulkhead too, left off.
+    expect(errors.some((e) => /maps\.fin_m01\.referenceProfile: spends/.test(e))).toBe(true);
     // A protocol is listed once, equipped or not.
     const raw = withRows();
     const a3m1 = raw.maps.a3_m01!;

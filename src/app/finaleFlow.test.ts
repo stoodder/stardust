@@ -3,7 +3,9 @@
 // later win, C5 answered, goes straight to the post-game; other maps and losses play none; and the
 // pieces not landed yet are placeholders naming their task.
 import { describe, expect, it } from 'vitest';
+import { sceneById } from '../content/dialogue/index.ts';
 import { resultsFlow } from '../content/dialogue/resultsFlow.ts';
+import { MEMOS } from '../content/memos/index.ts';
 import { createNewSave } from '../meta/saveData.ts';
 import { endingPlaceholder, endingSteps } from './finaleFlow.ts';
 
@@ -38,11 +40,23 @@ describe('the finale close (RESULTS_FLOW.fin_m01)', () => {
   it('names what each step waits for until it lands', () => {
     const steps = endingSteps('fin_m01', true, unanswered);
     expect(steps.map((s) => endingPlaceholder(s))).toEqual([
-      "memo memo_fin_01 isn't registered yet",
-      "scene fin_m01_scene_c5 isn't registered yet",
+      null,
+      null,
       'screen epilogue waits for T810',
       'screen post_game waits for T863',
     ]);
+    // The memo and C5's scene are T811's, registered: Sterling's farewell, and C5's choice.
+    expect(MEMOS.memo_fin_01?.subject).toBe('Clean Exit Complete!');
+    const c5 = sceneById('fin_m01_scene_c5');
+    const choice = c5?.nodes.find((n) => n.kind === 'choice');
+    expect(choice?.kind === 'choice' ? choice.options.map((o) => o.set) : []).toEqual([
+      { ending_choice: 'stay' },
+      { ending_choice: 'go' },
+    ]);
+    expect(endingPlaceholder({ memo: 'memo_fin_99' })).toBe("memo memo_fin_99 isn't registered yet");
+    expect(endingPlaceholder({ scene: 'fin_m01_scene_nope' })).toBe(
+      "scene fin_m01_scene_nope isn't registered yet",
+    );
     expect(endingPlaceholder({ screen: 'epilogue' }, ['epilogue'])).toBeNull();
     expect(endingPlaceholder({ scene: 'a3_m01_scene_song' })).toBeNull();
     expect(endingPlaceholder({ memo: 'memo_a1_00' })).toBeNull();

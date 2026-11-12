@@ -51,6 +51,13 @@ export {
   MERGE_TELL_TICKS,
 } from './enemyAbilities/bossMerge.ts'; // T708
 export { SPLIT_SPREAD_TILES, splitHp } from './enemyAbilities/bossSplit.ts'; // T708; D151 (render's gmawLook)
+export {
+  addsCalling,
+  bossRestProgress,
+  digTarget,
+  laidToRestBySong,
+  surfaceTelling,
+} from './enemyAbilities/unsung.ts'; // T808: the Unsung's dig, call, and rest progress (render)
 export { riftStatus, type RiftStatus } from './rifts.ts';
 export {
   escortMaxLost,

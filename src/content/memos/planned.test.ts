@@ -5,8 +5,9 @@ import { CAMPAIGN_PLAN_IDS } from '../campaign.ts';
 import { MEMOS, MEMO_ID, PLANNED_MEMOS } from './index.ts';
 
 describe('PLANNED_MEMOS (the finale)', () => {
-  it("reserves finale.md's memo_fin_01, after the finale", () => {
-    expect(PLANNED_MEMOS.map((m) => [m.id, m.afterMap])).toEqual([['memo_fin_01', 'fin_m01']]);
+  it("holds no rows once finale.md's memo_fin_01 has landed (T811: memos/finale.ts)", () => {
+    expect(PLANNED_MEMOS).toEqual([]);
+    expect(MEMOS.memo_fin_01?.afterMap).toBe('fin_m01');
   });
 
   it.each(PLANNED_MEMOS)('$id is a well-formed id on a planned map', (m) => {
