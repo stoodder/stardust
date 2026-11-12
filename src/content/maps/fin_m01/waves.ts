@@ -287,7 +287,7 @@ export const PHASE_2_WAVES: readonly WaveDef[] = [
   // W24 · Fractures, and Rift Moths over the song (they scatter past it)
   {
     ...P2,
-    groups: [fractures(2, 'halls', 0, 3), moths(3, 'sky_n', 2), motes(6, 'halls', 4, 0.6)],
+    groups: [fractures(2, 'halls', 0, 3), moths(3, 'sky_n', 2), motes(10, 'halls', 4, 0.25)],
   },
   // W25 · a Maw and a Silencer
   {

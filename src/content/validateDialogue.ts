@@ -40,7 +40,7 @@
 // - [dialogue-bark]: trigger waves and phases are positive integers; a `flag` trigger has a
 //   `when`; a `tower_revoked` bark is a map's, never shared; `cooldownSec` > 0 and not with `once`.
 // - [dialogue-tag]: name tags are on planned maps in campaign order.
-import { CAMPAIGN_PLAN_IDS, type CampaignMapId } from './campaign.ts';
+import { CAMPAIGN_PLAN_IDS } from './campaign.ts';
 import { FLAG_RULES, type FlagSet } from './dialogue/flags.ts';
 import { MAP_DIALOGUE, SCENES, BARKS } from './dialogue/index.ts';
 import { SHARED_BARKS } from './dialogue/barks/index.ts';
