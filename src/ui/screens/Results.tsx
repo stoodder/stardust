@@ -445,6 +445,15 @@ function StoryAsides({ rewards }: { rewards: RunRewards }) {
 }
 
 /**
+ * Whether the card lists a Stardust line: always, but where the warrens give and the map gives
+ * nothing (a post-game challenge pays medal Intel only), "+0 Stardust" would be clutter (T803e).
+ * Act I's unpaid training shift keeps its +0: its note is the joke.
+ */
+export function paysStardust(rewards: Pick<RunRewards, 'stones' | 'stardust'>): boolean {
+  return !(rewards.stones && rewards.stardust.base === 0);
+}
+
+/**
  * The payroll: the run's Stardust with where it came from, then (on a win) the map's medals, each
  * paying its Intel the first time it is earned.
  */
@@ -466,6 +475,10 @@ function Payroll({
   marks: MedalMarks;
 }) {
   const { label, note } = (rewards.stones ? stonesLine : stardustLine)(rewards.stardust);
+  const stardust = paysStardust(rewards);
+  // A loss on a map that pays no Stardust (a challenge) has nothing to list.
+  if (!stardust && !won && rewards.transactions.length === 0 && rewards.saveNotice === null)
+    return null;
   return (
     <section class="sd-results-payroll" aria-labelledby="sd-results-payroll-heading">
       {/* Act III: Everglow pays nothing any more; the warrens give (progression.md § 1). */}
@@ -473,15 +486,17 @@ function Payroll({
         {rewards.stones ? 'Given' : 'Payroll'}
       </h2>
       <ul>
-        <li data-testid="results-stardust">
-          <span class="sd-results-pay-label">
-            <StardustIcon theme={theme} />
-            {label}
-            {note !== undefined && <span class="sd-results-pay-note"> · {note}</span>}
-            {rewards.firstPayday && <span class="sd-results-payday">FIRST PAYDAY!</span>}
-          </span>
-          <Amount n={rewards.stardust.amount} currency="stardust" />
-        </li>
+        {stardust && (
+          <li data-testid="results-stardust">
+            <span class="sd-results-pay-label">
+              <StardustIcon theme={theme} />
+              {label}
+              {note !== undefined && <span class="sd-results-pay-note"> · {note}</span>}
+              {rewards.firstPayday && <span class="sd-results-payday">FIRST PAYDAY!</span>}
+            </span>
+            <Amount n={rewards.stardust.amount} currency="stardust" />
+          </li>
+        )}
         {rewards.transactions.map((t, i) => (
           <TransactionRow key={i} t={t} />
         ))}
@@ -601,7 +616,8 @@ function Body({ result }: { result: RunResult }) {
   );
   // The finale's win: REMEMBERED: {n} is the headline (T810), so its counter line goes; and a meter
   // line that only repeats its stat row goes (D143 R13: "Evacuated" once).
-  const remembered = full !== null && counterIsHeadline(result.counter, result.outcome);
+  const remembered =
+    full !== null && counterIsHeadline(result.counter, result.outcome, result.mapId);
   const headline = remembered ? full.line : header.headline;
   const counter = remembered || (full !== null && counterRepeatsStat(full, stats)) ? null : full;
   const asking = result.choice !== null && result.choice.picked === null;
@@ -666,7 +682,7 @@ function Body({ result }: { result: RunResult }) {
       )}
       {!asking && result.choice !== null && <Remembered choice={result.choice} />}
       {!asking &&
-        (counterIsHeadline(result.counter, result.outcome) ? (
+        (counterIsHeadline(result.counter, result.outcome, result.mapId) ? (
           // The campaign's last beat (T803e): the finale's win goes on, and only on.
           <div class="sd-results-buttons">
             <OnwardButton won />

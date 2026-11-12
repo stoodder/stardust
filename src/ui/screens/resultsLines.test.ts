@@ -1,7 +1,14 @@
 // The Results card's Stardust line and way on (T803e): no wave count the stat row already says,
 // the veteran bonus noted (T860), the act's Stardust icon, and Retry's one question (T329).
 import { describe, expect, it } from 'vitest';
-import { retryText, stardustLine, stardustPhase, stonesLine, veteranNote } from './Results.tsx';
+import {
+  paysStardust,
+  retryText,
+  stardustLine,
+  stardustPhase,
+  stonesLine,
+  veteranNote,
+} from './Results.tsx';
 import type { RunRewards } from './state.ts';
 
 type Pay = RunRewards['stardust'];
@@ -48,6 +55,15 @@ describe('the Stardust line', () => {
   it("wears the act's Stardust icon: the gem in Acts I–II, the gift stone from Act III", () => {
     const acts: readonly (1 | 2 | 3 | 'finale')[] = [1, 2, 3, 'finale'];
     expect(acts.map((t) => stardustPhase(t))).toEqual(['act1', 'act2', 'act3', 'finale']);
+  });
+});
+
+describe('a map that pays no Stardust', () => {
+  it('lists no "+0" gift stones (a challenge), but keeps Act I\'s unpaid training shift', () => {
+    const free = { ...PAY, base: 0, amount: 0 };
+    expect(paysStardust({ stones: true, stardust: free })).toBe(false);
+    expect(paysStardust({ stones: false, stardust: free })).toBe(true);
+    expect(paysStardust({ stones: true, stardust: PAY })).toBe(true);
   });
 });
 

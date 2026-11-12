@@ -61,13 +61,18 @@ export function resultsHeader(
   };
 }
 
+/** The campaign's last map: its win is the card's last beat (T810, T803e). */
+export const FINALE_MAP = 'fin_m01';
+
 /**
  * Whether the card's headline is its counter line instead of Everglow's cheer: the finale's win
  * (T810; finale.md § FIN, *Dawn*: "The results screen reads REMEMBERED: {n}"), where the system has
- * nothing left to say. The counter line then doesn't repeat under it.
+ * nothing left to say. The counter line then doesn't repeat under it. Only the finale's own map: a
+ * post-game challenge in the finale's dials keeps the cheer, its count the counter line (T803e).
+ * That card is also the campaign's last beat, so its way on is Continue alone.
  */
-export function counterIsHeadline(style: CounterStyle, outcome: RunOutcome): boolean {
-  return style === 'remembered' && outcome === 'won';
+export function counterIsHeadline(style: CounterStyle, outcome: RunOutcome, map: string): boolean {
+  return style === 'remembered' && outcome === 'won' && map === FINALE_MAP;
 }
 
 /** The marks on a medal or objective row: a first-time one, and one not earned this run. */

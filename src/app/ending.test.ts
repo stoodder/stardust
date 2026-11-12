@@ -298,7 +298,7 @@ describe("the finale's card (finale.md § FIN, Dawn: the results screen reads RE
     const save = DEV_SAVES.after_a3m6_strongest.build();
     const r = fixtureResult({ map: 'fin_m01', outcome: 'won' }, save);
     expect(r.counter).toBe('remembered');
-    expect(counterIsHeadline(r.counter, r.outcome)).toBe(true);
+    expect(counterIsHeadline(r.counter, r.outcome, r.mapId)).toBe(true);
     const counter = resultsCounter(r.counter, r.pestsProcessed, r.remembered!);
     expect(counter).not.toBeNull();
     if (counter === null) return;
@@ -313,9 +313,11 @@ describe("the finale's card (finale.md § FIN, Dawn: the results screen reads RE
     });
     expect(r.voices!.n).toBeLessThan(r.voices!.total);
     // A loss keeps the system's headline; every other map keeps its counter under the cheer.
-    expect(counterIsHeadline('remembered', 'lost')).toBe(false);
-    expect(counterIsHeadline('meter', 'won')).toBe(false);
-    expect(counterIsHeadline('starred', 'won')).toBe(false);
+    expect(counterIsHeadline('remembered', 'lost', 'fin_m01')).toBe(false);
+    expect(counterIsHeadline('meter', 'won', 'fin_m01')).toBe(false);
+    expect(counterIsHeadline('starred', 'won', 'fin_m01')).toBe(false);
+    // A post-game challenge in the finale's dials keeps its cheer (T803e).
+    expect(counterIsHeadline('remembered', 'won', 'ch_m01')).toBe(false);
   });
 });
 
