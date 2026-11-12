@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { runKey, type RunRequest } from '../src/balance/checks.ts';
 import { FLAG_VARIANT_CONTENT } from '../src/balance/__fixtures__/fireControl.ts';
 import { judgeMap, mapRunner, planMap, runMap } from '../src/balance/harness.ts';
-import { jobsSlowestFirst, runPool, type PoolWorker } from './simPool.ts';
+import { inOrder, mapAffinity, runPool, type PoolWorker, type SimJob } from './simPool.ts';
 
 /** Job 0 takes 40 ms, the rest 2 ms. */
 const zeroIsLong = (job: number): number => (job === 0 ? 40 : 2);
@@ -36,17 +36,46 @@ function fakeWorker(name: string, cost: (job: number) => number, log: string[]) 
 }
 
 describe('the sim work queue (T778)', () => {
-  it('queues the later maps first, each map’s runs in its plan’s order', () => {
-    const jobs = jobsSlowestFirst([
+  it('starts the later maps first, keeps each worker on its map, then joins the fullest', () => {
+    const maps = [
       { mapId: 'a1_m01', requests: [req('par'), req('none')] },
-      { mapId: 'a1_m02', requests: [req('par', 1), req('par', 2)] },
-    ]);
-    expect(jobs.map((j) => `${j.mapId} ${runKey(j.req)}`)).toEqual([
-      'a1_m02 par#1',
-      'a1_m02 par#2',
-      'a1_m01 par#1',
-      'a1_m01 none#1',
-    ]);
+      { mapId: 'a1_m02', requests: [req('par')] },
+      { mapId: 'a1_m03', requests: [1, 2, 3, 4, 5].map((n) => req('par', n)) },
+    ];
+    const src = mapAffinity(maps);
+    const name = (j: SimJob | undefined) => (j === undefined ? '-' : `${j.mapId} ${runKey(j.req)}`);
+    const took = (w: number) => name(src.take(w));
+    // Workers 0 and 1 start the two latest maps; worker 0 stays on a1_m03.
+    expect(took(0)).toBe('a1_m03 par#1');
+    expect(took(1)).toBe('a1_m02 par#1');
+    expect(took(0)).toBe('a1_m03 par#2');
+    // a1_m02 is done: worker 1 starts the next unstarted map, a1_m01.
+    expect(took(1)).toBe('a1_m01 par#1');
+    expect(took(1)).toBe('a1_m01 none#1');
+    // Every map is started and worker 1's is done: it joins the one with the most runs left.
+    expect(took(1)).toBe('a1_m03 par#3');
+    expect(took(0)).toBe('a1_m03 par#4');
+    expect(took(1)).toBe('a1_m03 par#5');
+    expect(took(0)).toBe('-');
+    expect(took(1)).toBe('-');
+  });
+
+  it('gives every planned run exactly once, whatever the workers’ timing', () => {
+    const maps = ['a', 'b', 'c', 'd'].map((mapId, i) => ({
+      mapId,
+      requests: Array.from({ length: 3 + 2 * i }, (_, n) => req('par', n + 1)),
+    }));
+    const src = mapAffinity(maps);
+    const seen: string[] = [];
+    // A fixed, uneven interleaving of three workers.
+    const order = [0, 1, 2, 0, 0, 2, 1, 1, 1, 0, 2, 2, 2, 0, 1];
+    for (let k = 0; seen.length < 24 && k < 200; k++) {
+      const job = src.take(order[k % order.length]!);
+      if (job !== undefined) seen.push(`${job.mapId} ${runKey(job.req)}`);
+    }
+    const all = maps.flatMap((m) => m.requests.map((r) => `${m.mapId} ${runKey(r)}`));
+    expect(seen.toSorted()).toEqual(all.toSorted());
+    expect([0, 1, 2].map((w) => src.take(w))).toEqual([undefined, undefined, undefined]);
   });
 
   it('runs every job once, the next one going to whichever worker is free', async () => {
@@ -54,7 +83,7 @@ describe('the sim work queue (T778)', () => {
     // Job 0 is long: worker a holds it while b runs the rest.
     const workers = [fakeWorker('a', zeroIsLong, log), fakeWorker('b', zeroIsLong, log)];
     const results = new Map<number, string>();
-    await runPool([0, 1, 2, 3, 4], workers, (job, r) => results.set(job, r));
+    await runPool(inOrder([0, 1, 2, 3, 4]), workers, (job, r) => results.set(job, r));
     expect([...results.keys()].toSorted((x, y) => x - y)).toEqual([0, 1, 2, 3, 4]);
     expect([...results.entries()].every(([job, r]) => r === `${job}`)).toBe(true);
     expect(log.filter((l) => l.startsWith('b:'))).toEqual(['b:1', 'b:2', 'b:3', 'b:4']);
@@ -64,7 +93,7 @@ describe('the sim work queue (T778)', () => {
   it('stops taking jobs after a failure, rejects, and closes every worker', async () => {
     const log: string[] = [];
     const workers = [fakeWorker('a', () => 2, log), fakeWorker('b', () => 2, log)];
-    await expect(runPool([1, -1, 2, 3, 4, 5, 6], workers, () => {})).rejects.toThrow(
+    await expect(runPool(inOrder([1, -1, 2, 3, 4, 5, 6]), workers, () => {})).rejects.toThrow(
       'job -1 failed',
     );
     expect(log.length).toBeLessThan(6);
@@ -73,7 +102,7 @@ describe('the sim work queue (T778)', () => {
 
   it('an empty queue closes its workers', async () => {
     const workers = [fakeWorker('a', () => 1, [])];
-    await runPool([], workers, () => {});
+    await runPool(inOrder<number>([]), workers, () => {});
     expect(workers[0]!.closed()).toBe(true);
   });
 

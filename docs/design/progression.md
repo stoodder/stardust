@@ -190,6 +190,14 @@ Example: Hardened Hides + Glass Core + Short-Handed = +120%, so a replay victory
 
 Post-game, **challenge maps** and **endless mode** reuse these modifiers ([maps.md §8](maps.md#8-post-game-maps)).
 
+**Rules:**
+- **Only what bites.** A modifier that would change nothing on a map for this save is shown dimmed with its reason and never applied, so no bonus is free: Glass Core on a map with no core (an Escort, a Holdout: "No core on this shift"), Short-Handed with 3 tower types or fewer to bring, Radio Silence with no ability in either slot, No Protocols with no protocol owned.
+- **Short-Handed** keeps the loadout's first three towers in build-slot order. **Glass Core** sets integrity 5, and Reinforced Core's ranks still add (as they do on Story). **Radio Silence** leaves slot 1 empty and darkens the companion's slot ("Radio Silence"); the companion still walks with you.
+- **The Veteran medal** is earned from wave 1: a checkpoint retry forfeits it, as it does Perfect Core and the Challenge, but still pays the bonus. It is a fourth medal in the map's record, outside the three pips.
+- **Picks persist.** The modifiers last picked on a map stay on for its next replay (and its retries) until turned off.
+
+**As built (T860):** [`src/meta/veteran.ts`](../../src/meta/veteran.ts) holds the table, the copy, the offer rules (`veteranOffers`), the record (`SaveData.veteran`: the last picks and the best bonus a win carried), and each modifier's sim grants (`veteranGrants`, sources `veteran:<id>`). Hardened Hides, Double Time, Lean Budget, Glass Core, and Rush Hour are sim modifiers; Radio Silence, Short-Handed, and No Protocols are run rules in the SimConfig ([`src/sim/rules.ts`](../../src/sim/rules.ts): `noAbilities`, `maxTowerTypes`, `noProtocols`). The replay's briefing shows one line under the medals: the total, the Veteran medal (at +100%, in reach, or on file), and **Choose**, which opens the eight toggles in the medals' place (a name, a short line, and the bonus each; the whole effect and a quip on focus or hover). A toggle writes the save; Clock in then restarts the battle, still on its first tick, under the picks. Run end pays the bonus and the medal from the mods the run's config carries; Results lists the Veteran medal when the run reaches +100%. The star map's node shows a small gold pip beside the medal pips once the Veteran medal is on file, and its accessible name ends "Veteran medal." The finale keeps its beats under Rush Hour and Double Time (the procession keeps wave time; `balance/veteranFinale.test.ts`). Veteran runs are opt-in, so they have no harness band.
+
 ---
 
 ## 7. R&D tree (Intel)
@@ -310,7 +318,7 @@ Persisted per save: the profile (name, pronouns, callsign, `arrival_reason`), St
 1. **Story difficulty awarding all medals** keeps it friendly, but it lets players farm Intel on easy mode. Is that acceptable for a single-player game? (Recommendation: yes.)
 2. Should **Intel unlock a few towers** too (beyond Aelari), to honor D001's "Intel gates major unlocks such as new towers" more strongly, or is Aelari attunement enough?
 3. **Defeat Stardust (25%)**: is "keep a small share" generous enough to make a loss feel like progress?
-4. Is the **Veteran medal threshold** (+100%) right, and should veteran records show on the star map?
+4. ~~Is the **Veteran medal threshold** (+100%) right, and should veteran records show on the star map?~~ Answered (D154): +100% stands, and the star map shows a veteran pip (§6).
 5. Do **Field Protocols** need limits per act (for example Linked Up is too strong early)?
 6. **C2 balance.** Both options spend the whole bank; Sell returns 3–8 Intel plus a permanent Vrell buff. Is Return's finale boon felt enough that players who are behind on upgrades still consider it? It must never be required to beat the finale.
 7. **Farming the bonus.** Replays don't re-grant the Q3 Bonus, but a player could hoard Stardust (or replay for it) before A2M4 to inflate the Sell windfall. The clamp at 8 Intel caps it; confirm that's enough.

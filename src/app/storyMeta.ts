@@ -153,6 +153,11 @@ export function revocationView(t: RevocationTransaction): ResultsRevocation {
   };
 }
 
+/** What a briefing can change in a battle's config, as text (`briefingChangedBattle`). */
+function battleShape(c: SimConfig<IdSpace>): string {
+  return JSON.stringify([c.modifiers, c.rules ?? [], c.loadout, c.abilities]);
+}
+
 /**
  * Whether the save now builds `cfg`'s battle differently (a briefing just committed C3's door, or
  * opened Zibzab's crate, or its veteran picker changed the replay's modifiers): other script flags
@@ -169,9 +174,7 @@ export function briefingChangedBattle(cfg: SimConfig<IdSpace>, save: SaveData | 
     return false;
   }
   // T860: a veteran pick on the briefing changes the rules, the loadout, and slot 1 too.
-  const shape = (c: SimConfig<IdSpace>): string =>
-    JSON.stringify([c.modifiers, c.rules ?? [], c.loadout, c.abilities]);
-  return shape(next) !== shape(cfg);
+  return battleShape(next) !== battleShape(cfg);
 }
 
 /** What Zibzab's crate holds for `save`: its tune-ups, else the protocols to pick from (D146). */

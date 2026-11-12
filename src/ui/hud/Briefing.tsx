@@ -23,7 +23,7 @@ import { CrateCard } from '../screens/crateCard.tsx';
 import { QUILL_LIST } from '../../content/dialogue/a3/a3_m06/quillList.ts'; // T714: QUILL's own list
 import { quillListUp } from '../screens/quillList.ts';
 import { QuillListCard } from '../screens/quillListCard.tsx';
-import { VeteranPicker } from './VeteranPicker.tsx'; // T860: a replay's veteran modifiers
+import { VeteranPicker, veteranOpen } from './VeteranPicker.tsx'; // T860: a replay's modifiers
 
 /**
  * The briefing's threat-intel strip (T202d; campaign.md § 4.8): the map's threats as tell glyphs
@@ -179,8 +179,11 @@ export function Briefing({ view }: { view: SceneView }) {
         ) : (
           <>
             {intel !== null && <IntelStrip intel={intel} />}
-            {medals.length > 0 && <BriefingMedals medals={medals} />}
-            {objectives.length > 0 && <BriefingObjectives objectives={objectives} />}
+            {/* T860: the veteran picker's grid, open, stands in the medals' place. */}
+            {medals.length > 0 && !veteranOpen.value && <BriefingMedals medals={medals} />}
+            {objectives.length > 0 && !veteranOpen.value && (
+              <BriefingObjectives objectives={objectives} />
+            )}
             <VeteranPicker />
           </>
         )}

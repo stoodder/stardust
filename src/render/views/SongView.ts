@@ -364,9 +364,10 @@ export class SongView {
         const facing = facingOfKey(snap.anim);
         const sprites = this.#ctx.sprites;
         const an = sprites.frameAnchor(UNSUNG_REST_SPRITE, `rest_${facing}_0`);
-        f.setFlipX(false).setDisplayOrigin(an.x, an.y).clearTint();
+        f.setFlipX(false).clearTint();
         f.play(sprites.anim(UNSUNG_REST_SPRITE, `rest_${facing}`, DEFAULT_VARIANT));
         f.chain(sprites.anim(UNSUNG_REST_SPRITE, `walk_${facing}`, DEFAULT_VARIANT));
+        f.setDisplayOrigin(an.x, an.y); // after the frame is its own (the origin is a share of it)
         if (this.#still()) f.anims.pause(); // a held frame, not a breath, under reduced motion
       } else {
         f.stop();

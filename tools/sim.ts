@@ -36,7 +36,7 @@ import { compileContent } from '../src/content/compile.ts';
 import { RAW_CONTENT } from '../src/content/registry.ts';
 import type { LiveIds } from '../src/content/types.ts';
 import { cpuClockMs } from './simClock.ts';
-import { jobsSlowestFirst, runPool, type PoolWorker, type SimJob } from './simPool.ts';
+import { mapAffinity, runPool, type PoolWorker, type SimJob } from './simPool.ts';
 import type { SimWorkerReply } from './simWorker.ts';
 
 const { values } = parseArgs({
@@ -116,9 +116,9 @@ async function runSplit(
     return { plan, records: new Map<string, RunRecord>(), ms: now() - t0 };
   });
   const byId = new Map<string, (typeof maps)[number]>(maps.map((m) => [m.plan.mapId, m]));
-  const queue = jobsSlowestFirst(maps.map((m) => m.plan));
-  const workers = Array.from({ length: Math.min(jobs, queue.length) }, threadWorker);
-  await runPool(queue, workers, (job, done) => {
+  const runs = maps.reduce((n, m) => n + m.plan.requests.length, 0);
+  const workers = Array.from({ length: Math.min(jobs, runs) }, threadWorker);
+  await runPool(mapAffinity(maps.map((m) => m.plan)), workers, (job, done) => {
     const m = byId.get(job.mapId)!; // every job is a planned map's
     m.records.set(runKey(job.req), done.record);
     m.ms += done.ms;

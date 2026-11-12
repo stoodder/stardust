@@ -181,6 +181,8 @@ import { ProjectileView } from '../views/ProjectileView.ts';
 import { RefugeeViews } from '../views/RefugeeView.ts';
 import { BearerViews } from '../views/BearerView.ts'; // T706
 import { ChoirWalkView } from '../views/ChoirWalkView.ts'; // T804
+import { EchoView } from '../views/EchoView.ts'; // T830
+import { unsungForms } from '../views/unsungLook.ts'; // T830
 import { flagGatedGround } from '../views/flagDressing.ts'; // T706
 import { enemyBody, facingOf } from '../views/spriteInfo.ts';
 import { TowerView } from '../views/TowerView.ts';
@@ -245,6 +247,7 @@ export class BattleScene extends Phaser.Scene {
   #refugees!: RefugeeViews;
   #bearers!: BearerViews; // T706: bearers with their burden, militia posts
   #choirWalk!: ChoirWalkView; // T804: the finale's choir, its song circles and halt window
+  #echoes!: EchoView; // T830: Thrum's echo, grey walking in, warming gold, rising
   #placement!: PlacementView;
   #fx!: FxView;
   #core!: CoreView;
@@ -455,6 +458,7 @@ export class BattleScene extends Phaser.Scene {
     this.#refugees = new RefugeeViews(ctx);
     this.#bearers = new BearerViews(ctx, prefersReducedMotion); // T706
     this.#choirWalk = new ChoirWalkView(ctx, prefersReducedMotion); // T804; T830: its looks
+    this.#echoes = new EchoView(ctx, prefersReducedMotion); // T830
     this.#placement = new PlacementView(ctx, this.#elevationOf);
     this.#links = new LinkView(ctx, prefersReducedMotion);
     this.#fx = new FxView(ctx, prefersReducedMotion);
@@ -642,6 +646,7 @@ export class BattleScene extends Phaser.Scene {
         plinks: this.#plinks,
         bossBar: this.#bossBar,
         cueProps: this.#cueProps,
+        holdDeath: (uid, x, y, lift, v) => this.#song.holdDeath(uid, x, y, lift, v), // T830
         strikeRadius: this.#strikeRadius,
         liftPx: (col, row) => this.#liftPx(col, row),
         onBuilt: () => {
@@ -672,8 +677,15 @@ export class BattleScene extends Phaser.Scene {
       this.#blinks.bind(bus, () => sim.state.enemies),
       this.#phases.bind(bus),
       this.#jams.bind(bus, () => sim.state.towers), // T702
-      this.#song.bind(bus, () => sim.state.enemies), // T805
-      this.#unsung.bind(bus), // T808
+      // T805; T830: its bodies to flip gold, the unravel for a death it doesn't claim.
+      this.#song.bind(
+        bus,
+        () => sim.state.enemies,
+        (uid) => this.#enemies.get(uid),
+        (x, y, lift) => this.#fx.unravel(x, y, lift),
+        map.song !== null,
+      ),
+      this.#unsung.bind(bus, () => sim.state.enemies), // T808; T830: the surfacing burst
       this.#leapers.bind(bus, () => sim.state.enemies), // T704
       this.#rings.bind(bus), // T707
       this.#takeover.bind(bus, () => sim.state.enemies), // T707; T730a: the jettison's burst
@@ -701,6 +713,7 @@ export class BattleScene extends Phaser.Scene {
       this.#refugees.releaseAll();
       this.#bearers.releaseAll(); // T706
       this.#choirWalk.releaseAll(); // T804
+      this.#echoes.releaseAll(); // T830
       this.#offs.length = 0;
       this.#fx.reset();
       this.#sacks.reset();
@@ -795,7 +808,7 @@ export class BattleScene extends Phaser.Scene {
     this.#bossBar.update(dt, state.enemies);
     this.#timerBars.update(state.timers); // T806
     this.#song.update(dt); // T805
-    this.#unsung.update(state); // T808
+    this.#unsung.update(state, dt); // T808; T830: dt for its bursts
     this.#huddles.update(state.enemies);
     this.#shields.update(dt, state.enemies);
     this.#auras.update(state.enemies, state.tick);
@@ -930,6 +943,7 @@ export class BattleScene extends Phaser.Scene {
       refugees: this.#refugees.counts,
       bearers: this.#bearers.counts, // T706
       choirWalk: this.#choirWalk.counts, // T804
+      echoes: { ...this.#echoes.shown, arrivedSeen: this.#echoes.arrivedSeen }, // T830
       shields: {
         ripples: sh.ripples,
         breaks: sh.breaks,
@@ -1029,12 +1043,14 @@ export class BattleScene extends Phaser.Scene {
         restsSeen: this.#song.restsSeen,
         scattersSeen: this.#song.scattersSeen,
         reformsSeen: this.#song.reformsSeen,
+        unravelsSeen: this.#song.unravelsSeen, // T830
       }, // T805
       unsung: {
         ...this.#unsung.shown,
         surfacesSeen: this.#unsung.surfacesSeen,
         dugOutSeen: this.#unsung.dugOutSeen,
         risesSeen: this.#unsung.risesSeen,
+        forms: unsungForms(this.#enemies.live.values()), // T830
       }, // T808
       bossShield: this.#bossBar.shieldPx,
       bossEnd: this.#bossBar.endPx,
@@ -1332,6 +1348,7 @@ export class BattleScene extends Phaser.Scene {
       if (!a.alive || a.kind === null || a.group >= 0) continue; // refugees: RefugeeViews (T305c)
       if (a.mode === 'owner') continue; // swarmlings: SwarmView (T604)
       if (a.mode === 'choir') continue; // the choir: ChoirWalkView, BearerViews (T804)
+      if (a.kind === 'echo') continue; // Thrum's echo: EchoView (T830)
       let v = this.#allies.get(a.uid);
       if (v === undefined) {
         v = this.#allies.acquire(a.uid);
@@ -1359,6 +1376,7 @@ export class BattleScene extends Phaser.Scene {
     this.#refugees.sync(allies, stamp);
     this.#bearers.sync(state, stamp, this.time.now); // T706
     this.#choirWalk.update(state, this.#deps.sim.map, stamp); // T804
+    this.#echoes.update(allies, stamp); // T830
     if (fireFrom === null) {
       this.#fx.setFireSource(Number.NaN, Number.NaN);
     } else {

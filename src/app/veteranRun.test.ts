@@ -26,6 +26,24 @@ function replay(mods: readonly VeteranModifierId[], save = actTwo()): SimConfig<
   return battleConfig(RIG, 7, withVeteranPick(save, RIG, mods));
 }
 
+/** The % terms on starting credits in a config. */
+const startPct = (c: SimConfig<IdSpace>): number =>
+  c.modifiers
+    .filter((m) => m.kind === 'economy' && m.stat === 'startCredits')
+    .reduce((sum, m) => sum + ('pct' in m ? (m.pct ?? 0) : 0), 0);
+
+/** A config's modifiers from Field Protocols. */
+const fromProtocol = (c: SimConfig<IdSpace>) =>
+  c.modifiers.filter((m) => m.source.startsWith('protocol:'));
+
+/** The first countdown a run's sim starts (after wave 1 is called), in ticks. */
+function firstCountdown(cfg: SimConfig<IdSpace>): number {
+  const s = createSim(cfg);
+  s.enqueue({ type: 'callWave' });
+  for (let i = 0; i < 60 * 600 && s.state.schedule.countdownTotalTicks === 0; i++) s.step();
+  return s.state.schedule.countdownTotalTicks;
+}
+
 describe('each modifier in the run (a test per modifier)', () => {
   const base = replay([]);
   const sim = (mods: readonly VeteranModifierId[]) => createSim(replay(mods));
@@ -56,11 +74,7 @@ describe('each modifier in the run (a test per modifier)', () => {
     expect(lean.economy.bountyPct - plain.economy.bountyPct).toBeCloseTo(-0.2);
     expect(lean.credits).toBeLessThan(plain.credits);
     // The start's % terms add (Head Start's +10% and Lean Budget's −30% on the save's ones).
-    const pct = (s: SimConfig<IdSpace>) =>
-      s.modifiers
-        .filter((m) => m.kind === 'economy' && m.stat === 'startCredits')
-        .reduce((sum, m) => sum + ('pct' in m ? (m.pct ?? 0) : 0), 0);
-    expect(pct(replay(['lean_budget'])) - pct(base)).toBeCloseTo(-0.3);
+    expect(startPct(replay(['lean_budget'])) - startPct(base)).toBeCloseTo(-0.3);
   });
 
   it('Glass Core: core integrity 5 (Reinforced Core ranks still add)', () => {
@@ -100,8 +114,6 @@ describe('each modifier in the run (a test per modifier)', () => {
   });
 
   it('No Protocols: every Field Protocol modifier leaves the run', () => {
-    const fromProtocol = (c: SimConfig<IdSpace>) =>
-      c.modifiers.filter((m) => m.source.startsWith('protocol:'));
     expect(fromProtocol(base).length).toBeGreaterThan(0);
     const cfg = replay(['no_protocols']);
     expect(fromProtocol(cfg)).toEqual([]);
@@ -114,12 +126,6 @@ describe('each modifier in the run (a test per modifier)', () => {
     const w = runWaveModifiers(replay(['rush_hour']));
     expect(w.countdownPct - runWaveModifiers(base).countdownPct).toBeCloseTo(-0.5);
     // The first countdown that runs (after wave 1 starts): half as long.
-    const firstCountdown = (cfg: SimConfig<IdSpace>): number => {
-      const s = createSim(cfg);
-      s.enqueue({ type: 'callWave' });
-      for (let i = 0; i < 60 * 600 && s.state.schedule.countdownTotalTicks === 0; i++) s.step();
-      return s.state.schedule.countdownTotalTicks;
-    };
     const plain = firstCountdown(base);
     expect(plain).toBeGreaterThan(0);
     expect(firstCountdown(replay(['rush_hour']))).toBe(Math.round(plain * 0.5));

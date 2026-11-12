@@ -27,6 +27,10 @@
   color: var(--sd-gold-3);
 }
 
+.hud-veteran-open {
+  min-height: 12px;
+}
+
 .hud-veteran-medal {
   display: inline-flex;
   align-items: center;
@@ -157,4 +161,10 @@
   border-color: var(--sd-gold-4);
   background: var(--sd-gold-3);
   pointer-events: none;
+}
+
+/* Open, the picker follows the threat-intel strip directly, whose own rule already divides them. */
+.hud-intel + .hud-veteran {
+  padding-top: 0;
+  border-top: 0;
 }

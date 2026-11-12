@@ -310,3 +310,27 @@ describe('poseFacts for M7 units (T740a)', () => {
     expect(statePose(poseFacts(m, f))).toBe('panic');
   });
 });
+
+describe('poseFacts for the Unsung (T830)', () => {
+  it("the Song's call for its Silencers is `tell` (its hum pouring out); between calls it walks", () => {
+    const sim = createSim(battleConfig('dev_phases', 1));
+    sim.enqueue({ type: 'build', tower: 'zapcoil', tile: [4, 3] });
+    for (const [c, r] of [
+      [8, 3],
+      [4, 1],
+      [8, 1],
+      [8, 5],
+      [4, 5],
+    ] as const) {
+      sim.enqueue({ type: 'build', tower: 'rivet', tile: [c, r] });
+    }
+    const u = firstLive(sim, (e) => e.def?.id === 'unsung', 40_000);
+    const f = blankFacts();
+    u.bossPhase = 4; // the Song: its phase's adds
+    u.invulnerableTicks = 0;
+    u.abilityTicks = 999;
+    expect(statePose(poseFacts(u, f))).toBe('walk');
+    u.abilityTicks = 30; // inside the call's 1.5 s
+    expect(statePose(poseFacts(u, f))).toBe('tell');
+  });
+});

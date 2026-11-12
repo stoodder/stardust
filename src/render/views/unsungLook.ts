@@ -137,3 +137,10 @@ export function surfaceBurstAt(
   out.alpha = STEPPED_ALPHA[Math.min(3, Math.floor(t * 4))]!;
   return out;
 }
+
+/** The Unsung's bodies drawn now (form sprites; the render-state hook), from the enemy views. */
+export function unsungForms(views: Iterable<{ readonly bodyId: string | null }>): string[] {
+  const out: string[] = [];
+  for (const v of views) if (v.bodyId?.startsWith('enemy.unsung') === true) out.push(v.bodyId);
+  return out;
+}

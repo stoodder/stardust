@@ -272,6 +272,23 @@ export interface RenderState {
     readonly hushed: number;
     readonly rings: number;
     readonly halted: boolean;
+    /** T830: the HALTED plate over Pebble, the window's look, members queued at the gate, poses. */
+    readonly plate: boolean;
+    readonly window: 'none' | 'walk' | 'halt';
+    readonly queued: number;
+    readonly poses: {
+      readonly walk: number;
+      readonly sing: number;
+      readonly halt: number;
+      readonly hushed: number;
+    };
+  };
+  /** EchoView (T830): Thrum's echo drawn now by look, and echoes that reached the song. */
+  readonly echoes: {
+    readonly walk: number;
+    readonly warm: number;
+    readonly rise: number;
+    readonly arrivedSeen: number;
   };
   /** Pinned units roped to a stake now, and Skewer lines drawn so far (T408, HarpoonView). */
   readonly harpoon: { readonly pins: number; readonly skewered: number };
@@ -305,6 +322,9 @@ export interface RenderState {
   readonly song: {
     readonly rests: number;
     readonly scatters: number;
+    /** T830: deaths waiting for the song's word now, and those it let unravel this battle. */
+    readonly held: number;
+    readonly unravelsSeen: number;
     readonly restsSeen: number;
     readonly scattersSeen: number;
     readonly reformsSeen: number;
@@ -322,6 +342,9 @@ export interface RenderState {
     readonly surfacesSeen: number;
     readonly dugOutSeen: number;
     readonly risesSeen: number;
+    /** T830: the Unsung's bodies drawn now (its form sprites), and surfacing bursts showing. */
+    readonly forms: readonly string[];
+    readonly bursts: number;
   };
   /**
    * The boss bar's shield strip fill (px of 160; −1: none shows, or the boss has no shield) and

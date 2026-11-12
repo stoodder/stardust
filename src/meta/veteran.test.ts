@@ -13,15 +13,12 @@ import {
   activeVeteranMods,
   campaignMedalCount,
   earnsVeteranMedal,
-  GLASS_CORE_INTEGRITY,
   hasVeteranMedal,
   SHORT_HANDED_MAX,
   VETERAN_COPY,
   VETERAN_MEDAL_ID,
   VETERAN_MODIFIER_IDS,
   veteranBonusPct,
-  veteranConfig,
-  veteranModsOf,
   veteranOffers,
   veteranRecord,
   withVeteranPick,
@@ -92,24 +89,25 @@ describe('the veteran record', () => {
   });
 });
 
-describe('run end: the replay bonus, the Veteran medal, the best', () => {
-  const won = (mods: readonly VeteranModifierId[], extra: Partial<RunEndInput> = {}) => {
-    const save = withVeteranPick(actTwo(), RIG, mods);
-    const input: RunEndInput = {
-      mapId: RIG,
-      outcome: 'won',
-      mapStardust: 200,
-      waveCount: 10,
-      wavesResolved: 10,
-      earnedMedals: ['victory'],
-      skitterkinKilled: 0,
-      meter: 10,
-      veteranMods: mods,
-      ...extra,
-    };
-    return { before: save, ...runEnd(save, input) };
+/** Rig Nine replayed and won under `mods` (`extra` overrides the run end's input). */
+const won = (mods: readonly VeteranModifierId[], extra: Partial<RunEndInput> = {}) => {
+  const save = withVeteranPick(actTwo(), RIG, mods);
+  const input: RunEndInput = {
+    mapId: RIG,
+    outcome: 'won',
+    mapStardust: 200,
+    waveCount: 10,
+    wavesResolved: 10,
+    earnedMedals: ['victory'],
+    skitterkinKilled: 0,
+    meter: 10,
+    veteranMods: mods,
+    ...extra,
   };
+  return { before: save, ...runEnd(save, input) };
+};
 
+describe('run end: the replay bonus, the Veteran medal, the best', () => {
   it('pays 0.4 × stardust × (1 + Σ bonus) on a replay (progression.md § 6 example: +120%)', () => {
     const mods = ['hardened_hides', 'glass_core', 'short_handed'] as const;
     expect(veteranBonusPct(mods)).toBe(120);

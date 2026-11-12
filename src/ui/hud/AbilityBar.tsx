@@ -100,7 +100,7 @@ function AbilitySlot({ a, cd }: { a: AbilitySlotView; cd: AbilityCooldownView | 
               <Icon id={a.icon} class="slot-icon" />
             </span>
           </span>
-          <span class="hud-cd">{uplink ? '' : why}</span>
+          <span class="hud-cd">{uplink ? '' : silenced ? 'Silence' : why}</span>
         </button>
         {uplink ? (
           <span

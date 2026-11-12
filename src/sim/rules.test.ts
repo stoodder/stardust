@@ -19,7 +19,7 @@ function hashAfter(cfg: SimConfig<IdSpace>, ticks: number): string {
   const sim = createSim(cfg);
   sim.enqueue({ type: 'callWave' });
   for (let i = 0; i < ticks; i++) sim.step();
-  return String(sim.hash());
+  return sim.hash();
 }
 
 describe('run rules', () => {

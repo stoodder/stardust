@@ -4,7 +4,7 @@
 // - **Laid to rest** (a Hollow unit broken inside the song, or Dawn's `restAll`): its body as it
 //   was drawn (EnemyView.snapshot) flips to `stardust.sung` gold over FLIP_STEPS steps
 //   (`flipStep`): the warm multiply first (its pale outline and hide go gold, its dark stays dark),
-//   then two warm screens brighter each step, then all gold. The gold body then fades down the
+//   then warm screens brighter each step, the last all gold (its features kept, light on gold). The gold body then fades down the
 //   stepped-alpha ladder over BODY_FADE_MS while `restMoteCount` `fx.rest_mote` motes (6–10 by
 //   the body's width) rise from across it: each sets out a little after the last, rises about
 //   REST_RISE_PX_PER_MS (slowly: ~24 px a second), sways a pixel, and fades in steps over its last
@@ -53,7 +53,7 @@ export const FLIP_LOOKS: readonly FlipLook[] = [
   { mode: 'multiply', color: 'gold.4' },
   { mode: 'screen', color: 'gold.2' },
   { mode: 'screen', color: 'gold.3' },
-  { mode: 'fill', color: 'gold.4' },
+  { mode: 'screen', color: 'gold.4' },
 ];
 
 /** The flip's step at `ms` after the rest (0–FLIP_STEPS − 1; the last holds while the body fades). */

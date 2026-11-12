@@ -22,6 +22,7 @@ import {
   type SimConfig,
   type SimRule,
 } from '../sim/index.ts';
+import { assertNever } from '../shared/types.ts';
 import { abilityPool, towerPool } from './pools.ts';
 import { isMapWon } from './progress.ts';
 import type { SaveData, VeteranRecord } from './saveData.ts';
@@ -105,13 +106,13 @@ export interface VeteranCopy {
 export const VETERAN_COPY: Readonly<Record<VeteranModifierId, VeteranCopy>> = {
   hardened_hides: {
     name: 'Hardened Hides',
-    short: 'Tougher enemies',
+    short: 'Tough foes',
     effect: 'Enemies +40% HP and shields',
     quip: 'They have been eating their vegetables.',
   },
   double_time: {
     name: 'Double Time',
-    short: 'Faster enemies',
+    short: 'Fast foes',
     effect: 'Enemies +20% speed',
     quip: 'Somebody told them about the snacks.',
   },
@@ -181,13 +182,13 @@ export interface VeteranMap {
 }
 
 /** Objectives with no core to protect (D143 R9; app/loadout.ts's CORELESS). */
-const CORELESS: readonly ObjectiveKind[] = ['escort', 'holdout'];
+const CORELESS: ReadonlySet<ObjectiveKind> = new Set(['escort', 'holdout']);
 
 /** Why `id` would change nothing on `map` for `save`, or null when it bites. */
 function dimmed(id: VeteranModifierId, save: SaveData, map: VeteranMap): string | null {
   switch (id) {
     case 'glass_core':
-      return CORELESS.includes(map.objective) ? VETERAN_DIM_TEXT.no_core : null;
+      return CORELESS.has(map.objective) ? VETERAN_DIM_TEXT.no_core : null;
     case 'short_handed':
       return towerPool(save).length > SHORT_HANDED_MAX ? null : VETERAN_DIM_TEXT.few_towers;
     case 'radio_silence': {
@@ -197,8 +198,13 @@ function dimmed(id: VeteranModifierId, save: SaveData, map: VeteranMap): string 
     }
     case 'no_protocols':
       return save.unlocks.protocols.length > 0 ? null : VETERAN_DIM_TEXT.no_protocols;
+    case 'hardened_hides':
+    case 'double_time':
+    case 'lean_budget':
+    case 'rush_hour':
+      return null; // they bite on every map
     default:
-      return null;
+      return assertNever(id);
   }
 }
 
@@ -290,6 +296,8 @@ export function veteranGrants(id: VeteranModifierId): {
       return { modifiers: [], rules: [{ kind: 'noProtocols', source }] };
     case 'rush_hour':
       return { modifiers: [{ kind: 'countdown', pct: -0.5, source }], rules: [] };
+    default:
+      return assertNever(id);
   }
 }
 

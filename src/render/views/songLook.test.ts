@@ -26,9 +26,9 @@ const m = { dx: 0, dy: 0, alpha: 0 };
 const s = { dx: 0, dy: 0, alpha: 0, share: 0, pull: false };
 
 describe('the gold flip', () => {
-  it('steps warm multiply → screens → all gold, holding the last step', () => {
+  it('steps warm multiply → brighter screens → all gold, holding the last step', () => {
     expect(FLIP_LOOKS).toHaveLength(FLIP_STEPS);
-    expect(FLIP_LOOKS.map((l) => l.mode)).toEqual(['multiply', 'screen', 'screen', 'fill']);
+    expect(FLIP_LOOKS.map((l) => l.mode)).toEqual(['multiply', 'screen', 'screen', 'screen']);
     expect(FLIP_LOOKS.every((l) => l.color.startsWith('gold.'))).toBe(true);
     expect(flipStep(0)).toBe(0);
     expect(flipStep(FLIP_MS / FLIP_STEPS)).toBe(1);
