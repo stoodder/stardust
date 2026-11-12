@@ -3,11 +3,12 @@ import { mkdirSync } from 'node:fs';
 import type { Page } from '@playwright/test';
 import { ALL_SPRITES as REGISTRY } from '../src/content/sprites/all.ts';
 import { FINALE_SCENE_SPRITES } from '../src/content/sprites/scenes/finale.ts';
+import { PRELUDE_STILLS } from '../src/content/sprites/scenes/prelude/index.ts';
 import { expect, test } from './fixtures.ts';
 import { outPath } from './out.ts';
 
-/** What the gallery shows: the registry, then the finale's lazy stills (app/gallery.ts). */
-const SPRITES = [...REGISTRY, ...FINALE_SCENE_SPRITES];
+/** What the gallery shows: the registry, then the finale's and the prelude's lazy stills (app/gallery.ts). */
+const SPRITES = [...REGISTRY, ...FINALE_SCENE_SPRITES, ...PRELUDE_STILLS];
 
 /**
  * The gallery's sheets are the milestone art trail (docs/art/tech-spec.md § The sprite gallery):

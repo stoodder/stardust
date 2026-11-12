@@ -12,16 +12,7 @@
 import type { CharGrid } from '../../helpers.ts';
 import { hash01, plot } from '../../helpers.ts';
 import { limbBand, limbDistance, limbRelief, smooth, type Limb } from '../limb.ts';
-import {
-  bayer,
-  copyGrid,
-  defineScene,
-  dithered,
-  fill,
-  SCENE_H,
-  SCENE_W,
-  sceneGrid,
-} from '../sceneKit.ts';
+import { bayer, defineScene, dithered, fill, SCENE_H, SCENE_W, sceneGrid } from '../sceneKit.ts';
 import { technicianBack, TECHNICIAN_HELM, type TechnicianInks } from '../technicianBack.ts';
 
 /*
@@ -185,9 +176,6 @@ function paintRing(g: CharGrid, adOn: boolean): void {
     if (t < 3) return 'N';
     if (t > RING - 1) return 'k';
     const v = 0.3 + facing * 0.35 - (t / RING) * 0.15;
-    const bolt =
-      Math.round(((a + Math.PI) / (2 * Math.PI)) * 24) % 1 === 0 && Math.abs(t - 5.5) < 0.8;
-    void bolt;
     return dithered(['A', 'E', 'F', 'G'], v, x, y);
   });
   // Bolts round the ring, catching the ad's light from behind us when it plays.
@@ -260,7 +248,6 @@ function paintFrame(adOn: boolean): CharGrid {
 function paintViewport(): Record<string, CharGrid> {
   const on = paintFrame(true);
   const off = paintFrame(false);
-  void copyGrid;
   return { ad_on: on, ad_off: off };
 }
 

@@ -19,6 +19,8 @@ import type { SpriteId } from '../content/sprites/index.ts';
 import { ALL_SPRITES } from '../content/sprites/all.ts';
 // The finale's stills: out of ALL_SPRITES (the boot atlas), shown here as cards all the same (T843).
 import { FINALE_SCENE_SPRITES } from '../content/sprites/scenes/finale.ts';
+// The prelude's stills (M10): out of ALL_SPRITES too, shown as cards after the finale's.
+import { PRELUDE_STILLS } from '../content/sprites/scenes/prelude/index.ts';
 import { tetherDir } from '../content/sprites/fx/link_tether.ts';
 import { groundShadowFor } from '../content/sprites/shadows.ts';
 import type { EnvPaletteId, SpriteDef } from '../content/sprites/types.ts';
@@ -85,8 +87,15 @@ function secondVariant(b: BakedSprite): string | undefined {
   return palettes.includes('act3') ? 'act3' : palettes[0];
 }
 
-/** Every sprite the gallery shows: every registry (sprites/all.ts), then the finale's stills. */
-const GALLERY_SPRITES: readonly SpriteDef[] = [...ALL_SPRITES, ...FINALE_SCENE_SPRITES];
+/**
+ * Every sprite the gallery shows: every registry (sprites/all.ts), then the finale's stills, then
+ * the prelude's.
+ */
+const GALLERY_SPRITES: readonly SpriteDef[] = [
+  ...ALL_SPRITES,
+  ...FINALE_SCENE_SPRITES,
+  ...PRELUDE_STILLS,
+];
 
 const DEFS: ReadonlyMap<string, SpriteDef> = new Map(GALLERY_SPRITES.map((d) => [d.id, d]));
 

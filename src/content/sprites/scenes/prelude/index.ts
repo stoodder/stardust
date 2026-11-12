@@ -3,43 +3,17 @@
 // in SPRITES (sprites/index.ts), so neither the boot atlas nor the initial JS carries them: only
 // the prelude's lazy chunk imports this module. The gallery shows them as cards (app/gallery.ts).
 import type { SpriteDef } from '../../types.ts';
-import { defineSprite } from '../../defineSprite.ts';
+import { sceneDescent } from './descent.ts';
+import { sceneDomeRow } from './domeRow.ts';
 import { sceneFreighter } from './freighter.ts';
 import { scenePreludeAd } from './preludeAd.ts';
+import { sceneTouchdown } from './touchdown.ts';
 import { sceneViewport } from './viewport.ts';
 
-/**
- * A placeholder still: one flat ink fill per frame, painted on first read. Each art owner replaces
- * its entries with the real still (T1002: ad, freighter, viewport; T1003: descent, touchdown,
- * dome row).
- */
-function placeholder<const Id extends string>(
-  id: Id,
-  frameNames: readonly string[],
-  h = 180,
-): SpriteDef<Id> {
-  let painted: Readonly<Record<string, readonly string[]>> | null = null;
-  return defineSprite({
-    id,
-    size: { w: 320, h },
-    anchor: { x: 160, y: h },
-    palette: 'act1',
-    outline: 'none',
-    legend: { A: 'ink.0' },
-    get frames() {
-      painted ??= Object.fromEntries(
-        frameNames.map((f) => [f, Array.from({ length: h }, () => 'A'.repeat(320))]),
-      );
-      return painted;
-    },
-  });
-}
-
 export { scenePreludeAd, sceneFreighter, sceneViewport };
-// TODO(T1003): real art (the descent is 320×300; the stage pans 0 → 120 px down).
-export const sceneDescent = placeholder('scene.descent', ['still'], 300);
-export const sceneTouchdown = placeholder('scene.touchdown', ['one', 'zero']);
-export const sceneDomeRow = placeholder('scene.dome_row', ['still', 'wave', 'gerald']);
+// The descent is 320×300: the stage pans it 0 → 120 px down (`DESCENT_PAN`).
+export { sceneDescent, sceneTouchdown, sceneDomeRow };
+export { DESCENT_H, DESCENT_PAN } from './descent.ts';
 
 /** Every prelude still, in the order the shots show them. */
 export const PRELUDE_STILLS = [

@@ -9,16 +9,8 @@
 //   further on each step (anim `small_print`, 2 fps). LETTUCE NOT FOR EXPORT is in it.
 import { textPixels, textWidth } from '../../font3x5.ts';
 import type { CharGrid } from '../../helpers.ts';
-import { at, hash01, plot } from '../../helpers.ts';
-import {
-  copyGrid,
-  defineScene,
-  dithered,
-  eachOnLine,
-  fill,
-  SCENE_W,
-  sceneGrid,
-} from '../sceneKit.ts';
+import { plot } from '../../helpers.ts';
+import { copyGrid, defineScene, dithered, fill, SCENE_W, sceneGrid } from '../sceneKit.ts';
 
 /*
  * Palette `act1`: 0–4 `act1.grass`, a–e `act1.clay`, 5–9 `act1.path`, + pink.3, * pink.4,
@@ -418,9 +410,6 @@ function paintAd(): Record<string, CharGrid> {
     paintCrawl(sp, beat * 2);
     frames[beat === 0 ? 'small_print' : 'small_print_1'] = sp;
   }
-  void at;
-  void hash01;
-  void eachOnLine;
   return frames;
 }
 

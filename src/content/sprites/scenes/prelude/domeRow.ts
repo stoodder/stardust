@@ -100,7 +100,7 @@ export const BRICKS_AT = cellCentre(GATE_GX + 1.3, -1.1);
 /** The Technician on the road, walking down it toward the gate. */
 export const TECHNICIAN_AT = cellCentre(4, 0.1);
 /** On `gerald`: the clipboard at the Technician's boots, and Gerald hovering just past it. */
-export const CLIPBOARD_AT = { x: TECHNICIAN_AT.x + 3, y: TECHNICIAN_AT.y + 3 } as const;
+export const CLIPBOARD_AT = { x: TECHNICIAN_AT.x + 4, y: TECHNICIAN_AT.y + 1 } as const;
 export const GERALD_AT = { x: TECHNICIAN_AT.x - 8, y: TECHNICIAN_AT.y + 16 } as const;
 
 /** The far edge of the valley floor: the terraces' foot under the Spires (higher to the east). */
@@ -367,11 +367,11 @@ function paintTechnician(g: CharGrid, x: number, y: number): void {
 /** Form FF-1 on its clipboard, dropped on the grass: steel board, clip, the form's lines. */
 function paintClipboard(g: CharGrid): void {
   const { x, y } = CLIPBOARD_AT;
-  const w = 9;
-  const h = 7;
+  const w = 7;
+  const h = 5;
   // Its shadow, then the board (lying a little askew: one pixel's lean per four rows).
   for (let sy = 0; sy <= h; sy++) {
-    const lean = Math.floor(sy / 4);
+    const lean = Math.floor(sy / 3);
     for (let sx = -1; sx <= w; sx++) {
       const px = x + sx + lean;
       const py = y + sy;
@@ -381,16 +381,16 @@ function paintClipboard(g: CharGrid): void {
       }
       const edge = sx === -1 || sx === w - 1 || sy === 0 || sy === h - 1;
       let ch = edge ? c('steel.1') : c('white.0');
-      if (!edge && sy === 3 && sx > 0 && sx < w - 2) ch = c('steel.2');
+      if (!edge && sy === 2 && sx > 0 && sx < w - 2) ch = c('steel.2');
       // The form's header: Everglow orange, and the empty signature line in ink.
       if (!edge && sy === 1) ch = c('orange.3');
-      if (!edge && sy === h - 2 && sx > 3) ch = c('ink.1');
+      if (!edge && sy === h - 2 && sx > 2) ch = c('ink.1');
       plot(g, px, py, ch);
     }
   }
   // The clip.
-  for (let sx = 3; sx <= 5; sx++) plot(g, x + sx, y, c('steel.4'));
-  plot(g, x + 4, y - 1, c('steel.2'));
+  for (let sx = 2; sx <= 4; sx++) plot(g, x + sx, y, c('steel.4'));
+  plot(g, x + 3, y - 1, c('steel.2'));
 }
 
 function paintGeraldShot(g: CharGrid): void {

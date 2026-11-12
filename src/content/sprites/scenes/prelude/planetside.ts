@@ -108,12 +108,13 @@ function ridgeAt(peaks: readonly Peak[], x: number, seed: number): number {
   let top = 0;
   peaks.forEach((p, i) => {
     const t = 1 - Math.abs(x - p.x) / (p.w / 2);
-    if (t > 0) top = Math.max(top, t ** 1.3 * p.h * 0.55);
+    if (t > 0) top = Math.max(top, t ** 1.5 * p.h * 0.45);
     for (let j = -3; j <= 3; j++) {
       const nx = p.x + (j * p.w) / 8 + (hash01(i, j + 9, seed) - 0.5) * 8;
       const nh = p.h * (1 - Math.abs(j) * 0.17) * (0.7 + 0.3 * hash01(j + 4, i, seed + 1));
-      const tn = 1 - Math.abs(x - nx) / (p.w / 10 + 2);
-      if (tn > 0) top = Math.max(top, nh * tn ** 0.8);
+      // Concave flanks: a broad foot narrowing to a needle's tip.
+      const tn = 1 - Math.abs(x - nx) / (p.w / 9 + 2);
+      if (tn > 0) top = Math.max(top, nh * tn ** 1.7);
     }
   });
   return top + (hash01(x >> 1, seed, 17) - 0.5) * 2;
