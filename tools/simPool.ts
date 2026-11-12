@@ -28,9 +28,9 @@ export interface JobSource<J> {
  * and busier than the ones before it, and the finale is the heaviest), with **map affinity**: a
  * worker keeps taking its map's runs, in its plan's order; when its map has none left it starts the
  * next map nobody has started, and once every map is started it joins the one with the most runs
- * left. So each worker runs few maps (a worker that ran every map ran ~7% slower: its compiled
- * code kept being re-optimized for another map's shapes; T778), and the pool still ends within
- * about one run (≤ 2 s of CPU, assertion 13) of each other.
+ * left. So each worker runs few maps (with every worker on every map, the sim took ~10% more CPU,
+ * its runs ~7% more: V8 kept re-optimizing for the next map; T778), and the workers still finish
+ * within about one run (≤ 2 s of CPU, assertion 13) of each other.
  */
 export function mapAffinity(maps: readonly PlannedMap[]): JobSource<SimJob> {
   const lanes = maps.toReversed().map((m) => ({ mapId: m.mapId, left: [...m.requests] }));

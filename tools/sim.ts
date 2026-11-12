@@ -1,10 +1,10 @@
 // npm run sim: headless balance sims for every campaign map (docs/tech/conventions.md § Balance
 // sims). The CLI over src/balance/: it compiles the content in plain Node, runs the harness,
 // prints the verdicts, and exits 1 on any failed check. It plans every map's checks on this thread
-// (`planMap`), shares their runs out one at a time over worker threads (tools/simPool.ts,
-// tools/simWorker.ts; one per core), the later maps' first, so a heavy map's runs spread over every
-// core (T778), then judges each map from its runs (`judgeMap`) and the campaign in campaign order,
-// so the output doesn't depend on the job count.
+// (`planMap`), shares their runs out one at a time over worker threads, one per core, each worker
+// staying on a map while it has runs left (tools/simPool.ts `mapAffinity`, tools/simWorker.ts), so
+// a heavy map's runs spread over every free core (T778), then judges each map from its runs
+// (`judgeMap`) and the campaign, in campaign order, so the output doesn't depend on the job count.
 //
 //   npm run sim                          every campaign map, seeds 1–5
 //   npm run sim -- --map a1_m01          one map (skips the cross-map monotonic check)

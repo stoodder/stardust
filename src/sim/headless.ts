@@ -103,12 +103,22 @@ export interface StepRecord {
   skipped: boolean;
 }
 
+/** One command the executor re-issued to rebuild a restored class (T821; see the header). */
+export interface RebuildRecord {
+  readonly kind: 'build' | 'upgrade' | 'specialize';
+  readonly tile: GridPos;
+  readonly tick: number;
+  readonly error: RejectReason | null;
+}
+
 export interface BuildExecutor {
   /** Issues every step that is due now. Call it before each `sim.step()`. */
   beforeTick(): void;
   readonly steps: readonly StepRecord[];
   /** Ticks at which the executor called a wave (wave 1's start and early calls). */
   readonly waveCalls: readonly number[];
+  /** The rebuilds after a restored class (see the header), in order (T821). */
+  readonly rebuilt: readonly RebuildRecord[];
   /**
    * Stops the `holdFireWhile` macros: a macro holding fire now issues `holdFire 'all'` off, and
    * none toggles again. Call it when the build stops being played (the app's autoplay, switched
@@ -216,6 +226,82 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
 
   /** The tower each tile's last build step placed (by tile index), for revocation skips (T606). */
   const builtAt = new Map<number, string>();
+  /**
+   * T821: what was issued and accepted on each tile, in order (build, upgrades, spec), so a class
+   * the script restores can be rebuilt as it stood; the rebuilds waiting (the head first), done
+   * (`rebuilt`), and the revoked classes seen last tick.
+   */
+  type Rebuild = {
+    readonly kind: RebuildRecord['kind'];
+    readonly tile: GridPos;
+    readonly tower: string;
+    readonly spec?: 'a' | 'b';
+  };
+  /** Accepted build, upgrade, and spec commands, with the uid of the tower each made or changed. */
+  const history: { readonly uid: number; readonly step: Rebuild }[] = [];
+  const toRebuild: Rebuild[] = [];
+  const rebuilt: RebuildRecord[] = [];
+  let seenFolded = 0;
+  let seenRevocations = 0;
+  let seenRevoked = 0;
+  const remember = (step: Rebuild, error: RejectReason | null): void => {
+    const t = error === null ? towerAt(step.tile) : null;
+    if (t !== null) history.push({ uid: t.uid, step });
+  };
+  /**
+   * Queues the rebuild of the towers a revocation folded once their class is buildable again (a
+   * restore, the same tick or later): every accepted command on them, in order.
+   */
+  const watchRestores = (): void => {
+    const r = state.revoked;
+    const n = state.stats.revocations;
+    if (r.uids.length === seenFolded && n === seenRevocations && r.towers.length === seenRevoked) {
+      return; // nothing folded or restored since the last check
+    }
+    seenFolded = r.uids.length;
+    seenRevocations = n;
+    seenRevoked = r.towers.length;
+    const keep: typeof history = [];
+    for (const h of history) {
+      if (r.uids.includes(h.uid) && !r.towers.includes(h.step.tower)) toRebuild.push(h.step);
+      else keep.push(h);
+    }
+    history.length = 0;
+    history.push(...keep);
+  };
+  /** Re-issues the waiting rebuilds in order, each once affordable; 'wait' holds later steps. */
+  const rebuild = (): 'wait' | 'done' => {
+    while (toRebuild.length > 0) {
+      const r = toRebuild[0]!;
+      let cmd: Command<K> | null = null;
+      if (r.kind === 'build') {
+        const def = sim.config.content.towers[r.tower as K['tower']];
+        if (def !== undefined && state.credits < price(r.tower, def.tiers[0].cost, 'build')) {
+          return 'wait';
+        }
+        cmd = { type: 'build', tile: r.tile, tower: r.tower as K['tower'] };
+      } else {
+        const t = towerAt(r.tile);
+        const def = t?.def ?? null;
+        if (t !== null && def !== null) {
+          const cost =
+            r.kind === 'upgrade' ? def.tiers[t.tier]?.cost : def.specs?.[r.spec ?? 'a']?.cost;
+          const kind: PurchaseKind = r.kind === 'upgrade' ? 'upgrade' : 'spec';
+          if (cost !== undefined && state.credits < price(def.id, cost, kind)) return 'wait';
+          cmd =
+            r.kind === 'upgrade'
+              ? { type: 'upgrade', towerUid: t.uid }
+              : { type: 'specialize', towerUid: t.uid, spec: r.spec ?? 'a' };
+        }
+      }
+      toRebuild.shift();
+      const error = cmd === null ? 'noSuchTower' : apply(cmd);
+      rebuilt.push({ kind: r.kind, tile: r.tile, tick: state.tick, error });
+      remember(r, error);
+    }
+    return 'done';
+  };
+
   /** Whether step `s` is for a revoked class or ability slot (see the header). */
   const forRevoked = (s: CompiledBuildStep<K>): boolean => {
     const r = state.revoked;
@@ -264,7 +350,9 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
           return 'wait';
         }
         builtAt.set(tileIndex(sim.map, s.tile[0], s.tile[1]), s.tower);
-        return finish(apply({ type: 'build', tile: s.tile, tower: s.tower }), lateForPhase);
+        const err = apply({ type: 'build', tile: s.tile, tower: s.tower });
+        remember({ kind: 'build', tile: s.tile, tower: s.tower }, err);
+        return finish(err, lateForPhase);
       }
       case 'upgrade': {
         const t = towerAt(s.tile);
@@ -277,7 +365,9 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
         ) {
           return 'wait';
         }
-        return finish(apply({ type: 'upgrade', towerUid: t.uid }), lateForPhase);
+        const err = apply({ type: 'upgrade', towerUid: t.uid });
+        if (t.def !== null) remember({ kind: 'upgrade', tile: s.tile, tower: t.def.id }, err);
+        return finish(err, lateForPhase);
       }
       case 'specialize': {
         const t = towerAt(s.tile);
@@ -293,7 +383,11 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
         if (allowed && spec !== undefined && state.credits < price(def.id, spec.cost, 'spec')) {
           return 'wait';
         }
-        return finish(apply({ type: 'specialize', towerUid: t.uid, spec: s.spec }), lateForPhase);
+        const err = apply({ type: 'specialize', towerUid: t.uid, spec: s.spec });
+        if (def !== null) {
+          remember({ kind: 'specialize', tile: s.tile, tower: def.id, spec: s.spec }, err);
+        }
+        return finish(err, lateForPhase);
       }
       case 'clear':
         return finish(apply(clearCommand(s.tile)), lateForPhase);
@@ -446,6 +540,7 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
   return {
     steps,
     waveCalls,
+    rebuilt,
     release() {
       if (released) return;
       released = true;
@@ -469,7 +564,8 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
         return;
       }
       watch();
-      while (next < build.steps.length) {
+      watchRestores();
+      while (rebuild() === 'done' && next < build.steps.length) {
         const s = build.steps[next]!; // next < length
         if (state.schedule.countdownWave < s.wave) break;
         if (tryStep(s, steps[next]!) === 'wait') break; // same index as build.steps
