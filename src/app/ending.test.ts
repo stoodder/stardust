@@ -203,9 +203,10 @@ describe('the epilogue (bible.md § 10)', () => {
 
   it('the roll ends on the player: And you last, centred over the thanks, held there (S2-2)', async () => {
     const { CREDITS, CREDITS_YOU } = await import('../ui/screens/credits.ts');
-    // With → And → The choir → Made with / Fonts / Built with → And you → the thanks.
+    // A game by → With → And → The choir → Made with / Fonts / Built with → And you → the thanks.
     expect(CREDITS.map((b) => b.heading)).toEqual([
       null,
+      'A game by',
       'With',
       'And',
       'The choir',

@@ -1,10 +1,11 @@
 // The credits roll (T810; design/core-loop.md § 6.8): after the epilogue's counter card, before the
-// final image. Data: the blocks in order, each a heading and its lines. The cast is the story's
-// (story/characters.md, by their full names); then what the game is made of (its libraries and its
-// two SIL Open Font License fonts, art-direction.md § Fonts); then, last, the protagonist: "And
-// you", the player's name at the title's size over "Waykeeper", the roll coming to rest on it over
-// "Thank you for playing." (S2-2; ui/screens/epilogue.ts `creditsStopPx`). Copy is UI copy
-// (style-guide.md § 6): plain, no jokes, no exclamation marks. Part of the finale's chunk.
+// final image. Data: the blocks in order, each a heading and its lines. Under the title, the game's
+// maker (D158); then the cast, the story's (story/characters.md, by their full names); then what the
+// game is made of (its libraries and its two SIL Open Font License fonts, art-direction.md § Fonts);
+// then, last, the protagonist: "And you", the player's name at the title's size over "Waykeeper",
+// the roll coming to rest on it over "Thank you for playing." (S2-2; ui/screens/epilogue.ts
+// `creditsStopPx`). Copy is UI copy (style-guide.md § 6): plain, no jokes, no exclamation marks.
+// Part of the finale's chunk.
 
 import { resolveText, type TextContext } from '../../story/text.ts';
 
@@ -27,6 +28,7 @@ export const CREDITS_TITLE = 'Stardust';
 /** The roll, top to bottom. */
 export const CREDITS: readonly CreditBlock[] = [
   { heading: null, lines: [CREDITS_TITLE], style: 'title' },
+  { heading: 'A game by', lines: ['Rick Allen'] },
   {
     heading: 'With',
     lines: [
