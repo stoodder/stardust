@@ -717,7 +717,7 @@ export function sceneSpeakers(scene: Pick<Scene, 'nodes'>): number {
 
 /**
  * Who speaks for each answer of the ending's choice (C5; D156): `ending_choice`'s value → the
- * voices whose faces sit beside it. Pebble and Ves'thara ask to stay; Bramble asks to give it back.
+ * voices whose faces sit beside it. Pebble and Ves'thara ask to stay; Bramble asks for the road back.
  */
 export const ENDING_VOICES: Readonly<Record<string, readonly SpeakerId[]>> = {
   stay: ['pebble', 'vesthara'],

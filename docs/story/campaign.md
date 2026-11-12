@@ -343,7 +343,7 @@ Flags are declared in `content/dialogue/flags.ts`. **§6.2 is the canonical flag
 | **C2** Zibzab's Price | A2M4 debrief, after the Q3 Bonus lands on the results screen. Two offers, price first, for the whole bank | "Sell it. Market price." / "Take it to them." | `stardust_choice` = `sold` / `returned` (`none` if the bank is 0) | None |
 | **C3** Which door | A3M3 briefing. Bricks: "Your call, Thorn. Which door do I hold?" | "The convoy. Goldie's people." / "The warren. Pebble's people." | `door_choice` = `convoy` / `warren` | "Goldie will remember that." / "Bramble will remember that." (the warren's matriarch speaks for it) |
 | **C4** QUILL's directives | A3M4 debrief, after the mail scene | "Purge them. All of them." / "Keep them. Stay yourself." / "Write your own." | `quill_choice` = `purge` / `keep` / `rewrite` | "QUILL will remember that." |
-| **C5** Stay or Go | After Dawn, full-screen | "We stay. We keep the way open." / "We go. We give it back." | `ending_choice` = `stay` / `go` | None |
+| **C5** Stay or Go | After Dawn, full-screen | "We stay. We keep the way open." / "We go. We leave them their road." | `ending_choice` = `stay` / `go` | None |
 
 Two smaller voice choices carry no flag: the A3M1 confession reply (earnest / wry / quiet) and the A3M3 "Why'd you really come out here?" answer (the three arrival reasons; if it differs from `arrival_reason`, Bricks notices).
 

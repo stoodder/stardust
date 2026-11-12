@@ -179,7 +179,7 @@ describe('FIN scenes', () => {
       choice?.kind === 'choice' && choice.options.map((o) => [o.text, o.set, o.remember]),
     ).toEqual([
       ['We stay. We keep the way open.', { ending_choice: 'stay' }, undefined],
-      ['We go. We give it back.', { ending_choice: 'go' }, undefined],
+      ['We go. We leave them their road.', { ending_choice: 'go' }, undefined],
     ]);
   });
 

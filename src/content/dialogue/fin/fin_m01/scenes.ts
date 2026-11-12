@@ -379,7 +379,11 @@ export const scenes = defineScenes([
       text: 'My people left the place where they did their wrong. It did not make them better. It only made them gone.',
     },
     // For Go.
-    { kind: 'line', speaker: 'chitterbloom', text: 'The road is ours. Give it back.' },
+    {
+      kind: 'line',
+      speaker: 'chitterbloom',
+      text: 'This road carried our dead before your domes. Let it be only a road again.',
+    },
     // For neither.
     {
       kind: 'line',
@@ -394,7 +398,7 @@ export const scenes = defineScenes([
           tone: 'earnest',
           set: { ending_choice: 'stay' },
         },
-        { text: 'We go. We give it back.', tone: 'quiet', set: { ending_choice: 'go' } },
+        { text: 'We go. We leave them their road.', tone: 'quiet', set: { ending_choice: 'go' } },
       ],
     },
     { label: 'done', kind: 'end' },

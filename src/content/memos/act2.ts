@@ -70,7 +70,7 @@ export const ACT2_MEMOS: readonly MemoDef[] = [
     subject: 'Re: Incident 2361-A. Please Use "Vandalism" in All Correspondence!',
     body:
       'Quick housekeeping, team! Some ridge reports used words like "construct," "intelligent," ' +
-      'and "she." The approved word is vandalism. It is accurate, it is insurable, and Legal ' +
+      'and "someone." The approved word is vandalism. It is accurate, it is insurable, and Legal ' +
       'loves it!\n\n' +
       'Rigs 7 and 8 will be back online by Friday. Not one home was touched. Lucky us!\n\n' +
       'An automated form went out by mistake. Please disregard it. It will stay pending!',
