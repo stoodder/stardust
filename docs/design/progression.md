@@ -310,7 +310,7 @@ The player can change between Story and Standard at any time between maps.
 
 ## 11. What persists
 
-Persisted per save: the profile (name, pronouns, callsign, `arrival_reason`), Stardust, Intel, owned towers, revoked and jailbroken classes, owned and revoked abilities, R&D unlocks, shop ranks, Field Protocols, medals per map, veteran records, the lifetime **Pests Processed** counter ([core-loop.md §6.2](core-loop.md#62-results-screen-and-the-lifetime-counter)), story flags and seen scenes, read memos and codex versions, Bricks's tag index and memorial tower, loadout presets, and settings. The format and export/import codes are owned by [../tech/meta-runtime.md](../tech/meta-runtime.md#save-system).
+Persisted per save: the profile (name, form of address, callsign, `arrival_reason`), Stardust, Intel, owned towers, revoked and jailbroken classes, owned and revoked abilities, R&D unlocks, shop ranks, Field Protocols, medals per map, veteran records, the lifetime **Pests Processed** counter ([core-loop.md §6.2](core-loop.md#62-results-screen-and-the-lifetime-counter)), story flags and seen scenes, read memos and codex versions, Bricks's tag index and memorial tower, loadout presets, and settings. The format and export/import codes are owned by [../tech/meta-runtime.md](../tech/meta-runtime.md#save-system).
 
 ---
 

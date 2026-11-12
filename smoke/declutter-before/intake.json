@@ -10,7 +10,7 @@
       "boxes": [
         {
           "x": 160,
-          "y": 83,
+          "y": 73,
           "w": 484,
           "h": 20
         }
@@ -24,7 +24,7 @@
       "boxes": [
         {
           "x": 160,
-          "y": 161,
+          "y": 151,
           "w": 960,
           "h": 20
         }
@@ -38,7 +38,7 @@
       "boxes": [
         {
           "x": 652,
-          "y": 251,
+          "y": 241,
           "w": 468,
           "h": 138
         }
@@ -52,7 +52,7 @@
       "boxes": [
         {
           "x": 652,
-          "y": 401,
+          "y": 391,
           "w": 468,
           "h": 40
         }
@@ -66,7 +66,7 @@
       "boxes": [
         {
           "x": 652,
-          "y": 453,
+          "y": 443,
           "w": 468,
           "h": 80
         }
@@ -75,11 +75,11 @@
   },
   "critical": {},
   "density": {
-    "elements": 29,
+    "elements": 28,
     "controls": 9,
-    "words": 138,
-    "numbers": 6,
-    "repeated": ["447 ×2"],
-    "longCopy": ["4 lines: Small print: Name and pronouns can be updated in Settings. Your reason"]
+    "words": 153,
+    "numbers": 5,
+    "repeated": [],
+    "longCopy": ["4 lines: Small print: Name and form of address can be updated in Settings. Your"]
   }
 }

@@ -115,7 +115,7 @@ Named meta operations, so they're testable and idempotent (each records itself i
 
 ```ts
 interface SaveData {
-  profile: PlayerProfile | null;        // { name, pronouns: 'she' | 'he' | 'they', callsign: 'sprout' | 'thorn' | 'waykeeper' }; null until the intake (T306)
+  profile: PlayerProfile | null;        // { name, pronouns: 'she' | 'he' | 'they' (the form of address Ms. | Mr. | Tech.), callsign: 'sprout' | 'thorn' | 'waykeeper' }; null until the intake (T306)
   campaign: {
     maps: Partial<Record<MapId, { completed: boolean; medals: MedalId[]; bestMeter: number; objectives?: string[] }>>;
     seenEnemies: EnemyId[];             // enemy types met in a run (run end, step 8): codex unlocks, the NEW badge, `new_enemy`
@@ -243,4 +243,4 @@ Medal ids are `victory`, `perfect_core`, and the map's Challenge id (`mapMedalId
 
 ## Open questions
 
-1. **Custom pronouns.** `PronounSet` supports any five forms plus an agreement, but the save stores only three ids. Adding custom sets later needs a save migration and a name-entry-style form.
+1. **More forms of address.** `PronounSet` supports any five forms plus an agreement, but the save stores only three ids. Adding another option later needs a save migration and its label on the form.

@@ -34,9 +34,14 @@ test('intake: a new game files the profile, then A1M1; the name shows on the Shi
   const address = form.getByRole('radiogroup', { name: 'Form of address' });
   await expect(address.getByRole('radio')).toHaveText(['Mr.', 'Ms.', 'Tech.']);
   await expect(address).not.toHaveAttribute('aria-required');
-  await expect(form.getByText('For your file. Most of the crew just uses your name.')).toBeVisible();
+  await expect(
+    form.getByText('For your file. Most of the crew just uses your name.'),
+  ).toBeVisible();
   await expect(form.getByRole('radio', { checked: true })).toHaveCount(1);
-  await expect(address.getByRole('radio', { name: 'Tech.' })).toHaveAttribute('aria-checked', 'true');
+  await expect(address.getByRole('radio', { name: 'Tech.' })).toHaveAttribute(
+    'aria-checked',
+    'true',
+  );
   await expect(page.getByTestId('file-note')).toHaveText(
     'File note: They are cleared for perimeter duty. Their helmet is one size fits most!',
   );

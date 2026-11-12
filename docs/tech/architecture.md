@@ -470,7 +470,7 @@ Lives in `src/render/`.
 Why DOM:
 - Stardust is **text-heavy** (dialogue, codex, memos, shop). DOM gives us text layout, wrapping, scrolling, and selection for free. Phaser text would need a hand-built layout engine.
 - **Accessibility:** focus order, keyboard navigation, screen-reader labels, and user font scaling.
-- **Forms:** player name and pronoun entry, and the save export/import text field.
+- **Forms:** the intake's name, form of address, and reason for joining, and the save export/import text field.
 - **Agent-friendly and testable:** Playwright can query DOM elements by role and text, and components are plain TSX.
 - **Touch-ready:** native hit testing and scrolling.
 

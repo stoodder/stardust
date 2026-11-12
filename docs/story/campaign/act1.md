@@ -41,18 +41,18 @@ So Mk II matters on every Act I map but A1M2, and Bricks's Rapport on A1M5 only.
 
 *Form FF-1: before your first shift, Everglow wants to know who you are. Mostly for the file.*
 
-The intake ([core-loop.md §6.1](../../design/core-loop.md#61-character-creation-and-callsigns)) opens on New game before A1M1, and on Continue, Load, or Import for a save with no profile yet. It is Act I system copy: Everglow's cheerful voice, never scolding. Nothing is picked for the player. Code home: `src/ui/screens/Intake.tsx` (copy) and `src/app/profile.ts` (the field problems and the file note).
+The intake ([core-loop.md §6.1](../../design/core-loop.md#61-character-creation-and-callsigns)) opens on New game before A1M1, and on Continue, Load, or Import for a save with no profile yet. It is Act I system copy: Everglow's cheerful voice, never scolding. The name and the reason start blank; the optional form of address starts on Tech. (core-loop.md §6.1). Code home: `src/ui/screens/Intake.tsx` (copy) and `src/app/profile.ts` (the field problems and the file note).
 - **Header:** kicker "Everglow · Frontier Futures · Form FF-1"; heading "New hire intake"; top right "Junior Perimeter Technician, Grade 1" (the employee number is on the badge).
 - **Intro:** "Welcome to the Everglow family! Please print clearly. Every answer goes in your file." For a save from before the intake: "Records switched to a new form! Fill it in once, and your shifts carry on where you left them."
 - **Fields** (labels, then the hint under each):
   - Name · "As it goes on your name tag: up to 16 letters, digits, spaces, and ' - ." (shown while the field has the focus, or a problem takes its place)
-  - Pronouns (she/her, he/him, they/them) · "So the team gets it right."
+  - Form of address (Mr. / Ms. / Tech., Tech. pre-selected; optional) · "For your file. Most of the crew just uses your name."
   - Reason for joining (The signing bonus / Money for family back home / I like lettuce: the `arrival_reason` flag) · "There are no wrong answers. All answers are filed."
   - Callsign · "Assigned in the field by your supervisor" (read-only: Bricks names you Sprout in the briefing).
 - **ID badge preview:** the player portrait (visor down) captioned "Photo on file", an "Everglow" tab, the name as typed ("Your name" while blank), and "JPT-1 · #ED-447".
-- **File note** (the pronouns in a sentence; "Pick pronouns to preview your file note." until picked): "File note: {They} {v:are|is} cleared for perimeter duty. {Their} helmet is one size fits most!"
-- **Small print** (the plant for A3M3, where Bricks reads your file): "Small print: Name and pronouns can be updated in Settings. Your reason for joining is final and goes in your permanent file, which your field supervisor may read."
-- **Problems** (shown after the first Sign, then live): "Your name tag needs a name!" · "Name tags fit 16 characters. Try a shorter one!" · "Name tags print letters, digits, spaces, and ' - . only. Try those!" · "Name tags need at least one letter or digit!" · "Pick the pronouns the team should use!" · "Pick a reason. Any reason! They're all approved."
+- **File note** (how the form of address reads in a sentence, live with the pick): "File note: {They} {v:are|is} cleared for perimeter duty. {Their} helmet is one size fits most!"
+- **Small print** (the plant for A3M3, where Bricks reads your file): "Small print: Name and form of address can be updated in Settings. Your reason for joining is final and goes in your permanent file, which your field supervisor may read."
+- **Problems** (shown after the first Sign, then live): "Your name tag needs a name!" · "Name tags fit 16 characters. Try a shorter one!" · "Name tags print letters, digits, spaces, and ' - . only. Try those!" · "Name tags need at least one letter or digit!" · "Pick a reason. Any reason! They're all approved."
 - **Buttons:** Back (and Esc: the Title; a new game isn't written until the form is signed) and **Sign and submit**.
 - **Payoffs:** Goldie's "You're the one who wrote 'lettuce' on the form!" (A1M1 w04) and Kip's signing bonus (A1M2) read the flag.
 

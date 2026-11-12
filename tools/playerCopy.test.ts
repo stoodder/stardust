@@ -98,7 +98,7 @@ describe('player copy never speaks of pronouns (D163)', () => {
 
   it('the form of address reads Mr., Ms., Tech., in that order, with Tech. by default', () => {
     expect(ADDRESS_ORDER.map((id) => PRONOUN_SETS[id].label)).toEqual(['Mr.', 'Ms.', 'Tech.']);
-    expect([...ADDRESS_ORDER].sort()).toEqual([...PRONOUN_IDS].sort());
+    expect(ADDRESS_ORDER.toSorted()).toEqual(PRONOUN_IDS.toSorted());
     expect(PRONOUN_SETS[DEFAULT_ADDRESS].label).toBe('Tech.');
   });
 });
