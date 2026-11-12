@@ -310,7 +310,9 @@ export class ChoirWalkView {
 
     this.#halted = ch.halted;
     const plate = ch.halted && !ch.arrived && pebble !== null;
-    if (plate) this.#plate.setPosition(pebble.at.x, pebble.at.y - HALT_PLATE_LIFT_PX);
+    if (plate && pebble !== null) {
+      this.#plate.setPosition(pebble.at.x, pebble.at.y - HALT_PLATE_LIFT_PX);
+    }
     if (this.#plate.visible !== plate) this.#plate.setVisible(plate);
     if (ch.arrived || ch.waiting) return;
     // The halt window: haltTiles up the road (toward its spawn) from the leader.

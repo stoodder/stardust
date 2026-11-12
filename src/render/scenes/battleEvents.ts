@@ -131,6 +131,11 @@ export interface BattleEventViews {
   readonly bossBar: BossBarView;
   /** Props that land on a cue (T312b). */
   readonly cueProps: CuePropView;
+  /**
+   * T830: a Hollow unit's death on a song map waits for the song's word (SongView `holdDeath`:
+   * gold rest or violet scatter, else it unravels); true when held.
+   */
+  readonly holdDeath?: (uid: number, x: number, y: number, liftPx: number, view: EnemyView | undefined) => boolean;
   /** Each ability slot's strike radius after modifiers (Mk II; tiles, 0: none). */
   readonly strikeRadius: readonly number[];
   /** How far up a tower on tile (col, row) stands (px): one ELEV_H step on high ground. */
@@ -374,6 +379,10 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
       const def = Object.hasOwn(content.enemies, e.enemy) ? content.enemies[e.enemy] : undefined;
       const style = def === undefined ? 'comic' : deathStyle(skitterkinDeath, def.faction);
       const lift = DEATH_BODY_PX + (def?.layer === 'air' ? AIR_LIFT_PX : 0);
+      if (style === 'unravel' && views.holdDeath?.(e.uid, e.x, e.y, lift, views.enemies.get(e.uid))) {
+        views.enemies.release(e.uid); // T830: the song shows it laid to rest or scattered
+        return;
+      }
       const popped = views.enemies.get(e.uid)?.die(style) === true;
       views.enemies.release(e.uid);
       if (style === 'shatter') fx.shatter(e.x, e.y, lift);
