@@ -68,6 +68,11 @@ export interface MapRecord {
 export interface LoadoutPreset {
   towers: TowerId[];
   ability: AbilityId | null;
+  /**
+   * Who walks with you on a pick-list map (the finale's companion pick; meta/loadout.ts
+   * `pickedCompanion`). Absent: the list's first (Ves'thara), and on every other map.
+   */
+  companion?: CompanionId;
 }
 
 /** The player's campaign state. Mutable plain data: meta transactions return updated copies. */

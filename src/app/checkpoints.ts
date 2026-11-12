@@ -76,6 +76,19 @@ export interface Resume<K extends IdSpace = LiveIds> {
   readonly checkpoint: Checkpoint;
   /** The run's command log up to the checkpoint (`commandCount` entries). */
   readonly log: readonly CommandLogEntry<K>[];
+  /**
+   * A reload of the finale's persisted run (`pendingRun`, app/resume.ts), not a lost run's retry:
+   * the checkpoint a retry before it resumed from (`Host.resumedFrom`, which forfeits Perfect and
+   * the Challenge), or null for a run from wave 1, which goes on as the same run with every medal
+   * still to play for. Absent: a retry, resumed from `checkpoint`.
+   */
+  readonly retriedFrom?: Checkpoint | null;
+  /**
+   * The run's kills already filed in the save (`Host.killsBefore`): a reload's own, persisted with
+   * it (nothing the closed tab played was filed). Absent: a retry, whose lost attempt filed every
+   * kill up to the checkpoint (the sim's count there).
+   */
+  readonly killsBefore?: number;
 }
 
 /** The resume for `checkpoint` from a run's command log. */

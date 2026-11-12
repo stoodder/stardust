@@ -45,7 +45,10 @@ export interface Host<K extends IdSpace = LiveIds> {
    * included): the latest is what Results offers after a loss.
    */
   readonly checkpoints: readonly Checkpoint[];
-  /** The checkpoint this battle resumed from (`HostOptions.resume`), or null for a fresh run. */
+  /**
+   * The checkpoint this battle was retried from (`HostOptions.resume`), or null for a run from
+   * wave 1. A reload of the finale's persisted run carries its own (`Resume.retriedFrom`).
+   */
   readonly resumedFrom: Checkpoint | null;
   /**
    * The sim's `stats.skitterkinKilled` at the checkpoint a resumed run replayed to (0 for a fresh
@@ -89,7 +92,7 @@ export function createHost<K extends IdSpace>(sim: Sim<K>, opts: HostOptions = {
   const checkpoints: Checkpoint[] = [];
   const resume = opts.resume ?? null;
   let replaying = resume !== null;
-  let killsBefore = 0;
+  let killsBefore = resume?.killsBefore ?? 0;
 
   const emitEvents = (): void => {
     events.length = 0;
@@ -172,7 +175,12 @@ export function createHost<K extends IdSpace>(sim: Sim<K>, opts: HostOptions = {
       driver = next;
     },
     checkpoints,
-    resumedFrom: resume?.checkpoint ?? null,
+    resumedFrom:
+      resume === null
+        ? null
+        : resume.retriedFrom === undefined
+          ? resume.checkpoint
+          : resume.retriedFrom,
     get killsBefore() {
       return killsBefore;
     },
@@ -190,7 +198,7 @@ export function createHost<K extends IdSpace>(sim: Sim<K>, opts: HostOptions = {
         emitEvents();
       }
       replaying = false;
-      killsBefore = sim.state.stats.skitterkinKilled;
+      killsBefore = resume.killsBefore ?? sim.state.stats.skitterkinKilled;
       // A replay that ended the run can't be played on (D134): the caller fails safely instead.
       if (
         sim.state.tick !== checkpoint.tick ||

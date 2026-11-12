@@ -31,8 +31,10 @@ export const ENDGAME_LIMITS = {
   tile: 255,
 } as const;
 
-/** The companions a persisted run may carry (content/types.ts `CompanionId`). */
-const COMPANIONS = [
+/**
+ * The companions a persisted run or a loadout preset may carry (content/types.ts `CompanionId`).
+ */
+export const COMPANIONS = [
   'bricks',
   'quill',
   'zibzab',

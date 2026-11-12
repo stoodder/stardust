@@ -17,7 +17,7 @@ import type {
 } from './saveData.ts';
 import { CODEX_VERSIONS, DIFFICULTIES, LIVE_KNOWN_IDS } from './saveData.ts';
 import { hintIds } from './hints.ts';
-import { checkEndgame } from './validateEndgame.ts';
+import { checkEndgame, COMPANIONS } from './validateEndgame.ts';
 import { Checker, describe, isMember } from './saveChecker.ts';
 import { protocolSlots } from './modifiers.ts';
 
@@ -475,7 +475,7 @@ function checkPreset(
   known: KnownIds,
   unlocks: SaveData['unlocks'],
 ): LoadoutPreset | null {
-  const p = c.object(x, path, ['towers', 'ability']);
+  const p = c.object(x, path, ['towers', 'ability'], ['companion']);
   if (p === null) return null;
   const towers = c.ids(p['towers'], `${path}.towers`, known.towers, MAX_LOADOUT);
   if (Array.isArray(p['towers']) && p['towers'].length === 0) {
@@ -486,5 +486,8 @@ function checkPreset(
   const ability = raw === null ? null : c.id(raw, `${path}.ability`, known.abilities);
   if (ability !== null)
     c.subset([ability], unlocks.abilities, `${path}.ability`, 'unlocks.abilities');
-  return { towers, ability };
+  // The finale's companion pick (optional; whether the map still offers it is the loadout's call).
+  if (p['companion'] === undefined) return { towers, ability };
+  const companion = c.id(p['companion'], `${path}.companion`, COMPANIONS);
+  return companion === null ? { towers, ability } : { towers, ability, companion };
 }

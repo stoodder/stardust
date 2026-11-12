@@ -11,9 +11,13 @@ import type { CompiledContent, CompiledMapDef } from '../content/compiled.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
 import { MAX_LOADOUT } from '../content/rules.ts';
 import type { IdSpace, RawContent } from '../content/types.ts';
+import { technicianClashes, technicianOffBeside } from '../content/technician.ts';
+import type { CompanionId } from '../content/types.ts';
 import {
   abilitiesOffOn,
   abilityPool,
+  companionChoices,
+  pickedCompanion,
   metaModifiers,
   resolveLoadout,
   saveModifiers,
@@ -131,17 +135,53 @@ export function defaultPick(
 }
 
 /**
- * The companion and slot 2 from the map (`companionSlot`: a pick list takes its first entry until
- * the finale's picker exists). Left out while the sim refuses companions or slot 2.
+ * The companion and slot 2 from the map (`companionSlot`): on a pick-list map (the finale),
+ * `picked`, else the list's first. Left out while the sim refuses companions or slot 2.
  */
 function companionOf(
   content: CompiledContent<IdSpace>,
   map: CompiledMapDef<IdSpace>,
+  picked: CompanionId | null = null,
 ): CompanionSlot<IdSpace> {
   if (!simulated('companion') || !simulated('abilitySlot2')) {
     return { companion: null, slot2: null, slot2State: 'none' };
   }
-  return companionSlot(content, map);
+  return companionSlot(content, map, picked);
+}
+
+/**
+ * A run's own loadout, fixed (the finale's persisted run, app/resume.ts): its towers, Technician
+ * ability, and companion, used as they were rather than as the save's preset now reads.
+ */
+export interface FixedLoadout {
+  readonly towers: readonly string[];
+  readonly ability: string | null;
+  readonly companion: CompanionId | null;
+}
+
+/**
+ * The companion `save` brings on `map` (meta `pickedCompanion` over `companionChoices`: QUILL
+ * leaves the finale's list under C4 Purge), or null on a map without a pick list.
+ */
+export function companionPicked(save: SaveData | null, map: CompiledMapDef<IdSpace>): CompanionId | null {
+  const choices = companionChoices(save, map.companion);
+  return save === null ? (choices[0] ?? null) : pickedCompanion(save, map.id, choices);
+}
+
+/**
+ * Slot 1 beside the companion (T501; content/technician.ts): an ability the companion brings
+ * itself (QUILL's Time Dilation, inherited under C4 Keep) gives way to the first of `pool` that
+ * doesn't clash, else none.
+ */
+export function slot1Beside(
+  content: CompiledContent<IdSpace>,
+  ability: string | null,
+  companion: CompanionId | null,
+  pool: readonly string[],
+): string | null {
+  if (!technicianClashes(content.abilities, ability, companion)) return ability;
+  const off = technicianOffBeside(content.abilities, companion);
+  return pool.find((a) => !off.includes(a)) ?? null;
 }
 
 /**
@@ -178,13 +218,19 @@ export function battleConfig(
   mapId: string,
   seed: number,
   save: SaveData | null = null,
+  fixed: FixedLoadout | null = null,
 ): SimConfig<IdSpace> {
   for (const [setIndex, set] of contentSets().entries()) {
     if (!Object.hasOwn(set.raw.maps, mapId)) continue;
     const content = set.compile();
     const map = content.maps[mapId]!; // hasOwn above
     const par = map.builds.parBuild;
-    const { companion, slot2, slot2State } = companionOf(content, map);
+    // The finale's pick (a fixed run's own; else the save's preset, QUILL gone under Purge).
+    const picked =
+      fixed !== null
+        ? fixed.companion
+        : companionPicked(save !== null && setIndex === 0 ? save : null, map);
+    const { companion, slot2, slot2State } = companionOf(content, map, picked);
     const base: SimConfig<IdSpace> = {
       content,
       mapId,
@@ -223,8 +269,11 @@ export function battleConfig(
     // without the abilities the map locks under the save's flags (A3M5's System Reboot under C4
     // Rewrite; meta/storyInPlay.ts).
     const off = abilitiesOffOn(map, save);
-    const pick = resolveLoadout(save, mapId, defaultPick(save, par, off), off);
+    const pick =
+      fixed ?? resolveLoadout(save, mapId, defaultPick(save, par, off), off);
     const loadout: readonly string[] = pick.towers;
+    // Slot 1 never holds what the companion brings (T501): Time Dilation beside QUILL.
+    const slot1 = slot1Beside(content, pick.ability, companion, abilityPool(save, off));
     return {
       ...base,
       loadout: [...loadout],
@@ -233,7 +282,7 @@ export function battleConfig(
       difficulty:
         save.settings.difficulty === 'story' && simulated('storyDifficulty') ? 'story' : 'standard',
       // Slot 1 is the Technician's, from the save; slot 2 is the map's companion's.
-      abilities: { slot1: pick.ability, slot2, slot2State },
+      abilities: { slot1, slot2, slot2State },
       // The save's story flags that map scripts may read (story-runtime.md § Map scripts).
       scriptFlags: gatedFlagDefaults(map, scriptFlagsOf(save.story.flags)),
       specsUnlocked: simulated('specs')

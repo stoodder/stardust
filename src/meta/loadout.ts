@@ -3,7 +3,8 @@
 // answers on a map (its counters and synergy links). Pure: the app builds the screen's view from
 // these, and app/battleSetup.ts asks `resolveLoadout` for the battle's towers and ability and
 // `equippedProtocols` for its Field Protocols (T308: equipped save-wide, swapped freely between
-// maps; progression.md § 5). The finale's companion pick joins the screen with the finale (M5).
+// maps; progression.md § 5). The finale's companion pick (`companionChoices`, `pickedCompanion`)
+// rides the same preset.
 import { answerScope, answersCarried, type ReachedTower } from '../content/counterAnswers.ts';
 import {
   COUNTER_ANSWERS,
@@ -14,6 +15,7 @@ import {
 import type {
   AbilityId,
   Act,
+  CompanionId,
   Body,
   CounterId,
   IdSpace,
@@ -54,6 +56,8 @@ export interface LoadoutPick<T extends string = TowerId, A extends string = Abil
   readonly towers: readonly T[];
   readonly ability: A | null;
   readonly equip?: ProtocolPick;
+  /** Who walks with you, on a pick-list map (the finale); absent or null elsewhere. */
+  readonly companion?: CompanionId | null;
 }
 
 /** Field Protocols to equip, in slot order, and the tower each `choice: 'tower'` one picked. */
@@ -76,10 +80,43 @@ export function loadoutPools(
   };
 }
 
+/** A map's slot 2 as the companion pick reads it (`MapDef.companion`). */
+export type MapCompanion =
+  | { readonly id: CompanionId; readonly state: 'present' | 'absent' }
+  | { readonly pick: readonly CompanionId[] }
+  | null;
+
+/**
+ * Who may walk with you on a map with a companion pick list (the finale; core-loop.md § 3.1,
+ * finale.md): the list in its order (the first, Ves'thara, is the default), less QUILL under C4
+ * Purge (`quill_choice = purge`: she has nothing left to walk with). Empty on a map without one.
+ */
+export function companionChoices(
+  save: Pick<SaveData, 'story'> | null,
+  companion: MapCompanion,
+): CompanionId[] {
+  if (companion === null || !('pick' in companion)) return [];
+  const purged = save?.story.flags.quill_choice === 'purge';
+  return companion.pick.filter((id) => !(purged && id === 'quill'));
+}
+
+/**
+ * The companion a save brings on `mapId` from `choices` (`companionChoices`): its preset's when
+ * still offered, else the first; null with no choices (a map without a pick list).
+ */
+export function pickedCompanion(
+  save: SaveData,
+  mapId: string,
+  choices: readonly CompanionId[],
+): CompanionId | null {
+  const stored = presetOn(save, mapId)?.companion;
+  return stored !== undefined && choices.includes(stored) ? stored : (choices[0] ?? null);
+}
+
 /**
  * The skip rule's "a choice to make" (core-loop.md § 1): more tower types than fit, more than one
- * Technician ability, or a Field Protocol to equip (a slot and an owned protocol). The companion
- * counts once the finale's pick list exists (M5).
+ * Technician ability, or a Field Protocol to equip (a slot and an owned protocol). A map's
+ * companion pick counts too (app/save.ts `loadoutOffered`: `companionChoices` longer than one).
  */
 export function hasLoadoutChoice(pools: LoadoutPools<string, string>): boolean {
   return (
@@ -219,12 +256,17 @@ export function withPreset(
   const problems = pickProblems(pick, loadoutPools(save, devUnlocks));
   if (problems.length > 0) throw new RangeError(`loadout: ${problems.join('; ')}`);
   const preset = (): LoadoutPreset => ({ towers: [...pick.towers], ability: pick.ability });
+  // The companion is this map's own (the pick list's); the last-used preset never carries it.
+  const companion = pick.companion ?? null;
   const next: SaveData = {
     ...save,
     loadouts: {
       ...save.loadouts,
       last: preset(),
-      byMap: { ...save.loadouts.byMap, [mapId]: preset() },
+      byMap: {
+        ...save.loadouts.byMap,
+        [mapId]: companion === null ? preset() : { ...preset(), companion },
+      },
     },
   };
   return pick.equip === undefined ? next : withProtocols(next, pick.equip, devUnlocks);

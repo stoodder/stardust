@@ -7,6 +7,7 @@ export type {
   LinkPair,
   LoadoutMap,
   LoadoutPick,
+  MapCompanion,
   LoadoutPools,
   ProtocolPick,
   SpecNames,
@@ -14,6 +15,7 @@ export type {
 } from './loadout.ts';
 export {
   abilityAnswers,
+  companionChoices,
   equippedProtocols,
   fitPick,
   fitProtocols,
@@ -24,6 +26,7 @@ export {
   linksAmong,
   loadoutPools,
   mapCounters,
+  pickedCompanion,
   pickProblems,
   protocolProblems,
   resolveLoadout,
