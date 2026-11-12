@@ -70,6 +70,7 @@ import {
   hasDarkness,
   isBuildableTile,
   liveTileAt,
+  songCircles,
   tileElevation,
   type Command,
   type Sim,
@@ -140,6 +141,9 @@ import { TimerBarView } from '../views/TimerBarView.ts'; // T806
 import { SongView } from '../views/SongView.ts'; // T805
 import { UnsungView } from '../views/UnsungView.ts'; // T808
 import { DarknessView } from '../views/DarknessView.ts';
+import { SongNightView } from '../views/SongNightView.ts'; // T831
+import { BoreView } from '../views/BoreView.ts'; // T831
+import { MemorialView } from '../views/MemorialView.ts'; // T831
 import { WorldGlowView } from '../views/WorldGlowView.ts';
 import { SweepView } from '../views/SweepView.ts';
 import { StillnessAimView } from '../views/StillnessAimView.ts';
@@ -234,6 +238,8 @@ export interface BattleSceneDeps {
 const PING_RING_TILES = 1;
 const PING_RING_MS = 700;
 const pingAt: Vec2 = { x: 0, y: 0 };
+/** Scratch for the pointer over the memorial wreck (T831). */
+const memorialAt: Vec2 = { x: 0, y: 0 };
 /** Scratch for a kept-clear spot's screen point (D134 K2). */
 const clearAt: Vec2 = { x: 0, y: 0 };
 /** A dig-in or a surfacing kicks up a ring of dirt (T312b). */
@@ -272,6 +278,9 @@ export class BattleScene extends Phaser.Scene {
   #lighting!: LightingView;
   /** Sundown's darkness overlay, from the sim's `state.dark` and light sources (T505). */
   #darkness!: DarknessView;
+  #songNight!: SongNightView; // T831: the finale's night, the song's light, Dawn
+  #bore!: BoreView; // T831: the Deep Bore's rig at work
+  #memorial!: MemorialView; // T831: the memorial wreck's name
   /** The world's glow: lamps, windows, vats, seams, pools of lamplight, the Prism's crystal (T530b). */
   #glow!: WorldGlowView;
   /** Scanner Sweep's circle while its reveal zone lives (T406). */
@@ -482,6 +491,14 @@ export class BattleScene extends Phaser.Scene {
       lights: map.lights,
       dark: hasDarkness(map),
     });
+    this.#songNight = new SongNightView(
+      ctx,
+      this.#lighting,
+      { cols: map.cols, song: map.song, dark: hasDarkness(map) },
+      ground,
+      map.env,
+      prefersReducedMotion,
+    ); // T831
     this.#glow = new WorldGlowView(
       ctx,
       this.#darkness,
@@ -493,9 +510,16 @@ export class BattleScene extends Phaser.Scene {
     this.#trapAim = new TrapAimView(ctx); // T631
     this.#lightGhosts = new LightGhostView(ctx, hasDarkness(map));
     // A salvaged tile is drawn after the dusk grade: the grade goes back over it (D135).
-    this.#wreckage = new WreckageView(ctx, map, wreckProps, this.#fx, () =>
-      this.#lighting.relight(),
+    this.#wreckage = new WreckageView(
+      ctx,
+      map,
+      wreckProps,
+      this.#fx,
+      () => this.#lighting.relight(),
+      this.#deps.memorialTower ?? null, // T831
     );
+    this.#bore = new BoreView(ctx, map, map.timers, this.#fx, map.env, prefersReducedMotion); // T831
+    this.#memorial = new MemorialView(ctx, map, this.#deps.memorialName ?? ''); // T831
     this.#drone = new DroneView(ctx, map);
     this.#tidybots = new TidybotView(
       ctx,
@@ -734,6 +758,9 @@ export class BattleScene extends Phaser.Scene {
       this.#fieldTint.reset();
       this.#lighting.reset();
       this.#darkness.reset();
+      this.#songNight.reset(); // T831
+      this.#bore.reset(); // T831
+      this.#memorial.reset(); // T831
       this.#glow.reset();
       this.#sweeps.reset();
       this.#stillAim.reset();
@@ -808,12 +835,23 @@ export class BattleScene extends Phaser.Scene {
       state.lightingTick,
     );
     this.#darkness.update(state.dark, state.towers);
+    this.#songNight.update(
+      songCircles(state, this.#deps.sim.map),
+      state.lightingKey,
+      state.lightingTick,
+      state.tick,
+    ); // T831
     this.#glow.update(state.dark, state.towers);
     this.#lightGhosts.update(state.towers);
     this.#drone.update(state.wreckage, this.#clearTicks, state.tick);
     this.#tidybots.update(state.tick);
     this.#bossBar.update(dt, state.enemies);
     this.#timerBars.update(state.timers); // T806
+    this.#bore.update(state.timers); // T831
+    this.#memorial.update(
+      this.#hover.pointerTile(true).index,
+      this.#hover.pointerAt(memorialAt) ? memorialAt : null,
+    ); // T831
     this.#song.update(dt); // T805
     this.#unsung.update(state, dt); // T808; T830: dt for its bursts
     this.#huddles.update(state.enemies);
@@ -1045,6 +1083,9 @@ export class BattleScene extends Phaser.Scene {
       debris: this.#fx.debrisLive,
       bossBar: this.bossBarFill,
       timerBars: this.#timerBars.shown, // T806
+      songNight: this.#songNight.look(), // T831
+      bore: this.#bore.look(), // T831
+      memorial: { tile: this.#memorial.tile, shown: this.#memorial.shown }, // T831
       song: {
         ...this.#song.shown,
         restsSeen: this.#song.restsSeen,

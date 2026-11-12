@@ -388,6 +388,11 @@ export interface EscortMeterView {
    * has no defeat, so nothing counts down to one). Absent: false.
    */
   readonly holdout?: boolean;
+  /**
+   * The finale's choir (T832): Voices of the run's choir, its losses the singers hushed (the row
+   * reads "Hushed"), the gate's integrity still on the core's row. Absent: false.
+   */
+  readonly choir?: boolean;
 }
 
 /** The meter's relabel moment (T531): the label it had before an objective change. */

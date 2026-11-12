@@ -8,6 +8,7 @@
 // Tab stays on it, and keys stop here. Part of the finale's lazy chunk (app/acts/fin.ts).
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { closeEndingScreen, endingCue } from '../../app/ending.ts';
+import { assertNever } from '../../shared/types.ts';
 import { prefersReducedMotion } from '../motion.ts';
 import { silkText } from '../silk.ts';
 import { CREDITS, creditsText } from './credits.ts';
@@ -210,13 +211,17 @@ function Beat({
       return <Credits ms={ms} still={still} />;
     case 'final':
       return <FinalImage ending={beat.ending} />;
+    default:
+      return assertNever(beat);
   }
 }
 
 /** The roll: up from under the stage (a block at a time under reduced motion). */
 function Credits({ ms, still }: { ms: number; still: boolean }) {
   const blocks = still ? [CREDITS[creditsBlockAt(ms)]!] : CREDITS;
-  const style = still ? undefined : { transform: `translateY(${STAGE_PX - creditsOffsetPx(ms)}px)` };
+  const style = still
+    ? undefined
+    : { transform: `translateY(${STAGE_PX - creditsOffsetPx(ms)}px)` };
   return (
     <div class="end-credits" data-testid="epilogue-credits">
       <p class="sd-visually-hidden" role="status">
@@ -224,7 +229,10 @@ function Credits({ ms, still }: { ms: number; still: boolean }) {
       </p>
       <div class={`end-roll${still ? ' block' : ''}`} style={style} aria-hidden="true">
         {blocks.map((b, i) => (
-          <div key={`${b.heading ?? ''}${i}`} class={b.heading === null ? 'end-roll-block title' : 'end-roll-block'}>
+          <div
+            key={`${b.heading ?? ''}${i}`}
+            class={b.heading === null ? 'end-roll-block title' : 'end-roll-block'}
+          >
             {b.heading !== null && <p class="end-roll-head">{b.heading}</p>}
             {b.lines.map((l) => (
               <p key={l} class="end-roll-line">
@@ -286,7 +294,11 @@ function Placeholder({ ending }: { ending: 'stay' | 'go' }) {
       <span class="end-ph-planet" />
       <span class="end-ph-relay" />
       {[0, 1, 2, 3, 4, 5].map((n) => (
-        <span key={n} class="end-ph-note" style={{ animationDelay: `${n * 600}ms`, left: `${304 + n * 6}px` }} />
+        <span
+          key={n}
+          class="end-ph-note"
+          style={{ animationDelay: `${n * 600}ms`, left: `${304 + n * 6}px` }}
+        />
       ))}
     </div>
   );

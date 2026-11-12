@@ -209,7 +209,8 @@
 }
 
 .end-final.go .end-ph {
-  background: radial-gradient(ellipse 200px 120px at 50% 30%, rgb(20 44 134 / 40%), transparent),
+  background:
+    radial-gradient(ellipse 200px 120px at 50% 30%, rgb(20 44 134 / 40%), transparent),
     var(--sd-ink-0);
 }
 

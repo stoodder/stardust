@@ -23,6 +23,7 @@ import { poolImage } from '../vfx/glowPixels.ts';
 import { propVariant } from './groundTiles.ts';
 import { isScenery, sceneryGround } from './scenery.ts';
 import type { TransientFx } from './TransientFx.ts';
+import type { RenderState } from './renderState.ts';
 import type { ViewContext } from './ViewContext.ts';
 
 export const BORE_RIG = 'prop.bore_rig' as const;
@@ -40,12 +41,8 @@ const BREACH_RING_MS = 600;
 /** The head's state as drawn. */
 type Head = 'idle' | 'drill' | 'breach';
 
-/** What the smoke flows read of the rig (`__sd.render().bore`). */
-export interface BoreLook {
-  readonly gauge: string;
-  readonly head: Head;
-  readonly full: boolean;
-}
+/** What the smoke flows read (`__sd.render()`; renderState.ts). */
+export type BoreLook = NonNullable<RenderState['bore']>;
 
 export class BoreView {
   readonly #ctx: ViewContext;

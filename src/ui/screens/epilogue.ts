@@ -7,6 +7,7 @@
 // motion keeps every beat and its timing but nothing slides or fades: cards cut, the roll shows a
 // block at a time, and the final image holds still.
 import type { EndingChoice, EpilogueView } from './epilogueState.ts';
+import { assertNever } from '../../shared/types.ts';
 import { CREDITS } from './credits.ts';
 
 /** A card's time on screen: about 6 s, plus reading time past 120 characters (ms). */
@@ -40,9 +41,15 @@ export const CREDIT_GAP_PX = 20;
 export const STAGE_PX = 360;
 
 /** The roll's own height (game px). */
-export function creditsHeightPx(blocks: readonly { heading: string | null; lines: readonly string[] }[] = CREDITS): number {
+export function creditsHeightPx(
+  blocks: readonly { heading: string | null; lines: readonly string[] }[] = CREDITS,
+): number {
   return blocks.reduce(
-    (h, b) => h + (b.heading === null ? 0 : CREDIT_LINE_PX) + b.lines.length * CREDIT_LINE_PX + CREDIT_GAP_PX,
+    (h, b) =>
+      h +
+      (b.heading === null ? 0 : CREDIT_LINE_PX) +
+      b.lines.length * CREDIT_LINE_PX +
+      CREDIT_GAP_PX,
     0,
   );
 }
@@ -84,6 +91,8 @@ export function beatMs(beat: EpilogueBeat, view: EpilogueView, still: boolean): 
       return creditsMs(still);
     case 'final':
       return FINAL_MS;
+    default:
+      return assertNever(beat);
   }
 }
 

@@ -100,14 +100,14 @@ export function epilogueFlags(
   save: Pick<SaveData, 'story'> | null,
   pick: EndingChoice | null,
 ): Partial<Record<EpilogueFlag, unknown>> {
-  const flags: Partial<Record<EpilogueFlag, unknown>> = { ...(save?.story.flags ?? {}) };
+  const flags: Partial<Record<EpilogueFlag, unknown>> = { ...save?.story.flags };
   if (pick !== null) flags.ending_choice = pick;
   return flags;
 }
 
 /** The counter card's slot (EPILOGUE_SLOTS' `counter`). */
-const COUNTER_SLOTS: readonly string[] = EPILOGUE_SLOTS.filter((s) => s.counter === true).map(
-  (s) => s.id,
+const COUNTER_SLOTS: ReadonlySet<string> = new Set(
+  EPILOGUE_SLOTS.filter((s) => s.counter === true).map((s) => s.id),
 );
 
 /**
@@ -123,12 +123,12 @@ export function epilogueView(
   const ctx = save === null ? null : textContext(save);
   const text = (t: string): string => (ctx === null ? t : resolveText(t, ctx));
   const all = epilogueFor(flags);
-  const counter = all.find((c) => COUNTER_SLOTS.includes(c.slot));
+  const counter = all.find((c) => COUNTER_SLOTS.has(c.slot));
   const ending = flags.ending_choice;
   return {
     kind: 'epilogue',
     cards: all
-      .filter((c) => !COUNTER_SLOTS.includes(c.slot))
+      .filter((c) => !COUNTER_SLOTS.has(c.slot))
       .map((c) => ({ slot: c.slot, text: text(c.text) })),
     remembered: counter === undefined ? null : text(counter.text),
     ending: C5_CHOICES.find((c) => c === ending) ?? null,

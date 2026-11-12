@@ -17,14 +17,7 @@ import { dawnLeadInMs } from '../screens/dawn.ts';
 
 /** A scene's staging, by kind. */
 export type StagingKind =
-  | 'rig9_feed'
-  | 'party'
-  | 'yield_log'
-  | 'mail'
-  | 'night_shift'
-  | 'waykeeper'
-  | 'dawn'
-  | 'c5';
+  'rig9_feed' | 'party' | 'yield_log' | 'mail' | 'night_shift' | 'waykeeper' | 'dawn' | 'c5';
 
 /** Which scenes are staged (a UI-owned table, keyed by scene id; K6). */
 export const SCENE_STAGING: Readonly<Record<string, StagingKind>> = {

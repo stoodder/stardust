@@ -42,7 +42,11 @@ export const CREDITS: readonly CreditBlock[] = [
   },
   {
     heading: 'Fonts',
-    lines: ['Silkscreen, by Jason Kottke', 'Pixelify Sans, by Stefie Justprince', 'SIL Open Font License'],
+    lines: [
+      'Silkscreen, by Jason Kottke',
+      'Pixelify Sans, by Stefie Justprince',
+      'SIL Open Font License',
+    ],
   },
   { heading: 'Built with', lines: ['Claude, by Anthropic'] },
   { heading: null, lines: ['Thank you for playing.'] },

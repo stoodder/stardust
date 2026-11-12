@@ -315,6 +315,27 @@ export interface RenderState {
   readonly bossBar: number;
   /** Each secondary timer's bar fill (px of 96; −1 before it starts; T806's TimerBarView). */
   readonly timerBars: readonly number[];
+  /** The finale's night, the song's light and Dawn's sun (T831; SongNightView). */
+  readonly songNight: {
+    /** Whether the night shows (false off a song map, and once the sun has risen). */
+    readonly night: boolean;
+    /** Song circles punched in it now. */
+    readonly circles: number;
+    /** The sun's step (0: none yet; 48, SUN_STEPS: risen). */
+    readonly sun: number;
+    /** Scenery in `world` in the night now, and out of it (both 0 while no night shows). */
+    readonly darkScenery: number;
+    readonly litScenery: number;
+  };
+  /** The Deep Bore's rig: its gauge frame, the head's state, the breakthrough (T831; null: none). */
+  readonly bore: {
+    /** The gauge's frame (`g0`–`g8`, or `full`). */
+    readonly gauge: string;
+    readonly head: 'idle' | 'drill' | 'breach';
+    readonly full: boolean;
+  } | null;
+  /** The memorial wreck's tile (−1: none) and its name while the plate shows (T831). */
+  readonly memorial: { readonly tile: number; readonly shown: string };
   /**
    * SongView (T805): rest and scatter bursts showing now, and the units laid to rest, scattered,
    * and re-formed this battle.

@@ -23,6 +23,7 @@ import { checkpointPlace } from './checkpoints.ts';
 import type { Host } from './host.ts';
 import { bindAssetMeter } from './hudAsset.ts';
 import { bindEscortMeter, refugeesWalking } from './hudEscort.ts';
+import { bindFinaleHud } from './hudFinale.ts';
 import { selectedRamp, selectedView } from './hudPanel.ts';
 import {
   displayName,
@@ -105,6 +106,11 @@ export interface HudSaveInfo {
   readonly lockedAbilities?: readonly string[];
   /** The save has shown the upgrade teach before, so it stays off (once per save, D061). */
   readonly upgradeHintSeen: boolean;
+  /**
+   * The save's lifetime Pests Processed as the battle began: the finale's countdown starts from it
+   * (app/countdown.ts, app/hudFinale.ts; T832). Absent: 0.
+   */
+  readonly pestsProcessed?: number;
   /** Enemy types the save has met (`campaign.seenEnemies`): the wave preview's NEW badges. */
   readonly seenEnemies: readonly string[];
   /**
@@ -161,6 +167,7 @@ export function hudSaveInfo(mapId: string, loadout: readonly string[]): HudSaveI
     upgradeHintSeen: hintShown(UPGRADE_HINT),
     seenEnemies: save.campaign.seenEnemies,
     jailbroken: save.unlocks.jailbroken,
+    pestsProcessed: save.stats.pestsProcessed,
     callsign: savedCallsign,
   };
 }
@@ -687,6 +694,7 @@ export function bindHud(
   const offs = [
     bindAssetMeter(host),
     bindEscortMeter(host), // T305c
+    bindFinaleHud(host, saveInfo.pestsProcessed ?? 0), // T832
     host.onAfterFrame(sync),
     interaction.subscribe(syncInteraction),
     // Inputs refused before the sim (render/input/apply.ts): a path ability aimed off the path

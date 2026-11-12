@@ -14,9 +14,22 @@
 // On a Holdout (A3M3; T631) the meter is Evacuated "of 36" with no lost row: a Holdout has no
 // defeat, so nothing counts down to one. Once its losses pass the low mark (`holdoutLow`) the
 // blinking alarm box sits beside the label instead, and each refugee lost still flashes it.
+// On the finale's choir (T832) it is **Voices**: the singers singing "of 16", and a **Hushed** row,
+// one pip per hush the choir can take (its floor), filled as singers are hushed; each hush flashes
+// it, and while the choir is halted a small HALTED tag sits at the end of its "of 16" row (the
+// playfield's plate, echoed where the eye checks the choir). The finale's alarm box carries no "!" (its tone).
 import { lostWords, relabelShown } from '../../app/hudEscort.ts';
 import { hud, type MeterRelabel } from '../state.ts';
+import { choirHalted } from './finaleState.ts';
 import { baked, Icon } from './Icon.tsx';
+
+/** The alarm box's mark: "!", or none in the finale (no system "!" there; D154's tone). */
+export function alarmMark(act: string): string {
+  return act === 'finale' ? '' : '!';
+}
+
+/** The halted choir's tag by the Voices label (the playfield's HALTED plate). */
+export const HALTED_TAG = 'Halted';
 
 /** The meter's glyph: the refugee's own once art draws one (`icon.refugee`), else the core orb. */
 export function escortIcon(): string {
@@ -55,16 +68,22 @@ export function EscortMeter() {
   const lost = lostWords(m.lost, m.maxLost);
   const last = m.maxLost !== null && m.lost >= m.maxLost;
   const held = relabel !== null && relabel.held;
+  const choir = m.choir === true;
+  const halted = choir && choirHalted.value;
+  const lostLabel = choir ? 'Hushed' : 'Lost';
+  const mark = alarmMark(hud.act.value);
   const name = m.holdout
     ? `${label} ${m.evacuated} of ${m.total}${m.low ? ', many lost' : ''}`
-    : `${label} ${m.evacuated} of ${m.total}, lost ${lost}${m.low ? ', few left' : ''}`;
+    : `${label} ${m.evacuated} of ${m.total}, ${lostLabel.toLowerCase()} ${lost}${m.low ? ', few left' : ''}${halted ? ', the choir is halted' : ''}`;
   return (
     <div
-      class={m.holdout ? 'hud-escort holdout' : 'hud-escort'}
+      class={m.holdout ? 'hud-escort holdout' : choir ? 'hud-escort choir' : 'hud-escort'}
       role="status"
       data-testid="escort-meter"
       data-low={m.low}
       data-holdout={m.holdout || undefined}
+      data-choir={choir || undefined}
+      data-halted={halted || undefined}
       aria-label={name}
     >
       {flash !== null && <span key={flash.id} class="hud-asset-flash" aria-hidden="true" />}
@@ -80,7 +99,7 @@ export function EscortMeter() {
                 {/* A Holdout's alarm sits by its label: it has no lost row (T631). */}
                 {m.holdout && m.low && (
                   <span class="hud-alarm" aria-hidden="true">
-                    !
+                    {mark}
                   </span>
                 )}
               </span>
@@ -93,14 +112,19 @@ export function EscortMeter() {
           </div>
           <span class="hud-escort-of num" data-testid="escort-total">
             of {m.total}
+            {halted && (
+              <span class="hud-halted-tag" data-testid="choir-halted" aria-hidden="true">
+                {HALTED_TAG}
+              </span>
+            )}
           </span>
           {!m.holdout && (
             <div class="hud-escort-lost" data-testid="escort-lost">
               <span class={m.low ? 'hud-label danger' : 'hud-label'}>
-                Lost
+                {lostLabel}
                 {m.low && (
                   <span class="hud-alarm" aria-hidden="true">
-                    !
+                    {mark}
                   </span>
                 )}
               </span>

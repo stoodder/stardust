@@ -1,9 +1,10 @@
 // The campaign's close after the finale's results card (D154; content/dialogue/resultsFlow.ts
 // `ending`): Sterling's farewell memo as a card, C5, the epilogue over the credits, then the
 // post-game star map. Pure: what a won run of a map plays once its card is dismissed, in order, and
-// which steps are still placeholders. The router plays them (T810 wires C5 and the epilogue, T863
-// the post-game star map); a step whose content or screen hasn't landed is a placeholder, which the
-// router passes over, so the flow can be wired before its pieces exist.
+// which steps are still placeholders. app/ending.ts plays them (T810: the memo, C5, the epilogue;
+// the post-game step routes to the star map until T863 builds its screen); a step whose content
+// or screen hasn't landed is a placeholder, passed over, so the flow can be wired before its pieces
+// exist.
 import { sceneById } from '../content/dialogue/index.ts';
 import {
   resultsFlow,
@@ -20,7 +21,7 @@ export const ENDING_SCREEN_TASKS: Readonly<Record<EndingScreen, string>> = {
 };
 
 /** The ending screens built so far (each task adds its own as it lands). */
-export const BUILT_ENDING_SCREENS: readonly EndingScreen[] = [];
+export const BUILT_ENDING_SCREENS: readonly EndingScreen[] = ['epilogue'];
 
 /**
  * The steps a win of `mapId` plays once its card is dismissed, over the save as run end left it:

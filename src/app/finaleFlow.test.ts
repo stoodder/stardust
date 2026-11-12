@@ -42,7 +42,7 @@ describe('the finale close (RESULTS_FLOW.fin_m01)', () => {
     expect(steps.map((s) => endingPlaceholder(s))).toEqual([
       null,
       null,
-      'screen epilogue waits for T810',
+      null,
       'screen post_game waits for T863',
     ]);
     // The memo and C5's scene are T811's, registered: Sterling's farewell, and C5's choice.

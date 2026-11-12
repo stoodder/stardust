@@ -10,9 +10,14 @@
 // a Holdout has no defeat, so nothing counts down to one; its alarm is `holdoutLow`'s mark.
 // The total is the run's (`state.refugeeTotal`: a gated group left out, A3M1's Thrum unspared, and
 // on A3M3 only the chosen door's), never the map's every group.
+// On the finale's choir (`objective: 'choir'`; T832) the same meter is **Voices**: the singers still
+// singing of the run's choir, and a Hushed row of pips, one per singer the choir can lose before the
+// map is (its floor, sim `minVoicesOf`: the run's choir − `maxHushed`), filled as singers are
+// hushed; each hush flashes it. The colony gate's integrity stays on the core's row under it
+// (ui/hud/StatusPanel.tsx: "Gate"). Dawn wakes the hushed: the pips empty again.
 // Otherwise `hud.escort` is null and the core's meter shows.
 import type { IdSpace } from '../content/types.ts';
-import { escortMaxLost, evaluateCondition, type Sim } from '../sim/index.ts';
+import { escortMaxLost, evaluateCondition, minVoicesOf, type Sim } from '../sim/index.ts';
 import { hud, type EscortMeterView } from '../ui/state.ts';
 import { escortLow, holdoutLow } from '../story/meters.ts';
 import { meterLabelText } from './hudText.ts';
@@ -52,9 +57,32 @@ export function lostPips(lost: number, maxLost: number | null): boolean[] | null
   return Array.from({ length: maxLost }, (_, i) => i < lost);
 }
 
-/** Whether the map's objective shows the Evacuated meter: an Escort's, or a Holdout's. */
+/** Whether the map's objective shows the Evacuated meter: an Escort's, a Holdout's, or the choir's. */
 export function showsEscortMeter(objective: string): boolean {
-  return objective === 'escort' || objective === 'holdout';
+  return objective === 'escort' || objective === 'holdout' || objective === 'choir';
+}
+
+/**
+ * The choir's meter (T832): Voices `voices` of `singers`, the hushed as its losses, and as many
+ * pips as hushes the run can take and still sing: the map is lost once Voices fall below `floor`
+ * (sim `choirLost`), so at `singers − floor + 1` hushed, every pip full. No floor: no pips.
+ */
+export function choirMeterView(
+  voices: number,
+  singers: number,
+  floor: number | null,
+): EscortMeterView {
+  const lost = Math.max(0, singers - voices);
+  const maxLost = floor === null ? null : Math.max(1, singers - floor + 1);
+  return {
+    evacuated: voices,
+    total: singers,
+    lost,
+    maxLost,
+    pips: lostPips(lost, maxLost),
+    low: escortLow(lost, maxLost),
+    choir: true,
+  };
 }
 
 /**
@@ -104,6 +132,13 @@ export function bindEscortMeter(host: Host<IdSpace>): () => void {
   const sync = (): void => {
     const s = sim.state;
     const was = hud.escort.value;
+    if (s.objective === 'choir') {
+      const { voices, singers } = s.choir;
+      if (was !== null && was.evacuated === voices && was.total === singers) return;
+      hud.escort.value = choirMeterView(voices, singers, minVoicesOf(s, sim.map));
+      hud.meterLabel.value = meterLabelText(s.meterLabel);
+      return;
+    }
     const { evacuated, refugeesLost: lost } = s.stats;
     const on = showsEscortMeter(s.objective);
     const total = s.refugeeTotal;
@@ -142,6 +177,11 @@ export function bindEscortMeter(host: Host<IdSpace>): () => void {
       }
     }),
     host.bus.on('RefugeeLost', () => {
+      sync();
+      if (!host.replaying) hud.escortLost.value = { id: ++lostId, amount: 1 };
+    }),
+    // The choir's: a singer hushed flashes Voices (T832).
+    host.bus.on('SingerHushed', () => {
       sync();
       if (!host.replaying) hud.escortLost.value = { id: ++lostId, amount: 1 };
     }),

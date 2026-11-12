@@ -41,6 +41,7 @@ import {
 import { apronCells, type GroundGrid } from './groundTiles.ts';
 import type { LightingView, NightTint } from './LightingView.ts';
 import { isScenery, sceneryGround } from './scenery.ts';
+import type { RenderState } from './renderState.ts';
 import type { ViewContext } from './ViewContext.ts';
 
 const OVERHANG_PX = 8;
@@ -53,18 +54,8 @@ const MAX_CIRCLES = 4;
 
 const at: Vec2 = { x: 0, y: 0 };
 
-/** What the smoke flows read of the night (`__sd.render().songNight`). */
-export interface SongNightLook {
-  /** Whether the night shows (false off a song map, and once the sun has risen). */
-  readonly night: boolean;
-  /** Song circles punched in it now. */
-  readonly circles: number;
-  /** The sun's step (0: none yet; SUN_STEPS: risen). */
-  readonly sun: number;
-  /** Scenery in `world` in the night now, and out of it (both 0 while no night shows). */
-  readonly darkScenery: number;
-  readonly litScenery: number;
-}
+/** What the smoke flows read (`__sd.render()`; renderState.ts). */
+export type SongNightLook = RenderState['songNight'];
 
 export class SongNightView implements NightTint {
   readonly #ctx: ViewContext;

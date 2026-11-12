@@ -838,7 +838,11 @@ export const STORY_CHOICE_LOCK_MS = 700;
  * StoryChoice's, the same 700 ms), and C5's ending (T810: the finale's last question waits the same
  * beat). Other choices, flag-setting or not, take a press at once.
  */
-export const LOCKED_CHOICE_FLAGS: readonly string[] = ['door_choice', 'quill_choice', 'ending_choice'];
+export const LOCKED_CHOICE_FLAGS: readonly string[] = [
+  'door_choice',
+  'quill_choice',
+  'ending_choice',
+];
 
 /** Whether a choice is a locked story choice: one of its options sets a LOCKED_CHOICE_FLAGS flag. */
 export function isStoryChoice(
