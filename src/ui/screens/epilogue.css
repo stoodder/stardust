@@ -133,12 +133,18 @@
   color: var(--sd-white-0);
 }
 
-.end-roll-block.title .end-roll-line {
+.end-roll-block.title .end-roll-line,
+.end-roll-name {
   font-family: var(--font-heading);
   font-size: 16px;
   line-height: 16px;
   text-transform: uppercase;
   color: var(--sd-gold-3);
+}
+
+/* The player's name keeps its own case (a callsign is the player's). */
+.end-roll-line.end-roll-name {
+  text-transform: none;
 }
 
 /* The final image, full-bleed. */

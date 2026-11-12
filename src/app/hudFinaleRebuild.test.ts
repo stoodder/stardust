@@ -56,7 +56,7 @@ describe('the rebuild pause after "Who\'s there?" (A3)', () => {
   it('never scolds: no "!" and no blame, and it names the way back', () => {
     expect(REBUILD_NOTE.text).not.toMatch(/!/);
     expect(REBUILD_NOTE.text).toMatch(/rebuild/i);
-    expect(REBUILD_NOTE.text).toMatch(/Space/);
+    expect(REBUILD_NOTE.text).toMatch(/press play/);
   });
 
   it("a resumed run's replay neither pauses nor speaks", () => {

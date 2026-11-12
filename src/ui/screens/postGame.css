@@ -39,6 +39,8 @@
 /* The open entry's box is the node panel's width (its tagline's lines as on a node's). */
 .sd-pg-head {
   width: 176px;
+  /* On top on screen; after the plate in the DOM and Tab order (PostGame.tsx). */
+  order: -1;
 }
 
 .sd-pg-tagline {

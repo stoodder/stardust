@@ -178,5 +178,8 @@ export function runTick(
     run(state, ctx);
     if (state.outcome !== 'playing') break;
   }
+  // A tick the freeze held (a request's own tick included; a press's tick runs whole): the time
+  // floors count the phase's unfrozen ticks (state.phaseFrozenTicks; D157).
+  if (state.pendingInput !== null) state.phaseFrozenTicks++;
   state.tick++;
 }

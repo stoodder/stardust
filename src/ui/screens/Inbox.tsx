@@ -12,6 +12,7 @@ import { silkText } from '../silk.ts';
 import { dialogue } from '../dialogue/state.ts';
 import { screen } from '../state.ts';
 import { baseChoice, campaign } from './state.ts';
+import '../components/disclosure.css';
 import './inbox.css';
 
 // ── Shared with the codex pane ───────────────────────────────────────────────────────────────
@@ -53,10 +54,8 @@ export function SmallPrint({ id, text }: { id: string; text: string }) {
         aria-controls={id}
         onClick={() => setOpen(!open)}
       >
-        <span class="sd-small-print-caret" aria-hidden="true">
-          {open ? '-' : '+'}
-        </span>
         Small print
+        <span class="sd-disclosure-chevron" aria-hidden="true" />
       </button>
       <p id={id} ref={textRef} class="sd-small-print-text" hidden={!open}>
         <GlyphText text={text} />

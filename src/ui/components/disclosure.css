@@ -1,6 +1,7 @@
-/* The "more" disclosure (Disclosure.tsx; T803a). The toggle reads like the Inbox's small print: a
-   +/- caret and small caps, quiet until hovered or focused; the region opens under it, or over what
-   follows with `float`. Spacing from the density tokens (theme.css). */
+/* The "more" disclosure (Disclosure.tsx; T803a). The toggle reads like the Inbox's small print: its
+   words in small caps and a chevron after them, quiet until hovered or focused; the region opens
+   under it, or over what follows with `float`. Spacing from the density tokens (theme.css). The
+   chevron is the game's one disclosure mark (the Inbox's small print wears it too; S2-6). */
 
 .sd-disclosure {
   position: relative;
@@ -31,14 +32,10 @@
   box-shadow: inset 0 -1px 0 var(--accent);
 }
 
-.sd-disclosure-caret {
-  width: 6px;
-  text-align: center;
-}
-
-/* `caret: 'trail'`: a small chevron after the words (a CSS triangle: Silkscreen has no arrows),
-   pointing right while closed, down while open. */
+/* A small chevron after the words (a CSS triangle: Silkscreen has no arrows), pointing right while
+   closed, down while open (its toggle's aria-expanded). */
 .sd-disclosure-chevron {
+  flex: none;
   width: 0;
   height: 0;
   border-top: 3px solid transparent;
@@ -46,7 +43,7 @@
   border-left: 3px solid currentcolor;
 }
 
-.sd-disclosure-open > .sd-disclosure-toggle .sd-disclosure-chevron {
+[aria-expanded='true'] > .sd-disclosure-chevron {
   border-top: 3px solid currentcolor;
   border-right: 3px solid transparent;
   border-bottom: 0;

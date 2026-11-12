@@ -999,6 +999,8 @@ interface CommsPlay {
   keep?: boolean;
   /** Its last line has rested on the panel past its hold (`lingerLastLine`; D144 S7). */
   lingered?: boolean;
+  /** The line on screen is its scene's last (`lingerLastLine`'s release moves it on at the press). */
+  last?: boolean;
   /** The line on screen: when it showed (performance.now), and what moves past it. */
   shownAt?: number;
   moveOn?: () => void;
@@ -1167,6 +1169,16 @@ export function lingerLastLine(id: string): () => void {
   lingering.add(id);
   return () => {
     lingering.delete(id);
+    // The press: a last line already typed moves on now, rested or still in its hold, so what the
+    // press cues ("Not Everglow.") follows the knock at once, not after the knock's reading time.
+    const c = commsNow;
+    if (lingerOn === null && c !== null && c.scene.id === id && c.last === true) {
+      if (typedScenes.has(id)) {
+        clearCommsTimer();
+        c.moveOn?.();
+      }
+      return;
+    }
     releaseLinger();
   };
 }
@@ -1220,6 +1232,8 @@ function holdComms(on: boolean): void {
     // from that line, shown again once the panel frees. Its `set` nodes so far ride its cursor,
     // saved as it ends. As it was on the panel, a countdown's start never drops it (D132).
     clearCommsTimer();
+    // Cut, not typed: the line shows again (and types again) once the panel frees.
+    typedLine = null;
     const c = commsNow;
     commsNow = null;
     lingerOn = null;
@@ -1327,6 +1341,8 @@ function pumpComms(): void {
 
 /** Shows the comms scene's current line and schedules the next. */
 function showCommsLine(): void {
+  // A last line leaving the panel for another counts as typed (it was on screen).
+  flushTypedLine();
   const c = commsNow;
   if (c === null) return;
   const step = c.cursor.step;
@@ -1369,6 +1385,7 @@ function showCommsLine(): void {
   };
   c.shownAt = performance.now();
   c.moveOn = moveOn;
+  c.last = next.step.kind !== 'line';
   clearCommsTimer();
   if (!barkScenes.has(c.scene)) markStarted(c.scene.id);
   // The scene's last line: once it has typed, its waiters go on (`whenSceneTyped`). The comms
@@ -1713,6 +1730,7 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
   dialogue.comms.value = null;
   typedScenes.clear();
   typedWaiters.clear();
+  typedLine = null;
   startedScenes.clear();
   startedWaiters.clear();
   lingering.clear();
@@ -2034,6 +2052,7 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
     // T664: nothing waits on a scene of a battle that has ended.
     startedWaiters.clear();
     typedWaiters.clear();
+    typedLine = null;
     lingering.clear();
     lingerOn = null;
     commsEnding = false;

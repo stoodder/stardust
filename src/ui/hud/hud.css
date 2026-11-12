@@ -1485,10 +1485,6 @@ section.chamfer,
   font-size: 0;
 }
 
-.hud-records-more .sd-disclosure-caret {
-  font-size: 8px;
-}
-
 .hud-records-more > .sd-disclosure-region {
   flex-basis: 100%;
   margin-top: 2px;

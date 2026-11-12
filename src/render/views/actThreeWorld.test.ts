@@ -7,7 +7,8 @@ import { RAW_CONTENT } from '../../content/registry.ts';
 import type { SpriteId } from '../../content/sprites/index.ts';
 import { ALL_SPRITES } from '../../content/sprites/all.ts';
 import { apronCells, decorLook, dressTile, peekerShows, propVariant } from './groundTiles.ts';
-import { riftCrackLook, riftCrackTiles } from './riftCrack.ts';
+import { SUN_STEPS } from '../vfx/songNightPixels.ts';
+import { RIFT_DAWN_FADE_STEPS, riftCrackLook, riftCrackTiles, riftDawnAlpha } from './riftCrack.ts';
 
 const maps = compileContent(RAW_CONTENT).maps;
 const m1 = maps['a3_m01'];
@@ -147,6 +148,24 @@ describe('the rift cracks', () => {
           expect(cracks[i]!.edges[0]).toBe(opposite[cracks[i - 1]!.edges[1]!]);
       }
     }
+  });
+
+  it('go out as Dawn begins: down the ladder over the first steps of the sun, then the scar (M8 R2)', () => {
+    expect(riftDawnAlpha(-1)).toBe(1);
+    expect(riftDawnAlpha(0)).toBe(1);
+    let last = 1;
+    for (let s = 0; s < RIFT_DAWN_FADE_STEPS; s++) {
+      const a = riftDawnAlpha(s);
+      expect(a).toBeGreaterThan(0);
+      expect(a).toBeLessThanOrEqual(last);
+      last = a;
+    }
+    expect(last).toBeLessThan(0.5);
+    expect(riftDawnAlpha(RIFT_DAWN_FADE_STEPS)).toBe(0);
+    // Gone long before the sun has crossed (about the HUD's 1.2 s of the 8 s sweep); at once
+    // under reduced motion (the sun lands at once).
+    expect(RIFT_DAWN_FADE_STEPS).toBeLessThanOrEqual(Math.ceil(SUN_STEPS * (1.2 / 8)));
+    expect(riftDawnAlpha(SUN_STEPS)).toBe(0);
   });
 
   it("reads A3M1's north rift down column 5 to the west ring", () => {

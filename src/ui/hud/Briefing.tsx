@@ -68,7 +68,6 @@ function IntelStrip({ intel }: { intel: ThreatIntelView }) {
           ) : (
             <Disclosure
               class="hud-intel-more"
-              caret="trail"
               label={answersLabel(r.answers.length)}
               about={`the towers that answer ${r.label}`}
             >
@@ -228,7 +227,6 @@ export function Briefing({ view }: { view: SceneView }) {
                     <MedalNames medals={medals} />
                     <Disclosure
                       class="hud-briefing-why"
-                      caret="trail"
                       label={medalsLabel(medals)}
                       about="what earns each medal"
                     >

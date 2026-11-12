@@ -16,7 +16,10 @@
 //   under it: `rimToward`), sorts over the towers round it (EnemyView `setHoldLift`), and the boss
 //   stands in a soft additive `violet.3` ground pool (`decal`); the floaters, bursts and sparks that
 //   start on or round its frame draw dimmed (TransientFx `setDim`). Render-only: the fight is
-//   unchanged.
+//   unchanged. At night the split's parts must read among the spires (M8 R2): every held body
+//   also sorts over each tower within one tile of it (`frontTowerNear`, depth.ts `held`), a held
+//   part wears a whole 1 px `gold.4` silhouette (`partOutline`: four copies, the song's side whole),
+//   and the dim box spans every held body.
 // - **Thrown back** (D156; unsungLook.ts `thrownAt`): up among the singers the song drives it back
 //   at once to where it dug in; the sim moves it in a tick, so its body is carried back from where
 //   it came up (BossSurfaced's `at`) over THROW_MS (EnemyView `setThrowOffset`), a `violet.3` streak
@@ -38,6 +41,7 @@ import {
   type Enemy,
   type SimEvent,
 } from '../../sim/index.ts';
+import { worldDepth } from '../depth.ts';
 import { gridToScreen, HALF_H, HALF_W, type Vec2 } from '../iso.ts';
 import { imageToCanvas } from '../sprites/canvas.ts';
 import { poolImage } from '../vfx/glowPixels.ts';
@@ -46,7 +50,10 @@ import {
   CHURN_CLODS,
   clodAt,
   digRingTiles,
+  frontTowerNear,
   heldBySong,
+  PART_OUTLINE_SIDES,
+  partOutline,
   rimToward,
   SURFACE_BURST_MS,
   surfaceBurstAt,
@@ -58,6 +65,7 @@ import {
   UNSUNG_POOL_STRENGTH,
   UNSUNG_POOL_TILES,
   UNSUNG_RIM_COLOR,
+  type TowerSpot,
 } from './unsungLook.ts';
 import type { ViewContext } from './ViewContext.ts';
 
@@ -68,6 +76,8 @@ const MAX_BURSTS = 4;
 const MAX_THROWS = 2;
 /** Bodies the song can hold at once: the Unsung, or its split's three parts (room to spare). */
 const MAX_HELD = 4;
+/** Rim copies at most: a part's silhouette is four (PART_OUTLINE_SIDES), the boss's rim one. */
+const MAX_RIMS = MAX_HELD * 4;
 const POOL_KEY = 'fx.unsung_pool';
 /** The rim sorts this far under the body it outlines (less than any uid tie-break step). */
 const RIM_UNDER = 1e-5;
@@ -99,16 +109,17 @@ interface Throw {
   ms: number;
 }
 
-/** The sim state as this view reads it: the enemy pool, the script phase, the song's circles. */
+/** The sim state as this view reads it: the pools, the script phase, the song's circles. */
 export type UnsungState = {
   readonly enemies: { readonly used: number; readonly items: readonly DeepReadonly<Enemy>[] };
+  readonly towers: { readonly used: number; readonly items: readonly TowerSpot[] };
   readonly phase: number;
 } & Parameters<typeof songCircles>[0];
 
 /** A drawn enemy body as the hold reads and lifts it (EnemyView). */
 export interface HeldBody {
   snapshot(out: BodySnapshot): boolean;
-  setHoldLift(px: number): void;
+  setHoldLift(px: number, over?: number): void;
   setThrowOffset(dx: number, dy: number): void;
   readonly alpha: number;
   readonly depth: number;
@@ -141,6 +152,9 @@ const rim = { dx: 0, dy: 0 };
 const thrown = { left: 0, alpha: 0 };
 const t0: Vec2 = { x: 0, y: 0 };
 const c0: Vec2 = { x: 0, y: 0 };
+const front = { x: 0, y: 0 };
+/** The box round every held body drawn this frame (screen px; the dim's). */
+const box = { l: 0, t: 0, r: 0, b: 0 };
 
 const p: Vec2 = { x: 0, y: 0 };
 const s: Vec2 = { x: 0, y: 0 };
@@ -165,12 +179,14 @@ export class UnsungView {
   risesSeen = 0;
 
   readonly #hold: UnsungHoldDeps | null;
-  /** The rims (one per held body) and the boss's ground pool; made on the first hold. */
+  /** The rims (the boss's one, a part's four) and the boss's ground pool; made on first use. */
   readonly #rims: Phaser.GameObjects.Sprite[] = [];
   #pool: Phaser.GameObjects.Image | null = null;
   /** The bodies lifted last frame (uid; 0: none), so a body let go drops back. */
   readonly #lifted: number[] = [];
   #held = 0;
+  /** Rim copies drawn this frame (the boss's one, a part's four). */
+  #rimsShown = 0;
   #dimmed = false;
   readonly #throws: Throw[] = [];
   #nextThrow = 0;
@@ -236,17 +252,19 @@ export class UnsungView {
     calls: number;
     bursts: number;
     held: number;
+    rims: number;
     thrown: number;
     thrownPx: number;
   } {
     let throwing = 0;
-    for (const t of this.#throws) if (t.ms >= 0) throwing++;
+    for (let i = 0; i < MAX_THROWS; i++) if (this.#throws[i]!.ms >= 0) throwing++; // i < MAX_THROWS
     return {
       digs: this.#digs,
       surfaceTells: this.#tells,
       calls: this.#calls,
       bursts: this.#burstsShown,
       held: this.#held,
+      rims: this.#rimsShown,
       thrown: throwing,
       thrownPx: this.#thrownPx,
     };
@@ -290,7 +308,8 @@ export class UnsungView {
     this.#thrownPx = 0;
     const hold = this.#hold;
     const still = this.#still();
-    for (const t of this.#throws) {
+    for (let k = 0; k < MAX_THROWS; k++) {
+      const t = this.#throws[k]!; // k < MAX_THROWS
       if (t.ms < 0) continue;
       const view = hold?.view(t.uid);
       let e: DeepReadonly<Enemy> | null = null;
@@ -328,8 +347,10 @@ export class UnsungView {
     if (hold === null) return;
     const circles = songCircles(state, hold.map());
     const items = state.enemies.items;
+    const origin = this.#ctx.origin;
     let n = 0;
-    // The body that takes the pool and the dim: the boss's, else the first part's.
+    let rims = 0;
+    // The body that takes the pool: the boss's, else the first part's.
     let main = false;
     let mainBoss = false;
     for (let i = 0; i < state.enemies.used && n < MAX_HELD; i++) {
@@ -339,25 +360,39 @@ export class UnsungView {
       if (c === null) continue;
       const v = hold.view(e.uid);
       if (v === undefined || !v.snapshot(snap)) continue;
-      v.setHoldLift(UNSUNG_HOLD_LIFT_PX);
-      gridToScreen(e.x, e.y, this.#ctx.origin, p);
-      gridToScreen(c.x, c.y, this.#ctx.origin, c0);
+      // Over the towers round it: its lift, and at least the lowest-drawn one within a tile.
+      let over = Number.NEGATIVE_INFINITY;
+      if (frontTowerNear(e.x, e.y, state.towers, front)) {
+        gridToScreen(front.x, front.y, origin, t0);
+        over = worldDepth(t0.y, 'held', e.uid);
+      }
+      v.setHoldLift(UNSUNG_HOLD_LIFT_PX, over);
+      gridToScreen(e.x, e.y, origin, p);
+      gridToScreen(c.x, c.y, origin, c0);
       rimToward(p.x, p.y, c0.x, c0.y, rim);
-      // The copy under the body (its depth reads the lift just applied).
-      this.#rim(n)
-        .setTexture(snap.texture, snap.frame)
-        .setFlipX(snap.flipX)
-        .setDisplayOrigin(snap.originX, snap.originY)
-        .setPosition(snap.x + rim.dx, snap.y + rim.dy)
-        .setDepth(v.depth - RIM_UNDER)
-        .setAlpha(v.alpha)
-        .setVisible(true);
       const isBoss = e.def !== null && e.def.boss !== null;
+      if (isBoss) {
+        // The copy under the body (its depth reads the lift just applied).
+        this.#placeRim(rims++, v, rim.dx, rim.dy, 1);
+      } else {
+        // A part's whole silhouette, the song's side whole (unsungLook.ts `partOutline`).
+        for (let k = 0; k < PART_OUTLINE_SIDES.length; k++) {
+          const side = PART_OUTLINE_SIDES[k]!; // k < length
+          this.#placeRim(
+            rims++,
+            v,
+            side[0],
+            side[1],
+            partOutline(side[0], side[1], rim.dx, rim.dy),
+          );
+        }
+      }
       if (!main || (isBoss && !mainBoss)) {
         main = true;
         mainBoss = isBoss;
-        this.#placePool(p.x, p.y, snap);
+        this.#placePool(p.x, p.y);
       }
+      this.#boxAround(snap, n === 0);
       this.#lifted[n] = e.uid;
       n++;
     }
@@ -369,8 +404,23 @@ export class UnsungView {
         this.#lifted[k] = 0;
       }
     }
-    for (let k = n; k < this.#rims.length; k++) this.#rims[k]!.setVisible(false); // k < length
-    if (!main) {
+    for (let k = rims; k < this.#rims.length; k++) {
+      const r = this.#rims[k]!; // k < length
+      if (r.visible) r.setVisible(false);
+    }
+    this.#rimsShown = rims;
+    if (n > 0) {
+      // Every held body's frame, dimmed round (see the header).
+      hold.fx?.setDim(
+        box.l,
+        box.t,
+        box.r - box.l,
+        box.b - box.t,
+        UNSUNG_DIM_MARGIN_PX,
+        UNSUNG_DIM_ALPHA,
+      );
+      this.#dimmed = true;
+    } else {
       this.#pool?.setVisible(false);
       if (this.#dimmed) hold.fx?.clearDim();
       this.#dimmed = false;
@@ -378,7 +428,20 @@ export class UnsungView {
     this.#held = n;
   }
 
-  /** The rim sprite for held body `k`, made on first use in `world`. */
+  /** Rim copy `k`: the held body's frame `snap`, (dx, dy) px off, sorted just under it, at `a` of its alpha. */
+  #placeRim(k: number, v: HeldBody, dx: number, dy: number, a: number): void {
+    if (k >= MAX_RIMS) return;
+    this.#rim(k)
+      .setTexture(snap.texture, snap.frame)
+      .setFlipX(snap.flipX)
+      .setDisplayOrigin(snap.originX, snap.originY)
+      .setPosition(snap.x + dx, snap.y + dy)
+      .setDepth(v.depth - RIM_UNDER)
+      .setAlpha(v.alpha * a)
+      .setVisible(true);
+  }
+
+  /** The rim sprite `k`, made on first use in `world`. */
   #rim(k: number): Phaser.GameObjects.Sprite {
     let r = this.#rims[k];
     if (r === undefined) {
@@ -390,8 +453,28 @@ export class UnsungView {
     return r;
   }
 
-  /** The boss's ground pool at screen (x, y), and the dim round its drawn frame `body`. */
-  #placePool(x: number, y: number, body: BodySnapshot): void {
+  /** Grows the dim box round body frame `body` (starts it afresh when `first`). */
+  #boxAround(body: BodySnapshot, first: boolean): void {
+    const f = this.#ctx.scene.textures.getFrame(body.texture, body.frame);
+    const w = f?.width ?? 0;
+    const h = f?.height ?? 0;
+    const l = body.flipX ? body.x - (w - body.originX) : body.x - body.originX;
+    const t = body.y - body.originY;
+    if (first) {
+      box.l = l;
+      box.t = t;
+      box.r = l + w;
+      box.b = t + h;
+      return;
+    }
+    box.l = Math.min(box.l, l);
+    box.t = Math.min(box.t, t);
+    box.r = Math.max(box.r, l + w);
+    box.b = Math.max(box.b, t + h);
+  }
+
+  /** The boss's ground pool at screen (x, y). */
+  #placePool(x: number, y: number): void {
     const { scene, layers } = this.#ctx;
     if (this.#pool === null) {
       if (!scene.textures.exists(POOL_KEY)) {
@@ -405,19 +488,6 @@ export class UnsungView {
       layers.decal.add(this.#pool);
     }
     this.#pool.setPosition(Math.round(x), Math.round(y)).setVisible(true);
-    const f = scene.textures.getFrame(body.texture, body.frame);
-    const w = f?.width ?? 0;
-    const h = f?.height ?? 0;
-    const left = body.flipX ? body.x - (w - body.originX) : body.x - body.originX;
-    this.#hold?.fx?.setDim(
-      left,
-      body.y - body.originY,
-      w,
-      h,
-      UNSUNG_DIM_MARGIN_PX,
-      UNSUNG_DIM_ALPHA,
-    );
-    this.#dimmed = true;
   }
 
   /** The singers' ground churning through the surfacing tell: clods hopping on the ring. */
@@ -438,7 +508,8 @@ export class UnsungView {
   #drawBursts(dt: number): void {
     this.#burstsShown = 0;
     const still = this.#still();
-    for (const b of this.#bursts) {
+    for (let k = 0; k < MAX_BURSTS; k++) {
+      const b = this.#bursts[k]!; // k < MAX_BURSTS
       if (b.ms < 0) continue;
       surfaceBurstAt(b.ms, still, burst);
       b.ms += dt;
@@ -462,6 +533,7 @@ export class UnsungView {
     this.#drew = false;
     for (const b of this.#bursts) b.ms = -1;
     for (const r of this.#rims) r.setVisible(false);
+    this.#rimsShown = 0;
     this.#pool?.setVisible(false);
     if (this.#dimmed) this.#hold?.fx?.clearDim();
     this.#dimmed = false;

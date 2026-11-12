@@ -13,6 +13,10 @@ describe('worldDepth', () => {
     // A ground strip (T232) covers enemies but never a tower, whatever their uids.
     expect(worldDepth(10, 'enemy', 255)).toBeLessThan(worldDepth(10, 'strip', 0));
     expect(worldDepth(10, 'strip', 255)).toBeLessThan(worldDepth(10, 'tower', 0));
+    // The held Unsung (M8 R2) at a tower's footY: over the tower and its head (+0.00005), under
+    // anything a pixel lower.
+    expect(worldDepth(10, 'tower', 255) + 0.00005).toBeLessThan(worldDepth(10, 'held', 0));
+    expect(worldDepth(10, 'held', 255)).toBeLessThan(worldDepth(11, 'prop', 0));
   });
 
   it('breaks ties by uid without crossing kinds', () => {

@@ -4,7 +4,10 @@
 // types, auto-dismissed. It never pauses, blocks, or takes the keys. A line that answers the one
 // before it (another speaker, same scene) shows under it, the cue dimmed above (D028). An optional
 // reply button (core-loop.md § 6.10) sits under the text, small and mouse-first, gone with the line.
-import { pressCommsButton } from '../../app/dialogue.ts';
+// Its typewriter tells the radio when a line has typed (`commsLineTyped`): a scene's last line
+// counts as typed from what the player saw (the SEAL's and "Who's there?"'s permission).
+import { useEffect } from 'preact/hooks';
+import { commsLineTyped, commsPanelMounted, pressCommsButton } from '../../app/dialogue.ts';
 import { plateColor } from './plate.ts';
 import { LineText, useTypewriter } from './LineText.tsx';
 import { Portrait } from './Portrait.tsx';
@@ -31,6 +34,13 @@ export function NamePlate({ line }: { line: LineView }) {
 export function CommsPanel() {
   const view = dialogue.comms.value;
   const typed = useTypewriter(view?.line ?? null, false);
+  // The radio's last-line waiters go on from this typewriter, not a clock (S2-8: "Who's there?"
+  // never arms before "...Knock knock." has typed on screen).
+  useEffect(() => commsPanelMounted(), []);
+  const lineId = view?.line.id ?? null;
+  useEffect(() => {
+    if (lineId !== null && typed.done) commsLineTyped(lineId);
+  }, [lineId, typed.done]);
   return (
     <div class="dlg-comms-slot" role="log" aria-live="polite" aria-label="Radio">
       {view !== null && (

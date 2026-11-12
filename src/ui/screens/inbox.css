@@ -344,11 +344,6 @@
   box-shadow: inset 0 -1px 0 var(--sd-teal-3);
 }
 
-.sd-small-print-caret {
-  width: 6px;
-  text-align: center;
-}
-
 .sd-small-print .sd-small-print-text {
   margin: 2px 0 0;
   font-family: var(--font-body);

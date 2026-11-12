@@ -518,6 +518,9 @@ test('declutter e: the epilogue (card, counter, credits, final image)', async ({
   await epi.click();
   await expect(epi).toHaveAttribute('data-beat', 'credits');
   await capture(page, 'epilogue-credits');
+  // The first press brings the roll to rest on the player; the next goes on.
+  await epi.click();
+  await expect(page.getByTestId('epilogue-credits')).toHaveAttribute('data-rest', 'true');
   await epi.click();
   await expect(epi).toHaveAttribute('data-beat', 'final');
   await capture(page, 'epilogue-final');

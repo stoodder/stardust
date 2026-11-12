@@ -369,6 +369,8 @@ export interface RenderState {
     readonly bursts: number;
     /** M8 R1: bodies the song holds now, drawn rimmed and lifted (the boss's in its pool). */
     readonly held: number;
+    /** M8 R2: rim copies drawn now (the boss's rim is one; a held part's whole silhouette, four). */
+    readonly rims: number;
     /** D156: throws back drawing now, the largest body offset drawn (px), and throws so far. */
     readonly thrown: number;
     readonly thrownPx: number;

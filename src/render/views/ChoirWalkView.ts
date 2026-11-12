@@ -12,7 +12,9 @@
 //   walks, red while the choir is halted (and a HALTED plate over her head, in `overlay`); hidden
 //   while the choir waits at a leg's end or once it has arrived.
 // Pooled bodies; ring textures baked once per radius; the fill and window are two Graphics redrawn
-// each frame from preallocated scratch. Nothing allocates per frame.
+// from preallocated scratch only when what they show changes (a circle moves or grows, the window's
+// screen points or its colour change; the fill's beat is the Graphics' own alpha), so a still choir
+// redraws nothing (M8 R2). Nothing allocates per frame.
 import type * as Phaser from 'phaser';
 import type { CompiledMapDef } from '../../content/compiled.ts';
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
@@ -76,6 +78,25 @@ const tip: Vec2 = { x: 0, y: 0 };
 const grid = { x: 0, y: 0 };
 const winX: number[] = Array.from({ length: MAX_WINDOW_POINTS }, () => 0);
 const winY: number[] = Array.from({ length: MAX_WINDOW_POINTS }, () => 0);
+/** The window's points on screen this frame: its path, then the bar's two ends. */
+const winSx: number[] = Array.from({ length: MAX_WINDOW_POINTS + 2 }, () => 0);
+const winSy: number[] = Array.from({ length: MAX_WINDOW_POINTS + 2 }, () => 0);
+/** The fill's ellipses this frame (screen centre and size). */
+const fillX: number[] = Array.from({ length: MAX_RINGS }, () => 0);
+const fillY: number[] = Array.from({ length: MAX_RINGS }, () => 0);
+const fillW: number[] = Array.from({ length: MAX_RINGS }, () => 0);
+const fillH: number[] = Array.from({ length: MAX_RINGS }, () => 0);
+
+/** Whether the first `n` of `a` differ from `b`'s, copying `a` into `b` when they do. */
+function differs(a: number[], b: number[], n: number): boolean {
+  let diff = false;
+  for (let i = 0; i < n; i++) {
+    if (a[i] === b[i]) continue;
+    diff = true;
+    b[i] = a[i]!; // i < n ≤ length
+  }
+  return diff;
+}
 
 type MemberLike = Readonly<
   Pick<Ally, 'x' | 'y' | 'hushUid' | 'pebble' | 'kind' | 'alive' | 'mode' | 'vulnerability'>
@@ -209,6 +230,13 @@ export class ChoirWalkView {
   #ringCount = 0;
   #halted = false;
   #window: 'none' | 'walk' | 'halt' = 'none';
+  /** What the fill and the window Graphics hold now (redrawn only on change; see the header). */
+  #fillN = -1;
+  readonly #fillDrawn = { x: [0, 0, 0, 0], y: [0, 0, 0, 0], w: [0, 0, 0, 0], h: [0, 0, 0, 0] };
+  #winDrawn: 'none' | 'walk' | 'halt' = 'none';
+  #winN = 0;
+  readonly #winDrawnX: number[] = Array.from({ length: MAX_WINDOW_POINTS + 2 }, () => 0);
+  readonly #winDrawnY: number[] = Array.from({ length: MAX_WINDOW_POINTS + 2 }, () => 0);
 
   constructor(ctx: ViewContext, reducedMotion: () => boolean = () => false) {
     this.#ctx = ctx;
@@ -237,13 +265,13 @@ export class ChoirWalkView {
     map: CompiledMapDef<IdSpace>,
     stamp: number,
   ): void {
-    this.#fill.clear();
-    this.#win.clear();
     this.#ringCount = 0;
     this.#halted = false;
     this.#window = 'none';
     const c = map.choir;
     if (c === null) {
+      this.#drawFill(0, 1);
+      this.#drawWindow(0);
       this.#hideRings(0);
       this.#plate.setVisible(false);
       return;
@@ -306,11 +334,15 @@ export class ChoirWalkView {
       const sc = circles[i]!; // i < length
       gridToScreen(sc.x, sc.y, this.#ctx.origin, pos);
       rangeEllipsePx(sc.r, semi);
-      this.#fill.fillStyle(FILL, fillAlpha).fillEllipse(pos.x, pos.y, semi.x * 2, semi.y * 2);
+      fillX[r] = pos.x;
+      fillY[r] = pos.y;
+      fillW[r] = semi.x * 2;
+      fillH[r] = semi.y * 2;
       this.#ring(r++, sc.r, shift, Math.round(pos.x), Math.round(pos.y));
     }
     this.#ringCount = r;
     this.#hideRings(r);
+    this.#drawFill(r, fillAlpha);
 
     this.#halted = ch.halted;
     const plate = ch.halted && !ch.arrived && pebble !== null;
@@ -318,17 +350,18 @@ export class ChoirWalkView {
       this.#plate.setPosition(pebble.at.x, pebble.at.y - HALT_PLATE_LIFT_PX);
     }
     if (this.#plate.visible !== plate) this.#plate.setVisible(plate);
-    if (ch.arrived || ch.waiting) return;
+    if (ch.arrived || ch.waiting) {
+      this.#drawWindow(0);
+      return;
+    }
     // The halt window: haltTiles up the road (toward its spawn) from the leader.
     const lead = end - ch.dist;
     const n = windowPath(route, lead, lead - c.haltTiles, winX, winY);
-    const g = this.#win;
     this.#window = ch.halted ? 'halt' : 'walk';
-    if (ch.halted) {
-      this.#stroke(n, 4, UNDER, 0.6);
-      this.#stroke(n, 2, HALT, 1);
-    } else {
-      this.#stroke(n, 1, WALK, 0.5);
+    for (let i = 0; i < n; i++) {
+      gridToScreen(winX[i]!, winY[i]!, this.#ctx.origin, pos); // i < n ≤ MAX_WINDOW_POINTS
+      winSx[i] = pos.x;
+      winSy[i] = pos.y;
     }
     // The bar across the road at the window's far edge.
     const lx = winX[n - 1]!; // n ≥ 2
@@ -340,15 +373,72 @@ export class ChoirWalkView {
     dy /= len;
     gridToScreen(lx - dy * WINDOW_BAR_TILES, ly + dx * WINDOW_BAR_TILES, this.#ctx.origin, pos);
     gridToScreen(lx + dy * WINDOW_BAR_TILES, ly - dx * WINDOW_BAR_TILES, this.#ctx.origin, tip);
-    if (ch.halted) g.lineStyle(4, UNDER, 0.6).lineBetween(pos.x, pos.y, tip.x, tip.y);
-    g.lineStyle(ch.halted ? 2 : 1, ch.halted ? HALT : WALK, ch.halted ? 1 : 0.6);
-    g.lineBetween(pos.x, pos.y, tip.x, tip.y);
+    winSx[n] = pos.x;
+    winSy[n] = pos.y;
+    winSx[n + 1] = tip.x;
+    winSy[n + 1] = tip.y;
+    this.#drawWindow(n);
+  }
+
+  /**
+   * The song circles' soft fill: the `n` ellipses in fillX…fillH, redrawn only when one moved or
+   * grew (or their count changed); the beat is the Graphics' alpha.
+   */
+  #drawFill(n: number, alpha: number): void {
+    const d = this.#fillDrawn;
+    // Every array compared (each `differs` copies what changed), then one redraw if any did.
+    let changed = n !== this.#fillN;
+    if (differs(fillX, d.x, n)) changed = true;
+    if (differs(fillY, d.y, n)) changed = true;
+    if (differs(fillW, d.w, n)) changed = true;
+    if (differs(fillH, d.h, n)) changed = true;
+    if (changed) {
+      this.#fillN = n;
+      const g = this.#fill;
+      g.clear();
+      for (let i = 0; i < n; i++) {
+        g.fillStyle(FILL, 1).fillEllipse(d.x[i]!, d.y[i]!, d.w[i]!, d.h[i]!); // i < n ≤ MAX_RINGS
+      }
+    }
+    if (this.#fill.alpha !== alpha) this.#fill.setAlpha(alpha);
+  }
+
+  /**
+   * The halt window (`#window`'s look) from its `n` path points and the bar's two ends in
+   * winSx/winSy (n = 0: none), redrawn only when a point or the look changed.
+   */
+  #drawWindow(n: number): void {
+    const look = n === 0 ? 'none' : this.#window;
+    let changed = n !== this.#winN || look !== this.#winDrawn;
+    if (n > 0 && differs(winSx, this.#winDrawnX, n + 2)) changed = true;
+    if (n > 0 && differs(winSy, this.#winDrawnY, n + 2)) changed = true;
+    if (!changed) return;
+    this.#winN = n;
+    this.#winDrawn = look;
+    const g = this.#win;
+    g.clear();
+    if (look === 'none') return;
+    const halted = look === 'halt';
+    if (halted) {
+      this.#stroke(n, 4, UNDER, 0.6);
+      this.#stroke(n, 2, HALT, 1);
+    } else {
+      this.#stroke(n, 1, WALK, 0.5);
+    }
+    const bx = this.#winDrawnX;
+    const by = this.#winDrawnY;
+    if (halted) g.lineStyle(4, UNDER, 0.6).lineBetween(bx[n]!, by[n]!, bx[n + 1]!, by[n + 1]!);
+    g.lineStyle(halted ? 2 : 1, halted ? HALT : WALK, halted ? 1 : 0.6);
+    g.lineBetween(bx[n]!, by[n]!, bx[n + 1]!, by[n + 1]!);
   }
 
   releaseAll(): void {
     this.#pool.releaseAll();
     this.#fill.clear();
     this.#win.clear();
+    this.#fillN = -1;
+    this.#winDrawn = 'none';
+    this.#winN = 0;
     this.#hideRings(0);
     this.#plate.setVisible(false);
     this.#ringCount = 0;
@@ -390,15 +480,17 @@ export class ChoirWalkView {
     };
   }
 
-  /** Strokes the window's path (its `n` points in winX/winY) `px` wide. */
+  /** Strokes the window's path (its `n` screen points as drawn) `px` wide. */
   #stroke(n: number, px: number, color: number, alpha: number): void {
     const g = this.#win;
     g.lineStyle(px, color, alpha);
     g.beginPath();
+    const xs = this.#winDrawnX;
+    const ys = this.#winDrawnY;
     for (let i = 0; i < n; i++) {
-      gridToScreen(winX[i]!, winY[i]!, this.#ctx.origin, pos); // i < n ≤ MAX_WINDOW_POINTS
-      if (i === 0) g.moveTo(pos.x, pos.y);
-      else g.lineTo(pos.x, pos.y);
+      if (i === 0)
+        g.moveTo(xs[i]!, ys[i]!); // i < n ≤ MAX_WINDOW_POINTS
+      else g.lineTo(xs[i]!, ys[i]!);
     }
     g.strokePath();
   }

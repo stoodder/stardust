@@ -238,6 +238,70 @@ export function rimToward(
   return out;
 }
 
+// --- The split's parts at night (M8 review R2) ---------------------------------------------------
+// The parts stand three together at the circle's edge among the Halls mouth's spires, small and
+// hollow on the night ground. So that each reads whole there:
+// - every held body sorts over **every tower within one tile of it, in any direction**
+//   (`frontTowerNear`: the lowest-drawn such tower; the body sorts at its footY, depth.ts `held`),
+//   on top of UNSUNG_HOLD_LIFT_PX, so a body standing at the back of its tile still clears the
+//   spire on the tile in front;
+// - a held **part** wears a whole 1 px `gold.4` silhouette (`partOutline`): a copy each way, at
+//   full strength on the side facing the song and a ladder step down (PART_OUTLINE_ALPHA) on the
+//   other sides; the boss keeps its one-sided rim (its bulk reads on its own);
+// - the dim round held bodies covers every one of them (the box round them all), and the Mindspike's
+//   Unnerved squiggles over them dim with the floaters (MindView reads TransientFx `dimOf`).
+
+/** A held part's silhouette on its sides away from the song (a ladder step). */
+export const PART_OUTLINE_ALPHA: number = STEPPED_ALPHA[1];
+/** The silhouette's copies: one pixel each way (x, y). */
+export const PART_OUTLINE_SIDES: readonly (readonly [number, number])[] = [
+  [-1, 0],
+  [1, 0],
+  [0, -1],
+  [0, 1],
+];
+
+/**
+ * The strength (of the body's alpha) of the silhouette copy offset (`sx`, `sy`) round a part whose
+ * rim faces (`rx`, `ry`) (`rimToward`): whole on the song's side(s), PART_OUTLINE_ALPHA elsewhere.
+ */
+export function partOutline(sx: number, sy: number, rx: number, ry: number): number {
+  return (sx !== 0 && sx === rx) || (sy !== 0 && sy === ry) ? 1 : PART_OUTLINE_ALPHA;
+}
+
+/** A tower as the hold reads it (sim `Tower`: alive, tile centre). */
+export interface TowerSpot {
+  readonly alive: boolean;
+  readonly x: number;
+  readonly y: number;
+}
+
+/**
+ * The tower within one tile of grid point (`ex`, `ey`) in any direction (its tile and the eight
+ * round it) drawn lowest on screen (the greatest x + y), written to `out`; false when there's none.
+ * The held body sorts over it, and so over every tower round it.
+ */
+export function frontTowerNear(
+  ex: number,
+  ey: number,
+  towers: { readonly used: number; readonly items: readonly TowerSpot[] },
+  out: { x: number; y: number },
+): boolean {
+  const col = Math.floor(ex);
+  const row = Math.floor(ey);
+  let best = Number.NEGATIVE_INFINITY;
+  for (let i = 0; i < towers.used; i++) {
+    const t = towers.items[i]!; // i < used ≤ items.length
+    if (!t.alive) continue;
+    if (Math.abs(Math.floor(t.x) - col) > 1 || Math.abs(Math.floor(t.y) - row) > 1) continue;
+    if (t.x + t.y <= best) continue;
+    best = t.x + t.y;
+    out.x = t.x;
+    out.y = t.y;
+  }
+  return best > Number.NEGATIVE_INFINITY;
+}
+
 // --- Thrown back (D156; M8 R1 relay) -------------------------------------------------------------
 // Up among the singers, the song drives the Unsung back at once to where it dug in (sim
 // `digFromDist`; BossSurfaced's `at` is where it came up). The sim moves it in one tick; render

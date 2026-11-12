@@ -15,8 +15,15 @@ import {
   cardMs,
   COUNTER_ZERO_MS,
   counterFlipped,
-  creditsMs,
+  creditBlockPx,
+  creditsAtRest,
+  creditsBlockAt,
+  creditsOffsetPx,
+  creditsRestMs,
+  creditsSteps,
+  creditsStopPx,
   epilogueBeats,
+  STAGE_PX,
   FINAL_IMAGES,
   stillFrameAt,
 } from '../ui/screens/epilogue.ts';
@@ -194,6 +201,39 @@ describe('the epilogue (bible.md § 10)', () => {
     expect(creditsText(resolvedCredits(null))).not.toMatch(/[{}]/);
   });
 
+  it('the roll ends on the player: And you last, centred over the thanks, held there (S2-2)', async () => {
+    const { CREDITS, CREDITS_YOU } = await import('../ui/screens/credits.ts');
+    // With → And → The choir → Made with / Fonts / Built with → And you → the thanks.
+    expect(CREDITS.map((b) => b.heading)).toEqual([
+      null,
+      'With',
+      'And',
+      'The choir',
+      'Made with',
+      'Fonts',
+      'Built with',
+      'And you',
+      null,
+    ]);
+    expect(CREDITS[CREDITS_YOU]).toMatchObject({ lines: ['{name}', 'Waykeeper'], style: 'you' });
+    expect(CREDITS.at(-1)?.lines).toEqual(['Thank you for playing.']);
+    // At rest, "And you" and the thanks sit centred on the stage.
+    const top = CREDITS.slice(0, CREDITS_YOU).reduce((h, b) => h + creditBlockPx(b), 0);
+    const group = creditBlockPx(CREDITS[CREDITS_YOU]!) + creditBlockPx(CREDITS.at(-1)!) - 20;
+    const rollTop = STAGE_PX - creditsStopPx();
+    expect(Math.abs(rollTop + top + group / 2 - STAGE_PX / 2)).toBeLessThanOrEqual(1);
+    // The roll climbs to that rest and stays there, however long it waits.
+    const rest = creditsRestMs(false);
+    expect(creditsAtRest(rest - 1, false)).toBe(false);
+    expect(creditsAtRest(rest, false)).toBe(true);
+    expect(creditsOffsetPx(rest * 10)).toBe(creditsStopPx());
+    // Reduced motion steps there a block at a time; the last step is And you with the thanks.
+    const steps = creditsSteps();
+    expect(steps.at(-1)).toEqual([CREDITS_YOU, CREDITS.length - 1]);
+    expect(creditsBlockAt(0)).toEqual([0]);
+    expect(creditsBlockAt(creditsRestMs(true) * 10)).toEqual(steps.at(-1));
+  });
+
   it("C5's pick overrides the save's flag (the fixture's answer isn't saved)", () => {
     expect(epilogueFlags(base, 'go').ending_choice).toBe('go');
     expect(epilogueFlags(base, null).ending_choice).toBe('stay');
@@ -207,11 +247,15 @@ describe('the epilogue (bible.md § 10)', () => {
     expect(beats.filter((b) => b.kind === 'card')).toHaveLength(view.cards.length);
     expect(cardMs('short')).toBe(6000);
     expect(cardMs('x'.repeat(170))).toBe(8000);
-    for (const b of beats) expect(beatMs(b, view, false)).toBeGreaterThan(0);
+    // Every beat moves on by itself but the credits, which hold at rest until a press.
+    for (const b of beats) {
+      if (b.kind === 'credits') expect(beatMs(b, view, false)).toBeNull();
+      else expect(beatMs(b, view, false)).toBeGreaterThan(0);
+    }
     expect(counterFlipped(COUNTER_ZERO_MS - 1)).toBe(false);
     expect(counterFlipped(COUNTER_ZERO_MS)).toBe(true);
-    expect(creditsMs(true)).toBeGreaterThan(0);
-    expect(creditsMs(false)).toBeGreaterThan(creditsMs(true) / 4);
+    expect(creditsRestMs(true)).toBeGreaterThan(0);
+    expect(creditsRestMs(false)).toBeGreaterThan(creditsRestMs(true) / 4);
     expect(Object.keys(FINAL_IMAGES)).toEqual(['stay', 'go']);
     // The orbit's relay blinks on T843's anim; held still under reduced motion.
     const blink = { frames: ['still', 'blink_1'], fps: 4 };

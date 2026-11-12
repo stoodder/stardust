@@ -322,24 +322,32 @@
   text-align: center;
 }
 
-/* The voices who spoke for an answer (C5; D156): small faces at its end, each a 26 px window on
-   its portrait's face (the bust's head, whole pixels, never scaled). */
+/* The voices who spoke for an answer (C5; D156): small faces at its end, each a 28 px window on
+   its portrait's face (the bust's head, whole pixels, never scaled), fully framed (S2-4): the row
+   stands a face plus 4 px tall, and the faces sit 4 px in from its chamfered right edge. */
+.dlg-choice:has(.dlg-choice-voices) {
+  min-height: 32px;
+  align-items: center;
+}
+
 .dlg-choice-voices {
   display: flex;
   flex: none;
+  align-self: center;
   gap: 2px;
   margin-left: 6px;
+  margin-right: 4px;
 }
 
 .dlg-choice-voices .dlg-portrait {
   display: block;
   overflow: hidden;
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
 }
 
 .dlg-choice-voices .dlg-portrait img {
-  margin: -5px 0 0 -12px;
+  margin: -4px 0 0 -11px;
 }
 
 /* The keys a locked choice answers (D156): one quiet line under its options. */

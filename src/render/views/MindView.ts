@@ -1,6 +1,7 @@
 // The Mindspike's and Stillness's views (T507; mindLook.ts has the rules; T530a's polish):
 // - **Unnerved:** a wobbling `violet.4` squiggle over the head of each Unnerved unit (a boss's
-//   too: it is interrupted, if not slowed), from the sim's `unnervedTicks`, so it holds while
+//   too: it is interrupted, if not slowed; dimmed over the held Unsung, as the floaters are:
+//   TransientFx `dimOf`, M8 R2), from the sim's `unnervedTicks`, so it holds while
 //   paused and goes the tick the status does; never on a leaving unit (a stood-down one). It sits over the body as EnemyView draws it (its
 //   lane offset, a flyer's lift; unitAnchor.ts), falling back to the grid point without a view.
 //   The body's 1 px jitter is EnemyView's.
@@ -133,7 +134,11 @@ export class MindView {
         top = pos.y - lift - this.#headroomOf(drawnBody(e));
       }
       if (mark.texture.key !== key) mark.setTexture(key);
-      mark.setPosition(Math.round(x), Math.round(top - UNNERVED_GAP_PX)).setVisible(true);
+      const my = Math.round(top - UNNERVED_GAP_PX);
+      // Over the held Unsung it dims with the floaters (TransientFx `dimOf`; M8 R2).
+      const a = this.#fx.dimOf(x, my);
+      if (mark.alpha !== a) mark.setAlpha(a);
+      mark.setPosition(Math.round(x), my).setVisible(true);
     }
     this.#shown = n;
     for (; n < MAX_MARKS; n++) {

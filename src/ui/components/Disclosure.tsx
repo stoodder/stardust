@@ -3,8 +3,10 @@
 // `aria-expanded` and `aria-controls`, its region `hidden` while closed (out of the page, the tab
 // order and the screen reader's reading alike), opened by a click, Enter or Space (the button's
 // own); Esc inside an open one closes it and puts the focus back on its toggle, without reaching
-// the game's Esc (the pause menu, a menu's way back). The toggle reads like the Inbox's small print
-// (a +/- caret, small caps; or a chevron after the words, `caret: 'trail'`). `float` lays the region over what follows instead of pushing it down,
+// the game's Esc (the pause menu, a menu's way back). The toggle reads like the Inbox's small print:
+// its words in small caps, then a small chevron after them, pointing right while closed and down
+// while open ("Every link ▸", "Small print ▸", "3 medals ▸"; one style everywhere, S2-6). `float`
+// lays the region over what follows instead of pushing it down,
 // for a panel that mustn't grow. It opens with a short fade, none under reduced motion
 // (disclosure.css). Never put a `data-critical` readout inside one: the declutter guard
 // (smoke/declutter.ts) fails a critical readout that isn't shown without a click.
@@ -30,12 +32,6 @@ export interface DisclosureProps {
   readonly onToggle?: (open: boolean) => void;
   /** Lay the region over what follows (absolutely placed under the toggle) instead of in flow. */
   readonly float?: boolean;
-  /**
-   * Where its mark sits: `lead` (default) a +/- before the words; `trail` a small chevron after
-   * them, pointing right while closed and down while open (a count like "8 of yours answer it",
-   * which a leading "+" turned into "+8"; D156).
-   */
-  readonly caret?: 'lead' | 'trail';
   /** Extra classes on the root. */
   readonly class?: string;
   readonly children?: ComponentChildren;
@@ -119,13 +115,8 @@ export function Disclosure(props: DisclosureProps): JSX.Element {
         aria-label={s.name}
         onClick={() => set(!open)}
       >
-        {props.caret !== 'trail' && (
-          <span class="sd-disclosure-caret" aria-hidden="true">
-            {open ? '-' : '+'}
-          </span>
-        )}
         {s.text}
-        {props.caret === 'trail' && <span class="sd-disclosure-chevron" aria-hidden="true" />}
+        <span class="sd-disclosure-chevron" aria-hidden="true" />
       </button>
       <div id={s.region.id} class="sd-disclosure-region" hidden={s.region.hidden}>
         {props.children}

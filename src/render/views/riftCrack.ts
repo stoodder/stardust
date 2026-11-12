@@ -8,6 +8,7 @@
 import type { RiftStatus } from '../../sim/index.ts';
 import type { GridPos, TileChar } from '../../content/types.ts';
 import type { VergeEdge } from '../../content/sprites/tiles/verge.ts';
+import { STEPPED_ALPHA } from '../vfx/fxTiming.ts';
 
 export interface RiftCrackTile {
   readonly col: number;
@@ -85,4 +86,20 @@ export function riftCrackLook(
 ): { readonly frame: string; readonly anim: string | null } {
   if (status === 'closed') return { frame: `closed_${edge}`, anim: null };
   return { frame: `${status}_${edge}_0`, anim: `${status}_${edge}` };
+}
+
+/**
+ * At the finale's Dawn the torn rifts go out (M8 review R2): as Phase 3 begins each lit half
+ * (`opening`, `open`) fades down the stepped-alpha ladder over RIFT_DAWN_FADE_STEPS of the sun's
+ * sweep (SongNightView `sunStep`, sim time: about the HUD's 1.2 s of the 8 s Dawn), then closes to
+ * its old scar, so no violet tear burns across the morning. Under reduced motion the sun lands at
+ * once (step SUN_STEPS), so they close at once.
+ */
+export const RIFT_DAWN_FADE_STEPS = 7;
+
+/** A lit half's alpha at Dawn's sun step `step` (−1: no Dawn → 1); 0 once it has gone to its scar. */
+export function riftDawnAlpha(step: number): number {
+  if (step < 0) return 1;
+  if (step >= RIFT_DAWN_FADE_STEPS) return 0;
+  return STEPPED_ALPHA[Math.min(3, Math.floor((step / RIFT_DAWN_FADE_STEPS) * 4))]!;
 }

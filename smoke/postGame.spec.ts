@@ -69,6 +69,17 @@ test('post-game: the Title at dawn, the Sector map at dawn under Stay, the plate
   await expect(page.locator('.sd-star-open, .sd-star-coming_soon')).toHaveCount(0);
   await nextFrames(page);
   await shot(page, FLOW, 2, 'stay-endless');
+  // The panel stands above the plate on screen but follows it in Tab order (S2-5): from the
+  // deck's last row, Tab reaches the open entry's seed field, not the Title.
+  const boxes = page.locator('[data-testid="post-game"] > .sd-pg-box');
+  await expect(boxes.first()).toHaveClass(/sd-pg-plate/);
+  await expect(boxes.last()).toHaveClass(/sd-pg-head/);
+  const plateY = (await boxes.first().boundingBox())?.y ?? 0;
+  const headY = (await boxes.last().boundingBox())?.y ?? 0;
+  expect(headY).toBeLessThan(plateY);
+  await page.getByRole('button', { name: 'Watch the epilogue' }).focus();
+  await page.keyboard.press('Tab');
+  await expect(page.getByTestId('post-game-panel').locator(':focus')).toHaveCount(1);
 
   // One column (T803c): with Endless open, neither box covers the west nodes (The Long Walk,
   // The Preserve), which take a click.

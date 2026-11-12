@@ -40,7 +40,8 @@ import { createState, takeUid, type SimState } from './state.ts';
 import { cleanup } from './systems/cleanup.ts';
 import { movement } from './systems/movement.ts';
 import { applyUnnerved } from './systems/status.ts';
-import { createScratch, type TickContext } from './tick.ts';
+import { createScratch, runTick, type TickContext } from './tick.ts';
+import { setPhase } from './phases.ts';
 import { FIXTURE_CONTENT, fixtureConfig } from './__fixtures__/sim.ts';
 
 const LIVE = compileContent(RAW_CONTENT);
@@ -293,13 +294,15 @@ describe('phase 3: the dig toward the choir (D154 Fork 2)', () => {
     expect(u.abilityTicks).toBe(GAP);
   });
 
-  it('a burrow answer’s hit underground digs it out: up where it is, no one hushed', () => {
+  it('a burrow answer’s hit underground digs it out: no one hushed, driven back to its edge', () => {
     const { state, ctx } = world();
     const u = risen(state, ctx);
-    run(state, ctx, BOSS_PHASE_INVULNERABLE_TICKS + GAP, false);
+    run(state, ctx, BOSS_PHASE_INVULNERABLE_TICKS + GAP - 1, false);
+    const dugInAt = u.dist;
+    run(state, ctx, 1, false);
     expect(u.burrowed).toBe(true);
     run(state, ctx, 10);
-    const where = u.dist;
+    expect(u.dist).not.toBeCloseTo(dugInAt, 3); // on its way under the singers
     const plain = applyDamage(state, u, 50, 'kinetic', SRC); // an ordinary shot: nothing lands
     expect(plain).toBe(0);
     const hit = applyDamage(state, u, 50, 'kinetic', SRC, {
@@ -312,7 +315,10 @@ describe('phase 3: the dig toward the choir (D154 Fork 2)', () => {
     expect(u.burrowed).toBe(false);
     expect(of(events, 'BossSurfaced')[0]).toMatchObject({ dugOut: true, hushed: 0 });
     expect(of(events, 'SingerHushed')).toEqual([]);
-    expect(u.dist).toBeCloseTo(where, 9); // short of the singers
+    // Up short of the singers (BossSurfaced's `at`), then the song drives it back to where it dug
+    // in, as after a surfacing among them (D157): it never parks on the choir's road.
+    expect(u.dist).toBeCloseTo(dugInAt, 9);
+    expect(u.digFromDist).toBe(-1);
     expect(u.abilityCount).toBe(1); // the dig is spent
   });
 
@@ -490,6 +496,33 @@ describe("the forms' time floors (D156): damage never brings a form on sooner", 
     state.tick = state.phaseTick + P4!.notBeforeTicks;
     bossDamage(state, b, 1);
     expect(b.bossPhase).toBe(4);
+  });
+
+  it('counts only unfrozen ticks: a forced input left unanswered never brings a form on (D157)', () => {
+    const { state, ctx } = world();
+    state.phase = 1;
+    setPhase(state, 2); // Phase 2 begins now; its frozen count starts at 0
+    expect(state.phaseFrozenTicks).toBe(0);
+    // "Who's there?" waits 200 s: the whole sim holds but the tick runs on.
+    state.pendingInput = 'whos_there';
+    for (let t = 0; t < secToTicks(200); t++) runTick(state, ctx);
+    expect(state.phaseFrozenTicks).toBe(secToTicks(200));
+    state.pendingInput = null;
+    runTick(state, ctx); // a tick of play
+    expect(state.phaseFrozenTicks).toBe(secToTicks(200));
+    const b = boss(state, ctx);
+    b.bossPhase = 3;
+    b.hp = 0.3 * UNSUNG.hp;
+    // 201 s of the phase's clock, 1 tick of it played: form 4 (120 s) still waits.
+    bossDamage(state, b, 0.2 * UNSUNG.hp);
+    expect(b.bossPhase).toBe(3);
+    expect(b.hp).toBeCloseTo(0.25 * UNSUNG.hp, 6);
+    state.tick += P4!.notBeforeTicks - 1; // the floor's unfrozen time, all played
+    bossDamage(state, b, 1);
+    expect(b.bossPhase).toBe(4);
+    // The next phase starts its count afresh.
+    setPhase(state, 3);
+    expect(state.phaseFrozenTicks).toBe(0);
   });
 
   it('risen after the split early, it holds in its rise until form 3 may begin', () => {

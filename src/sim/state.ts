@@ -495,6 +495,12 @@ export interface SimState<K extends IdSpace = IdSpace> {
   phase: number;
   /** The tick the current phase began (0 for phase 1): the `{ phase, afterSec }` trigger's clock. */
   phaseTick: number;
+  /**
+   * Ticks of the current phase frozen behind a forced input (sim/forcedInput.ts; 0 at its start):
+   * a boss form's time floor counts the phase's unfrozen ticks only (bossPhases.ts
+   * `phaseWaitTicks`; D157), so "Who's there?" left unanswered never brings a form on sooner.
+   */
+  phaseFrozenTicks: number;
   /** The secondary timers (T806), index-aligned with `map.timers`; empty without any. */
   timers: TimerState[];
   /** The song's rest points so far (T805; the countdown's p = restPoints ÷ restTarget). */
@@ -644,6 +650,7 @@ export function createState(map: CompiledMapDef<IdSpace>, seed: number): SimStat
     wreckageAtWave: [],
     phase: 1,
     phaseTick: 0,
+    phaseFrozenTicks: 0,
     timers: map.timers.map((): TimerState => ({
       filled: 0,
       ratePct: 1,

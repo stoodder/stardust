@@ -84,12 +84,12 @@ describe('meta modifiers', () => {
     );
   });
 
-  it('Story difficulty: −30% HP and shields, +50% credits, integrity 30, asset +50%, countdowns +50%', () => {
+  it('Story difficulty: −30% HP and shields, +50% credits, integrity ≥ 30, asset +50%, countdowns +50%', () => {
     expect(metaModifiers({ ...none, difficulty: 'story' })).toEqual([
       { kind: 'enemyStat', stat: 'hp', pct: -0.3, source: 'difficulty:story' },
       { kind: 'enemyStat', stat: 'shield', pct: -0.3, source: 'difficulty:story' },
       { kind: 'economy', stat: 'startCredits', pct: 0.5, source: 'difficulty:story' },
-      { kind: 'economy', stat: 'coreIntegrity', set: 30, source: 'difficulty:story' },
+      { kind: 'economy', stat: 'coreIntegrity', atLeast: 30, source: 'difficulty:story' },
       { kind: 'economy', stat: 'assetIntegrity', pct: 0.5, source: 'difficulty:story' },
       { kind: 'countdown', pct: 0.5, source: 'difficulty:story' },
     ]);
@@ -124,6 +124,28 @@ describe('meta modifiers', () => {
     );
     expect(stacked.state.integrity).toBe(33);
     expect(stacked.state.credits).toBe(Math.round(map.startCredits * (1 + 0.5 + 0.16)));
+  });
+
+  it("Story's integrity is a floor (N5): the finale keeps its 50, never less gate than Standard", () => {
+    const content = compileContent(RAW_CONTENT);
+    const map = content.maps.fin_m01;
+    expect(map.coreIntegrity).toBeGreaterThan(30);
+    const start = (difficulty: 'standard' | 'story') =>
+      createSim<IdSpace>({
+        content,
+        mapId: 'fin_m01',
+        seed: 1,
+        loadout: map.builds.parBuild.loadout,
+        companion: null,
+        modifiers: metaModifiers({ ...none, difficulty }),
+        difficulty,
+        abilities: { slot1: null, slot2: null, slot2State: 'none' },
+        scriptFlags: {},
+        specsUnlocked: [],
+      }).state.integrity;
+    expect(start('standard')).toBe(map.coreIntegrity);
+    expect(start('story')).toBe(map.coreIntegrity);
+    expect(start('story')).toBeGreaterThanOrEqual(start('standard'));
   });
 
   it('keeps a stable order: upgrades in catalog order, then protocols, then difficulty', () => {

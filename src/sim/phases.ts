@@ -30,6 +30,7 @@ export function setPhase(state: SimState, phase: number): void {
   if (phase <= state.phase) return;
   state.phase = phase;
   state.phaseTick = state.tick;
+  state.phaseFrozenTicks = 0;
   emit(state, { type: 'PhaseChanged', phase });
 }
 

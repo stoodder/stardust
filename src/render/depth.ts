@@ -6,6 +6,8 @@ import { HALF_H } from './iso.ts';
 /**
  * At equal footY, towers draw in front of enemies, and enemies in front of props. A ground strip
  * (Suppressing Fire's live zone, T232) sits between: over the enemies on its tiles, under towers.
+ * `held` is the Unsung held by the song (M8 R2), sorted at a tower's footY: over that tower, its
+ * head and everything at its row, under anything a pixel further down the screen.
  */
 export const KIND_BIAS = {
   highGround: 0.05,
@@ -13,6 +15,7 @@ export const KIND_BIAS = {
   enemy: 0.2,
   strip: 0.25,
   tower: 0.3,
+  held: 0.4,
 } as const;
 export type DepthKind = keyof typeof KIND_BIAS;
 

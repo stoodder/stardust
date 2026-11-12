@@ -3,6 +3,8 @@
 // the surfacing burst.
 import { describe, expect, it } from 'vitest';
 import { UNSUNG_FORM_SPRITE, UNSUNG_REST_SPRITE } from '../../content/sprites/enemies/unsung.ts';
+import { gridToScreen, TILE_H } from '../iso.ts';
+import { worldDepth } from '../depth.ts';
 import { hasAnim } from './spriteInfo.ts';
 import {
   clodAt,
@@ -10,7 +12,11 @@ import {
   DIG_RING_WIDE,
   digRingTiles,
   facingOfKey,
+  frontTowerNear,
   heldBySong,
+  PART_OUTLINE_ALPHA,
+  PART_OUTLINE_SIDES,
+  partOutline,
   isUnsungBody,
   rimToward,
   SONG_SCRIPT_PHASE,
@@ -19,6 +25,7 @@ import {
   SURFACE_BURST_MS,
   surfaceBurstAt,
   UNSUNG_FLIP_MS,
+  UNSUNG_HOLD_LIFT_PX,
   UNSUNG_RISE_MS,
   UNSUNG_RISE_PX,
   unsungBody,
@@ -136,6 +143,73 @@ describe('held by the song (M8 R1)', () => {
     expect(rimToward(100, 100, 60, 140, out)).toEqual({ dx: -1, dy: 1 });
     expect(rimToward(100, 100, 102, 60, out)).toEqual({ dx: 0, dy: -1 });
     expect(rimToward(100, 100, 100, 100, out)).toEqual({ dx: 0, dy: -1 });
+  });
+});
+
+describe('the split’s parts at night (M8 R2)', () => {
+  const tower = (x: number, y: number, alive = true) => ({ alive, x, y });
+  const pool = (...items: { alive: boolean; x: number; y: number }[]) => ({
+    used: items.length,
+    items,
+  });
+
+  it('finds the lowest-drawn tower within one tile in any direction, and none further', () => {
+    const out = { x: 0, y: 0 };
+    // A part at the back of tile (11, 2): spires either side, one diagonally in front.
+    const towers = pool(tower(10.5, 2.5), tower(12.5, 2.5), tower(12.5, 3.5), tower(13.5, 2.5));
+    expect(frontTowerNear(11.05, 2.05, towers, out)).toBe(true);
+    expect(out).toEqual({ x: 12.5, y: 3.5 });
+    // Behind it, beside it, in front of it: every one of the eight round it counts.
+    for (const [dx, dy] of [
+      [-1, -1],
+      [0, -1],
+      [1, -1],
+      [-1, 0],
+      [1, 0],
+      [-1, 1],
+      [0, 1],
+      [1, 1],
+    ]) {
+      expect(frontTowerNear(11.5, 2.5, pool(tower(11.5 + dx!, 2.5 + dy!)), out)).toBe(true);
+    }
+    // Two tiles off, or a sold one: none.
+    expect(frontTowerNear(11.5, 2.5, pool(tower(13.5, 2.5), tower(11.5, 4.5)), out)).toBe(false);
+    expect(frontTowerNear(11.5, 2.5, pool(tower(12.5, 2.5, false)), out)).toBe(false);
+    expect(frontTowerNear(11.5, 2.5, { used: 0, items: [tower(12.5, 2.5)] }, out)).toBe(false);
+  });
+
+  it('sorts a held body at the back of its tile over the spire diagonally in front (the lift alone can’t)', () => {
+    const origin = { x: 0, y: 0 };
+    const at = { x: 0, y: 0 };
+    gridToScreen(11.05, 2.05, origin, at);
+    const body = worldDepth(at.y + UNSUNG_HOLD_LIFT_PX, 'enemy', 7);
+    gridToScreen(12.5, 3.5, origin, at);
+    const spire = worldDepth(at.y, 'tower', 200) + 0.00005; // its head
+    expect(body).toBeLessThan(spire); // R1's lift alone: buried
+    expect(Math.max(body, worldDepth(at.y, 'held', 7))).toBeGreaterThan(spire);
+    expect(UNSUNG_HOLD_LIFT_PX).toBe(TILE_H + 1);
+  });
+
+  it('outlines a held part all round, whole on the song’s side, a step down elsewhere', () => {
+    expect(PART_OUTLINE_SIDES).toHaveLength(4);
+    const strengths = (rx: number, ry: number) =>
+      PART_OUTLINE_SIDES.map(([sx, sy]) => partOutline(sx, sy, rx, ry));
+    // Sides: left, right, up, down.
+    expect(strengths(1, 0)).toEqual([
+      PART_OUTLINE_ALPHA,
+      1,
+      PART_OUTLINE_ALPHA,
+      PART_OUTLINE_ALPHA,
+    ]);
+    expect(strengths(-1, 1)).toEqual([1, PART_OUTLINE_ALPHA, PART_OUTLINE_ALPHA, 1]);
+    expect(strengths(0, -1)).toEqual([
+      PART_OUTLINE_ALPHA,
+      PART_OUTLINE_ALPHA,
+      1,
+      PART_OUTLINE_ALPHA,
+    ]);
+    expect(PART_OUTLINE_ALPHA).toBeGreaterThan(0);
+    expect(PART_OUTLINE_ALPHA).toBeLessThan(1);
   });
 });
 

@@ -27,8 +27,10 @@
 //   while the adds walk past it into the singers (BossSurfaced's `at` is where it came up).
 //   **Dug out:** a burrow answer's hit underground (the Scuttle Den's swarm, Underfoot; damage.ts
 //   `reachesBurrowed`) takes its HP below what it dug in with, and on the next tick it surfaces
-//   where it is, short of the singers, hushing no one (BossSurfaced `dugOut`). Either way the dig
-//   is spent. With no choir on the map it surfaces where it dug.
+//   where it is, short of the singers, hushing no one (BossSurfaced `dugOut`), and the song drives
+//   it back to where it dug in all the same (D157: dug out, it would otherwise stand inside the
+//   circle on the singers' road for the rest of the phase). Either way the dig is spent. With no
+//   choir on the map it surfaces where it dug.
 // - **Phasing in a phase** (a phase's `phase`; phase 3): the Phased cycle (phase.ts's rule, its tell
 //   at least BOSS_MIN_TELL_SEC). The two never overlap: the cycle holds while the boss is dug in or
 //   telling a dig, and a dig's wait holds while it is Phased or telling a phase.
@@ -183,12 +185,13 @@ function surface(state: SimState, boss: Enemy, dugOut: boolean): void {
   boss.digToDist = -1;
   const hushed = dugOut || !arrived ? 0 : hushNearest(state, boss);
   emit(state, { type: 'BossSurfaced', uid: boss.uid, at: [boss.x, boss.y], dugOut, hushed });
-  // Up among the singers, the song drives it back to its edge, where it dug in (D156): it never
-  // stands in the column, drawing every tower's fire while the adds walk past it.
+  // Up among the singers, or dug out on its way to them, the song drives it back to its edge,
+  // where it dug in (D156, D157): it never stands in the column, drawing every tower's fire while
+  // the adds walk past it.
   const from = boss.digFromDist;
   boss.digFromDist = -1;
   const route = boss.route;
-  if (!dugOut && arrived && from >= 0 && route !== null) {
+  if (arrived && from >= 0 && route !== null) {
     boss.dist = from;
     boss.seg = pointAt(route, from, boss, 0);
   }

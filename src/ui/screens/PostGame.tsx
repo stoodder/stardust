@@ -271,7 +271,7 @@ function EntryRow({
  * The post-game column over the Sector map at dawn (app/postGameHooks.ts `PostGameLayerProps`;
  * T803c, D153): one column under the header, clear of the campaign's west nodes. On top, the
  * selected entry's panel; under it, the plate: its heading and line, the rows by kind (Endless,
- * then the challenges) and "Watch the epilogue".
+ * then the challenges) and "Watch the epilogue". In the DOM (and Tab order) the plate comes first.
  */
 export function PostGameLayer({ selected, select, arrival }: PostGameLayerProps) {
   const camp = campaign.value;
@@ -338,13 +338,17 @@ export function PostGameLayer({ selected, select, arrival }: PostGameLayerProps)
   );
   const endless = entries.filter((e) => e.kind === 'endless');
   const challenges = entries.filter((e) => e.kind === 'challenge');
+  // The panel stands above the plate on screen (CSS `order`), but follows it in the DOM, so Tab
+  // meets the deck's heading and rows before the default entry's seed and Start (S2-5); a pick
+  // sends the focus into the panel itself.
+  const open =
+    entry === null ? null : (
+      <div class="sd-pg-box sd-pg-head">
+        <EntryPanel key={entry.id} entry={entry} focusStart={focusPanel} panelRef={panel} />
+      </div>
+    );
   return (
     <section class="sd-pg" aria-labelledby="sd-pg-heading" data-testid="post-game">
-      {entry !== null && (
-        <div class="sd-pg-box sd-pg-head">
-          <EntryPanel key={entry.id} entry={entry} focusStart={focusPanel} panelRef={panel} />
-        </div>
-      )}
       <div class="sd-pg-box sd-pg-plate">
         {heading}
         {endless.length > 0 && (
@@ -370,6 +374,7 @@ export function PostGameLayer({ selected, select, arrival }: PostGameLayerProps)
           </button>
         )}
       </div>
+      {open}
     </section>
   );
 }

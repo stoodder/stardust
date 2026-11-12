@@ -138,7 +138,26 @@ export async function watchEpilogueThrough(
   await shot(page, flow, first + 2, 'counter-remembered');
   await epi.click();
   await expect(epi).toHaveAttribute('data-beat', 'credits');
-  await page.waitForTimeout(6000); // the roll climbs into view
+  // The roll climbs; a click brings it to rest on the player (S2-2): "And you", the name at the
+  // title's size over Waykeeper, centred over the thanks, held there until the next press.
+  const credits = page.getByTestId('epilogue-credits');
+  await page.waitForTimeout(1500);
+  await expect(credits).not.toHaveAttribute('data-rest', 'true');
+  await epi.click();
+  await expect(epi).toHaveAttribute('data-beat', 'credits');
+  await expect(credits).toHaveAttribute('data-rest', 'true');
+  const you = page.getByTestId('credits-you');
+  await expect(you).toBeVisible();
+  await expect(you.locator('.end-roll-name')).not.toHaveText(/[{}]/);
+  await expect(you).toContainText('Waykeeper');
+  await page.waitForTimeout(2500); // held: no press, no move
+  await expect(epi).toHaveAttribute('data-beat', 'credits');
+  const box = await you.boundingBox();
+  const vp = page.viewportSize();
+  if (box !== null && vp !== null) {
+    // Centred-ish on the stage, the thanks under it.
+    expect(Math.abs(box.y + box.height / 2 - vp.height / 2)).toBeLessThan(vp.height / 6);
+  }
   await shot(page, flow, first + 3, 'credits');
   await epi.click();
   await expect(epi).toHaveAttribute('data-beat', 'final');

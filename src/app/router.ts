@@ -407,6 +407,21 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
         RESUMED_NOTICE_MS,
         true,
       );
+      // The finale's run is pending again from where it picks up (N1): its end dropped it, and the
+      // replay re-reaches its checkpoints without writing, so a tab closed now resumes here, not W1.
+      if (finale && activeSave() !== null) {
+        const run = pendingRunOf(
+          next.host.sim.config,
+          c,
+          next.host.sim.state.commandLog,
+          next.host.killsBefore,
+          next.host.resumedFrom,
+        );
+        if (run !== null) {
+          const w = updateActiveSave((s) => withPendingRun(s, run));
+          if (!w.ok) logError(`resume: ${w.message}`);
+        }
+      }
     }
     return next.firstFrame;
   };

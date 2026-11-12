@@ -15,11 +15,15 @@
 // "The Unsung" (the Halls banner and Phase 2's are one: Phase 2 begins as the choir reaches the
 // Halls). A resumed run's replay shows none (app/checkpoints.ts). No "!" anywhere (finale tone).
 // After "Who's there?" restores the class Directive 0 folded (`ClassRestored`), the battle stands
-// paused with QUILL's word under PAUSED (`REBUILD_NOTE`, D156) so the player rebuilds before the
-// Halls run on; play resumes on the player's own Space or speed button, and the word goes with it.
+// paused at once (the sim frozen for the restore) while the knock-knock lands on the radio: the
+// restore's own cue (`fin_m01_cue_not_everglow`, "Not Everglow." / "...That's the joke.") plays
+// through the pause, and only once its last line has typed does QUILL's word show under PAUSED
+// (`REBUILD_NOTE`, D156; S2-1): the joke first, then the logistics. Play resumes on the player's
+// own press (Space, or the play/speed buttons), and the word goes with it.
 // Every signal here is quiet (ui/hud/finaleState.ts) on a map without the finale's song or timers.
 import { effect } from '@preact/signals';
 import type { CompiledMapDef } from '../content/compiled.ts';
+import { SCENES } from '../content/dialogue/index.ts';
 import { SPEAKER_DEFS } from '../content/dialogue/speakers.ts';
 import type { IdSpace } from '../content/types.ts';
 import { formatCount } from '../story/counter.ts';
@@ -37,17 +41,19 @@ import {
 import { speed } from '../ui/state.ts';
 import { setSpeed } from './commands.ts';
 import { COUNTDOWN_PHASE, trackCountdown } from './countdown.ts';
+import { whenSceneTyped } from './dialogue.ts';
 import type { Host } from './host.ts';
 import { cueStale, displayName } from './hudText.ts';
 
 /**
- * QUILL's word as the battle pauses after "Who's there?" (D156): the refund is already in the
- * credits (Directive 0 folded the class at 100%), so the pause is for the rebuild. Warm, never a
- * scolding; Keep's QUILL, still holding things.
+ * QUILL's word as the battle pauses after "Who's there?" (D156), once the joke has landed: the
+ * refund is already in the credits (Directive 0 folded the class at 100%), so the pause is for the
+ * rebuild. Warm, never a scolding; Keep's QUILL, still holding things. It names no key, so a mouse
+ * player isn't told one.
  */
 export const REBUILD_NOTE: PauseNote = {
   speaker: SPEAKER_DEFS.quill.name,
-  text: "I'm holding the clock. Your refund's in the credits: rebuild, then Space.",
+  text: "I'm holding the clock. Your refund's in your credits. Rebuild, then press play.",
 };
 
 /** The countdown's label: the counter's own name, the one the epilogue's last card lands on 0. */
@@ -133,6 +139,11 @@ export function bindFinaleHud(host: Host<IdSpace>, lifetime: number): () => void
   let bannerTimer: ReturnType<typeof setTimeout> | null = null;
   /** The sim tick the banner showed at (−1: none up): it leaves after its beat in sim time too. */
   let bannerTick = -1;
+  /** The last script cue and its tick: the restore's own, when it fired on the restore's tick. */
+  let restoreCue: { readonly id: string; readonly tick: number } | null = null;
+  /** Cancels the wait for the restore cue's last line (`whenSceneTyped`). */
+  let offNote: (() => void) | null = null;
+  let bound = true;
   const banner = (kicker: string, title: string): void => {
     if (host.replaying) return;
     phaseBanner.value = { id: ++bannerId, kicker, title };
@@ -182,11 +193,24 @@ export function bindFinaleHud(host: Host<IdSpace>, lifetime: number): () => void
       sync();
       if (e.phase === COUNTDOWN_PHASE) banner(PHASE_TWO_BANNER.kicker, PHASE_TWO_BANNER.title);
     }),
-    // The folded class is back: hold the battle for the rebuild (not in a resumed run's replay).
+    // The restore's own cue (the script fires it on the same tick, just before the restore).
+    host.bus.on('ScriptCue', (e) => {
+      restoreCue = { id: e.cueId, tick: sim.state.tick };
+    }),
+    // The folded class is back: hold the battle for the rebuild (not in a resumed run's replay),
+    // and say so once the cue's last line has typed (the knock-knock lands first; S2-1).
     host.bus.on('ClassRestored', () => {
       if (host.replaying) return;
       setSpeed(0);
-      pauseNote.value = REBUILD_NOTE;
+      offNote?.();
+      const cue = restoreCue !== null && restoreCue.tick === sim.state.tick ? restoreCue.id : null;
+      const show = (): void => {
+        offNote = null;
+        // Still held for the rebuild (the player may have pressed play while the joke typed).
+        if (bound && speed.peek() === 0) pauseNote.value = REBUILD_NOTE;
+      };
+      if (cue === null || SCENES[cue] === undefined) show();
+      else offNote = whenSceneTyped(cue, show);
     }),
     // Play resumed (the player's own press): QUILL's word goes.
     effect(() => {
@@ -194,6 +218,8 @@ export function bindFinaleHud(host: Host<IdSpace>, lifetime: number): () => void
     }),
   ];
   return () => {
+    bound = false;
+    offNote?.();
     for (const off of offs) off();
     countdown?.off();
     if (bannerTimer !== null) clearTimeout(bannerTimer);

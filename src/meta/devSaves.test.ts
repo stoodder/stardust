@@ -285,12 +285,6 @@ describe('Act III part two: a save for every door and C4 answer (T700b)', () => 
     ['after_a3m4_rewrite_warren', 'warren', 'rewrite'],
   ] as const;
 
-  it.runIf(!isRegistered('a3_m04'))('equal the save before A3M4 until it is registered', () => {
-    for (const [id, door] of A3M4) expect(build(id), id).toEqual(build(`after_a3m3_${door}`));
-    expect(build('after_a3m5_purge')).toEqual(build('after_a3m3_convoy'));
-    expect(build('after_a3m6')).toEqual(build('after_a3m3_convoy'));
-  });
-
   it.runIf(isRegistered('a3_m04'))(
     'A3M4: the jailbreak, the gifts, the mail, C4, Night Shift',
     () => {

@@ -709,6 +709,14 @@ export class TransientFx {
     this.#dimAlpha = 1;
   }
 
+  /**
+   * The dim factor for a mark at screen (x, y) another view draws (MindView's Unnerved squiggles
+   * over the held Unsung; M8 R2): `dimAt`.
+   */
+  dimOf(x: number, y: number): number {
+    return this.dimAt(x, y);
+  }
+
   /** The dim factor for an effect at screen (x, y): `setDim`'s alpha inside its box, else 1. */
   protected dimAt(x: number, y: number): number {
     if (this.#dimAlpha === 1) return 1;
@@ -764,7 +772,8 @@ export class TransientFx {
    */
   #absorb(text: string, color: ColorName, x: number, y: number): boolean {
     const amount = floatAmount(text);
-    for (const f of this.#floats) {
+    for (let i = 0; i < this.#floats.length; i++) {
+      const f = this.#floats[i]!; // i < length
       if (!f.active || f.color !== color) continue;
       if (amount === null) {
         if (f.text === text && withinTiles(f.gx, f.gy, x, y, SAME_CALLOUT_TILES)) return true;
@@ -900,7 +909,8 @@ export class TransientFx {
     const col = Math.floor(x);
     const row = Math.floor(y);
     let n = 0;
-    for (const b of this.#bursts) {
+    for (let i = 0; i < this.#bursts.length; i++) {
+      const b = this.#bursts[i]!; // i < length
       if (b.active && b.small === small && b.col === col && b.row === row) n++;
     }
     if (n >= BURSTS_PER_TILE[small ? 'small' : 'big']) {
@@ -914,7 +924,8 @@ export class TransientFx {
   /** Advances every pooled effect by a frame of `dt` ms (FxView's update, before the abilities). */
   protected advance(dt: number): void {
     this.gfx.clear();
-    for (const t of this.#tracers) {
+    for (let i = 0; i < this.#tracers.length; i++) {
+      const t = this.#tracers[i]!; // i < length
       if (!t.active) continue;
       t.ms += dt;
       if (t.ms >= TRACER_MS) {
@@ -924,7 +935,8 @@ export class TransientFx {
         this.#drawTracer(t);
       }
     }
-    for (const p of this.#pulses) {
+    for (let i = 0; i < this.#pulses.length; i++) {
+      const p = this.#pulses[i]!; // i < length
       if (!p.active) continue;
       p.ms += dt;
       if (p.ms >= p.durationMs) {
@@ -934,7 +946,8 @@ export class TransientFx {
         this.#syncPulse(p);
       }
     }
-    for (const d of this.#decals) {
+    for (let i = 0; i < this.#decals.length; i++) {
+      const d = this.#decals[i]!; // i < length
       if (!d.active) continue;
       d.ms += dt;
       if (d.ms >= d.durationMs) {
@@ -944,7 +957,8 @@ export class TransientFx {
         d.img.setAlpha(fadeAlpha(d.ms / d.durationMs));
       }
     }
-    for (const f of this.#floats) {
+    for (let i = 0; i < this.#floats.length; i++) {
+      const f = this.#floats[i]!; // i < length
       if (!f.active) continue;
       f.ms += dt;
       // One already up when a spot near it arms goes at once (D134 K2).
@@ -967,7 +981,8 @@ export class TransientFx {
         this.#syncFloat(f);
       }
     }
-    for (const s of this.#splats) {
+    for (let i = 0; i < this.#splats.length; i++) {
+      const s = this.#splats[i]!; // i < length
       if (!s.active) continue;
       s.ms += dt;
       if (s.ms >= s.durationMs) {
@@ -977,7 +992,8 @@ export class TransientFx {
         s.img.setAlpha(fadeAlpha(s.ms / s.durationMs));
       }
     }
-    for (const b of this.#bursts) {
+    for (let i = 0; i < this.#bursts.length; i++) {
+      const b = this.#bursts[i]!; // i < length
       if (!b.active) continue;
       b.ms += dt;
       // Starts once its delay is up (a burst with no delay starts on its first frame: −0 < 0 is
@@ -996,7 +1012,8 @@ export class TransientFx {
         );
       }
     }
-    for (const d of this.#debris) {
+    for (let i = 0; i < this.#debris.length; i++) {
+      const d = this.#debris[i]!; // i < length
       if (!d.active) continue;
       d.ms += dt;
       if (d.ms >= d.lifeMs) {
@@ -1011,7 +1028,8 @@ export class TransientFx {
         .setPosition(Math.round(d.x), Math.round(d.y))
         .setAlpha((d.steady ? 1 : fadeAlpha(d.ms / d.lifeMs)) * this.dimAt(d.x, d.y));
     }
-    for (const m of this.#motes) {
+    for (let i = 0; i < this.#motes.length; i++) {
+      const m = this.#motes[i]!; // i < length
       if (!m.active) continue;
       m.ms += dt;
       if (m.ms >= m.lifeMs) {

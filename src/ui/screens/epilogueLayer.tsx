@@ -17,8 +17,10 @@ import {
   beatMs,
   COUNTER_ZERO,
   counterFlipped,
+  creditsAtRest,
   creditsBlockAt,
   creditsOffsetPx,
+  creditsRestMs,
   epilogueBeats,
   FINAL_IMAGES,
   PERIMETER_OPEN,
@@ -127,13 +129,22 @@ function Epilogue({ view }: { view: EpilogueView }) {
     closeEndingScreen();
   };
   const advance = (): void => {
+    // A press while the roll climbs brings it to rest on the player at once (S2-2): the credits
+    // always end on "And you", and the next press goes on.
+    const now = performance.now();
+    if (beat?.kind === 'credits' && !creditsAtRest(now - at.from, still)) {
+      setAt({ i: at.i, from: now - creditsRestMs(still) });
+      return;
+    }
     if (at.i + 1 >= beats.length) close();
-    else setAt({ i: at.i + 1, from: performance.now() });
+    else setAt({ i: at.i + 1, from: now });
   };
-  // Each beat moves on by itself when its time is up.
+  // Each beat moves on by itself when its time is up (the credits hold at rest until a press).
   useEffect(() => {
     if (beat === undefined) return undefined;
-    const id = setTimeout(advance, beatMs(beat, view, still));
+    const ms = beatMs(beat, view, still);
+    if (ms === null) return undefined;
+    const id = setTimeout(advance, ms);
     return () => clearTimeout(id);
   }, [at]);
   useEffect(() => {
@@ -232,7 +243,8 @@ function Beat({
 
 /**
  * The roll (`all`: its blocks, tokens resolved for the save; the player's name over "Waykeeper"):
- * up from under the stage (a block at a time under reduced motion).
+ * up from under the stage to rest on "And you" over the thanks (a block at a time under reduced
+ * motion, to the same rest), `data-rest` once it holds there.
  */
 function Credits({
   blocks: all,
@@ -243,12 +255,17 @@ function Credits({
   ms: number;
   still: boolean;
 }) {
-  const blocks = still ? [all[creditsBlockAt(ms)]!] : all;
+  const blocks = still ? creditsBlockAt(ms).map((i) => all[i]!) : all;
   const style = still
     ? undefined
     : { transform: `translateY(${STAGE_PX - creditsOffsetPx(ms)}px)` };
   return (
-    <div class="end-credits" data-testid="epilogue-credits" data-voice="credits">
+    <div
+      class="end-credits"
+      data-testid="epilogue-credits"
+      data-voice="credits"
+      data-rest={creditsAtRest(ms, still) ? 'true' : undefined}
+    >
       <p class="sd-visually-hidden" role="status">
         {creditsText(all)}
       </p>
@@ -256,11 +273,15 @@ function Credits({
         {blocks.map((b, i) => (
           <div
             key={`${b.heading ?? ''}${i}`}
-            class={b.heading === null ? 'end-roll-block title' : 'end-roll-block'}
+            class={`end-roll-block${b.style === undefined ? '' : ` ${b.style}`}`}
+            data-testid={b.style === 'you' ? 'credits-you' : undefined}
           >
             {b.heading !== null && <p class="end-roll-head">{b.heading}</p>}
             {b.lines.map((l, j) => (
-              <p key={`${j}${l}`} class="end-roll-line">
+              <p
+                key={`${j}${l}`}
+                class={b.style === 'you' && j === 0 ? 'end-roll-line end-roll-name' : 'end-roll-line'}
+              >
                 {l}
               </p>
             ))}

@@ -366,8 +366,10 @@ export class EnemyView implements PooledView {
   #ownDepth = 0;
   #overDepth = 0;
   #depthFloor = Number.NEGATIVE_INFINITY;
-  /** Its sort lift while the song holds it (px of foot y; UnsungView, M8 R1), 0 otherwise. */
+  /** Its sort lift while the song holds it (px of foot y; UnsungView, M8 R1), 0 otherwise, and the
+   * least depth it sorts at then (over the towers round it, M8 R2; −∞ for none). */
   #holdLift = 0;
+  #holdOver = Number.NEGATIVE_INFINITY;
   /**
    * Its drawn offset from where the sim stands it (px; UnsungView: the Unsung thrown back from where
    * it surfaced, easing to 0), and its shadow's ground point without it.
@@ -684,6 +686,7 @@ export class EnemyView implements PooledView {
     this.#tellStart = -1;
     this.#depthFloor = Number.NEGATIVE_INFINITY;
     this.#holdLift = 0;
+    this.#holdOver = Number.NEGATIVE_INFINITY;
     this.#throwX = 0;
     this.#throwY = 0;
     this.#stopFlash();
@@ -841,12 +844,14 @@ export class EnemyView implements PooledView {
   }
 
   /**
-   * Lifts the body's sort by `px` of foot y (0: none): the held Unsung draws over the towers round
-   * it (UnsungView, unsungLook.ts UNSUNG_HOLD_LIFT_PX; M8 R1). Its overhead keeps its own sort.
+   * Lifts the body's sort by `px` of foot y (0: none), and sorts it at `over` at least (−∞: no
+   * floor): the held Unsung draws over the towers round it (UnsungView, unsungLook.ts
+   * UNSUNG_HOLD_LIFT_PX, M8 R1; `frontTowerNear`, M8 R2). Its overhead keeps its own sort.
    */
-  setHoldLift(px: number): void {
-    if (px === this.#holdLift) return;
+  setHoldLift(px: number, over = Number.NEGATIVE_INFINITY): void {
+    if (px === this.#holdLift && over === this.#holdOver) return;
     this.#holdLift = px;
+    this.#holdOver = over;
     if (!Number.isNaN(this.#x)) this.#applyDepth();
   }
 
@@ -871,7 +876,7 @@ export class EnemyView implements PooledView {
    * higher, and its overhead at its own.
    */
   #applyDepth(): void {
-    const depth = Math.max(this.#ownDepth + this.#holdLift, this.#depthFloor);
+    const depth = Math.max(this.#ownDepth + this.#holdLift, this.#holdOver, this.#depthFloor);
     if (this.#body.depth !== depth) {
       this.#body.setDepth(depth);
       this.#mound.setDepth(depth);
@@ -1353,6 +1358,7 @@ export class EnemyView implements PooledView {
     this.#fray = 0;
     this.#overClear = false;
     this.#holdLift = 0;
+    this.#holdOver = Number.NEGATIVE_INFINITY;
     this.#throwX = 0;
     this.#throwY = 0;
     this.#dress.hideAll();

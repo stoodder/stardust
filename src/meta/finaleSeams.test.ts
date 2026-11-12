@@ -91,14 +91,6 @@ describe('the dev saves into and out of the finale', () => {
     expect(build('after_a3m6_strongest').unlocks.towers).toContain('choir');
   });
 
-  it.runIf(!isRegistered('fin_m01'))(
-    'after_fin_<c5> equal A3M6’s until the finale is registered',
-    () => {
-      expect(build('after_fin_stay')).toEqual(build('after_a3m6_rewrite'));
-      expect(build('after_fin_go')).toEqual(build('after_a3m6_rewrite'));
-    },
-  );
-
   it.runIf(isRegistered('fin_m01'))(
     'after_fin_<c5>: the finale won, C5 answered, never re-asked',
     () => {
