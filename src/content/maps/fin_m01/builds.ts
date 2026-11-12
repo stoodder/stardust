@@ -160,8 +160,8 @@ export const builds = defineBuilds({
   referenceProfile: REFERENCE_PROFILES.fin_m01,
   referenceProfileByFlag: REFERENCE_VARIANTS.fin_m01,
   parBuild: { loadout: ['mindspike', 'choir', 'sproing', 'burrow'], steps: parSteps() },
-  // The finale's no-counter builds must lose in Phase 1 (finale.md § FIN): by W17, the harness's
-  // ⌊⅔ × 26⌋ once Phase 2's waves land (T821).
+  // The finale's no-counter builds must lose in Phase 1 (finale.md § FIN), W1–18: the harness's
+  // default ⌊⅔ × 26⌋ = W17 is a wave short of it (no-jam falls at the Halls mouth, W18; T821).
   noCounterLoseByWave: 18,
   flagVariants: {
     door_choice: ['convoy', 'warren'],
