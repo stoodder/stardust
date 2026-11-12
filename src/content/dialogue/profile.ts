@@ -1,6 +1,7 @@
 // The player's profile as content data (design/core-loop.md § 6.1; docs/tech/story-runtime.md
-// § Text substitution): the pronoun sets the text tokens resolve to, the callsigns, the intake
-// form's arrival reasons, and the name rule. The save holds only the ids (meta/saveData.ts
+// § Text substitution): the pronoun sets the text tokens resolve to (picked on the intake form as
+// its "Form of address": Mr., Ms., or Tech.), the callsigns, the intake form's arrival reasons, and
+// the name rule. The save holds only the ids (meta/saveData.ts
 // `SaveData.profile`); `arrival_reason` is a story flag (content/dialogue/flags.ts), so story
 // conditions read it like any other flag.
 import type { FlagValueOf } from './flags.ts';
@@ -8,6 +9,15 @@ import type { FlagValueOf } from './flags.ts';
 /** The pronoun sets a profile can pick (core-loop.md § 6.1). */
 export const PRONOUN_IDS = ['she', 'he', 'they'] as const;
 export type PronounId = (typeof PRONOUN_IDS)[number];
+
+/**
+ * The intake's and Settings' "Form of address" options, in form order: Mr., Ms., Tech. (D163). The
+ * form never asks about pronouns by name; each option picks the set the text tokens resolve to.
+ */
+export const ADDRESS_ORDER: readonly PronounId[] = ['he', 'she', 'they'];
+
+/** A new profile's form of address until the player picks another: Tech. (D163). */
+export const DEFAULT_ADDRESS: PronounId = 'they';
 
 /**
  * One pronoun set: each form keyed by its text token (`{they}`, `{them}`, `{their}`, `{theirs}`,
@@ -20,7 +30,7 @@ export interface PronounSet {
   readonly theirs: string;
   readonly themself: string;
   readonly agreement: 'singular' | 'plural';
-  /** The intake form's label. */
+  /** Its "Form of address" option on the intake form and in Settings ("Mr.", "Ms.", "Tech."). */
   readonly label: string;
 }
 
@@ -32,7 +42,7 @@ export const PRONOUN_SETS: Readonly<Record<PronounId, PronounSet>> = {
     theirs: 'hers',
     themself: 'herself',
     agreement: 'singular',
-    label: 'she/her',
+    label: 'Ms.',
   },
   he: {
     they: 'he',
@@ -41,7 +51,7 @@ export const PRONOUN_SETS: Readonly<Record<PronounId, PronounSet>> = {
     theirs: 'his',
     themself: 'himself',
     agreement: 'singular',
-    label: 'he/him',
+    label: 'Mr.',
   },
   they: {
     they: 'they',
@@ -50,7 +60,7 @@ export const PRONOUN_SETS: Readonly<Record<PronounId, PronounSet>> = {
     theirs: 'theirs',
     themself: 'themself',
     agreement: 'plural',
-    label: 'they/them',
+    label: 'Tech.',
   },
 };
 
@@ -99,8 +109,8 @@ export function isValidPlayerName(name: string): boolean {
 
 /**
  * The profile character creation fills in (T306): plain save data (`SaveData.profile`, null until
- * the intake). Name and pronouns can change in Settings; the callsign changes by dialogue `set`
- * nodes. `arrival_reason` is the flag of that name, set by the same intake.
+ * the intake). Name and form of address (`pronouns`) can change in Settings; the callsign changes
+ * by dialogue `set` nodes. `arrival_reason` is the flag of that name, set by the same intake.
  */
 export interface PlayerProfile {
   name: string;

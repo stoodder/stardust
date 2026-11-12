@@ -1,13 +1,15 @@
 // Character creation (T306; design/core-loop.md § 6.1): the intake form's rules and the profile
 // writes. The intake ("Frontier Futures: New Hire Intake") runs on New game before A1M1, and on
 // Continue, Load, or Import for a save with no profile yet (every save from before SaveData v2).
-// It writes `SaveData.profile` (name, pronouns, the first callsign) and the `arrival_reason`
-// flag, that flag's one home (D066). Settings edits the name and pronouns later; the callsign
+// It writes `SaveData.profile` (name, form of address as `pronouns`, the first callsign) and the
+// `arrival_reason` flag, that flag's one home (D066). Settings edits the name and form of address
+// later; the callsign
 // changes only by dialogue `set` nodes, and the reason is final. The copy's home is
 // docs/story/campaign/act1.md § Character creation.
 import {
   ARRIVAL_REASONS,
   CALLSIGN_IDS,
+  DEFAULT_ADDRESS,
   PLAYER_NAME,
   isValidPlayerName,
   type ArrivalReason,
@@ -64,12 +66,18 @@ export function intakeMode(): IntakeMode | null {
 
 // ── The form ─────────────────────────────────────────────────────────────────────────────────
 
-/** The intake form as filled in so far. Nothing is picked for the player. */
+/**
+ * The intake form as filled in so far. The name and the reason start blank; the form of address is
+ * optional and starts on Tech. (D163), so it never holds the form up.
+ */
 export interface IntakeForm {
   readonly name: string;
-  readonly pronouns: PronounId | null;
+  readonly pronouns: PronounId;
   readonly arrival: ArrivalReason | null;
 }
+
+/** A fresh intake form. */
+export const BLANK_INTAKE: IntakeForm = { name: '', pronouns: DEFAULT_ADDRESS, arrival: null };
 
 /** Field problems, in the Act I voice: cheerful, never scolding (story/style-guide.md § 2). */
 export const INTAKE_PROBLEMS = {
@@ -77,7 +85,6 @@ export const INTAKE_PROBLEMS = {
   nameLong: `Name tags fit ${PLAYER_NAME.maxLength} characters. Try a shorter one!`,
   nameChars: "Name tags print letters, digits, spaces, and ' - . only. Try those!",
   nameBare: 'Name tags need at least one letter or digit!',
-  pronouns: 'Pick the pronouns the team should use!',
   arrival: "Pick a reason. Any reason! They're all approved.",
 } as const;
 
@@ -99,7 +106,6 @@ export function nameProblem(raw: string): string | null {
 /** Each field's problem; an empty object when the form can be signed. */
 export interface IntakeProblems {
   name?: string;
-  pronouns?: string;
   arrival?: string;
 }
 
@@ -107,7 +113,6 @@ export function intakeProblems(form: IntakeForm): IntakeProblems {
   const out: IntakeProblems = {};
   const name = nameProblem(form.name);
   if (name !== null) out.name = name;
-  if (form.pronouns === null) out.pronouns = INTAKE_PROBLEMS.pronouns;
   if (form.arrival === null) out.arrival = INTAKE_PROBLEMS.arrival;
   return out;
 }
@@ -135,7 +140,7 @@ export function withIntake(
   };
 }
 
-/** `save` with a new name and pronouns (Settings). The callsign and the reason stay. */
+/** `save` with a new name and form of address (Settings). The callsign and the reason stay. */
 export function withProfileEdit(
   save: SaveData,
   edit: { readonly name: string; readonly pronouns: PronounId },
@@ -153,7 +158,7 @@ export type IntakeSubmit = SaveResult | { readonly ok: false; readonly problems:
  */
 export function signIntake(form: IntakeForm): IntakeSubmit {
   const problems = intakeProblems(form);
-  if (form.pronouns === null || form.arrival === null || Object.keys(problems).length > 0) {
+  if (form.arrival === null || Object.keys(problems).length > 0) {
     return { ok: false, problems };
   }
   const profile = { name: cleanName(form.name), pronouns: form.pronouns };
@@ -167,7 +172,7 @@ export function signIntake(form: IntakeForm): IntakeSubmit {
   return r;
 }
 
-/** Settings → Update file: a new name and pronouns for the save in play. */
+/** Settings → Update file: a new name and form of address for the save in play. */
 export function editProfile(raw: string, pronouns: PronounId): SaveResult {
   const problem = nameProblem(raw);
   if (problem !== null) return { ok: false, message: problem };
@@ -183,7 +188,7 @@ export function editProfile(raw: string, pronouns: PronounId): SaveResult {
 
 /**
  * The intake's sample file note (act1.md § Character creation): the pronoun tokens in use, so the
- * player sees their pick in a sentence. Third person about the player, from the form, never an
+ * player sees in a sentence how their form of address reads (it reads naturally under each). Third person about the player, from the form, never an
  * NPC (no NPC says `{name}` before A3M3; style-guide.md § 3).
  */
 export const SAMPLE_NOTE =

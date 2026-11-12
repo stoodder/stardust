@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { MemoryStore, createNewSave } from '../meta/index.ts';
 import {
   ARRIVAL_ORDER,
+  BLANK_INTAKE,
   INTAKE_PROBLEMS,
   SAMPLE_NOTE,
   cleanName,
@@ -44,10 +45,10 @@ describe('the name rule', () => {
     for (const m of Object.values(INTAKE_PROBLEMS)) expect(m).not.toMatch(/invalid|error|wrong/i);
   });
 
-  it('nothing is picked for the player: every field must be filled', () => {
-    expect(intakeProblems({ name: '', pronouns: null, arrival: null })).toEqual({
+  it('the name and the reason must be filled; the form of address is optional (Tech.; D163)', () => {
+    expect(BLANK_INTAKE).toEqual({ name: '', pronouns: 'they', arrival: null });
+    expect(intakeProblems(BLANK_INTAKE)).toEqual({
       name: INTAKE_PROBLEMS.nameEmpty,
-      pronouns: INTAKE_PROBLEMS.pronouns,
       arrival: INTAKE_PROBLEMS.arrival,
     });
     expect(intakeProblems({ name: 'Ada', pronouns: 'they', arrival: 'lettuce' })).toEqual({});
@@ -84,6 +85,12 @@ describe('the intake writes', () => {
     expect(intakeMode()).toEqual({ kind: 'existing' });
   });
 
+  it('signs with the form of address untouched: Tech. (they) is filed', () => {
+    holdNewGame(1);
+    expect(signIntake({ ...BLANK_INTAKE, name: 'Ada', arrival: 'lettuce' })).toEqual({ ok: true });
+    expect(activeSave()?.profile).toEqual({ name: 'Ada', pronouns: 'they', callsign: 'sprout' });
+  });
+
   it('a save with no profile (a v1 save) needs the intake, and files it in place', () => {
     newGame(1);
     expect(needsIntake()).toBe(true);
@@ -106,7 +113,7 @@ describe('the intake writes', () => {
 });
 
 describe('Settings edits the file', () => {
-  it('changes the name and pronouns; the callsign and reason stay', () => {
+  it('changes the name and form of address; the callsign and reason stay', () => {
     newGame(1, (s) => withIntake(s, { name: 'Ada', pronouns: 'she' }, 'lettuce'));
     expect(editProfile('  Ada  Lovelace ', 'they')).toEqual({ ok: true });
     expect(activeSave()?.profile).toEqual({
@@ -129,7 +136,7 @@ describe('Settings edits the file', () => {
 });
 
 describe('the preview', () => {
-  it('resolves the file note for each pronoun set', () => {
+  it('resolves the file note for each form of address', () => {
     expect(previewText(SAMPLE_NOTE, 'they')).toBe(
       'File note: They are cleared for perimeter duty. Their helmet is one size fits most!',
     );

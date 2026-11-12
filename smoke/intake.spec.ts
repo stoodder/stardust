@@ -1,6 +1,7 @@
 // Character creation (T306; design/core-loop.md § 6.1): Start shift → the intake → A1M1's
-// briefing, the name on the Shift board, Settings' file edit; a v1 save's Continue runs the intake
-// first; Back (Esc) drops a new game without writing it. `?test=1` skips the intake, so these
+// briefing, the name on the Shift board, Settings' file edit; the form of address is optional and
+// starts on Tech. (D163); a v1 save's Continue runs the intake first; Back (Esc) drops a new game
+// without writing it. `?test=1` skips the intake, so these
 // specs turn it back on with `&intake=1`.
 import { readFileSync } from 'node:fs';
 import type { Page } from '@playwright/test';
@@ -29,36 +30,52 @@ test('intake: a new game files the profile, then A1M1; the name shows on the Shi
   await expect(name).toBeFocused();
   const hint = form.getByText(/^As it goes on your name tag/);
   await expect(hint).toBeVisible();
-  // Nothing is picked for the player.
-  await expect(form.getByRole('radio')).toHaveCount(6);
-  await expect(form.getByRole('radio', { checked: true })).toHaveCount(0);
-  await expect(page.getByTestId('file-note')).toContainText('Pick pronouns');
+  // No name or reason is picked for the player; the form of address is optional, on Tech.
+  const address = form.getByRole('radiogroup', { name: 'Form of address' });
+  await expect(address.getByRole('radio')).toHaveText(['Mr.', 'Ms.', 'Tech.']);
+  await expect(address).not.toHaveAttribute('aria-required');
+  await expect(form.getByText('For your file. Most of the crew just uses your name.')).toBeVisible();
+  await expect(form.getByRole('radio', { checked: true })).toHaveCount(1);
+  await expect(address.getByRole('radio', { name: 'Tech.' })).toHaveAttribute('aria-checked', 'true');
+  await expect(page.getByTestId('file-note')).toHaveText(
+    'File note: They are cleared for perimeter duty. Their helmet is one size fits most!',
+  );
+  await expect(form).toContainText('Name and form of address can be updated in Settings.');
+  await expect(form).not.toContainText(/pronoun|she\/her|he\/him|they\/them/i);
   await shot(page, 'intake', 1, 'blank');
 
-  // Signing it blank: cheerful problems, the focus on the name.
+  // Signing it blank: cheerful problems for the name and the reason, the focus on the name.
   await form.getByRole('button', { name: 'Sign and submit' }).click();
   await expect(form).toContainText('Your name tag needs a name!');
-  await expect(form).toContainText('Pick the pronouns the team should use!');
   await expect(form).toContainText("Pick a reason. Any reason! They're all approved.");
+  await expect(form.getByRole('alert')).toHaveCount(2);
   await expect(name).toBeFocused();
   await shot(page, 'intake', 2, 'problems');
 
-  // Keyboard: type the name, Tab to the pronouns, the arrows pick.
+  // Keyboard: type the name, Tab to the form of address (its pick holds the Tab stop), the arrows
+  // pick and wrap.
   await name.fill('Ada Okafor-Quinn');
   await expect(page.getByTestId('badge-name')).toHaveText('Ada Okafor-Quinn');
   await page.keyboard.press('Tab');
-  await expect(form.getByRole('radio', { name: 'she/her' })).toBeFocused();
+  await expect(address.getByRole('radio', { name: 'Tech.' })).toBeFocused();
   await expect(hint).toBeHidden();
   await page.keyboard.press('ArrowRight');
+  await expect(address.getByRole('radio', { name: 'Mr.' })).toHaveAttribute('aria-checked', 'true');
+  await expect(page.getByTestId('file-note')).toHaveText(
+    'File note: He is cleared for perimeter duty. His helmet is one size fits most!',
+  );
   await page.keyboard.press('ArrowRight');
-  await expect(form.getByRole('radio', { name: 'he/him' })).toHaveAttribute('aria-checked', 'true');
+  await expect(address.getByRole('radio', { name: 'Ms.' })).toBeFocused();
+  await expect(page.getByTestId('file-note')).toHaveText(
+    'File note: She is cleared for perimeter duty. Her helmet is one size fits most!',
+  );
   await page.keyboard.press('ArrowRight');
-  await expect(form.getByRole('radio', { name: 'they/them' })).toBeFocused();
+  await expect(address.getByRole('radio', { name: 'Tech.' })).toBeFocused();
   await expect(page.getByTestId('file-note')).toHaveText(
     'File note: They are cleared for perimeter duty. Their helmet is one size fits most!',
   );
   await form.getByRole('radio', { name: 'I like lettuce' }).click();
-  await expect(form).not.toContainText('Pick the pronouns');
+  await expect(form.getByRole('alert')).toHaveCount(0);
   await shot(page, 'intake', 3, 'filled');
 
   await form.getByRole('button', { name: 'Sign and submit' }).click();
@@ -72,13 +89,20 @@ test('intake: a new game files the profile, then A1M1; the name shows on the Shi
   await expect(page.getByTestId('technician')).toContainText('Ada Okafor-Quinn');
   await shot(page, 'intake', 4, 'shift-board');
 
-  // Settings: the name and pronouns change; the callsign and reason are read-only.
+  // Settings: the name and form of address change; the callsign and reason are read-only.
   await page.getByRole('button', { name: 'Settings' }).click();
   const file = page.getByRole('group', { name: 'Your file' });
   await expect(file).toContainText('Sprout');
   await expect(file).toContainText('I like lettuce');
+  const fileAddress = file.getByRole('radiogroup', { name: 'Form of address' });
+  await expect(fileAddress.getByRole('radio')).toHaveText(['Mr.', 'Ms.', 'Tech.']);
+  await expect(fileAddress.getByRole('radio', { name: 'Tech.' })).toHaveAttribute(
+    'aria-checked',
+    'true',
+  );
+  await expect(file).not.toContainText(/pronoun/i);
   await file.getByRole('textbox').fill('Ada');
-  await file.getByRole('radio', { name: 'she/her' }).click();
+  await fileAddress.getByRole('radio', { name: 'Ms.' }).click();
   await file.getByRole('button', { name: 'Update file' }).click();
   await expect(file).toContainText('Filed!');
   await shot(page, 'intake', 5, 'settings');
@@ -106,7 +130,7 @@ test('intake: Continue on a v1 save runs the intake, then its Shift board', asyn
   await expect(form).toBeVisible();
   await expect(form).toContainText('Records switched to a new form!');
   await form.getByRole('textbox', { name: 'Name' }).fill('Kofi');
-  await form.getByRole('radio', { name: 'he/him' }).click();
+  await form.getByRole('radio', { name: 'Mr.' }).click();
   await form.getByRole('radio', { name: 'The signing bonus' }).click();
   await shot(page, 'intake', 6, 'v1-continue');
   // Enter in the name field signs the form.
@@ -117,6 +141,19 @@ test('intake: Continue on a v1 save runs the intake, then its Shift board', asyn
   expect(save?.story.flags.arrival_reason).toBe('bonus');
   // The v1 save's progress survived.
   expect(save?.campaign.maps.a1_m01?.completed).toBe(true);
+});
+
+test('intake: signing with only a name and a reason files Tech.', async ({ page }) => {
+  await page.goto(URL);
+  await waitForReady(page);
+  await page.getByRole('button', { name: 'Start shift' }).click();
+  const form = intake(page);
+  await form.getByRole('textbox', { name: 'Name' }).fill('Rin');
+  await form.getByRole('radio', { name: 'The signing bonus' }).click();
+  await form.getByRole('button', { name: 'Sign and submit' }).click();
+  await expect(page.getByRole('dialog', { name: 'Shift briefing' })).toBeVisible();
+  const save = await page.evaluate(() => globalThis.__sd!.save());
+  expect(save?.profile).toEqual({ name: 'Rin', pronouns: 'they', callsign: 'sprout' });
 });
 
 test('intake: Esc backs out of a new game without writing it', async ({ page }) => {

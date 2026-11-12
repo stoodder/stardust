@@ -1,8 +1,9 @@
 // Character creation (T306; design/core-loop.md § 6.1): Everglow's onboarding form, "Frontier
 // Futures: New Hire Intake". It opens on New game before A1M1, and on Continue, Load, or Import
-// for a save with no profile yet. Name, pronouns, and the reason for joining, with nothing picked
-// for the player; the callsign is assigned in the field (Bricks, A1M1). An ID badge previews the
-// name (and carries the employee number) and a file note shows the pronouns in a sentence. The
+// for a save with no profile yet. Name, the form of address (optional, Tech. until the player picks
+// another; D163), and the reason for joining, with no name or reason picked for the player; the
+// callsign is assigned in the field (Bricks, A1M1). An ID badge previews the name (and carries the
+// employee number) and a file note shows how the form of address reads in a sentence. The
 // name's hint shows while the field has the focus (or a problem takes its place; T803c). The copy's home is
 // docs/story/campaign/act1.md § Character creation; the rules are app/profile.ts.
 import { useRef, useState } from 'preact/hooks';
@@ -10,6 +11,7 @@ import type { TargetedKeyboardEvent } from 'preact';
 import { cancelIntake, submitIntake } from '../../app/navigation.ts';
 import {
   ARRIVAL_ORDER,
+  BLANK_INTAKE,
   SAMPLE_NOTE,
   cleanName,
   intakeMode,
@@ -19,9 +21,9 @@ import {
   type IntakeProblems,
 } from '../../app/profile.ts';
 import {
+  ADDRESS_ORDER,
   ARRIVAL_REASONS,
   PLAYER_NAME,
-  PRONOUN_IDS,
   PRONOUN_SETS,
   type ArrivalReason,
   type PronounId,
@@ -42,17 +44,16 @@ export const INTAKE_COPY = {
     'Records switched to a new form! Fill it in once, and your shifts carry on where you left them.',
   nameLabel: 'Name',
   nameHint: "As it goes on your name tag: up to 16 letters, digits, spaces, and ' - .",
-  pronounsLabel: 'Pronouns',
-  pronounsHint: 'So the team gets it right.',
+  addressLabel: 'Form of address',
+  addressHint: 'For your file. Most of the crew just uses your name.',
   arrivalLabel: 'Reason for joining',
   arrivalHint: 'There are no wrong answers. All answers are filed.',
   callsignLabel: 'Callsign',
   callsignValue: 'Assigned in the field by your supervisor',
   badgeBlank: 'Your name',
   badgePhoto: 'Photo on file',
-  notePending: 'Pick pronouns to preview your file note.',
   smallPrint:
-    'Small print: Name and pronouns can be updated in Settings. Your reason for joining is ' +
+    'Small print: Name and form of address can be updated in Settings. Your reason for joining is ' +
     'final and goes in your permanent file, which your field supervisor may read.',
   back: 'Back',
   submit: 'Sign and submit',
@@ -73,8 +74,9 @@ export interface ChoiceOption<T extends string> {
 
 /**
  * A radio group of small buttons (the WAI-ARIA radio pattern, like Settings' difficulty): one Tab
- * stop, the arrows move the pick. Nothing is picked until the player picks; the first option then
- * holds the Tab stop.
+ * stop, the arrows move the pick. The picked option holds the Tab stop; with nothing picked yet
+ * (a required group the player hasn't answered), the first option holds it. An optional group
+ * (`required={false}`) always arrives with a pick.
  */
 export function ChoiceGroup<T extends string>({
   name,
@@ -83,6 +85,7 @@ export function ChoiceGroup<T extends string>({
   options,
   value,
   invalid = false,
+  required = true,
   stacked = false,
   groupRef,
   onPick,
@@ -93,6 +96,7 @@ export function ChoiceGroup<T extends string>({
   options: readonly ChoiceOption<T>[];
   value: T | null;
   invalid?: boolean;
+  required?: boolean;
   stacked?: boolean;
   groupRef?: (el: HTMLDivElement | null) => void;
   onPick: (id: T) => void;
@@ -120,7 +124,7 @@ export function ChoiceGroup<T extends string>({
       aria-labelledby={labelledBy}
       aria-describedby={describedBy}
       aria-invalid={invalid ? 'true' : undefined}
-      aria-required="true"
+      aria-required={required ? 'true' : undefined}
       data-group={name}
       onKeyDown={onKeyDown}
     >
@@ -142,8 +146,8 @@ export function ChoiceGroup<T extends string>({
   );
 }
 
-/** The pronoun sets as options, in profile.ts order (she/her, he/him, they/them). */
-export const PRONOUN_OPTIONS: readonly ChoiceOption<PronounId>[] = PRONOUN_IDS.map((id) => ({
+/** The form of address options, in form order (Mr., Ms., Tech.; profile.ts `ADDRESS_ORDER`). */
+export const ADDRESS_OPTIONS: readonly ChoiceOption<PronounId>[] = ADDRESS_ORDER.map((id) => ({
   id,
   label: PRONOUN_SETS[id].label,
 }));
@@ -176,12 +180,11 @@ function Badge({ name }: { name: string }) {
 /** The intake form. */
 export function Intake() {
   const mode = intakeMode();
-  const [form, setForm] = useState<IntakeForm>({ name: '', pronouns: null, arrival: null });
+  const [form, setForm] = useState<IntakeForm>(BLANK_INTAKE);
   // Problems show once the player tries to sign, then follow the form live.
   const [tried, setTried] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
   const nameRef = useRef<HTMLInputElement | null>(null);
-  const pronounsRef = useRef<HTMLDivElement | null>(null);
   const arrivalRef = useRef<HTMLDivElement | null>(null);
   useEscape(() => {
     cancelIntake();
@@ -192,7 +195,6 @@ export function Intake() {
 
   const focusFirstProblem = (p: IntakeProblems): void => {
     if (p.name !== undefined) nameRef.current?.focus();
-    else if (p.pronouns !== undefined) firstRadio(pronounsRef.current)?.focus();
     else if (p.arrival !== undefined) firstRadio(arrivalRef.current)?.focus();
   };
   const onSubmit = (e: Event): void => {
@@ -266,34 +268,21 @@ export function Intake() {
                 )}
               </div>
               <div class="sd-intake-field">
-                <p id="sd-intake-pronouns" class="sd-field-label">
-                  {INTAKE_COPY.pronounsLabel}
+                <p id="sd-intake-address" class="sd-field-label">
+                  {INTAKE_COPY.addressLabel}
                 </p>
                 <ChoiceGroup
-                  name="pronouns"
-                  labelledBy="sd-intake-pronouns"
-                  describedBy={
-                    problems.pronouns !== undefined
-                      ? 'sd-intake-pronouns-problem'
-                      : 'sd-intake-pronouns-hint'
-                  }
-                  options={PRONOUN_OPTIONS}
+                  name="address"
+                  labelledBy="sd-intake-address"
+                  describedBy="sd-intake-address-hint"
+                  options={ADDRESS_OPTIONS}
                   value={form.pronouns}
-                  invalid={problems.pronouns !== undefined}
-                  groupRef={(el) => {
-                    pronounsRef.current = el;
-                  }}
+                  required={false}
                   onPick={(pronouns) => update({ pronouns })}
                 />
-                {problems.pronouns !== undefined ? (
-                  <p id="sd-intake-pronouns-problem" class="sd-message sd-warn" role="alert">
-                    {problems.pronouns}
-                  </p>
-                ) : (
-                  <p id="sd-intake-pronouns-hint" class="sd-message sd-dim">
-                    {INTAKE_COPY.pronounsHint}
-                  </p>
-                )}
+                <p id="sd-intake-address-hint" class="sd-message sd-dim">
+                  {INTAKE_COPY.addressHint}
+                </p>
               </div>
               <div class="sd-intake-field">
                 <p id="sd-intake-arrival" class="sd-field-label">
@@ -339,9 +328,7 @@ export function Intake() {
                 data-testid="file-note"
                 data-voice="file-note"
               >
-                {form.pronouns === null
-                  ? INTAKE_COPY.notePending
-                  : previewText(SAMPLE_NOTE, form.pronouns)}
+                {previewText(SAMPLE_NOTE, form.pronouns)}
               </p>
               <p class="sd-intake-small" data-voice="small-print">
                 {INTAKE_COPY.smallPrint}

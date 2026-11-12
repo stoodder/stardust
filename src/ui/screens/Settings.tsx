@@ -1,8 +1,8 @@
 // Settings (T209): sound (mute and the three volumes, app/settings.ts, which the audio engine
 // follows live), the campaign's difficulty (Standard or Story, progression.md § 9: changeable any
-// time between maps), the player's file (T306: name and pronouns; the callsign and the reason for
-// joining show read-only), and the save's export and import codes. Difficulty and Export need a save
-// in play; from the Title they explain that instead.
+// time between maps), the player's file (T306: name and form of address; the callsign and the
+// reason for joining show read-only), and the save's export and import codes. Difficulty and Export
+// need a save in play; from the Title they explain that instead.
 import { useState } from 'preact/hooks';
 import { closeSettings } from '../../app/navigation.ts';
 import { exportActive, setDifficulty } from '../../app/save.ts';
@@ -15,7 +15,7 @@ import {
   type PronounId,
 } from '../../content/dialogue/profile.ts';
 import { copyText } from './clipboard.ts';
-import { ChoiceGroup, PRONOUN_OPTIONS } from './Intake.tsx';
+import { ADDRESS_OPTIONS, ChoiceGroup } from './Intake.tsx';
 import { useEscape } from './escape.ts';
 import { focusOnce } from './focus.ts';
 import { ImportPanel } from './ImportPanel.tsx';
@@ -149,7 +149,7 @@ function DifficultyPick() {
 }
 
 /**
- * The player's file (T306; core-loop.md § 6.1): the name and pronouns can change here; the
+ * The player's file (T306; core-loop.md § 6.1): the name and form of address can change here; the
  * callsign is the story's (dialogue `set` nodes) and the reason for joining is final, so both
  * show read-only.
  */
@@ -203,14 +203,15 @@ function FileEditor({ profile }: { profile: ProfileView }) {
         />
       </label>
       <div class="sd-file-row sd-file-row-stack">
-        <span id="sd-file-pronouns" class="sd-slider-label">
-          Pronouns
+        <span id="sd-file-address" class="sd-slider-label">
+          Form of address
         </span>
         <ChoiceGroup
-          name="pronouns"
-          labelledBy="sd-file-pronouns"
-          options={PRONOUN_OPTIONS}
+          name="address"
+          labelledBy="sd-file-address"
+          options={ADDRESS_OPTIONS}
           value={pronouns}
+          required={false}
           onPick={(p) => {
             setPronouns(p);
             setNote(null);
