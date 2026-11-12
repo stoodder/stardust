@@ -8,7 +8,7 @@ import { ENV_PALETTES } from '../../palettes/env.ts';
 import { PALETTES } from '../../palettes/index.ts';
 import { luminance } from '../../palettes/color.ts';
 import { rgbOf } from '../../palettes/master.ts';
-import { SPRITES } from '../index.ts';
+import { ALL_SPRITES } from '../all.ts';
 import type { SpriteDef } from '../types.ts';
 import { GATHERING_MAW_STAGES } from './gathering_maw.ts';
 import { M7_ALLIES, M7_UNIT_FX, M7_UNITS } from './m7.ts';
@@ -104,7 +104,7 @@ const HOLLOW = ['enemy.silencer', ...GMAWS, 'enemy.gathering_maw_part'];
 
 describe('M7 registers real art for every unit (no placeholders left for T740a)', () => {
   it('registers the units, allies, overlays, and icons (placeholders/m7.ts is gone, T740b)', () => {
-    const ids = new Set(SPRITES.map((d) => d.id as string));
+    const ids = new Set(ALL_SPRITES.map((d) => d.id as string));
     for (const d of [...M7_UNITS, ...M7_ALLIES, ...M7_UNIT_FX, ...M7_UNIT_ICONS])
       expect(ids.has(d.id), d.id).toBe(true);
   });

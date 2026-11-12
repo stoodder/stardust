@@ -1,11 +1,12 @@
 // Act II's props and tiles (T440c; art-direction §6): the frames render picks exist and say what
 // they should at 1×.
 import { describe, expect, it } from 'vitest';
-import { SPRITES, type SpriteId } from '../index.ts';
+import type { SpriteId } from '../index.ts';
+import { ALL_SPRITES } from '../all.ts';
 import type { SpriteDef } from '../types.ts';
 
 function def(id: SpriteId): SpriteDef {
-  const d = SPRITES.find((s) => s.id === id);
+  const d = ALL_SPRITES.find((s) => s.id === id);
   if (d === undefined) throw new Error(`no sprite ${id}`);
   return d;
 }

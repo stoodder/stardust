@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import { compileContent } from '../../content/compile.ts';
 import { RAW_CONTENT } from '../../content/registry.ts';
-import { SPRITES } from '../../content/sprites/index.ts';
+import { ALL_SPRITES } from '../../content/sprites/all.ts';
 import { gridToScreen } from '../iso.ts';
 import { doorCores, doorLook, doorScreenBox, SEAL_INPUT, type SealPhase } from './blastDoor.ts';
 import {
@@ -22,9 +22,9 @@ const m2 = maps['a3_m02'];
 const m3 = maps['a3_m03'];
 
 const frames = (id: string): readonly string[] =>
-  Object.keys(SPRITES.find((s) => s.id === id)?.frames ?? {});
+  Object.keys(ALL_SPRITES.find((s) => s.id === id)?.frames ?? {});
 const anims = (id: string): readonly string[] =>
-  Object.keys(SPRITES.find((s) => s.id === id)?.anims ?? {});
+  Object.keys(ALL_SPRITES.find((s) => s.id === id)?.anims ?? {});
 
 describe("Sterling's shuttle (A3M2)", () => {
   it('stands on its pad marker and lifts on a cue the map really fires', () => {
@@ -167,7 +167,7 @@ describe("a blast door's screen box (review R3: the HUD keeps off the chosen doo
     expect(box.x + box.w).toBeGreaterThan(c.x);
     expect(box.y).toBeLessThan(c.y);
     expect(box.y + box.h).toBeGreaterThan(c.y);
-    const def = SPRITES.find((d) => d.id === 'prop.blast_door')!;
+    const def = ALL_SPRITES.find((d) => d.id === 'prop.blast_door')!;
     expect([box.w, box.h]).toEqual([def.size.w + 2, def.size.h + 2]);
   });
 });

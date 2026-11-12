@@ -1,12 +1,12 @@
 // EverglowView's shutdown frames (T640a): the price tag's and the power-off line's sprite frames
 // by time and width, and that each names a frame its sprite draws.
 import { describe, expect, it } from 'vitest';
-import { SPRITES } from '../../content/sprites/index.ts';
+import { ALL_SPRITES } from '../../content/sprites/all.ts';
 import { TAG_FALL_MS, TAG_MS, SHUTDOWN_HALF_W, SHUTDOWN_MS, shutdownLine } from './everglowLook.ts';
 import { powerOffFrame, tagFrame } from './EverglowView.ts';
 
 function frames(id: string): readonly string[] {
-  return Object.keys(SPRITES.find((s) => s.id === id)?.frames ?? {});
+  return Object.keys(ALL_SPRITES.find((s) => s.id === id)?.frames ?? {});
 }
 
 describe('the shutdown as sprites (T640a)', () => {

@@ -14,7 +14,8 @@
 // Act III has no darkness (D141): scenery wears its baked glow at NIGHT_GLOW, the emergency lamps
 // burn red, and the two moons hang in the sky (galleryKit `backdrop`).
 import { rgbOf, type ColorName } from '../content/palettes/master.ts';
-import { SPRITES, type SpriteId } from '../content/sprites/index.ts';
+import type { SpriteId } from '../content/sprites/index.ts';
+import { ALL_SPRITES } from '../content/sprites/all.ts';
 import { groundShadowFor } from '../content/sprites/shadows.ts';
 import { APRON_RINGS } from '../content/sprites/tiles/apron.ts';
 import type { EnvPaletteId } from '../content/sprites/types.ts';
@@ -283,7 +284,7 @@ export function m6Corner(
       const [sx, sy] = screen(o.gx, o.gy);
       const base = frameOf(o.tower, o.base);
       const head = frameOf(o.head, o.frame);
-      const def = SPRITES.find((d) => d.id === o.tower);
+      const def = ALL_SPRITES.find((d) => d.id === o.tower);
       const mount = def === undefined ? null : mountOf(def);
       if (base === undefined || head === undefined || mount === null) continue;
       if (o.fold === undefined) {

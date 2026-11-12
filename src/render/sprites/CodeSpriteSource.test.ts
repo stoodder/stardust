@@ -1,9 +1,14 @@
 // CodeSpriteSource's atlas pages are CPU-backed canvases (T501j): every page's first 2D context
 // asks for `willReadFrequently`, so the bake's puts and Phaser's readback stay off the GPU. The
 // browser is stood in for by stubs (a canvas that records its context requests, an ImageData).
+// It registers a probe sprite (the lazy-page test), so it keeps a module graph of its own.
+// vitest: isolate
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PALETTES } from '../../content/palettes/index.ts';
+import { FINALE_SPRITES } from '../../content/sprites/finale.ts';
 import { SPRITES } from '../../content/sprites/index.ts';
+import { liveSprites, registerSprites } from '../../content/sprites/registry.ts';
+import type { SpriteDef } from '../../content/sprites/types.ts';
 import { bakeAll } from './bake.ts';
 import {
   ATLAS_SPRITES,
@@ -38,6 +43,9 @@ afterEach(() => {
 });
 
 const ids = (list: readonly { id: string }[]): string[] => list.map((d) => d.id);
+
+/** What `register` bakes here: every registered sprite but the portraits (tests register all). */
+const atlasLive = (): SpriteDef[] => liveSprites().filter((d) => !d.id.startsWith('portrait.'));
 
 describe('CodeSpriteSource', () => {
   it('gives every atlas page a willReadFrequently context before drawing on it', () => {
@@ -127,7 +135,7 @@ describe('CodeSpriteSource', () => {
     );
     // Every frame's pixels, row by row, where its texture frame says it is.
     let checked = 0;
-    for (const b of bakeAll(ATLAS_SPRITES, PALETTES)) {
+    for (const b of bakeAll(atlasLive(), PALETTES)) {
       for (const f of b.frames) {
         const at = frames.get(f.key);
         const put = at === undefined ? undefined : puts[at.page];
@@ -147,8 +155,90 @@ describe('CodeSpriteSource', () => {
     expect([...frames.keys()].filter((k) => k.startsWith('portrait.'))).toEqual([]);
   });
 
-  it('holds every sprite but the portraits (T766: they are drawn only in the DOM)', () => {
-    expect(ids(ATLAS_SPRITES)).toEqual(ids(SPRITES).filter((id) => !id.startsWith('portrait.')));
-    expect(ids(SPRITES).some((id) => id.startsWith('portrait.'))).toBe(true);
+  it('boots with the core sprites only: no portrait (T766), none of the finale (T871)', () => {
+    expect(ids(ATLAS_SPRITES)).toEqual(ids(SPRITES));
+    expect(ids(SPRITES).some((id) => id.startsWith('portrait.'))).toBe(false);
+    const core = new Set(ids(SPRITES));
+    expect(ids(FINALE_SPRITES).filter((id) => core.has(id))).toEqual([]);
+  });
+
+  it('bakes a lazily registered sprite into a page of its own on sync (T871)', () => {
+    vi.stubGlobal('document', { createElement: () => fakeCanvas() });
+    vi.stubGlobal(
+      'ImageData',
+      class {
+        readonly data: Uint8ClampedArray;
+        constructor(data: Uint8ClampedArray) {
+          this.data = data;
+        }
+      },
+    );
+    const pages: string[] = [];
+    const added: string[] = [];
+    const anims: string[] = [];
+    const scene: SpriteScene = {
+      textures: {
+        addCanvas: (key: string) => {
+          pages.push(key);
+          return { add: (name: string) => added.push(name) };
+        },
+      },
+      anims: {
+        create: (c: { key: string }) => {
+          anims.push(c.key);
+        },
+      },
+    };
+    const source = new CodeSpriteSource();
+    source.register(scene);
+    const booted = pages.length;
+    source.sync(); // nothing new: no page
+    expect(pages).toHaveLength(booted);
+
+    const base = SPRITES.find((d) => d.id === 'fx.shadow');
+    if (base === undefined) throw new Error('no fx.shadow');
+    const probe = { ...base, id: 'fx.t871_probe' } as SpriteDef;
+    registerSprites([probe]);
+    const before = added.length;
+    source.sync();
+    expect(pages.slice(booted)).toEqual([`${PAGE_PREFIX}${booted}`]);
+    expect(added.slice(before).every((k) => k.startsWith('fx.t871_probe#'))).toBe(true);
+    expect(added.length).toBeGreaterThan(before);
+    // A lookup finds it (and one before `sync` would have baked it then).
+    const frame = Object.keys(base.frames)[0] ?? '';
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the probe's id, registered above
+    expect(source.frame('fx.t871_probe' as never, frame).texture).toBe(`${PAGE_PREFIX}${booted}`);
+  });
+
+  it('bakes on a lookup that meets a sprite registered since the last sync', () => {
+    vi.stubGlobal('document', { createElement: () => fakeCanvas() });
+    vi.stubGlobal(
+      'ImageData',
+      class {
+        readonly data: Uint8ClampedArray;
+        constructor(data: Uint8ClampedArray) {
+          this.data = data;
+        }
+      },
+    );
+    const pages: string[] = [];
+    const scene: SpriteScene = {
+      textures: {
+        addCanvas: (key: string) => {
+          pages.push(key);
+          return { add: () => undefined };
+        },
+      },
+      anims: { create: () => undefined },
+    };
+    const source = new CodeSpriteSource();
+    source.register(scene);
+    const booted = pages.length;
+    const base = SPRITES.find((d) => d.id === 'fx.shadow');
+    if (base === undefined) throw new Error('no fx.shadow');
+    registerSprites([{ ...base, id: 'fx.t871_probe2' } as SpriteDef]);
+    const frame = Object.keys(base.frames)[0] ?? '';
+    expect(source.frame('fx.t871_probe2' as never, frame).texture).toBe(`${PAGE_PREFIX}${booted}`);
+    expect(() => source.frame('fx.nope' as never, frame)).toThrow(/unknown frame/);
   });
 });

@@ -3,11 +3,12 @@
 // shut door is dark and an open one lit, the dead turrets carry no live light, the shuttle's
 // frames line up for its lift, and Act III's crystal stays a dim growth with a few bright tips.
 import { describe, expect, it } from 'vitest';
-import { SPRITES, type SpriteId } from '../index.ts';
+import type { SpriteId } from '../index.ts';
+import { ALL_SPRITES } from '../all.ts';
 import type { SpriteDef } from '../types.ts';
 
 function def(id: SpriteId): SpriteDef {
-  const d = SPRITES.find((s) => s.id === id);
+  const d = ALL_SPRITES.find((s) => s.id === id);
   if (d === undefined) throw new Error(`no sprite ${id}`);
   return d;
 }

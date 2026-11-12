@@ -3,11 +3,11 @@
 // with their spec frames, the idle heads' spec anims, Scanner Sweep's icon, and the Act II sack
 // burst. The tier and spec silhouette rules every tower shares are in art.test.ts.
 import { describe, expect, it } from 'vitest';
-import { SPRITES } from './index.ts';
+import { ALL_SPRITES } from './all.ts';
 import type { SpriteDef } from './types.ts';
 
 function def(id: string): SpriteDef {
-  const d: SpriteDef | undefined = SPRITES.find((s) => s.id === id);
+  const d: SpriteDef | undefined = ALL_SPRITES.find((s) => s.id === id);
   if (d === undefined) throw new Error(`no sprite ${id}`);
   return d;
 }

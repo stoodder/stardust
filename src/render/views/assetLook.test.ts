@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SPRITES } from '../../content/sprites/index.ts';
+import { ALL_SPRITES } from '../../content/sprites/all.ts';
 import { assetDamage } from '../../sim/index.ts';
 import { ASSET_SPRITES, assetLook } from './assetLook.ts';
 
@@ -20,7 +20,7 @@ describe('assetLook (A2M2: Rigs 7 and 8 by damage band, T440c)', () => {
 
   it('names only frames and anims its sprites have', () => {
     for (const id of Object.values(ASSET_SPRITES)) {
-      const def = SPRITES.find((d) => d.id === id);
+      const def = ALL_SPRITES.find((d) => d.id === id);
       expect(def, id).toBeDefined();
       for (const band of ['none', 'intact', 'damaged', 'critical', 'lost'] as const) {
         const look = assetLook(band);

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { PALETTE_IDS } from '../palettes/index.ts';
 import { defineSprite } from './defineSprite.ts';
-import { SPRITES } from './index.ts';
+import { ALL_SPRITES } from './all.ts';
 import { SLOT_CHAR, STANDARD_LEGEND } from './legend.ts';
 import type { SpriteDef } from './types.ts';
 import { mirrorName, validateSprite, validateSprites } from './validate.ts';
@@ -33,15 +33,15 @@ const M1_SPRITES = [
 
 describe('sprite registry', () => {
   it('has well-formed definitions', () => {
-    expect(validateSprites(SPRITES, PALETTE_IDS)).toEqual([]);
+    expect(validateSprites(ALL_SPRITES, PALETTE_IDS)).toEqual([]);
   });
 
   it('covers the M1 cut', () => {
-    expect(SPRITES.map((s) => s.id)).toEqual(expect.arrayContaining(M1_SPRITES));
+    expect(ALL_SPRITES.map((s) => s.id)).toEqual(expect.arrayContaining(M1_SPRITES));
   });
 
   it('gives every moving actor SE and NE walks mirrored to four facings', () => {
-    for (const def of SPRITES as readonly SpriteDef[]) {
+    for (const def of ALL_SPRITES as readonly SpriteDef[]) {
       if (!def.id.startsWith('enemy.')) continue;
       const anims = def.anims ?? {};
       expect(
@@ -68,7 +68,7 @@ describe('sprite registry', () => {
   });
 
   it('gives every tower base t1–t3 frames (plus spec_a/spec_b once it has specs) and a mount', () => {
-    for (const def of SPRITES as readonly SpriteDef[]) {
+    for (const def of ALL_SPRITES as readonly SpriteDef[]) {
       if (!def.id.startsWith('tower.') || def.id.endsWith('_head')) continue;
       const frames = Object.keys(def.frames);
       const tiers = frames.includes('spec_a')
@@ -79,7 +79,7 @@ describe('sprite registry', () => {
       expect(frames, def.id).toEqual(jb ? [...tiers, ...tiers.map((t) => `${t}_jb`)] : tiers);
       expect(def.mount, def.id).toBeDefined();
       expect(
-        SPRITES.some((s) => s.id === `${def.id}_head`),
+        ALL_SPRITES.some((s) => s.id === `${def.id}_head`),
         def.id,
       ).toBe(true);
     }

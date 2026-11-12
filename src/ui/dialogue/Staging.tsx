@@ -6,7 +6,7 @@
 // sound, so muted play loses nothing. Reduced motion holds still frames and the counter lands.
 // A3M2's Asset Yield Log is its own stage (YieldLogStage.tsx, T614).
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { SPRITES } from '../../content/sprites/index.ts';
+import { spriteDef as liveDef } from '../../content/sprites/registry.ts';
 import type { SpriteDef } from '../../content/sprites/types.ts';
 import { baked } from '../hud/Icon.tsx';
 import { prefersReducedMotion } from '../motion.ts';
@@ -54,7 +54,7 @@ const MUZZLE = { x: 15, y: 12 };
 const BURST_ANCHOR = { x: 48, y: 71 };
 
 function spriteDef(id: string): SpriteDef | undefined {
-  return (SPRITES as readonly SpriteDef[]).find((s) => s.id === id);
+  return liveDef(id);
 }
 
 /** Each staged sprite's anims, looked up once (a stage redraws every STAGE_TICK_MS; C-L7). */

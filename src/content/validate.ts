@@ -73,8 +73,7 @@ import {
   TRAIT_TELL,
   type CounterAnswers,
 } from './rules.ts';
-import { SPRITES } from './sprites/index.ts';
-import type { SpriteDef } from './sprites/types.ts';
+import { hasSprite, liveSprites, spritesVersion } from './sprites/registry.ts';
 import { validateSprites } from './sprites/validate.ts';
 import type {
   AbilityDef,
@@ -145,23 +144,28 @@ export function validate<K extends IdSpace>(
 // ── Art ──────────────────────────────────────────────────────────────────────────────────────
 
 let artCache: readonly string[] | null = null;
+let artVersion = -1;
 
-/** Sprite and palette errors. The art registries are static, so this runs once per process. */
+/**
+ * Sprite and palette errors, over every sprite registered so far (sprites/registry.ts: the lazy
+ * chunks' too, once loaded). Rerun only when a chunk registers more.
+ */
 function artErrors(): readonly string[] {
+  if (artVersion !== spritesVersion()) artCache = null;
+  artVersion = spritesVersion();
   artCache ??= [
-    ...validateSprites(SPRITES, PALETTE_IDS).map((e) => `[sprites] ${e}`),
-    ...validatePalettes({ palettes: PALETTES, envIds: ENV_PALETTE_IDS, sprites: SPRITES }).map(
+    ...validateSprites(liveSprites(), PALETTE_IDS).map((e) => `[sprites] ${e}`),
+    ...validatePalettes({ palettes: PALETTES, envIds: ENV_PALETTE_IDS, sprites: liveSprites() }).map(
       (e) => `[palettes] ${e}`,
     ),
   ];
   return artCache;
 }
 
-const SPRITE_IDS: ReadonlySet<string> = new Set(SPRITES.map((s: SpriteDef) => s.id));
 function checkSprite(issues: Issues, id: string, category: string, where: string): void {
   if (!id.startsWith(`${category}.`)) {
     issues.add('sprite-ref', where, `'${id}' must be a '${category}.*' sprite`);
-  } else if (!SPRITE_IDS.has(id)) {
+  } else if (!hasSprite(id)) {
     issues.add('sprite-ref', where, `'${id}' is not a registered sprite`);
   }
 }

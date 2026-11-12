@@ -6,11 +6,11 @@ import { describe, expect, it } from 'vitest';
 import { bodyLuminance, contrastRatio, slotLuminance } from '../__fixtures__/valueBands.ts';
 import { ENV_PALETTES } from '../palettes/env.ts';
 import { PALETTES } from '../palettes/index.ts';
-import { SPRITES } from './index.ts';
+import { ALL_SPRITES } from './all.ts';
 import type { SpriteDef } from './types.ts';
 
 function def(id: string): SpriteDef {
-  const d: SpriteDef | undefined = SPRITES.find((s) => s.id === id);
+  const d: SpriteDef | undefined = ALL_SPRITES.find((s) => s.id === id);
   if (d === undefined) throw new Error(`no sprite ${id}`);
   return d;
 }

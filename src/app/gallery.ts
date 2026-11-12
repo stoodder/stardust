@@ -14,8 +14,9 @@
 // (app/galleryKit.ts).
 import { ENV_PALETTE_IDS } from '../content/palettes/env.ts';
 import { PALETTES } from '../content/palettes/index.ts';
-import { SPRITES, type SpriteId } from '../content/sprites/index.ts';
-// The finale's stills: out of SPRITES (the boot atlas), shown here as cards all the same (T843).
+import type { SpriteId } from '../content/sprites/index.ts';
+import { ALL_SPRITES } from '../content/sprites/all.ts';
+// The finale's stills: out of ALL_SPRITES (the boot atlas), shown here as cards all the same (T843).
 import { FINALE_SCENE_SPRITES } from '../content/sprites/scenes/finale.ts';
 import { tetherDir } from '../content/sprites/fx/link_tether.ts';
 import { groundShadowFor } from '../content/sprites/shadows.ts';
@@ -82,8 +83,8 @@ function secondVariant(b: BakedSprite): string | undefined {
   return palettes.includes('act3') ? 'act3' : palettes[0];
 }
 
-/** Every sprite the gallery shows: the registry, then the finale's lazy stills. */
-const GALLERY_SPRITES: readonly SpriteDef[] = [...SPRITES, ...FINALE_SCENE_SPRITES];
+/** Every sprite the gallery shows: every registry (sprites/all.ts), then the finale's stills. */
+const GALLERY_SPRITES: readonly SpriteDef[] = [...ALL_SPRITES, ...FINALE_SCENE_SPRITES];
 
 const DEFS: ReadonlyMap<string, SpriteDef> = new Map(GALLERY_SPRITES.map((d) => [d.id, d]));
 
@@ -712,7 +713,7 @@ function diorama(
       const sy = gy - o.z * 8; // on high ground, the anchor draws one step up
       const base = frameOf(baseId, o.look, DEFAULT_VARIANT);
       draw(base, sx, sy, glowOf(baked, baseId, o.look));
-      const def = SPRITES.find((d) => d.id === baseId);
+      const def = ALL_SPRITES.find((d) => d.id === baseId);
       const mount = def === undefined ? null : mountOf(def);
       if (base !== undefined && mount !== null) {
         draw(
@@ -1006,7 +1007,7 @@ function m5Corner(
     const [sx, sy] = screen(pad[0] + 0.5, pad[1] + 0.5);
     const base = frameOf('tower.prism', 't1');
     draw(base, sx, sy, glowOf(baked, 'tower.prism', 't1'));
-    const def = SPRITES.find((d) => d.id === 'tower.prism');
+    const def = ALL_SPRITES.find((d) => d.id === 'tower.prism');
     const mount = def === undefined ? null : mountOf(def);
     if (base === undefined || mount === null) return;
     draw(

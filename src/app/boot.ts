@@ -25,6 +25,7 @@ import { activeSave, browserKeyValueStore, initSaves, loadDevSave } from './save
 import { hasBattleMap } from './battleSetup.ts';
 import { loadDevFixtures } from './devRegistry.ts';
 import { ensureAllActs } from './actContent.ts';
+import { loadPortraits } from './portraitContent.ts';
 import { loadFinaleScreens } from './finaleScreens.ts';
 import { gateRouter } from './contentGate.ts';
 import { loadBattleRenderer } from './battleRenderer.ts';
@@ -87,8 +88,15 @@ export async function boot(): Promise<void> {
   // The dev fixtures (the dev battles and saves) stay out of the initial JS: a dev URL (`?test=1`,
   // or `?map=` naming no live map) loads their chunk first (devRegistry.ts; D150).
   const devFixtures = params.test || (params.map !== null && !hasBattleMap(params.map));
-  // The three chunks load side by side.
+  // The portraits' chunk (T871) starts loading now, beside the atlas bake; the content gate waits
+  // for it before the first screen shows. A test boot holds it up front with the rest.
+  const portraits = loadPortraits();
+  portraits.catch((err: unknown) => {
+    logError('boot: the portraits failed to load', err);
+  });
+  // The chunks load side by side.
   await Promise.all([
+    upFront ? portraits : null,
     upFront ? ensureAllActs() : null,
     upFront ? loadBattleRenderer() : null,
     upFront ? loadFinaleScreens() : null, // T810

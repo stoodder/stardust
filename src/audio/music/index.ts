@@ -157,6 +157,11 @@ export const PHASE_THEME: Readonly<Partial<Record<Act, Readonly<Record<number, T
 export const MAP_THEME: Readonly<Partial<Record<string, ThemeId>>> = {
   a3_m04: 'act3_shelters',
   a3_m05: 'act3_vats',
+  // The challenge maps play the battle theme of the act their layout comes from (D154 addendum);
+  // Endless (end_m01) keeps Act I's, on purpose: the first shift, revisited at dawn.
+  ch_m01: 'act3_battle',
+  ch_m02: 'act2_battle',
+  ch_m03: 'act2_battle',
 };
 
 /**

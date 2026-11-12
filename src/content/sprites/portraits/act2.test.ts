@@ -11,7 +11,7 @@ import { EXPRESSION_EXTRAS, type SpeakerId } from '../../dialogue/types.ts';
 import { contrastRatio, luminance } from '../../palettes/color.ts';
 import { PALETTES } from '../../palettes/index.ts';
 import { isColorName, rgbOf } from '../../palettes/master.ts';
-import { SPRITES } from '../index.ts';
+import { ALL_SPRITES } from '../all.ts';
 import type { FrameDef, PatchFrame, SpriteDef } from '../types.ts';
 import { portraitBricks } from './bricks.ts';
 import { portraitKip } from './kip.ts';
@@ -114,7 +114,7 @@ describe('Act II portraits: the frame contract', () => {
   );
 
   it('registers both portraits under the ids speakers.ts names', () => {
-    const ids = new Set<string>(SPRITES.map((s) => s.id));
+    const ids = new Set<string>(ALL_SPRITES.map((s) => s.id));
     for (const id of ['vesthara', 'pebble'] as const satisfies readonly SpeakerId[]) {
       const portrait = SPEAKER_DEFS[id].portrait;
       expect(portrait).toBe(`portrait.${id}`);

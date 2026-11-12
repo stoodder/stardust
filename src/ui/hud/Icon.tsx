@@ -1,8 +1,7 @@
 // A sprite icon in the DOM (art-direction §5: shown 1:1 in game pixels). Icons are baked from the
 // same sprite definitions as the canvas art (render/sprites), once per id, into data URLs.
 import { PALETTES } from '../../content/palettes/index.ts';
-import { SPRITES } from '../../content/sprites/index.ts';
-import type { SpriteDef } from '../../content/sprites/types.ts';
+import { spriteDef } from '../../content/sprites/registry.ts';
 import { bakeSprite, DEFAULT_VARIANT, frameKey } from '../../render/sprites/bake.ts';
 import { imageToCanvas } from '../../render/sprites/canvas.ts';
 
@@ -28,14 +27,14 @@ export function baked(id: string, frameName: string, variant = DEFAULT_VARIANT):
   const cacheKey = `${id}|${variant}|${frameName}`;
   const hit = cache.get(cacheKey);
   if (hit !== undefined) return hit;
-  const def = (SPRITES as readonly SpriteDef[]).find((s) => s.id === id);
+  const def = spriteDef(id);
+  // Not registered yet (a lazy chunk's sprite before it loads): not cached, so it bakes later.
+  if (def === undefined) return null;
   let out: Baked | null = null;
-  if (def !== undefined) {
-    const key = frameKey(id, variant, frameName);
-    const frame = bakeSprite(def, PALETTES).frames.find((f) => f.key === key);
-    if (frame !== undefined) {
-      out = { url: imageToCanvas(frame.image).toDataURL(), w: frame.image.w, h: frame.image.h };
-    }
+  const key = frameKey(id, variant, frameName);
+  const frame = bakeSprite(def, PALETTES).frames.find((f) => f.key === key);
+  if (frame !== undefined) {
+    out = { url: imageToCanvas(frame.image).toDataURL(), w: frame.image.w, h: frame.image.h };
   }
   cache.set(cacheKey, out);
   return out;

@@ -3,7 +3,7 @@
 // the frame contract the dialogue panel asks for; and each character keeps its tell.
 import { describe, expect, it } from 'vitest';
 import { ACT1_SPEAKERS, SPEAKER_DEFS } from '../../dialogue/speakers.ts';
-import { SPRITES } from '../index.ts';
+import { ALL_SPRITES } from '../all.ts';
 import type { FrameDef, PatchFrame, SpriteDef } from '../types.ts';
 import { portraitGerald } from './gerald.ts';
 import { portraitGoldie } from './goldie.ts';
@@ -83,7 +83,7 @@ describe('portrait batch 2', () => {
   );
 
   it('registers a portrait (or icon) for every Act I speaker that shows one', () => {
-    const ids = new Set<string>(SPRITES.map((s) => s.id));
+    const ids = new Set<string>(ALL_SPRITES.map((s) => s.id));
     for (const id of ACT1_SPEAKERS) {
       const portrait = SPEAKER_DEFS[id].portrait;
       if (portrait !== null) expect(ids.has(portrait), portrait).toBe(true);

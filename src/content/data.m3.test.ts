@@ -5,10 +5,10 @@
 import { describe, expect, it } from 'vitest';
 import { compileContent } from './compile.ts';
 import { RAW_CONTENT } from './registry.ts';
-import { SPRITES } from './sprites/index.ts';
+import { ALL_SPRITES } from './sprites/all.ts';
 
 const content = compileContent(RAW_CONTENT);
-const SPRITE_IDS = new Set<string>(SPRITES.map((s) => s.id));
+const SPRITE_IDS = new Set<string>(ALL_SPRITES.map((s) => s.id));
 
 describe('M3 towers', () => {
   it('Skyhook: 14 → 20 explosive flak with a 0.8 burst, air only; T3 1.3/s, range 4', () => {

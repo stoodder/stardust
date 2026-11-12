@@ -30,7 +30,8 @@ import { map as a2m05 } from '../../content/maps/a2_m05/map.ts';
 import { map as a2m06 } from '../../content/maps/a2_m06/map.ts';
 import { compileContent } from '../../content/compile.ts';
 import { RAW_CONTENT } from '../../content/registry.ts';
-import { SPRITES, type SpriteId } from '../../content/sprites/index.ts';
+import type { SpriteId } from '../../content/sprites/index.ts';
+import { ALL_SPRITES } from '../../content/sprites/all.ts';
 
 function grid(rows: readonly string[]): {
   cols: number;
@@ -356,7 +357,7 @@ describe("dressing layers (T410a: the revisit's grey soil)", () => {
 });
 
 function frames(id: SpriteId): readonly string[] {
-  return Object.keys(SPRITES.find((d) => d.id === id)?.frames ?? {});
+  return Object.keys(ALL_SPRITES.find((d) => d.id === id)?.frames ?? {});
 }
 
 describe("Act II's looks (T440c)", () => {

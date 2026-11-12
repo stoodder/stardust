@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { bodyLuminance, contrastRatio, sprite } from '../__fixtures__/valueBands.ts';
 import { ENV_PALETTES } from '../palettes/env.ts';
 import { PALETTES } from '../palettes/index.ts';
-import { SPRITES } from './index.ts';
+import { ALL_SPRITES } from './all.ts';
 import type { FramesAnim, SpriteDef } from './types.ts';
 
 function grid(id: string, frame: string): readonly string[] {
@@ -251,7 +251,7 @@ describe('M6 tell glyphs (art-direction §8)', () => {
 
 describe('the M6 placeholders are gone', () => {
   it('no M6 sprite borrows another’s frames any more', () => {
-    const ids = SPRITES.map((s) => s.id);
+    const ids = ALL_SPRITES.map((s) => s.id);
     for (const id of ['tower.burrow', 'tower.choir', 'tower.bloom', 'icon.tell.consumer']) {
       expect(ids, id).toContain(id);
     }

@@ -8,7 +8,7 @@ import { bodyLuminance, contrastRatio, sprite } from '../__fixtures__/valueBands
 import { ENV_PALETTES } from '../palettes/env.ts';
 import { FACTION_PALETTES } from '../palettes/factions.ts';
 import { PALETTES } from '../palettes/index.ts';
-import { SPRITES } from './index.ts';
+import { ALL_SPRITES } from './all.ts';
 import type { FramesAnim, SpriteDef } from './types.ts';
 
 function grid(id: string, frame: string): readonly string[] {
@@ -269,7 +269,7 @@ describe('M7 icons and glyphs (art-direction §5, §8)', () => {
       const b = sprite(old);
       expect(JSON.stringify(a.frames), id).not.toBe(JSON.stringify(b.frames));
     }
-    expect(SPRITES.filter((d) => d.id === 'icon.jammed')).toHaveLength(1);
+    expect(ALL_SPRITES.filter((d) => d.id === 'icon.jammed')).toHaveLength(1);
   });
 
   it('sizes the icons 14×14 and the glyphs 6×6, each in its own colour', () => {

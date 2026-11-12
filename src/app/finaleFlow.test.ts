@@ -39,12 +39,7 @@ describe('the finale close (RESULTS_FLOW.fin_m01)', () => {
 
   it('names what each step waits for until it lands', () => {
     const steps = endingSteps('fin_m01', true, unanswered);
-    expect(steps.map((s) => endingPlaceholder(s))).toEqual([
-      null,
-      null,
-      null,
-      null,
-    ]);
+    expect(steps.map((s) => endingPlaceholder(s))).toEqual([null, null, null, null]);
     // The memo and C5's scene are T811's, registered: Sterling's farewell, and C5's choice.
     expect(MEMOS.memo_fin_01?.subject).toBe('Clean Exit Complete!');
     const c5 = sceneById('fin_m01_scene_c5');

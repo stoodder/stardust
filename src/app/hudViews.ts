@@ -10,7 +10,7 @@ import type {
 import { COUNTER_ANSWERS, MAX_TIER_BEFORE_SPEC, THREAT_INTEL_TELL } from '../content/rules.ts';
 import { answerScope, answersCarried, type ReachedTower } from '../content/counterAnswers.ts';
 import { SPEAKERS } from '../content/dialogue/speakers.ts';
-import { SPRITES } from '../content/sprites/index.ts';
+import { hasSprite } from '../content/sprites/registry.ts';
 import type { IdSpace } from '../content/types.ts';
 import { gridToScreen, type IsoOrigin } from '../render/iso.ts';
 import { TICK_HZ } from '../shared/time.ts';
@@ -56,9 +56,6 @@ import {
   lockedAbilityReason,
   threatLabel,
 } from './hudText.ts';
-
-/** Every registered sprite id (the tell glyphs the briefing may show). */
-const SPRITE_IDS: ReadonlySet<string> = new Set(SPRITES.map((d) => d.id));
 
 /**
  * The wave whose countdown unlocks each tower the map holds back (`towerUnlockWave`, compiled to
@@ -279,7 +276,7 @@ export function wavePreview(
  */
 export function previewIcon(icon: string, fleeing: boolean): string {
   const look = `${icon}_fleeing`;
-  return fleeing && SPRITE_IDS.has(look) ? look : icon;
+  return fleeing && hasSprite(look) ? look : icon;
 }
 
 /** Whole seconds left in the countdown to the next wave (rounded up), or null when none runs. */
@@ -519,7 +516,7 @@ export function threatIntel(
 function tellGlyph(ids: readonly string[]): string | null {
   for (const id of ids) {
     const glyph = `icon.tell.${id}`;
-    if (SPRITE_IDS.has(glyph)) return glyph;
+    if (hasSprite(glyph)) return glyph;
   }
   return null;
 }

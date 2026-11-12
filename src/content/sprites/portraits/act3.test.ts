@@ -9,7 +9,7 @@ import { EXPRESSION_EXTRAS, type SpeakerId } from '../../dialogue/types.ts';
 import { contrastRatio, luminance } from '../../palettes/color.ts';
 import { PALETTES } from '../../palettes/index.ts';
 import { rgbOf, type ColorName } from '../../palettes/master.ts';
-import { SPRITES } from '../index.ts';
+import { ALL_SPRITES } from '../all.ts';
 import { STANDARD_LEGEND } from '../legend.ts';
 import type { FrameDef, PatchFrame, SpriteDef } from '../types.ts';
 import { BRAMBLE_EXPRESSIONS, BRAMBLE_FACE, portraitBramble } from './bramble.ts';
@@ -162,7 +162,7 @@ describe('Act III portraits: the frame contract', () => {
   });
 
   it('registers each portrait under the id speakers.ts names, and Goldie’s act3 rule', () => {
-    const ids = new Set<string>(SPRITES.map((s) => s.id));
+    const ids = new Set<string>(ALL_SPRITES.map((s) => s.id));
     for (const [speaker, def] of [
       ['chitterbloom', portraitBramble],
       ['thrum', portraitThrum],

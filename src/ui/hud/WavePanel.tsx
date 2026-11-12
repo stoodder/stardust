@@ -167,9 +167,9 @@ export function WavePanel() {
             <li class="hud-endless-block" data-testid="preview-endless" aria-label={block.spoken}>
               <span class="hud-label">{block.needs.length === 0 ? 'Warm-up' : 'Needs'}</span>
               {block.needs.length > 0 && <span> {block.needs.join(' ')}</span>}
-              {block.then !== null && (
+              {block.coming !== null && (
                 <span class="hud-endless-then">
-                  <span class="hud-label"> Then</span> +{block.then.join(' +')}
+                  <span class="hud-label"> Then</span> +{block.coming.join(' +')}
                 </span>
               )}
             </li>

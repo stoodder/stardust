@@ -12,7 +12,7 @@ import {
   STONE_PIP,
   type BarLayout,
 } from './BlockerView.ts';
-import { SPRITES } from '../../content/sprites/index.ts';
+import { ALL_SPRITES } from '../../content/sprites/all.ts';
 import { HEALTH_BAR_GAP_PX } from '../vfx/healthBar.ts';
 
 describe('the blocker bar (T605)', () => {
@@ -58,7 +58,7 @@ describe('the blocker bar, polished (T630a)', () => {
   });
 
   it('sits over his head as a unit bar does, a pixel clear of his standing frame (review R3)', () => {
-    const def = SPRITES.find((s) => s.id === 'ally.bricks')!;
+    const def = ALL_SPRITES.find((s) => s.id === 'ally.bricks')!;
     // His frame's top above his ground point, the baked 1 px outline included, standing and
     // straining; kneeling only drops it, so the bar holds where it is.
     const headPx = (frame: string): number => {
@@ -89,7 +89,7 @@ describe("the blocker's stance (T640a)", () => {
   });
 
   it("names anims Bricks's sprite draws, idle and shot, in every facing", () => {
-    const anims = SPRITES.find((s) => s.id === 'ally.bricks')?.anims ?? {};
+    const anims = ALL_SPRITES.find((s) => s.id === 'ally.bricks')?.anims ?? {};
     for (const st of ['block', 'strain', 'last']) {
       for (const f of ['se', 'sw', 'ne', 'nw']) {
         expect(anims[`${st}_${f}`], `${st}_${f}`).toBeDefined();

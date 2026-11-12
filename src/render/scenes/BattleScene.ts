@@ -443,6 +443,7 @@ export class BattleScene extends Phaser.Scene {
     // BootScene stores the baked sprite source in the registry (architecture.md § Rendering).
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- BootScene sets it before any battle
     const sprites = this.registry.get(SPRITE_SOURCE_KEY) as SpriteSource;
+    sprites.sync(); // T871: a lazy chunk's sprites (the finale's) get their atlas page now
     const layers = createLayers(this);
     this.#origin = mapOrigin(map.cols, map.rows, VIEW_W, VIEW_H);
     const ctx: ViewContext = { scene: this, sprites, layers, origin: this.#origin };

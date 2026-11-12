@@ -45,7 +45,10 @@ export const waves = defineWaves([
     groups: [motes('road', 20, OPEN, 0.15), g('glimmer', 6, 'road', OPEN + 8, 1.2)],
   },
   // W3 · Lightwings over the vats
-  { countdownSec: COUNTDOWN, groups: [wings(4, OPEN), g('glimmer', 6, 'road', OPEN + 4, 1.2)] },
+  {
+    countdownSec: COUNTDOWN,
+    groups: [wings(5, OPEN, 1.2), g('glimmer', 6, 'road', OPEN + 4, 1.2)],
+  },
   // W4 · a Weft Warden, Glimmers at its back
   {
     countdownSec: COUNTDOWN,
@@ -80,37 +83,37 @@ export const waves = defineWaves([
     countdownSec: COUNTDOWN,
     groups: [
       g('cantor', 2, 'road', OPEN, 3),
-      g('glimmer', 10, 'road', OPEN + 1, 0.8),
-      g('weft_warden', 1, 'road', OPEN + 10),
+      g('glimmer', 14, 'road', OPEN + 1, 0.7),
+      g('weft_warden', 2, 'road', OPEN + 10, 3),
     ],
   },
   // W10 · the hatch: Glimmers and Motes straight up out of it
   {
     countdownSec: COUNTDOWN,
     groups: [
-      g('glimmer', 6, 'vats', OPEN, 1),
-      motes('vats', 20, OPEN + 8, 0.15),
-      wings(4, OPEN + 12),
+      g('glimmer', 10, 'vats', OPEN, 0.8),
+      motes('vats', 22, OPEN + 8, 0.15),
+      wings(6, OPEN + 12, 1.2),
     ],
   },
   // W11 · Wardens and Cantors together
   {
     countdownSec: COUNTDOWN,
     groups: [
-      g('weft_warden', 2, 'road', OPEN, 3),
-      g('cantor', 1, 'road', OPEN + 2),
-      motes('road', 26, OPEN + 10, 0.15),
+      g('weft_warden', 3, 'road', OPEN, 3),
+      g('cantor', 2, 'road', OPEN + 2, 3),
+      motes('road', 30, OPEN + 10, 0.15),
     ],
   },
   // W12 · everything, the road and the hatch and the sky
   {
     countdownSec: COUNTDOWN,
     groups: [
-      g('weft_warden', 1, 'road', OPEN),
-      g('cantor', 1, 'road', OPEN + 2),
-      g('glimmer', 10, 'road', OPEN + 3, 0.8),
-      wings(6, OPEN + 8, 1.2),
-      motes('vats', 20, OPEN + 14, 0.15),
+      g('weft_warden', 2, 'road', OPEN, 3),
+      g('cantor', 2, 'road', OPEN + 2, 3),
+      g('glimmer', 14, 'road', OPEN + 3, 0.7),
+      wings(8, OPEN + 8, 1),
+      motes('vats', 24, OPEN + 14, 0.15),
     ],
   },
 ]);

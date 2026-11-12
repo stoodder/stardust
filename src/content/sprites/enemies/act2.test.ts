@@ -1,12 +1,12 @@
 // Act II's unit art (T440a; art-direction §4, §6, §8): the Mote and its Heavy walk, the woven
 // Aelari constructs with their see-through gaps, and the fleeing runners' scurry, glance, and hop.
 import { describe, expect, it } from 'vitest';
-import { SPRITES } from '../index.ts';
+import { ALL_SPRITES } from '../all.ts';
 import type { SpriteDef } from '../types.ts';
 import { YOUNG_HEADROOM } from './sack.ts';
 
 function def(id: string): SpriteDef {
-  const d: SpriteDef | undefined = SPRITES.find((s) => s.id === id);
+  const d: SpriteDef | undefined = ALL_SPRITES.find((s) => s.id === id);
   if (d === undefined) throw new Error(`no sprite ${id}`);
   return d;
 }
@@ -164,7 +164,7 @@ function eyesUp(rows: readonly string[]): number {
 }
 
 describe('the fleeing runners (art-direction §6, §8 Skittish)', () => {
-  const fleeing = SPRITES.filter((s) => s.id.startsWith('enemy.') && s.id.endsWith('_fleeing')).map(
+  const fleeing = ALL_SPRITES.filter((s) => s.id.startsWith('enemy.') && s.id.endsWith('_fleeing')).map(
     (s) => s.id,
   );
 

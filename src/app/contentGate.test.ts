@@ -78,6 +78,16 @@ describe('the content gate', () => {
     expect(calls.at(-1)).toBe('retry');
   });
 
+  it('gates a post-game map (a challenge, Endless) on every act, the finale included (T862)', async () => {
+    const { battleActs } = await import('./contentGate.ts');
+    // Their maps register with the finale's chunk (content/acts/fin.ts), so a `?map=ch_m01` boot
+    // waits for it, as a dev map waits for every act.
+    for (const id of ['ch_m01', 'ch_m02', 'ch_m03', 'end_m01']) {
+      expect(battleActs(null, id)).toBe('finale');
+    }
+    expect(battleActs(null, 'a1_m01')).toBe(2);
+  });
+
   it('never holds the calls that only finish a run', () => {
     const calls: string[] = [];
     const gate = gateRouter(fakeRouter(calls));

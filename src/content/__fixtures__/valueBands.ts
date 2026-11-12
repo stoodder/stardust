@@ -5,7 +5,7 @@
 import { contrastRatio, luminance, type RgbLike } from '../palettes/color.ts';
 import { PALETTES } from '../palettes/index.ts';
 import { rgbOf } from '../palettes/master.ts';
-import { SPRITES } from '../sprites/index.ts';
+import { ALL_SPRITES } from '../sprites/all.ts';
 import { isCustomChar, STANDARD_LEGEND } from '../sprites/legend.ts';
 import type { SlotPalette, SpriteDef } from '../sprites/types.ts';
 
@@ -21,7 +21,7 @@ function lit(c: RgbLike, grade: Grade): RgbLike {
 }
 
 export function sprite(id: string): SpriteDef {
-  const d = SPRITES.find((s) => s.id === id) as SpriteDef | undefined;
+  const d = ALL_SPRITES.find((s) => s.id === id) as SpriteDef | undefined;
   if (d === undefined) throw new Error(`no sprite ${id}`);
   return d;
 }

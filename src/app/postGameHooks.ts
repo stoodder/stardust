@@ -119,7 +119,7 @@ export interface EndlessNextLine {
    * In a block's last two waves, what the next block brings: its new counters, else (none new) all
    * of its counters; null otherwise.
    */
-  readonly then: readonly string[] | null;
+  readonly coming: readonly string[] | null;
   /** The line for screen readers. */
   readonly spoken: string;
 }
@@ -133,7 +133,7 @@ export function endlessNextLine(run: EndlessRunView, nextWave: number): EndlessN
   const block = run.blocks[at];
   if (block === undefined) return null;
   const after = run.blocks[at + 1];
-  const then =
+  const coming =
     after !== undefined && nextWave >= block.last - 1
       ? after.fresh.length > 0
         ? after.fresh
@@ -142,6 +142,6 @@ export function endlessNextLine(run: EndlessRunView, nextWave: number): EndlessN
   const needs = block.counters;
   const spoken =
     (needs.length === 0 ? 'Warm-up block.' : `This block needs ${listed(needs)}.`) +
-    (then === null || then.length === 0 ? '' : ` The next block brings ${listed(then)}.`);
-  return { needs, then: then !== null && then.length === 0 ? null : then, spoken };
+    (coming === null || coming.length === 0 ? '' : ` The next block brings ${listed(coming)}.`);
+  return { needs, coming: coming !== null && coming.length === 0 ? null : coming, spoken };
 }

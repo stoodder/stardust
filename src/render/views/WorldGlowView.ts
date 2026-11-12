@@ -23,7 +23,8 @@
 // Render-only and cosmetic. Allocation-free per frame: textures are baked once, images pooled,
 // and nothing is set that hasn't changed.
 import * as Phaser from 'phaser';
-import { SPRITES, type SpriteId } from '../../content/sprites/index.ts';
+import type { SpriteId } from '../../content/sprites/index.ts';
+import { hasSprite } from '../../content/sprites/registry.ts';
 import { isLightSource, type LightTowers } from '../../sim/index.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
 import { VIEW_H, VIEW_W } from '../scale.ts';
@@ -106,15 +107,15 @@ interface GlowTex {
 
 const pos: Vec2 = { x: 0, y: 0 };
 
-const SPRITE_IDS: ReadonlyMap<string, SpriteId> = new Map(SPRITES.map((d) => [d.id, d.id]));
-
 /** `<spriteId>#<variant>:<frame>` (bake.ts `frameKey`), split; null for anything else. */
 function parseFrameKey(name: string): { id: SpriteId; variant: string; frame: string } | null {
   const hash = name.indexOf('#');
   const colon = name.indexOf(':', hash + 1);
   if (hash <= 0 || colon < 0) return null;
-  const id = SPRITE_IDS.get(name.slice(0, hash));
-  if (id === undefined) return null;
+  const raw = name.slice(0, hash);
+  if (!hasSprite(raw)) return null;
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- checked against the registry
+  const id = raw as SpriteId;
   return { id, variant: name.slice(hash + 1, colon), frame: name.slice(colon + 1) };
 }
 

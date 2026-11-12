@@ -1,7 +1,7 @@
 // The Stardust icon by phase and the gift stone (T843; art-direction § 2's table, § 6 Gift stones).
 import { describe, expect, it } from 'vitest';
 import { PALETTE_IDS } from '../../palettes/index.ts';
-import { SPRITES } from '../index.ts';
+import { ALL_SPRITES } from '../all.ts';
 import { propGiftStone } from '../props/gift_stone.ts';
 import type { SpriteDef } from '../types.ts';
 import { validateSprites } from '../validate.ts';
@@ -41,7 +41,7 @@ function colors(def: SpriteDef, frame = 'icon'): Set<string> {
 describe('the Stardust icon (T843)', () => {
   it('validates and is registered: one icon per phase, 6×6 authored (8×8 outlined)', () => {
     expect(validateSprites([...STARDUST_ICONS, propGiftStone], PALETTE_IDS)).toEqual([]);
-    const ids = new Set(SPRITES.map((s) => s.id as string));
+    const ids = new Set(ALL_SPRITES.map((s) => s.id as string));
     for (const phase of STARDUST_PHASES) {
       expect(ids.has(STARDUST_ICON[phase])).toBe(true);
       expect(icon(phase).size).toEqual({ w: 6, h: 6 });

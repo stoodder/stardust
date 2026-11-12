@@ -234,3 +234,22 @@ test('star map: reduced motion holds still; after A2M4 the Long Walk next up at 
   await nextFrames(page);
   await shot(page, 'starmap', 3, 'after-a2m4-next');
 });
+
+// T863 (T860's note): Orientation Day's node takes a click wherever the Sector map stands, nothing
+// over it (the marker, a neighbour's plate or pips, the chrome) catching the pointer first.
+for (const save of ['after_a1m5_ref', 'after_a2m6', 'after_a3m6_keep', 'after_fin_stay']) {
+  test(`star map: Orientation Day's node takes a click (${save})`, async ({ page }) => {
+    await page.goto(`/?test=1&seed=1&save=${save}`);
+    await waitForReady(page);
+    await expect(heading(page)).toBeVisible();
+    const button = node(page, 'Orientation Day');
+    const hit = await button.evaluate((el) => {
+      const b = el.getBoundingClientRect();
+      const at = document.elementFromPoint(b.x + b.width / 2, b.y + b.height / 2);
+      return at === el || el.contains(at) ? 'ok' : (at?.outerHTML.slice(0, 160) ?? 'nothing');
+    });
+    expect(hit).toBe('ok');
+    await button.click();
+    await expect(page.getByTestId('star-panel')).toContainText('Orientation Day');
+  });
+}

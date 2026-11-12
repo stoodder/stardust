@@ -12,6 +12,11 @@ export interface FrameRef {
 export interface SpriteSource {
   /** Registers textures, frames, and animations with the scene's game. */
   load(scene: Phaser.Scene): Promise<void>;
+  /**
+   * Bakes the sprites a lazy chunk registered since `load` (the finale's, T871) into pages of their
+   * own. A battle calls it before it draws anything.
+   */
+  sync(): void;
   /** A frame by name. `variant` defaults to `default`; derived ones are `<variant>+selected`. */
   frame(spriteId: SpriteId, frame: string, variant?: string): FrameRef;
   /** Like `frame`, for the additive `@glow` halo; `null` if the sprite has no glow. */

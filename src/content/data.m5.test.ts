@@ -10,7 +10,7 @@ import { compileContent } from './compile.ts';
 import { mapDefinersFor } from './define.ts';
 import { RAW_CONTENT } from './registry.ts';
 import { REFUGEE_GROUP_SIZE, SPLIT_MAX_DEPTH } from './rules.ts';
-import { SPRITES } from './sprites/index.ts';
+import { ALL_SPRITES } from './sprites/all.ts';
 import { STUB_TOWER_TASKS, TOWERS_AHEAD_OF_TASK } from './towers/index.ts';
 import type { ConditionDef, EnemyDef, IdSpace, MapDef, RawContent } from './types.ts';
 import { TOWER_ACCESS } from './upgrades/access.ts';
@@ -18,7 +18,7 @@ import { UPGRADES } from './upgrades/index.ts';
 import { validate } from './validate.ts';
 
 const content = compileContent(RAW_CONTENT);
-const SPRITE_IDS = new Set<string>(SPRITES.map((s) => s.id));
+const SPRITE_IDS = new Set<string>(ALL_SPRITES.map((s) => s.id));
 const loose = mapDefinersFor<IdSpace>();
 
 function withMap(patch: Partial<MapDef<IdSpace>>): RawContent<IdSpace> {

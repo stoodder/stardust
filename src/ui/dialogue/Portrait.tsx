@@ -7,8 +7,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { PALETTES } from '../../content/palettes/index.ts';
 import { SCAN_FPS, TALK_FPS } from '../../content/sprites/portraits/portrait.ts';
-import { SPRITES } from '../../content/sprites/index.ts';
-import type { SpriteDef } from '../../content/sprites/types.ts';
+import { spriteDef } from '../../content/sprites/registry.ts';
 import {
   bakeSprite,
   DEFAULT_VARIANT,
@@ -39,12 +38,15 @@ const sprites = new Map<string, SpriteFrames | null>();
 function spriteFrames(id: string): SpriteFrames | null {
   const hit = sprites.get(id);
   if (hit !== undefined) return hit;
-  const def = (SPRITES as readonly SpriteDef[]).find((s) => s.id === id);
-  let out: SpriteFrames | null = null;
-  if (def !== undefined) {
-    const baked = bakeSprite(def, PALETTES);
-    out = { baked, names: new Set(baked.frameNames), urls: new Map<string, string>() };
-  }
+  const def = spriteDef(id);
+  // Not registered yet (the portraits' chunk is still loading): not cached, so it bakes later.
+  if (def === undefined) return null;
+  const baked = bakeSprite(def, PALETTES);
+  const out: SpriteFrames = {
+    baked,
+    names: new Set(baked.frameNames),
+    urls: new Map<string, string>(),
+  };
   sprites.set(id, out);
   return out;
 }

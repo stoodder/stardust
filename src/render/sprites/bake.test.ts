@@ -3,7 +3,7 @@ import { luminance } from '../../content/palettes/color.ts';
 import { PALETTES } from '../../content/palettes/index.ts';
 import { rgbOf } from '../../content/palettes/master.ts';
 import { defineSprite } from '../../content/sprites/defineSprite.ts';
-import { SPRITES } from '../../content/sprites/index.ts';
+import { ALL_SPRITES } from '../../content/sprites/all.ts';
 import type { SpriteDef } from '../../content/sprites/types.ts';
 import {
   bakeAll,
@@ -204,12 +204,12 @@ describe('bakeSprite', () => {
 });
 
 describe('the registry bakes', () => {
-  const baked = bakeAll(SPRITES, PALETTES);
+  const baked = bakeAll(ALL_SPRITES, PALETTES);
 
   it('every sprite, with glow frames wherever glow is declared', () => {
-    expect(baked).toHaveLength(SPRITES.length);
+    expect(baked).toHaveLength(ALL_SPRITES.length);
     for (const [i, b] of baked.entries()) {
-      const def: SpriteDef | undefined = SPRITES[i];
+      const def: SpriteDef | undefined = ALL_SPRITES[i];
       const hasGlow = b.frames.some((f) => f.key.endsWith('@glow'));
       expect(hasGlow, b.id).toBe(def?.glow !== undefined);
       for (const f of b.frames) expect(f.image.data.length, f.key).toBe(f.image.w * f.image.h * 4);
@@ -226,7 +226,7 @@ describe('the registry bakes', () => {
   });
 
   it('puts tower head mounts on the base top face, inside the base', () => {
-    for (const def of SPRITES as readonly SpriteDef[]) {
+    for (const def of ALL_SPRITES as readonly SpriteDef[]) {
       const m = mountOf(def);
       if (m === null) continue;
       expect(m.x).toBeLessThan(def.size.w + 2);

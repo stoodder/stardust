@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { compileContent } from '../../content/compile.ts';
 import { RAW_CONTENT } from '../../content/registry.ts';
 import type { Enemy } from '../../sim/index.ts';
-import { SPRITES } from '../../content/sprites/index.ts';
+import { ALL_SPRITES } from '../../content/sprites/all.ts';
 import { STEPPED_ALPHA } from '../vfx/fxTiming.ts';
 import {
   TENDRIL_STROKES,
@@ -92,7 +92,7 @@ describe("the Maw's growth sprites (T640a)", () => {
     expect(mawBody(gm, unit({ def: E.gathering_maw, absorbs: 3 }))).toBe('enemy.gathering_maw_g3');
     expect(mawBody(gm, unit({ def: E.gathering_maw, absorbs: 0 }))).toBe('enemy.gathering_maw');
     // Every step it can reach is a registered sprite, as many as the Maw's absorbs.
-    const ids = new Set<string>(SPRITES.map((s) => s.id));
+    const ids = new Set<string>(ALL_SPRITES.map((s) => s.id));
     expect(GROWTH_STEPS).toBe(E.maw.gather!.maxAbsorbs);
     for (let n = 0; n <= GROWTH_STEPS; n++) {
       expect(ids.has(mawBody(body, unit({ def: E.maw, absorbs: n }))), String(n)).toBe(true);

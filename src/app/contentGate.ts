@@ -12,6 +12,7 @@ import { frontierOf, type SaveData } from '../meta/index.ts';
 import { actsLoaded, ensureActs, preloadActs, whenIdle } from './actContent.ts';
 import { battleRendererLoaded, loadBattleRenderer } from './battleRenderer.ts';
 import { finaleScreensLoaded, loadFinaleScreens } from './finaleScreens.ts';
+import { loadPortraits, portraitsLoaded } from './portraitContent.ts';
 import { DEFAULT_MAP_ID } from './battleSetup.ts';
 import { assertNever } from '../shared/types.ts';
 import { logError } from './log.ts';
@@ -52,7 +53,7 @@ function preloadRenderer(): void {
 
 /**
  * Runs `go` once the acts through `acts` (and, for a battle, the renderer; with the finale, its
- * screens, T810) have loaded: at once, synchronously, when they already have. Then preloads the
+ * screens, T810; always, the portraits, T871) have loaded: at once, synchronously, when they already have. Then preloads the
  * next act and the renderer.
  */
 function gated<T>(acts: StoryAct, battle: boolean, go: () => Promise<T>): Promise<T> {
@@ -62,6 +63,7 @@ function gated<T>(acts: StoryAct, battle: boolean, go: () => Promise<T>): Promis
     preloadRenderer();
   };
   if (
+    portraitsLoaded() &&
     actsLoaded(acts) &&
     (!battle || battleRendererLoaded()) &&
     (!screens || finaleScreensLoaded())
@@ -71,6 +73,7 @@ function gated<T>(acts: StoryAct, battle: boolean, go: () => Promise<T>): Promis
     return out;
   }
   return Promise.all([
+    loadPortraits(),
     ensureActs(acts),
     battle ? loadBattleRenderer() : null,
     screens ? loadFinaleScreens() : null,

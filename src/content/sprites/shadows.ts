@@ -1,7 +1,8 @@
 // Which contact shadow a ground actor gets (art-direction §1). Render reads this; it never
 // guesses sizes. Towers bake their shadow into the base frame, so this is for enemies (and
 // any later ground unit without one).
-import { SPRITES, type SpriteId } from './index.ts';
+import type { SpriteId } from './index.ts';
+import { spriteDef } from './registry.ts';
 
 export interface GroundShadow {
   readonly sprite: 'fx.ground_shadow';
@@ -38,7 +39,7 @@ const byId = new Map<string, GroundShadow>();
 export function groundShadowFor(id: SpriteId): GroundShadow {
   const cached = byId.get(id);
   if (cached !== undefined) return cached;
-  const def = SPRITES.find((s) => s.id === id);
+  const def = spriteDef(id);
   const w = def?.size.w ?? 0;
   const s = w <= 15 ? SMALL : w <= 20 ? MEDIUM : LARGE;
   byId.set(id, s);

@@ -352,7 +352,12 @@ export function EndlessScore({ result }: { result: EndlessResultView }) {
         </ol>
       )}
       <div class="sd-results-buttons">
-        <button type="button" class="sd-button sd-button-primary" ref={focusOnce} onClick={retryRun}>
+        <button
+          type="button"
+          class="sd-button sd-button-primary"
+          ref={focusOnce}
+          onClick={retryRun}
+        >
           Run it again
         </button>
         <button type="button" class="sd-button" onClick={() => endlessAgain(randomSeed())}>

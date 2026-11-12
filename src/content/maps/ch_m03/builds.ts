@@ -11,46 +11,35 @@ import type { BuildStep, GridPos, TowerId } from '../../types.ts';
 /** The two catwalks either side of the drain hatch (high ground). */
 const CATWALK_W: GridPos = [6, 7];
 const CATWALK_E: GridPos = [10, 7];
-/** East of the vats, inside the road's last bend. */
-const VATS_E: GridPos = [12, 7];
 /** The conduit (power node), inside the road's last bend. */
 const CONDUIT: GridPos = [11, 9];
 /** South of the run under the vats. */
-const SOUTH_W: GridPos = [4, 9];
 const SOUTH_MID: GridPos = [7, 9];
 const SOUTH_E: GridPos = [10, 9];
 /** Beside the core, west of the last leg. */
 const CORE_W: GridPos = [8, 10];
-/** In the intake yard, beside the road down into it. */
-const YARD_N: GridPos = [4, 3];
-const YARD: GridPos = [4, 4];
-/** Beside the road in at the north-east. */
-const GATE_E: GridPos = [13, 1];
-const GATE_W: GridPos = [15, 1];
-
-/** Build `tower` at `tile`, then take it to tier 3. */
-const raise = (wave: number, tower: TowerId, tile: GridPos): BuildStep[] => [
-  { wave, build: tower, tile },
-  { wave, upgrade: tile },
-  { wave, upgrade: tile },
-];
 
 function parSteps(): BuildStep[] {
   return [
-    ...raise(1, 'zapcoil', CATWALK_E),
-    ...raise(1, 'thumper', SOUTH_MID),
-    ...raise(1, 'zapcoil', CONDUIT),
-    { wave: 2, build: 'prism', tile: CATWALK_W },
-    { wave: 2, upgrade: CATWALK_W },
-    ...raise(3, 'skyhook', CORE_W),
-    { wave: 4, upgrade: CATWALK_W },
-    ...raise(5, 'thumper', SOUTH_E),
-    { wave: 6, specialize: CATWALK_E, spec: 'a' },
-    ...raise(7, 'zapcoil', VATS_E),
-    { wave: 8, specialize: SOUTH_MID, spec: 'a' },
-    ...raise(9, 'zapcoil', YARD),
-    ...raise(10, 'thumper', SOUTH_W),
-    { wave: 11, specialize: CONDUIT, spec: 'a' },
+    // The setup: a Zapcoil on the east catwalk over the hatch, one on the conduit, a Thumper
+    // between the road's runs, a Skyhook by the core.
+    { wave: 1, build: 'zapcoil', tile: CATWALK_E },
+    { wave: 1, build: 'thumper', tile: SOUTH_MID },
+    { wave: 1, build: 'zapcoil', tile: CONDUIT },
+    { wave: 1, build: 'skyhook', tile: CORE_W },
+    { wave: 1, upgrade: CATWALK_E },
+    { wave: 2, upgrade: SOUTH_MID },
+    { wave: 2, upgrade: CONDUIT },
+    { wave: 3, upgrade: CORE_W },
+    { wave: 3, upgrade: SOUTH_MID },
+    { wave: 4, upgrade: CATWALK_E },
+    { wave: 4, build: 'prism', tile: CATWALK_W },
+    { wave: 5, upgrade: CATWALK_W },
+    { wave: 5, upgrade: CORE_W },
+    { wave: 6, upgrade: CONDUIT },
+    { wave: 6, build: 'thumper', tile: SOUTH_E },
+    { wave: 7, upgrade: SOUTH_E },
+    { wave: 7, upgrade: CATWALK_W },
   ];
 }
 

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { ENEMIES } from '../../enemies/index.ts';
-import { SPRITES } from '../index.ts';
+import { ALL_SPRITES } from '../all.ts';
 import type { SpriteDef } from '../types.ts';
 
-const icons = (SPRITES as readonly SpriteDef[]).filter((s) => s.id.startsWith('icon.'));
+const icons = (ALL_SPRITES as readonly SpriteDef[]).filter((s) => s.id.startsWith('icon.'));
 
 /** The baked size: the outline pass grows a sprite by 1 px on every side. */
 function bakedSize(def: SpriteDef): { w: number; h: number } {
@@ -41,7 +41,7 @@ describe('icon sprites (art-direction §5)', () => {
   });
 
   it('gives every tower and enemy sprite a matching icon', () => {
-    const ids = new Set<string>(SPRITES.map((s) => s.id));
+    const ids = new Set<string>(ALL_SPRITES.map((s) => s.id));
     // Render-only actors never appear in a wave preview or the build bar. A youngling is a
     // Nibbler with the `youngling` wave modifier drawn small, so its preview is the Nibbler's.
     // The Unsung's later forms, its split parts and its rest are one unit's looks (T841): its icon.
@@ -54,7 +54,7 @@ describe('icon sprites (art-direction §5)', () => {
       'enemy.unsung_song',
       'enemy.unsung_rest',
     ]);
-    for (const s of SPRITES) {
+    for (const s of ALL_SPRITES) {
       const m = /^(tower|enemy)\.([a-z_]+)$/.exec(s.id);
       // A fleeing body (`enemy.<id>_fleeing`, T440a) is its unit's look while it runs: the unit's icon.
       if (m === null || s.id.endsWith('_head') || s.id.endsWith('_fleeing') || renderOnly.has(s.id))
@@ -64,7 +64,7 @@ describe('icon sprites (art-direction §5)', () => {
   });
 
   it("draws a tell glyph for every tell an enemy's data names (art-direction §8)", () => {
-    const ids = new Set<string>(SPRITES.map((s) => s.id));
+    const ids = new Set<string>(ALL_SPRITES.map((s) => s.id));
     for (const e of Object.values(ENEMIES)) {
       for (const t of e.tells) expect(ids.has(`icon.tell.${t}`), `${e.id}: ${t}`).toBe(true);
     }

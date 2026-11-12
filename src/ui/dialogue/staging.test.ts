@@ -2,7 +2,7 @@
 // lead-in, reduced motion's stills, and the line announcer's words (U-M1).
 import { describe, expect, it } from 'vitest';
 import { SCENES } from '../../content/dialogue/index.ts';
-import { SPRITES } from '../../content/sprites/index.ts';
+import { ALL_SPRITES } from '../../content/sprites/all.ts';
 import type { SpriteDef } from '../../content/sprites/types.ts';
 import { DEV_SCENES } from './dev.ts';
 import { lineAnnouncement } from './SceneParts.tsx';
@@ -29,7 +29,7 @@ import {
 import type { LineView } from './state.ts';
 
 function def(id: string): SpriteDef {
-  const d = (SPRITES as readonly SpriteDef[]).find((s) => s.id === id);
+  const d = (ALL_SPRITES as readonly SpriteDef[]).find((s) => s.id === id);
   if (d === undefined) throw new Error(`no sprite ${id}`);
   return d;
 }

@@ -10,7 +10,7 @@ import { parseSceneId } from '../content/dialogue/rules.ts';
 import { scenes as a3m06Scenes } from '../content/dialogue/a3/a3_m06/scenes.ts';
 import { barksFor, SCENES } from '../content/dialogue/index.ts';
 import type { Bark, Scene, SpeakerId } from '../content/dialogue/types.ts';
-import { SPRITES } from '../content/sprites/index.ts';
+import { ALL_SPRITES } from '../content/sprites/all.ts';
 import type { SpriteDef } from '../content/sprites/types.ts';
 import { PALETTES } from '../content/palettes/index.ts';
 import type { IdSpace } from '../content/types.ts';
@@ -137,7 +137,7 @@ describe('portraits and frames', () => {
   });
 
   it('the status bar has a talk frame to blink to', () => {
-    const def = (SPRITES as readonly SpriteDef[]).find((s) => s.id === 'portrait.quill')!;
+    const def = (ALL_SPRITES as readonly SpriteDef[]).find((s) => s.id === 'portrait.quill')!;
     const names = new Set(bakeSprite(def, PALETTES).frameNames);
     expect(pickFrame(names, 'purge', 'neutral', 'rest')).toBe('purge.neutral');
     expect(pickFrame(names, 'purge', 'neutral', 'talk')).toBe('purge.neutral_talk');
@@ -191,7 +191,7 @@ describe('portraits and frames', () => {
       null,
     );
     expect(view.portrait).toMatchObject({ variant: 'touched_deep', expression: 'laugh' });
-    const def = (SPRITES as readonly SpriteDef[]).find((s) => s.id === 'portrait.vesthara')!;
+    const def = (ALL_SPRITES as readonly SpriteDef[]).find((s) => s.id === 'portrait.vesthara')!;
     const names = new Set(bakeSprite(def, PALETTES).frameNames);
     expect(pickFrame(names, 'touched_deep', 'laugh', 'rest')).toBe('touched_deep.laugh');
     expect(pickFrame(names, 'touched_deep', 'laugh', 'talk')).toBe('touched_deep.laugh_talk');

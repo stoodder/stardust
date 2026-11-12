@@ -6,7 +6,7 @@ import { luminance } from '../../palettes/color.ts';
 import { PALETTES, PALETTE_IDS } from '../../palettes/index.ts';
 import { rgbOf, type ColorName } from '../../palettes/master.ts';
 import { grid } from '../helpers.ts';
-import { SPRITES } from '../index.ts';
+import { ALL_SPRITES } from '../all.ts';
 import { isCustomChar, STANDARD_LEGEND } from '../legend.ts';
 import type { SpriteDef } from '../types.ts';
 import { validateSprites } from '../validate.ts';
@@ -87,8 +87,8 @@ describe("the finale's stills (T843)", () => {
     expect(finaleSceneDef('scene.dawn')).toBe(sceneDawn);
   });
 
-  it('stay out of the boot registry (SPRITES, so the atlas and the initial JS)', () => {
-    const ids = new Set(SPRITES.map((s) => s.id as string));
+  it('stay out of the boot registry (ALL_SPRITES, so the atlas and the initial JS)', () => {
+    const ids = new Set(ALL_SPRITES.map((s) => s.id as string));
     for (const def of FINALE_SCENE_SPRITES) expect(ids.has(def.id)).toBe(false);
   });
 

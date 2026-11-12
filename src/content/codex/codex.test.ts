@@ -7,7 +7,7 @@ import type { Condition } from '../dialogue/types.ts';
 import { TEXT_LIMITS, tokenProblems, usesName, worstCaseLength } from '../dialogue/rules.ts';
 import { ENEMIES } from '../enemies/index.ts';
 import { MAPS } from '../maps/index.ts';
-import { SPRITES } from '../sprites/index.ts';
+import { ALL_SPRITES } from '../sprites/all.ts';
 import type { SpriteDef } from '../sprites/types.ts';
 import { TOWERS } from '../towers/index.ts';
 import { ACT1_CODEX } from './act1.ts';
@@ -187,7 +187,7 @@ const LATER_VERSIONS: Readonly<Record<string, Partial<Record<CodexVersion, Campa
   codex_long_walk: { corrected: 'fin_m01' },
 };
 
-const sprites = SPRITES as readonly SpriteDef[];
+const sprites = ALL_SPRITES as readonly SpriteDef[];
 
 describe('the codex content', () => {
   it('holds every entry of Acts I–III, in campaign order, each id unique and well-formed', () => {

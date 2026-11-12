@@ -2,9 +2,10 @@
 // counter block (src/sim/endless.ts; ENDLESS in endless.ts). Plain Skitterkin down the old road on
 // the threat curve's first steps (ENDLESS.firstWaveThreat 600, ×1.07 a wave: 600, 642, 687, 735,
 // 786; sim/endless.test.ts holds each within 5% and above the one before), so a post-game player
-// builds up while the colony's oldest pests say hello. The block demands no counter; W5's one
-// Bunchling (7% of its threat by the validator's count, under the soft cap) is a taste of what
-// splits. Countdowns are Endless's default (20 s, rules.ts).
+// builds up while the colony's oldest pests say hello. The block demands no counter, so every
+// trait in it is soft (≤ 15% of a wave's threat, maps.md § 6.2): the Zoomers' `fast` is intel only,
+// and a splitter can't fit (a Bunchling with its three Nibblers is 147, 19% of W5). Countdowns are
+// Endless's default (20 s, rules.ts).
 import { defineWaves } from '../../define.ts';
 
 const ROUTE = 'road';
@@ -39,11 +40,10 @@ export const waves = defineWaves([
       { enemy: 'zoomer', count: 7, delaySec: 10, route: ROUTE },
     ],
   },
-  // W5 · 791: and a Bunchling in the knot (the splash to come).
+  // W5 · 796: a long Nibbler knot, then a Zoomer run.
   {
     groups: [
-      { enemy: 'nibbler', count: 14, intervalSec: 0.5, route: ROUTE },
-      { enemy: 'bunchling', count: 1, delaySec: 3, route: ROUTE },
+      { enemy: 'nibbler', count: 19, intervalSec: 0.45, route: ROUTE },
       { enemy: 'zoomer', count: 8, delaySec: 9, route: ROUTE },
     ],
   },

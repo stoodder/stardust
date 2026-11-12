@@ -4,7 +4,8 @@
 import { describe, expect, it } from 'vitest';
 import { compileContent } from '../../content/compile.ts';
 import { RAW_CONTENT } from '../../content/registry.ts';
-import { SPRITES, type SpriteId } from '../../content/sprites/index.ts';
+import type { SpriteId } from '../../content/sprites/index.ts';
+import { ALL_SPRITES } from '../../content/sprites/all.ts';
 import { apronCells, decorLook, dressTile, peekerShows, propVariant } from './groundTiles.ts';
 import { riftCrackLook, riftCrackTiles } from './riftCrack.ts';
 
@@ -14,13 +15,13 @@ const m2 = maps['a3_m02'];
 const m3 = maps['a3_m03'];
 
 function frames(id: SpriteId): readonly string[] {
-  const d = SPRITES.find((s) => s.id === id);
+  const d = ALL_SPRITES.find((s) => s.id === id);
   if (d === undefined) throw new Error(`no sprite ${id}`);
   return Object.keys(d.frames);
 }
 
 function anims(id: SpriteId): readonly string[] {
-  return Object.keys(SPRITES.find((s) => s.id === id)?.anims ?? {});
+  return Object.keys(ALL_SPRITES.find((s) => s.id === id)?.anims ?? {});
 }
 
 function propAt(g: typeof m1, id: string): ReturnType<typeof dressTile>['prop'] {

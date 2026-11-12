@@ -6,8 +6,9 @@ import { afterEach, describe, expect, it } from 'vitest';
 import type { IdSpace } from '../content/types.ts';
 import { DEV_SAVES } from '../meta/__fixtures__/devSaves.ts';
 import { endlessBest } from '../meta/endless.ts';
+import type { SaveData } from '../meta/saveData.ts';
 import { createSim, type SimConfig } from '../sim/index.ts';
-import { campaign, type CampaignView } from '../ui/screens/state.ts';
+import { campaign } from '../ui/screens/state.ts';
 import { speed } from '../ui/state.ts';
 import { battleConfig } from './battleSetup.ts';
 import { setSpeed, toggleFastSpeed } from './commands.ts';
@@ -80,7 +81,11 @@ describe('the Sector map at dawn', () => {
 describe('the post-game plate', () => {
   it('Endless first, then each registered challenge map, with its own tagline', () => {
     const entries = postGameEntries(DEV_SAVES.after_fin_stay.build());
-    expect(entries[0]).toMatchObject({ id: 'end_m01', kind: 'endless', name: 'The Open Perimeter' });
+    expect(entries[0]).toMatchObject({
+      id: 'end_m01',
+      kind: 'endless',
+      name: 'The Open Perimeter',
+    });
     const challenges = entries.filter((e) => e.kind === 'challenge');
     expect(challenges.map((e) => e.id)).toContain('ch_m01');
     const ch = challenges.find((e) => e.id === 'ch_m01')!;
@@ -102,15 +107,15 @@ describe('the post-game plate', () => {
   });
 });
 
-describe('launching Endless', () => {
-  const save = () => DEV_SAVES.after_fin_stay.build();
+const save = (): SaveData => DEV_SAVES.after_fin_stay.build();
+const waves = (cfg: SimConfig<IdSpace>) => cfg.content.maps[ENDLESS_MAP_ID]!.waves;
 
+describe('launching Endless', () => {
   it('the seed picks its generated run; the same seed, the same run', () => {
     registerLaunch();
     const a = battleConfig(ENDLESS_MAP_ID, 7, save());
     const b = battleConfig(ENDLESS_MAP_ID, 7, save());
     const c = battleConfig(ENDLESS_MAP_ID, 8, save());
-    const waves = (cfg: SimConfig<IdSpace>) => cfg.content.maps[ENDLESS_MAP_ID]!.waves;
     expect(waves(a).length).toBeGreaterThan(5);
     expect(JSON.stringify(waves(a))).toBe(JSON.stringify(waves(b)));
     expect(JSON.stringify(waves(a).slice(5))).not.toBe(JSON.stringify(waves(c).slice(5)));
@@ -143,13 +148,13 @@ describe("the HUD's Next line", () => {
   };
 
   it('names the block the next wave is in, and the next block in its last two waves', () => {
-    expect(endlessNextLine(run, 2)).toMatchObject({ needs: [], then: null });
-    expect(endlessNextLine(run, 4)).toMatchObject({ needs: [], then: ['Armor'] });
-    expect(endlessNextLine(run, 7)).toMatchObject({ needs: ['Armor'], then: null });
+    expect(endlessNextLine(run, 2)).toMatchObject({ needs: [], coming: null });
+    expect(endlessNextLine(run, 4)).toMatchObject({ needs: [], coming: ['Armor'] });
+    expect(endlessNextLine(run, 7)).toMatchObject({ needs: ['Armor'], coming: null });
     const late = endlessNextLine(run, 9)!;
-    expect(late).toMatchObject({ needs: ['Armor'], then: ['Air'] });
+    expect(late).toMatchObject({ needs: ['Armor'], coming: ['Air'] });
     expect(late.spoken).toBe('This block needs Armor. The next block brings Air.');
-    expect(endlessNextLine(run, 15)).toMatchObject({ needs: ['Air', 'Armor'], then: null });
+    expect(endlessNextLine(run, 15)).toMatchObject({ needs: ['Air', 'Armor'], coming: null });
     expect(endlessNextLine(run, 16)).toBeNull();
   });
 });
@@ -177,18 +182,17 @@ describe('the score', () => {
 });
 
 describe('3x speed (core-loop.md § 2.8)', () => {
-  const view = (frontier: CampaignView['frontier']): CampaignView =>
-    ({ frontier }) as unknown as CampaignView;
-
   it('unlocks once the finale is won; F steps 1x → 2x → 3x → 1x', () => {
-    campaign.value = view('fin_m01');
+    expect(loadDevSave('after_a3m6_keep')).toBe(true);
+    expect(campaign.value?.frontier).toBe('fin_m01');
     expect(fastestSpeed.value).toBe(2);
     setSpeed(1);
     toggleFastSpeed();
     expect(speed.value).toBe(2);
     toggleFastSpeed();
     expect(speed.value).toBe(1);
-    campaign.value = view(null);
+    expect(loadDevSave('after_fin_stay')).toBe(true);
+    expect(campaign.value?.frontier).toBeNull();
     expect(fastestSpeed.value).toBe(3);
     toggleFastSpeed();
     expect(speed.value).toBe(2);

@@ -50,17 +50,23 @@ export function emptyHistory(): History {
   };
 }
 
-/** An enemy's planning threat (maps.md § 6.2). */
-export function threatOf(e: EnemyDef): number {
+/**
+ * An enemy's planning threat (maps.md § 6.2). Given the roster, a splitter carries its brood too
+ * ("splitting: add the children's threat", recursively: a Fracture is its own and its Shards' and
+ * their Motes'), as Endless's `threatWithBrood` counts it; without, the unit alone (`unitThreat`).
+ */
+export function threatOf(e: EnemyDef, enemies?: ReadonlyMap<string, EnemyDef>): number {
   let factor = 1;
   for (const t of e.traits) factor *= THREAT_TRAIT_FACTOR[t] ?? 1;
   if (e.traits.some((t) => THREAT_AURA_TRAITS.includes(t))) factor *= THREAT_AURA_FACTOR;
-  return (
+  const own =
     (e.hp + THREAT_SHIELD_WEIGHT * (e.shield?.hp ?? 0)) *
     (1 + e.armor / THREAT_ARMOR_DIVISOR) *
     Math.sqrt(e.speedTilesPerSec) *
-    factor
-  );
+    factor;
+  const child = e.split === undefined ? undefined : enemies?.get(e.split.enemy);
+  if (e.split === undefined || child === undefined || child === e) return own;
+  return own + e.split.count * threatOf(child, enemies);
 }
 
 /**

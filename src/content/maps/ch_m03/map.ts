@@ -29,7 +29,7 @@ export const map = defineMapLayout({
     tagline: 'Core integrity 5. Comms down.',
     rules: [{ kind: 'glassCore' }, { kind: 'noAbilities' }],
   },
-  startCredits: 800,
+  startCredits: 600,
   // A challenge pays Intel for its medals, never Stardust.
   stardust: 0,
   threatIntel: ['shielded', 'shield_aura', 'clustered', 'flying', 'armored'],

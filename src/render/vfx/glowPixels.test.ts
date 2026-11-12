@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import { PALETTES } from '../../content/palettes/index.ts';
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
-import { SPRITES } from '../../content/sprites/index.ts';
+import { ALL_SPRITES } from '../../content/sprites/all.ts';
 import { bakeSprite, DEFAULT_VARIANT, frameKey } from '../sprites/bake.ts';
 import { HALF_H, HALF_W } from '../iso.ts';
 import { GLOW_STEPS, type RgbaImage } from '../sprites/rasterize.ts';
@@ -94,7 +94,7 @@ describe('prop glows', () => {
 
 /** A sprite's baked frame (default variant). */
 function baked(id: string, name: string): RgbaImage {
-  const def = SPRITES.find((d) => d.id === id);
+  const def = ALL_SPRITES.find((d) => d.id === id);
   if (def === undefined) throw new Error(`no ${id}`);
   const f = bakeSprite(def, PALETTES).frames.find(
     (b) => b.key === frameKey(id, DEFAULT_VARIANT, name),

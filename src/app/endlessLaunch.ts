@@ -34,8 +34,7 @@ export function endlessRunContent(
   const live = cfg.content as unknown as CompiledContent;
   const { content, plan } = endlessContent(ENDLESS, live, cfg.seed);
   return {
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the same set, waves swapped
-    cfg: { ...cfg, content: content as unknown as CompiledContent<IdSpace> },
+    cfg: { ...cfg, content },
     run: { map: cfg.mapId, seed: cfg.seed, blocks: endlessBlocks(plan) },
   };
 }

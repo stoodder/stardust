@@ -6,10 +6,13 @@ import { EndlessScore, firstPostGameEntry, PostGameLayer } from '../../ui/screen
 import { endlessRunContent } from '../endlessLaunch.ts';
 import { registerPostGame } from '../postGameHooks.ts';
 
-registerPostGame({
-  dawnLook: dawnChartLook,
-  Layer: PostGameLayer,
-  EndlessScore,
-  firstEntry: firstPostGameEntry,
-  runContent: endlessRunContent,
-});
+/** Registers the post-game shell's lazy half (app/acts/finUi.ts calls it as the chunk loads). */
+export function registerPostGameUi(): void {
+  registerPostGame({
+    dawnLook: dawnChartLook,
+    Layer: PostGameLayer,
+    EndlessScore,
+    firstEntry: firstPostGameEntry,
+    runContent: endlessRunContent,
+  });
+}

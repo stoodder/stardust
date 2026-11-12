@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SPRITES } from '../../content/sprites/index.ts';
+import { ALL_SPRITES } from '../../content/sprites/all.ts';
 import {
   BEAM_MS,
   BOMBLET_BURST_MS,
@@ -132,7 +132,7 @@ describe('shell bursts (review R14)', () => {
       ['fx.explosion', BURST_MS],
       ['fx.bomblet_burst', BOMBLET_BURST_MS],
     ] as const) {
-      const burst = SPRITES.find((d) => d.id === id)?.anims?.['burst'];
+      const burst = ALL_SPRITES.find((d) => d.id === id)?.anims?.['burst'];
       expect(burst !== undefined && 'frames' in burst, id).toBe(true);
       if (burst === undefined || !('frames' in burst)) continue;
       expect(ms, id).toBeCloseTo((burst.frames.length * 1000) / burst.fps, 6);

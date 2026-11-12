@@ -2,9 +2,9 @@
 // unlit, the hum-glyph painted over the smile in sung stardust's warm pink-gold, and nothing else
 // on it lit.
 import { describe, expect, it } from 'vitest';
-import { SPRITES } from '../index.ts';
+import { ALL_SPRITES } from '../all.ts';
 
-const billboard = SPRITES.find((s) => s.id === 'prop.billboard');
+const billboard = ALL_SPRITES.find((s) => s.id === 'prop.billboard');
 
 function frame(name: string): readonly string[] {
   const f = billboard?.frames[name];

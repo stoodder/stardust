@@ -112,7 +112,7 @@ export const map = defineMapLayout({
   // meta/endless.ts).
   stardust: 0,
   // The warm-up's intel (waves.ts); a run's intel is its plan's (sim/endless.ts `endlessIntel`).
-  threatIntel: ['fast', 'splitting'],
+  threatIntel: ['fast'],
   // The warm-up demands no counter; each generated block names its own (≤ 3; sim/endless.ts).
   requiredCounters: [],
   // The finale's pick list: whoever walked the Long Walk with you.

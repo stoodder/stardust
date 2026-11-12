@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SPRITES } from '../sprites/index.ts';
+import { ALL_SPRITES } from '../sprites/all.ts';
 import { isCustomChar, STANDARD_LEGEND } from '../sprites/legend.ts';
 import type { SlotPalette, SpriteDef } from '../sprites/types.ts';
 import {
@@ -73,7 +73,7 @@ describe('Hollow hue reservation (art-direction §2)', () => {
   });
 
   it('is used by no non-Hollow sprite legend', () => {
-    for (const def of SPRITES as readonly SpriteDef[]) {
+    for (const def of ALL_SPRITES as readonly SpriteDef[]) {
       if (def.palette === 'hollow') continue;
       for (const [ch, color] of Object.entries(def.legend ?? {})) {
         if (color === undefined) continue;
@@ -111,8 +111,8 @@ function frameLuminance(def: SpriteDef, frame: string, palette: SlotPalette): nu
 }
 
 describe('path vs pad contrast (art-direction §8 Tile readability)', () => {
-  const path = SPRITES.find((s) => s.id === 'tile.path') as SpriteDef | undefined;
-  const pad = SPRITES.find((s) => s.id === 'tile.pad') as SpriteDef | undefined;
+  const path = ALL_SPRITES.find((s) => s.id === 'tile.path') as SpriteDef | undefined;
+  const pad = ALL_SPRITES.find((s) => s.id === 'tile.pad') as SpriteDef | undefined;
 
   it('is at least 1.5:1 in every environment palette', () => {
     expect(path).toBeDefined();

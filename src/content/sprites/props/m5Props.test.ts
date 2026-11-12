@@ -7,11 +7,12 @@ import { bodyLuminance, contrastRatio } from '../../__fixtures__/valueBands.ts';
 import { ENV_PALETTES } from '../../palettes/env.ts';
 import { PALETTES } from '../../palettes/index.ts';
 import { rgbOf } from '../../palettes/master.ts';
-import { SPRITES, type SpriteId } from '../index.ts';
+import type { SpriteId } from '../index.ts';
+import { ALL_SPRITES } from '../all.ts';
 import type { SpriteDef } from '../types.ts';
 
 function def(id: SpriteId): SpriteDef {
-  const d = SPRITES.find((s) => s.id === id);
+  const d = ALL_SPRITES.find((s) => s.id === id);
   if (d === undefined) throw new Error(`no sprite ${id}`);
   return d;
 }

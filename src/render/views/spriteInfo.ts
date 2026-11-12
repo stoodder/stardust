@@ -1,10 +1,11 @@
 // Content names sprites by string id; the SpriteSource wants the registry's SpriteId union. These
 // helpers resolve an id once (at spawn, never per frame) and answer the few questions views ask
 // of a sprite definition: does a tower head aim, and which idle anim does it play otherwise?
-import { SPRITES, type SpriteId } from '../../content/sprites/index.ts';
-import type { SpriteDef } from '../../content/sprites/types.ts';
+import type { SpriteId } from '../../content/sprites/index.ts';
+import { hasSprite, spriteDef } from '../../content/sprites/registry.ts';
 
-const BY_ID: ReadonlyMap<string, SpriteDef> = new Map(SPRITES.map((d) => [d.id, d]));
+/** The live registry, read at call time (a lazy chunk's sprites register when it loads; T871). */
+const BY_ID = { get: spriteDef, has: hasSprite } as const;
 
 /** The registry id for a content sprite id. Throws on an id with no sprite (a content error). */
 export function spriteId(id: string): SpriteId {

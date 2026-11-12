@@ -8,6 +8,7 @@
 import { registerMusic } from '../audio/music/index.ts';
 import { registerSfx } from '../audio/sfx/index.ts';
 import { actRank, LAZY_ACTS, registerActStory, type LazyAct } from '../content/acts/index.ts';
+import { registerSprites } from '../content/sprites/registry.ts';
 import type { StoryAct } from '../content/dialogue/types.ts';
 import type { ActChunk } from './acts/types.ts';
 
@@ -21,11 +22,12 @@ const LOADERS: Readonly<Record<LazyAct, () => Promise<ActChunk>>> = {
 const registered = new Set<StoryAct>([1]);
 const pending = new Map<LazyAct, Promise<void>>();
 
-/** Adds an act chunk's story, sounds, and music to the registries (idempotent). */
+/** Adds an act chunk's story, sounds, music, and sprites to the registries (idempotent). */
 export function registerActChunk(chunk: ActChunk): void {
   registerActStory(chunk.story);
   registerSfx(chunk.sfx);
   if (chunk.music !== undefined) registerMusic(chunk.music);
+  if (chunk.sprites !== undefined) registerSprites(chunk.sprites);
   registered.add(chunk.story.act);
 }
 

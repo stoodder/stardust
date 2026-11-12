@@ -15,7 +15,7 @@ import {
   UNSUNG_STAGES,
 } from './enemies/unsung.ts';
 import { M8_UNIT_ICONS } from './icons/m8_enemies.ts';
-import { SPRITES } from './index.ts';
+import { ALL_SPRITES } from './all.ts';
 import { isCustomChar, STANDARD_LEGEND } from './legend.ts';
 import type { SpriteDef } from './types.ts';
 
@@ -81,7 +81,7 @@ function fps(d: SpriteDef, a: string): number {
 
 describe('M8 registers real art for every finale unit (placeholders/m8.ts is gone)', () => {
   it('registers the units, the choir, the effects, and the icon', () => {
-    const ids = new Set(SPRITES.map((d) => d.id as string));
+    const ids = new Set(ALL_SPRITES.map((d) => d.id as string));
     for (const d of [...M8_UNITS, ...M8_ALLIES, ...M8_UNIT_FX, ...M8_UNIT_ICONS])
       expect(ids.has(d.id), d.id).toBe(true);
     for (const id of [

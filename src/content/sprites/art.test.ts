@@ -9,13 +9,14 @@ import { DEATH_ANIM, DEATH_FRAMES } from './enemies/death.ts';
 import { SACK_LEGEND } from './enemies/sack.ts';
 import { peekerFrame } from './props/peeker.ts';
 import { tetherDir } from './fx/link_tether.ts';
-import { SPRITES, type SpriteId } from './index.ts';
+import type { SpriteId } from './index.ts';
+import { ALL_SPRITES } from './all.ts';
 import { GROUND_SHADOW_ALPHA, groundShadowFor } from './shadows.ts';
 import { APRON_RINGS } from './tiles/apron.ts';
 import type { SpriteDef } from './types.ts';
 
 function def(id: SpriteId): SpriteDef {
-  const d = SPRITES.find((s) => s.id === id);
+  const d = ALL_SPRITES.find((s) => s.id === id);
   if (d === undefined) throw new Error(`no sprite ${id}`);
   return d;
 }
