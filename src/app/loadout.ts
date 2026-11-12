@@ -3,8 +3,12 @@
 // (toggling a tower or a Field Protocol, the links a pick forms, the counters it leaves
 // unanswered) through the pure rules in meta/loadout.ts. Locking a pick in writes it as the map's
 // preset and equips its protocols save-wide (app/save.ts); the battle reads both back through
-// battleConfig (app/battleSetup.ts), so a retry keeps them too.
+// battleConfig (app/battleSetup.ts), so a retry keeps them too. The screen serves the campaign's
+// maps and the post-game's (Endless, the challenges; T803d), and bends to the run's rules
+// (sim/rules.ts): Short-Handed's 3-tower cap (T860), a challenge's faction (T862: the other towers
+// stay home, greyed with why), Radio Silence's dark slot 1, No Protocols.
 import { CAMPAIGN, CAMPAIGN_PLAN } from '../content/campaign.ts';
+import { POST_GAME_MAPS } from '../content/postGame.ts';
 import type { CompiledContent, CompiledMapDef } from '../content/compiled.ts';
 import { LINKS } from '../content/links/index.ts';
 import { MAX_LOADOUT } from '../content/rules.ts';
@@ -40,8 +44,21 @@ import {
   type LoadoutPools,
   type SaveData,
   mapName,
+  isVeteranModifierId,
+  VETERAN_COPY,
+  VETERAN_SOURCE_PREFIX,
 } from '../meta/index.ts';
-import type { SimConfig } from '../sim/index.ts';
+import {
+  challengeConfig,
+  hasRule,
+  radioSilent,
+  towerFactionRule,
+  towerTypeLimit,
+  CHALLENGE_SOURCE_PREFIX,
+  type SimConfig,
+  type SimRule,
+  type SimRuleKind,
+} from '../sim/index.ts';
 import { LIST_PRICE_STATE, priceOf } from './hudViews.ts';
 import { silkText } from '../ui/silk.ts';
 import {
@@ -53,6 +70,7 @@ import {
   type LoadoutPickView,
   type LoadoutProtocolView,
   type LoadoutRevokedView,
+  type LoadoutRulesView,
   type LoadoutTowerView,
   type LoadoutView,
 } from '../ui/screens/loadoutView.ts';
@@ -154,6 +172,10 @@ interface Context {
   readonly fixed: CompanionId | null;
   /** The abilities slot 1 can't hold beside each companion (content/technician.ts). */
   readonly offBeside: Readonly<Partial<Record<CompanionId, readonly string[]>>>;
+  /** The run's tower limit (4, or a rule's lower one: Short-Handed's 3). */
+  readonly max: number;
+  /** Whether a tower may deploy on this run (a challenge's faction rule; T862). */
+  readonly deploys: (tower: string) => boolean;
 }
 
 let ctx: Context | null = null;
@@ -203,6 +225,7 @@ function towerView(
   c: Context,
   modifiers: SimConfig<IdSpace>['modifiers'],
   id: TowerId,
+  stays: string | null,
 ): LoadoutTowerView {
   const def = content.towers[id]!; // pool towers are registered (validateSave)
   const specsOwned = c.save.unlocks.specs.includes(id);
@@ -223,7 +246,59 @@ function towerView(
     })),
     // A jailbroken class shows its jailbroken art (T731; towers.md § 9).
     ...(c.save.unlocks.jailbroken.includes(id) ? { jailbroken: true } : {}),
+    ...(stays === null ? {} : { stays }),
   };
+}
+
+/**
+ * Whether the loadout screen serves `mapId`: a registered campaign map, or a registered post-game
+ * map (Endless, a challenge: T803d; picking four is the whole game there too). A dev battle's
+ * towers aren't the save's, so never one of those.
+ */
+export function isLoadoutMap(mapId: string): boolean {
+  const campaignMaps: readonly string[] = CAMPAIGN;
+  if (campaignMaps.includes(mapId)) return true;
+  return POST_GAME_MAPS.some((m) => m.id === mapId);
+}
+
+/**
+ * The name a rule goes by on the screen, from its source: a veteran modifier's ("Short-Handed"),
+ * or the challenge map's own ("Skitterkin Only"); null for one the screen can't name.
+ */
+function ruleName(rule: SimRule, content: CompiledContent<IdSpace>): string | null {
+  const source = rule.source;
+  if (source.startsWith(VETERAN_SOURCE_PREFIX)) {
+    const id = source.slice(VETERAN_SOURCE_PREFIX.length);
+    return isVeteranModifierId(id) ? VETERAN_COPY[id].name : null;
+  }
+  if (source.startsWith(CHALLENGE_SOURCE_PREFIX)) {
+    const maps: Readonly<Record<string, CompiledMapDef<IdSpace> | undefined>> = content.maps;
+    const id = source.slice(CHALLENGE_SOURCE_PREFIX.length);
+    return Object.hasOwn(maps, id) ? (maps[id]?.challenge?.name ?? null) : null;
+  }
+  return null;
+}
+
+/** The name of `cfg`'s first rule of `kind`, else a plain fallback. */
+function ruleNamed(cfg: SimConfig<IdSpace>, kind: SimRuleKind, fallback: string): string {
+  const rule = (cfg.rules ?? []).find((r) => r.kind === kind);
+  return (rule === undefined ? null : ruleName(rule, cfg.content)) ?? fallback;
+}
+
+/** What `cfg`'s rules do to the pick, in words, or null when it carries none that bite here. */
+export function rulesView(cfg: SimConfig<IdSpace>): LoadoutRulesView | null {
+  const limit = towerTypeLimit(cfg);
+  const cap =
+    limit !== null && limit < MAX_LOADOUT ? ruleNamed(cfg, 'maxTowerTypes', 'Run rule') : null;
+  const noAbilities = radioSilent(cfg)
+    ? `${ruleNamed(cfg, 'noAbilities', 'Radio Silence')}: slot 1 stays dark this shift`
+    : null;
+  const noProtocols = hasRule(cfg, 'noProtocols')
+    ? `${ruleNamed(cfg, 'noProtocols', 'No Protocols')}: none apply this shift`
+    : null;
+  return cap === null && noAbilities === null && noProtocols === null
+    ? null
+    : { cap, noAbilities, noProtocols };
 }
 
 /** The objectives with no core to protect: an Escort's road, a Holdout's doors (D143 R9). */
@@ -329,11 +404,13 @@ function configFor(mapId: string, save: SaveData): ReturnType<typeof battleConfi
  */
 export function openLoadout(mapId: string): boolean {
   const save = activeSave();
-  // Campaign maps only: a dev battle's towers aren't the save's.
-  const campaignMaps: readonly string[] = CAMPAIGN;
-  if (save === null || !campaignMaps.includes(mapId)) return false;
-  const cfg = configFor(mapId, save);
-  if (cfg === null) return false;
+  // Campaign and post-game maps only: a dev battle's towers aren't the save's.
+  if (save === null || !isLoadoutMap(mapId)) return false;
+  const saved = configFor(mapId, save);
+  if (saved === null) return false;
+  // The run's rules as the battle will meet them: a veteran replay's (battleConfig applies them)
+  // and a challenge map's (createSim applies them; T862).
+  const cfg = challengeConfig(saved);
   const content = cfg.content;
   const map = content.maps[mapId]!; // battleConfig found it
   // Slot 1 leaves out what the map locks under the save's flags (A3M5's System Reboot, Rewrite).
@@ -341,6 +418,15 @@ export function openLoadout(mapId: string): boolean {
   const pools = loadoutPools(save, [], off);
   // The finale's companion pick (QUILL gone under C4 Purge; the first, Ves'thara, by default).
   const companions = companionChoices(save, map.companion);
+  // The run's tower limit (Short-Handed's 3; T860), and its faction (a challenge's; T862).
+  const max = Math.min(MAX_LOADOUT, towerTypeLimit(cfg) ?? MAX_LOADOUT);
+  const faction = towerFactionRule(cfg);
+  const factionOf: Readonly<Record<string, { readonly faction: string } | undefined>> =
+    content.towers;
+  const deploys = (tower: string): boolean =>
+    faction === null || factionOf[tower]?.faction === faction;
+  const staysText =
+    faction === null ? null : silkText(`Stays home: ${ruleNamed(cfg, 'towerFaction', 'Rules')}`);
   // A map's one companion, present in slot 2, brings its ability too (A1M5's Bricks beside an
   // inherited Suppressing Fire); an absent one brings nothing.
   const fixed =
@@ -358,6 +444,8 @@ export function openLoadout(mapId: string): boolean {
     companions,
     fixed,
     offBeside,
+    max,
+    deploys,
   };
   ctx = c;
   const required: readonly string[] = map.requiredCounters;
@@ -367,7 +455,14 @@ export function openLoadout(mapId: string): boolean {
     save.unlocks.protocols.filter((o) => o === p),
   );
   const offered = owned.map((o) => protocolView(o, map.objective));
-  const first = initialPick(save, mapId, defaultPick(save, map.builds.parBuild, off), off);
+  const remembered = initialPick(save, mapId, defaultPick(save, map.builds.parBuild, off), off);
+  // Fitted to the run's rules: only towers that deploy, the first `max` in build-slot order (as
+  // Short-Handed keeps them); none left, the pool's first that do.
+  const fitted = remembered.towers.filter(deploys);
+  const first = {
+    ...remembered,
+    towers: (fitted.length > 0 ? fitted : pools.towers.filter(deploys)).slice(0, max),
+  };
   const companion = companions.length === 0 ? null : pickedCompanion(save, mapId, companions);
   const beside = companion ?? fixed;
   const start = {
@@ -392,7 +487,9 @@ export function openLoadout(mapId: string): boolean {
       label: COUNTER_LABELS[id],
       required: required.includes(id),
     })),
-    towers: pools.towers.map((id) => towerView(content, c, cfg.modifiers, id)),
+    towers: pools.towers.map((id) =>
+      towerView(content, c, cfg.modifiers, id, deploys(id) ? null : staysText),
+    ),
     revoked: save.unlocks.revokedTowers.flatMap((id): LoadoutRevokedView[] => {
       const def = content.towers[id];
       return def === undefined ? [] : [{ id, name: silkText(def.name), icon: def.sprites.icon }];
@@ -459,7 +556,11 @@ export function openLoadout(mapId: string): boolean {
     protocols,
     protocolSlots: pools.protocolSlots ?? 0,
     initial: { ...start, ...bench.pick },
-    max: MAX_LOADOUT,
+    max,
+    ...((): { rules?: LoadoutRulesView } => {
+      const rules = rulesView(cfg);
+      return rules === null ? {} : { rules };
+    })(),
   };
   loadout.value = view;
   return true;
@@ -538,9 +639,15 @@ export function pickAbility(pick: LoadoutPickView, id: string): LoadoutPickView 
   return { ...pick, ability: id };
 }
 
-/** Toggles a tower in the pick (meta/loadout.ts toggleTower: up to four, in build-slot order). */
+/**
+ * Toggles a tower in the pick (meta/loadout.ts toggleTower: up to four, in build-slot order), never
+ * past the run's limit (Short-Handed's 3) and never a tower the run leaves home (a challenge's).
+ */
 export function togglePickTower(pick: LoadoutPickView, tower: string): LoadoutPickView {
   if (ctx === null) return pick;
+  const adding = !pick.towers.includes(tower);
+  // A tower the run leaves home (T862), or one past the run's limit (Short-Handed; T860).
+  if (adding && (!ctx.deploys(tower) || pick.towers.length >= ctx.max)) return pick;
   const pools: LoadoutPools<string, string> = ctx.pools;
   const from = { towers: pick.towers, ability: pick.ability };
   const next = toggleTower(from, tower, pools);
@@ -593,6 +700,7 @@ export function pickWarnings(pick: LoadoutPickView): string[] {
   return uncoveredCounters(typed(c, pick), c.save, c.map, c.specName).map((counter) => {
     const label = COUNTER_LABELS[counter];
     const who = view.towers
+      .filter((t) => t.stays === undefined)
       .map((t) => {
         const a = t.answers.find((x) => x.counter === counter);
         return a === undefined ? null : a.via === null ? t.name : `${t.name} (${a.via})`;

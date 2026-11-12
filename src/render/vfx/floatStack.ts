@@ -55,3 +55,33 @@ export function stackFloat(
   }
   return null;
 }
+
+// One pop per unit (T803b; D153's declutter): a number rising where one of its own kind is still in
+// the first part of its rise merges into it ("−225", "−120", "−150" over one tower's upgrades read
+// "−495"; three leaks at the gate, "−3"), and a callout already up near the same spot isn't drawn
+// again (three Harmony links formed by one build: one HARMONY).
+
+/** Floaters rising from points this close on the grid (tiles) are the same target's. */
+export const SAME_TARGET_TILES = 0.25;
+/** A callout already up within this many tiles of a new one with the same words keeps it. */
+export const SAME_CALLOUT_TILES = 2;
+
+/** A floater's signed amount ("−150" → −150, "+40" → 40), or null for words ("CROSSFIRE!"). */
+export function floatAmount(text: string): number | null {
+  const m = /^([+−-])(\d+)$/.exec(text);
+  if (m === null) return null;
+  const n = Number(m[2]);
+  return m[1] === '+' ? n : -n;
+}
+
+/** An amount in a floater's words: "+40", "−150" (the typographic minus, as the events float). */
+export function amountText(n: number): string {
+  return n < 0 ? `−${-n}` : `+${n}`;
+}
+
+/** Whether grid points (ax, ay) and (bx, by) are within `tiles` of each other. */
+export function withinTiles(ax: number, ay: number, bx: number, by: number, tiles: number): boolean {
+  const dx = ax - bx;
+  const dy = ay - by;
+  return dx * dx + dy * dy <= tiles * tiles;
+}

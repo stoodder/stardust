@@ -31,6 +31,12 @@ export interface LoadoutTowerView {
    * `everglow.jailbroken` and reads "Jailbroken". Absent: false.
    */
   readonly jailbroken?: boolean;
+  /**
+   * Why it can't deploy on this run, or absent: a challenge map's faction rule leaves it home
+   * (T862; `towerFaction`: "Stays home: Skitterkin Only"). Shown greyed with the reason, never a
+   * pick.
+   */
+  readonly stays?: string;
 }
 
 /** A Technician ability on offer (slot 1). */
@@ -176,8 +182,23 @@ export interface LoadoutView {
    * protocols equipped now.
    */
   readonly initial: LoadoutPickView;
-  /** The tower limit (the CLAUDE.md 4-tower rule). */
+  /** The tower limit: the CLAUDE.md 4-tower rule, or a run rule's lower one (Short-Handed's 3). */
   readonly max: number;
+  /**
+   * The run rules this screen bends to (sim/rules.ts; a veteran replay's or a challenge map's),
+   * each named for the player beside what it changes; absent: none.
+   */
+  readonly rules?: LoadoutRulesView;
+}
+
+/** What a run's rules do to the pick, in words (T803d; T860's Short-Handed, T862's challenges). */
+export interface LoadoutRulesView {
+  /** The rule that lowers `max` ("Short-Handed"), or null. */
+  readonly cap: string | null;
+  /** Slot 1 stays dark ("Radio Silence: no Technician ability this shift"), or null. */
+  readonly noAbilities: string | null;
+  /** No protocol applies ("No Protocols: none apply this shift"), or null. */
+  readonly noProtocols: string | null;
 }
 
 /** The open loadout screen's view, or null. */

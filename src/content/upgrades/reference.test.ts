@@ -202,11 +202,13 @@ describe('REFERENCE_PROFILES, Act III part two (M7, T700b)', () => {
     expect(a3_m04.towers).toEqual([...a3_m03.towers, 'rivet', 'choir']);
     expect(a3_m04.shop).toEqual(a3_m03.shop);
     expect(a3_m04.technicianAbility).toBe('system_reboot');
-    // A Defend with a core: the Bulkhead on, as on A3M2.
+    // Head Start carried on from A3M3, whose Holdout benched the Bulkhead (T771, T874): the
+    // protocol a live player brings, so A3M4 and A3M5 run what the harness runs.
     expect([a3_m04.protocols, a3_m04.unequippedProtocols]).toEqual([
-      ['emergency_bulkhead'],
       ['head_start'],
+      ['emergency_bulkhead'],
     ]);
+    expect(a3_m05.protocols).toEqual(['head_start']);
     // The warren's Gloop Spitter, given in the briefing.
     expect(warren4?.when).toEqual({ door_choice: 'warren' });
     expect(warren4?.profile.towers).toEqual([...a3_m04.towers, 'gloop']);

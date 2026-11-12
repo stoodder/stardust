@@ -7,6 +7,7 @@
 import { CAMPAIGN, CAMPAIGN_PLAN } from '../content/campaign.ts';
 import { MAPS } from '../content/maps/index.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
+import { POST_GAME_MAPS } from '../content/postGame.ts'; // T803d
 import type { MapId } from '../content/types.ts';
 import { devFixtures } from './devRegistry.ts';
 import {
@@ -312,11 +313,20 @@ export function setDifficulty(difficulty: Difficulty): SaveResult {
 }
 
 /**
+ * A registered post-game map (Endless, a challenge; T803d): the loadout screen serves it as it
+ * does a campaign map, so a challenge's faction rule shows before the run, not inside it.
+ */
+function isPostGameMap(id: string): id is MapId {
+  return POST_GAME_MAPS.some((m) => m.id === id) && Object.hasOwn(RAW_CONTENT.maps, id);
+}
+
+/**
  * Whether the loadout screen comes before `mapId` for the save in play (meta/loadout.ts: the
- * system is open and there's a choice to make). Never for a non-campaign map (a `?map=` battle).
+ * system is open and there's a choice to make). Campaign and post-game maps only, never a dev
+ * map (a `?map=` battle).
  */
 export function loadoutOffered(mapId: string): boolean {
-  if (session === null || !isCampaignMap(mapId)) return false;
+  if (session === null || !(isCampaignMap(mapId) || isPostGameMap(mapId))) return false;
   const { save, devUnlocks } = session;
   if (showsLoadoutScreen(save, devUnlocks)) return true;
   // The finale's companion pick is a choice of its own (meta `companionChoices`; QUILL gone under Purge).
@@ -329,7 +339,9 @@ export function loadoutOffered(mapId: string): boolean {
 /** Remembers a locked-in loadout as `mapId`'s preset and the last one (T201), and writes it. */
 export function rememberLoadout(mapId: string, pick: LoadoutPick): SaveResult {
   if (session === null) return { ok: false, message: 'No save is loaded.' };
-  if (!isCampaignMap(mapId)) return { ok: false, message: `'${mapId}' is not a campaign map.` };
+  if (!(isCampaignMap(mapId) || isPostGameMap(mapId))) {
+    return { ok: false, message: `'${mapId}' is not a campaign map.` };
+  }
   session.save = withPreset(session.save, mapId, pick);
   return persist();
 }

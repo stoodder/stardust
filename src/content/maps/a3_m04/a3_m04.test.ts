@@ -15,14 +15,14 @@ const byRow = ([c1, r1]: readonly number[], [c2, r2]: readonly number[]): number
   r1! - r2! || c1! - c2!;
 
 describe('A3M4 · Empty Slot', () => {
-  it('has the facts act3.md gives: Defend, 22×14, 16 waves, 700 credits, Bricks absent', () => {
+  it('has the facts act3.md gives: Defend, 22×14, 16 waves, 660 credits, Bricks absent', () => {
     expect(map).toMatchObject({
       act: 3,
       env: 'act3',
       objective: 'defend',
       cols: 22,
       rows: 14,
-      startCredits: 700,
+      startCredits: 660,
       stardust: 330,
       requiredCounters: ['jam', 'armor', 'air'],
     });

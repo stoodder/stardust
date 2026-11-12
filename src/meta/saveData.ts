@@ -9,6 +9,7 @@ import type { PlayerProfile } from '../content/dialogue/profile.ts';
 import type { SceneId } from '../content/dialogue/types.ts';
 import { ENEMIES } from '../content/enemies/index.ts';
 import { MAPS } from '../content/maps/index.ts';
+import { POST_GAME_MAPS } from '../content/postGame.ts'; // T803d
 import type { MemoId } from '../content/memos/types.ts';
 import { TOWERS } from '../content/towers/index.ts';
 import { PROTOCOLS, UPGRADES } from '../content/upgrades/index.ts';
@@ -251,7 +252,9 @@ export const LIVE_KNOWN_IDS: KnownIds = {
   towers: Object.values(TOWERS).map((t) => t.id),
   enemies: Object.values(ENEMIES).map((e) => e.id),
   abilities: Object.values(ABILITIES).map((a) => a.id),
-  maps: Object.values(MAPS).map((m) => m.id),
+  // The post-game maps too (Endless, the challenges; T803d): their loadout presets are kept per map,
+  // though their content registers later, with the finale's chunk.
+  maps: [...Object.values(MAPS).map((m) => m.id), ...POST_GAME_MAPS.map((m) => m.id as MapId)],
   upgradeRanks: Object.fromEntries(Object.values(UPGRADES).map((u) => [u.id, u.ranks.length])),
   protocols: Object.values(PROTOCOLS).map((p) => p.id),
   protocolsWithPick: Object.values(PROTOCOLS)
