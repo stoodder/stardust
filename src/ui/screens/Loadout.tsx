@@ -294,7 +294,10 @@ function CompanionPicker(props: {
           {k.icon !== '' && <Icon id={k.icon} class="sd-lo-icon" />}
           <span class="sd-lo-ability-name">
             {k.name}
-            <span class="sd-lo-from"> · {k.ability}</span>
+            <span class="sd-lo-companion-ability">
+              <span class="sd-visually-hidden">, </span>
+              {k.ability}
+            </span>
           </span>
         </button>
       ))}

@@ -920,12 +920,14 @@ export interface BossPhaseDef {
   readonly floorPct?: number;
   /**
    * Where this phase's `burrow` surfaces (the Unsung's phase 3: `'choir'`, among the singers;
-   * D154 Fork 2). Needs a `burrow` in the same phase; without it a burrow surfaces where it dug.
+   * D154 Fork 2). Needs a `burrow` in the same phase, longer than its 1.5 s surfacing tell;
+   * without it a burrow surfaces where it dug. Run by enemyAbilities/unsung.ts (T808).
    */
   readonly burrowTo?: 'choir';
   /**
    * Adds while in this phase (the Unsung's Song: Silencer adds): `count` (default 1) of `enemy`
-   * (an EnemyId) every `everySec`, walking in from the map's spawns (T808 places them).
+   * (an EnemyId) every `everySec`, born in its wave at the start of its route (the Halls) after a
+   * 1.5 s call (T808; enemyAbilities/unsung.ts).
    */
   readonly adds?: BossAddsDef;
   /**
@@ -1350,6 +1352,13 @@ export interface ChoirDef {
   readonly pace: number;
   /** The choir halts while a Hollow unit is within this many route tiles ahead of the leader (1.5). */
   readonly haltTiles: number;
+  /**
+   * The walk keeps time with the waves (T820): with it, the leader walks no further than
+   * wave ÷ `walkWaves` of the way to her stop (a leg a wave, walked as the wave starts), so Story's
+   * longer countdowns, early calls, and veteran Rush Hour never put her ahead of or behind the
+   * waves (fin_m01: 18, Phase 1's waves). Without it she walks on sim time alone.
+   */
+  readonly walkWaves?: number;
   /** Singers added (or, negative, kept home) by story flag: warren +4, convoy −2 (D154). */
   readonly groups?: readonly { readonly when: FlagGateDef; readonly singers: number }[];
   /**

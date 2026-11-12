@@ -110,7 +110,7 @@ test('finaleApp: the companion pick; Time Dilation greys beside QUILL; no QUILL 
   await expect(td).toHaveAttribute('aria-disabled', 'true');
   await expect(td).toHaveAttribute('aria-checked', 'false');
   await expect(td.getByTestId('loadout-brings')).toContainText(/QUILL brings it/i);
-  await td.click();
+  await td.click({ force: true });
   await expect(td).toHaveAttribute('aria-checked', 'false');
   await nextFrames(page);
   await shot(page, FLOW, 5, 'loadout-quill');

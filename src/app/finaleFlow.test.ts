@@ -53,7 +53,9 @@ describe('the finale close (RESULTS_FLOW.fin_m01)', () => {
       { ending_choice: 'stay' },
       { ending_choice: 'go' },
     ]);
-    expect(endingPlaceholder({ memo: 'memo_fin_99' })).toBe("memo memo_fin_99 isn't registered yet");
+    expect(endingPlaceholder({ memo: 'memo_fin_99' })).toBe(
+      "memo memo_fin_99 isn't registered yet",
+    );
     expect(endingPlaceholder({ scene: 'fin_m01_scene_nope' })).toBe(
       "scene fin_m01_scene_nope isn't registered yet",
     );

@@ -41,6 +41,7 @@ export function compileChoir(
     singers: c.singers,
     paceTilesPerTick: perSecToPerTick(c.pace),
     haltTiles: c.haltTiles,
+    walkWaves: c.walkWaves ?? 0,
     groups: (c.groups ?? []).map((g) => ({ when: gate(g.when), singers: g.singers })),
     thrum:
       c.thrum === undefined ? null : { when: gate(c.thrum.when), radiusBonus: c.thrum.radiusBonus },

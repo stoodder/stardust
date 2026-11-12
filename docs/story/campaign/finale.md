@@ -40,7 +40,7 @@ The one-map finale, `fin_m01`, from the end of the Long Night to the First Dawn.
   - Pebble: "Clearing the way! (That's the good part!)"
   - (spared) Old Thrum: "Nineteen days of night. At my age, that is rude."
   - QUILL (Rewrite): "Last entry. Dawn, the Deep Halls. All of them, sung. Closing the log." · (Keep, its voice coming back a word at a time) "Good... morning. Good morning, Waykeeper." · (Purge) "Sunrise, 06:14. ...I'm logging it."
-  - "(One gold mote rises apart from the rest. It stops at Ves'thara's shoulder.)" Her frayed threads light, one by one (her `dawn` portrait from here).
+  - "(One gold mote rises apart from the rest. It stops at Ves'thara's shoulder.)" Her frayed threads light, one by one (her `dawn` portrait, from Phase 3 on).
   - Ves'thara: "Ishael." · "Her face. I remember her face. She was laughing."
   - Pebble: "Waykeeper is my name for you. Bricks had a different one." · "{name}. Bricks said it like that. I practiced."
   - "(The visor goes up, once.)" A silhouette against the sunrise. The results screen reads **REMEMBERED: {n}**.

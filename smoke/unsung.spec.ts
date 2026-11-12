@@ -25,7 +25,8 @@ async function until(page: Page, what: Probe, max = 12_000): Promise<boolean> {
         const r = sd.render()!.unsung;
         const boss = s.enemies.items.find((e) => e.alive && e.def?.id === 'unsung');
         if (probe === 'unsung') return boss !== undefined && s.phase === 2;
-        if (probe === 'parts') return s.enemies.items.some((e) => e.alive && e.def?.id === 'unsung_part');
+        if (probe === 'parts')
+          return s.enemies.items.some((e) => e.alive && e.def?.id === 'unsung_part');
         if (probe === 'risen') return boss !== undefined && boss.bossPhase === 3;
         if (probe === 'dig') return boss?.burrowed === true && boss.digToDist >= 0;
         if (probe === 'surfaceTell') return r.surfaceTells > 0;

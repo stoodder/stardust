@@ -109,7 +109,12 @@ export class UnsungView {
 
   /** What shows now: dig marks, surfacing tells, calls, and the rest strip's fill (−1: none). */
   get shown(): { digs: number; surfaceTells: number; calls: number; restPx: number } {
-    return { digs: this.#digs, surfaceTells: this.#tells, calls: this.#calls, restPx: this.#restPx };
+    return {
+      digs: this.#digs,
+      surfaceTells: this.#tells,
+      calls: this.#calls,
+      restPx: this.#restPx,
+    };
   }
 
   update(state: UnsungState): void {
@@ -130,7 +135,12 @@ export class UnsungView {
         const telling = surfaceTelling(e);
         const dig = e.def.boss.phases[e.bossPhase - 1]?.burrow?.durationTicks ?? 1;
         const k = telling ? 0 : Math.min(1, e.abilityTicks / dig); // wide as it digs, tight under them
-        this.#ring(p.x, p.y, RING_TIGHT + (RING_WIDE - RING_TIGHT) * k, telling ? this.#blink() : C.dig);
+        this.#ring(
+          p.x,
+          p.y,
+          RING_TIGHT + (RING_WIDE - RING_TIGHT) * k,
+          telling ? this.#blink() : C.dig,
+        );
         this.#digs++;
         if (telling) this.#tells++;
       }

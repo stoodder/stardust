@@ -366,6 +366,23 @@
   text-transform: uppercase;
 }
 
+/* The finale's companion pick (T809): two columns of short cards, the name over the ability they
+   bring, so the column keeps its height for the links. */
+.sd-lo-companions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.sd-lo-companion-ability {
+  display: block;
+  margin-top: 2px;
+  color: var(--sd-steel-4);
+}
+
+.sd-lo-companion-card.sd-lo-on .sd-lo-companion-ability {
+  color: var(--sd-white-1);
+}
+
 /* A Technician ability its companion brings in slot 2 (T501): dim, not a pick, with why. */
 .sd-lo-ability.sd-lo-off {
   border-left-color: var(--sd-ink-3);

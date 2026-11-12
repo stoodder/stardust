@@ -58,8 +58,12 @@ const HP_EPS = 1e-9;
 const BOSS_ABILITY_TELL_TICKS = secToTicks(BOSS_ABILITY_TELL_SEC);
 
 /** Where adds are born: the boss's wave and tags, at the start of its route (module scratch). */
-const addsAt: { wave: number; tags: readonly WaveTag[]; route: CompiledRoute | null; dist: number } =
-  { wave: 0, tags: [], route: null, dist: 0 };
+const addsAt: {
+  wave: number;
+  tags: readonly WaveTag[];
+  route: CompiledRoute | null;
+  dist: number;
+} = { wave: 0, tags: [], route: null, dist: 0 };
 
 /** Whether boss phase `p` has a kind this module runs (boss.ts hands it here). */
 export function isUnsungPhase(p: CompiledBossPhase): boolean {

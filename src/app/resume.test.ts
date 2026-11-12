@@ -11,7 +11,7 @@ import type * as Phaser from 'phaser';
 import type { IdSpace } from '../content/types.ts';
 import { MemoryStore, validateSave } from '../meta/index.ts';
 import { createSim, type CommandLogEntry, type SimConfig } from '../sim/index.ts';
-import { menuNotice, runResult } from '../ui/screens/state.ts';
+import { menuNotice, runResult, slots } from '../ui/screens/state.ts';
 import { hud, screen, speed } from '../ui/state.ts';
 import { startAutoplay } from './autoplay.ts';
 import type { Battle, BattleStart } from './battle.ts';
@@ -27,7 +27,15 @@ import {
   withPendingRun,
 } from './resume.ts';
 import { createRouter, type Router } from './router.ts';
-import { activeSave, initSaves, loadDevSave, setDifficulty } from './save.ts';
+import { resumeLongWalk, setNavigator } from './navigation.ts';
+import {
+  activeSave,
+  continueSlot,
+  importInto,
+  initSaves,
+  loadDevSave,
+  setDifficulty,
+} from './save.ts';
 
 vi.mock('./battle.ts', async () => {
   const { createSim: create } = await import('../sim/index.ts');
@@ -255,6 +263,30 @@ describe('through the router: the closed tab resumes the same run', () => {
       expect(card.pestsProcessed).toBe(run.kills);
       // The end dropped the pending run.
       expect(activeSave()?.pendingRun).toBeUndefined();
+    },
+    TIMEOUT_MS,
+  );
+
+  it(
+    'the Title offers it: a slot with a pending run, and "Resume the Long Walk" picks it up',
+    async () => {
+      const run = straightRun();
+      await persistAndClose();
+      const save = activeSave()!;
+      // A real slot (the dev save's is scratch): the save written to slot 1, played last.
+      initSaves(new MemoryStore(), () => 1_793_000_000_000);
+      expect(importInto(1, save).ok).toBe(true);
+      expect(continueSlot()).toBe(1);
+      const slot = slots.value.find((v) => v.slot === 1);
+      expect(slot?.status === 'ok' && slot.pending === true).toBe(true);
+      router = createRouter(game, { mapId: MAP, seed: SEED });
+      setNavigator(router);
+      expect(resumeLongWalk().ok).toBe(true);
+      await vi.waitFor(() => {
+        expect(screen.value).toBe('battle');
+      });
+      expect(host().sim.hash()).toBe(run.atCp);
+      setNavigator(null);
     },
     TIMEOUT_MS,
   );

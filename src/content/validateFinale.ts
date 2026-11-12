@@ -3,7 +3,7 @@
 // - [choir]: a `choir` map has a `choir` (and only it does), and exactly one of `minVoices` (a
 //   whole number ≥ 1) or `minVoicesPct` (in (0, 1]); its meter reads `voices`. The choir walks a
 //   ground path of the map and stops at a marker within 1 tile of it; its base singers are a whole
-//   number ≥ 1, its pace and halt distance > 0; each flag group adds a whole, non-zero number of
+//   number ≥ 1, its pace and halt distance > 0, its `walkWaves` (T820) a whole 1..waves; each flag group adds a whole, non-zero number of
 //   singers, and the smallest choir any flags allow still has one; Thrum's radius bonus is ≥ 0;
 //   the Returned are a whole number ≥ 1 with an aura > 0. Every gate is a script flag and one of
 //   its values ([flag-gate]) with a `flagVariants` entry ([flag-variants]: it changes the sim).
@@ -100,6 +100,10 @@ function validateChoir(
   if (!isPositiveInt(c.singers)) issues.add('choir', `${w}.singers`, 'must be a whole number ≥ 1');
   if (!isPositive(c.pace)) issues.add('choir', `${w}.pace`, 'must be > 0');
   if (!isPositive(c.haltTiles)) issues.add('choir', `${w}.haltTiles`, 'must be > 0');
+  const ww = c.walkWaves;
+  if (ww !== undefined && !(Number.isInteger(ww) && ww >= 1 && ww <= def.waves.length)) {
+    issues.add('choir', `${w}.walkWaves`, `${ww} must be a whole number of the map's waves`);
+  }
   const gate = (g: FlagGateDef, at: string): void => {
     checkFlagGate(issues, g, at);
     flagsRead.push([g.flag, at]);

@@ -100,7 +100,11 @@ function play(
 }
 
 /** A fresh sim fed `log`'s commands before their ticks, stepped to `tick`. */
-function replay(c: CompiledContent<IdSpace>, log: Sim<IdSpace>['state']['commandLog'], tick: number) {
+function replay(
+  c: CompiledContent<IdSpace>,
+  log: Sim<IdSpace>['state']['commandLog'],
+  tick: number,
+) {
   const s = createSim(config(c, 'rewrite'));
   let next = 0;
   while (s.state.outcome === 'playing' && s.state.tick < tick) {
@@ -135,7 +139,9 @@ describe('dev_phases (T808): the Unsung', () => {
     expect(up.every((e) => !e.dugOut && e.hushed !== 0)).toBe(true); // no burrow answer here
     expect(of(events, 'BossAdds').length).toBeGreaterThan(0);
     const end = of(events, 'BossEnded');
-    expect(end).toEqual([{ type: 'BossEnded', uid: rise[0]!.uid, enemy: 'unsung', how: 'layToRest' }]);
+    expect(end).toEqual([
+      { type: 'BossEnded', uid: rise[0]!.uid, enemy: 'unsung', how: 'layToRest' },
+    ]);
     expect(at.get(end[0]!)).toBe(at.get(of(events, 'PhaseChanged').at(-1)!)); // at Dawn
     expect(played.s.state.restPoints).toBe(played.s.state.restTarget);
   });

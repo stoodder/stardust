@@ -44,8 +44,8 @@ import { createScratch, type TickContext } from './tick.ts';
 import { FIXTURE_CONTENT, fixtureConfig } from './__fixtures__/sim.ts';
 
 const LIVE = compileContent(RAW_CONTENT);
-const UNSUNG = LIVE.enemies.unsung!;
-const PART = LIVE.enemies.unsung_part!;
+const UNSUNG = LIVE.enemies.unsung;
+const PART = LIVE.enemies.unsung_part;
 const PHASES = UNSUNG.boss!.phases;
 const [P1, P2, P3, P4] = PHASES;
 const TELL = secToTicks(BOSS_ABILITY_TELL_SEC);
@@ -332,16 +332,17 @@ describe('phase 3: the dig toward the choir (D154 Fork 2)', () => {
   });
 });
 
-describe('phase 4: the Song (the floor, the adds)', () => {
-  function song(): { state: SimState; ctx: TickContext; u: Enemy } {
-    const { state, ctx } = world();
-    const u = risen(state, ctx);
-    run(state, ctx, BOSS_PHASE_INVULNERABLE_TICKS, false);
-    bossDamage(state, u, u.hp - 0.25 * UNSUNG.hp);
-    expect(u.bossPhase).toBe(4);
-    return { state, ctx, u };
-  }
+/** The risen Unsung taken on into phase 4 (the Song). */
+function song(): { state: SimState; ctx: TickContext; u: Enemy } {
+  const { state, ctx } = world();
+  const u = risen(state, ctx);
+  run(state, ctx, BOSS_PHASE_INVULNERABLE_TICKS, false);
+  bossDamage(state, u, u.hp - 0.25 * UNSUNG.hp);
+  expect(u.bossPhase).toBe(4);
+  return { state, ctx, u };
+}
 
+describe('phase 4: the Song (the floor, the adds)', () => {
   it('its HP never falls below 1%, and the damage past it still feeds the song', () => {
     const { state, ctx, u } = song();
     run(state, ctx, BOSS_PHASE_INVULNERABLE_TICKS + 1, false);
@@ -428,7 +429,7 @@ describe('held by the song, and laid to rest', () => {
     state.restPoints = 10;
     const part = live(state).find((e) => e.def === PART)!;
     expect(bossRestProgress(state, part)).toBe(0.25);
-    expect(bossRestProgress(state, { def: LIVE.enemies.mote!, splitFrom: null })).toBe(-1);
+    expect(bossRestProgress(state, { def: LIVE.enemies.mote, splitFrom: null })).toBe(-1);
   });
 
   it('is immune while invulnerable after its rise, and targetable once it ends', () => {

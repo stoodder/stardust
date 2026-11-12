@@ -234,7 +234,12 @@ describe('the codex content', () => {
   );
 
   it('names real subjects, and an entry without one unlocks once its own map is won', () => {
-    for (const [map, ids] of Object.entries({ ...ACT1_LISTS, ...ACT2_LISTS, ...ACT3_LISTS, ...FIN_LISTS })) {
+    for (const [map, ids] of Object.entries({
+      ...ACT1_LISTS,
+      ...ACT2_LISTS,
+      ...ACT3_LISTS,
+      ...FIN_LISTS,
+    })) {
       for (const id of ids) {
         const e = CODEX[id]!;
         const when = e.versions.original?.when;

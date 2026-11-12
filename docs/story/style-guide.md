@@ -190,8 +190,8 @@ Snake_case, following [../tech/conventions.md](../tech/conventions.md):
 - **Labels:** any node may carry a `label` (snake_case, unique within its scene). A choice option's `goto` and a branch's `goto` and `else` name one; without one, play continues with the next node.
 - **Barks:** pools in `barks/<trigger>.ts`. Bark IDs are `<speaker>_<trigger>_a<act>_<nn>`, for example `bricks_idle_fire_a1_01`.
 - **Codex:** `codex_<entry>` with versions `original`, `annotated`, `margin` (Ves'thara's notes), and `corrected`.
-- **Memos:** `memo_a<act>_<nn>`; a form that arrives with a memo is `memo_a<act>_<nn>_<form>` (`memo_a2_02_kfa`).
-- **Epilogue cards:** `epi_<topic>_<variant>`, for example `epi_quill_rewrite`.
+- **Memos:** `memo_a<act>_<nn>`, and `memo_fin_<nn>` for the finale's (Sterling's farewell, `memo_fin_01`); a form that arrives with a memo is `memo_a<act>_<nn>_<form>` (`memo_a2_02_kfa`).
+- **Epilogue cards:** no id of their own: a card is its slot and its condition (`EpilogueCardDef` in `content/dialogue/epilogue.ts`; the words are `content/dialogue/fin/epilogue.ts`).
 - **Flags:** declared in `content/dialogue/flags.ts`. The canon story flags are listed in [bible.md §9](bible.md#flag-summary).
 
 ### 5.4 Text, tokens, and length
@@ -273,7 +273,7 @@ export const a3_m03_cue_seal = defineScene([
 
 From, To, Subject, body, sign-off, and **small print**. The small print is where the fair-play clues live. Subject lines are cheerful in every act.
 
-The memo texts' home is their content file ([`src/content/memos/act1.ts`](../../src/content/memos/act1.ts) for Act I, [`act2.ts`](../../src/content/memos/act2.ts) for Act II, [`act3.ts`](../../src/content/memos/act3.ts) for Act III), the way the item copy lives in `copy.ts`; the act files give each memo's subject and small print, and the sample below is `memo_a1_00`, verbatim.
+The memo texts' home is their content file ([`src/content/memos/act1.ts`](../../src/content/memos/act1.ts) for Act I, [`act2.ts`](../../src/content/memos/act2.ts) for Act II, [`act3.ts`](../../src/content/memos/act3.ts) for Act III, [`finale.ts`](../../src/content/memos/finale.ts) for Sterling's farewell), the way the item copy lives in `copy.ts`; the act files give each memo's subject and small print, and the sample below is `memo_a1_00`, verbatim.
 
 ```
 FROM: Director Joy Sterling, Frontier Operations
@@ -297,7 +297,7 @@ Sample subject lines: *Mandatory Fun Friday Is Back! (Attendance Optional) (Requ
 
 Up to four versions per entry, each unlocked by story progress or flags: the `original`, QUILL's (or Everglow's) `annotated` note, Ves'thara's `margin` note (from A2M6), and Act III's `corrected` text. The Act III *Field Journal* shows the original and the corrected version side by side, so the text the player laughed at becomes the evidence.
 
-The entry texts' home is their content file ([`src/content/codex/act1.ts`](../../src/content/codex/act1.ts) for Act I's originals, [`act2.ts`](../../src/content/codex/act2.ts) for Act II's entries and the annotations Act II adds to earlier ones, [`act3.ts`](../../src/content/codex/act3.ts) for the Field Journal's entries and the corrections Act III adds); the act files list which entries each map unlocks, and the quotes below and in the act files appear there verbatim.
+The entry texts' home is their content file ([`src/content/codex/act1.ts`](../../src/content/codex/act1.ts) for Act I's originals, [`act2.ts`](../../src/content/codex/act2.ts) for Act II's entries and the annotations Act II adds to earlier ones, [`act3.ts`](../../src/content/codex/act3.ts) for the Field Journal's entries and the corrections Act III adds, [`finale.ts`](../../src/content/codex/finale.ts) for its last pages); the act files list which entries each map unlocks, and the quotes below and in the act files appear there verbatim.
 
 **Annotations on screen.** An annotated version's text is the note alone, bracketed and signed; the codex shows it under the original it annotates, the original dimmed, so the record and what was written on it read together. Everglow annotates first (A2M1: Rig Nine's status update, signed by Frontier Operations, covering up); QUILL's annotations begin at A2M3 and correct the record in its own voice: what it logged, what it was told to call it, what it now isn't sure of. An entry QUILL won't file reads "[QUILL: Entry withheld.]" with "Withheld" in its photo frame (A2M3's "Pebble", filed under Personnel, not Pests). Ves'thara's margin notes, unlocked when A2M6 is won, are their own version (`margin`) with their own NEW badge, shown under QUILL's note on the same record, bracketed and led by "In the margin, in Ves'thara's hand:" (the Brood Hauler's below).
 

@@ -778,7 +778,12 @@ export type SimEvent<K extends IdSpace = LiveIds> =
       readonly hushed: number;
     }
   /** A boss phase's adds walked in at its route's spawn (T808, the Song's Silencers). */
-  | { readonly type: 'BossAdds'; readonly uid: number; readonly enemy: string; readonly count: number }
+  | {
+      readonly type: 'BossAdds';
+      readonly uid: number;
+      readonly enemy: string;
+      readonly count: number;
+    }
   /** A Sproing Pad's leaper bonked an enemy (T704): render's arc, audio's boing. */
   | { readonly type: 'LeaperBonk'; readonly tower: number; readonly target: number }
   /** A leaper's bonk Pinned a flyer for `ticks` (T704): grounded, so ground towers hit it. */

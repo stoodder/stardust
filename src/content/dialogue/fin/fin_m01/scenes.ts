@@ -119,7 +119,12 @@ export const scenes = defineScenes([
       text: 'The Bore broke through. Everything it woke is coming up the road.',
     },
     { kind: 'end' },
-    { label: 'purge', kind: 'line', speaker: 'quill', text: 'Deep Bore: breakthrough. Surge on the road.' },
+    {
+      label: 'purge',
+      kind: 'line',
+      speaker: 'quill',
+      text: 'Deep Bore: breakthrough. Surge on the road.',
+    },
   ]),
 
   // ── Phase 2: the Unsung ───────────────────────────────────────────────────────────────────
@@ -348,7 +353,12 @@ export const scenes = defineScenes([
       text: '4. Residency points accrued under charter are honored upon evacuation only (Reg. 4-02).',
     },
     // The residency points the player came out here for, under the family's name.
-    { kind: 'branch', cond: { flag: 'arrival_reason', eq: 'family' }, goto: 'family', else: 'voices' },
+    {
+      kind: 'branch',
+      cond: { flag: 'arrival_reason', eq: 'family' },
+      goto: 'family',
+      else: 'voices',
+    },
     {
       label: 'family',
       kind: 'line',

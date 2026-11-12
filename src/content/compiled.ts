@@ -971,6 +971,8 @@ export interface CompiledChoir {
   readonly singers: number;
   readonly paceTilesPerTick: number;
   readonly haltTiles: number;
+  /** ChoirDef.walkWaves (T820): the waves the walk spans; absent or 0, it walks on time alone. */
+  readonly walkWaves?: number;
   readonly groups: readonly {
     readonly when: { readonly flag: ScriptFlagId; readonly eq: FlagValue };
     readonly singers: number;
