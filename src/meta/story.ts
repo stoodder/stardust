@@ -6,7 +6,7 @@ import { CAMPAIGN_PLAN_IDS, type CampaignMapId } from '../content/campaign.ts';
 import type { CodexId } from '../content/codex/index.ts';
 import { FLAG_IDS, type FlagSet } from '../content/dialogue/flags.ts';
 import { ENEMIES } from '../content/enemies/index.ts';
-import { MAPS } from '../content/maps/index.ts';
+import { RAW_CONTENT } from '../content/registry.ts';
 import type { MemoGift, MemoId } from '../content/memos/index.ts';
 import type { EnemyId, FlagId, FlagValue, MapId } from '../content/types.ts';
 import { newCodexUnlocks } from '../story/codex.ts';
@@ -86,7 +86,9 @@ function pushNew(out: EnemyId[], id: string): void {
  * `campaign.seenEnemies` (the codex's subjects, the NEW badge) adds them at run end.
  */
 export function enemiesMet(mapId: MapId, won: boolean, wavesResolved: number): EnemyId[] {
-  const map = MAPS[mapId];
+  // The live registry: a post-game map (Endless, a challenge map) registers with its lazy chunk.
+  if (!Object.hasOwn(RAW_CONTENT.maps, mapId)) return [];
+  const map = RAW_CONTENT.maps[mapId];
   const reached = won
     ? map.waves.length
     : Math.min(map.waves.length, Math.max(0, wavesResolved) + 1);

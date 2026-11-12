@@ -299,8 +299,10 @@ describe("the finale's card (finale.md § FIN, Dawn: the results screen reads RE
     const r = fixtureResult({ map: 'fin_m01', outcome: 'won' }, save);
     expect(r.counter).toBe('remembered');
     expect(counterIsHeadline(r.counter, r.outcome)).toBe(true);
-    const line = resultsCounter(r.counter, r.pestsProcessed, r.remembered!).line;
-    expect(line).toBe(`REMEMBERED: ${save.stats.pestsProcessed.toLocaleString('en-US')}`);
+    const counter = resultsCounter(r.counter, r.pestsProcessed, r.remembered!);
+    expect(counter).not.toBeNull();
+    if (counter === null) return;
+    expect(counter.line).toBe(`REMEMBERED: ${save.stats.pestsProcessed.toLocaleString('en-US')}`);
     expect(resultsHeader(r.counter, 'won').headline).toBe('PERIMETER SECURED.');
     const rows = resultsStats(r);
     expect(rows.map((x) => x.id)).toEqual(['waves', 'voices']);

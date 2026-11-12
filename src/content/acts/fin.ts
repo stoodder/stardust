@@ -7,6 +7,7 @@ import { EPILOGUE_CARDS } from '../dialogue/fin/epilogue.ts';
 import { barks as finM01Barks } from '../dialogue/fin/fin_m01/barks.ts';
 import { scenes as finM01Scenes } from '../dialogue/fin/fin_m01/scenes.ts';
 import { CHALLENGE_MAPS } from '../maps/challenge.ts';
+import { ENDLESS_MAPS } from '../maps/end_m01/index.ts';
 import { FINALE_MEMOS } from '../memos/finale.ts';
 import type { ActStory } from './index.ts';
 
@@ -18,6 +19,6 @@ export const FINALE_STORY: ActStory = {
   codexVersions: {},
   memos: FINALE_MEMOS,
   epilogue: EPILOGUE_CARDS,
-  // The post-game maps (T862): the challenge maps.
-  maps: { ...CHALLENGE_MAPS },
+  // The post-game maps (T862): the challenge maps, and Endless's (T861).
+  maps: { ...CHALLENGE_MAPS, ...ENDLESS_MAPS },
 };

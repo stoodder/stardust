@@ -15,6 +15,7 @@ import type { ENEMIES } from './enemies/index.ts';
 import type { LINKS } from './links/index.ts';
 import type { MAPS } from './maps/index.ts';
 import type { CHALLENGE_MAPS } from './maps/challenge.ts';
+import type { ENDLESS_MAPS } from './maps/end_m01/index.ts'; // T861
 import type { AuraKind } from './rules.ts';
 import type { SpriteId as RegisteredSpriteId } from './sprites/index.ts';
 import type { EnvPaletteId } from './sprites/types.ts';
@@ -35,7 +36,7 @@ export type MapId = Extract<keyof typeof MAPS | LazyMapKey, string>;
  * *Lazy chunks*): absent from `RAW_CONTENT.maps` until their chunk loads. One `keyof typeof` per
  * registry, imported as a type only so nothing of theirs reaches the initial JS.
  */
-type LazyMapKey = keyof typeof CHALLENGE_MAPS;
+type LazyMapKey = keyof typeof CHALLENGE_MAPS | keyof typeof ENDLESS_MAPS;
 
 /** The ids one set of registries defines. Cross-kind references are typed through this. */
 export interface IdSpace {
@@ -1343,7 +1344,35 @@ export interface MapLayoutDef<K extends IdSpace = LiveIds, Id extends string = s
    * `setPhase 3`). Such a map needs an `endMap: 'won'` event.
    */
   readonly winBy?: 'script';
+  /**
+   * A challenge map's fixed rules (design/maps.md § 8; T862): every run on the map carries them,
+   * applied by createSim (sim/rules.ts `challengeConfig`). Required on an `act: 'challenge'` map,
+   * and only there (validateChallenge.ts).
+   */
+  readonly challenge?: ChallengeDef;
 }
+
+/** A challenge map's tagline and rules (MapLayoutDef.challenge; design/maps.md § 8; T862). */
+export interface ChallengeDef {
+  /** The one line the post-game node and the briefing show ("Only the warrens' towers deploy."). */
+  readonly tagline: string;
+  /** The rules, in the order the briefing names them. Each kind at most once. */
+  readonly rules: readonly ChallengeRuleDef[];
+}
+
+/**
+ * One challenge rule (sim/rules.ts turns each into the run's rule or modifier, sourced
+ * `challenge:<map id>`):
+ * - `towerFaction`: only that faction's towers deploy (the loadout keeps those, the rest stay home).
+ * - `allCloaked`: every hostile unit the map spawns is cloaked (a cloak, enemies.md § 2.5).
+ * - `noAbilities`: Radio Silence (design/progression.md § 6): every ability slot dark.
+ * - `glassCore`: Glass Core (progression.md § 6): core integrity 5, Reinforced Core's ranks add.
+ */
+export type ChallengeRuleDef =
+  | { readonly kind: 'towerFaction'; readonly faction: TowerFaction }
+  | { readonly kind: 'allCloaked' }
+  | { readonly kind: 'noAbilities' }
+  | { readonly kind: 'glassCore' };
 
 /**
  * The finale's choir (MapDef.choir; design/maps.md § 5.5; T800a seam, T804 runs it). Its leader

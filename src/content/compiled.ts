@@ -4,6 +4,7 @@
 // value or null (monomorphic shapes), ids that hot loops follow are resolved to references, and
 // the whole tree is deep-frozen.
 import type {
+  ChallengeDef,
   CounterExemption,
   PendingChecks,
   Act,
@@ -966,6 +967,8 @@ export interface CompiledMapDef<K extends IdSpace = LiveIds> {
   readonly timers: readonly CompiledTimer[];
   /** MapDef.winBy: 'waves' (every wave resolved, the default) or 'script' (an endMap 'won' only). */
   readonly winBy: 'waves' | 'script';
+  /** MapDef.challenge (T862): a challenge map's rules, or null (sim/rules.ts `challengeConfig`). */
+  readonly challenge: ChallengeDef | null;
   readonly builds: CompiledBuilds<K>;
 }
 

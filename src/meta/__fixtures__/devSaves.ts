@@ -96,12 +96,12 @@ export interface DevSave {
  * The medal ids a map can award (sim/medals.ts's convention): `victory`, `perfect_core`, and the
  * map's own Challenge id (`challenge` for a map whose data has none).
  */
-function medalIds(map: MapId): MedalId[] {
+function medalIds(map: CampaignMap): MedalId[] {
   const def: { readonly medals?: { readonly challenge: { readonly id: MedalId } } } = MAPS[map];
   return ['victory', 'perfect_core', def.medals?.challenge.id ?? 'challenge'];
 }
 
-function won(map: MapId, medals: MedalId[]): MapRecord {
+function won(map: CampaignMap, medals: MedalId[]): MapRecord {
   return { completed: true, medals, bestMeter: MAPS[map].coreIntegrity ?? 0 };
 }
 

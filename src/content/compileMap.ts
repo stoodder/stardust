@@ -193,6 +193,7 @@ export function compileMap<K extends IdSpace>(
     song,
     timers,
     winBy: def.winBy ?? 'waves',
+    challenge: def.challenge ?? null,
     builds,
   };
 }

@@ -5,8 +5,7 @@
 // on their waves along the road, and every group walks a route it may.
 import { describe, expect, it } from 'vitest';
 import { compileContent } from '../content/compile.ts';
-import { ENDLESS, type EndlessDef, type EndlessIds } from '../content/maps/end_m01/endless.ts';
-import { ENDLESS_MAPS } from '../content/maps/end_m01/index.ts';
+import { ENDLESS, type EndlessDef } from '../content/maps/end_m01/endless.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
 import {
   MAX_REQUIRED_COUNTERS,
@@ -14,7 +13,7 @@ import {
   COUNTER_CATEGORIES,
 } from '../content/rules.ts';
 import type { CompiledEnemyDef, CompiledRoute } from '../content/compiled.ts';
-import type { CounterId, RawContent } from '../content/types.ts';
+import type { CounterId } from '../content/types.ts';
 import { threatOf } from '../content/validateThreats.ts';
 import { ENEMIES } from '../content/enemies/index.ts';
 import {
@@ -35,12 +34,9 @@ import {
 } from './endless.ts';
 import { createSim } from './sim.ts';
 
-/** The live content with Endless's map (as the finale chunk registers it). */
-const RAW: RawContent<EndlessIds> = {
-  ...RAW_CONTENT,
-  maps: { ...RAW_CONTENT.maps, ...ENDLESS_MAPS },
-};
-const content = compileContent(RAW);
+// The live content, with Endless's map as the finale chunk registers it (vitestSetup registers
+// every act before a test runs).
+const content = compileContent(RAW_CONTENT);
 const map = content.maps.end_m01;
 /** The seeds the invariants run over. */
 const SEEDS = Array.from({ length: 40 }, (_, i) => i + 1).concat([0, 4_294_967_295, 123_456_789]);
