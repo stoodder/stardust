@@ -6,12 +6,7 @@
 // `preloadActs` does it in idle time. Tests and the Node tools register every act up front
 // (`registerActChunk` with app/acts/all.ts; tools/vitestSetup.ts).
 import { registerSfx } from '../audio/sfx/index.ts';
-import {
-  actRank,
-  LAZY_ACTS,
-  registerActStory,
-  type LazyAct,
-} from '../content/acts/index.ts';
+import { actRank, LAZY_ACTS, registerActStory, type LazyAct } from '../content/acts/index.ts';
 import type { StoryAct } from '../content/dialogue/types.ts';
 import type { ActChunk } from './acts/types.ts';
 

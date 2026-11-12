@@ -45,8 +45,11 @@ type LazySfx = typeof AELARI_SFX &
   typeof ACT3_SFX &
   typeof ACT3B_SFX;
 
+/** Every recipe, registered or not, with its literal shape. */
+type AllSfx = typeof CORE_SFX & LazySfx & typeof SPEECH_SFX;
+
 /** A sound effect's id (registered or not yet: its act may still be loading). */
-export type SfxId = keyof typeof CORE_SFX | keyof LazySfx | keyof typeof SPEECH_SFX;
+export type SfxId = keyof AllSfx;
 
 /**
  * The groups an act chunk registers, in registry order (`registerSfx`): each group's recipes sit
@@ -71,7 +74,7 @@ const ids: SfxId[] = [];
  * Every registered recipe, by id: the core's always, an act's once its chunk has loaded. Typed as
  * every sound; read one that may not be registered with `loadedSfx`.
  */
-export const SFX: Readonly<Record<SfxId, SfxRecipe>> = registry as Record<SfxId, SfxRecipe>;
+export const SFX: Readonly<AllSfx> = registry as AllSfx;
 
 /** Whether `id` names a registered sound effect. */
 export function isSfxId(id: string): id is SfxId {
@@ -93,7 +96,9 @@ function rebuild(): void {
 rebuild();
 
 /** Registers an act chunk's sound groups (again: replaces them). */
-export function registerSfx(add: Readonly<Partial<Record<SfxGroup, Readonly<Record<string, SfxRecipe>>>>>): void {
+export function registerSfx(
+  add: Readonly<Partial<Record<SfxGroup, Readonly<Record<string, SfxRecipe>>>>>,
+): void {
   for (const g of SFX_GROUPS) {
     const recipes = add[g];
     if (recipes !== undefined) groups.set(g, recipes);
