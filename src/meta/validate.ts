@@ -3,7 +3,13 @@
 // exist in the live registries, every number must be a bounded integer, and nothing outside the
 // schema survives. On success it returns a freshly built copy, so the caller never holds the
 // parsed object (no extra keys, no shared references, no prototype tricks).
-import { CALLSIGN_IDS, PRONOUN_IDS, isValidPlayerName } from '../content/dialogue/profile.ts';
+import {
+  ADDRESSES,
+  ADDRESS_IDS,
+  CALLSIGN_IDS,
+  PRONOUN_IDS,
+  isValidPlayerName,
+} from '../content/dialogue/profile.ts';
 import { MAX_LOADOUT } from '../content/rules.ts';
 import type { FlagValue, MapId, ProtocolId, TowerId } from '../content/types.ts';
 import type {
@@ -148,9 +154,12 @@ function checkSave(c: Checker, x: unknown, path: string, known: KnownIds): SaveD
   };
 }
 
-/** The intake's profile: a valid name (core-loop.md § 6.1), a pronoun set, and a callsign. */
+/**
+ * The intake's profile: a valid name (core-loop.md § 6.1), a form of address with the pronoun set
+ * it picks (`ADDRESSES`), and a callsign.
+ */
 function checkProfile(c: Checker, x: unknown, path: string): PlayerProfile | null {
-  const p = c.object(x, path, ['name', 'pronouns', 'callsign']);
+  const p = c.object(x, path, ['name', 'address', 'pronouns', 'callsign']);
   if (p === null) return null;
   const name = p['name'];
   if (typeof name !== 'string' || !isValidPlayerName(name)) {
@@ -159,10 +168,20 @@ function checkProfile(c: Checker, x: unknown, path: string): PlayerProfile | nul
       `expected 1–16 letters, digits, spaces, apostrophes, hyphens, or periods, got ${describe(name)}`,
     );
   }
+  const address = c.id(p['address'], `${path}.address`, ADDRESS_IDS);
   const pronouns = c.id(p['pronouns'], `${path}.pronouns`, PRONOUN_IDS);
   const callsign = c.id(p['callsign'], `${path}.callsign`, CALLSIGN_IDS);
-  if (typeof name !== 'string' || !isValidPlayerName(name) || !pronouns || !callsign) return null;
-  return { name, pronouns, callsign };
+  if (address && pronouns && ADDRESSES[address].pronouns !== pronouns) {
+    c.fail(
+      `${path}.pronouns`,
+      `expected '${ADDRESSES[address].pronouns}' for address '${address}', got '${pronouns}'`,
+    );
+    return null;
+  }
+  if (typeof name !== 'string' || !isValidPlayerName(name) || !address || !pronouns || !callsign) {
+    return null;
+  }
+  return { name, address, pronouns, callsign };
 }
 
 function checkCampaign(

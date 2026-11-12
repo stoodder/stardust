@@ -536,7 +536,7 @@ function profileView(save: SaveData): ProfileView | null {
   const arrival = save.story.flags.arrival_reason;
   return {
     name: p.name,
-    pronouns: p.pronouns,
+    address: p.address,
     callsign: p.callsign,
     arrival: arrival === 'bonus' || arrival === 'family' || arrival === 'lettuce' ? arrival : null,
   };

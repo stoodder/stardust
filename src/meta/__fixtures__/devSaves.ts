@@ -114,7 +114,12 @@ function afterA1M1(): SaveData {
 }
 
 /** The profile the M3 dev saves carry (character creation done, T306). */
-const DEV_PROFILE = { name: 'Dev Tech', pronouns: 'they', callsign: 'sprout' } as const;
+const DEV_PROFILE = {
+  name: 'Dev Tech',
+  address: 'tech',
+  pronouns: 'they',
+  callsign: 'sprout',
+} as const;
 
 function isRegistered(id: string): id is CampaignMap {
   return CAMPAIGN.some((m) => m === id);

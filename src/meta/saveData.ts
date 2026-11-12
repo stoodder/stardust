@@ -30,7 +30,7 @@ import type {
 } from '../content/types.ts';
 
 /** The current schema version. Codes carry it as their `SD<v>-` prefix. */
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 /** Story flags a save can hold: every flag in `content/dialogue/flags.ts`. */
 export type StoryFlagId = FlagId;
@@ -79,8 +79,9 @@ export interface LoadoutPreset {
 /** The player's campaign state. Mutable plain data: meta transactions return updated copies. */
 export interface SaveData {
   /**
-   * The player's name, pronouns, and callsign, from character creation (T306). Null until the
-   * intake: every save written before v2, and a new save until the form is filled in. The intake
+   * The player's name, form of address (and the pronoun set it picks), and callsign, from
+   * character creation (T306). Null until the intake: every save written before v2, and a new save
+   * until the form is filled in. v3 added `address` (D163). The intake
    * also sets the `arrival_reason` flag (that flag is its one home).
    */
   profile: PlayerProfile | null;

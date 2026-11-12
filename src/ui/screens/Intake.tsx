@@ -21,12 +21,12 @@ import {
   type IntakeProblems,
 } from '../../app/profile.ts';
 import {
-  ADDRESS_ORDER,
+  ADDRESSES,
+  ADDRESS_IDS,
   ARRIVAL_REASONS,
   PLAYER_NAME,
-  PRONOUN_SETS,
+  type AddressId,
   type ArrivalReason,
-  type PronounId,
 } from '../../content/dialogue/profile.ts';
 import { Icon } from '../hud/Icon.tsx';
 import { useEscape } from './escape.ts';
@@ -146,10 +146,10 @@ export function ChoiceGroup<T extends string>({
   );
 }
 
-/** The form of address options, in form order (Mr., Ms., Tech.; profile.ts `ADDRESS_ORDER`). */
-export const ADDRESS_OPTIONS: readonly ChoiceOption<PronounId>[] = ADDRESS_ORDER.map((id) => ({
+/** The form of address options, in form order (Mr., Ms., Mrs., Dr., Tech.; profile.ts). */
+export const ADDRESS_OPTIONS: readonly ChoiceOption<AddressId>[] = ADDRESS_IDS.map((id) => ({
   id,
-  label: PRONOUN_SETS[id].label,
+  label: ADDRESSES[id].label,
 }));
 
 const ARRIVAL_OPTIONS: readonly ChoiceOption<ArrivalReason>[] = ARRIVAL_ORDER.map((id) => ({
@@ -276,9 +276,9 @@ export function Intake() {
                   labelledBy="sd-intake-address"
                   describedBy="sd-intake-address-hint"
                   options={ADDRESS_OPTIONS}
-                  value={form.pronouns}
+                  value={form.address}
                   required={false}
-                  onPick={(pronouns) => update({ pronouns })}
+                  onPick={(address) => update({ address })}
                 />
                 <p id="sd-intake-address-hint" class="sd-message sd-dim">
                   {INTAKE_COPY.addressHint}
@@ -328,7 +328,7 @@ export function Intake() {
                 data-testid="file-note"
                 data-voice="file-note"
               >
-                {previewText(SAMPLE_NOTE, form.pronouns)}
+                {previewText(SAMPLE_NOTE, form.address)}
               </p>
               <p class="sd-intake-small" data-voice="small-print">
                 {INTAKE_COPY.smallPrint}

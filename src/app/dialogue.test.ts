@@ -135,7 +135,7 @@ describe('dialogue helpers', () => {
   it("saves a scene's flags, callsign, and seen id; never a bark's id", () => {
     const save: SaveData = {
       ...createNewSave(),
-      profile: { name: 'Ada', pronouns: 'they', callsign: 'sprout' },
+      profile: { name: 'Ada', address: 'tech', pronouns: 'they', callsign: 'sprout' },
     };
     const fx: DialogueEffects = { flags: { peeker_poked: true }, callsign: 'thorn' };
     const after = withSceneEffects(save, 'a1_m01_cue_test', fx);
@@ -369,7 +369,7 @@ describe("a battle's dialogue", () => {
     newGame(1);
     updateActiveSave((sv) => ({
       ...sv,
-      profile: { name: 'Ada', pronouns: 'they', callsign: 'thorn' },
+      profile: { name: 'Ada', address: 'tech', pronouns: 'they', callsign: 'thorn' },
     }));
     bind('a1_m01', { briefing: true });
     expect(dialogue.scene.value?.line?.name).toBe('QUILL');
@@ -392,7 +392,7 @@ describe("a battle's dialogue", () => {
     // A replay never takes back a later callsign.
     updateActiveSave((sv) => ({
       ...sv,
-      profile: { name: 'Ada', pronouns: 'they', callsign: 'thorn' },
+      profile: { name: 'Ada', address: 'tech', pronouns: 'they', callsign: 'thorn' },
     }));
     unbind();
     bind('a1_m01', { briefing: true });

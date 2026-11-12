@@ -66,7 +66,7 @@ export const POLICY_TELL = '(Per policy.)';
 
 // ─── Tokens (style-guide § 5.4) ───────────────────────────────────────────────────────────────
 
-type PronounForm = Exclude<keyof PronounSet, 'agreement' | 'label'>;
+type PronounForm = Exclude<keyof PronounSet, 'agreement'>;
 const PRONOUN_FORMS: readonly PronounForm[] = ['they', 'them', 'their', 'theirs', 'themself'];
 
 /** The pronoun form a pronoun token names, and whether it is capitalized; null for others. */

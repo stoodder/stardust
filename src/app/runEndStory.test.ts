@@ -25,7 +25,7 @@ import { createHost } from './host.ts';
 import { endRunStory, withDebriefEffects } from './runResult.ts';
 import { activeSave, initSaves, newGame } from './save.ts';
 
-const PROFILE = { name: 'Ada', pronouns: 'she', callsign: 'sprout' } as const;
+const PROFILE = { name: 'Ada', address: 'ms', pronouns: 'she', callsign: 'sprout' } as const;
 type Ev = SimEvent<IdSpace>;
 const noop = (): void => {};
 const shown = (): string | null => dialogue.comms.value?.line.text ?? null;

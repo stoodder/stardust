@@ -1,4 +1,5 @@
-// The setup asks for an in-world "Form of address" (Mr., Ms., Tech.; D163), never for pronouns:
+// The setup asks for an in-world "Form of address" (Mr., Ms., Mrs., Dr., Tech.; D163), never for
+// pronouns:
 // no player-facing string in src/ui, src/app, src/content, or src/story says "pronoun(s)" or pairs
 // pronouns with a slash ("she/her"). Player-facing means every string literal, template chunk, and
 // JSX text in the shipped modules (tests and dev fixtures aside); a bare code id ("pronouns", a
@@ -8,12 +9,16 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { parseAst } from 'vite';
 import { describe, expect, it } from 'vitest';
+import { scenes as a1m04Scenes } from '../src/content/dialogue/a1/a1_m04/scenes.ts';
 import {
-  ADDRESS_ORDER,
+  ADDRESSES,
+  ADDRESS_IDS,
   DEFAULT_ADDRESS,
   PRONOUN_IDS,
-  PRONOUN_SETS,
+  addressFields,
 } from '../src/content/dialogue/profile.ts';
+import { FINALE_MEMOS } from '../src/content/memos/finale.ts';
+import { resolveText } from '../src/story/text.ts';
 
 const SRC = new URL('../src/', import.meta.url).pathname;
 const DIRS = ['ui', 'app', 'content', 'story'];
@@ -96,9 +101,51 @@ describe('player copy never speaks of pronouns (D163)', () => {
     expect(checked).toBeGreaterThan(10_000);
   });
 
-  it('the form of address reads Mr., Ms., Tech., in that order, with Tech. by default', () => {
-    expect(ADDRESS_ORDER.map((id) => PRONOUN_SETS[id].label)).toEqual(['Mr.', 'Ms.', 'Tech.']);
-    expect(ADDRESS_ORDER.toSorted()).toEqual(PRONOUN_IDS.toSorted());
-    expect(PRONOUN_SETS[DEFAULT_ADDRESS].label).toBe('Tech.');
+  it('the form of address reads Mr., Ms., Mrs., Dr., Tech., in that order, Tech. by default', () => {
+    expect(ADDRESS_IDS.map((id) => ADDRESSES[id].label)).toEqual([
+      'Mr.',
+      'Ms.',
+      'Mrs.',
+      'Dr.',
+      'Tech.',
+    ]);
+    expect(ADDRESS_IDS.map((id) => ADDRESSES[id].pronouns)).toEqual([
+      'he',
+      'she',
+      'she',
+      'they',
+      'they',
+    ]);
+    expect(new Set(ADDRESS_IDS.map((id) => ADDRESSES[id].pronouns))).toEqual(new Set(PRONOUN_IDS));
+    expect(ADDRESSES[DEFAULT_ADDRESS].label).toBe('Tech.');
+  });
+});
+
+describe("Sterling's lines about the player read under every form of address", () => {
+  const line = (id: string): string => {
+    const node = a1m04Scenes.find((sc) => sc.id === id)?.nodes[0];
+    return node !== undefined && node.kind === 'line' ? node.text : '';
+  };
+  const memo = FINALE_MEMOS.find((m) => m.id === 'memo_fin_01')?.body.split('\n\n').at(-1) ?? '';
+  const as = (text: string, address: (typeof ADDRESS_IDS)[number]): string =>
+    resolveText(text, {
+      profile: { name: 'Ada', ...addressFields(address), callsign: 'sprout' },
+      pestsProcessed: 0,
+      evacuated: null,
+    });
+  const POSSESSIVE = { mr: 'his', ms: 'her', mrs: 'her', dr: 'their', tech: 'their' } as const;
+  const OBJECT = { mr: 'him', ms: 'her', mrs: 'her', dr: 'them', tech: 'them' } as const;
+
+  it.each(ADDRESS_IDS)('%s', (address) => {
+    const p = POSSESSIVE[address];
+    expect(as(line('a1_m04_w04'), address)).toBe(
+      'Auditor Prim, Four-Forty-Seven is the best technician on this rock. ' +
+        `Dock ${p} pay and you'll have to dock mine.`,
+    );
+    expect(as(memo, address)).toBe(
+      'To whom it may concern: Four-Forty-Seven was a top-five-percent technician. ' +
+        `${p.charAt(0).toUpperCase()}${p.slice(1)} numbers were the best I ever saw. ` +
+        `Hire ${OBJECT[address]} for anything.`,
+    );
   });
 });

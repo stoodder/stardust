@@ -1,8 +1,8 @@
 // Character creation (T306; design/core-loop.md § 6.1): the intake form's rules and the profile
 // writes. The intake ("Frontier Futures: New Hire Intake") runs on New game before A1M1, and on
 // Continue, Load, or Import for a save with no profile yet (every save from before SaveData v2).
-// It writes `SaveData.profile` (name, form of address as `pronouns`, the first callsign) and the
-// `arrival_reason` flag, that flag's one home (D066). Settings edits the name and form of address
+// It writes `SaveData.profile` (name, form of address and its pronoun set, the first callsign) and
+// the `arrival_reason` flag, that flag's one home (D066). Settings edits the name and form of address
 // later; the callsign
 // changes only by dialogue `set` nodes, and the reason is final. The copy's home is
 // docs/story/campaign/act1.md § Character creation.
@@ -11,9 +11,10 @@ import {
   CALLSIGN_IDS,
   DEFAULT_ADDRESS,
   PLAYER_NAME,
+  addressFields,
   isValidPlayerName,
+  type AddressId,
   type ArrivalReason,
-  type PronounId,
 } from '../content/dialogue/profile.ts';
 import type { SaveData, SlotId } from '../meta/index.ts';
 import { resolveText } from '../story/text.ts';
@@ -72,12 +73,12 @@ export function intakeMode(): IntakeMode | null {
  */
 export interface IntakeForm {
   readonly name: string;
-  readonly pronouns: PronounId;
+  readonly address: AddressId;
   readonly arrival: ArrivalReason | null;
 }
 
 /** A fresh intake form. */
-export const BLANK_INTAKE: IntakeForm = { name: '', pronouns: DEFAULT_ADDRESS, arrival: null };
+export const BLANK_INTAKE: IntakeForm = { name: '', address: DEFAULT_ADDRESS, arrival: null };
 
 /** Field problems, in the Act I voice: cheerful, never scolding (story/style-guide.md § 2). */
 export const INTAKE_PROBLEMS = {
@@ -126,14 +127,14 @@ export const FIRST_CALLSIGN = CALLSIGN_IDS[0];
  */
 export function withIntake(
   save: SaveData,
-  profile: { readonly name: string; readonly pronouns: PronounId },
+  profile: { readonly name: string; readonly address: AddressId },
   arrival: ArrivalReason,
 ): SaveData {
   return {
     ...save,
     profile: {
       name: profile.name,
-      pronouns: profile.pronouns,
+      ...addressFields(profile.address),
       callsign: save.profile?.callsign ?? FIRST_CALLSIGN,
     },
     story: { ...save.story, flags: { ...save.story.flags, arrival_reason: arrival } },
@@ -143,10 +144,10 @@ export function withIntake(
 /** `save` with a new name and form of address (Settings). The callsign and the reason stay. */
 export function withProfileEdit(
   save: SaveData,
-  edit: { readonly name: string; readonly pronouns: PronounId },
+  edit: { readonly name: string; readonly address: AddressId },
 ): SaveData {
   if (save.profile === null) return save;
-  return { ...save, profile: { ...save.profile, name: edit.name, pronouns: edit.pronouns } };
+  return { ...save, profile: { ...save.profile, name: edit.name, ...addressFields(edit.address) } };
 }
 
 /** A form that can't be signed yet: which fields need another look. */
@@ -161,7 +162,7 @@ export function signIntake(form: IntakeForm): IntakeSubmit {
   if (form.arrival === null || Object.keys(problems).length > 0) {
     return { ok: false, problems };
   }
-  const profile = { name: cleanName(form.name), pronouns: form.pronouns };
+  const profile = { name: cleanName(form.name), address: form.address };
   const arrival = form.arrival;
   const fill = (save: SaveData): SaveData => withIntake(save, profile, arrival);
   const mode = intakeMode();
@@ -173,7 +174,7 @@ export function signIntake(form: IntakeForm): IntakeSubmit {
 }
 
 /** Settings → Update file: a new name and form of address for the save in play. */
-export function editProfile(raw: string, pronouns: PronounId): SaveResult {
+export function editProfile(raw: string, address: AddressId): SaveResult {
   const problem = nameProblem(raw);
   if (problem !== null) return { ok: false, message: problem };
   const save = activeSave();
@@ -181,7 +182,7 @@ export function editProfile(raw: string, pronouns: PronounId): SaveResult {
   if (save.profile === null) {
     return { ok: false, message: 'Your intake form opens when you continue this campaign.' };
   }
-  return updateActiveSave((s) => withProfileEdit(s, { name: cleanName(raw), pronouns }));
+  return updateActiveSave((s) => withProfileEdit(s, { name: cleanName(raw), address }));
 }
 
 // ── The preview ──────────────────────────────────────────────────────────────────────────────
@@ -198,10 +199,14 @@ export const SAMPLE_NOTE =
  * `text` resolved for a profile being filled in (the intake's file note, Settings' preview):
  * the story runtime's `resolveText` (story/text.ts), with the name as typed so far.
  */
-export function previewText(text: string, pronouns: PronounId, name = ''): string {
+export function previewText(text: string, address: AddressId, name = ''): string {
   const cleaned = cleanName(name);
   return resolveText(text, {
-    profile: { name: cleaned === '' ? 'Technician' : cleaned, pronouns, callsign: FIRST_CALLSIGN },
+    profile: {
+      name: cleaned === '' ? 'Technician' : cleaned,
+      ...addressFields(address),
+      callsign: FIRST_CALLSIGN,
+    },
     pestsProcessed: 0,
     evacuated: null,
   });

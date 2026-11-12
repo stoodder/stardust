@@ -5,7 +5,7 @@ import { memorialFor } from './memorial.ts';
 describe("the memorial wreck's deps (T831)", () => {
   it("draws the save's tagged class and its plate's name, resolved", () => {
     const save = createNewSave();
-    save.profile = { name: 'Ada Okafor', pronouns: 'she', callsign: 'sprout' };
+    save.profile = { name: 'Ada Okafor', address: 'ms', pronouns: 'she', callsign: 'sprout' };
     save.story.memorialTower = 'thumper';
     expect(memorialFor(save)).toEqual({ memorialTower: 'thumper', memorialName: 'Ada Okafor' });
   });

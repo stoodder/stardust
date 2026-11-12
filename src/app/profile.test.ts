@@ -46,26 +46,26 @@ describe('the name rule', () => {
   });
 
   it('the name and the reason must be filled; the form of address is optional (Tech.; D163)', () => {
-    expect(BLANK_INTAKE).toEqual({ name: '', pronouns: 'they', arrival: null });
+    expect(BLANK_INTAKE).toEqual({ name: '', address: 'tech', arrival: null });
     expect(intakeProblems(BLANK_INTAKE)).toEqual({
       name: INTAKE_PROBLEMS.nameEmpty,
       arrival: INTAKE_PROBLEMS.arrival,
     });
-    expect(intakeProblems({ name: 'Ada', pronouns: 'they', arrival: 'lettuce' })).toEqual({});
+    expect(intakeProblems({ name: 'Ada', address: 'tech', arrival: 'lettuce' })).toEqual({});
   });
 });
 
 describe('the intake writes', () => {
   it('the profile with the first callsign, and the arrival_reason flag', () => {
-    const save = withIntake(createNewSave(), { name: 'Ada', pronouns: 'she' }, 'lettuce');
-    expect(save.profile).toEqual({ name: 'Ada', pronouns: 'she', callsign: 'sprout' });
+    const save = withIntake(createNewSave(), { name: 'Ada', address: 'ms' }, 'lettuce');
+    expect(save.profile).toEqual({ name: 'Ada', address: 'ms', pronouns: 'she', callsign: 'sprout' });
     expect(save.story.flags.arrival_reason).toBe('lettuce');
   });
 
   it('keeps a callsign already earned', () => {
     const base = createNewSave();
-    base.profile = { name: 'Old', pronouns: 'he', callsign: 'thorn' };
-    expect(withIntake(base, { name: 'New', pronouns: 'they' }, 'bonus').profile?.callsign).toBe(
+    base.profile = { name: 'Old', address: 'mr', pronouns: 'he', callsign: 'thorn' };
+    expect(withIntake(base, { name: 'New', address: 'tech' }, 'bonus').profile?.callsign).toBe(
       'thorn',
     );
   });
@@ -74,12 +74,12 @@ describe('the intake writes', () => {
     holdNewGame(2);
     expect(intakeMode()).toEqual({ kind: 'new', slot: 2 });
     expect(slotEmpty(2)).toBe(true);
-    const bad = signIntake({ name: '', pronouns: 'he', arrival: 'bonus' });
+    const bad = signIntake({ name: '', address: 'mr', arrival: 'bonus' });
     expect(bad.ok).toBe(false);
     expect(slotEmpty(2)).toBe(true);
-    expect(signIntake({ name: ' Kofi ', pronouns: 'he', arrival: 'family' })).toEqual({ ok: true });
+    expect(signIntake({ name: ' Kofi ', address: 'mr', arrival: 'family' })).toEqual({ ok: true });
     expect(slotEmpty(2)).toBe(false);
-    expect(activeSave()?.profile).toEqual({ name: 'Kofi', pronouns: 'he', callsign: 'sprout' });
+    expect(activeSave()?.profile).toEqual({ name: 'Kofi', address: 'mr', pronouns: 'he', callsign: 'sprout' });
     expect(activeSave()?.story.flags.arrival_reason).toBe('family');
     // The hold is spent: the intake now edits the save in play.
     expect(intakeMode()).toEqual({ kind: 'existing' });
@@ -88,13 +88,13 @@ describe('the intake writes', () => {
   it('signs with the form of address untouched: Tech. (they) is filed', () => {
     holdNewGame(1);
     expect(signIntake({ ...BLANK_INTAKE, name: 'Ada', arrival: 'lettuce' })).toEqual({ ok: true });
-    expect(activeSave()?.profile).toEqual({ name: 'Ada', pronouns: 'they', callsign: 'sprout' });
+    expect(activeSave()?.profile).toEqual({ name: 'Ada', address: 'tech', pronouns: 'they', callsign: 'sprout' });
   });
 
   it('a save with no profile (a v1 save) needs the intake, and files it in place', () => {
     newGame(1);
     expect(needsIntake()).toBe(true);
-    expect(signIntake({ name: 'Ada', pronouns: 'they', arrival: 'bonus' })).toEqual({ ok: true });
+    expect(signIntake({ name: 'Ada', address: 'tech', arrival: 'bonus' })).toEqual({ ok: true });
     expect(needsIntake()).toBe(false);
     expect(activeSave()?.story.flags.arrival_reason).toBe('bonus');
   });
@@ -108,44 +108,55 @@ describe('the intake writes', () => {
   it('no save and no hold: nothing to fill in', () => {
     closeSession();
     expect(intakeMode()).toBeNull();
-    expect(signIntake({ name: 'Ada', pronouns: 'she', arrival: 'bonus' }).ok).toBe(false);
+    expect(signIntake({ name: 'Ada', address: 'ms', arrival: 'bonus' }).ok).toBe(false);
   });
 });
 
 describe('Settings edits the file', () => {
   it('changes the name and form of address; the callsign and reason stay', () => {
-    newGame(1, (s) => withIntake(s, { name: 'Ada', pronouns: 'she' }, 'lettuce'));
-    expect(editProfile('  Ada  Lovelace ', 'they')).toEqual({ ok: true });
+    newGame(1, (s) => withIntake(s, { name: 'Ada', address: 'ms' }, 'lettuce'));
+    expect(editProfile('  Ada  Lovelace ', 'tech')).toEqual({ ok: true });
     expect(activeSave()?.profile).toEqual({
       name: 'Ada Lovelace',
+      address: 'tech',
       pronouns: 'they',
       callsign: 'sprout',
     });
     expect(activeSave()?.story.flags.arrival_reason).toBe('lettuce');
   });
 
+  it('keeps the honorific picked, so the form shows it again (Mrs. and Ms. share a set)', () => {
+    newGame(1, (s) => withIntake(s, { name: 'Ada', address: 'ms' }, 'lettuce'));
+    expect(editProfile('Ada', 'mrs')).toEqual({ ok: true });
+    expect(activeSave()?.profile).toMatchObject({ address: 'mrs', pronouns: 'she' });
+    expect(editProfile('Ada', 'dr')).toEqual({ ok: true });
+    expect(activeSave()?.profile).toMatchObject({ address: 'dr', pronouns: 'they' });
+  });
+
   it('refuses a bad name with the form message, and needs a filed profile', () => {
     newGame(1);
-    expect(editProfile('Ada', 'she')).toEqual({
+    expect(editProfile('Ada', 'ms')).toEqual({
       ok: false,
       message: 'Your intake form opens when you continue this campaign.',
     });
-    expect(editProfile('', 'she')).toEqual({ ok: false, message: INTAKE_PROBLEMS.nameEmpty });
-    expect(withProfileEdit(createNewSave(), { name: 'X', pronouns: 'he' }).profile).toBeNull();
+    expect(editProfile('', 'ms')).toEqual({ ok: false, message: INTAKE_PROBLEMS.nameEmpty });
+    expect(withProfileEdit(createNewSave(), { name: 'X', address: 'mr' }).profile).toBeNull();
   });
 });
 
 describe('the preview', () => {
   it('resolves the file note for each form of address', () => {
-    expect(previewText(SAMPLE_NOTE, 'they')).toBe(
+    expect(previewText(SAMPLE_NOTE, 'tech')).toBe(
       'File note: They are cleared for perimeter duty. Their helmet is one size fits most!',
     );
-    expect(previewText(SAMPLE_NOTE, 'she')).toBe(
+    expect(previewText(SAMPLE_NOTE, 'ms')).toBe(
       'File note: She is cleared for perimeter duty. Her helmet is one size fits most!',
     );
-    expect(previewText(SAMPLE_NOTE, 'he')).toBe(
+    expect(previewText(SAMPLE_NOTE, 'mr')).toBe(
       'File note: He is cleared for perimeter duty. His helmet is one size fits most!',
     );
+    expect(previewText(SAMPLE_NOTE, 'mrs')).toBe(previewText(SAMPLE_NOTE, 'ms'));
+    expect(previewText(SAMPLE_NOTE, 'dr')).toBe(previewText(SAMPLE_NOTE, 'tech'));
   });
 
   it('fits a dialogue line at worst case (style-guide.md § 5.4)', () => {

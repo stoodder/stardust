@@ -13,7 +13,8 @@ import {
 } from './text.ts';
 
 const ctx = (pronouns: PronounId, over: Partial<TextContext> = {}): TextContext => {
-  const profile: PlayerProfile = { name: "Jo O'Neil", pronouns, callsign: 'thorn' };
+  const address = ({ he: 'mr', she: 'ms', they: 'tech' } as const)[pronouns];
+  const profile: PlayerProfile = { name: "Jo O'Neil", address, pronouns, callsign: 'thorn' };
   return { profile, pestsProcessed: 1234567, evacuated: 42, ...over };
 };
 

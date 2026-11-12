@@ -4,7 +4,7 @@
 import { signal } from '@preact/signals';
 import type { RunOutcome } from '../../app/testHookTypes.ts';
 import type { CampaignMapId } from '../../content/campaign.ts';
-import type { ArrivalReason, CallsignId, PronounId } from '../../content/dialogue/profile.ts';
+import type { AddressId, ArrivalReason, CallsignId } from '../../content/dialogue/profile.ts';
 import type { StoryAct } from '../../content/dialogue/types.ts';
 import type { CounterStyle } from '../../content/presentation.ts';
 import type { ResultsMeter } from '../../story/counter.ts';
@@ -356,7 +356,7 @@ export type Difficulty = 'standard' | 'story';
 /** The player's file (SaveData.profile and the `arrival_reason` flag), for the menus. */
 export interface ProfileView {
   readonly name: string;
-  readonly pronouns: PronounId;
+  readonly address: AddressId;
   readonly callsign: CallsignId;
   /** The intake's reason for joining (the flag), or null if the save has none. */
   readonly arrival: ArrivalReason | null;

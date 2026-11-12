@@ -55,7 +55,24 @@ export const migrations: Readonly<Record<number, Migration>> = {
       seenHints: 'seenHints' in old ? old['seenHints'] : [],
     };
   },
+  /**
+   * v2 is the save through M9 (shipped). v3 files the form of address beside the pronoun set
+   * (D163): a profile with only `pronouns` gets the honorific that set stood for on v2's form
+   * (`V2_ADDRESS`, frozen here). A null profile stays null.
+   */
+  2: (old) => {
+    if (!isRecord(old) || !isRecord(old['profile'])) return old;
+    const profile = old['profile'];
+    if ('address' in profile) return old;
+    const pronouns = profile['pronouns'];
+    if (typeof pronouns !== 'string' || !Object.hasOwn(V2_ADDRESS, pronouns)) return old;
+    const { name, callsign } = profile;
+    return { ...old, profile: { name, address: V2_ADDRESS[pronouns], pronouns, callsign } };
+  },
 };
+
+/** v2's pronoun ids and the form of address each becomes in v3 (D163), frozen with migration 2. */
+const V2_ADDRESS: Readonly<Record<string, string>> = { he: 'mr', she: 'ms', they: 'tech' };
 
 /**
  * The enemy types each M2 map spawns (act1.md § A1M1, § A1M2 wave data), frozen with the v1 → v2

@@ -12,7 +12,7 @@ import {
   ARRIVAL_REASONS,
   CALLSIGNS,
   PLAYER_NAME,
-  type PronounId,
+  type AddressId,
 } from '../../content/dialogue/profile.ts';
 import { copyText } from './clipboard.ts';
 import { ADDRESS_OPTIONS, ChoiceGroup } from './Intake.tsx';
@@ -172,12 +172,12 @@ function TechnicianFile() {
 
 function FileEditor({ profile }: { profile: ProfileView }) {
   const [name, setName] = useState(profile.name);
-  const [pronouns, setPronouns] = useState<PronounId>(profile.pronouns);
+  const [address, setAddress] = useState<AddressId>(profile.address);
   const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
-  const changed = name !== profile.name || pronouns !== profile.pronouns;
+  const changed = name !== profile.name || address !== profile.address;
   const save = (e: Event): void => {
     e.preventDefault();
-    const r = editProfile(name, pronouns);
+    const r = editProfile(name, address);
     setNote(
       r.ok
         ? { ok: true, text: 'Filed! Your name tag is being reprinted.' }
@@ -210,10 +210,10 @@ function FileEditor({ profile }: { profile: ProfileView }) {
           name="address"
           labelledBy="sd-file-address"
           options={ADDRESS_OPTIONS}
-          value={pronouns}
+          value={address}
           required={false}
           onPick={(p) => {
-            setPronouns(p);
+            setAddress(p);
             setNote(null);
           }}
         />

@@ -1,8 +1,7 @@
 // The player's profile as content data (design/core-loop.md § 6.1; docs/tech/story-runtime.md
-// § Text substitution): the pronoun sets the text tokens resolve to (picked on the intake form as
-// its "Form of address": Mr., Ms., or Tech.), the callsigns, the intake form's arrival reasons, and
-// the name rule. The save holds only the ids (meta/saveData.ts
-// `SaveData.profile`); `arrival_reason` is a story flag (content/dialogue/flags.ts), so story
+// § Text substitution): the forms of address the intake offers (Mr., Ms., Mrs., Dr., Tech.) and the
+// pronoun set each picks for the text tokens, the callsigns, the intake form's arrival reasons, and
+// the name rule. The save holds only the ids (meta/saveData.ts `SaveData.profile`); `arrival_reason` is a story flag (content/dialogue/flags.ts), so story
 // conditions read it like any other flag.
 import type { FlagValueOf } from './flags.ts';
 
@@ -11,13 +10,28 @@ export const PRONOUN_IDS = ['she', 'he', 'they'] as const;
 export type PronounId = (typeof PRONOUN_IDS)[number];
 
 /**
- * The intake's and Settings' "Form of address" options, in form order: Mr., Ms., Tech. (D163). The
- * form never asks about pronouns by name; each option picks the set the text tokens resolve to.
+ * The intake's and Settings' "Form of address" options, in form order (D163). The form never asks
+ * about pronouns by name; each option picks the pronoun set the text tokens resolve to.
  */
-export const ADDRESS_ORDER: readonly PronounId[] = ['he', 'she', 'they'];
+export const ADDRESS_IDS = ['mr', 'ms', 'mrs', 'dr', 'tech'] as const;
+export type AddressId = (typeof ADDRESS_IDS)[number];
+
+/** One form of address: its label on the form, and the pronoun set it picks. */
+export interface AddressDef {
+  readonly label: string;
+  readonly pronouns: PronounId;
+}
+
+export const ADDRESSES: Readonly<Record<AddressId, AddressDef>> = {
+  mr: { label: 'Mr.', pronouns: 'he' },
+  ms: { label: 'Ms.', pronouns: 'she' },
+  mrs: { label: 'Mrs.', pronouns: 'she' },
+  dr: { label: 'Dr.', pronouns: 'they' },
+  tech: { label: 'Tech.', pronouns: 'they' },
+};
 
 /** A new profile's form of address until the player picks another: Tech. (D163). */
-export const DEFAULT_ADDRESS: PronounId = 'they';
+export const DEFAULT_ADDRESS: AddressId = 'tech';
 
 /**
  * One pronoun set: each form keyed by its text token (`{they}`, `{them}`, `{their}`, `{theirs}`,
@@ -30,8 +44,6 @@ export interface PronounSet {
   readonly theirs: string;
   readonly themself: string;
   readonly agreement: 'singular' | 'plural';
-  /** Its "Form of address" option on the intake form and in Settings ("Mr.", "Ms.", "Tech."). */
-  readonly label: string;
 }
 
 export const PRONOUN_SETS: Readonly<Record<PronounId, PronounSet>> = {
@@ -42,7 +54,6 @@ export const PRONOUN_SETS: Readonly<Record<PronounId, PronounSet>> = {
     theirs: 'hers',
     themself: 'herself',
     agreement: 'singular',
-    label: 'Ms.',
   },
   he: {
     they: 'he',
@@ -51,7 +62,6 @@ export const PRONOUN_SETS: Readonly<Record<PronounId, PronounSet>> = {
     theirs: 'his',
     themself: 'himself',
     agreement: 'singular',
-    label: 'Mr.',
   },
   they: {
     they: 'they',
@@ -60,7 +70,6 @@ export const PRONOUN_SETS: Readonly<Record<PronounId, PronounSet>> = {
     theirs: 'theirs',
     themself: 'themself',
     agreement: 'plural',
-    label: 'Tech.',
   },
 };
 
@@ -109,11 +118,22 @@ export function isValidPlayerName(name: string): boolean {
 
 /**
  * The profile character creation fills in (T306): plain save data (`SaveData.profile`, null until
- * the intake). Name and form of address (`pronouns`) can change in Settings; the callsign changes
- * by dialogue `set` nodes. `arrival_reason` is the flag of that name, set by the same intake.
+ * the intake). Name and form of address can change in Settings; the callsign changes by dialogue
+ * `set` nodes. `arrival_reason` is the flag of that name, set by the same intake. `pronouns` is
+ * always the set `address` picks (`ADDRESSES`; validation holds the pair together); the text tokens
+ * read it, and the form shows `address`.
  */
 export interface PlayerProfile {
   name: string;
+  address: AddressId;
   pronouns: PronounId;
   callsign: CallsignId;
+}
+
+/** The profile fields a form of address sets: the honorific and the pronoun set it picks. */
+export function addressFields(address: AddressId): {
+  readonly address: AddressId;
+  readonly pronouns: PronounId;
+} {
+  return { address, pronouns: ADDRESSES[address].pronouns };
 }

@@ -43,7 +43,7 @@ const won = (medals: unknown, extra: object = {}): object => ({
 });
 
 /** A valid profile. */
-const PROFILE = { name: "Jo O'Neil-Park", pronouns: 'they', callsign: 'sprout' };
+const PROFILE = { name: "Jo O'Neil-Park", address: 'tech', pronouns: 'they', callsign: 'sprout' };
 
 /** A valid preset for a new save. */
 const PRESET = { towers: ['thumper', 'rivet'], ability: 'orbital_strike' };
@@ -94,6 +94,11 @@ describe('validateSave', () => {
     ['data.profile.name: expected 1–16', 'profile', { ...PROFILE, name: ' Jo' }],
     ['data.profile.name: expected 1–16', 'profile', { ...PROFILE, name: 7 }],
     ['data.profile.pronouns: unknown id', 'profile', { ...PROFILE, pronouns: 'xe' }],
+    ['data.profile: missing field "address"', 'profile', { name: 'Jo' }],
+    ['data.profile.address: unknown id', 'profile', { ...PROFILE, address: 'sir' }],
+    // A form of address and the pronoun set it picks stay together (D163).
+    ["data.profile.pronouns: expected 'he' for address 'mr'", 'profile', { ...PROFILE, address: 'mr' }],
+    ["data.profile.pronouns: expected 'she' for address 'mrs'", 'profile', { ...PROFILE, address: 'mrs' }],
     ['data.profile.callsign: unknown id', 'profile', { ...PROFILE, callsign: 'ace' }],
     [
       'data.profile: unknown field "arrivalReason"',
@@ -277,7 +282,7 @@ describe('validateSave', () => {
       memorialTower: 'rivet',
       granted: ['q3_bonus'],
     };
-    save.profile = { name: 'Jo', pronouns: 'she', callsign: 'thorn' };
+    save.profile = { name: 'Jo', address: 'ms', pronouns: 'she', callsign: 'thorn' };
     save.campaign.seenEnemies = ['nibbler', 'zoomer'];
     save.unlocks.protocols = ['head_start', 'specialist'];
     save.loadouts = {

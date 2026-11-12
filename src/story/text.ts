@@ -26,6 +26,7 @@ export interface TextContext {
  */
 export const NO_PROFILE: PlayerProfile = {
   name: 'Technician',
+  address: 'tech',
   pronouns: 'they',
   callsign: 'sprout',
 };
