@@ -27,6 +27,7 @@ import {
   MemoryStore,
   SAVE_KEYS,
   buy,
+  companionChoices,
   createNewSave,
   deleteSlot,
   exportCode,
@@ -313,8 +314,13 @@ export function setDifficulty(difficulty: Difficulty): SaveResult {
  * system is open and there's a choice to make). Never for a non-campaign map (a `?map=` battle).
  */
 export function loadoutOffered(mapId: string): boolean {
+  if (session === null || !isCampaignMap(mapId)) return false;
+  const { save, devUnlocks } = session;
+  if (showsLoadoutScreen(save, devUnlocks)) return true;
+  // The finale's companion pick is a choice of its own (meta `companionChoices`; QUILL gone under Purge).
   return (
-    session !== null && isCampaignMap(mapId) && showsLoadoutScreen(session.save, session.devUnlocks)
+    isSystemUnlocked(save, 'loadout', devUnlocks) &&
+    companionChoices(save, MAPS[mapId].companion).length > 1
   );
 }
 
