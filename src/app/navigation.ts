@@ -152,6 +152,18 @@ export function continueGame(): SaveResult {
   return loadGame(slot);
 }
 
+/**
+ * Title → "Resume the Long Walk" (D154; app/resume.ts): the Continue slot, straight back into its
+ * pending finale run at its checkpoint (or its Shift board with the notice, when the save changed).
+ */
+export function resumeLongWalk(): SaveResult {
+  const slot = continueSlot();
+  if (slot === null) return { ok: false, message: 'No save to continue.' };
+  const r = openSlot(slot);
+  if (r.ok) run('resume the long walk', (nav) => nav.resumePending());
+  return r;
+}
+
 /** Title → Load → a slot: that campaign's Shift board (after its intake, if it has no profile). */
 export function loadGame(slot: SlotId): SaveResult {
   const r = openSlot(slot);

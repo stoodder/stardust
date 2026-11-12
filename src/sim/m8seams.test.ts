@@ -120,17 +120,18 @@ describe('FEATURE_GATES and SCRIPT_GATES (T800a rows; D154)', () => {
       'map.choir': null, // T804 lifted (tools/devVoices.test.ts)
       'map.song': null, // T805 lifted
       'map.timers': null, // T806 (sim/timers.test.ts)
-      'enemy.boss.layToRest': 'T808',
-      'enemy.boss.floor': 'T808',
-      'enemy.boss.burrowTo': 'T808',
-      'enemy.boss.adds': 'T808',
+      // T808 lifted the Unsung's (sim/unsung.test.ts).
+      'enemy.boss.layToRest': null,
+      'enemy.boss.floor': null,
+      'enemy.boss.burrowTo': null,
+      'enemy.boss.adds': null,
     });
     // T807 lifted restoreTowerClass, lockAbility, and spawnEcho (sim/storyActions.test.ts).
     expect(SCRIPT_GATES).toEqual({});
     // HARNESS_GATES' finale rows (#2 Voices: T804; #18 song timing: T821): balance/refusals.m8.test.ts.
   });
 
-  it('refuse the Unsung whole until T808, naming each part', () => {
+  it('accept the Unsung whole since T808', () => {
     const unsung: CompiledEnemyDef = LIVE.enemies.unsung;
     // As m3seams.test.ts's contentWith: the fixture map's groups all send it.
     const waves = MAP.waves.map((w) =>
@@ -139,12 +140,7 @@ describe('FEATURE_GATES and SCRIPT_GATES (T800a rows; D154)', () => {
       }),
     );
     const content = { ...FX, maps: { fx_map: Object.assign({}, MAP, { waves }) } };
-    expect(gateRefusals(fixtureConfig({ content }))).toEqual([
-      "a boss ending 'layToRest' (unsung) is not simulated until T808",
-      "a phase's HP floor (unsung) is not simulated until T808",
-      'a burrow toward the choir (unsung) is not simulated until T808',
-      "a phase's adds (unsung) is not simulated until T808",
-    ]);
+    expect(gateRefusals(fixtureConfig({ content }))).toEqual([]);
   });
 });
 
@@ -161,7 +157,7 @@ describe('the finale content (the Unsung, a stub under its final id)', () => {
       [0.25, 0.01, null],
     ]);
     expect(boss.phases[0]?.gather).not.toBeNull();
-    expect(boss.phases[2]?.burrow).toMatchObject({ times: 2, durationTicks: 180 });
+    expect(boss.phases[2]?.burrow).toMatchObject({ times: 2, durationTicks: 240 }); // T808: 4 s
     expect(boss.phases[3]?.adds).toEqual({ enemy: 'silencer', count: 1, everyTicks: 1200 });
     expect(u.sprites).toEqual({ body: 'enemy.unsung', icon: 'icon.enemy.unsung' });
   });

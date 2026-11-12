@@ -405,6 +405,11 @@ export type SlotView =
       readonly fromBackup: boolean;
       /** Its next map to play (null once the finale is won): the Title's loading tip reads it. */
       readonly frontier: CampaignMapId | null;
+      /**
+       * The finale's run is pending at a checkpoint (`pendingRun`, D154): Continue offers "Resume
+       * the Long Walk" (app/resume.ts). Absent: false.
+       */
+      readonly pending?: boolean;
     }
   | {
       readonly slot: 1 | 2 | 3;

@@ -6,7 +6,15 @@
 // dials (its next map's act: Act I's "a clean perimeter is a happy perimeter!", Act II's "a clean
 // perimeter."; story/style-guide.md §2), Act I's with no save to continue.
 import { useState } from 'preact/hooks';
-import { continueGame, loadGame, newGame, openSettings, startGame } from '../../app/navigation.ts';
+import {
+  continueGame,
+  loadGame,
+  newGame,
+  openSettings,
+  resumeLongWalk,
+  startGame,
+} from '../../app/navigation.ts';
+import { RESUME_LABEL } from '../../app/resume.ts';
 import { continueSlot, deleteSave, rawSlotText, type SaveResult } from '../../app/save.ts';
 import { MuteButton } from '../hud/MuteButton.tsx';
 import { copyText } from './clipboard.ts';
@@ -30,16 +38,31 @@ const PANEL_TITLE: Readonly<Record<Exclude<Panel, 'main'>, string>> = {
 function MainButtons({ open, act }: { open: (p: Panel) => void; act: (r: SaveResult) => void }) {
   const hasSaves = slots.value.some((s) => s.status !== 'empty');
   const canContinue = continueSlot() !== null;
+  // The finale's run waits at a checkpoint (D154): Continue offers picking the walk back up first.
+  const last = slots.value.find((v) => v.slot === continueSlot());
+  const pending = last?.status === 'ok' && last.pending === true;
   const full = slots.value.every((s) => s.status !== 'empty');
   return (
     <div class="sd-title-menu">
-      {hasSaves ? (
+      {pending && (
         <button
           type="button"
           class="sd-button sd-button-primary sd-title-start"
-          disabled={!canContinue}
-          // Focused on arrival, so Enter continues.
+          data-testid="title-resume"
+          // Focused on arrival, so Enter picks the walk back up.
           ref={focusOnce}
+          onClick={() => act(resumeLongWalk())}
+        >
+          {RESUME_LABEL}
+        </button>
+      )}
+      {hasSaves ? (
+        <button
+          type="button"
+          class={pending ? 'sd-button sd-title-start' : 'sd-button sd-button-primary sd-title-start'}
+          disabled={!canContinue}
+          // Focused on arrival, so Enter continues (after the resume, when one waits).
+          ref={pending ? null : focusOnce}
           onClick={() => act(continueGame())}
         >
           Continue

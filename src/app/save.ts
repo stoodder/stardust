@@ -490,6 +490,7 @@ function slotView(slot: SlotId, load: SlotLoad): SlotView {
         savedAt: load.savedAt,
         fromBackup: load.source === 'bak',
         frontier: frontierOf(load.save),
+        ...(load.save.pendingRun === undefined ? {} : { pending: true }),
       };
     }
     case 'unreadable':
