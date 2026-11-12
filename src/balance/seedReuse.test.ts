@@ -29,9 +29,16 @@ describe('a run counts its random draws (seedDraws)', () => {
     const run = (seed: number) =>
       runHeadless(runConfig(PLAIN_CONTENT, MAP, build, profile, seed), build);
     const one = run(1);
-    expect(Object.keys(one.seedDraws).toSorted()).toEqual(
-      ['abilities', 'allies', 'movement', 'projectiles', 'status', 'towers', 'triggers', 'waves'],
-    );
+    expect(Object.keys(one.seedDraws).toSorted()).toEqual([
+      'abilities',
+      'allies',
+      'movement',
+      'projectiles',
+      'status',
+      'towers',
+      'triggers',
+      'waves',
+    ]);
     expect(drewNoRandom(one)).toBe(true);
     const two = run(2);
     expect(two.hash).not.toBe(one.hash); // the streams' state differs by seed
@@ -79,7 +86,7 @@ describe('the harness reuses seed 1 for a build that drew nothing (D157)', () =>
     const reused = report.runs.filter((r) => r.reusedFrom !== undefined);
     expect(reused.length).toBeGreaterThan(0);
     for (const rec of reused) {
-      expect(asked).not.toContain(runKey(rec)); // never run
+      expect(asked).not.toContain(runKey({ build: rec.build, seed: rec.seed })); // never run
       const ran = real({ build: rec.build, seed: rec.seed });
       expect(playable(rec.result!)).toEqual(playable(ran.result!));
       expect(rec.marginPct).toBe(ran.marginPct);
