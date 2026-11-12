@@ -45,12 +45,17 @@ jobs:
       # SMOKE_CHROME nor CHROME_PATH is set).
       - run: npx playwright install --with-deps chromium
         if: github.event_name != 'workflow_dispatch' || inputs.gate == 'full'
-      - name: Gate (npm run check)
-        if: github.event_name != 'workflow_dispatch' || inputs.gate == 'full'
-        run: npm run check
+      # The whole gate's steps, one at a time: on the hosted runner, smoke's real-time story flows
+      # starve beside the sim and the slow lane (`npm run check` runs those three side by side), so
+      # the runner plays them in sequence. Same steps, same tree (architecture.md § 5).
       - name: Gate without smoke (npm run check:fast)
-        if: github.event_name == 'workflow_dispatch' && inputs.gate == 'fast'
         run: npm run check:fast
+      - name: Slow lane (test:slow)
+        if: github.event_name != 'workflow_dispatch' || inputs.gate == 'full'
+        run: npx vitest run --project slow
+      - name: Smoke, alone on the runner (npm run smoke)
+        if: github.event_name != 'workflow_dispatch' || inputs.gate == 'full'
+        run: npm run smoke
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
