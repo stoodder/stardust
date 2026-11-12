@@ -20,18 +20,23 @@ async function until(page: Page, what: Probe, max = 12_000): Promise<boolean> {
   const hit = await page.evaluate(
     ([probe, limit]) => {
       const sd = globalThis.__sd!; // installed: waitForReady passed
+      // Sim state only: the view's numbers update on frames, not on fast-forwarded ticks.
       const seen = (): boolean => {
         const s = sd.state()!;
-        const r = sd.render()!.unsung;
         const boss = s.enemies.items.find((e) => e.alive && e.def?.id === 'unsung');
         if (probe === 'unsung') return boss !== undefined && s.phase === 2;
-        if (probe === 'parts')
+        if (probe === 'parts') {
           return s.enemies.items.some((e) => e.alive && e.def?.id === 'unsung_part');
+        }
         if (probe === 'risen') return boss !== undefined && boss.bossPhase === 3;
         if (probe === 'dig') return boss?.burrowed === true && boss.digToDist >= 0;
-        if (probe === 'surfaceTell') return r.surfaceTells > 0;
-        if (probe === 'surfaced') return r.surfacesSeen > 0;
-        if (probe === 'call') return r.calls > 0;
+        if (probe === 'surfaceTell') {
+          return boss?.burrowed === true && boss.digToDist >= 0 && boss.abilityTicks <= 60;
+        }
+        if (probe === 'surfaced') return boss?.burrowed === false && boss.abilityCount === 1;
+        if (probe === 'call') {
+          return boss?.bossPhase === 4 && boss.invulnerableTicks === 0 && boss.abilityTicks <= 60;
+        }
         return boss === undefined && s.phase === 3;
       };
       for (let k = 0; k < limit && !seen(); k++) {
@@ -117,9 +122,10 @@ test('unsung: held at the Halls, split, risen, a dig toward the choir, the call,
   expect((await view(page)).digs).toBe(1);
   await shot(page, 'unsung', 4, 'dig');
   expect(await until(page, 'surfaceTell')).toBe(true);
+  expect((await view(page)).surfaceTells).toBe(1);
   await shot(page, 'unsung', 5, 'surface-tell');
   expect(await until(page, 'surfaced')).toBe(true);
-  expect((await view(page)).digs).toBe(0);
+  expect(await view(page)).toMatchObject({ digs: 0, surfacesSeen: 1 });
 
   // The Song: its call at the Halls.
   await edge(page, 'unsung', 0.25);

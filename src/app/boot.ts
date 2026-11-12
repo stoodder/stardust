@@ -24,6 +24,7 @@ import { setJinglePlayer } from './runFlow.ts';
 import { activeSave, browserKeyValueStore, initSaves, loadDevSave } from './save.ts';
 import { hasBattleMap } from './battleSetup.ts';
 import { loadDevFixtures } from './devRegistry.ts';
+import { ensureAllActs } from './actContent.ts';
 import { initSettings } from './settings.ts';
 import { createTestHooks, installTestHooks } from './testHooks.ts';
 import type { BootParams } from './testHookTypes.ts';
@@ -72,6 +73,8 @@ export async function boot(): Promise<void> {
   initSaves(browserKeyValueStore());
   // The dev fixtures (the dev battles and saves) stay out of the initial JS: a dev URL (`?test=1`,
   // or `?map=` naming no live map) loads their chunk first (devRegistry.ts; D150).
+  // The story's later acts are lazy chunks (app/actContent.ts; T802).
+  await ensureAllActs();
   if (params.test || (params.map !== null && !hasBattleMap(params.map))) await loadDevFixtures();
   const devSave = params.save !== null && loadDevSave(params.save);
   if (params.save !== null && !devSave) logError(`boot: unknown dev save '${params.save}'`);

@@ -75,8 +75,11 @@ export const PHASE_2: ScriptedEvent = {
   ],
 };
 
-/** The militia's three posts (manned under `convoy`): the gate, the Gap, and the Bore road. */
-const MILITIA = ['militia_gate', 'militia_gap', 'militia_bore'] as const;
+/**
+ * The militia's three posts (manned under `convoy`), where the walk's last legs need them: the west
+ * bend over the rift field's mouth, the row-4 run, and the Halls corner.
+ */
+const MILITIA = ['militia_bend', 'militia_run', 'militia_halls'] as const;
 const CONVOY = { flag: 'door_choice', eq: 'convoy' } as const;
 
 export const map = defineMapLayout({
@@ -180,9 +183,9 @@ export const map = defineMapLayout({
     waymark_2: [14, 9],
     waymark_3: [4, 6],
     waymark_4: [9, 3],
-    militia_gate: [9, 11],
-    militia_gap: [7, 8],
-    militia_bore: [19, 4],
+    militia_bend: [4, 5],
+    militia_run: [7, 3],
+    militia_halls: [13, 4],
   },
   markerWhen: Object.fromEntries(MILITIA.map((m) => [m, CONVOY])),
   startCredits: 900,
@@ -267,7 +270,8 @@ export const map = defineMapLayout({
   // The Deep Bore (maps.md § 5.5): fills over Phase 1 (Purge: 75% speed), +5% Unsung HP per 10%;
   // full, it breaks through at the Halls mouth.
   timers: { deep_bore: { fillSec: 1320, bossHpPerTenth: 0.05 } },
-  // The colonist militia (maps.md § 5.4), only under the convoy: low DPS, long range, ground only.
+  // The colonist militia (maps.md § 5.4), only under the convoy: A3M6's posts' numbers (low DPS,
+  // long range, ground only), beside the walk's last legs.
   allies: MILITIA.map((post) => ({
     kind: 'militia' as const,
     post,
