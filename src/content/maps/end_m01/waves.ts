@@ -1,7 +1,7 @@
 // END_M01's warm-up: the five waves every Endless seed opens with, before the generator's first
 // counter block (src/sim/endless.ts; ENDLESS in endless.ts). Plain Skitterkin down the old road,
-// on the threat curve's first steps (ENDLESS.firstWaveThreat 600, ×1.08 a wave: 600, 648, 700,
-// 756, 816; sim/endless.test.ts holds each within 5%), so a post-game player builds up while
+// on the threat curve's first steps (ENDLESS.firstWaveThreat 600, ×1.07 a wave: 600, 642, 687,
+// 735, 786; sim/endless.test.ts holds each within 5%, each above the one before), so a post-game player builds up while
 // the colony's oldest pests say hello. The block demands no counter; W5's two Bunchlings (14% of
 // its threat, under the soft cap) tell of the splash block that follows (sim/endless.ts: every
 // seed's first block is Chitterbloom's, armor and splash). Countdowns are Endless's default (20 s,
@@ -32,18 +32,18 @@ export const waves = defineWaves([
       { enemy: 'nibbler', count: 16, intervalSec: 0.5, delaySec: 4, route: ROUTE },
     ],
   },
-  // W4 · 752: two Zoomer runs either side of a Nibbler knot.
+  // W4 · 724: two Zoomer runs either side of a Nibbler knot.
   {
     groups: [
       { enemy: 'zoomer', count: 6, route: ROUTE },
       { enemy: 'nibbler', count: 12, intervalSec: 0.5, delaySec: 4, route: ROUTE },
-      { enemy: 'zoomer', count: 6, delaySec: 10, route: ROUTE },
+      { enemy: 'zoomer', count: 7, delaySec: 10, route: ROUTE },
     ],
   },
-  // W5 · 821: and a Bunchling in the knot (the splash to come).
+  // W5 · 791: and a Bunchling in the knot (the splash to come).
   {
     groups: [
-      { enemy: 'nibbler', count: 15, intervalSec: 0.5, route: ROUTE },
+      { enemy: 'nibbler', count: 14, intervalSec: 0.5, route: ROUTE },
       { enemy: 'bunchling', count: 1, delaySec: 3, route: ROUTE },
       { enemy: 'zoomer', count: 8, delaySec: 9, route: ROUTE },
     ],

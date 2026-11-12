@@ -76,7 +76,7 @@ describe('the rules', () => {
     }
     const expected = [...met].filter((id) => {
       const e = content.enemies[id as 'nibbler'];
-      return e.boss === null && e.neutral !== true;
+      return e.boss === null && !e.neutral;
     });
     expect([...ENDLESS.roster].toSorted()).toEqual(expected.toSorted());
   });

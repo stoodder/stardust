@@ -212,7 +212,7 @@ export const PHASE_1: readonly WaveDef[] = [
     groups: [
       motes(10, 'halls', 0),
       maws(2, 'halls', 4, 4),
-      fractures(4, 'rift_nw', 2, 2),
+      fractures(3, 'rift_nw', 2, 3),
       silencers(2, 'rift_ne', 6, 4),
       maws(1, 'rift_ne', 12),
       moths(4, 'sky_n', 4),
