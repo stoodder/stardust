@@ -23,7 +23,7 @@ import {
 } from './music/pattern.ts';
 import { recipeDuration } from './recipes.ts';
 import { SPEECH_SFX } from './sfx/blips.ts';
-import { SFX, type SfxId } from './sfx/index.ts';
+import { loadedSfx, type SfxId } from './sfx/index.ts';
 import type { Instrument, MusicLayer, SfxRecipe, Song, ToneLayer } from './types.ts';
 import { MUSIC_LAYERS } from './types.ts';
 import { createVoiceBook, type VoiceBook } from './voices.ts';
@@ -281,7 +281,9 @@ export class Synth {
    * priority stealing). Returns whether it started.
    */
   play(id: SfxId, opts: PlayOptions = {}): boolean {
-    const recipe: SfxRecipe = SFX[id];
+    // A sound whose act hasn't loaded yet (audio/sfx/index.ts) plays nothing.
+    const recipe: SfxRecipe | undefined = loadedSfx(id);
+    if (recipe === undefined) return false;
     const start = this.ctx.currentTime + Math.max(0, opts.delay ?? 0);
     const admit = this.#book.admit(id, recipe, start);
     if (!admit.ok) return false;

@@ -87,8 +87,9 @@ export const map = defineMapLayout({
   env: 'act3',
   objective: 'choir',
   meterLabel: 'voices',
-  // D154: the floor is 40% of the run's choir, rounded up (10 → 4, warren 14 → 6, convoy 8 → 4).
-  minVoicesPct: 0.4,
+  // D154 (addendum, T820): the floor is 30% of the run's choir, rounded up (20 → 6, warren 28 → 9,
+  // convoy 16 → 5).
+  minVoicesPct: 0.3,
   size: { cols: 22, rows: 14 },
   // prettier-ignore
   tiles: [
@@ -173,7 +174,7 @@ export const map = defineMapLayout({
   ],
   markers: {
     halls_mouth: [12, 4],
-    memorial_wreck: [13, 6],
+    memorial_wreck: [14, 6],
     bore_rig: [20, 2],
     waymark_1: [10, 11],
     waymark_2: [14, 9],
@@ -229,21 +230,21 @@ export const map = defineMapLayout({
   ],
   // The player picks who walks with them (core-loop.md § 3.1): Ves'thara is the default.
   companion: { pick: ['vesthara', 'bramble', 'zibzab', 'quill'] },
-  // The choir (D154; maps.md § 5.5): Pebble leading 10 singers up the road, +4 under the warren,
-  // −2 under the convoy, Thrum beside her if spared, the Returned under `returned`.
+  // The choir (D154 and its T820 addendum; maps.md § 5.5): Pebble leading 20 singers up the road,
+  // +8 under the warren, −4 under the convoy, Thrum beside her if spared, the Returned under `returned`.
   choir: {
     leader: 'pebble',
     route: 'halls',
     stopAt: 'halls_mouth',
-    singers: 10,
-    // A procession (D154's ~0.35 tiles/s), paced to Phase 1's waves: a leg a wave (`walkWaves`),
+    singers: 20,
+    // Paced to Phase 1's waves: a leg a wave (`walkWaves`), walked over most of a Standard wave,
     // so she passes the memorial in W9 and reaches the Halls mouth in W18 whatever the countdowns.
-    pace: 0.35,
+    pace: 0.08,
     haltTiles: 1.5,
     walkWaves: PHASE_1_WAVES,
     groups: [
-      { when: { flag: 'door_choice', eq: 'warren' }, singers: 4 },
-      { when: CONVOY, singers: -2 },
+      { when: { flag: 'door_choice', eq: 'warren' }, singers: 8 },
+      { when: CONVOY, singers: -4 },
     ],
     thrum: { when: { flag: 'spared_quiet_wave', eq: true }, radiusBonus: 0.5 },
     returned: { when: { flag: 'stardust_choice', eq: 'returned' }, count: 2, auraRadius: 1 },

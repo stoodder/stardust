@@ -1,12 +1,10 @@
 // The codex registry (docs/story/style-guide.md § 6.2): every entry by id. The entry texts are
 // written in the act files (their one home, like the item copy in content/upgrades/copy.ts); a
 // later act's versions of an earlier entry (Act II's annotations, Act III's corrections) are
-// merged in here.
+// merged in here. Act I's entries are always registered; a later act's register with its chunk
+// (content/acts; architecture.md § 5, *Bundle*), and the lists below are updated in place.
 import type { CampaignMapId } from '../campaign.ts';
 import { ACT1_CODEX } from './act1.ts';
-import { ACT2_CODEX, ACT2_CODEX_VERSIONS } from './act2.ts';
-import { ACT3_CODEX, ACT3_CODEX_VERSIONS } from './act3.ts';
-import { FINALE_CODEX } from './finale.ts';
 import {
   CODEX_VERSIONS,
   type CodexEntryDef,
@@ -17,12 +15,6 @@ import {
 } from './types.ts';
 
 export * from './types.ts';
-
-/** The later acts' versions of other entries, in act order (codex.test.ts checks each lands). */
-export const CODEX_LATER_VERSIONS: readonly CodexLaterVersions[] = [
-  ACT2_CODEX_VERSIONS,
-  ACT3_CODEX_VERSIONS,
-];
 
 /**
  * `entries` with `later`'s versions merged in, in act order. A version an entry already has
@@ -46,19 +38,64 @@ export function withLaterVersions(
   });
 }
 
-/** Every codex entry, in codex order, with every act's versions. */
-export const CODEX_ENTRIES: readonly CodexEntryDef[] = withLaterVersions(
-  [...ACT1_CODEX, ...ACT2_CODEX, ...ACT3_CODEX, ...FINALE_CODEX],
-  CODEX_LATER_VERSIONS,
-);
+/** Each act's entries and versions of earlier entries, by act rank (Act I 0 … the finale 3). */
+const byAct: ({ entries: readonly CodexEntryDef[]; versions: CodexLaterVersions } | undefined)[] = [
+  { entries: ACT1_CODEX, versions: {} },
+];
+const laterVersions: CodexLaterVersions[] = [];
+const entryList: CodexEntryDef[] = [];
+const byId: Record<CodexId, CodexEntryDef> = {};
+const ids: CodexId[] = [];
 
-/** Every codex entry, by id. */
-export const CODEX: Readonly<Record<CodexId, CodexEntryDef>> = Object.fromEntries(
-  CODEX_ENTRIES.map((e) => [e.id, e] as const),
-);
+/**
+ * The registered later acts' versions of other entries, in act order (codex.test.ts checks each
+ * lands). Updated in place as acts register.
+ */
+export const CODEX_LATER_VERSIONS: readonly CodexLaterVersions[] = laterVersions;
+
+/** Every registered codex entry, in codex order, with every registered act's versions. */
+export const CODEX_ENTRIES: readonly CodexEntryDef[] = entryList;
+
+/** Every registered codex entry, by id. */
+export const CODEX: Readonly<Record<CodexId, CodexEntryDef>> = byId;
 
 /** Every registered codex id, in codex order. */
-export const CODEX_IDS: readonly CodexId[] = CODEX_ENTRIES.map((e) => e.id);
+export const CODEX_IDS: readonly CodexId[] = ids;
+
+/** Rebuilds the lists from the registered acts, in act order. */
+function rebuild(): void {
+  const parts = byAct.filter((p) => p !== undefined);
+  laterVersions.length = 0;
+  laterVersions.push(
+    ...parts.slice(1).flatMap((p) => (Object.keys(p.versions).length > 0 ? [p.versions] : [])),
+  );
+  entryList.length = 0;
+  entryList.push(
+    ...withLaterVersions(
+      parts.flatMap((p) => p.entries),
+      laterVersions,
+    ),
+  );
+  for (const id of Object.keys(byId)) delete byId[id];
+  for (const e of entryList) byId[e.id] = e;
+  ids.length = 0;
+  ids.push(...entryList.map((e) => e.id));
+}
+rebuild();
+
+/**
+ * Registers an act's entries and its versions of earlier entries (content/acts
+ * `registerActStory`; `rank` is the act's, Act II 1 … the finale 3). Registering an act again
+ * replaces its part.
+ */
+export function registerCodex(
+  rank: number,
+  entries: readonly CodexEntryDef[],
+  versions: CodexLaterVersions,
+): void {
+  byAct[rank] = { entries, versions };
+  rebuild();
+}
 
 /**
  * Field Journal entries an act file names whose text hasn't landed: reserved ids (T800b), each with

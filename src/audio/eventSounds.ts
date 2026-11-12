@@ -73,7 +73,7 @@ import {
   TAKEOVER_SOUNDS,
 } from './eventTablesAct3b.ts';
 import { LOSE_CUE, WAVE_CLEAR_CUE, type CueId } from './music/index.ts';
-import { SFX, type SfxId } from './sfx/index.ts';
+import { loadedSfx, type SfxId } from './sfx/index.ts';
 
 export {
   ABILITY_SOUNDS,
@@ -304,7 +304,7 @@ export interface SoundDials {
 /** Whether `id` is one of the small sounds the Hollow's quiet drops (HOLLOW_QUIET). */
 function quietable(id: SfxId): boolean {
   return (
-    SFX[id].priority <= HOLLOW_QUIET.maxPriority &&
+    (loadedSfx(id)?.priority ?? 0) <= HOLLOW_QUIET.maxPriority &&
     !(HOLLOW_QUIET.keep as readonly SfxId[]).includes(id)
   );
 }

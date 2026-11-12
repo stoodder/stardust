@@ -54,11 +54,9 @@ const CALL = { countdownSec: COUNTDOWN } as const;
 /** Phase 1, the Descent (W1–18). */
 export const PHASE_1: readonly WaveDef[] = [
   // W1 · Motes ahead of the choir
-  {
-    groups: [motes(5, 'halls', 4, 1.2), fractures(1, 'rift_field', 10), motes(5, 'halls', 16, 1.2)],
-  },
+  { groups: [motes(6, 'halls', 4, 1.2), motes(6, 'halls', 16, 1.2)] },
   // W2 · Fractures from the rift field
-  { ...CALL, groups: [fractures(2, 'rift_field', 0, 4), motes(6, 'halls', 6, 1.2)] },
+  { ...CALL, groups: [fractures(1, 'halls', 0), motes(6, 'rift_field', 6, 1.2)] },
   // W3 · Rift Moths
   { ...CALL, groups: [moths(2, 'sky_n', 0), moths(2, 'sky_e', 6), motes(6, 'halls', 4, 1.2)] },
   // W4 · Bore security: an Auditor on the Bore road, which runs past the rig onto the Halls descent
@@ -66,8 +64,8 @@ export const PHASE_1: readonly WaveDef[] = [
     ...CALL,
     groups: [
       g('auditor', 1, 'bore_road', 0),
-      fractures(2, 'rift_field', 4, 4),
-      motes(6, 'halls', 8, 1.2),
+      motes(6, 'rift_field', 4, 1.2),
+      fractures(1, 'halls', 8),
     ],
   },
   // W5 · Maws
@@ -89,10 +87,11 @@ export const PHASE_1: readonly WaveDef[] = [
   {
     ...CALL,
     groups: [
-      silencers(2, 'halls', 0, 4),
+      silencers(1, 'halls', 0),
+      g('auditor', 1, 'bore_road', 4),
       motes(8, 'halls', 2, 0.5),
       motes(8, 'rift_field', 6, 0.5),
-      fractures(2, 'rift_field', 10, 3),
+      fractures(2, 'halls', 10, 3),
     ],
   },
   // W8 · gunships over the road
@@ -104,7 +103,7 @@ export const PHASE_1: readonly WaveDef[] = [
   {
     ...CALL,
     groups: [
-      fractures(3, 'rift_field', MEMORIAL_QUIET_SEC + 2, 3),
+      fractures(2, 'halls', MEMORIAL_QUIET_SEC + 2, 3),
       motes(10, 'halls', MEMORIAL_QUIET_SEC + 4),
       moths(3, 'sky_n', MEMORIAL_QUIET_SEC + 6),
     ],
@@ -114,8 +113,8 @@ export const PHASE_1: readonly WaveDef[] = [
     ...CALL,
     groups: [
       motes(10, 'halls', 0, 0.5),
-      fractures(3, 'rift_field', 2, 3),
-      fractures(1, 'bore_road', 6),
+      fractures(3, 'halls', 10, 3),
+      motes(6, 'bore_road', 6, 0.5),
       moths(3, 'sky_e', 8),
     ],
   },
@@ -124,7 +123,7 @@ export const PHASE_1: readonly WaveDef[] = [
   {
     ...CALL,
     groups: [
-      fractures(5, 'halls', 0, 2),
+      fractures(3, 'halls', 0, 3),
       motes(10, 'halls', 10, 0.5),
       maws(2, 'halls', 16, 4),
       g('associate', 1, 'bore_road', 12),
@@ -134,8 +133,9 @@ export const PHASE_1: readonly WaveDef[] = [
   {
     ...CALL,
     groups: [
-      maws(2, 'halls', 0, 5),
-      silencers(3, 'halls', 4, 4),
+      maws(1, 'halls', 0),
+      silencers(2, 'halls', 4, 5),
+      gunships(1, 'sky_n', 8),
       motes(10, 'halls', 14, 0.5),
       fractures(1, 'bore_road', 6),
     ],
@@ -144,43 +144,48 @@ export const PHASE_1: readonly WaveDef[] = [
   {
     ...CALL,
     groups: [
-      moths(5, 'sky_n', 0, 0.8),
-      moths(4, 'sky_e', 4, 0.8),
-      moths(4, 'sky_w', 8, 0.8),
+      moths(4, 'sky_n', 0, 0.8),
+      moths(3, 'sky_e', 4, 0.8),
+      moths(3, 'sky_w', 8, 0.8),
       motes(10, 'halls', 6, 0.5),
       fractures(2, 'halls', 12, 3),
     ],
   },
-  // W14 · an Associate on the Bore road, behind a Mote screen (the canon's Liability stays home:
-  // at 15% of a wave's threat it needs one ~6,000 strong beside its crew)
+  // W14 · an Associate and Bore security on the Bore road, behind a Mote screen, gunships over
+  // it (the canon's Liability stays home: at 15% of a wave's threat it needs one ~6,000 strong)
   {
     ...CALL,
     groups: [
-      motes(16, 'halls', 0),
-      maws(3, 'halls', 4, 4),
-      fractures(3, 'halls', 14, 2),
+      motes(10, 'halls', 0),
+      maws(2, 'halls', 4, 4),
+      fractures(2, 'halls', 14, 3),
       silencers(2, 'halls', 20, 4),
       g('associate', 1, 'bore_road', 8),
+      g('auditor', 1, 'bore_road', 10),
+      gunships(2, 'sky_e', 12, 4),
     ],
   },
   // W15 · rifts everywhere
   {
     ...CALL,
     groups: [
-      motes(12, 'rift_ne', 0),
-      fractures(3, 'rift_nw', 2, 2),
-      maws(2, 'rift_nw', 8, 4),
+      motes(6, 'rift_ne', 0),
+      fractures(1, 'rift_nw', 2),
+      maws(1, 'rift_nw', 8),
       motes(10, 'rift_field', 6),
+      motes(6, 'rift_nw', 10),
       maws(1, 'rift_ne', 12),
       moths(4, 'sky_n', 8),
+      gunships(2, 'sky_w', 10, 4),
     ],
   },
   // W16 · Fractures with an Undertow
   {
     ...CALL,
     groups: [
-      fractures(7, 'halls', 0, 1.5),
-      fractures(3, 'rift_nw', 6, 1.5),
+      fractures(5, 'halls', 0, 2),
+      fractures(2, 'rift_nw', 6, 2),
+      motes(8, 'rift_ne', 8),
       maws(3, 'halls', 12, 4),
       g('undertow', 1, 'halls', 16),
     ],
@@ -189,11 +194,12 @@ export const PHASE_1: readonly WaveDef[] = [
   {
     ...CALL,
     groups: [
-      motes(12, 'halls', 0, 0.5),
-      fractures(3, 'rift_ne', 4, 3),
+      motes(16, 'halls', 0, 0.4),
+      fractures(4, 'rift_ne', 4, 2),
       maws(3, 'halls', 10, 4),
       silencers(2, 'halls', 16, 4),
-      motes(8, 'rift_nw', 8, 0.5),
+      motes(12, 'rift_nw', 8),
+      motes(6, 'rift_ne', 12),
       moths(4, 'sky_e', 6),
       gunships(2, 'sky_n', 10, 4),
       g('blackbudget', 1, 'bore_road', 14),
@@ -203,9 +209,9 @@ export const PHASE_1: readonly WaveDef[] = [
   {
     ...CALL,
     groups: [
-      motes(12, 'halls', 0),
+      motes(10, 'halls', 0),
       maws(2, 'halls', 4, 4),
-      fractures(2, 'rift_nw', 2, 2),
+      fractures(2, 'rift_nw', 2, 3),
       silencers(2, 'rift_ne', 6, 4),
       maws(1, 'rift_ne', 12),
       moths(4, 'sky_n', 4),

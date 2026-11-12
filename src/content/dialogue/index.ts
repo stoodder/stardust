@@ -1,6 +1,8 @@
 // The dialogue registries (docs/tech/story-runtime.md): every map's scenes and map-scoped barks,
 // the shared bark pools, and lookups by id. Each map's files are its own (`a<act>/a<act>_m0N/`), so
-// map tasks never share an edit here beyond their one registry line.
+// map tasks never share an edit here beyond their one registry line: Act I's maps below, a later
+// act's in its act file (content/acts/a2.ts, a3.ts, fin.ts), which loads with that act's chunk
+// (architecture.md § 5, *Bundle*). The shared bark pools are always registered.
 import type { CampaignMapId } from '../campaign.ts';
 import { barks as a1m01Barks } from './a1/a1_m01/barks.ts';
 import { scenes as a1m01Scenes } from './a1/a1_m01/scenes.ts';
@@ -13,35 +15,6 @@ import { barks as a1m04Barks } from './a1/a1_m04/barks.ts';
 import { scenes as a1m04Scenes } from './a1/a1_m04/scenes.ts';
 import { barks as a1m05Barks } from './a1/a1_m05/barks.ts';
 import { scenes as a1m05Scenes } from './a1/a1_m05/scenes.ts';
-import { barks as a2m01Barks } from './a2/a2_m01/barks.ts';
-import { scenes as a2m01Scenes } from './a2/a2_m01/scenes.ts';
-import { barks as a2m02Barks } from './a2/a2_m02/barks.ts';
-import { scenes as a2m02Scenes } from './a2/a2_m02/scenes.ts';
-import { barks as a2m03Barks } from './a2/a2_m03/barks.ts';
-import { scenes as a2m03Scenes } from './a2/a2_m03/scenes.ts';
-import { barks as a2m04Barks } from './a2/a2_m04/barks.ts';
-import { scenes as a2m04BaseScenes } from './a2/a2_m04/base.ts';
-import { scenes as a2m04Scenes } from './a2/a2_m04/scenes.ts';
-import { barks as a2m05Barks } from './a2/a2_m05/barks.ts';
-import { scenes as a2m05Scenes } from './a2/a2_m05/scenes.ts';
-import { barks as a2m06Barks } from './a2/a2_m06/barks.ts';
-import { scenes as a2m06BaseScenes } from './a2/a2_m06/base.ts';
-import { scenes as a2m06Scenes } from './a2/a2_m06/scenes.ts';
-import { barks as a3m01Barks } from './a3/a3_m01/barks.ts';
-import { scenes as a3m01BaseScenes } from './a3/a3_m01/base.ts';
-import { scenes as a3m01Scenes } from './a3/a3_m01/scenes.ts';
-import { barks as a3m02Barks } from './a3/a3_m02/barks.ts';
-import { scenes as a3m02Scenes } from './a3/a3_m02/scenes.ts';
-import { barks as a3m03Barks } from './a3/a3_m03/barks.ts';
-import { scenes as a3m03Scenes } from './a3/a3_m03/scenes.ts';
-import { barks as a3m04Barks } from './a3/a3_m04/barks.ts';
-import { scenes as a3m04Scenes } from './a3/a3_m04/scenes.ts';
-import { barks as a3m05Barks } from './a3/a3_m05/barks.ts';
-import { scenes as a3m05Scenes } from './a3/a3_m05/scenes.ts';
-import { barks as a3m06Barks } from './a3/a3_m06/barks.ts';
-import { scenes as a3m06Scenes } from './a3/a3_m06/scenes.ts';
-import { barks as finM01Barks } from './fin/fin_m01/barks.ts';
-import { scenes as finM01Scenes } from './fin/fin_m01/scenes.ts';
 import { SHARED_BARKS } from './barks/index.ts';
 import type { Bark, BarkId, MapDialogue, Scene, SceneId } from './types.ts';
 
@@ -50,39 +23,55 @@ export { defineBarks, defineScene, defineScenes } from './define.ts';
 export { SPEAKER_DEFS, SPEAKERS } from './speakers.ts';
 export type { BlipId, PortraitSpriteId, SpeakerDef, SpeakerFrame } from './speakers.ts';
 
-/** Every map's dialogue, in campaign order. */
-export const MAP_DIALOGUE: readonly MapDialogue[] = [
+/** Act I's dialogue, in campaign order: always registered (later acts' arrive with their chunk). */
+const ACT1_DIALOGUE: readonly MapDialogue[] = [
   { map: 'a1_m01', scenes: a1m01Scenes, barks: a1m01Barks },
   { map: 'a1_m02', scenes: a1m02Scenes, barks: a1m02Barks },
   { map: 'a1_m03', scenes: [...a1m03Scenes, ...a1m03BaseScenes], barks: a1m03Barks },
   { map: 'a1_m04', scenes: a1m04Scenes, barks: a1m04Barks },
   { map: 'a1_m05', scenes: a1m05Scenes, barks: a1m05Barks },
-  { map: 'a2_m01', scenes: a2m01Scenes, barks: a2m01Barks },
-  { map: 'a2_m02', scenes: a2m02Scenes, barks: a2m02Barks },
-  { map: 'a2_m03', scenes: a2m03Scenes, barks: a2m03Barks },
-  { map: 'a2_m04', scenes: [...a2m04Scenes, ...a2m04BaseScenes], barks: a2m04Barks },
-  { map: 'a2_m05', scenes: a2m05Scenes, barks: a2m05Barks },
-  { map: 'a2_m06', scenes: [...a2m06Scenes, ...a2m06BaseScenes], barks: a2m06Barks },
-  { map: 'a3_m01', scenes: [...a3m01Scenes, ...a3m01BaseScenes], barks: a3m01Barks },
-  { map: 'a3_m02', scenes: a3m02Scenes, barks: a3m02Barks },
-  { map: 'a3_m03', scenes: a3m03Scenes, barks: a3m03Barks },
-  // M7's maps: registered empty (T700b) so each map task fills only its own files.
-  { map: 'a3_m04', scenes: a3m04Scenes, barks: a3m04Barks },
-  { map: 'a3_m05', scenes: a3m05Scenes, barks: a3m05Barks },
-  { map: 'a3_m06', scenes: a3m06Scenes, barks: a3m06Barks },
-  // The finale: registered empty (T800b) so its map and words tasks fill only their own files.
-  { map: 'fin_m01', scenes: finM01Scenes, barks: finM01Barks },
 ];
 
-/** Every scene, by id. */
-export const SCENES: Readonly<Record<SceneId, Scene>> = Object.fromEntries(
-  MAP_DIALOGUE.flatMap((m) => m.scenes.map((s) => [s.id, s] as const)),
-);
+/** Each act's maps' dialogue by act rank (content/acts: Act I 0 … the finale 3). */
+const byAct: (readonly MapDialogue[] | undefined)[] = [ACT1_DIALOGUE];
+const mapDialogueList: MapDialogue[] = [];
+const scenes: Record<SceneId, Scene> = {};
+const barks: Record<BarkId, Bark> = {};
 
-/** Every bark (map-scoped and shared), by id. */
-export const BARKS: Readonly<Record<BarkId, Bark>> = Object.fromEntries(
-  [...MAP_DIALOGUE.flatMap((m) => m.barks), ...SHARED_BARKS].map((b) => [b.id, b] as const),
-);
+/**
+ * Every registered map's dialogue, in campaign order: Act I's always, a later act's once its chunk
+ * has loaded (content/acts; app/actContent.ts). The array is updated in place.
+ */
+export const MAP_DIALOGUE: readonly MapDialogue[] = mapDialogueList;
+
+/** Every registered scene, by id (updated in place as acts register). */
+export const SCENES: Readonly<Record<SceneId, Scene>> = scenes;
+
+/** Every registered bark (map-scoped and shared), by id (updated in place as acts register). */
+export const BARKS: Readonly<Record<BarkId, Bark>> = barks;
+
+/** Rebuilds the lists from the registered acts, in campaign order. */
+function rebuild(): void {
+  mapDialogueList.length = 0;
+  for (const id of Object.keys(scenes)) delete scenes[id];
+  for (const id of Object.keys(barks)) delete barks[id];
+  for (const part of byAct) if (part !== undefined) mapDialogueList.push(...part);
+  for (const m of mapDialogueList) {
+    for (const s of m.scenes) scenes[s.id] = s;
+    for (const b of m.barks) barks[b.id] = b;
+  }
+  for (const b of SHARED_BARKS) barks[b.id] = b;
+}
+rebuild();
+
+/**
+ * Registers an act's maps' dialogue (content/acts `registerActStory`; `rank` is the act's rank,
+ * Act II 1 … the finale 3). Registering an act again replaces its part.
+ */
+export function registerMapDialogue(rank: number, maps: readonly MapDialogue[]): void {
+  byAct[rank] = maps;
+  rebuild();
+}
 
 /** The scene `id`, if registered. */
 export function sceneById(id: SceneId): Scene | undefined {
