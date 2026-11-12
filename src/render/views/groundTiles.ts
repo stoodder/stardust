@@ -8,7 +8,13 @@ import { CLIFF_VARIANTS, type CliffEdge } from '../../content/sprites/tiles/clif
 import { VERGE_VARIANTS, type VergeEdge } from '../../content/sprites/tiles/verge.ts';
 import { GRIME_VARIANTS } from '../../content/sprites/tiles/grime.ts';
 import type { HighGroundLook } from '../../content/sprites/tiles/high_ground.ts';
-import type { DressingLayerDef, GridPos, MarkerId, TileChar, TowerId } from '../../content/types.ts';
+import type {
+  DressingLayerDef,
+  GridPos,
+  MarkerId,
+  TileChar,
+  TowerId,
+} from '../../content/types.ts';
 import { memorialWreckFrame } from '../../content/sprites/props/memorial_wreck.ts';
 import { assertNever } from '../../shared/types.ts';
 import { DEFAULT_VARIANT } from '../sprites/bake.ts';
@@ -600,7 +606,9 @@ export function isHalls(g: GroundGrid): boolean {
  * the mouth and the Hollow come up out of it (finale.md § FIN: the north spawn is the Halls mouth).
  * Its face runs along the grid's x axis, so only a spawn on row 0 can take it.
  */
-export function hallsMouthCell(g: GroundGrid): { readonly col: number; readonly row: number } | null {
+export function hallsMouthCell(
+  g: GroundGrid,
+): { readonly col: number; readonly row: number } | null {
   const at = g.markers?.[HALLS_MARKER];
   if (at === undefined) return null;
   let best: { col: number; row: number } | null = null;

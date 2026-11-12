@@ -454,7 +454,7 @@ export class BattleScene extends Phaser.Scene {
     this.#allies = new ViewPool(() => new AllyView(ctx, prefersReducedMotion));
     this.#refugees = new RefugeeViews(ctx);
     this.#bearers = new BearerViews(ctx, prefersReducedMotion); // T706
-    this.#choirWalk = new ChoirWalkView(ctx); // T804
+    this.#choirWalk = new ChoirWalkView(ctx, prefersReducedMotion); // T804; T830: its looks
     this.#placement = new PlacementView(ctx, this.#elevationOf);
     this.#links = new LinkView(ctx, prefersReducedMotion);
     this.#fx = new FxView(ctx, prefersReducedMotion);

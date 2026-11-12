@@ -98,7 +98,9 @@ function isMemorialClass(id: string): id is MemorialClass {
 
 /** The memorial wreck's frame for the save's `memorialTower` (null, absent or unknown: the fallback). */
 export function memorialWreckFrame(tower: string | null | undefined): MemorialClass {
-  return tower !== null && tower !== undefined && isMemorialClass(tower) ? tower : MEMORIAL_FALLBACK;
+  return tower !== null && tower !== undefined && isMemorialClass(tower)
+    ? tower
+    : MEMORIAL_FALLBACK;
 }
 
 const W = 40;
@@ -156,12 +158,12 @@ function isGrid(f: FrameDef): f is GridFrame {
 function resolve(def: SpriteDef, name: string): string[][] {
   const f = def.frames[name];
   if (f === undefined) throw new Error(`${def.id}: no frame '${name}'`);
-  if (isGrid(f)) return f.map((r) => [...r]);
-  if ('mirrorOf' in f) return resolve(def, f.mirrorOf).map((r) => r.reverse());
+  if (isGrid(f)) return f.map((r) => r.split(''));
+  if ('mirrorOf' in f) return resolve(def, f.mirrorOf).map((r) => r.toReversed());
   const g = resolve(def, f.from);
   for (const p of patchList(f)) {
     p.rows.forEach((row, dy) => {
-      [...row].forEach((ch, dx) => {
+      row.split('').forEach((ch, dx) => {
         const line = g[p.y + dy];
         if (ch !== ' ' && line !== undefined) line[p.x + dx] = ch;
       });
@@ -195,7 +197,7 @@ function headArt(head: SpriteDef): { g: string[][]; top: number } {
 function wreck(tower: MemorialClass): string[] {
   const { base, head } = MEMORIAL_SOURCES[tower];
   const g: CharGrid = grid(W, H);
-  const seed = [...tower].reduce((a, c) => a * 31 + c.charCodeAt(0), 7) % 997;
+  const seed = tower.split('').reduce((a, c) => a * 31 + c.charCodeAt(0), 7) % 997;
   // The T1 base, drained.
   resolve(base, 't1').forEach((r, y) =>
     r.forEach((ch, x) => {
@@ -238,7 +240,8 @@ function wreck(tower: MemorialClass): string[] {
     }),
   );
   // What snapped off lies in pieces at its foot: lumps of its own colours.
-  const lumpOf = (i: number): string => rubble[Math.floor(hash01(i, 9, seed) * rubble.length)] ?? 'D';
+  const lumpOf = (i: number): string =>
+    rubble[Math.floor(hash01(i, 9, seed) * rubble.length)] ?? 'D';
   for (const [x, y, w] of [
     [ANCHOR.x + 9, ANCHOR.y + 3, 3],
     [ANCHOR.x + 12, ANCHOR.y + 1, 2],
@@ -267,7 +270,9 @@ function wreck(tower: MemorialClass): string[] {
 }
 
 const FRAMES: Readonly<Record<string, readonly string[]>> = Object.fromEntries(
-  (Object.keys(MEMORIAL_SOURCES) as MemorialClass[]).map((t) => [t, wreck(t)]),
+  Object.keys(MEMORIAL_SOURCES)
+    .filter(isMemorialClass)
+    .map((t) => [t, wreck(t)]),
 );
 
 export const propMemorialWreck = defineSprite({

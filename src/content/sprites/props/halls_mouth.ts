@@ -129,7 +129,7 @@ function mouth(glint: number): string[] {
   ];
   const gy = footAt(AX) - ARCH_H - 8;
   hum.forEach((r, dy) =>
-    [...r].forEach((ch, dx) => ch === 'g' && plot(g, AX - 3 + dx, gy + dy, 'N')),
+    r.split('').forEach((ch, dx) => ch === 'g' && plot(g, AX - 3 + dx, gy + dy, 'N')),
   );
   // A fungus lantern on a post either side of the arch.
   for (const x of [AX - ARCH - 6, AX + ARCH + 5]) {

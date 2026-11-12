@@ -78,7 +78,7 @@ function stone(g: CharGrid, ink: WaymarkInk, cx: number, foot: number, glyph: st
   const x0 = cx - 4;
   const y0 = foot - shape.length;
   shape.forEach((r, dy) =>
-    [...r].forEach((ch, dx) => {
+    r.split('').forEach((ch, dx) => {
       if (ch === '.') return;
       plot(g, x0 + dx, y0 + dy, ch === 'L' ? lit : ch === 'm' ? mid : ch === 'S' ? shade : deep);
     }),
@@ -93,7 +93,7 @@ function stone(g: CharGrid, ink: WaymarkInk, cx: number, foot: number, glyph: st
     '..g..',
   ];
   hum.forEach((r, dy) =>
-    [...r].forEach((ch, dx) => ch === 'g' && plot(g, x0 + 2 + dx, y0 + 3 + dy, glyph)),
+    r.split('').forEach((ch, dx) => ch === 'g' && plot(g, x0 + 2 + dx, y0 + 3 + dy, glyph)),
   );
   // Moss round its foot, and the shadow it stands in.
   for (let x = x0 - 1; x <= x0 + 9; x++) plot(g, x, foot, ink.shadow);
@@ -125,7 +125,7 @@ function lantern(g: CharGrid, ink: WaymarkInk, cx: number, top: number, light: L
   const x0 = cx - 5;
   const y0 = top;
   cap.forEach((r, dy) =>
-    [...r].forEach((ch, dx) => {
+    r.split('').forEach((ch, dx) => {
       if (ch === '.') return;
       let c = ch === 'r' ? rim : ch === 'b' ? body : gills;
       if (light === 'lit' || light === 'lit_1') {
@@ -154,7 +154,13 @@ function lantern(g: CharGrid, ink: WaymarkInk, cx: number, top: number, light: L
 }
 
 /** A standing waymark, by its light. */
-export function waymarkStanding(g: CharGrid, ink: WaymarkInk, cx: number, foot: number, light: Light): void {
+export function waymarkStanding(
+  g: CharGrid,
+  ink: WaymarkInk,
+  cx: number,
+  foot: number,
+  light: Light,
+): void {
   const lit = light === 'lit' || light === 'lit_1';
   stone(g, ink, cx, foot, lit ? ink.litCut : ink.cut);
   lantern(g, ink, cx, foot - 17, light);
@@ -164,7 +170,13 @@ export function waymarkStanding(g: CharGrid, ink: WaymarkInk, cx: number, foot: 
  * A knocked-down waymark (`v` 0: the stone on its side, the cap split beside it; 1: the stone
  * snapped, its top half fallen across its foot, the cradle crushed under it), drawn dark.
  */
-export function waymarkWreck(g: CharGrid, ink: WaymarkInk, cx: number, foot: number, v: 0 | 1): void {
+export function waymarkWreck(
+  g: CharGrid,
+  ink: WaymarkInk,
+  cx: number,
+  foot: number,
+  v: 0 | 1,
+): void {
   const [lit, mid, shade, deep] = ink.stone;
   const [rim, body, gills] = ink.capDark;
   if (v === 0) {
@@ -207,7 +219,8 @@ export function waymarkWreck(g: CharGrid, ink: WaymarkInk, cx: number, foot: num
     // The crushed cradle and a shard of cap.
     stamp(g, cx + 3, foot - 2, [`${rim}${body}.`, `${gills}${ink.reed[1]}${ink.reed[0]}`]);
   }
-  for (let x = cx - 8; x <= cx + 7; x++) if ((g[foot]?.[x] ?? '.') === '.') plot(g, x, foot, ink.shadow);
+  for (let x = cx - 8; x <= cx + 7; x++)
+    if ((g[foot]?.[x] ?? '.') === '.') plot(g, x, foot, ink.shadow);
   plot(g, cx - 3, foot - 1, ink.moss[0]);
   plot(g, cx + 6, foot, ink.moss[1]);
 }

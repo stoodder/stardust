@@ -1,18 +1,21 @@
-// The finale's choir on its walk (design/maps.md § 5.5; sim/choir.ts; T804's minimal readable view,
-// polished by T830). It reads sim state only, so it holds while paused:
-// - **The column:** each choir member (allies of mode `choir`) walks the road in a body: Pebble in
-//   her bottle cap (`ally.pebble`), the singers as colonist Skitterkin (`ally.refugee` in the
-//   allies' palette, each a little to the side by uid), Old Thrum beside Pebble in the elder's body
-//   (`enemy.elder`). Each faces the way it moves; a hushed singer is dimmed and greyed, its walk
-//   held, as it trails at the back. One held in a hush tell freezes. The Returned are bearers:
-//   BearerView draws them.
-// - **The song's circles** (`songCircles`: the leader's, and each Returned's 1-tile aura), warm
-//   gold over a dark rim in `decal`, on a map with a song.
-// - **The halt window:** a line from the leader up the road for `haltTiles`, faint while she walks
-//   and red while the choir is halted (a Hollow unit inside it).
-// Pooled bodies; the circles and the line are one Graphics redrawn each frame (no allocation).
+// The finale's choir on its walk (design/maps.md § 5.5; sim/choir.ts; T804's view, T830's look:
+// the rules are choirWalkLook.ts). It reads sim state only, so it holds while paused:
+// - **The column:** each choir member (allies of mode `choir`, the Returned aside: BearerView) in
+//   its own sprite and pose: Pebble leading (`walk`, `sing`, `halt` only while halted), Old Thrum
+//   beside her, the singers (`walk`, `sing`, `hushed` as they trail). Each faces the way it last
+//   moved (up the road to begin with). A singer held in a hush tell freezes on its frame. The
+//   members still waiting at the colony gate stand queued beside it (`queuePoint`), filing out as
+//   the leader makes room.
+// - **The song's circles** (`songCircles`): a baked dashed `gold.4` ring at each radius over a soft
+//   `gold.3` fill pulsing on the hymn's beat, in `decal`.
+// - **The halt window:** the road from Pebble `haltTiles` toward the Hollow, faint gold while she
+//   walks, red while the choir is halted (and a HALTED plate over her head, in `overlay`); hidden
+//   while the choir waits at a leg's end or once it has arrived.
+// Pooled bodies; ring textures baked once per radius; the fill and window are two Graphics redrawn
+// each frame from preallocated scratch. Nothing allocates per frame.
 import type * as Phaser from 'phaser';
 import type { CompiledMapDef } from '../../content/compiled.ts';
+import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
 import type { SpriteId } from '../../content/sprites/index.ts';
 import type { IdSpace } from '../../content/types.ts';
 import type { DeepReadonly } from '../../shared/types.ts';
@@ -20,28 +23,57 @@ import { isHushedSinger, songCircles, type Ally, type SimState } from '../../sim
 import { worldDepth } from '../depth.ts';
 import { gridToScreen, rangeEllipsePx, type Vec2 } from '../iso.ts';
 import { DEFAULT_VARIANT } from '../sprites/bake.ts';
-import { hexOf } from './jamLook.ts';
-import { PEBBLE_SPRITE, REFUGEE_SPRITE, REFUGEE_VARIANT } from './RefugeeView.ts';
+import { imageToCanvas } from '../sprites/canvas.ts';
+import { ringImage, snapRingRadius } from '../vfx/overlayPixels.ts';
+import {
+  gateOf,
+  HALT_PLATE_LIFT_PX,
+  haltPlateImage,
+  memberPose,
+  memberSprite,
+  queueDepth,
+  queuePoint,
+  SONG_FILL_COLOR,
+  SONG_RING_COLOR,
+  SONG_RING_UNDER,
+  songFillAlpha,
+  songRingShift,
+  WINDOW_BAR_TILES,
+  WINDOW_HALT,
+  WINDOW_UNDER,
+  WINDOW_WALK,
+  windowPath,
+  type Gate,
+  type MemberPose,
+} from './choirWalkLook.ts';
 import { refugeeLanePx } from './refugeeLook.ts';
 import { facingOf, hasAnim, type Facing } from './spriteInfo.ts';
 import type { ViewContext } from './ViewContext.ts';
 import { ViewPool, type PooledView } from './ViewPool.ts';
 
-/** Old Thrum's body (the elder Skitterkin). */
-export const THRUM_SPRITE: SpriteId = 'enemy.elder';
-/** A hushed singer: dimmed and greyed. */
-export const HUSHED_ALPHA = 0.5;
-const HUSHED_TINT = 0x8a8aa8;
-/** Thrum walks this far (px) to Pebble's right. */
-const THRUM_SIDE_PX = 7;
-const SONG = hexOf('gold.3');
-const INK = hexOf('gold.0');
-const HALT = hexOf('red.3');
-const WALK = hexOf('gold.2');
+/** Old Thrum walks this far (px) to Pebble's right. */
+const THRUM_SIDE_PX = 9;
+/** Song circles drawn at once: the leader's and each Returned's (2), with room to spare. */
+const MAX_RINGS = 4;
+/** The window path's points (the road's corners within `haltTiles`, and its two ends). */
+const MAX_WINDOW_POINTS = 12;
+const PLATE_KEY = 'fx.choir_halted';
+
+function hex(name: ColorName): number {
+  const c = rgbOf(name);
+  return (c.r << 16) | (c.g << 8) | c.b;
+}
+const FILL = hex(SONG_FILL_COLOR);
+const WALK = hex(WINDOW_WALK);
+const HALT = hex(WINDOW_HALT);
+const UNDER = hex(WINDOW_UNDER);
 
 const pos: Vec2 = { x: 0, y: 0 };
 const semi: Vec2 = { x: 0, y: 0 };
 const tip: Vec2 = { x: 0, y: 0 };
+const grid = { x: 0, y: 0 };
+const winX: number[] = new Array<number>(MAX_WINDOW_POINTS).fill(0);
+const winY: number[] = new Array<number>(MAX_WINDOW_POINTS).fill(0);
 
 type MemberLike = Readonly<
   Pick<Ally, 'x' | 'y' | 'hushUid' | 'pebble' | 'kind' | 'alive' | 'mode' | 'vulnerability'>
@@ -51,14 +83,21 @@ class MemberView implements PooledView {
   stamp = 0;
   readonly #ctx: ViewContext;
   readonly #body: Phaser.GameObjects.Sprite;
-  #sprite: SpriteId = REFUGEE_SPRITE;
-  #variant = REFUGEE_VARIANT;
+  #sprite: SpriteId = 'ally.singer';
   #facing: Facing = 'ne';
+  #pose: MemberPose = 'sing';
+  /** Where it was drawn (grid), and the sim tick it was last moved on. */
   #x = Number.NaN;
   #y = Number.NaN;
+  #tick = -1;
+  #moving = false;
   #side = 0;
   #uid = 0;
   hushed = false;
+  /** Drawn in the gate queue this frame. */
+  queued = false;
+  /** Screen px of its feet (the HALTED plate rides over Pebble's). */
+  readonly at: Vec2 = { x: 0, y: 0 };
 
   constructor(ctx: ViewContext) {
     this.#ctx = ctx;
@@ -67,47 +106,66 @@ class MemberView implements PooledView {
     this.release();
   }
 
-  show(uid: number, a: MemberLike): void {
+  get pose(): MemberPose {
+    return this.#pose;
+  }
+
+  show(uid: number, a: MemberLike, facing: Facing): void {
     this.#uid = uid;
-    const thrum = a.kind === 'thrum';
-    this.#sprite = thrum ? THRUM_SPRITE : a.pebble ? PEBBLE_SPRITE : REFUGEE_SPRITE;
-    this.#variant = thrum ? DEFAULT_VARIANT : REFUGEE_VARIANT;
-    // Thrum beside Pebble; each singer a little to the side by uid (the refugees' lanes, T530a),
-    // so the column waiting at the gate doesn't stack into one body.
-    this.#side = thrum ? THRUM_SIDE_PX : a.pebble ? 0 : refugeeLanePx(uid, false);
-    this.#facing = 'ne';
+    this.#sprite = memberSprite(a);
+    // Thrum beside Pebble; each walking singer a little to the side by uid (the refugees' lanes).
+    this.#side = a.kind === 'thrum' ? THRUM_SIDE_PX : a.pebble ? 0 : refugeeLanePx(uid, false);
+    this.#facing = facing;
+    this.#pose = 'sing';
     this.#x = Number.NaN;
     this.#y = Number.NaN;
+    this.#tick = -1;
+    this.#moving = false;
     this.hushed = false;
-    this.#body.setAlpha(1).clearTint().setVisible(true);
+    this.queued = false;
+    this.#body.setAlpha(1).setVisible(true);
     this.#play();
   }
 
-  sync(a: MemberLike): void {
-    const moved = a.x !== this.#x || a.y !== this.#y;
-    if (moved && !Number.isNaN(this.#x)) {
-      const f = facingOf(a.x - this.#x, a.y - this.#y);
-      if (f !== this.#facing) {
-        this.#facing = f;
-        this.#play();
-      }
+  /** Places it at grid (gx, gy) and picks its pose (choirWalkLook.ts `memberPose`). */
+  sync(
+    a: MemberLike,
+    gx: number,
+    gy: number,
+    queued: boolean,
+    choir: DeepReadonly<SimState['choir']>,
+    tick: number,
+  ): void {
+    const moved = gx !== this.#x || gy !== this.#y;
+    if (tick !== this.#tick) {
+      // Only a tick that ran changes walk to sing: paused, the pose holds.
+      this.#tick = tick;
+      this.#moving = moved && !Number.isNaN(this.#x);
     }
-    const hushed = isHushedSinger(a);
-    if (hushed !== this.hushed) {
-      this.hushed = hushed;
-      if (hushed) this.#body.setAlpha(HUSHED_ALPHA).setTint(HUSHED_TINT);
-      else this.#body.setAlpha(1).clearTint();
+    let facing = this.#facing;
+    if (moved && !Number.isNaN(this.#x)) facing = facingOf(gx - this.#x, gy - this.#y);
+    this.hushed = isHushedSinger(a);
+    this.queued = queued;
+    const pose = memberPose(a, this.hushed, choir, this.#moving);
+    if (pose !== this.#pose || facing !== this.#facing) {
+      this.#pose = pose;
+      this.#facing = facing;
+      this.#play();
     }
-    const still = hushed || a.hushUid !== 0 || !moved;
-    if (still && this.#body.anims.isPlaying) this.#body.anims.pause();
-    else if (!still && this.#body.anims.isPaused) this.#body.anims.resume();
+    // A singer held in a hush tell freezes; a walk holds its frame while paused.
+    const still = a.hushUid !== 0 || (pose === 'walk' && !moved);
+    const anims = this.#body.anims;
+    if (still && anims.isPlaying) anims.pause();
+    else if (!still && anims.isPaused) anims.resume();
     if (!moved) return;
-    this.#x = a.x;
-    this.#y = a.y;
-    gridToScreen(a.x, a.y, this.#ctx.origin, pos);
-    this.#body
-      .setPosition(pos.x + this.#side, pos.y)
-      .setDepth(worldDepth(pos.y, 'enemy', this.#uid));
+    this.#x = gx;
+    this.#y = gy;
+    gridToScreen(gx, gy, this.#ctx.origin, pos);
+    const x = Math.round(pos.x + (queued ? 0 : this.#side));
+    const y = Math.round(pos.y);
+    this.at.x = x;
+    this.at.y = y;
+    this.#body.setPosition(x, y).setDepth(worldDepth(pos.y, 'enemy', this.#uid));
   }
 
   release(): void {
@@ -117,103 +175,254 @@ class MemberView implements PooledView {
   }
 
   #play(): void {
-    const key = `walk_${this.#facing}`;
+    const key = `${this.#pose}_${this.#facing}`;
     if (!hasAnim(this.#sprite, key)) return;
-    this.#body.play(this.#ctx.sprites.anim(this.#sprite, key, this.#variant), true);
-    const a = this.#ctx.sprites.frameAnchor(this.#sprite, `${key}_0`);
+    const sprites = this.#ctx.sprites;
+    this.#body.play(sprites.anim(this.#sprite, key, DEFAULT_VARIANT), true);
+    const a = sprites.frameAnchor(this.#sprite, `${key}_0`);
     this.#body.setDisplayOrigin(a.x, a.y);
   }
+}
+
+interface Ring {
+  readonly img: Phaser.GameObjects.Image;
+  radius: number;
+  shift: number;
 }
 
 /** The choir's bodies, its song circles, and its halt window, synced each frame (BattleScene). */
 export class ChoirWalkView {
   readonly #ctx: ViewContext;
+  readonly #reduced: () => boolean;
   readonly #pool: ViewPool<MemberView>;
-  readonly #g: Phaser.GameObjects.Graphics;
-  #rings = 0;
+  readonly #fill: Phaser.GameObjects.Graphics;
+  readonly #win: Phaser.GameObjects.Graphics;
+  readonly #rings: Ring[] = [];
+  readonly #frames = new Map<string, { ox: number; oy: number }>();
+  readonly #plate: Phaser.GameObjects.Image;
+  readonly #gate: Gate = { x: 0, y: 0, fx: 0, fy: -1, sx: 1, sy: 0 };
+  #gateMap: unknown = null;
+  #ringCount = 0;
   #halted = false;
+  #window: 'none' | 'walk' | 'halt' = 'none';
 
-  constructor(ctx: ViewContext) {
+  constructor(ctx: ViewContext, reducedMotion: () => boolean = () => false) {
     this.#ctx = ctx;
+    this.#reduced = reducedMotion;
     this.#pool = new ViewPool(() => new MemberView(ctx));
-    this.#g = ctx.scene.make.graphics({}, false);
-    ctx.layers.decal.add(this.#g);
+    const scene = ctx.scene;
+    this.#fill = scene.make.graphics({}, false);
+    ctx.layers.decal.add(this.#fill);
+    for (let i = 0; i < MAX_RINGS; i++) {
+      const img = scene.make.image({}, false).setVisible(false);
+      ctx.layers.decal.add(img);
+      this.#rings.push({ img, radius: 0, shift: -1 });
+    }
+    this.#win = scene.make.graphics({}, false);
+    ctx.layers.decal.add(this.#win);
+    if (!scene.textures.exists(PLATE_KEY)) {
+      scene.textures.addCanvas(PLATE_KEY, imageToCanvas(haltPlateImage()));
+    }
+    this.#plate = scene.make.image({}, false).setTexture(PLATE_KEY).setOrigin(0.5, 1);
+    this.#plate.setVisible(false);
+    ctx.layers.overlay.add(this.#plate);
   }
 
   update(
-    state: DeepReadonly<Pick<SimState, 'allies' | 'choir'>>,
+    state: DeepReadonly<Pick<SimState, 'allies' | 'choir' | 'tick'>>,
     map: CompiledMapDef<IdSpace>,
     stamp: number,
   ): void {
-    const g = this.#g;
-    g.clear();
-    this.#rings = 0;
+    this.#fill.clear();
+    this.#win.clear();
+    this.#ringCount = 0;
     this.#halted = false;
+    this.#window = 'none';
     const c = map.choir;
-    if (c === null) return;
+    if (c === null) {
+      this.#hideRings(0);
+      this.#plate.setVisible(false);
+      return;
+    }
+    const ch = state.choir;
+    const route = c.route;
+    const end = route.lengthTiles;
+    if (this.#gateMap !== map) {
+      // The queue's side: the one that keeps the longest queue (the warren's 28) on the map.
+      gateOf(route, map.cols, map.rows, 30 * 0.3, this.#gate);
+      this.#gateMap = map;
+    }
+    const upRoad = facingOf(this.#gate.fx, this.#gate.fy);
+    const toGate = facingOf(-this.#gate.sx, -this.#gate.sy);
+    // The column's ranks, as sim/choir.ts files it: singing singers, the Returned, the hushed.
     const allies = state.allies;
+    let singing = 0;
+    let returned = 0;
+    for (let i = 0; i < allies.used; i++) {
+      const a = allies.items[i]!; // i < used ≤ items.length
+      if (!a.alive || a.mode !== 'choir') continue;
+      if (a.kind === 'bearer') returned++;
+      else if (!a.pebble && a.kind === 'singer' && a.vulnerability === 'hush') singing++;
+    }
+    let s = 0;
+    let h = 0;
+    let pebble: MemberView | null = null;
     for (let i = 0; i < allies.used; i++) {
       const a = allies.items[i]!; // i < used ≤ items.length
       if (!a.alive || a.mode !== 'choir' || a.kind === 'bearer') continue;
+      let rank = 0;
+      if (a.kind === 'singer' && !a.pebble) {
+        rank = a.vulnerability === 'hush' ? 1 + s++ : 1 + singing + returned + h++;
+      }
+      // Still on the gate (the sim's road end) with its place behind it: queued beside the gate.
+      const q = queueDepth(rank, ch.dist);
+      const queued = rank > 0 && q > 0 && a.dist >= end - 1e-9;
       let v = this.#pool.get(a.uid);
       if (v === undefined) {
         v = this.#pool.acquire(a.uid);
-        v.show(a.uid, a);
+        v.show(a.uid, a, queued ? toGate : upRoad); // a queued one faces the gate
       }
       v.stamp = stamp;
-      v.sync(a);
+      if (queued) queuePoint(this.#gate, q, (a.uid & 1) as 0 | 1, grid);
+      else {
+        grid.x = a.x;
+        grid.y = a.y;
+      }
+      v.sync(a, grid.x, grid.y, queued, ch, state.tick);
+      if (a.pebble) pebble = v;
     }
     this.#pool.sweep(stamp);
+
+    const reduced = this.#reduced();
     const circles = songCircles(state, map);
-    for (let i = 0; i < circles.length; i++) {
-      const s = circles[i]!; // i < length
-      gridToScreen(s.x, s.y, this.#ctx.origin, pos);
-      rangeEllipsePx(s.r, semi);
-      g.lineStyle(3, INK, 0.45).strokeEllipse(pos.x, pos.y, semi.x * 2, semi.y * 2);
-      g.lineStyle(1, SONG, 0.9).strokeEllipse(pos.x, pos.y, semi.x * 2, semi.y * 2);
-      this.#rings++;
+    const fillAlpha = songFillAlpha(state.tick, reduced);
+    const shift = songRingShift(state.tick, reduced);
+    let r = 0;
+    for (let i = 0; i < circles.length && r < MAX_RINGS; i++) {
+      const sc = circles[i]!; // i < length
+      gridToScreen(sc.x, sc.y, this.#ctx.origin, pos);
+      rangeEllipsePx(sc.r, semi);
+      this.#fill.fillStyle(FILL, fillAlpha).fillEllipse(pos.x, pos.y, semi.x * 2, semi.y * 2);
+      this.#ring(r++, sc.r, shift, Math.round(pos.x), Math.round(pos.y));
     }
-    const ch = state.choir;
-    if (ch.arrived) return;
+    this.#ringCount = r;
+    this.#hideRings(r);
+
     this.#halted = ch.halted;
+    const plate = ch.halted && !ch.arrived && pebble !== null;
+    if (plate) this.#plate.setPosition(pebble.at.x, pebble.at.y - HALT_PLATE_LIFT_PX);
+    if (this.#plate.visible !== plate) this.#plate.setVisible(plate);
+    if (ch.arrived || ch.waiting) return;
     // The halt window: haltTiles up the road (toward its spawn) from the leader.
-    const route = c.route;
-    let d = route.lengthTiles - ch.dist - c.haltTiles;
-    if (d < 0) d = 0;
-    let seg = 0;
-    while (seg < route.cumLenTiles.length - 2 && d >= route.cumLenTiles[seg + 1]!) seg++;
-    const start = route.cumLenTiles[seg]!;
-    const end = route.cumLenTiles[seg + 1] ?? start;
-    const t = end > start ? (d - start) / (end - start) : 0;
-    const tx = route.xs[seg]! + ((route.xs[seg + 1] ?? route.xs[seg]!) - route.xs[seg]!) * t;
-    const ty = route.ys[seg]! + ((route.ys[seg + 1] ?? route.ys[seg]!) - route.ys[seg]!) * t;
-    gridToScreen(ch.x, ch.y, this.#ctx.origin, pos);
-    gridToScreen(tx, ty, this.#ctx.origin, tip);
-    if (ch.halted) g.lineStyle(3, HALT, 0.9);
-    else g.lineStyle(1, WALK, 0.5);
+    const lead = end - ch.dist;
+    const n = windowPath(route, lead, lead - c.haltTiles, winX, winY);
+    const g = this.#win;
+    this.#window = ch.halted ? 'halt' : 'walk';
+    if (ch.halted) {
+      this.#stroke(n, 4, UNDER, 0.6);
+      this.#stroke(n, 2, HALT, 1);
+    } else {
+      this.#stroke(n, 1, WALK, 0.5);
+    }
+    // The bar across the road at the window's far edge.
+    const lx = winX[n - 1]!; // n ≥ 2
+    const ly = winY[n - 1]!;
+    let dx = winX[n - 2]! - lx;
+    let dy = winY[n - 2]! - ly;
+    const len = Math.hypot(dx, dy) || 1;
+    dx /= len;
+    dy /= len;
+    gridToScreen(lx - dy * WINDOW_BAR_TILES, ly + dx * WINDOW_BAR_TILES, this.#ctx.origin, pos);
+    gridToScreen(lx + dy * WINDOW_BAR_TILES, ly - dx * WINDOW_BAR_TILES, this.#ctx.origin, tip);
+    if (ch.halted) g.lineStyle(4, UNDER, 0.6).lineBetween(pos.x, pos.y, tip.x, tip.y);
+    g.lineStyle(ch.halted ? 2 : 1, ch.halted ? HALT : WALK, ch.halted ? 1 : 0.6);
     g.lineBetween(pos.x, pos.y, tip.x, tip.y);
   }
 
   releaseAll(): void {
     this.#pool.releaseAll();
-    this.#g.clear();
-    this.#rings = 0;
+    this.#fill.clear();
+    this.#win.clear();
+    this.#hideRings(0);
+    this.#plate.setVisible(false);
+    this.#ringCount = 0;
     this.#halted = false;
+    this.#window = 'none';
+    this.#gateMap = null;
   }
 
-  /** The render-state hook's view: members drawn, hushed ones, song rings, and the halt. */
+  /** The render-state hook's view: members drawn, by pose, queued; song rings; the halt. */
   get counts(): {
     readonly shown: number;
     readonly hushed: number;
     readonly rings: number;
     readonly halted: boolean;
+    readonly plate: boolean;
+    readonly window: 'none' | 'walk' | 'halt';
+    readonly queued: number;
+    readonly poses: { walk: number; sing: number; halt: number; hushed: number };
   } {
     let shown = 0;
     let hushed = 0;
+    let queued = 0;
+    const poses = { walk: 0, sing: 0, halt: 0, hushed: 0 };
     for (const v of this.#pool.live.values()) {
       shown++;
       if (v.hushed) hushed++;
+      if (v.queued) queued++;
+      poses[v.pose]++;
     }
-    return { shown, hushed, rings: this.#rings, halted: this.#halted };
+    return {
+      shown,
+      hushed,
+      rings: this.#ringCount,
+      halted: this.#halted,
+      plate: this.#plate.visible,
+      window: this.#window,
+      queued,
+      poses,
+    };
+  }
+
+  /** Strokes the window's path (its `n` points in winX/winY) `px` wide. */
+  #stroke(n: number, px: number, color: number, alpha: number): void {
+    const g = this.#win;
+    g.lineStyle(px, color, alpha);
+    g.beginPath();
+    for (let i = 0; i < n; i++) {
+      gridToScreen(winX[i]!, winY[i]!, this.#ctx.origin, pos); // i < n ≤ MAX_WINDOW_POINTS
+      if (i === 0) g.moveTo(pos.x, pos.y);
+      else g.lineTo(pos.x, pos.y);
+    }
+    g.strokePath();
+  }
+
+  /** Shows ring `k` at screen (x, y) for `radiusTiles`, its dashes at `shift`. */
+  #ring(k: number, radiusTiles: number, shift: 0 | 1, x: number, y: number): void {
+    const ring = this.#rings[k]!; // k < MAX_RINGS
+    const radius = snapRingRadius(radiusTiles);
+    if (ring.radius !== radius || ring.shift !== shift) {
+      const key = `fx.song_ring.${radius}.${shift}`;
+      let f = this.#frames.get(key);
+      if (f === undefined) {
+        const baked = ringImage(radius, SONG_RING_COLOR, true, SONG_RING_UNDER, shift);
+        if (!this.#ctx.scene.textures.exists(key)) {
+          this.#ctx.scene.textures.addCanvas(key, imageToCanvas(baked.image));
+        }
+        f = { ox: baked.cx, oy: baked.cy };
+        this.#frames.set(key, f);
+      }
+      ring.img.setTexture(key).setDisplayOrigin(f.ox, f.oy);
+      ring.radius = radius;
+      ring.shift = shift;
+    }
+    ring.img.setPosition(x, y).setVisible(true);
+  }
+
+  #hideRings(from: number): void {
+    for (let i = from; i < MAX_RINGS; i++) {
+      const ring = this.#rings[i]!; // i < MAX_RINGS
+      if (ring.img.visible) ring.img.setVisible(false);
+    }
   }
 }

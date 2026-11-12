@@ -266,7 +266,7 @@ The harness runs, per map:
     - Holdout maps assert an Evacuated floor instead of a win (A3M3: 50%).
     - The finale runs the par build once per **companion on the pick list** ([core-loop.md §3.1](core-loop.md#31-rules)), and asserts that Phase 2 lasts within **±30%** of its target time for every `quill_choice` (§5.5).
 
-A map may hold a few checks **pending** a named task (`pendingChecks`: subjects `alt:<name>` or a #14 cell `flag:<flag>=<value>`, with the task and a reason): they still run and report, but pass as "pending <task>", and only while the map isn't finished (its dialogue isn't COMPLETE; `tools/pendingChecks.test.ts`), so nothing ships pending. The finale's alts and its warren cell wait for T821 this way.
+A map may hold a few checks **pending** a named task (`pendingChecks`: subjects `alt:<name>` or a #14 cell `flag:<flag>=<value>`, and check ids such as `'18'`, with the task and a reason): they still run and report, but pass as "pending <task>", and only while the map isn't finished (its dialogue isn't COMPLETE; `tools/pendingChecks.test.ts`), so nothing ships pending. The finale's alts, its warren cell, and #18 (refused until T821 lifts it) wait for T821 this way.
 
 How the harness encodes these is in [../tech/conventions.md § Balance sims](../tech/conventions.md#balance-sims-npm-run-sim).
 

@@ -23,7 +23,8 @@ function sync(host: Host<IdSpace>, leakLine: string | null): void {
     slots,
     previewHidden: previewHidden(state),
     leakLine,
-    silenced: radioSilent(config), // T860: the veteran rule darkens the slots
+    // T860: Radio Silence (a veteran rule) darkens the slots; absent otherwise.
+    ...(radioSilent(config) ? { silenced: true } : {}),
   };
 }
 

@@ -30,7 +30,12 @@ function convoy(): string[] {
   for (let y = FOOT_Y - 11; y <= FOOT_Y + 1; y++) {
     for (let x = CX - 7; x <= CX + 6; x++) {
       const post = x <= CX - 5 || x >= CX + 4;
-      plot(g, x, y, post ? (x === CX - 7 ? 'H' : x <= CX - 5 ? 'G' : 'F') : y < FOOT_Y - 9 ? 'A' : 'Z');
+      plot(
+        g,
+        x,
+        y,
+        post ? (x === CX - 7 ? 'H' : x <= CX - 5 ? 'G' : 'F') : y < FOOT_Y - 9 ? 'A' : 'Z',
+      );
     }
   }
   // The lintel, hazard-striped, chipped at its right end.
@@ -61,8 +66,10 @@ function warren(): string[] {
   });
   // The round doorway, ringed in pebbles, dark inside.
   disc(g, CX + 0.5, FOOT_Y - 2, 5, (d) => (d > 4.2 ? 'M' : d > 3.2 ? 'A' : 'Z'));
-  for (let x = CX - 5; x <= CX + 5; x++) if ((g[FOOT_Y + 3]?.[x] ?? '.') !== '.') plot(g, x, FOOT_Y + 3, '_');
-  for (let y = FOOT_Y + 1; y < FOOT_Y + 4; y++) for (let x = CX - 4; x <= CX + 4; x++) plot(g, x, y, '.');
+  for (let x = CX - 5; x <= CX + 5; x++)
+    if ((g[FOOT_Y + 3]?.[x] ?? '.') !== '.') plot(g, x, FOOT_Y + 3, '_');
+  for (let y = FOOT_Y + 1; y < FOOT_Y + 4; y++)
+    for (let x = CX - 4; x <= CX + 4; x++) plot(g, x, y, '.');
   // A glowworm lantern on a reed beside it.
   for (let y = FOOT_Y - 13; y <= FOOT_Y + 1; y++) plot(g, CX + 9, y, 'L');
   stamp(g, CX + 8, FOOT_Y - 16, ['.+.', '+*+', '.+.']);
