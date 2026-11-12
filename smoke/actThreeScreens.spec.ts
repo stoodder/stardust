@@ -55,7 +55,9 @@ test("t714: Gerald's mail, C4 remembered, then Night Shift's laugh", async ({ pa
   await page.waitForTimeout(400); // the paper's slide
   await shot(page, 't714', 2, 'mail-pension');
   const out = (n: string) => async () =>
-    (await stage.getAttribute('data-out', { timeout: 2000 })) === n;
+    // A stage briefly between lines (or slow under load) reads as "not yet", never an error;
+    // the toHaveAttribute below still pins the outcome.
+    (await stage.getAttribute('data-out', { timeout: 2000 }).catch(() => null)) === n;
   await readUntil(page, out('2'));
   await expect(stage).toHaveAttribute('data-out', '2');
   await page.waitForTimeout(400);
