@@ -132,14 +132,16 @@ function inputOf(f: ResultsFixture, save: SaveData | null): RunEndInput {
   const won = f.outcome === 'won';
   const map = isMapId(f.map) ? RAW_CONTENT.maps[f.map] : undefined;
   const waveCount = map?.waves.length ?? 10;
-  // The map's objective names Perfect Core plain "Perfect" on an Escort, as the battle does, and
-  // on a Protect map whose bearers walk (A3M5; its compiled escort).
-  const bearers =
-    map?.objective === 'protect' ? battleConfig(f.map, 0, save).content.maps[f.map] : undefined;
+  // The map's objective names Perfect Core plain "Perfect" on an Escort, as the battle does, on a
+  // Protect map whose bearers walk (A3M5; its compiled escort), and on a choir map (the finale).
+  const compiled =
+    map?.objective === 'protect' || (map?.choir ?? null) !== null
+      ? battleConfig(f.map, 0, save).content.maps[f.map]
+      : undefined;
   const medals = offeredMedals({
     medals: map?.medals ?? null,
     ...(map === undefined ? {} : { objective: map.objective }),
-    ...(bearers === undefined ? {} : { escort: bearers.escort }),
+    ...(compiled === undefined ? {} : { escort: compiled.escort, choir: compiled.choir }),
   });
   return {
     mapId: f.map,

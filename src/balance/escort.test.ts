@@ -62,6 +62,7 @@ function escortResult(
       leaked: 0,
       integrityLost: 0,
       assetLost: 0,
+      singersHushed: 0,
       refugeesLost,
       startTick: 0,
       early: false,

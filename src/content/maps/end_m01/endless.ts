@@ -66,9 +66,14 @@ export const ENDLESS: EndlessDef = {
   // The warm-up, then one counter, two, and three from the fourth block (W16–W20) on. A boss's
   // own categories can raise its block's count ("Shareholder Value" brings jam to its armor).
   countersPerBlock: [0, 1, 2, 3],
-  // Act I's answers first (armor, air, splash), then shields; detection, burrowing, and jamming
-  // once the third block (W11–W15) is past.
-  categoryFrom: { armor: 1, air: 1, splash: 1, shield: 2, detection: 3, burrowed: 3, jam: 3 },
+  // Splash first: the first block (W6–W10) is the Long Night's swarm. Then armor, air, and
+  // shields; detection, burrowing, and jamming once the third block (W11–W15) is past. A block
+  // with no plain unit tops its waves up with its lightest unit (sim/endless.ts), and before ~W20
+  // only a Mote (32 threat) is fine enough for that on a rising budget: a lone armor, air, or
+  // shield block there (Compliance 168, Rift Moth 174, Glimmer 126) overshoots its band. Splash
+  // in block 1 keeps a Mote in every block until W20 (block 2 adds one category to it, block 3
+  // one more), and from W21 each block's lightest unit is under 8% of its budget.
+  categoryFrom: { splash: 1, armor: 2, air: 2, shield: 2, detection: 3, burrowed: 3, jam: 3 },
   // No Skitterkin (D156): the post-game is QUILL's sim deck, and after "Remember them." it never
   // asks the player to shoot the people they walked home. Ves'thara's lumenglass constructs stay:
   // they were remote-piloted glass, not people.

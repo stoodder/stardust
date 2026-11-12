@@ -29,8 +29,8 @@ export const RESUME_REFUSED =
  * The notice a reload opens with, paused at its checkpoint (`place`: "wave 10", "the Halls");
  * `retried`: the run was a checkpoint retry before the tab closed, so its medals stay dim.
  */
-export function reloadedNotice(place: string, retried = false): string {
-  const why = retried ? ' Perfect Core and the Challenge need a shift from wave 1.' : '';
+export function reloadedNotice(place: string, retried = false, perfect = 'Perfect'): string {
+  const why = retried ? ` ${perfect} and the Challenge need a shift from wave 1.` : '';
   return `The Long Walk resumes at ${place}. Unpause when ready.${why}`;
 }
 

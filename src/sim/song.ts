@@ -10,7 +10,9 @@
 //   and out of reach; movement: speed 0; enemyAbilities: no abilities) for `scatter.reformTicks`,
 //   then re-forms at `scatter.hpPct` of its max HP (`Reformed`). It stays in its wave all along,
 //   so the wave isn't resolved while a scattered unit waits. Its second death pays no bounty
-//   (combat/damage.ts) and is for good, inside the song or out.
+//   (combat/damage.ts) and is for good, inside the song or out. Each unit has one result in the
+//   stats (D156; the Laid to Rest medal reads them): laid to rest on its second death, it moves
+//   from `scatteredKills` to `restedKills`; outside again, it isn't counted twice.
 // - **A whole boss** never dies by damage (bossPhases.ts); a split boss's part (bossSplit.ts) is
 //   laid to rest inside like a unit, and outside it falls for good (it never scatters: the boss
 //   bar's parts are T808's). Damage a boss takes is summed on it (`Enemy.songDamage`, by
@@ -70,14 +72,18 @@ export function song(state: SimState, ctx: TickContext): void {
     }
     if (!live || def.faction !== 'hollow' || !wasKilled(e)) continue;
     if (def.boss !== null && !isSplitBorn(e)) continue; // a whole boss never dies by damage
+    // One result per unit (D156): a re-formed unit's second death replaces its scatter, so laid to
+    // rest at last it counts once, rested; falling outside again it was already counted.
+    const again = e.scatteredOnce;
     if (inSong(state, ctx.map, e.x, e.y)) {
       const points = def.restValue * mul;
       addRest(state, points);
       state.stats.restedKills++;
+      if (again) state.stats.scatteredKills--;
       emit(state, { type: 'LaidToRest', uid: e.uid, at: [e.x, e.y], points });
-    } else {
+    } else if (!again) {
       state.stats.scatteredKills++;
-      if (!e.scatteredOnce && def.boss === null) scatter(state, e, rules);
+      if (def.boss === null) scatter(state, e, rules);
     }
   }
   if (live) addRest(state, rules.restPerTick * mul);

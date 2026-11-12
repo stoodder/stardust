@@ -160,7 +160,7 @@ function beginCountdown(state: SimState, ctx: TickContext, next: CompiledWave<Id
   // A retry checkpoint as the countdown to every 5th wave begins (core-loop.md § 2.12): the run
   // resumes from the state after this tick, in the build phase before that wave, so a retry can
   // rebuild before it walks in. The host records it (architecture.md § Checkpoints).
-  if (checkpointAt(ctx.map, next.number)) {
+  if (checkpointAt(ctx.map, next.number, next.inPhase)) {
     emit(state, { type: 'CheckpointReached', wave: next.number, tick: state.tick + 1 });
   }
 }
@@ -168,20 +168,19 @@ function beginCountdown(state: SimState, ctx: TickContext, next: CompiledWave<Id
 /**
  * Whether the countdown to `wave` records a retry checkpoint (core-loop.md § 2.12): every
  * CHECKPOINT_EVERY_WAVES-th wave on a campaign act's map from CHECKPOINTS_FROM_ACT on, never on a
- * Holdout (it has no defeat to retry). The finale isn't counted in waves: its one checkpoint is a
- * `checkpoint` script action at Phase 2 (sim/phases.ts, T806).
+ * Holdout (it has no defeat to retry). The finale takes them too, in Phase 1 only (W5, W10, W15:
+ * waves of no script phase, `inPhase` 0; D156); Phase 2's one checkpoint is a `checkpoint` script
+ * action at its start (sim/phases.ts, T806).
  */
 export function checkpointAt(
   map: { readonly act: Act; readonly objective: ObjectiveKind },
   wave: number,
+  inPhase = 0,
 ): boolean {
-  return (
-    typeof map.act === 'number' &&
-    map.act >= CHECKPOINTS_FROM_ACT &&
-    map.objective !== 'holdout' &&
-    wave > 1 &&
-    wave % CHECKPOINT_EVERY_WAVES === 0
-  );
+  const act = map.act;
+  const counted =
+    (typeof act === 'number' && act >= CHECKPOINTS_FROM_ACT) || (act === 'finale' && inPhase === 0);
+  return counted && map.objective !== 'holdout' && wave > 1 && wave % CHECKPOINT_EVERY_WAVES === 0;
 }
 
 /**

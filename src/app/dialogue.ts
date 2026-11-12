@@ -1594,7 +1594,7 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
   const offline = offlineSpeakers(map, activeSave());
   const s: Session = {
     map,
-    storyMap: null,
+    storyMap: map === null ? storyMapOf(mapDef.id) : null,
     present: presentSpeakers(mapDef, everglow.includes(true), sim.config.companion).filter(
       (id) => !offline.includes(id),
     ),

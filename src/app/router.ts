@@ -63,6 +63,7 @@ import {
   voicesHeld,
   type RunEndInput,
 } from './runResult.ts';
+import { perfectMedalName } from './hudViews.ts';
 import { flowScenes, playInOrder, setAfterResults, unskippable } from './runFlow.ts';
 import { endingSteps } from './finaleFlow.ts';
 import {
@@ -186,13 +187,13 @@ function markFirstPaydayShown(): void {
  * The notice a checkpoint retry opens with, paused in wave `wave`'s countdown, or at a labelled
  * checkpoint's `place` ("the Halls").
  */
-export function resumedNotice(wave: number, place?: string): string {
+export function resumedNotice(wave: number, place?: string, perfect = 'Perfect Core'): string {
   // "Before": the wave panel still counts the waves behind it (D134 U3), and the tracker's dimmed
-  // medals get their reason.
+  // medals get their reason (`perfect`: the map's name for Perfect Core, `perfectMedalName`).
   const where = place === undefined ? `before wave ${wave}` : `at ${place}`;
   return (
     `Resumed ${where}. Unpause when ready. ` +
-    'Perfect Core and the Challenge need a shift from wave 1.'
+    `${perfect} and the Challenge need a shift from wave 1.`
   );
 }
 
@@ -397,8 +398,12 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
       const retried = next.host.resumedFrom;
       showNotice(
         resume.retriedFrom === undefined
-          ? resumedNotice(c.wave, labelPlace(c))
-          : reloadedNotice(checkpointPlace(c), retried !== null),
+          ? resumedNotice(c.wave, labelPlace(c), perfectMedalName(next.host.sim.map))
+          : reloadedNotice(
+              checkpointPlace(c),
+              retried !== null,
+              perfectMedalName(next.host.sim.map),
+            ),
         RESUMED_NOTICE_MS,
         true,
       );

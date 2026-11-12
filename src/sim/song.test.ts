@@ -192,10 +192,10 @@ describe('scattered outside the song (Phase 2 only)', () => {
     expect(state.events.find((v) => v.type === 'EnemyDied')).toMatchObject({ bounty: 0 });
     expect(types(state)).not.toContain('Scattered');
     expect(e.alive).toBe(false);
-    expect(state.stats.scatteredKills).toBe(2);
+    expect(state.stats.scatteredKills).toBe(1); // one result per unit (D156): counted once
   });
 
-  it('a re-formed unit broken inside the song is laid to rest', () => {
+  it('a re-formed unit broken inside the song is laid to rest, its scatter replaced', () => {
     const { state, ctx } = setup();
     const e = spawn(state, MOTE);
     kill(state, e);
@@ -204,7 +204,7 @@ describe('scattered outside the song (Phase 2 only)', () => {
     leaderBy(state, e); // the choir walks up to it
     kill(state, e);
     step(state, ctx);
-    expect(state.stats).toMatchObject({ restedKills: 1, scatteredKills: 1 });
+    expect(state.stats).toMatchObject({ restedKills: 1, scatteredKills: 0 });
     expect(e.alive).toBe(false);
   });
 

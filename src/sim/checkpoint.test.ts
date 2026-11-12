@@ -14,11 +14,19 @@ describe('checkpointAt', () => {
     expect(checkpointAt({ act: 3, objective: 'protect' }, 10)).toBe(true);
   });
 
-  it('never in Act I, on a Holdout (no defeat to retry), or by wave count in the finale', () => {
+  it('never in Act I, on a Holdout (no defeat to retry), or in a post-game map', () => {
     expect(checkpointAt({ act: 1, objective: 'defend' }, 5)).toBe(false);
     expect(checkpointAt({ act: 1, objective: 'defend' }, 10)).toBe(false);
     expect(checkpointAt({ act: 3, objective: 'holdout' }, 5)).toBe(false);
-    expect(checkpointAt({ act: 'finale', objective: 'choir' }, 5)).toBe(false);
+    expect(checkpointAt({ act: 'challenge', objective: 'defend' }, 5)).toBe(false);
+  });
+
+  it("in the finale, every 5th wave of Phase 1 only (D156): Phase 2's is its script's", () => {
+    const fin = { act: 'finale', objective: 'choir' } as const;
+    const marked = Array.from({ length: 26 }, (_, i) => i + 1).filter((w) =>
+      checkpointAt(fin, w, w > 18 ? 2 : 0),
+    );
+    expect(marked).toEqual([5, 10, 15]);
   });
 
   it('is live: its gate row is lifted', () => {

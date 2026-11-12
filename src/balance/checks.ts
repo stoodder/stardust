@@ -273,12 +273,16 @@ export const won = (rec: RunRecord): string | null =>
 
 /**
  * Integrity lost per wave, "0,0,3,8,9" (waves that never started read 0); on a Protect map each
- * wave adds its asset loss, "0,2+1a,3", and on an Escort its refugees lost, "0,0+2r".
+ * wave adds its asset loss, "0,2+1a,3", on an Escort its refugees lost, "0,0+2r", and on a choir
+ * map its singers hushed, "0,1+2h".
  */
 export const lossPerWave = (r: HeadlessResult | null): string =>
   r === null ? '-' : r.waves.map(waveLoss).join(',');
 
-/** One wave's losses: integrity, "+Na" for the asset's, "+Nr" for refugees lost (T305c). */
+/**
+ * One wave's losses: integrity, "+Na" for the asset's, "+Nr" for refugees lost (T305c), "+Nh" for
+ * singers hushed (a choir map; D156).
+ */
 function waveLoss(w: HeadlessResult['waves'][number]): string {
   let out = `${w.integrityLost}`;
   if (w.assetLost > 0) out += `+${w.assetLost}a`;
@@ -290,8 +294,9 @@ function waveLoss(w: HeadlessResult['waves'][number]): string {
 /**
  * Why a run hits a wall rather than losing gradually (the `gradual` check, D028), or null: a
  * wave that costs more than MAX_WAVE_LOSS_PCT of max integrity (or of a Protect map's asset
- * meter, or of the refugees whose loss loses an Escort: `maxLost`), or a loss in the
- * very wave its leaks start (they must start LEAK_LEAD_WAVES earlier).
+ * meter, or of the refugees whose loss loses an Escort: `maxLost`, or of a choir's hush
+ * allowance in singers hushed: D156), or a loss in the very wave its leaks start (they must
+ * start LEAK_LEAD_WAVES earlier).
  */
 export function notGradual(r: HeadlessResult): string | null {
   const cap = (r.maxIntegrity * MAX_WAVE_LOSS_PCT) / 100;

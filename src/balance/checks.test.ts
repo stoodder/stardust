@@ -53,6 +53,7 @@ function lossy(outcome: 'won' | 'lost', losses: readonly number[]): HeadlessResu
     leaked: integrityLost,
     integrityLost,
     assetLost: 0,
+    singersHushed: 0,
     refugeesLost: 0,
     startTick: 0,
     early: false,

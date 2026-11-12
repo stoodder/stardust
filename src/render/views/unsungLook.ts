@@ -163,8 +163,8 @@ export const SONG_SCRIPT_PHASE = 2;
 /** Sort lift while held (px of foot y): one tile row and a pixel, over the tower in front of it. */
 export const UNSUNG_HOLD_LIFT_PX = TILE_H + 1;
 /** The ground pool's radius (tiles) and strength (additive alpha scale). */
-export const UNSUNG_POOL_TILES = 1.1;
-export const UNSUNG_POOL_STRENGTH = 0.9;
+export const UNSUNG_POOL_TILES = 1.5;
+export const UNSUNG_POOL_STRENGTH = 1.4;
 /** The rim's colour: the song's light on the side it holds. */
 export const UNSUNG_RIM_COLOR = 'gold.4';
 /** Effects that start this near its drawn frame (px) dim to UNSUNG_DIM_ALPHA (a ladder step). */

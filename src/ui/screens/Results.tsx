@@ -296,11 +296,12 @@ function Revoked({ revocations }: { revocations: RunRewards['revocations'] }) {
 
 /**
  * Why a checkpoint run's card lights Victory only (core-loop.md § 2.12); `place` names a labelled
- * checkpoint ("the Halls"), else it reads "wave {wave}".
+ * checkpoint ("the Halls"), else it reads "wave {wave}". `perfect`: the map's name for Perfect
+ * Core ("Perfect" on an Escort or the finale's choir; app/hudViews.ts `perfectMedalName`).
  */
-export function resumedNote(wave: number, place?: string): string {
+export function resumedNote(wave: number, place?: string, perfect = 'Perfect Core'): string {
   const from = place ?? `wave ${wave}`;
-  return `Resumed from ${from}: Perfect Core and the Challenge need a shift from wave 1.`;
+  return `Resumed from ${from}: ${perfect} and the Challenge need a shift from wave 1.`;
 }
 
 /**
@@ -527,7 +528,13 @@ function Payroll({
       {/* A checkpoint run keeps Victory only (core-loop.md § 2.12): say why, without a scolding. */}
       {won && resumedFromWave !== null && (
         <p class="sd-results-pay-aside" data-testid="results-resumed">
-          {silkText(resumedNote(resumedFromWave, resumedPlace))}
+          {silkText(
+            resumedNote(
+              resumedFromWave,
+              resumedPlace,
+              rewards.medals.find((m) => m.id === 'perfect_core')?.name,
+            ),
+          )}
         </p>
       )}
       {/* Under the medals (core-loop.md § 2.13): a loss pays none, so like the medals, a win's only. */}
@@ -614,12 +621,12 @@ function Body({ result }: { result: RunResult }) {
     result.remembered ?? rewards?.lifetimePests ?? result.pestsProcessed,
     result.meter,
   );
-  // The finale's win: REMEMBERED: {n} is the headline (T810), so its counter line goes; and a meter
-  // line that only repeats its stat row goes (D143 R13: "Evacuated" once).
-  const remembered =
-    full !== null && counterIsHeadline(result.counter, result.outcome, result.mapId);
-  const headline = remembered ? full.line : header.headline;
-  const counter = remembered || (full !== null && counterRepeatsStat(full, stats)) ? null : full;
+  // The finale's win: the counter as Dawn left it, PESTS PROCESSED: 0, is the headline (D156; the
+  // first REMEMBERED is the epilogue's flip), so its counter line goes; and a meter line that only
+  // repeats its stat row goes (D143 R13: "Evacuated" once).
+  const finaleWin = counterIsHeadline(result.counter, result.outcome, result.mapId);
+  const headline = finaleWin ? FINALE_HEADLINE : header.headline;
+  const counter = finaleWin || (full !== null && counterRepeatsStat(full, stats)) ? null : full;
   const asking = result.choice !== null && result.choice.picked === null;
   const counted = useCountUp(counter?.n ?? 0);
   return (

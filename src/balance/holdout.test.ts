@@ -73,6 +73,7 @@ const emptyWave = {
   leaked: 0,
   integrityLost: 0,
   assetLost: 0,
+  singersHushed: 0,
   refugeesLost: 0,
   startTick: 0,
   early: false,

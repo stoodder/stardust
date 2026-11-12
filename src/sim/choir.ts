@@ -12,7 +12,9 @@
 // - **The walk.** The choir walks its road (`choir.route`, a ground path) from its core end back
 //   toward its spawn, once wave 1 has started, at the choir's `pace`: `state.choir.dist` is how far
 //   the leader has walked, `x`/`y` where she stands. The column files behind her
-//   CHOIR_SPACING_TILES apart in this order: the singers still singing, the Returned, the hushed.
+//   CHOIR_SPACING_TILES apart (closed up when the run's choir outnumbers the base `singers`, so a
+//   bigger choir's column is no longer than the base's: `choirSpacing`, D156) in this order: the
+//   singers still singing, the Returned, the hushed.
 //   Each member moves toward its place at up to CHOIR_CATCHUP_MUL × the pace (so the column closes
 //   up behind a hushed singer, and the hushed singer drifts back through it to the tail); one held
 //   in a hush tell stands. She stops for good at the road's point nearest the
@@ -251,6 +253,7 @@ function walkColumn(state: SimState, c: CompiledChoir, lead: number): void {
   }
   const end = c.route.lengthTiles;
   const step = c.paceTilesPerTick * CHOIR_CATCHUP_MUL;
+  const spacing = choirSpacing(c, state.choir.singers - (state.choir.thrum ? 1 : 0));
   let s = 0;
   let r = 0;
   let h = 0;
@@ -262,7 +265,7 @@ function walkColumn(state: SimState, c: CompiledChoir, lead: number): void {
     else if (isChoirSinger(a)) {
       rank = a.vulnerability === 'hush' ? 1 + s++ : 1 + singing + returned + h++;
     }
-    let target = lead + rank * CHOIR_SPACING_TILES;
+    let target = lead + rank * spacing;
     if (target > end) target = end;
     if (rank === 0) {
       a.dist = lead; // Pebble, and Thrum beside her
@@ -274,6 +277,18 @@ function walkColumn(state: SimState, c: CompiledChoir, lead: number): void {
     }
     a.seg = pointAt(c.route, a.dist, a, a.seg);
   }
+}
+
+/**
+ * The column's spacing for a run's choir of `singers` (Thrum, beside Pebble, not counted; D156):
+ * CHOIR_SPACING_TILES, closed up in
+ * proportion when the run's choir outnumbers the map's base `singers` (the warren's 28 file 0.21
+ * apart), so a bigger choir's column is never longer than the base's. A smaller one keeps it.
+ */
+export function choirSpacing(c: Pick<CompiledChoir, 'singers'>, singers: number): number {
+  return singers > c.singers && singers > 0
+    ? (CHOIR_SPACING_TILES * c.singers) / singers
+    : CHOIR_SPACING_TILES;
 }
 
 /** Whether a Hollow unit is within the halt distance ahead of the leader at `lead` (the header). */

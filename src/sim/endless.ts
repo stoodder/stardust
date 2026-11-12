@@ -65,8 +65,10 @@ const SPICE_SHARE = 0.12;
 const FILLER_WEIGHT = 0.6;
 /** The most blocks a category's staleness counts for (unmet categories count this much). */
 const MAX_AGE = 4;
-/** A top-up whose unit is over this share of the budget fills with plain units instead. */
+/** A top-up whose unit is over this share of the budget fills with a finer unit instead. */
 const TOP_UP_GRAIN = 0.04;
+/** Wave threat totals are rounded to millionths (`roundThreat`). */
+const THREAT_SCALE = 1e6;
 /** A group aims at no fewer units than this when a unit fits (fewer reads as a stray). */
 const MIN_GROUP_COUNT = 3;
 
@@ -447,6 +449,21 @@ interface Draft {
   readonly role: EndlessGroup['role'];
 }
 
+/**
+ * A threat total rounded to millionths (THREAT_SCALE), so comparing two waves' threat ("strictly above the
+ * last") never turns on the order a float sum was taken in.
+ */
+export function roundThreat(x: number): number {
+  return Math.round(x * THREAT_SCALE) / THREAT_SCALE;
+}
+
+/** The drafts' threat, summed in their order and rounded (`roundThreat`). */
+function draftThreat(ctx: Ctx, drafts: readonly Draft[]): number {
+  let sum = 0;
+  for (const d of drafts) sum += d.count * ctx.threat.get(d.enemy.id)!;
+  return roundThreat(sum);
+}
+
 /** One generated wave (w > the warm-up). */
 function planWave(
   ctx: Ctx,
@@ -530,7 +547,7 @@ function planWave(
   // Land the wave in its band: trim the heaviest groups over the top, top up the lightest below it
   // (and above the last wave without a boss, `floor`), then hold the spice under the soft cap.
   const t = (d: Draft): number => ctx.threat.get(d.enemy.id)!;
-  const sum = (): number => drafts.reduce((a, d) => a + d.count * t(d), 0);
+  const sum = (): number => draftThreat(ctx, drafts);
   const adjustable = drafts.filter((d) => d.role === 'featured' || d.role === 'filler');
   // A boss wave: at least its budget's floor, and an escort of at least BOSS_ESCORT_MIN_SHARE.
   const bossThreat = bossId === null ? 0 : ctx.threat.get(bossId)!;
@@ -551,26 +568,34 @@ function planWave(
   }
   let lightest = adjustable[0]!; // a wave has a core slot
   for (const d of adjustable) if (t(d) < t(lightest)) lightest = d;
-  // Coarse units overshoot a top-up: the block's plain units (no category) fill finer.
+  // Coarse units overshoot a top-up: the block's lightest core unit fills finer, a plain one (no
+  // category) first. (Endless's roster has no plain unit since the Skitterkin left it, D156: the
+  // finest grain is then the block's own lightest, still inside its categories.)
   if (t(lightest) > TOP_UP_GRAIN * budget) {
-    let plain: CompiledEnemyDef<EnemyId> | null = null;
+    let fine: CompiledEnemyDef<EnemyId> | null = null;
+    let finePlain = false;
     for (const e of core) {
-      if (ctx.cats.get(e.id)!.size > 0) continue;
-      if (plain === null || ctx.threat.get(e.id)! < ctx.threat.get(plain.id)!) plain = e;
+      const plain = ctx.cats.get(e.id)!.size === 0;
+      const lighter = fine === null || ctx.threat.get(e.id)! < ctx.threat.get(fine.id)!;
+      if (fine === null || (plain && !finePlain) || (plain === finePlain && lighter)) {
+        fine = e;
+        finePlain = plain;
+      }
     }
-    if (plain !== null && ctx.threat.get(plain.id)! < t(lightest)) {
-      lightest = { enemy: plain, count: 0, route: route(plain), role: 'filler' };
+    if (fine !== null && ctx.threat.get(fine.id)! < t(lightest)) {
+      lightest = { enemy: fine, count: 0, route: route(fine), role: 'filler' };
       drafts.push(lightest);
     }
   }
-  // Strictly above the last wave without a boss (a boss wave is a spike, so it needn't be).
+  // Strictly above the last wave without a boss (a boss wave is a spike, so it needn't be); the
+  // spice then held under the soft cap, and topped up again if that dropped the wave back.
   const above = isBossWave ? -Infinity : floor;
-  for (let now = sum(); now < lo || now <= above; now += t(lightest)) lightest.count++;
-  if (lightest.count === 0) drafts.splice(drafts.indexOf(lightest), 1);
-  if (spice !== null) {
+  for (;;) {
+    for (let now = sum(); now < lo || now <= above; now = sum()) lightest.count++;
+    if (spice === null || spice.count * t(spice) <= SOFT_THREAT_MAX_SHARE * sum()) break;
     while (spice.count > 0 && spice.count * t(spice) > SOFT_THREAT_MAX_SHARE * sum()) spice.count--;
-    if (spice.count === 0) drafts.splice(drafts.indexOf(spice), 1);
   }
+  for (let i = drafts.length - 1; i >= 0; i--) if (drafts[i]!.count === 0) drafts.splice(i, 1);
   return drafts;
 }
 
@@ -641,7 +666,7 @@ export function endlessPlan(
         delayTicks: g.delayTicks,
         role: 'authored',
       }));
-      const t = groups.reduce((a, g) => a + g.count * threat.get(g.enemy)!, 0);
+      const t = roundThreat(groups.reduce((a, g) => a + g.count * threat.get(g.enemy)!, 0));
       waves.push({ number: w, block: 0, budget, threat: t, spiceThreat: 0, boss: null, groups });
       compiled.push(authored);
       floor = Math.max(floor, t);
@@ -649,10 +674,11 @@ export function endlessPlan(
     }
     const drafts = planWave(ctx, forkRng(rng, `wave:${w}`), w, budget, block, blocks[b + 1], floor);
     const groups = compileDrafts(ctx, drafts);
-    const t = drafts.reduce((a, d) => a + d.count * threat.get(d.enemy.id)!, 0);
-    const spice = drafts
-      .filter((d) => d.role === 'spice')
-      .reduce((a, d) => a + d.count * threat.get(d.enemy.id)!, 0);
+    const t = draftThreat(ctx, drafts);
+    const spice = draftThreat(
+      ctx,
+      drafts.filter((d) => d.role === 'spice'),
+    );
     const boss = drafts.find((d) => d.role === 'boss')?.enemy.id ?? null;
     if (boss === null) floor = t;
     const lastSpawnTicks = groups.reduce(
