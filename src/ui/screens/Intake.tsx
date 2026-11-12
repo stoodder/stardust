@@ -87,6 +87,7 @@ export function ChoiceGroup<T extends string>({
   invalid = false,
   required = true,
   stacked = false,
+  compact = false,
   groupRef,
   onPick,
 }: {
@@ -98,6 +99,8 @@ export function ChoiceGroup<T extends string>({
   invalid?: boolean;
   required?: boolean;
   stacked?: boolean;
+  /** Short labels kept on one row in a narrow column (the form of address in Settings). */
+  compact?: boolean;
   groupRef?: (el: HTMLDivElement | null) => void;
   onPick: (id: T) => void;
 }) {
@@ -119,7 +122,7 @@ export function ChoiceGroup<T extends string>({
   return (
     <div
       ref={groupRef ?? null}
-      class={`sd-choices${stacked ? ' sd-choices-stacked' : ''}`}
+      class={`sd-choices${stacked ? ' sd-choices-stacked' : ''}${compact ? ' sd-choices-compact' : ''}`}
       role="radiogroup"
       aria-labelledby={labelledBy}
       aria-describedby={describedBy}
@@ -278,6 +281,7 @@ export function Intake() {
                   options={ADDRESS_OPTIONS}
                   value={form.address}
                   required={false}
+                  compact
                   onPick={(address) => update({ address })}
                 />
                 <p id="sd-intake-address-hint" class="sd-message sd-dim">

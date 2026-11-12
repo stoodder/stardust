@@ -97,8 +97,16 @@ describe('validateSave', () => {
     ['data.profile: missing field "address"', 'profile', { name: 'Jo' }],
     ['data.profile.address: unknown id', 'profile', { ...PROFILE, address: 'sir' }],
     // A form of address and the pronoun set it picks stay together (D163).
-    ["data.profile.pronouns: expected 'he' for address 'mr'", 'profile', { ...PROFILE, address: 'mr' }],
-    ["data.profile.pronouns: expected 'she' for address 'mrs'", 'profile', { ...PROFILE, address: 'mrs' }],
+    [
+      "data.profile.pronouns: expected 'he' for address 'mr'",
+      'profile',
+      { ...PROFILE, address: 'mr' },
+    ],
+    [
+      "data.profile.pronouns: expected 'she' for address 'mrs'",
+      'profile',
+      { ...PROFILE, address: 'mrs' },
+    ],
     ['data.profile.callsign: unknown id', 'profile', { ...PROFILE, callsign: 'ace' }],
     [
       'data.profile: unknown field "arrivalReason"',

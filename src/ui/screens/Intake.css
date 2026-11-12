@@ -78,6 +78,17 @@
   gap: 4px;
 }
 
+/* Five short options (the form of address) on one row, even in Settings' narrow column at 960×540. */
+.sd-choices-compact {
+  flex-wrap: nowrap;
+  gap: 3px;
+}
+
+.sd-choices-compact .sd-choice {
+  min-width: 0;
+  padding-inline: 4px;
+}
+
 .sd-choices-stacked {
   flex-direction: column;
   align-items: stretch;

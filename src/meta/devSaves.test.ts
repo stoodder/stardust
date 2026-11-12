@@ -58,7 +58,12 @@ describe('dev saves (the ?save= fixtures)', () => {
     '%s has been through the intake and wins only registered Act I maps',
     (id) => {
       const save = DEV_SAVES[id].build();
-      expect(save.profile).toEqual({ name: 'Dev Tech', pronouns: 'they', callsign: 'sprout' });
+      expect(save.profile).toEqual({
+        name: 'Dev Tech',
+        address: 'tech',
+        pronouns: 'they',
+        callsign: 'sprout',
+      });
       expect(save.story.flags.arrival_reason).toBe('lettuce');
       for (const map of Object.keys(save.campaign.maps)) expect(CAMPAIGN).toContain(map);
       expect(save.campaign.seenEnemies).toEqual(expect.arrayContaining(['nibbler', 'zoomer']));

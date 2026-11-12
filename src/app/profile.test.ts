@@ -58,7 +58,12 @@ describe('the name rule', () => {
 describe('the intake writes', () => {
   it('the profile with the first callsign, and the arrival_reason flag', () => {
     const save = withIntake(createNewSave(), { name: 'Ada', address: 'ms' }, 'lettuce');
-    expect(save.profile).toEqual({ name: 'Ada', address: 'ms', pronouns: 'she', callsign: 'sprout' });
+    expect(save.profile).toEqual({
+      name: 'Ada',
+      address: 'ms',
+      pronouns: 'she',
+      callsign: 'sprout',
+    });
     expect(save.story.flags.arrival_reason).toBe('lettuce');
   });
 
@@ -79,7 +84,12 @@ describe('the intake writes', () => {
     expect(slotEmpty(2)).toBe(true);
     expect(signIntake({ name: ' Kofi ', address: 'mr', arrival: 'family' })).toEqual({ ok: true });
     expect(slotEmpty(2)).toBe(false);
-    expect(activeSave()?.profile).toEqual({ name: 'Kofi', address: 'mr', pronouns: 'he', callsign: 'sprout' });
+    expect(activeSave()?.profile).toEqual({
+      name: 'Kofi',
+      address: 'mr',
+      pronouns: 'he',
+      callsign: 'sprout',
+    });
     expect(activeSave()?.story.flags.arrival_reason).toBe('family');
     // The hold is spent: the intake now edits the save in play.
     expect(intakeMode()).toEqual({ kind: 'existing' });
@@ -88,7 +98,12 @@ describe('the intake writes', () => {
   it('signs with the form of address untouched: Tech. (they) is filed', () => {
     holdNewGame(1);
     expect(signIntake({ ...BLANK_INTAKE, name: 'Ada', arrival: 'lettuce' })).toEqual({ ok: true });
-    expect(activeSave()?.profile).toEqual({ name: 'Ada', address: 'tech', pronouns: 'they', callsign: 'sprout' });
+    expect(activeSave()?.profile).toEqual({
+      name: 'Ada',
+      address: 'tech',
+      pronouns: 'they',
+      callsign: 'sprout',
+    });
   });
 
   it('a save with no profile (a v1 save) needs the intake, and files it in place', () => {

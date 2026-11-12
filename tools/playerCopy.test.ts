@@ -121,21 +121,26 @@ describe('player copy never speaks of pronouns (D163)', () => {
   });
 });
 
-describe("Sterling's lines about the player read under every form of address", () => {
-  const line = (id: string): string => {
-    const node = a1m04Scenes.find((sc) => sc.id === id)?.nodes[0];
-    return node !== undefined && node.kind === 'line' ? node.text : '';
-  };
-  const memo = FINALE_MEMOS.find((m) => m.id === 'memo_fin_01')?.body.split('\n\n').at(-1) ?? '';
-  const as = (text: string, address: (typeof ADDRESS_IDS)[number]): string =>
-    resolveText(text, {
-      profile: { name: 'Ada', ...addressFields(address), callsign: 'sprout' },
-      pestsProcessed: 0,
-      evacuated: null,
-    });
-  const POSSESSIVE = { mr: 'his', ms: 'her', mrs: 'her', dr: 'their', tech: 'their' } as const;
-  const OBJECT = { mr: 'him', ms: 'her', mrs: 'her', dr: 'them', tech: 'them' } as const;
+/** A1M4's scene `id`'s first line, as written. */
+const line = (id: string): string => {
+  const node = a1m04Scenes.find((sc) => sc.id === id)?.nodes[0];
+  return node !== undefined && node.kind === 'line' ? node.text : '';
+};
+const memo =
+  FINALE_MEMOS.find((m) => m.id === 'memo_fin_01')
+    ?.body.split('\n\n')
+    .at(-1) ?? '';
+/** `text` as it reads for a profile with `address`. */
+const as = (text: string, address: (typeof ADDRESS_IDS)[number]): string =>
+  resolveText(text, {
+    profile: { name: 'Ada', ...addressFields(address), callsign: 'sprout' },
+    pestsProcessed: 0,
+    evacuated: null,
+  });
+const POSSESSIVE = { mr: 'his', ms: 'her', mrs: 'her', dr: 'their', tech: 'their' } as const;
+const OBJECT = { mr: 'him', ms: 'her', mrs: 'her', dr: 'them', tech: 'them' } as const;
 
+describe("Sterling's lines about the player read under every form of address", () => {
   it.each(ADDRESS_IDS)('%s', (address) => {
     const p = POSSESSIVE[address];
     expect(as(line('a1_m04_w04'), address)).toBe(

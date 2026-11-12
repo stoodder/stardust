@@ -75,9 +75,9 @@
   },
   "critical": {},
   "density": {
-    "elements": 28,
-    "controls": 9,
-    "words": 153,
+    "elements": 30,
+    "controls": 11,
+    "words": 155,
     "numbers": 5,
     "repeated": [],
     "longCopy": ["4 lines: Small print: Name and form of address can be updated in Settings. Your"]

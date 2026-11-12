@@ -67,7 +67,7 @@ export function ImportPanel({
           rows={4}
           spellcheck={false}
           autocomplete="off"
-          placeholder="SD2-…"
+          placeholder="SD3-…"
           value={text}
           ref={focusOnce}
           onInput={(e) => setText(e.currentTarget.value)}

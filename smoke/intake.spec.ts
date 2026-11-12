@@ -4,13 +4,42 @@
 // without writing it. `?test=1` skips the intake, so these
 // specs turn it back on with `&intake=1`.
 import { readFileSync } from 'node:fs';
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 import { shot, waitForReady } from './hooks.ts';
 
 const URL = '/?test=1&seed=1&intake=1';
 
 const intake = (page: Page) => page.getByRole('main', { name: 'New hire intake' });
+
+const OPTIONS = ['Mr.', 'Ms.', 'Mrs.', 'Dr.', 'Tech.'];
+
+/** The form of address's five options sit on one row, at 1280×720 and at 960×540. */
+async function oneRow(page: Page, group: Locator, name: string): Promise<void> {
+  for (const size of [
+    { width: 960, height: 540 },
+    { width: 1280, height: 720 },
+  ]) {
+    await page.setViewportSize(size);
+    await expect(group.getByRole('radio')).toHaveText(OPTIONS);
+    if (size.width === 960) await shot(page, 'intake', 0, `${name}-960`);
+    const tops = await group
+      .getByRole('radio')
+      .evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().top)));
+    expect(new Set(tops).size, `${name} at ${size.width}×${size.height}: ${tops.join(', ')}`).toBe(
+      1,
+    );
+    // …and inside their column, not spilling past it.
+    const spill = await group.evaluate((el) => {
+      const column = el.parentElement!.getBoundingClientRect().right;
+      return Math.max(...[...el.children].map((c) => c.getBoundingClientRect().right)) - column;
+    });
+    expect(
+      spill,
+      `${name} at ${size.width}×${size.height} spills past its column`,
+    ).toBeLessThanOrEqual(0.5);
+  }
+}
 
 test('intake: a new game files the profile, then A1M1; the name shows on the Shift board', async ({
   page,
@@ -32,7 +61,7 @@ test('intake: a new game files the profile, then A1M1; the name shows on the Shi
   await expect(hint).toBeVisible();
   // No name or reason is picked for the player; the form of address is optional, on Tech.
   const address = form.getByRole('radiogroup', { name: 'Form of address' });
-  await expect(address.getByRole('radio')).toHaveText(['Mr.', 'Ms.', 'Tech.']);
+  await oneRow(page, address, 'intake');
   await expect(address).not.toHaveAttribute('aria-required');
   await expect(
     form.getByText('For your file. Most of the crew just uses your name.'),
@@ -75,7 +104,12 @@ test('intake: a new game files the profile, then A1M1; the name shows on the Shi
     'File note: She is cleared for perimeter duty. Her helmet is one size fits most!',
   );
   await page.keyboard.press('ArrowRight');
-  await expect(address.getByRole('radio', { name: 'Tech.' })).toBeFocused();
+  await expect(address.getByRole('radio', { name: 'Mrs.' })).toBeFocused();
+  await expect(page.getByTestId('file-note')).toHaveText(
+    'File note: She is cleared for perimeter duty. Her helmet is one size fits most!',
+  );
+  await page.keyboard.press('ArrowRight');
+  await expect(address.getByRole('radio', { name: 'Dr.' })).toBeFocused();
   await expect(page.getByTestId('file-note')).toHaveText(
     'File note: They are cleared for perimeter duty. Their helmet is one size fits most!',
   );
@@ -87,7 +121,12 @@ test('intake: a new game files the profile, then A1M1; the name shows on the Shi
   const briefing = page.getByRole('dialog', { name: 'Shift briefing' });
   await expect(briefing).toBeVisible();
   const save = await page.evaluate(() => globalThis.__sd!.save());
-  expect(save?.profile).toEqual({ name: 'Ada Okafor-Quinn', pronouns: 'they', callsign: 'sprout' });
+  expect(save?.profile).toEqual({
+    name: 'Ada Okafor-Quinn',
+    address: 'dr',
+    pronouns: 'they',
+    callsign: 'sprout',
+  });
   expect(save?.story.flags.arrival_reason).toBe('lettuce');
 
   await page.evaluate(() => globalThis.__sd!.goto('campaign'));
@@ -100,19 +139,22 @@ test('intake: a new game files the profile, then A1M1; the name shows on the Shi
   await expect(file).toContainText('Sprout');
   await expect(file).toContainText('I like lettuce');
   const fileAddress = file.getByRole('radiogroup', { name: 'Form of address' });
-  await expect(fileAddress.getByRole('radio')).toHaveText(['Mr.', 'Ms.', 'Tech.']);
-  await expect(fileAddress.getByRole('radio', { name: 'Tech.' })).toHaveAttribute(
-    'aria-checked',
-    'true',
-  );
+  // The honorific picked shows again (Dr., not the Tech. that shares its pronoun set).
+  await expect(fileAddress.getByRole('radio', { checked: true })).toHaveText('Dr.');
+  await oneRow(page, fileAddress, 'settings');
   await expect(file).not.toContainText(/pronoun/i);
   await file.getByRole('textbox').fill('Ada');
-  await fileAddress.getByRole('radio', { name: 'Ms.' }).click();
+  await fileAddress.getByRole('radio', { name: 'Mrs.' }).click();
   await file.getByRole('button', { name: 'Update file' }).click();
   await expect(file).toContainText('Filed!');
   await shot(page, 'intake', 5, 'settings');
   const edited = await page.evaluate(() => globalThis.__sd!.save());
-  expect(edited?.profile).toEqual({ name: 'Ada', pronouns: 'she', callsign: 'sprout' });
+  expect(edited?.profile).toEqual({
+    name: 'Ada',
+    address: 'mrs',
+    pronouns: 'she',
+    callsign: 'sprout',
+  });
   await page.keyboard.press('Escape');
   await expect(page.getByTestId('technician')).toContainText('Ada');
 });
@@ -142,7 +184,12 @@ test('intake: Continue on a v1 save runs the intake, then its Shift board', asyn
   await form.getByRole('textbox', { name: 'Name' }).press('Enter');
   await expect(page.getByTestId('technician')).toContainText('Kofi');
   const save = await page.evaluate(() => globalThis.__sd!.save());
-  expect(save?.profile).toEqual({ name: 'Kofi', pronouns: 'he', callsign: 'sprout' });
+  expect(save?.profile).toEqual({
+    name: 'Kofi',
+    address: 'mr',
+    pronouns: 'he',
+    callsign: 'sprout',
+  });
   expect(save?.story.flags.arrival_reason).toBe('bonus');
   // The v1 save's progress survived.
   expect(save?.campaign.maps.a1_m01?.completed).toBe(true);
@@ -158,7 +205,12 @@ test('intake: signing with only a name and a reason files Tech.', async ({ page 
   await form.getByRole('button', { name: 'Sign and submit' }).click();
   await expect(page.getByRole('dialog', { name: 'Shift briefing' })).toBeVisible();
   const save = await page.evaluate(() => globalThis.__sd!.save());
-  expect(save?.profile).toEqual({ name: 'Rin', pronouns: 'they', callsign: 'sprout' });
+  expect(save?.profile).toEqual({
+    name: 'Rin',
+    address: 'tech',
+    pronouns: 'they',
+    callsign: 'sprout',
+  });
 });
 
 test('intake: Esc backs out of a new game without writing it', async ({ page }) => {

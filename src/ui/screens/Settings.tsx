@@ -212,6 +212,7 @@ function FileEditor({ profile }: { profile: ProfileView }) {
           options={ADDRESS_OPTIONS}
           value={address}
           required={false}
+          compact
           onPick={(p) => {
             setAddress(p);
             setNote(null);

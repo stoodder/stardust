@@ -124,7 +124,7 @@ Flags are declared in `content/dialogue/flags.ts` (`FLAGS`): each with its `valu
 |---|---|
 | `{name}` | `profile.name` |
 | `{callsign}` | `profile.callsign` (Sprout, Thorn, Waykeeper; `CALLSIGNS`) |
-| `{they}` `{them}` `{their}` `{theirs}` `{themself}` and capitalized `{They}` `{Them}` `{Their}` `{Theirs}` `{Themself}` | The forms from `profile.pronouns` (`PRONOUN_SETS` in [`content/dialogue/profile.ts`](../../src/content/dialogue/profile.ts): `she`, `he`, or `they`, picked on the intake as the form of address Ms., Mr., or Tech. ([core-loop.md §6.1](../design/core-loop.md#61-character-creation-and-callsigns)), each with all five forms and its `agreement`) |
+| `{they}` `{them}` `{their}` `{theirs}` `{themself}` and capitalized `{They}` `{Them}` `{Their}` `{Theirs}` `{Themself}` | The forms from `profile.pronouns` (`PRONOUN_SETS` in [`content/dialogue/profile.ts`](../../src/content/dialogue/profile.ts): `she`, `he`, or `they`, the set the profile's form of address picks ([core-loop.md §6.1](../design/core-loop.md#61-character-creation-and-callsigns)), each with all five forms and its `agreement`) |
 | `{v:<plural>\|<singular>}` | Verb agreement: the first form when `agreement` is `plural` (they/them), the second when `singular` (she, he). Any pair works: `{v:are\|is}`, `{v:were\|was}`, `{v:have\|has}` |
 | `{pests_processed}` | The lifetime counter with thousands separators; inside a map it is the save value plus the run's `skitterkinKilled` so far |
 | `{evacuated}` | The current map's meter count (Evacuated, Sheltered, or Voices); 0 outside a map |

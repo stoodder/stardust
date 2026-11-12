@@ -46,7 +46,7 @@ The intake ([core-loop.md §6.1](../../design/core-loop.md#61-character-creation
 - **Intro:** "Welcome to the Everglow family! Please print clearly. Every answer goes in your file." For a save from before the intake: "Records switched to a new form! Fill it in once, and your shifts carry on where you left them."
 - **Fields** (labels, then the hint under each):
   - Name · "As it goes on your name tag: up to 16 letters, digits, spaces, and ' - ." (shown while the field has the focus, or a problem takes its place)
-  - Form of address (Mr. / Ms. / Tech., Tech. pre-selected; optional) · "For your file. Most of the crew just uses your name."
+  - Form of address (Mr. / Ms. / Mrs. / Dr. / Tech., Tech. pre-selected; optional) · "For your file. Most of the crew just uses your name."
   - Reason for joining (The signing bonus / Money for family back home / I like lettuce: the `arrival_reason` flag) · "There are no wrong answers. All answers are filed."
   - Callsign · "Assigned in the field by your supervisor" (read-only: Bricks names you Sprout in the briefing).
 - **ID badge preview:** the player portrait (visor down) captioned "Photo on file", an "Everglow" tab, the name as typed ("Your name" while blank), and "JPT-1 · #ED-447".

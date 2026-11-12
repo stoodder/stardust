@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import saveV0 from './__fixtures__/save.v0.json' with { type: 'json' };
 import saveV1 from './__fixtures__/save.v1.json' with { type: 'json' };
 import saveV2 from './__fixtures__/save.v2.json' with { type: 'json' };
+import saveV3 from './__fixtures__/save.v3.json' with { type: 'json' };
 import { migrate, migrations } from './migrations.ts';
 import { FIRST_PAYDAY_SEEN_ID, runEnd, type RunEndInput } from './runEnd.ts';
 import { decodeEnvelope, serializeSave } from './save.ts';
@@ -26,7 +27,7 @@ const PAYING_WIN: RunEndInput = {
 };
 
 /** One fixture per schema version ever written (meta-runtime.md § Versioning and migrations). */
-const FIXTURES: Readonly<Record<number, unknown>> = { 0: saveV0, 1: saveV1, 2: saveV2 };
+const FIXTURES: Readonly<Record<number, unknown>> = { 0: saveV0, 1: saveV1, 2: saveV2, 3: saveV3 };
 
 describe('save migrations', () => {
   it('has a fixture for every version up to the current one', () => {
@@ -110,6 +111,48 @@ describe('save migrations', () => {
     const decoded = decodeEnvelope({ v: 1, savedAt: 0, data: v1 });
     if (!decoded.ok) throw new Error(decoded.problem.message);
     expect(decoded.envelope.data).toEqual(createNewSave());
+  });
+
+  it('v2 → v3 files the form of address each pronoun set stood for (D163)', () => {
+    const v2 = decodeEnvelope(saveV2);
+    if (!v2.ok) throw new Error(v2.problem.message);
+    expect(v2.migratedFrom).toBe(2);
+    expect(v2.envelope.data.profile).toEqual({
+      name: "Jo O'Neil-Park",
+      address: 'tech',
+      pronouns: 'they',
+      callsign: 'sprout',
+    });
+    for (const [pronouns, address] of [
+      ['he', 'mr'],
+      ['she', 'ms'],
+      ['they', 'tech'],
+    ] as const) {
+      const old = clone(saveV2);
+      old.data.profile.pronouns = pronouns;
+      const decoded = decodeEnvelope(old);
+      if (!decoded.ok) throw new Error(decoded.problem.message);
+      expect(decoded.envelope.data.profile).toMatchObject({ address, pronouns });
+    }
+    // A null profile stays null: the intake still runs on Continue.
+    const blank: { data: Record<string, unknown> } = clone(saveV2);
+    blank.data['profile'] = null;
+    const decoded = decodeEnvelope(blank);
+    if (!decoded.ok) throw new Error(decoded.problem.message);
+    expect(decoded.envelope.data.profile).toBeNull();
+    // Everything else carries over as it was.
+    expect(migrations[2]?.({ profile: 'x' })).toEqual({ profile: 'x' });
+    expect(migrations[2]?.({ profile: { pronouns: 'xe' } })).toEqual({
+      profile: { pronouns: 'xe' },
+    });
+  });
+
+  it('v3 keeps the honorific picked (Mrs. and Dr. share their sets with Ms. and Tech.)', () => {
+    const decoded = decodeEnvelope(saveV3);
+    if (!decoded.ok) throw new Error(decoded.problem.message);
+    expect(decoded.migratedFrom).toBeNull();
+    expect(decoded.envelope.data.profile).toEqual(saveV3.data.profile);
+    expect(decoded.envelope.data.profile?.address).toBe('dr');
   });
 
   it('marks the first payday on a save from before its id that has won a paying map (D098)', () => {
