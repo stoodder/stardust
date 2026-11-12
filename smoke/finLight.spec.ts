@@ -62,15 +62,19 @@ async function skyAt(page: Page, wave: number, before: number): Promise<number> 
 async function heldAt(page: Page, wave: number): Promise<void> {
   expect(await until(page, wave)).toMatchObject({ held: true, phase: 2, outcome: 'playing' });
   let held = 0;
+  let rims = 0;
   for (let k = 0; k < 30 && held === 0; k++) {
     // oxlint-disable-next-line no-await-in-loop -- a step, a frame, a look
     await page.evaluate(() => globalThis.__sd!.fastForward(30));
     // oxlint-disable-next-line no-await-in-loop -- a step, a frame, a look
     await nextFrames(page);
     // oxlint-disable-next-line no-await-in-loop -- a step, a frame, a look
-    held = (await page.evaluate(() => globalThis.__sd!.render()!.unsung)).held;
+    ({ held, rims } = await page.evaluate(() => globalThis.__sd!.render()!.unsung));
   }
   expect(held, `W${wave}: the Unsung held`).toBeGreaterThan(0);
+  // M8 R2: each held body rimmed (the boss's one copy, a split part's whole silhouette of four).
+  expect(rims).toBeGreaterThanOrEqual(held);
+  expect(rims).toBeLessThanOrEqual(held * 4);
   await shot(page, 'fin-light', 9 + wave / 100, `w${wave}-unsung-held`);
 }
 
@@ -128,6 +132,8 @@ test('FIN light: the night, the song, the warming sky, the Bore, and Dawn', asyn
   expect(mid.night).toBe(true);
   expect(mid.sun).toBeGreaterThan(0);
   expect(mid.sun).toBeLessThan(SUN_STEPS);
+  // The torn rifts went out as Dawn began (M8 R2): their scars only, long before the sun lands.
+  expect(await cracks()).toMatchObject({ cracks: torn.cracks, openCracks: 0 });
   await shot(page, 'fin-light', 11, 'dawn-middle');
   // The sun lands as the win's 8 s hold ends (finale.md: "the map is won as it lands"): a tick
   // before, it has crossed the map.

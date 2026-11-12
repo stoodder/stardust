@@ -64,7 +64,10 @@ export const ORBIT_HALLS = { x: 128, y: 158 } as const;
 /** QUILL's relay: its body's centre. */
 const RELAY = { x: 112, y: 52 } as const;
 
-/** The colony's domes on the night side: night steel catching the starlight (`Go`: no window lit). */
+/**
+ * The colony's domes on the night side: night steel catching the starlight (`Go`: no window lit):
+ * a cluster round the Halls, and the outlying settlements scattered over the dark (M8 R2).
+ */
 const DOME_GLINTS: readonly (readonly [number, number, 'I' | 'J' | 'K'])[] = [
   [121, 161, 'K'],
   [124, 163, 'J'],
@@ -72,6 +75,14 @@ const DOME_GLINTS: readonly (readonly [number, number, 'I' | 'J' | 'K'])[] = [
   [133, 164, 'J'],
   [137, 167, 'K'],
   [113, 170, 'I'],
+  [88, 150, 'K'],
+  [91, 152, 'I'],
+  [64, 160, 'J'],
+  [67, 162, 'I'],
+  [40, 171, 'K'],
+  [101, 176, 'J'],
+  [146, 176, 'I'],
+  [150, 172, 'K'],
 ];
 
 function inPlanet(x: number, y: number): boolean {
@@ -105,9 +116,10 @@ function smooth(x: number, y: number, cell: number, seed: number): number {
   return a + (b - a) * ease(fy);
 }
 
-/** The terminator's column at row y: it leans with the globe's curve. */
+/** The terminator's column at row y: it leans and bows with the globe's curve (M8 R2), an arc. */
 function duskX(y: number): number {
-  return DUSK_X + (y - 120) * 0.45;
+  const t = y - 120;
+  return DUSK_X + t * 0.7 - t * t * 0.006;
 }
 
 function paintPlanet(g: CharGrid): void {

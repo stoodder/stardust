@@ -107,9 +107,9 @@ const NORTH_FROM = 16;
 const NORTH_TO = 96;
 /** The Spires' lit tips turn gold north of this row (their clay's top step, `finale.ground.3`). */
 const SPIRES_TO = 150;
-/** The south darkens toward ink from this row, to SOUTH_ALPHA at the south edge. */
+/** The south darkens toward ink from this row, to SOUTH_ALPHA at the south edge (M8 R2: a step deeper). */
 const SOUTH_FROM = 220;
-const SOUTH_ALPHA = 0.5;
+const SOUTH_ALPHA = 0.7;
 
 /**
  * The north faces the sunrise (M8 review R2/R5: the chart was flat mauve): a warm edge under the

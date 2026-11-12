@@ -156,13 +156,18 @@ describe('held by the song (M8 R1)', () => {
   });
 });
 
-describe('the split’s parts at night (M8 R2)', () => {
-  const tower = (x: number, y: number, alive = true) => ({ alive, x, y });
-  const pool = (...items: { alive: boolean; x: number; y: number }[]) => ({
-    used: items.length,
-    items,
-  });
+/** A tower at (x, y) as the hold reads it, and a pool of them. */
+const tower = (x: number, y: number, alive = true) => ({ alive, x, y });
+const pool = (...items: { alive: boolean; x: number; y: number }[]) => ({
+  used: items.length,
+  items,
+});
 
+/** The silhouette's strengths (left, right, up, down) round a part whose rim faces (rx, ry). */
+const strengths = (rx: number, ry: number) =>
+  PART_OUTLINE_SIDES.map(([sx, sy]) => partOutline(sx, sy, rx, ry));
+
+describe('the split’s parts at night (M8 R2)', () => {
   it('finds the lowest-drawn tower within one tile in any direction, and none further', () => {
     const out = { x: 0, y: 0 };
     // A part at the back of tile (11, 2): spires either side, one diagonally in front.
@@ -202,8 +207,6 @@ describe('the split’s parts at night (M8 R2)', () => {
 
   it('outlines a held part all round, whole on the song’s side, a step down elsewhere', () => {
     expect(PART_OUTLINE_SIDES).toHaveLength(4);
-    const strengths = (rx: number, ry: number) =>
-      PART_OUTLINE_SIDES.map(([sx, sy]) => partOutline(sx, sy, rx, ry));
     // Sides: left, right, up, down.
     expect(strengths(1, 0)).toEqual([
       PART_OUTLINE_ALPHA,

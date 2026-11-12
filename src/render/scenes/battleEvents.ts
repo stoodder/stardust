@@ -6,7 +6,7 @@
 // salvage a cleared wreck pays; and T312b's: younglings drawn as `enemy.youngling`, a brood popping
 // in where it's born (a split's children, a sneeze, a surfacing), a splitter's pink pop, a boss's
 // phase change (its bar flashes, gold and white rings, a 1 px shake) and the sparks of shots
-// plinking off it while it's invulnerable, its ending fading the bar, and props on cues landing
+// plinking off it while it's invulnerable, its ending (or its rest in the song) fading the bar, and props on cues landing
 // with their wave's countdown; T328's health bars scaled to each unit's def (none on a boss or a
 // neutral unit); and T329's: a link formed by this frame's build floats its callout clear of the
 // new tower's `−cost`; and T430a's: deaths in the act's tone (deathLook.ts: Act I's comic pop, Act
@@ -451,6 +451,11 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
       // Driven off: she turns and runs for the edge with her brood (EnemyView's `flee`); the bar
       // holds a moment and steps out.
       views.bossBar.ended(e.uid, e.how === 'pivot'); // a pivot steps out at once (T530a)
+    }),
+    // The Unsung laid to rest (or a boss laid to rest at Dawn): its bar steps out with it, never
+    // left empty over the sunrise (M8 R2; `ended` passes over any unit whose bar isn't up).
+    bus.on('LaidToRest', (e) => {
+      views.bossBar.ended(e.uid, false);
     }),
     bus.on('CountdownStarted', (e) => {
       views.cueProps.reveal(e.wave);

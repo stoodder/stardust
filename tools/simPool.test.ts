@@ -5,11 +5,19 @@ import { describe, expect, it } from 'vitest';
 import { runKey, type RunRequest } from '../src/balance/checks.ts';
 import { FLAG_VARIANT_CONTENT } from '../src/balance/__fixtures__/fireControl.ts';
 import { judgeMap, mapRunner, planMap, runMap } from '../src/balance/harness.ts';
-import { inOrder, mapAffinity, runPool, type PoolWorker, type SimJob } from './simPool.ts';
+import {
+  inOrder,
+  mapAffinity,
+  runPool,
+  WAIT,
+  type JobSource,
+  type PoolWorker,
+  type SimJob,
+} from './simPool.ts';
 
-/** A job as 'map build#seed', or '-' for none. */
-const jobName = (j: SimJob | undefined): string =>
-  j === undefined ? '-' : `${j.mapId} ${runKey(j.req)}`;
+/** A job as 'map build#seed', '-' for none, or 'wait'. */
+const jobName = (j: SimJob | undefined | typeof WAIT): string =>
+  j === undefined ? '-' : j === WAIT ? 'wait' : `${j.mapId} ${runKey(j.req)}`;
 /** Job 0 takes 40 ms, the rest 2 ms. */
 const zeroIsLong = (job: number): number => (job === 0 ? 40 : 2);
 const req = (build: string, seed = 1): RunRequest => ({ build, seed });
@@ -73,7 +81,7 @@ describe('the sim work queue (T778)', () => {
     const order = [0, 1, 2, 0, 0, 2, 1, 1, 1, 0, 2, 2, 2, 0, 1];
     for (let k = 0; seen.length < 24 && k < 200; k++) {
       const job = src.take(order[k % order.length]!);
-      if (job !== undefined) seen.push(`${job.mapId} ${runKey(job.req)}`);
+      if (job !== undefined && job !== WAIT) seen.push(`${job.mapId} ${runKey(job.req)}`);
     }
     const all = maps.flatMap((m) => m.requests.map((r) => `${m.mapId} ${runKey(r)}`));
     expect(seen.toSorted()).toEqual(all.toSorted());
@@ -105,6 +113,49 @@ describe('the sim work queue (T778)', () => {
   it('an empty queue closes its workers', async () => {
     const workers = [fakeWorker('a', () => 1, [])];
     await runPool(inOrder<number>([]), workers, () => {});
+    expect(workers[0]!.closed()).toBe(true);
+  });
+
+  it('with a gate: skipped jobs drop, waiting ones are passed over, and all-waiting says WAIT', () => {
+    const maps = [
+      { mapId: 'a', requests: [req('par'), req('par', 2), req('par', 3), req('none')] },
+    ];
+    const done = new Set<string>();
+    // A later seed waits for its seed 1, then is skipped (seed 1 drew nothing; D157).
+    const src = mapAffinity(maps, ({ req: r }) =>
+      r.seed === 1 ? 'run' : done.has(r.build) ? 'skip' : 'wait',
+    );
+    const took = (w: number) => jobName(src.take(w));
+    expect(took(0)).toBe('a par#1');
+    expect(took(1)).toBe('a none#1'); // par#2 and #3 wait behind par#1, still running
+    expect(took(1)).toBe('wait');
+    done.add('par');
+    expect(took(1)).toBe('-'); // both skipped: nothing left
+    expect(took(0)).toBe('-');
+  });
+
+  it('a worker told to WAIT idles until a job in flight finishes, then takes the job it freed', async () => {
+    const log: string[] = [];
+    let first = false;
+    const jobs = [0, 1];
+    // Job 1 waits until job 0 is done (job 0 is long, so worker b is told to WAIT first).
+    const src: JobSource<number> = {
+      take: () => {
+        if (jobs[0] === 1 && !first) return WAIT;
+        return jobs.shift();
+      },
+    };
+    const workers = [fakeWorker('a', zeroIsLong, log), fakeWorker('b', zeroIsLong, log)];
+    await runPool(src, workers, (job) => {
+      if (job === 0) first = true;
+    });
+    expect(log).toEqual(['a:0', expect.stringMatching(/^[ab]:1$/)]);
+    expect(workers.every((w) => w.closed())).toBe(true);
+  });
+
+  it('WAIT with no job in flight is a bug in the source: it rejects', async () => {
+    const workers = [fakeWorker('a', () => 1, [])];
+    await expect(runPool({ take: () => WAIT }, workers, () => {})).rejects.toThrow(/waits/);
     expect(workers[0]!.closed()).toBe(true);
   });
 

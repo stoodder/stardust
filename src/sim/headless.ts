@@ -64,7 +64,7 @@ import { createSim, type Sim } from './sim.ts';
 import { abilityReady } from './systems/abilities.ts';
 import { slotRevoked } from './revoke.ts';
 import { clearCommand, wreckageStatus } from './systems/wreckage.ts';
-import type { MedalStatus, ObjectiveStatus } from './state.ts';
+import type { MedalStatus, ObjectiveStatus, SimRngs } from './state.ts';
 
 export type { RunSummary, TowerSummary, WaveSummary } from './headlessTracker.ts';
 
@@ -622,6 +622,27 @@ export interface HeadlessResult extends RunSummary {
   readonly forcedInputs: readonly string[];
   /** The classes and abilities the map's script revoked, in order (`state.revoked`; T606). */
   readonly revoked: { readonly towers: readonly string[]; readonly abilities: readonly string[] };
+  /**
+   * The random numbers each RNG stream drew this run (`state.rng`; sfc32's counter word counts
+   * its outputs). The seed reaches a run only through these streams, so a run that drew none
+   * plays alike on every seed: the harness then reuses it for the build's other seeds (D157).
+   */
+  readonly seedDraws: Readonly<Record<keyof SimRngs, number>>;
+}
+
+/** Each stream's counter word now (`seedDraws`). */
+function rngCounters(rng: SimRngs): Record<keyof SimRngs, number> {
+  const out = {} as Record<keyof SimRngs, number>;
+  for (const k of Object.keys(rng) as (keyof SimRngs)[]) out[k] = rng[k].d;
+  return out;
+}
+
+/** Whether a run drew no random number on any stream (`seedDraws`): every seed plays it alike. */
+export function drewNoRandom(r: Pick<HeadlessResult, 'seedDraws'>): boolean {
+  for (const k of Object.keys(r.seedDraws) as (keyof SimRngs)[]) {
+    if (r.seedDraws[k] !== 0) return false;
+  }
+  return true;
 }
 
 /** 30 minutes of sim time: longer than any map (the finale is about 25). */
@@ -637,6 +658,7 @@ export function runHeadless<K extends IdSpace = LiveIds>(
   const sim = createSim(cfg);
   const exec = createBuildExecutor(sim, build);
   const tracker = createRunTracker(sim, opts.checkInvariants ?? true);
+  const counters = rngCounters(sim.state.rng);
   const out: SimEvent<K>[] = [];
   let hushes = 0;
   const hold = opts.holdAfterRestoreTicks ?? 0;
@@ -676,5 +698,19 @@ export function runHeadless<K extends IdSpace = LiveIds>(
       towers: [...sim.state.revoked.towers],
       abilities: [...sim.state.revoked.abilities],
     },
+    seedDraws: drawsSince(counters, sim.state.rng),
   };
+}
+
+/**
+ * The outputs each stream drew since `start` (its counter words then): the counter steps by one
+ * per output, mod 2³² (a stream replaced outright reads as drawn, which only costs a rerun).
+ */
+function drawsSince(
+  start: Readonly<Record<keyof SimRngs, number>>,
+  rng: SimRngs,
+): Record<keyof SimRngs, number> {
+  const now = rngCounters(rng);
+  for (const k of Object.keys(now) as (keyof SimRngs)[]) now[k] = (now[k] - start[k]) >>> 0;
+  return now;
 }

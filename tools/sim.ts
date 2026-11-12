@@ -36,7 +36,14 @@ import { compileContent } from '../src/content/compile.ts';
 import { RAW_CONTENT } from '../src/content/registry.ts';
 import type { LiveIds } from '../src/content/types.ts';
 import { cpuClockMs } from './simClock.ts';
-import { mapAffinity, runPool, type PoolWorker, type SimJob } from './simPool.ts';
+import {
+  firstSeedsFirst,
+  mapAffinity,
+  runPool,
+  seedReuseGate,
+  type PoolWorker,
+  type SimJob,
+} from './simPool.ts';
 import type { SimWorkerReply } from './simWorker.ts';
 
 const { values } = parseArgs({
@@ -104,7 +111,9 @@ function threadWorker(): PoolWorker<SimJob, Done> {
 /**
  * Every map in `ids` on up to `jobs` worker threads, one run per job (tools/simPool.ts): planned
  * here, run there, judged here, in `ids`' order. A map's time is its planning, its runs' wall time
- * wherever they ran, and its judging.
+ * wherever they ran, and its judging. A build's later seeds queue behind its first ones and wait
+ * for its seed 1: if that run drew no random number, they're never run (the judge copies it,
+ * balance/harness.ts `reuseSeed`; D157), else they run.
  */
 async function runSplit(
   ids: readonly LiveIds['map'][],
@@ -118,7 +127,9 @@ async function runSplit(
   const byId = new Map<string, (typeof maps)[number]>(maps.map((m) => [m.plan.mapId, m]));
   const runs = maps.reduce((n, m) => n + m.plan.requests.length, 0);
   const workers = Array.from({ length: Math.min(jobs, runs) }, threadWorker);
-  await runPool(mapAffinity(maps.map((m) => m.plan)), workers, (job, done) => {
+  const plans = maps.map((m) => m.plan);
+  const gate = seedReuseGate(plans, (mapId, key) => byId.get(mapId)?.records.get(key));
+  await runPool(mapAffinity(firstSeedsFirst(plans), gate), workers, (job, done) => {
     const m = byId.get(job.mapId)!; // every job is a planned map's
     m.records.set(runKey(job.req), done.record);
     m.ms += done.ms;

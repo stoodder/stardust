@@ -4,7 +4,7 @@
 import type { CompiledBuild, CompiledContent, CompiledMapDef } from '../content/compiled.ts';
 import type { IdSpace, LiveIds, WaveTag } from '../content/types.ts';
 import { LIVE_CATALOG, type MetaCatalog } from '../meta/index.ts';
-import { runHeadless, type ScriptFlags } from '../sim/index.ts';
+import { drewNoRandom, runHeadless, type ScriptFlags } from '../sim/index.ts';
 import { secToTicks } from '../shared/time.ts';
 import {
   describeRun,
@@ -21,6 +21,7 @@ import {
   type RunRecord,
   type RunRequest,
 } from './checks.ts';
+import { bossDamageChecks, bossDamageOf, withBossDamage } from './bossDamage.ts'; // D157
 import { noCounterAnswerChecks } from './counterChecks.ts';
 import { holdoutBand, judgeHoldout } from './holdout.ts';
 import { mapChecks } from './mapChecks.ts';
@@ -112,6 +113,10 @@ export function buildFor<K extends IdSpace>(
   if (flags === null) return null; // a 'flag:'/'flags:' label naming a value the map doesn't list
   const par = parBuildFor(map, flags);
   label = splitMeta(label).build;
+  // The boss-damage variant (D157): the alt it names, run on content whose boss takes more damage.
+  const hard = bossDamageOf(label);
+  if (hard !== null)
+    return hard.build.startsWith('alt:') ? buildFor(hard.build, map, content) : null;
   // The late-rebuild variant (D156): the build it names, played by the runner's late executor.
   if (label.startsWith(LATE_REBUILD_PREFIX)) {
     const inner = label.slice(LATE_REBUILD_PREFIX.length);
@@ -252,6 +257,7 @@ function planWith<K extends IdSpace>(
     ...rndPickChecks(map, rndPicks(map, content, catalog), few),
     ...revokeVariantChecks(map, content, few), // T606
     ...lateRebuildChecks(map, few), // D156
+    ...bossDamageChecks(map, content), // D157
   ];
   const only = opts.build;
   if (only !== undefined) {
@@ -342,6 +348,15 @@ function runnerWith<K extends IdSpace>(
 ): (req: RunRequest) => RunRecord {
   const map = content.maps[mapId];
   const cpuNow = opts.cpuNow ?? opts.now ?? ((): number => 0);
+  /** The boss-damage variants' content, one per multiplier (D157). */
+  const harder = new Map<number, CompiledContent<K>>();
+  const contentFor = (label: string): CompiledContent<K> => {
+    const mul = bossDamageOf(splitMeta(label).build)?.mul;
+    if (mul === undefined) return content;
+    let c = harder.get(mul);
+    if (c === undefined) harder.set(mul, (c = withBossDamage(content, mapId, mul)));
+    return c;
+  };
   return (req) => {
     const build = buildFor(req.build, map, content);
     const flags = flagsFor(req.build, map) ?? {};
@@ -355,7 +370,8 @@ function runnerWith<K extends IdSpace>(
     }
     const start = cpuNow();
     try {
-      const plain = runConfig(content, map, build, profile, req.seed, flags);
+      const runContent = contentFor(req.build);
+      const plain = runConfig(runContent, runContent.maps[mapId], build, profile, req.seed, flags);
       // A revocation variant forces the cue's class (T606; balance/revokeChecks.ts).
       const forced = revocableClasses(map, build, content).find(
         (t) => t === revokeClassOf(req.build),
@@ -381,9 +397,36 @@ function runnerWith<K extends IdSpace>(
 }
 
 /**
+ * The run whose result a seed's run may reuse (D157): seed 1 of the same build, for any later
+ * seed's run that isn't a determinism repeat; null for any other run.
+ */
+export function firstSeedOf(req: RunRequest): RunRequest | null {
+  return req.seed > 1 && req.repeat !== true ? { build: req.build, seed: 1 } : null;
+}
+
+/**
+ * `req`'s record as a copy of `first` (its `firstSeedOf` run), when that run drew no random number
+ * (`HeadlessResult.seedDraws`): the seed reaches a run only through the sim's RNG streams, so every
+ * seed plays it alike, and the harness needn't run it again. Null when `first` drew, failed, or
+ * isn't `req`'s first seed, so a build that one day draws a random number runs every seed again by
+ * itself. The copy keeps `first`'s result, final hash included, says where it came from
+ * (`reusedFrom`), and took no CPU.
+ */
+export function reuseSeed(first: RunRecord, req: RunRequest): RunRecord | null {
+  const want = firstSeedOf(req);
+  if (want === null || first.build !== want.build || first.seed !== want.seed || first.repeat) {
+    return null;
+  }
+  if (first.error !== null || first.result === null || !drewNoRandom(first.result)) return null;
+  return { ...first, seed: req.seed, ms: 0, reusedFrom: first.seed };
+}
+
+/**
  * Judges a planned map from its runs: `run` gives each request's record (run here, or looked up
  * among a worker's), asked once per request in the plan's order, and `elapsedMs` the map's time
- * as the report shows it. A check that reads a run it didn't plan for gets it from `run` too.
+ * as the report shows it. A check that reads a run it didn't plan for gets it from `run` too. A
+ * later seed of a planned build whose seed 1 drew no random number is that run's copy
+ * (`reuseSeed`), whether or not a worker ran it too, so the verdicts never depend on which ran.
  */
 export function judgeMap<K extends IdSpace>(
   content: CompiledContent<K>,
@@ -393,11 +436,15 @@ export function judgeMap<K extends IdSpace>(
 ): MapReport {
   const map = content.maps[plan.mapId];
   const runs = new Map<string, RunRecord>();
+  const planned = new Set(plan.requests.map(runKey));
   const get = (req: RunRequest): RunRecord => {
     const key = runKey(req);
     let rec = runs.get(key);
     if (rec === undefined) {
-      rec = run(req);
+      const first = firstSeedOf(req);
+      if (first !== null && planned.has(runKey(first)))
+        rec = reuseSeed(get(first), req) ?? undefined;
+      rec ??= run(req);
       runs.set(key, rec);
     }
     return rec;

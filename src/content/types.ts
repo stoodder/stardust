@@ -928,9 +928,9 @@ export interface BossPhaseDef {
    */
   readonly floorPct?: number;
   /**
-   * The phase begins no earlier than this long into the map's current script phase (the Unsung's
-   * forms 3 and 4: 60 s and 120 s into Phase 2; D156), so damage never brings a form's threat on
-   * sooner. Reached by HP sooner, the HP holds at the phase's threshold until then (the hits still
+   * The phase begins no earlier than this long into the map's current script phase, counting its
+   * unfrozen time only (the Unsung's forms 2–4: 90 s, 120 s and 150 s into Phase 2; D156, D157), so
+   * damage never brings a form's threat on sooner. Reached by HP sooner, the HP holds at the phase's threshold until then (the hits still
    * feed the song); risen after a split sooner, the rise's invulnerability lasts until then.
    * Without it a phase begins as soon as its HP share (or its rise) comes.
    */

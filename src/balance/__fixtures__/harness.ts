@@ -81,6 +81,17 @@ export function fakeResult(
     lostAtWave,
     forcedInputs: [],
     revoked: { towers: [], abilities: [] },
+    // A draw, so the judge never reuses a fake seed's run for another (`reuseSeed`; D157).
+    seedDraws: {
+      waves: 0,
+      triggers: 0,
+      status: 0,
+      abilities: 0,
+      movement: 0,
+      towers: 0,
+      allies: 0,
+      projectiles: 1,
+    },
     stats: {
       skitterkinKilled: 0,
       killsByEnemy: {},

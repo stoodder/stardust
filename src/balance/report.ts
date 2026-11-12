@@ -25,6 +25,13 @@ export function towerDps(t: TowerSummary, endTick: number): number {
 }
 const runName = (r: RunRecord): string => `${r.build}${r.repeat ? ' (again)' : ''}`;
 
+/** A map's run count, and how many were seed 1's copies (no random draw; `reuseSeed`, D157). */
+export function runCount(map: Pick<MapReport, 'runs'>): string {
+  const reused = map.runs.filter((r) => r.reusedFrom !== undefined).length;
+  const n = `${map.runs.length} runs`;
+  return reused === 0 ? n : `${n} (${reused} reused from seed 1: no random draw)`;
+}
+
 /** The first run of each build, in the order they ran (seed 1 for almost all of them). */
 function firstRuns(map: MapReport): RunRecord[] {
   const seen = new Set<string>();
@@ -41,7 +48,7 @@ export function formatText(report: CampaignReport): string {
   for (const map of report.maps) {
     const band = map.band === null ? 'no band' : `band ${map.band.lo}–${map.band.hi}`;
     lines.push(
-      `${map.mapId} (act ${map.act}, ${map.objective}) · ${band} · ${map.runs.length} runs · ${fmtSec(map.ms)} · ${map.ok ? 'PASS' : 'FAIL'}`,
+      `${map.mapId} (act ${map.act}, ${map.objective}) · ${band} · ${runCount(map)} · ${fmtSec(map.ms)} · ${map.ok ? 'PASS' : 'FAIL'}`,
     );
     for (const c of map.checks) {
       lines.push(`  ${c.ok ? 'ok  ' : 'FAIL'} #${c.id} ${c.title}: ${c.summary}`);
@@ -124,8 +131,8 @@ export function formatMarkdown(report: CampaignReport): string {
           res === null ? '—' : res.steps.filter((s) => s.late).length,
           medalMarks(res),
           linkUptime(res),
-          res?.hash ?? '—',
-          Math.round(r.ms),
+          r.reusedFrom === undefined ? (res?.hash ?? '—') : `= seed ${r.reusedFrom}`,
+          r.reusedFrom === undefined ? Math.round(r.ms) : 'reused',
         ]),
       );
     }

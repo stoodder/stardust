@@ -38,6 +38,11 @@ export interface RunRecord {
   readonly marginPct: number;
   /** The run's CPU time in ms (`HarnessOptions.cpuNow`; assertion 13). */
   readonly ms: number;
+  /**
+   * Set on a record the harness didn't run: a copy of this seed's run of the same build, which
+   * drew no random number, so every seed plays it alike (`reuseSeed`; D157). Its `ms` is 0.
+   */
+  readonly reusedFrom?: number;
 }
 
 export interface CheckOutcome {

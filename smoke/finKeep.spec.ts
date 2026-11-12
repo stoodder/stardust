@@ -66,7 +66,7 @@ test('FIN under Keep: Directive 0, "Who\'s there?", the class restored through D
   const note = page.getByTestId('pause-note');
   await expect(note).toBeVisible();
   await expect(note).toContainText('QUILL');
-  await expect(note).toContainText('rebuild');
+  await expect(note).toContainText(/rebuild/i);
   const held = await page.evaluate(() => globalThis.__sd!.state()!.tick);
   await page.waitForTimeout(500);
   expect(await page.evaluate(() => globalThis.__sd!.state()!.tick)).toBe(held);

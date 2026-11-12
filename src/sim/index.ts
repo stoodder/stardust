@@ -226,6 +226,7 @@ export { pointAt, remainingDist, segmentAt, type Point, type RouteFollower } fro
 export {
   DEFAULT_MAX_TICKS,
   assertRunnableBuild,
+  drewNoRandom,
   createBuildExecutor,
   runHeadless,
   type BuildExecutor,
