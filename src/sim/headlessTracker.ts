@@ -1,6 +1,7 @@
 // What a headless run reports (runHeadless, headless.ts): per-wave and per-tower tallies built
 // from the drained events, and the debug invariant checks the harness asserts
 // (conventions.md § Balance sims, #12). Reads the public sim API only.
+import type { CompiledMapDef } from '../content/compiled.ts';
 import type { IdSpace, ObjectiveKind } from '../content/types.ts';
 import { MAX_LOADOUT } from './config.ts';
 import { escortMaxLost } from './escort.ts';
@@ -519,7 +520,7 @@ export function createRunTracker<K extends IdSpace>(
         maxLost: escortMaxLost(state, map),
         voices: state.choir.voices,
         choirSize: state.choir.singers,
-        choirBase: (map.choir?.maxHushed ?? null) !== null ? map.choir!.singers : 0,
+        choirBase: choirBaseOf(map),
         credits: state.credits,
         lostAtWave,
         stats: {
@@ -536,4 +537,10 @@ export function createRunTracker<K extends IdSpace>(
       };
     },
   };
+}
+
+/** A choir map's base choir when it has a hush allowance (the margin's denominator; T821), else 0. */
+function choirBaseOf(map: { readonly choir: CompiledMapDef<IdSpace>['choir'] }): number {
+  const c = map.choir;
+  return c !== null && (c.maxHushed ?? null) !== null ? c.singers : 0;
 }
