@@ -226,7 +226,7 @@ describe.each(SEEDS)('seed %i', (seed) => {
       for (const c of block.counters) {
         const demands = w.groups.some((g) => g.role !== 'spice' && cats(g.enemy).has(c));
         const bossBrings =
-          w.boss !== null && bossCategories(content.enemies[w.boss], content.enemies).has(c);
+          w.boss !== null && bossCategories(enemy(w.boss), content.enemies).has(c);
         expect(demands || bossBrings).toBe(true);
       }
       expect(w.spiceThreat).toBeLessThanOrEqual(SOFT_THREAT_MAX_SHARE * w.threat + 1e-9);

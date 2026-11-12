@@ -73,7 +73,8 @@ describe('A3M6 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
       map: 'a3_m06',
       counter: 'detection',
       par: rec('par').marginPct,
-      without: rec('noCounter:detection').marginPct,
+      // The harness doesn't run an exempted build: a loss's margin is 0, a win's its Sheltered %.
+      without: blind.outcome === 'lost' ? 0 : (blind.evacuated / REFUGEES) * 100,
       minPoints: 10,
     });
     // Nothing Repossessed is out of its reach (an Operative reached the gate), and more Operatives
