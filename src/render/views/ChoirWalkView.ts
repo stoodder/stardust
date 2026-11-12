@@ -72,8 +72,8 @@ const pos: Vec2 = { x: 0, y: 0 };
 const semi: Vec2 = { x: 0, y: 0 };
 const tip: Vec2 = { x: 0, y: 0 };
 const grid = { x: 0, y: 0 };
-const winX: number[] = new Array<number>(MAX_WINDOW_POINTS).fill(0);
-const winY: number[] = new Array<number>(MAX_WINDOW_POINTS).fill(0);
+const winX: number[] = Array.from({ length: MAX_WINDOW_POINTS }, () => 0);
+const winY: number[] = Array.from({ length: MAX_WINDOW_POINTS }, () => 0);
 
 type MemberLike = Readonly<
   Pick<Ally, 'x' | 'y' | 'hushUid' | 'pebble' | 'kind' | 'alive' | 'mode' | 'vulnerability'>
@@ -283,7 +283,7 @@ export class ChoirWalkView {
         v.show(a.uid, a, queued ? toGate : upRoad); // a queued one faces the gate
       }
       v.stamp = stamp;
-      if (queued) queuePoint(this.#gate, q, (a.uid & 1) as 0 | 1, grid);
+      if (queued) queuePoint(this.#gate, q, a.uid % 2 === 0 ? 0 : 1, grid);
       else {
         grid.x = a.x;
         grid.y = a.y;

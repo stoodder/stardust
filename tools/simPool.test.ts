@@ -7,6 +7,9 @@ import { FLAG_VARIANT_CONTENT } from '../src/balance/__fixtures__/fireControl.ts
 import { judgeMap, mapRunner, planMap, runMap } from '../src/balance/harness.ts';
 import { inOrder, mapAffinity, runPool, type PoolWorker, type SimJob } from './simPool.ts';
 
+/** A job as 'map build#seed', or '-' for none. */
+const jobName = (j: SimJob | undefined): string =>
+  j === undefined ? '-' : `${j.mapId} ${runKey(j.req)}`;
 /** Job 0 takes 40 ms, the rest 2 ms. */
 const zeroIsLong = (job: number): number => (job === 0 ? 40 : 2);
 const req = (build: string, seed = 1): RunRequest => ({ build, seed });
@@ -43,8 +46,7 @@ describe('the sim work queue (T778)', () => {
       { mapId: 'a1_m03', requests: [1, 2, 3, 4, 5].map((n) => req('par', n)) },
     ];
     const src = mapAffinity(maps);
-    const name = (j: SimJob | undefined) => (j === undefined ? '-' : `${j.mapId} ${runKey(j.req)}`);
-    const took = (w: number) => name(src.take(w));
+    const took = (w: number) => jobName(src.take(w));
     // Workers 0 and 1 start the two latest maps; worker 0 stays on a1_m03.
     expect(took(0)).toBe('a1_m03 par#1');
     expect(took(1)).toBe('a1_m02 par#1');

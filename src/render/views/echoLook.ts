@@ -42,6 +42,11 @@ export function echoRiseAt(
     return out;
   }
   out.lift = still ? 0 : Math.round(ECHO_RISE_PX * Math.min(1, t));
-  out.alpha = t >= 1 ? 0 : t < 0.55 ? 1 : STEPPED_ALPHA[1 + Math.min(2, Math.floor(((t - 0.55) / 0.45) * 3))]!;
+  out.alpha =
+    t >= 1
+      ? 0
+      : t < 0.55
+        ? 1
+        : STEPPED_ALPHA[1 + Math.min(2, Math.floor(((t - 0.55) / 0.45) * 3))]!;
   return out;
 }

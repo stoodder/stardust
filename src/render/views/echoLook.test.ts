@@ -17,7 +17,8 @@ describe("Thrum's echo", () => {
     expect(echoLook(1)).toBe('warm');
     expect(echoLook(ECHO_WARM_TICKS + 1)).toBe('rise');
     for (const f of ['se', 'sw', 'ne', 'nw']) {
-      for (const l of ['walk', 'warm', 'rise']) expect(hasAnim(ECHO_SPRITE, `${l}_${f}`)).toBe(true);
+      for (const l of ['walk', 'warm', 'rise'])
+        expect(hasAnim(ECHO_SPRITE, `${l}_${f}`)).toBe(true);
     }
   });
 

@@ -2,10 +2,7 @@
 // absorbs), every form's poses in the sprite, the rested body's rise, the dig ring, the churn and
 // the surfacing burst.
 import { describe, expect, it } from 'vitest';
-import {
-  UNSUNG_FORM_SPRITE,
-  UNSUNG_REST_SPRITE,
-} from '../../content/sprites/enemies/unsung.ts';
+import { UNSUNG_FORM_SPRITE, UNSUNG_REST_SPRITE } from '../../content/sprites/enemies/unsung.ts';
 import { hasAnim } from './spriteInfo.ts';
 import {
   clodAt,

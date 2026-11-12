@@ -34,8 +34,10 @@ describe('bodies and poses', () => {
     expect(memberSprite(singer)).toBe('ally.singer');
     expect(memberSprite(thrum)).toBe('ally.thrum');
     for (const f of ['se', 'sw', 'ne', 'nw']) {
-      for (const p of ['walk', 'sing', 'halt']) expect(hasAnim('ally.pebble_lead', `${p}_${f}`)).toBe(true);
-      for (const p of ['walk', 'sing', 'hushed']) expect(hasAnim('ally.singer', `${p}_${f}`)).toBe(true);
+      for (const p of ['walk', 'sing', 'halt'])
+        expect(hasAnim('ally.pebble_lead', `${p}_${f}`)).toBe(true);
+      for (const p of ['walk', 'sing', 'hushed'])
+        expect(hasAnim('ally.singer', `${p}_${f}`)).toBe(true);
       for (const p of ['walk', 'sing']) expect(hasAnim('ally.thrum', `${p}_${f}`)).toBe(true);
     }
   });
@@ -95,7 +97,7 @@ describe('the song ring', () => {
   it('pulses its fill between two low rungs on the hymn, steady under reduced motion', () => {
     const seen = new Set<number>();
     for (let t = 0; t < 200; t++) seen.add(songFillAlpha(t, false));
-    expect([...seen].sort()).toEqual([SONG_FILL_OFF, SONG_FILL_ON]);
+    expect([...seen].toSorted((x, y) => x - y)).toEqual([SONG_FILL_OFF, SONG_FILL_ON]);
     for (let t = 0; t < 200; t++) expect(songFillAlpha(t, true)).toBe(SONG_FILL_ON);
     const shifts = new Set<number>();
     for (let t = 0; t < 200; t++) shifts.add(songRingShift(t, false));
@@ -114,8 +116,8 @@ describe('the halt window', () => {
   });
 
   it('follows the road round a corner toward the spawn', () => {
-    const xs = new Array<number>(8).fill(0);
-    const ys = new Array<number>(8).fill(0);
+    const xs = Array.from({ length: 8 }, () => 0);
+    const ys = Array.from({ length: 8 }, () => 0);
     const n = windowPath(bend, 5, 3.5, xs, ys);
     expect(n).toBe(3);
     expect([xs[0], ys[0]]).toEqual([1, 4]); // from the leader

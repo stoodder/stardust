@@ -97,7 +97,6 @@ export class UnsungView {
   readonly #bursts: Burst[] = [];
   #nextBurst = 0;
   #burstsShown = 0;
-  #pool: UnsungState['enemies'] | null = null;
   /** Marks shown this frame (the render-state hook). */
   #digs = 0;
   #tells = 0;
@@ -117,7 +116,10 @@ export class UnsungView {
     for (let i = 0; i < MAX_BURSTS; i++) this.#bursts.push({ ms: -1, x: 0, y: 0 });
   }
 
-  bind(bus: Bus<SimEvent<IdSpace>>, pool: () => UnsungState['enemies'] | null = () => null): () => void {
+  bind(
+    bus: Bus<SimEvent<IdSpace>>,
+    pool: () => UnsungState['enemies'] | null = () => null,
+  ): () => void {
     const offs = [
       bus.on('BossSurfaced', (e) => {
         this.surfacesSeen++;

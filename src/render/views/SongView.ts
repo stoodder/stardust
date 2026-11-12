@@ -41,7 +41,13 @@ import {
   type TintMode,
 } from './songLook.ts';
 import { AIR_LIFT_PX, BODY_LIFT_PX } from './TransientFx.ts';
-import { facingOfKey, isUnsungBody, unsungRestAt, UNSUNG_FLIP_MS, UNSUNG_RISE_MS } from './unsungLook.ts';
+import {
+  facingOfKey,
+  isUnsungBody,
+  unsungRestAt,
+  UNSUNG_FLIP_MS,
+  UNSUNG_RISE_MS,
+} from './unsungLook.ts';
 import type { ViewContext } from './ViewContext.ts';
 
 /** The enemy pool as this view reads it (to find a scattered unit's resting place). */
@@ -204,7 +210,15 @@ export class SongView {
       });
     }
     for (let i = 0; i < MAX_HELD; i++) {
-      this.#held.push({ active: false, uid: 0, x: 0, y: 0, liftPx: 0, has: false, snap: blankSnapshot() });
+      this.#held.push({
+        active: false,
+        uid: 0,
+        x: 0,
+        y: 0,
+        liftPx: 0,
+        has: false,
+        snap: blankSnapshot(),
+      });
     }
   }
 
@@ -275,7 +289,13 @@ export class SongView {
    * says rest or scatter (copying its body as drawn now, from `view`). False off a song map: the
    * caller unravels it as anywhere else.
    */
-  holdDeath(uid: number, x: number, y: number, liftPx: number, view: SongBody | undefined): boolean {
+  holdDeath(
+    uid: number,
+    x: number,
+    y: number,
+    liftPx: number,
+    view: SongBody | undefined,
+  ): boolean {
     if (!this.#songMap) return false;
     const h = this.#held[this.#nextHeld]!; // index < MAX_HELD
     this.#nextHeld = (this.#nextHeld + 1) % MAX_HELD;
@@ -415,7 +435,7 @@ export class SongView {
         if (step !== r.step) {
           r.step = step;
           const look = FLIP_LOOKS[step]!; // step < FLIP_STEPS
-          f.setTint(FLIP_HEX[step]!).setTintMode(TINT[look.mode]);
+          f.setTint(FLIP_HEX[step]).setTintMode(TINT[look.mode]);
         }
         if (f.alpha !== alpha) f.setAlpha(alpha);
       }
