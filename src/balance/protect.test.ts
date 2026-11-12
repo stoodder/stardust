@@ -45,6 +45,7 @@ function result(
       integrityLost,
       assetLost,
       refugeesLost: 0,
+      singersHushed: 0,
       startTick: 0,
       early: false,
       earlyBonus: 0,
