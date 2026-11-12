@@ -320,7 +320,7 @@ export class UnsungView {
         scene.textures.addCanvas(POOL_KEY, imageToCanvas(baked.img));
       }
       const tex = scene.textures.get(POOL_KEY).getSourceImage();
-      this.#pool = scene.make.image({ key: POOL_KEY }, false);
+      this.#pool = scene.make.image({}, false).setTexture(POOL_KEY);
       this.#pool.setDisplayOrigin(tex.width / 2, tex.height / 2);
       this.#pool.setBlendMode(Phaser.BlendModes.ADD);
       layers.decal.add(this.#pool);

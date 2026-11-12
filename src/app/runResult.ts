@@ -352,9 +352,10 @@ export function runRewardsOf(
       wavesResolved: summary.stardust.wavesResolved,
       waveCount,
       fromWave,
-      // T860: the bonus a replay win carried, noted on the line (the payout already holds it).
-      ...(source === 'replay' && input.veteran !== undefined
-        ? { veteranPct: veteranBonusPct(input.veteran) }
+      // T860: the bonus a replay win carried, noted on the line (the payout already holds it);
+      // only one that beat the map's best pays it (D156: `veteranPaidPct`).
+      ...(source === 'replay' && summary.veteranPaidPct > 0
+        ? { veteranPct: summary.veteranPaidPct }
         : {}),
     },
     intel: summary.intel,

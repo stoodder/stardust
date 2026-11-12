@@ -473,15 +473,22 @@ function Links({ view, pick }: { view: LoadoutView; pick: LoadoutPickView }) {
   );
 }
 
+/** How many formed links the Links section spells out, bonus and all (D156); more read as names. */
+const FORMED_TOLD_MAX = 3;
+
 /**
- * The Links section (T803d): its heading with the formed count, the formed links' names in view
- * (what the pick does), and the whole list, bonuses and what each still needs, one press away in a
+ * The Links section (T803d): its heading with the formed count, the formed links in view (what the
+ * pick does: up to three with their bonus, in the Technician column's open band, D156; more by
+ * name), and the whole list, bonuses and what each still needs, one press away in a
  * floating Disclosure that opens upward over the column, so it never pushes the heads-up or the
  * footer.
  */
 function LinksSection({ view, pick }: { view: LoadoutView; pick: LoadoutPickView }) {
   const formed = formedLinks(pick);
-  const names = view.links.filter((l) => formed.includes(l.id)).map((l) => l.name);
+  const on = view.links.filter((l) => formed.includes(l.id));
+  const names = on.map((l) => l.name);
+  // A few formed links say what they do in the column's open band (D156); more read as names.
+  const told = on.length <= FORMED_TOLD_MAX ? on : [];
   return (
     <section class="sd-lo-links-section" aria-labelledby="sd-lo-links-label">
       <h2 id="sd-lo-links-label" class="sd-panel-heading sd-lo-heading">
@@ -497,9 +504,20 @@ function LinksSection({ view, pick }: { view: LoadoutView; pick: LoadoutPickView
         <Links view={view} pick={pick} />
       ) : (
         <div class="sd-lo-links-row">
-          <p class={names.length === 0 ? 'sd-lo-linked sd-lo-dim' : 'sd-lo-linked'}>
-            {names.length === 0 ? 'None formed' : names.join(' · ')}
-          </p>
+          {told.length > 0 ? (
+            <ul class="sd-lo-linked sd-lo-linked-told" data-testid="loadout-linked">
+              {told.map((l) => (
+                <li key={l.id}>
+                  {l.name}
+                  <span class="sd-lo-linked-bonus">{l.bonus}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p class={names.length === 0 ? 'sd-lo-linked sd-lo-dim' : 'sd-lo-linked'}>
+              {names.length === 0 ? 'None formed' : names.join(' · ')}
+            </p>
+          )}
           <Disclosure
             float
             class="sd-lo-links-more"

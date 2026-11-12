@@ -514,6 +514,22 @@
   text-transform: uppercase;
 }
 
+/* A few formed links, each with what it does under its name (D156). */
+.sd-lo-linked-told {
+  display: grid;
+  gap: 3px;
+  padding: 0;
+  list-style: none;
+}
+
+.sd-lo-linked-bonus {
+  display: block;
+  color: var(--sd-white-0);
+  font-family: var(--font-body);
+  text-transform: none;
+  line-height: 9px;
+}
+
 .sd-lo-linked.sd-lo-dim {
   color: var(--sd-steel-3);
 }

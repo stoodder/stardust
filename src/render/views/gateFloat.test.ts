@@ -39,7 +39,7 @@ describe('a gate’s loss number', () => {
   it('steps clear of FIN’s HE HELD THE DOOR on its own map', () => {
     // The colony gate (8,13) and the stone propped by it (map.ts `held_door`).
     const core = { x: 8.5, y: 13.5 };
-    const out = gateFloatAt(core, FIN.markers, { x: 0, y: 0 });
+    const out = gateFloatAt(core, FIN.markers ?? {}, { x: 0, y: 0 });
     expect(screenX(out.x, out.y)).toBeGreaterThan(screenX(core.x, core.y));
   });
 });

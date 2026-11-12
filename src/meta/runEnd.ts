@@ -168,6 +168,11 @@ export interface RunEndSummary {
    * and on every replay and loss.
    */
   readonly revocations: readonly RevocationTransaction[];
+  /**
+   * The veteran bonus this run's Stardust carried, in percent (D156): its modifiers' total when a
+   * replay win beats the map's stored best (`SaveData.veteran`), else 0. Results notes it.
+   */
+  readonly veteranPaidPct: number;
 }
 
 export interface RunEndResult {
@@ -213,6 +218,10 @@ export function runEnd(
   // Veteran modifiers ride only replays (they unlock on Victory; meta/veteran.ts).
   const vetMods = won && wonBefore ? inTableOrder(input.veteranMods ?? []) : [];
   const vetPct = veteranBonusPct(vetMods);
+  // The bonus pays only when this win beats the map's best bonus on file (D156): a replay at the
+  // same picks pays the plain replay share, so a veteran run can't be farmed.
+  const oldVet = veteranRecord(save, input.mapId);
+  const paidVetPct = vetPct > (oldVet?.best ?? 0) ? vetPct : 0;
   const earned =
     input.usedCheckpoint === true
       ? input.earnedMedals.filter((m) => m === VICTORY_MEDAL_ID)
@@ -241,7 +250,7 @@ export function runEnd(
     stardust: input.mapStardust,
     wavesResolved: input.wavesResolved,
     waveCount: input.waveCount,
-    veteranBonus: input.veteranMods !== undefined ? vetPct / 100 : (input.veteranBonus ?? 0),
+    veteranBonus: input.veteranMods !== undefined ? paidVetPct / 100 : (input.veteranBonus ?? 0),
     resumedFromWave: input.resumedFromWave ?? null,
   });
   const intel =
@@ -253,7 +262,6 @@ export function runEnd(
       ? input.memorialTower
       : save.story.memorialTower;
   // The veteran record (T860): a replay victory with modifiers raises the map's best bonus.
-  const oldVet = veteranRecord(save, input.mapId);
   const veteran =
     vetPct > 0
       ? {
@@ -322,6 +330,7 @@ export function runEnd(
       codex: story.codex,
       transactions: transacted.transactions,
       revocations: revoked.revocations,
+      veteranPaidPct: input.veteranMods !== undefined ? paidVetPct : 0,
     },
   };
 }
