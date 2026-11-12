@@ -13,11 +13,13 @@ import { openSettings, playMap, toBase, toTitle } from '../../app/navigation.ts'
 import {
   STAR_MAP_ACCESS_NOTICE,
   STAR_MAP_CHART_LABEL,
+  headerKicker,
   markStarMapOpened,
   showsStateLine,
   starKicker,
   starMapView,
   starStateText,
+  technicianLine,
   type StarBriefView,
   type StarMapView,
   type StarNodeView,
@@ -83,7 +85,11 @@ function measuredRects(screen: HTMLElement | null): CostedRect[] {
     };
   };
   return [
-    ...[...screen.querySelectorAll<HTMLElement>('.sd-pg-box')].map((el) => rect(el, CHROME_COST)),
+    ...[
+      ...screen.querySelectorAll<HTMLElement>(
+        '.sd-pg-box, .sd-starmap-post-notice > :not([hidden])',
+      ),
+    ].map((el) => rect(el, CHROME_COST)),
     ...[...screen.querySelectorAll<HTMLElement>('[data-region]')].map((el) =>
       rect(el, REGION_COST, 2),
     ),
@@ -547,7 +553,7 @@ export function StarMap() {
       </div>
       <header class="sd-starmap-header sd-star-chrome">
         <p class="sd-kicker" data-voice="kicker">
-          Everglow · Perimeter Ops
+          {headerKicker(view)}
           {camp.slot === null ? ' · Dev save' : ` · Slot ${camp.slot}`}
         </p>
         <h1 id="sd-starmap-heading" class="sd-menu-heading">
@@ -555,16 +561,18 @@ export function StarMap() {
         </h1>
         {camp.profile !== null && (
           <p class="sd-kicker sd-campaign-tech" data-testid="technician" data-voice="callsign">
-            JPT-1 {silkText(camp.profile.name)} · #ED-447
+            {technicianLine(view, silkText(camp.profile.name))}
           </p>
         )}
       </header>
       <div class="sd-starmap-banks sd-star-chrome">
         <Banks view={camp} />
       </div>
-      {/* Under the header, clear of the region labels and the node panel (D134 U9). */}
+      {/* Under the header, clear of the region labels and the node panel (D134 U9). After the
+          finale the column is the post-game plate's, and a menu notice stands over the footer
+          instead, so it never pushes the plate onto the west nodes (T900). */}
       <div class="sd-starmap-notices">
-        <MenuNotice />
+        {!view.postGame && <MenuNotice />}
         {noticeOn && (
           <p class="sd-star-notice" role="status" data-testid="star-notice" data-voice="notice">
             {STAR_MAP_ACCESS_NOTICE}
@@ -624,6 +632,11 @@ export function StarMap() {
           }}
           focusButton={arrival.current && selected === arrivalAt && node.state !== 'coming_soon'}
         />
+      )}
+      {view.postGame && (
+        <div class="sd-starmap-post-notice">
+          <MenuNotice />
+        </div>
       )}
       <footer class="sd-starmap-footer">
         <button type="button" class="sd-button" onClick={toTitle}>

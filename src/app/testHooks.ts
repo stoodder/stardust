@@ -2,6 +2,7 @@
 // Installed only when the URL has `?test=1`. They read state and issue the same commands a player
 // could, through the same paths (app/commands.ts and the host loop).
 import { forcedInputAvoid } from '../ui/hud/forcedInputState.ts';
+import { menuNotice } from '../ui/screens/state.ts';
 import type { IdSpace } from '../content/types.ts';
 import type { SaveData } from '../meta/index.ts';
 import type { Sim } from '../sim/index.ts';
@@ -112,6 +113,9 @@ export function createTestHooks(env: HookEnv): TestHooks {
       return { x: rect.left + (p.x + 0.5) * scale, y: rect.top + (p.y + 0.5) * scale };
     },
     goto: (screen: ScreenId) => env.goto(screen),
+    notice: (text: string | null) => {
+      menuNotice.value = text;
+    },
     audio: env.audio,
     dialogue: env.dialogue,
     save: () => env.save(),

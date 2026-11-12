@@ -46,6 +46,7 @@ function seams(): (readonly [number, number])[][] {
   for (const [y0, seed] of [
     [-27, 3],
     [-12, 7],
+    [-20, 12],
   ] as const) {
     const run: (readonly [number, number])[] = [];
     let dy: number = y0;
@@ -56,7 +57,7 @@ function seams(): (readonly [number, number])[][] {
       dy = Math.max(-heightAt(x) + 3, Math.min(-3, dy));
       const y = footAt(x) + dy;
       // Broken veins: the seam dives into the rock and surfaces again.
-      const shows = hash01(x >> 1, seed, 4) < 0.6;
+      const shows = hash01(x >> 1, seed, 4) < 0.72;
       if (shows && heightAt(x) > 8 && !inArch(x, y) && !inArch(x, y + 1) && !inArch(x, y - 1))
         run.push([x, y]);
     }
@@ -110,12 +111,14 @@ function mouth(glint: number): string[] {
     const f = footAt(x);
     for (let y = f; y < f + 4 - Math.abs(x + 0.5 - AX) / 3; y++) plot(g, x, y, y === f ? 'R' : 'S');
   }
-  // The seams, sung gold, a glint creeping along them.
+  // The seams, sung gold, a glint creeping along them; under each, where the rock shows, its
+  // dark gold lip, so a vein reads two pixels deep at 1× (M9: more gold in the Halls' rock).
   seams().forEach((run, i) =>
     run.forEach(([x, y], k) => {
-      // Mostly the seam's dim gold, lit every few pixels (the emissives: a glow in the dark).
+      // Mostly the seam's gold, lit every few pixels (the emissives: a glow in the dark).
       const on = (k + i * 5) % 12 === glint * 4;
-      plot(g, x, y, on ? '*' : (x + i) % 13 === 0 ? 'P' : k % 4 === 0 ? '+' : 'N');
+      plot(g, x, y, on ? '*' : (x + i) % 13 === 0 ? 'P' : k % 3 === 0 ? '+' : 'N');
+      if ('BCD'.includes(g[y + 1]?.[x] ?? '.')) plot(g, x, y + 1, 'G');
     }),
   );
   // The hum-glyph over the arch, gilded: a singer's ring and two arcs.
@@ -165,6 +168,7 @@ export const propHallsMouth = defineSprite({
     C: 'ink.3',
     D: 'ink.4',
     E: 'steel.0',
+    G: 'gold.1',
     L: 'brass.1',
     N: 'gold.2',
     P: 'pink.3',

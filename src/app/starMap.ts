@@ -7,6 +7,7 @@
 // Maps past the frontier are never in it. Pure over a SaveData (the screen reads it through
 // `starMapView`, and `campaignScreenName` names the campaign screen for the buttons that go back).
 import { CAMPAIGN_PLAN, type CampaignMapId } from '../content/campaign.ts';
+import { CALLSIGNS } from '../content/dialogue/profile.ts';
 import {
   STAR_MAP_CHANGES,
   STAR_MAP_NODES,
@@ -138,6 +139,27 @@ export interface StarMapView {
  * post-game chart corrects its label, Everglow's old words struck through above.
  */
 export const WAYSIDE_LABEL = 'Wayside';
+
+/**
+ * The header's kicker in the post-game under Go (story/style-guide.md § 2, *Sector map*): the deck
+ * the post-game plate is (`POST_GAME_PLATE.heading`, content/postGame.ts, which stays out of the
+ * initial JS; app/starMap.test.ts pins the two alike).
+ */
+export const SIM_DECK_KICKER = "QUILL's sim deck";
+
+/** The Sector map header's kicker before the save's slot: Everglow's, or the post-game's (S3-5). */
+export function headerKicker(view: Pick<StarMapView, 'postGame' | 'ending'>): string {
+  if (!view.postGame) return 'Everglow · Perimeter Ops';
+  return view.ending === 'stay' ? WAYSIDE_LABEL : SIM_DECK_KICKER;
+}
+
+/**
+ * The header's Technician line for `name`: Everglow's badge ("JPT-1 {name} · #ED-447"), and after
+ * the finale the name the Aelari gave ("Waykeeper {name}"; S3-5).
+ */
+export function technicianLine(view: Pick<StarMapView, 'postGame'>, name: string): string {
+  return view.postGame ? `${CALLSIGNS.waykeeper} ${name}` : `JPT-1 ${name} · #ED-447`;
+}
 
 /** The chart's phase for a frontier (null: the finale is won, `dawn`). */
 export function phaseFor(frontier: CampaignMapId | null): StarMapPhase {

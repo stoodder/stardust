@@ -12,8 +12,9 @@
 // - **Phase 3, Dawn:** nothing but the light: the HUD steps back to the name plate and the same
 //   counter at 0 (ui/hud/index.tsx `data-dawn`).
 // Phase banners (in the wave banner's place): W1's "The Descent", and Phase 2's "The Halls" over
-// "The Unsung" (the Halls banner and Phase 2's are one: Phase 2 begins as the choir reaches the
-// Halls). A resumed run's replay shows none (app/checkpoints.ts). No "!" anywhere (finale tone).
+// "The Leaving Song" (the boss bar beside it reads THE UNSUNG; the Halls banner and Phase 2's are
+// one: Phase 2 begins as the choir reaches the Halls). A resumed run's replay shows none
+// (app/checkpoints.ts). No "!" anywhere (finale tone).
 // After "Who's there?" restores the class Directive 0 folded (`ClassRestored`), the battle stands
 // paused at once (the sim frozen for the restore) while the knock-knock lands on the radio: the
 // restore's own cue (`fin_m01_cue_not_everglow`, "Not Everglow." / "...That's the joke.") plays
@@ -67,7 +68,7 @@ export const PHASE_BANNER_MS = 2400;
 
 /** The phase banners: W1's kicker over its wave, and Phase 2's place over its name. */
 export const PHASE_ONE_KICKER = 'The Descent';
-export const PHASE_TWO_BANNER = { kicker: 'The Halls', title: 'The Unsung' } as const;
+export const PHASE_TWO_BANNER = { kicker: 'The Halls', title: 'The Leaving Song' } as const;
 
 /** Whether `map` is phased like the finale (a song or a secondary timer): the HUD scopes by phase. */
 export function phasedMap(map: Pick<CompiledMapDef<IdSpace>, 'song' | 'timers'>): boolean {

@@ -172,6 +172,9 @@ describe('Dawn’s morning light (M8 R2): rose on the darks, gold and teal on th
     expect(pad.g).toBeGreaterThan(plain.g);
     expect(pad.b).toBeGreaterThan(plain.b);
     expect(pad.g - plain.g).toBeGreaterThan(pad.r - plain.r);
+    // M9: a pad's light reads teal through the dawn's rose wash, not grey-violet.
+    expect(pad.g).toBeGreaterThan(pad.r);
+    expect(pad.b).toBeGreaterThan(pad.r);
   });
 
   it('flags each pixel by its ground: road and gate gold, pads teal, the rest none', () => {

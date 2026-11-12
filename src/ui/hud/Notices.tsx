@@ -184,7 +184,7 @@ export function BottomHint() {
 /**
  * The "WAVE n" banner as a wave starts (D026). On the finale (T832; app/hudFinale.ts) a phase banner
  * takes its place, a small kicker over the phase ("The Descent" over "Wave 1"; "The Halls" over
- * "The Unsung"), and from Phase 2 the add waves walk in without one (the song is doing the talking).
+ * "The Leaving Song"), and from Phase 2 the add waves walk in without one (the song is doing the talking).
  */
 export function WaveBannerView() {
   const p = phaseBanner.value;

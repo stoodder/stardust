@@ -275,27 +275,46 @@ function paintHalls(g: CharGrid): void {
 }
 
 /**
- * The choir's two shapes, back-lit: a grown singer (a tufted fuzzball on stubby feet, its mouth a
- * dark round, singing) and a little one. `x` is solid; `o` a hole (the open mouth, the sky's
- * light through it would be wrong, so it is drawn dark-on-dark: `o` is painted `F`).
+ * The choir's shapes, back-lit, each a Skitterkin in profile singing up at the sunrise (M9: a row of
+ * round blobs didn't read as singers at 1×): ear tufts, the head tipped back, the mouth open (a
+ * notch the sky shows through, its lips rim-lit), stubby feet. `x` is solid. Drawn facing east (the
+ * sun); `west` mirrors one, turned to its neighbour. A grown singer, a little one, and an elder
+ * (bigger, its tufts long and drooping).
  */
 const GROWN = [
-  '..x.x.x..', //
-  '.xxxxxxx.',
-  'xxxxxxxxx',
-  'xxxxxxxxx',
-  'xxxxxxxxx',
-  'xxxxxxxxx',
-  '.xxxxxxx.',
-  '..xx.xx..',
+  '..x...x...', //
+  '...x.x....',
+  '..xxxxx..x',
+  '.xxxxxxxx.',
+  'xxxxxxx...',
+  'xxxxxxxxx.',
+  'xxxxxxxxx.',
+  'xxxxxxxxx.',
+  '.xxxxxxx..',
+  '..xx.xx...',
 ] as const;
 const LITTLE = [
-  '.x.x..', //
-  'xxxxx.',
-  'xxxxxx',
-  'xxxxxx',
-  '.xxxx.',
-  '.x..x.',
+  '.x.x...', //
+  '.xxxxxx',
+  'xxxxx..',
+  'xxxxxxx',
+  'xxxxxx.',
+  '.xxxx..',
+  '.x..x..',
+] as const;
+const ELDER = [
+  'x.......x...', //
+  '.x.....x....',
+  '..x...x.....',
+  '...xxxxxx..x',
+  '..xxxxxxxxx.',
+  '.xxxxxxxx...',
+  'xxxxxxxxxxx.',
+  'xxxxxxxxxxx.',
+  'xxxxxxxxxxx.',
+  'xxxxxxxxxxx.',
+  '.xxxxxxxxx..',
+  '..xxx..xxx..',
 ] as const;
 
 /** Pebble: small, in front, with her two-leaf seedling tuft (the Peeker's, so you know her). */
@@ -315,25 +334,40 @@ const PEBBLE = [
 /** A little gold note over a singing head (the choir's sprites wear one: § 6, *The choir*). */
 const NOTE = ['.MM', '.ML', '.L.', 'LL.', 'LL.'] as const;
 
-/** The choir on the ledge, west to east: who stands where, how big, and who wears a note. */
-const CHOIR: readonly { x: number; little: boolean; note: number | null; up?: number }[] = [
-  { x: 128, little: false, note: 7 },
-  { x: 137, little: true, note: null },
-  { x: 143, little: false, note: 9 },
-  { x: 153, little: false, note: null },
-  { x: 162, little: true, note: 4 },
-  { x: 168, little: false, note: null },
-  { x: 178, little: false, note: 12 },
-  { x: 188, little: true, note: null },
-  { x: 197, little: true, note: 14, up: 6 },
-  { x: 194, little: false, note: null },
-  { x: 204, little: false, note: 6 },
-  { x: 214, little: true, note: 2 },
-  { x: 220, little: false, note: null },
-  { x: 230, little: false, note: 10 },
-  { x: 240, little: true, note: null },
-  { x: 248, little: true, note: 16, up: 6 },
-  { x: 246, little: false, note: 3 },
+type Singer = 'grown' | 'little' | 'elder';
+const SHAPES: Readonly<Record<Singer, readonly string[]>> = {
+  grown: GROWN,
+  little: LITTLE,
+  elder: ELDER,
+};
+
+/**
+ * The choir on the ledge, west to east: who stands where (its left column), what shape, turned to
+ * its west neighbour or not, who wears a note (its height over the head), and who rides a back.
+ */
+const CHOIR: readonly {
+  x: number;
+  kind: Singer;
+  west?: boolean;
+  note: number | null;
+  up?: number;
+}[] = [
+  { x: 127, kind: 'grown', note: 7 },
+  { x: 138, kind: 'little', west: true, note: null },
+  { x: 144, kind: 'grown', note: 9 },
+  { x: 155, kind: 'grown', west: true, note: null },
+  { x: 166, kind: 'little', note: 4 },
+  { x: 173, kind: 'elder', note: 12 },
+  { x: 187, kind: 'little', west: true, note: null },
+  { x: 197, kind: 'little', note: 14, up: 7 },
+  { x: 195, kind: 'grown', note: null },
+  { x: 206, kind: 'grown', west: true, note: 6 },
+  { x: 216, kind: 'little', note: 2 },
+  { x: 222, kind: 'grown', note: null },
+  { x: 232, kind: 'grown', west: true, note: 10 },
+  { x: 242, kind: 'little', note: null },
+  { x: 249, kind: 'little', note: 16, up: 7 },
+  { x: 247, kind: 'grown', note: 3 },
 ];
 const PEBBLE_AT = { x: 258 } as const;
 
@@ -348,7 +382,11 @@ function silhouette(g: CharGrid, x0: number, y0: number, shape: readonly string[
       if (!solid(x, y)) continue;
       const gx = x0 + x;
       const toSun = Math.abs(gx - DAWN_SUN.x);
-      const rim = !solid(x + 1, y) || !solid(x, y - 1);
+      // A thin stroke (a tuft, a stalk: nothing solid either side) stays dark but for its tip, so
+      // it reads as a tuft against the sky and not a gold scratch.
+      const thin = !solid(x - 1, y) && !solid(x + 1, y);
+      const tip = !solid(x - 1, y - 1) && !solid(x, y - 1) && !solid(x + 1, y - 1);
+      const rim = thin ? tip : !solid(x + 1, y) || !solid(x, y - 1);
       let ch = 'G';
       if (rim) ch = toSun < 22 ? 'M' : toSun < 64 ? 'L' : 'S';
       plot(g, gx, y0 + y, ch);
@@ -360,10 +398,12 @@ function paintChoir(g: CharGrid): void {
   // Riders last, over the grown ones whose backs they ride.
   const order = CHOIR.toSorted((a, b) => (a.up ?? 0) - (b.up ?? 0));
   for (const s of order) {
-    const shape = s.little ? LITTLE : GROWN;
+    const base = SHAPES[s.kind];
+    const shape = s.west === true ? base.map((r) => r.split('').toReversed().join('')) : base;
     const y0 = ledgeTop(s.x + 3) - shape.length + 1 - (s.up ?? 0);
     silhouette(g, s.x, y0, shape);
-    if (s.note !== null) stampNote(g, s.x + (s.little ? 2 : 4), y0 - 5 - s.note);
+    if (s.note !== null)
+      stampNote(g, s.x + Math.floor((shape[0]?.length ?? 0) / 2) - 1, y0 - 5 - s.note);
   }
   const py = ledgeTop(PEBBLE_AT.x + 3) - PEBBLE.length + 1;
   silhouette(g, PEBBLE_AT.x, py, PEBBLE);

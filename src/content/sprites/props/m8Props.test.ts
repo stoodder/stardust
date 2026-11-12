@@ -76,7 +76,7 @@ describe('the memorial wreck', () => {
       expect(
         count(
           g.map((r) => r.replace(/[._+*Z]/g, '')),
-          'ABCDEFGHIJKLMNOPQRSTUXY',
+          'ABCDEFGHIKLMNOPQRSTUXY',
         ),
       ).toBeGreaterThan(200);
     }
@@ -89,6 +89,11 @@ describe('the memorial wreck', () => {
     expect(deadChar('white.1')).toBe('F'); // Everglow white, grey
     expect(deadChar('ink.0')).toBe('A');
     expect(deadChar('coral.3')).toBe('T'); // a Skitterkin body is only earth
+    // Aelari glass drains to navy under slate, never a saturated blue (M9: T901).
+    expect(deadChar('blue.3')).toBe('C');
+    expect(deadChar('blue.2')).toBe('I');
+    expect(deadChar('pink.4')).toBe('D');
+    expect(Object.values(def('prop.memorial_wreck').legend ?? {})).not.toContain('blue.1');
   });
 });
 

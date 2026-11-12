@@ -1,9 +1,18 @@
 /* The post-game shell (T863; art-direction.md § 10, *After the finale*): one column under the Sector
-   map's header (in the notices' column, so a notice stacks above it; T803c): the selected entry's
-   panel in the node panel's grammar, then the plate ("QUILL's sim deck" over its line, the rows by
-   kind and "Watch the epilogue"); and the Endless score screen in the results card's place. Calm: one accent edge,
-   no glow, no motion. The column is 176 px wide where the panel is and 136 px under it, so neither
-   box covers The Long Walk's node (176, 164) or The Preserve's (152, 208) with Endless open. */
+   map's header (in the notices' column; T803c): the selected entry's panel in the node panel's
+   grammar, then the plate ("QUILL's sim deck" over its line, the rows by kind and "Watch the
+   epilogue"); and the Endless score screen in the results card's place. Calm: one accent edge, no
+   glow, no motion. The column is 176 px wide where the panel is and 136 px under it, so neither
+   box covers The Long Walk's node (176, 164) or The Preserve's (152, 208) with Endless open. A menu
+   notice stands over the footer instead of above the column (StarMap.tsx), and the column ends
+   inside the screen: when the open panel grows (a challenge's medals open), the plate under it
+   gives way and scrolls its rows (T900). */
+
+.sd-starmap-post .sd-starmap-notices {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100% - 56px);
+}
 
 .sd-pg {
   position: relative;
@@ -11,6 +20,27 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 4px;
+  min-height: 0;
+}
+
+.sd-pg-plate {
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--sd-steel-1) var(--sd-ink-1);
+}
+
+/* A menu notice after the finale (a battle that couldn't start): over the footer, its width. */
+.sd-starmap-post-notice {
+  position: absolute;
+  right: 8px;
+  bottom: 28px;
+  width: 228px;
+}
+
+.sd-starmap-post-notice .sd-menu-notice {
+  margin: 0;
 }
 
 .sd-pg-box {
@@ -38,6 +68,7 @@
 
 /* The open entry's box is the node panel's width (its tagline's lines as on a node's). */
 .sd-pg-head {
+  flex: none;
   width: 176px;
   /* On top on screen; after the plate in the DOM and Tab order (PostGame.tsx). */
   order: -1;

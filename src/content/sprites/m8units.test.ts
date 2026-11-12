@@ -158,6 +158,22 @@ describe('the Unsung (enemies/unsung.ts)', () => {
     expect(count(grid('enemy.unsung_burrow', 'under_se_0'), 'MNO')).toBeGreaterThan(40);
   });
 
+  it('sings in the Song form at 1×: a white-hot throat, and violet rings rising off its crown (A3-1)', () => {
+    for (const f of ['walk_se_0', 'walk_se_1', 'walk_se_2']) {
+      const g = grid('enemy.unsung_song', f);
+      expect(count(g, 'Y'), f).toBeGreaterThan(3); // the throat's white heart
+      // The rings: violet over the whole width of the crown, in the rows above the body.
+      const top = g.findIndex((r) => /[0-4]/.test(r));
+      const above = g.slice(0, top);
+      expect(count(above, 'UV'), f).toBeGreaterThan(20);
+    }
+    // The gathered form has neither.
+    expect(count(grid('enemy.unsung', 'walk_se_0'), 'Y')).toBe(0);
+    // Never warm before the rest: no gold on the Song.
+    for (const c of colours(sprite('enemy.unsung_song'), 'walk_se_0'))
+      expect(ramp(c)).not.toBe('gold');
+  });
+
   it('turns gold from the outline in when laid to rest, and stays gold', () => {
     const rest = sprite(UNSUNG_REST_SPRITE);
     const grey = 'ABCDEKRVU';

@@ -89,6 +89,11 @@ export interface TestHooks {
   sealAvoid(): readonly { x: number; y: number; w: number; h: number }[];
   /** Jumps to a screen. Resolves once it has rendered (`battle`: its first frame). */
   goto(screen: ScreenId): Promise<void>;
+  /**
+   * Shows `text` as the menu notice (`menuNotice`: why a battle couldn't start), or clears it with
+   * null, for the screens' layout checks (T900).
+   */
+  notice(text: string | null): void;
   /** Recent frame and sim timings and live entity counts. */
   perf(): PerfSample;
   /** The audio (T205): its state, and offline renders of its sounds for the level checks. */

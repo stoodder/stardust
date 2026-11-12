@@ -102,19 +102,27 @@ const SEAM_SPIKE: readonly BuildStep[] = [
   { wave: 17, upgrade: SEAM_E },
 ];
 
+/** Suppressing Fire's road tiles for the Mindspike-free build, in the order it covers them. */
+const DESCENT: GridPos = [11, 2]; // the Halls descent, between the ledges
+const ROW_4: GridPos = [9, 4]; // the row-4 run, below the Gap's north pad
+const WEST_BEND: GridPos = [3, 5]; // the west bend, at the rift field's mouth
+const HALLS_MOUTH: GridPos = [11, 4]; // where the descent meets the row-4 run (Pebble's stop)
+const GAP_WEST: GridPos = [6, 7]; // the Gap's west end
+
 /**
- * The Mindspike-free answer (T874; finale.md § FIN, Alt builds): Thumpers, Harpoons and a Sproing
- * Pad, and a Hum Choir last, no Psionic at all. Thumpers on par's road and
- * ledge pads for the Mote and Fracture swarms; Harpoons through the Gap and at the Halls for the
- * plated Silencers and Maws, and either side of the gate for Everglow's units walking in from the
- * Bore road; the air is left to the gate until W18 (the Moths and gunships cost it ~12 of its
- * 50), then a Sproing Pad on the ridge. What Phase 2 pays goes to the Halls mouth (D156): the
- * east ledge's Thumper to tier 3 and Cluster Thumper, the Halls Harpoon to tier 3, then a Hum Choir
- * on the east seam beside the Halls as the last credits come in. Its only casts
- * are Suppressing Fire's, so it plays the same with any companion.
+ * The Mindspike-free answer (T874; finale.md § FIN, Alt builds): Thumper, Hum Choir, Sproing Pad,
+ * Harpoon, no Psionic at all, and Suppressing Fire its only cast, so it plays the same with any
+ * companion. Thumpers on par's road and ledge pads for the Mote and Fracture swarms; Harpoons
+ * through the Gap and at the Halls for the plated Silencers and Maws, and at the gate for
+ * Everglow's units walking in from the Bore road. The air is left to the gate until W18 (the
+ * Moths and gunships cost it ~12 of its 50), then a Sproing Pad on the ridge. Phase 2 pays for the
+ * Halls mouth (D156), and a Hum Choir comes last. Most steps are bought mid-wave, as the credits
+ * come in (each wave names the build phase it waits for; harness-identical to T874's hill-climb).
  */
 function noMindspikeSteps(): BuildStep[] {
   return [
+    // Setup: relight the lanterns; Thumpers on the west seam and the east ledge, Harpoons in the
+    // Gap, at the gate's west side and below row 10, and a Thumper by the Bore rig.
     ...RELIGHT,
     { wave: 1, build: 'thumper', tile: SEAM_W },
     { wave: 1, build: 'thumper', tile: LEDGE_E },
@@ -124,39 +132,46 @@ function noMindspikeSteps(): BuildStep[] {
     { wave: 1, build: 'harpoon', tile: LOW_MID },
     { wave: 1, upgrade: LOW_MID },
     { wave: 1, build: 'thumper', tile: BORE_N },
-    { wave: 1, upgrade: SEAM_W },
-    { wave: 1, build: 'thumper', tile: BEND },
-    { wave: 1, build: 'harpoon', tile: BEND_E },
-    { wave: 1, upgrade: LEDGE_E },
-    { wave: 1, build: 'harpoon', tile: WEST_IN },
-    { wave: 1, build: 'thumper', tile: MID_N },
-    { wave: 1, build: 'thumper', tile: LEDGE_W },
-    { wave: 1, upgrade: BEND },
-    { wave: 1, upgrade: LOW_MID },
-    { wave: 1, build: 'harpoon', tile: GATE_E },
-    { wave: 1, upgrade: BEND },
-    fire(8, 14, [11, 2]),
-    fire(13, 28, [9, 4]),
-    { wave: 13, upgrade: MID_N },
-    fire(15, 7, [3, 5]),
-    fire(15, 5, [11, 4]),
-    { wave: 15, upgrade: LEDGE_W },
-    { wave: 15, upgrade: GATE_W },
-    { wave: 15, build: 'harpoon', tile: HALLS_E },
-    { wave: 15, upgrade: MID_S },
-    { wave: 15, build: 'thumper', tile: CORNER },
-    { wave: 15, upgrade: GATE_W },
-    { wave: 15, upgrade: CORNER },
-    { wave: 15, upgrade: BEND_E },
-    { wave: 15, upgrade: CORNER },
-    { wave: 15, upgrade: MID_S },
-    fire(15, 18, [6, 7]),
-    { wave: 15, build: 'sproing', tile: RIDGE_W },
-    { wave: 15, upgrade: LEDGE_W },
-    { wave: 15, upgrade: BEND_E },
-    { wave: 15, upgrade: MID_N },
+    // W2–W11, a buy a wave: the seam to tier 3, then the west bend's pair, the east ledge, the
+    // rift field's mouth, the Gap's north pad and the west ledge, and the gate's second Harpoon.
+    { wave: 2, upgrade: SEAM_W },
+    { wave: 3, build: 'thumper', tile: BEND },
+    { wave: 5, build: 'harpoon', tile: BEND_E },
+    { wave: 6, upgrade: LEDGE_E },
+    { wave: 7, build: 'harpoon', tile: WEST_IN },
+    { wave: 8, build: 'thumper', tile: MID_N },
+    { wave: 9, build: 'thumper', tile: LEDGE_W },
+    { wave: 9, upgrade: BEND },
+    { wave: 11, upgrade: LOW_MID },
+    { wave: 11, build: 'harpoon', tile: GATE_E },
+    { wave: 11, upgrade: BEND },
+    // Suppressing Fire walks down the road with the choir, as each wave's thickest knot comes.
+    fire(11, 28, DESCENT),
+    fire(13, 28, ROW_4),
+    { wave: 14, upgrade: MID_N },
+    fire(15, 7, WEST_BEND), // W15's rifts open
+    fire(16, 10, HALLS_MOUTH),
+    // W16, the Halls' run: the banked credits go to the Halls mouth and the gate: the west ledge,
+    // a Harpoon at the Halls, the corner's Thumper to tier 3, and the gate and Gap Harpoons.
+    { wave: 16, upgrade: LEDGE_W },
+    { wave: 16, upgrade: GATE_W },
+    { wave: 16, build: 'harpoon', tile: HALLS_E },
+    { wave: 16, upgrade: MID_S },
+    { wave: 16, build: 'thumper', tile: CORNER },
+    { wave: 16, upgrade: GATE_W },
+    { wave: 16, upgrade: CORNER },
+    { wave: 16, upgrade: BEND_E },
+    { wave: 16, upgrade: CORNER },
+    { wave: 17, upgrade: MID_S },
+    fire(17, 24, GAP_WEST),
+    // W18, the Halls mouth: the first air answer on the ridge, and the road's last tier 3s.
+    { wave: 18, build: 'sproing', tile: RIDGE_W },
+    { wave: 18, upgrade: LEDGE_W },
+    { wave: 18, upgrade: BEND_E },
+    { wave: 18, upgrade: MID_N },
     // Phase 2 at the Halls mouth (D156): what it earns goes where the Unsung and the adds meet
-    // the choir, the descent's ledges, its corner, and the Halls' harpoons.
+    // the choir: the east ledge to tier 3 and Cluster Thumper, the Halls Harpoon to tier 3, and a
+    // Hum Choir on the east seam beside the Halls as the last credits come in.
     { wave: 19, upgrade: LEDGE_E },
     { wave: 19, upgrade: HALLS_E },
     { wave: 20, upgrade: HALLS_E },

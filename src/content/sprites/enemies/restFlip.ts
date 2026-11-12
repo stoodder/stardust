@@ -27,6 +27,8 @@ const GREY_OF: Readonly<Record<string, string>> = {
   K: 'K',
   V: 'V',
   U: 'U',
+  // The Song's white-hot throat (`Y`, white.1) starts the flip as the violet round it.
+  Y: 'U',
   // Its acid eyes close: nothing hungers once it is being laid to rest.
   '+': 'D',
   '*': 'D',

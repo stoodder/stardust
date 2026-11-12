@@ -46,7 +46,7 @@ export const SUN_EAST_ALPHA = 0.14;
  */
 export const SUN_HIGHLIGHT_ALPHA = 0.12;
 export const SUN_PAD_LIGHT: ColorName = 'teal.3';
-export const SUN_PAD_ALPHA = 0.16;
+export const SUN_PAD_ALPHA = 0.26;
 /** The morning's wash over all the ground the sun has reached: the dawn's rose (darks stay violet). */
 export const SUN_WASH: ColorName = 'finale.sky.1';
 export const SUN_WASH_ALPHA = 0.26;

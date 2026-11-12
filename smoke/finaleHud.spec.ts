@@ -99,7 +99,7 @@ test('finale HUD: Voices and the Bore, the countdown, Dawn steps back', async ({
   await nextFrames(page);
   await expect(clock).toHaveAttribute('data-kind', 'counter');
   await expect(clock).toContainText('Pests processed');
-  await expect(page.getByTestId('phase-banner')).toContainText('The Unsung');
+  await expect(page.getByTestId('phase-banner')).toContainText('The Leaving Song');
   await shot(page, FLOW, 4, 'phase2');
 
   // Dawn: the name plate and the counter at 0, and nothing else.

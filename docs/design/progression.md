@@ -41,7 +41,7 @@ Each map has a `stardust` value in its data (its **first-clear reward**).
 | Situation | Stardust awarded |
 |---|---|
 | **First victory** on a map | `stardust` (100%) |
-| **Replay victory** (already won before) | `0.4 × stardust × (1 + Σ veteranBonus)` ([§6](#6-veteran-modifiers-replays)) |
+| **Replay victory** (already won before) | `0.4 × stardust`, or `0.4 × stardust × (1 + Σ veteranBonus)` when its veteran total beats the map's best on file ([§6](#6-veteran-modifiers-replays)) |
 | **Defeat** on a map not yet won | `0.25 × stardust × (wavesResolved / totalWaves)`, rounded. This is D001's "keep a small share." **No farming (rule):** after a checkpoint retry, `wavesResolved` counts only the waves resolved in this attempt beyond the checkpoint ([core-loop.md §2.12](core-loop.md#212-checkpoints)). |
 | **Defeat** on a map already won | 0 |
 | **Holdout maps** ([maps.md §5.2](maps.md#52-objective-variants)) | Treated as a victory at the end, and paid as a **flat** `stardust` that never scales with Evacuated (A3M3: 320), so the score is never a price on what happened at the door |
@@ -186,7 +186,7 @@ Veteran modifiers unlock on a map once its Victory medal is earned. The player s
 | **No Protocols** | Field Protocols disabled | +15% |
 | **Rush Hour** | Wave countdowns −50% | +20% |
 
-Example: Hardened Hides + Glass Core + Short-Handed = +120%, so a replay victory pays `0.4 × stardust × 2.2` and earns the Veteran medal (+1 Intel, once).
+Example: Hardened Hides + Glass Core + Short-Handed = +120%, so a replay victory pays `0.4 × stardust × 2.2` and earns the Veteran medal (+1 Intel, once). Won again at +120% or less, it pays the plain `0.4 × stardust`.
 
 Post-game, **challenge maps** and **endless mode** reuse these modifiers ([maps.md §8](maps.md#8-post-game-maps)).
 
@@ -194,6 +194,7 @@ Post-game, **challenge maps** and **endless mode** reuse these modifiers ([maps.
 - **Only what bites.** A modifier that would change nothing on a map for this save is shown dimmed with its reason and never applied, so no bonus is free: Glass Core on a map with no core (an Escort, a Holdout: "No core on this shift"), Short-Handed with 3 tower types or fewer to bring, Radio Silence with no ability in either slot, No Protocols with no protocol owned, and Rush Hour on a choir map (the finale: "The walk sets its own pace."; shorter countdowns there would only bring a wave wall back).
 - **Short-Handed** keeps the loadout's first three towers in build-slot order. **Glass Core** sets integrity 5, and Reinforced Core's ranks still add (as they do on Story). **Radio Silence** leaves slot 1 empty and darkens the companion's slot ("Radio Silence"); the companion still walks with you.
 - **The Veteran medal** is earned from wave 1: a checkpoint retry forfeits it, as it does Perfect Core and the Challenge, but still pays the bonus. It is a fourth medal in the map's record, outside the three pips.
+- **The bonus pays only on a new best (D156).** The map's record keeps the best total a win carried; a replay win pays its whole bonus only when its total beats that best (which then rises to it), and otherwise the plain replay share, so a veteran run can't be farmed. Results notes the bonus on the Stardust line only when it paid.
 - **Picks persist.** The modifiers last picked on a map stay on for its next replay (and its retries) until turned off.
 
 **As built (T860):** [`src/meta/veteran.ts`](../../src/meta/veteran.ts) holds the table, the copy, the offer rules (`veteranOffers`), the record (`SaveData.veteran`: the last picks and the best bonus a win carried), and each modifier's sim grants (`veteranGrants`, sources `veteran:<id>`). Hardened Hides, Double Time, Lean Budget, Glass Core, and Rush Hour are sim modifiers; Radio Silence, Short-Handed, and No Protocols are run rules in the SimConfig ([`src/sim/rules.ts`](../../src/sim/rules.ts): `noAbilities`, `maxTowerTypes`, `noProtocols`). The replay's briefing shows one line under the medals: the total, the Veteran medal (at +100%, in reach, or on file), and **Choose**, which opens the eight toggles in the medals' place (a name, a short line, and the bonus each; the whole effect and a quip on focus or hover). A toggle writes the save; Clock in then restarts the battle, still on its first tick, under the picks. Run end pays the bonus and the medal from the mods the run's config carries; Results lists the Veteran medal when the run reaches +100%. The star map's node shows a small gold pip beside the medal pips once the Veteran medal is on file, and its accessible name ends "Veteran medal." The finale keeps its beats under Double Time (the procession keeps wave time; `balance/veteranFinale.test.ts`), and offers Rush Hour dimmed. Veteran runs are opt-in, so they have no harness band.

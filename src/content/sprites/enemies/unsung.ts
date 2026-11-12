@@ -93,6 +93,8 @@ const ABOVE = 5;
 const BELOW = 2;
 /** The split's chasm widens the canvas by this (its right half lurches away). */
 const CHASM_ROOM = 4;
+/** The Song's rings rise off its crest into this much more room above (M9, A3-1). */
+const SONG_ROOM = 12;
 
 function lobesOf(form: Form): readonly Lobe[] {
   return form === 'part' ? [PART_BODY, ...PART_HEADS] : [BODY, ...HEADS];
@@ -128,10 +130,11 @@ function frameOf(form: Form, stage: number): Frame {
   const s = (form === 'part' ? 1 : SCALE) * (1 + GROW * stage);
   const e = extent(lobesOf(form), s);
   const room = form === 'split' ? CHASM_ROOM : 0;
+  const crown = form === 'song' ? SONG_ROOM : 0;
   const w = BACK + Math.ceil(e.l + e.r) + 1 + AHEAD + room + stage;
-  const h = ABOVE + Math.ceil(e.u + e.d) + 1 + BELOW;
+  const h = crown + ABOVE + Math.ceil(e.u + e.d) + 1 + BELOW;
   const cx = BACK + e.l;
-  const cy = ABOVE + e.u;
+  const cy = crown + ABOVE + e.u;
   return { w, h, ax: Math.round(cx), ay: h - 1, cx, cy, s };
 }
 
@@ -193,22 +196,35 @@ function hollowAt(
     return;
   }
   const song = form === 'song';
-  // A part's hollow glows wider (M8 R5: a small torn lump must still read at 1× on the dark).
-  const core = song ? 0.42 : form === 'part' ? 0.5 : 0.3;
+  // A part's hollow glows wider (M8 R5: a small torn lump must still read at 1× on the dark). The
+  // Song's is a lit throat (M9, A3-1): violet nearly to the lip, burning white at its heart.
+  const core = song ? 0.7 : form === 'part' ? 0.5 : 0.3;
   for (let y = Math.floor(hy - ry) - 1; y <= Math.ceil(hy + ry) + 1; y++) {
     for (let x = Math.floor(hx - rx) - 1; x <= Math.ceil(hx + rx) + 1; x++) {
       const d = Math.hypot((x + 0.5 - hx) / rx, (y + 0.5 - hy) / ry);
       if (d > 1) continue;
       // The pale lip (broken: a ring the Hollow can't quite draw), then the dark, then the violet.
       if (d > 0.78) plot(g, x, y, (x * 3 + y + step) % 7 === 0 ? 'k' : 'w');
-      else if (d < core - (step === 1 ? 0.06 : 0)) plot(g, x, y, d < 0.22 ? 'U' : 'V');
+      else if (song && d < 0.24 + (step === 1 ? 0.06 : 0)) plot(g, x, y, 'Y');
+      else if (d < core - (step === 1 ? 0.06 : 0))
+        plot(g, x, y, d < (song ? 0.46 : 0.22) ? 'U' : 'V');
       else plot(g, x, y, 'k');
     }
   }
 }
 
-/** The Unsung's body in `form`, at `stage` absorbs, facing `facing`, on `step` of `look`. */
-function unsung(form: Form, stage: number, facing: Facing, step: number, look: Look): string[] {
+/**
+ * The Unsung's body in `form`, at `stage` absorbs, facing `facing`, on `step` of `look`; the Song's
+ * walk wears its rings off the crest unless `rings` is false (the rest's flip starts without them).
+ */
+function unsung(
+  form: Form,
+  stage: number,
+  facing: Facing,
+  step: number,
+  look: Look,
+  rings = true,
+): string[] {
   const f = frameOf(form, stage);
   if (look === 'under') return dropPixels(mound(f, step, 0), 900 + step);
   if (look === 'surface' && step === 0) return dropPixels(mound(f, 2, 1), 905);
@@ -288,8 +304,9 @@ function unsung(form: Form, stage: number, facing: Facing, step: number, look: L
   const hx = main.x + main.rx * (form === 'part' ? 0.3 : 0.28);
   const hy = main.y + main.ry * 0.18;
   const gape = tell && form !== 'song' ? 1.35 : song ? 1.12 : 1;
+  // The Song's mouth is open round, taller than the gathered hollow (a singing O).
   const hrx = main.rx * (form === 'part' ? 0.46 : 0.34) * gape;
-  const hry = main.ry * (form === 'part' ? 0.48 : 0.38) * gape;
+  const hry = main.ry * (form === 'part' ? 0.48 : 0.38) * gape * (song ? 1.25 : 1);
   if (facing === 'se') hollowAt(g, hx, hy, hrx, hry, look, form, step);
   else {
     const x0 = Math.round(main.x - main.rx * 0.1);
@@ -351,6 +368,7 @@ function unsung(form: Form, stage: number, facing: Facing, step: number, look: L
   }
   if (tell && (form === 'gather' || form === 'part')) tendrils(g, f, hx, hy, main, step);
   if (tell && form === 'song') hum(g, f, hx, hy, main, step);
+  if (song && look === 'walk' && rings) songRings(g, centers, step);
   let out = rows(g);
   if (form === 'split') out = chasm(out, Math.round(main.x), step, tell);
   if (look === 'dig') out = digIn(out, f, step);
@@ -385,6 +403,41 @@ function tendrils(
     line(g, ox, oy, mx, my, t === 1 ? '2' : '1');
     line(g, mx, my, f.w - 1, ey, t === 1 ? '2' : '1');
     plot(g, f.w - 1, ey, 'w');
+  }
+}
+
+/**
+ * The Song's rings (M9, A3-1: form 4 reads as *singing* in silhouette at 1×): two arcs of sound
+ * rising off its crown, over the middle of its lifted stalks, each a step higher and wider a frame;
+ * unsung violet (the inner lit `violet.4`, the outer `violet.3`), broken like everything the Hollow
+ * draws. Never warm: only a unit laid to rest shows gold (art-direction §4).
+ */
+function songRings(
+  g: CharGrid,
+  centers: readonly { x: number; y: number; rx: number; ry: number }[],
+  step: number,
+): void {
+  let top = Infinity;
+  let sum = 0;
+  for (const [i, c] of centers.entries()) {
+    if (i === 0) continue;
+    top = Math.min(top, c.y - c.ry);
+    sum += c.x;
+  }
+  const cx = sum / Math.max(1, centers.length - 1);
+  // Over the lifted stalks' tips, so the rings stand clear of the crown.
+  const cy = top - 4;
+  for (let a = 0; a < 2; a++) {
+    const ry = 5 + a * 4 + step;
+    for (let k = -10; k <= 10; k++) {
+      const th = -Math.PI / 2 + (k / 10) * 1.2;
+      const x = Math.round(cx + Math.cos(th) * ry * 2);
+      const y = Math.round(cy + Math.sin(th) * ry);
+      // Only each ring's crown: its ends never droop onto the stalks.
+      if (Math.sin(th) > -0.6 || y < 0 || at(g, x, y) !== '.') continue;
+      if ((k + a * 3 + step) % 7 === 6) continue;
+      plot(g, x, y, a === 0 ? 'U' : 'V');
+    }
   }
 }
 
@@ -489,6 +542,9 @@ function phased(src: readonly string[]): string[] {
     }),
   );
 }
+
+/** The Song's throat at its hottest (unsung stardust's cycle tops out at `white.1`). */
+const THROAT_LEGEND = { Y: 'white.1' } as const;
 
 /** The burrow mound's earth (custom legend: the turned ground, as `fx.burrow_mound`'s). */
 const EARTH_LEGEND = { M: 'grime.2', N: 'grime.3', O: 'grime.4' } as const;
@@ -629,7 +685,7 @@ function formSprite<const Id extends string>(
     anchor: { x: f.ax, y: f.ay },
     palette: 'hollow',
     outline: 'auto',
-    legend: { ...MOTE_BODY_LEGEND, ...EARTH_LEGEND },
+    legend: { ...MOTE_BODY_LEGEND, ...EARTH_LEGEND, ...THROAT_LEGEND },
     frames: fr,
     anims: an,
   });
@@ -681,7 +737,7 @@ const restFrame = frameOf('song', 0);
 function restFrames(): Record<string, string[]> {
   const out: Record<string, string[]> = {};
   for (const fc of ['se', 'ne'] as const) {
-    const grey = ringed(greyed(unsung('song', 0, fc, 0, 'walk')));
+    const grey = ringed(greyed(unsung('song', 0, fc, 0, 'walk', false)));
     REST_DEPTHS.forEach((d, i) => (out[`rest_${fc}_${i}`] = warmed(grey, d)));
     const gold = warmed(grey, Infinity);
     out[`walk_${fc}_0`] = gold;

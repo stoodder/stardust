@@ -146,16 +146,20 @@ function paintPlanet(g: CharGrid): void {
     // Day: Tumble IV's regolith (art-direction § 2, the Fringe's dust-rose ground), rust basins in
     // its lows, violet crystal ridges along its highs, a crystal glint here and there catching the
     // sun; darkening toward dusk.
+    // Seen from orbit the day side is hazed by the air between (M9: calmer than the ground's own
+    // colours): the ridges' crystal reads as a dim violet line, lit only in a few places, the
+    // highlands' outcrops a sparse speckle, and the peach of the brightest regolith only where the
+    // sun stands highest.
     const relief = smooth(x, y * 2.2, 22, 51) * 0.7 + smooth(x, y * 2.2, 9, 52) * 0.3;
     const light = Math.min(1, (dusk - 6) / 46);
     const lit = light > 0.15 + 0.85 * (1 - bayerOf(x, y));
-    if (relief > 0.6 && relief < 0.64) return lit ? 'c' : 'b';
-    if (relief >= 0.64) {
+    if (relief > 0.6 && relief < 0.63) return lit && hash01(x, y, 53) < 0.3 ? 'c' : 'b';
+    if (relief >= 0.63) {
       // The highlands: pale regolith, crystal outcrops speckled violet, a glint where they catch it.
       const h = hash01(x, y, 54);
-      if (lit && light > 0.5 && h < 0.025) return 'd';
-      if (h < 0.09) return lit ? 'c' : 'b';
-      return lit ? dithered(['3', '3', '4'], light * 0.6, x, y) : '2';
+      if (lit && light > 0.6 && h < 0.012) return 'd';
+      if (h < 0.04) return 'b';
+      return lit ? dithered(['3', '3', '4'], light * 0.35, x, y) : '2';
     }
     if (relief < 0.42) return lit ? dithered(['7', '8'], light * 0.8, x, y) : '6';
     return lit ? dithered(['2', '3'], light * 0.9, x, y) : '2';

@@ -120,14 +120,15 @@ const NEUTRAL_LUM = [0.012, 0.03, 0.06, 0.14, 0.3] as const;
 /** A faction hue's dull steps, darkest first, by the source step (0–4). */
 const HUE_STEPS: Readonly<Record<string, readonly string[]>> = {
   teal: ['G', 'G', 'G', 'H', 'H'],
-  blue: ['I', 'I', 'I', 'J', 'J'],
-  violet: ['I', 'I', 'I', 'J', 'J'],
+  // Aelari blue (and violet) drains to navy under slate (M9: no saturated blue.1 left lit).
+  blue: ['I', 'I', 'I', 'C', 'D'],
+  violet: ['I', 'I', 'I', 'C', 'D'],
   brass: ['K', 'K', 'K', 'L', 'L'],
   gold: ['K', 'K', 'L', 'L', 'L'],
   orange: ['M', 'M', 'M', 'N', 'N'],
   red: ['M', 'M', 'M', 'N', 'N'],
   // Aelari glass (the Prism's and the Mindspike's crystal) goes grey-blue, never warm.
-  pink: ['I', 'I', 'I', 'J', 'J'],
+  pink: ['I', 'I', 'I', 'C', 'D'],
   patina: ['O', 'O', 'O', 'P', 'P'],
   green: ['Q', 'Q', 'Q', 'R', 'R'],
   // The warrens' earth, and a Skitterkin's coral body, go to cold turned earth.
@@ -294,7 +295,6 @@ export const propMemorialWreck = defineSprite({
     G: 'teal.0',
     H: 'teal.1',
     I: 'blue.0',
-    J: 'blue.1',
     K: 'brass.0',
     L: 'brass.1',
     M: 'orange.0',
