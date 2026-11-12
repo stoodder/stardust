@@ -117,7 +117,8 @@ const GAP_WEST: GridPos = [6, 7]; // the Gap's west end
  * Everglow's units walking in from the Bore road. The air is left to the gate until W18 (the
  * Moths and gunships cost it ~12 of its 50), then a Sproing Pad on the ridge. Phase 2 pays for the
  * Halls mouth (D156), and a Hum Choir comes last. Most steps are bought mid-wave, as the credits
- * come in (each wave names the build phase it waits for; harness-identical to T874's hill-climb).
+ * come in (each wave names the build phase it waits for; identical to T874's hill-climb on Standard;
+ * Story's extra credits buy a few steps later, its margin unchanged).
  */
 function noMindspikeSteps(): BuildStep[] {
   return [
