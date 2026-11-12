@@ -6,7 +6,7 @@
 import { performance } from 'node:perf_hooks';
 import { parentPort } from 'node:worker_threads';
 import type { RunRecord, RunRequest } from '../src/balance/checks.ts';
-import { mapRunner, type HarnessOptions } from '../src/balance/harness.ts';
+import { campaignMapIds, mapRunner, type HarnessOptions } from '../src/balance/harness.ts';
 import { ALL_ACT_CHUNKS } from '../src/app/acts/all.ts';
 import { registerActChunk } from '../src/app/actContent.ts';
 import { compileContent } from '../src/content/compile.ts';
@@ -32,7 +32,8 @@ port.on('message', ({ mapId, req }: SimJob) => {
   try {
     let run = runners.get(mapId);
     if (run === undefined) {
-      const id = content.campaign.find((m) => m === mapId);
+      // A campaign map or a challenge map (T862); a RangeError for any other id.
+      const [id] = campaignMapIds(content, mapId);
       if (id === undefined) throw new RangeError(`unknown campaign map '${mapId}'`);
       run = mapRunner(content, id, opts);
       runners.set(mapId, run);

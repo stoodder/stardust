@@ -5,6 +5,7 @@
 // `ensureActs` loads up to an act (screens await it through app/contentGate.ts before they show);
 // `preloadActs` does it in idle time. Tests and the Node tools register every act up front
 // (`registerActChunk` with app/acts/all.ts; tools/vitestSetup.ts).
+import { registerMusic } from '../audio/music/index.ts';
 import { registerSfx } from '../audio/sfx/index.ts';
 import { actRank, LAZY_ACTS, registerActStory, type LazyAct } from '../content/acts/index.ts';
 import type { StoryAct } from '../content/dialogue/types.ts';
@@ -20,10 +21,11 @@ const LOADERS: Readonly<Record<LazyAct, () => Promise<ActChunk>>> = {
 const registered = new Set<StoryAct>([1]);
 const pending = new Map<LazyAct, Promise<void>>();
 
-/** Adds an act chunk's story and sounds to the registries (idempotent). */
+/** Adds an act chunk's story, sounds, and music to the registries (idempotent). */
 export function registerActChunk(chunk: ActChunk): void {
   registerActStory(chunk.story);
   registerSfx(chunk.sfx);
+  if (chunk.music !== undefined) registerMusic(chunk.music);
   registered.add(chunk.story.act);
 }
 

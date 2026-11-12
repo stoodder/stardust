@@ -13,7 +13,13 @@
 //   cue voices ─▶ cues ───────────────────────────────┘ (into music, after the duck)
 import { createRng, nextFloat, type Rng } from '../shared/rng.ts';
 import { midiToHz, semitones } from './notes.ts';
-import { ALL_INSTRUMENTS, CUES, THEMES, type CueId, type ThemeId } from './music/index.ts';
+import {
+  ALL_INSTRUMENTS,
+  loadedCue,
+  loadedTheme,
+  type CueId,
+  type ThemeId,
+} from './music/index.ts';
 import {
   compileSong,
   createSequencer,
@@ -308,11 +314,16 @@ export class Synth {
     return true;
   }
 
-  /** Plays a one-shot music cue now (it isn't ducked; it's the point of the moment). */
+  /**
+   * Plays a one-shot music cue now (it isn't ducked; it's the point of the moment). A cue whose
+   * chunk hasn't loaded (music/index.ts) plays nothing.
+   */
   cue(id: CueId): void {
+    const song = loadedCue(id);
+    if (song === undefined) return;
     const out = this.ctx.createGain();
     out.connect(this.cues);
-    const seq = createSequencer(this.#compile(CUES[id]), this.ctx.currentTime + 0.02);
+    const seq = createSequencer(this.#compile(song), this.ctx.currentTime + 0.02);
     this.#cueSeqs.push({ id, seq, out });
     this.played.set(`cue:${id}`, (this.played.get(`cue:${id}`) ?? 0) + 1);
     this.pump();
@@ -359,9 +370,16 @@ export class Synth {
 
   /**
    * Plays `id` with its layers at `levels` (0–1), crossfading from whatever played; null fades
-   * the music out. The same theme keeps its place in the loop and only moves its layers.
+   * the music out. The same theme keeps its place in the loop and only moves its layers. A theme
+   * whose chunk hasn't loaded (music/index.ts) fades the music out like null.
    */
-  setTheme(id: ThemeId | null, levels: Readonly<Record<MusicLayer, number>>, level = 1): void {
+  setTheme(
+    requested: ThemeId | null,
+    levels: Readonly<Record<MusicLayer, number>>,
+    level = 1,
+  ): void {
+    const song = requested === null ? undefined : loadedTheme(requested);
+    const id = song === undefined ? null : requested;
     const t = this.ctx.currentTime;
     const current = this.#themes.find((p) => p.stopAt === null) ?? null;
     if (current !== null && current.id === id) {
@@ -374,7 +392,7 @@ export class Synth {
       current.fade.gain.setTargetAtTime(0, t, THEME_FADE_SEC / 3);
       current.stopAt = t + THEME_FADE_SEC * 2;
     }
-    if (id === null) return;
+    if (id === null || song === undefined) return;
     const fade = this.ctx.createGain();
     fade.gain.setValueAtTime(0, t);
     fade.gain.setTargetAtTime(level, t, THEME_FADE_SEC / 3);
@@ -394,7 +412,7 @@ export class Synth {
     };
     this.#themes.push({
       id,
-      seq: createSequencer(this.#compile(THEMES[id]), t + 0.05),
+      seq: createSequencer(this.#compile(song), t + 0.05),
       fade,
       layers,
       levels: { ...levels },

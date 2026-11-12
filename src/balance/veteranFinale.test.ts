@@ -2,12 +2,13 @@
 // time, not clock time). Every modifier that changes the clock (Rush Hour's countdowns −50%, Double
 // Time's +20% enemy speed, and both at once) still lands FIN's beats: the memorial cue in W9, and
 // Phase 2 ("Retry from the Halls") at the later of W18 cleared and the choir at the Halls mouth.
-// Runs par on a stand-in W19 (balance/__fixtures__/finM01Beats.ts) until Phase 2 starts.
+// Runs par until Phase 2 starts (W19 waits for it: `inPhase`, T821).
 import { describe, expect, it } from 'vitest';
+import { compileContent } from '../content/compile.ts';
 import type { CompiledContent } from '../content/compiled.ts';
+import { RAW_CONTENT } from '../content/registry.ts';
 import { veteranGrants, type VeteranModifierId } from '../meta/veteran.ts';
 import { createBuildExecutor, createSim, type SimEvent } from '../sim/index.ts';
-import { withStandInW19 } from './__fixtures__/finM01Beats.ts';
 import { flagsFor } from './checks.ts';
 import { buildFor } from './harness.ts';
 import { referenceRunProfile, runConfig } from './profile.ts';
@@ -70,7 +71,7 @@ describe(
     timeout: HARNESS_TEST_TIMEOUT_MS * 3,
   },
   () => {
-    const c = withStandInW19();
+    const c = compileContent(RAW_CONTENT);
     const cases: readonly (readonly VeteranModifierId[])[] = [
       ['rush_hour'],
       ['double_time'],
@@ -85,7 +86,7 @@ describe(
         expect(b.w18ClearedTick).toBeGreaterThan(0);
         expect(b.arrivedTick).toBeGreaterThan(0);
         expect(b.phase2Tick).toBe(Math.max(b.w18ClearedTick, b.arrivedTick) + 1);
-        // A labelled checkpoint's wave is the last wave started (W18; the stand-in W19 waits).
+        // A labelled checkpoint's wave is the last wave started (W18; W19 waits for Phase 2).
         expect(b.checkpoint).toEqual({ label: 'halls', wave: 18 });
       });
     }

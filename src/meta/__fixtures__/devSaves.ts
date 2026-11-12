@@ -607,10 +607,15 @@ function finaleThrough(plan: ActThreePlan, c5: C5Choice): SaveData {
 function a3m6Save(c4: C4Choice): DevSave {
   return {
     description:
-      `after_a3m5_${c4}, then Harpoon tune 2 and A3M6 won (Victory): the reference into the ` +
-      `finale with C4 ${c4} (Phase 2's ${c4 === 'keep' ? 'Directive 0' : c4 === 'rewrite' ? 'log' : 'silence'}). ` +
+      `after_a3m5_${c4}, then Harpoon tune 2 and A3M6 won (Victory), and the Mindspike specs ` +
+      `bought for the finale (FIN's reference row; T821): the reference into the finale with C4 ` +
+      `${c4} (Phase 2's ${c4 === 'keep' ? 'Directive 0' : c4 === 'rewrite' ? 'log' : 'silence'}). ` +
       'Skipped while A3M6 is not registered.',
-    build: () => actThreeThrough('a3_m06', { ...A3_REF, c4 }),
+    build: () => {
+      const save = actThreeThrough('a3_m06', { ...A3_REF, c4 });
+      const fin: string = 'fin_m01'; // widened, as finaleThrough's
+      return isRegistered(fin) && isRegistered('a3_m06') ? bought(save, FIN_PREP) : save;
+    },
   };
 }
 

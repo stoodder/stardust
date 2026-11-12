@@ -7,7 +7,7 @@ import { CHOIR_LINE_BRIGHT } from './act3.ts';
 import { KIT } from './instruments.ts';
 
 /** The couplet melody in 8ths (the lead of both themes): the PA's "Everglow Bright". */
-const COUPLET =
+export const COUPLET =
   'G4 C5 E5 - - - . . | F5 D5 C5 - - - . . | E5 F5 G5 A5 G5 - E5 - | D5 - B4 - G4 - . . |' +
   'G4 C5 E5 - - - . . | F5 D5 C5 - - - A4 C5 | D5 E5 D5 C5 B4 - D5 - | C5 - - - . . . .';
 
@@ -51,11 +51,11 @@ export const ACT1_BATTLE: Song = {
 };
 
 /** Held chord tones in quarters (the title's calm bed). */
-const PAD_LO =
+export const PAD_LO =
   'E4 - - - | F4 - - - | E4 - - - | D4 - - - | E4 - - - | F4 - - - | D4 - - - | E4 - - -';
-const PAD_HI =
+export const PAD_HI =
   'G4 - - - | A4 - - - | A4 - - - | G4 - - - | G4 - - - | A4 - - - | B4 - - - | G4 - - -';
-const WALK_BASS =
+export const WALK_BASS =
   'C3 - G2 - | F2 - C3 - | A2 - E3 - | G2 - D3 - | C3 - G2 - | F2 - C3 - | G2 - D3 - | C3 - G2 -';
 
 /** The title theme: the same tune, slower and softer, on held chords (no drums). */

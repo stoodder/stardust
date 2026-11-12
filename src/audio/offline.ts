@@ -6,7 +6,8 @@
 // far its line's blip stands over the rest of the mix. The `__sd.audio` test hooks expose them and
 // smoke/audio.spec.ts asserts the numbers. Browser only.
 import { analyze, type Levels } from './analyze.ts';
-import { CUES, THEMES, type CueId, type ThemeId } from './music/index.ts';
+import { loadedCue, loadedTheme, type CueId, type ThemeId } from './music/index.ts';
+import type { Song } from './types.ts';
 import { compileSong } from './music/pattern.ts';
 import { recipeDuration } from './recipes.ts';
 import { BLIP_SFX } from './sfx/blips.ts';
@@ -137,9 +138,15 @@ export function renderSfx(id: SfxId): Promise<RenderLevels> {
   });
 }
 
+/** A theme or cue that must be registered (a render of an unloaded one is a test's mistake). */
+function loaded(song: Song | undefined, id: string): Song {
+  if (song === undefined) throw new Error(`offline: '${id}' isn't registered (its chunk isn't in)`);
+  return song;
+}
+
 /** Renders one music cue at default volumes. */
 export function renderCue(id: CueId): Promise<RenderLevels> {
-  const c = compileSong(CUES[id]);
+  const c = compileSong(loaded(loadedCue(id), id));
   const secs = c.steps * c.secPerStep + 1;
   return both(secs, (s) => {
     s.cue(id);
@@ -149,7 +156,7 @@ export function renderCue(id: CueId): Promise<RenderLevels> {
 
 /** Renders one loop of a theme with every layer up, at default volumes. */
 export function renderTheme(id: ThemeId): Promise<RenderLevels> {
-  const c = compileSong(THEMES[id]);
+  const c = compileSong(loaded(loadedTheme(id), id));
   const secs = c.steps * c.secPerStep + 0.5;
   return both(secs, (s) => {
     s.setTheme(id, { base: 1, drums: 1, lead: 1, choir: 1 });

@@ -14,7 +14,10 @@ test('endless: The Open Perimeter boots at dawn and W1 walks the old road', asyn
     const s = globalThis.__sd!.state()!; // waitForReady passed: a battle is running
     return { tick: s.tick, wave: s.wave, credits: s.credits, integrity: s.integrity };
   });
-  expect(start).toMatchObject({ wave: 0, credits: 900, integrity: 20 });
+  // The map's 900 credits and 20 integrity, plus the save's meta (Seed Money, Reinforced Core).
+  expect(start.wave).toBe(0);
+  expect(start.credits).toBeGreaterThanOrEqual(900);
+  expect(start.integrity).toBeGreaterThanOrEqual(20);
   await shot(page, 'endless', 1, 'setup');
 
   // A Zapcoil by the gate, then W1: the Nibblers come down from A1M1's spawn.

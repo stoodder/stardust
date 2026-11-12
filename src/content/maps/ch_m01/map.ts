@@ -1,14 +1,19 @@
 // CH_M01 · Skitterkin Only (design/maps.md § 8, challenge maps; T862): the Preserve again, after
-// the dawn, and only the warrens' towers deploy. A revisit of A3M1 by reference (`revisitOf`,
-// content/compileRevisit.ts) with no band: the whole 22×14 bowl, its spiral, the north road, both
-// rifts (north from W2, east from W6, as A3M1 opens them), and the Rift Moths' lane, composed in
-// unchanged. Here it is a Defend map: the back gate (2,13) is the core, and the Hollow come out of
-// the basin and down the north road toward it. An edit to A3M1's layout flows here.
+// the dawn, and only the warrens' towers deploy. A3M1's layout by reference (read from its map.ts,
+// never copied): the whole 22×14 bowl, its terraces, the spiral, the north road, both rifts (north
+// from W2, east from W6, as A3M1 opens them), the Rift Moths' lane, and its markers but the gate.
+// Here it is a Defend map: the back gate (2,13) is the core (a marker can't sit on it), and the
+// Hollow come out of the basin and down the north road toward it. An edit to A3M1's layout flows
+// here. (Not a `revisitOf`: a revisit adds a band around its original and keeps every marker.)
 //
 // The rule (sim/rules.ts `challengeConfig`): `towerFaction: 'skitterkin'`, so the loadout is the
 // four homes the warrens gave (the Scuttle Den, the Hum Choir, the Gloop Spitter, the Sproing Pad)
 // and nothing else. Bramble walks with you (slot 2: Underfoot), on her own road this time.
 import { defineMapLayout } from '../../define.ts';
+import { map as a3m01 } from '../a3_m01/map.ts';
+
+/** A3M1's markers but the gate, the core tile here. */
+const { gate: _gate, ...MARKERS } = a3m01.markers ?? {};
 
 export const map = defineMapLayout({
   id: 'ch_m01',
@@ -16,34 +21,18 @@ export const map = defineMapLayout({
   // After the dawn: the finale's palette (post-game maps read the finale's dials).
   env: 'finale',
   objective: 'defend',
-  revisitOf: 'a3_m01',
-  // A3M1's tile (0, 0) sits at the grid's: the whole grid, no band.
-  revisitAt: [0, 0],
-  size: { cols: 22, rows: 14 },
-  // prettier-ignore
-  tiles: [
-    '**********************',
-    '**********************',
-    '**********************',
-    '**********************',
-    '**********************',
-    '**********************',
-    '**********************',
-    '**********************',
-    '**********************',
-    '**********************',
-    '**********************',
-    '**********************',
-    '**********************',
-    '**********************',
-  ],
-  // A3M1's routes, rifts, air lane, and markers come with its layout.
-  paths: [],
+  size: a3m01.size,
+  tiles: a3m01.tiles,
+  ...(a3m01.terraces === undefined ? {} : { terraces: a3m01.terraces }),
+  paths: a3m01.paths,
+  riftLanes: a3m01.riftLanes ?? [],
+  airLanes: a3m01.airLanes ?? [],
+  markers: MARKERS,
   challenge: {
     tagline: "Only the warrens' towers deploy.",
     rules: [{ kind: 'towerFaction', faction: 'skitterkin' }],
   },
-  startCredits: 650,
+  startCredits: 1700,
   coreIntegrity: 20,
   // A challenge pays Intel for its medals, never Stardust.
   stardust: 0,

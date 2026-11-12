@@ -79,9 +79,20 @@ describe('the dev saves into and out of the finale', () => {
       });
       expect(isRegistered('a3_m06') && save.campaign.maps.a3_m06?.completed, c4).toBe(true);
       expect(save.unlocks.abilities.includes('time_dilation'), c4).toBe(c4 === 'keep');
+      expect(save.unlocks.specs, c4).toContain('mindspike'); // par's Echo Spike and Dread (T821)
     }
-    // `after_a3m6` is the Rewrite one, kept by its old id.
-    expect(build('after_a3m6_rewrite')).toEqual(build('after_a3m6'));
+    // `after_a3m6` is the Rewrite one, kept by its old id, before the finale's prep: the
+    // `after_a3m6_<c4>` saves have also bought the Mindspike specs (FIN's row: 3 Intel; T821).
+    const plain = build('after_a3m6');
+    const prepped = build('after_a3m6_rewrite');
+    expect(plain.unlocks.specs).not.toContain('mindspike');
+    expect(prepped.unlocks.specs).toEqual([...plain.unlocks.specs, 'mindspike']);
+    expect(prepped.currencies.intel).toBe(plain.currencies.intel - 3);
+    expect({
+      ...prepped,
+      unlocks: { ...prepped.unlocks, specs: plain.unlocks.specs },
+      currencies: { ...prepped.currencies, intel: plain.currencies.intel },
+    }).toEqual(plain);
   });
 
   it.runIf(isRegistered('a3_m06'))("the choir's extremes carry FIN_CHOIR_CELLS' flags", () => {

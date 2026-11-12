@@ -38,43 +38,43 @@ export const OPEN = 4;
 
 export const waves = defineWaves([
   // W1 · Motes down the north road, then out of the basin
-  { groups: [motes(16, 'north', OPEN), motes(10, 'spiral', OPEN + 8)] },
-  // W2 · Fractures out of the basin; Motes through the north rift
+  { groups: [motes(10, 'north', OPEN, 0.35), motes(8, 'spiral', OPEN + 10, 0.35)] },
+  // W2 · a Fracture out of the basin; Motes through the north rift
   {
     countdownSec: COUNTDOWN,
-    groups: [g('fracture', 2, 'spiral', OPEN, 3), motes(14, 'rift_n', OPEN + 6)],
+    groups: [g('fracture', 1, 'spiral', OPEN), motes(8, 'rift_n', OPEN + 10, 0.35)],
   },
-  // W3 · the first Undertows, out of the basin, under Motes on the north road
+  // W3 · the first Undertow, out of the basin, behind Motes on the north road
   {
     countdownSec: COUNTDOWN,
-    groups: [g('undertow', 2, 'spiral', OPEN, 3), motes(16, 'north', OPEN + 4)],
+    groups: [motes(10, 'north', OPEN, 0.35), g('undertow', 1, 'spiral', OPEN + 2)],
   },
-  // W4 · Rift Moths, and Motes on both roads
+  // W4 · Rift Moths, and Motes on the north road
   {
     countdownSec: COUNTDOWN,
-    groups: [moths(4, OPEN), motes(14, 'north', OPEN + 2), motes(14, 'rift_n', OPEN + 10)],
+    groups: [moths(2, OPEN, 3), motes(10, 'north', OPEN + 8, 0.35)],
   },
-  // W5 · a Maw leading Motes down the north road; Undertows out of the basin
+  // W5 · a Maw leading Motes down the north road; an Undertow out of the basin
   {
     countdownSec: COUNTDOWN,
     groups: [
       g('maw', 1, 'north', OPEN),
-      motes(12, 'north', OPEN + 1),
-      g('undertow', 2, 'spiral', OPEN + 4, 3),
+      motes(6, 'north', OPEN + 1, 0.35),
+      g('undertow', 1, 'spiral', OPEN + 8),
     ],
   },
-  // W6 · Fractures through the east rift (it opens); Rift Moths
+  // W6 · a Fracture through the east rift (it opens); Rift Moths
   {
     countdownSec: COUNTDOWN,
-    groups: [g('fracture', 3, 'rift_e', OPEN, 2.5), moths(4, OPEN + 6)],
+    groups: [g('fracture', 1, 'rift_e', OPEN), moths(3, OPEN + 10, 3)],
   },
-  // W7 · Undertows on every road
+  // W7 · Undertows on both roads, Motes through the north rift
   {
     countdownSec: COUNTDOWN,
     groups: [
-      g('undertow', 2, 'spiral', OPEN, 3),
-      g('undertow', 2, 'north', OPEN + 3, 3),
-      motes(18, 'rift_n', OPEN + 6),
+      g('undertow', 1, 'spiral', OPEN),
+      g('undertow', 1, 'north', OPEN + 6),
+      motes(10, 'rift_n', OPEN + 12, 0.35),
     ],
   },
   // W8 · two Maws, and the sky
@@ -82,50 +82,48 @@ export const waves = defineWaves([
     countdownSec: COUNTDOWN,
     groups: [
       g('maw', 1, 'north', OPEN),
-      motes(10, 'north', OPEN + 1),
-      g('maw', 1, 'rift_e', OPEN + 6),
-      motes(10, 'rift_e', OPEN + 7),
-      moths(5, OPEN + 10),
+      motes(6, 'north', OPEN + 1, 0.35),
+      g('maw', 1, 'rift_e', OPEN + 12),
+      moths(3, OPEN + 18, 3),
     ],
   },
   // W9 · Fractures and Undertows through both rifts
   {
     countdownSec: COUNTDOWN,
     groups: [
-      g('fracture', 3, 'rift_n', OPEN, 2.5),
-      g('undertow', 3, 'rift_e', OPEN + 4, 3),
-      motes(16, 'spiral', OPEN + 8),
+      g('fracture', 2, 'rift_n', OPEN, 5),
+      g('undertow', 2, 'rift_e', OPEN + 10, 5),
+      motes(8, 'spiral', OPEN + 18, 0.35),
     ],
   },
-  // W10 · the swarm: Rift Moths over Motes on every road
+  // W10 · the swarm: Rift Moths over Motes on both north ways in
   {
     countdownSec: COUNTDOWN,
     groups: [
-      moths(7, OPEN, 1.2),
-      motes(18, 'north', OPEN + 2),
-      motes(18, 'rift_n', OPEN + 6),
-      motes(18, 'rift_e', OPEN + 10),
+      moths(3, OPEN, 3),
+      motes(12, 'north', OPEN + 6, 0.35),
+      motes(10, 'rift_n', OPEN + 14, 0.35),
     ],
   },
   // W11 · Maws and Undertows together
   {
     countdownSec: COUNTDOWN,
     groups: [
-      g('maw', 2, 'north', OPEN, 4),
-      motes(14, 'north', OPEN + 1),
-      g('undertow', 4, 'spiral', OPEN + 4, 2.5),
-      g('fracture', 2, 'rift_e', OPEN + 8, 3),
+      g('maw', 2, 'north', OPEN, 6),
+      motes(8, 'north', OPEN + 1, 0.35),
+      g('undertow', 2, 'spiral', OPEN + 8, 4),
+      g('fracture', 1, 'rift_e', OPEN + 16),
     ],
   },
   // W12 · everything the warrens know how to answer, at once
   {
     countdownSec: COUNTDOWN,
     groups: [
-      g('fracture', 4, 'rift_n', OPEN, 2.5),
-      g('undertow', 4, 'north', OPEN + 3, 2.5),
-      moths(7, OPEN + 6, 1.2),
-      g('maw', 1, 'rift_e', OPEN + 8),
-      motes(16, 'rift_e', OPEN + 9),
+      g('fracture', 2, 'rift_n', OPEN, 5),
+      g('undertow', 2, 'north', OPEN + 8, 5),
+      moths(3, OPEN + 14, 3),
+      g('maw', 1, 'rift_e', OPEN + 18),
+      motes(6, 'rift_e', OPEN + 19, 0.35),
     ],
   },
 ]);

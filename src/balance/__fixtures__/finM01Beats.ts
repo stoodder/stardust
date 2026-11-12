@@ -1,13 +1,9 @@
 // FIN Phase 1's beats as one run shows them (balance/finM01*.test.ts; T820): the waves' starts,
 // the choir's walk (its arrival at the Halls mouth, its halts and waits), the memorial cue, W18's
 // clear, Phase 2's start with its checkpoint and the Bore stopped, the Voices, and the Waymarks.
-// `withStandInW19` appends a stand-in W19 (one Mote, never called, five minutes' countdown) so the
-// run outlives W18 and the choir's arrival and Phase 2's event can fire before T821's waves exist
-// (`untilPhase2` stops the run there); `rushHour` plays the veteran countdowns
+// `untilPhase2` stops the run once Phase 2 has begun; `rushHour` plays the veteran countdowns
 // (−50%), `@story` Story.
-import { compileContent } from '../../content/compile.ts';
 import type { CompiledBuild, CompiledContent } from '../../content/compiled.ts';
-import { RAW_CONTENT } from '../../content/registry.ts';
 import { createBuildExecutor, createSim, type SimEvent } from '../../sim/index.ts';
 import { flagsFor } from '../checks.ts';
 import { buildFor } from '../harness.ts';
@@ -40,18 +36,6 @@ export interface FinM01Beats {
   readonly waveStartTick: readonly number[];
   /** The Waymarks objective's standing. */
   readonly waymarks: string;
-}
-
-/** The content with a stand-in W19 on fin_m01 (see the header). */
-export function withStandInW19(): CompiledContent {
-  const raw = RAW_CONTENT.maps.fin_m01;
-  const w19 = {
-    countdownSec: 300,
-    noCall: true as const,
-    groups: [{ enemy: 'mote' as const, count: 1, route: 'halls' }],
-  };
-  const maps = { ...RAW_CONTENT.maps, fin_m01: { ...raw, waves: [...raw.waves, w19] } };
-  return compileContent({ ...RAW_CONTENT, maps });
 }
 
 /** Plays `label` (a harness label; `@story` for Story) on fin_m01 in `c`, logging its beats. */
