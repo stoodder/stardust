@@ -122,8 +122,9 @@ export function depths(src: readonly string[]): number[][] {
         [x, y - 1],
         [x, y + 1],
       ] as const) {
-        if (clear(nx, ny) || d[ny]?.[nx] !== -1) continue;
-        d[ny]![nx] = k; // inside the grid: clear() is false only there
+        const row = d[ny];
+        if (clear(nx, ny) || row === undefined || row[nx] !== -1) continue;
+        row[nx] = k;
         next.push([nx, ny]);
       }
     }

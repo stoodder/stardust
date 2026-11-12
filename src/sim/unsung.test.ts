@@ -89,6 +89,7 @@ function world(): { state: SimState; ctx: TickContext } {
   const ctx: TickContext = { content: LIVE, map: MAP, config, scratch: createScratch() };
   initChoir(state, MAP, config.scriptFlags);
   choir(state, ctx); // tick 0: the column spawns at the road's core end
+  state.tick = 1; // spawned once
   // Arrived: the leader 3 tiles in, each singer 0.4 behind the one before.
   state.choir.dist = ROAD.lengthTiles - LEAD;
   state.choir.arrived = true;
@@ -198,12 +199,13 @@ describe('phase 2: the split, no merge, the rise', () => {
   it('three parts carry the band; they never merge, not even the last alone', () => {
     const { state, ctx } = world();
     const b = boss(state, ctx);
+    const owner = b.uid;
     const events = toPhase(state, ctx, b, 0.75);
     expect(of(events, 'BossSplit')).toHaveLength(1);
     const parts = live(state).filter((e) => e.def === PART);
     expect(parts).toHaveLength(3);
     expect(parts.every((p) => isSplitBorn(p) && p.mergeTicks === 0)).toBe(true);
-    expect(splitHp(state.enemies, b.uid)).toBeCloseTo(0.25 * UNSUNG.hp, 6);
+    expect(splitHp(state.enemies, owner)).toBeCloseTo(0.25 * UNSUNG.hp, 6);
     applyDamage(state, parts[0]!, 1e6, 'kinetic', SRC);
     applyDamage(state, parts[1]!, 1e6, 'kinetic', SRC);
     const later = run(state, ctx, 60 * 30, false); // 30 s: a merge's clock would long have run
@@ -356,11 +358,12 @@ describe('phase 4: the Song (the floor, the adds)', () => {
   it('a Silencer walks in at the road’s spawn every 20 s, after a 1.5 s call', () => {
     const { state, ctx, u } = song();
     const every = P4!.adds!.everyTicks;
-    run(state, ctx, BOSS_PHASE_INVULNERABLE_TICKS + every - TELL, false);
+    run(state, ctx, BOSS_PHASE_INVULNERABLE_TICKS + every - TELL - 1, false);
     expect(addsCalling(u)).toBe(false);
     run(state, ctx, 1, false);
     expect(addsCalling(u)).toBe(true);
-    const events = run(state, ctx, TELL - 1, false);
+    expect(of(run(state, ctx, TELL - 1, false), 'BossAdds')).toEqual([]);
+    const events = run(state, ctx, 1, false);
     expect(of(events, 'BossAdds')).toEqual([
       { type: 'BossAdds', uid: u.uid, enemy: 'silencer', count: 1 },
     ]);
@@ -404,13 +407,15 @@ describe('held by the song, and laid to rest', () => {
   it('is laid to rest the tick after the countdown completes, whatever its phase', () => {
     const { state, ctx } = world();
     const b = boss(state, ctx);
+    const uid = b.uid;
     expect(bossRestProgress(state, b)).toBe(0);
     state.restPoints = SONG.restTarget;
     expect(bossRestProgress(state, b)).toBe(1);
     const events = run(state, ctx, 1);
-    expect(events.map((e) => e.type)).toEqual(['BossEnded', 'LaidToRest']);
-    expect(of(events, 'BossEnded')[0]).toMatchObject({ uid: b.uid, how: 'layToRest' });
-    expect(of(events, 'LaidToRest')[0]).toMatchObject({ uid: b.uid, points: 0 });
+    expect(events.map((e) => e.type).slice(0, 2)).toEqual(['BossEnded', 'LaidToRest']);
+    expect(of(events, 'WaveCleared')).toHaveLength(1);
+    expect(of(events, 'BossEnded')[0]).toMatchObject({ uid, how: 'layToRest' });
+    expect(of(events, 'LaidToRest')[0]).toMatchObject({ uid, points: 0 });
     expect(live(state)).toEqual([]);
     expect(state.schedule.remaining[0]).toBe(0); // booked to its wave, no kill or leak
     expect(state.stats.restedKills).toBe(0);

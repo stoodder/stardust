@@ -49,8 +49,16 @@ import {
   type ReplyButton,
   type Scene,
   type SpeakerId,
+  SPEAKER_IDS,
 } from '../content/dialogue/types.ts';
-import type { AllyKind, EnemyId, IdSpace, MapDef, TowerId } from '../content/types.ts';
+import type {
+  AllyKind,
+  CompanionId,
+  EnemyId,
+  IdSpace,
+  MapDef,
+  TowerId,
+} from '../content/types.ts';
 import { quillOffline, resolveC4, setDoorChoice, type SaveData } from '../meta/index.ts';
 import { baseStoryContext } from '../meta/story.ts';
 import { escortMaxLost, isBossWave } from '../sim/index.ts';
@@ -1478,16 +1486,31 @@ const isTower = (id: string): id is TowerId => Object.hasOwn(TOWERS, id);
 /**
  * Who is on the radio on `map`: QUILL and a present companion (style-guide § 5.5), Ves'thara beside
  * Bramble (her translator: every Bramble line comes through her; T613), and Prim when `pa` (the map
- * sends Everglow Security units, which speak in her voice; T603).
+ * sends Everglow Security units, which speak in her voice; T603). On a pick-list map (the finale;
+ * T809) the companion is the run's pick (`picked`, the config's `companion`), and Ves'thara walks
+ * whoever is picked ("I will hold the light", finale.md § FIN); a choir map's leader sings on the
+ * radio too (Pebble).
  */
-export function presentSpeakers(map: Pick<MapDef<IdSpace>, 'companion'>, pa = false): SpeakerId[] {
+export function presentSpeakers(
+  map: Pick<MapDef<IdSpace>, 'companion'> & { readonly choir?: { readonly leader: string } | null },
+  pa = false,
+  picked: CompanionId | null = null,
+): SpeakerId[] {
   const out: SpeakerId[] = ['quill'];
-  const c = map.companion;
-  if (c !== null && 'id' in c && c.state === 'present') {
-    const id = c.id === 'bramble' ? 'chitterbloom' : c.id;
+  const add = (id: SpeakerId): void => {
     if (!out.includes(id)) out.push(id);
-    if (c.id === 'bramble' && !out.includes('vesthara')) out.push('vesthara');
+  };
+  const c = map.companion;
+  const walking =
+    c === null ? null : 'pick' in c ? picked : c.state === 'present' ? c.id : null;
+  if (walking !== null) {
+    add(walking === 'bramble' ? 'chitterbloom' : walking);
+    if (walking === 'bramble') add('vesthara');
   }
+  if (c !== null && 'pick' in c) add('vesthara');
+  // The choir's leader (the finale's Pebble) leads the song on the radio.
+  const leader = SPEAKER_IDS.find((id) => id === map.choir?.leader);
+  if (leader !== undefined) add(leader);
   if (pa) out.push('prim');
   return out;
 }
@@ -1537,7 +1560,9 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
   const offline = offlineSpeakers(map, activeSave());
   const s: Session = {
     map,
-    present: presentSpeakers(mapDef, everglow.includes(true)).filter((id) => !offline.includes(id)),
+    present: presentSpeakers(mapDef, everglow.includes(true), sim.config.companion).filter(
+      (id) => !offline.includes(id),
+    ),
     offline,
     simSec: () => sim.state.tick / TICK_HZ,
     runKills: () => attemptKills(host),

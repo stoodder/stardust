@@ -13,31 +13,29 @@ import type { BuildStep, GridPos, TowerId } from '../../types.ts';
 import { WAYMARKS } from './map.ts';
 
 // The pads, from the Halls down to the gate.
-/** The Halls mouth: west of the descent, and its two ledges (high ground). */
-const HALLS_W: GridPos = [9, 1];
+/** The Halls mouth: its two ledges (high ground), east of the descent, and below its corner. */
 const LEDGE_W: GridPos = [10, 2];
 const LEDGE_E: GridPos = [12, 2];
-/** East of the descent, and below its corner (where the choir stops). */
-const HALLS_E: GridPos = [14, 3];
+const HALLS_E: GridPos = [13, 3];
 const CORNER: GridPos = [12, 5];
-/** Above the row-4 run, west. */
+/** Above the row-4 run, west, and beside the rift field's mouth. */
 const RUN_N: GridPos = [6, 3];
-/** The west bend: beside the rift field's mouth, inside the bend. */
 const WEST_IN: GridPos = [1, 4];
+/** Inside the west bend: a pair over the rift field's mouth, row 4, and the Gap's west end. */
 const BEND: GridPos = [5, 5];
-/** Between the row-4 run and the Gap's row 7, and the west gold seam (a power node). */
-const MID_N: GridPos = [8, 5];
+const BEND_E: GridPos = [6, 5];
+/** Between the row-4 run and the Gap (row 7): a pair and the west gold seam (a power node). */
+const MID_N: GridPos = [9, 5];
+const MID_S: GridPos = [9, 6];
 const SEAM_W: GridPos = [10, 6];
 /** Above the Gap's east end. */
 const GAP_E: GridPos = [15, 6];
-/** Below the Gap: west, middle, and the ridge by the memorial. */
-const WEST_S: GridPos = [2, 8];
-const GAP_W: GridPos = [6, 8];
-const RIDGE: GridPos = [13, 8];
-/** Between the Gap and row 10, and inside the east bend. */
+/** The ridge by the memorial, between the Gap and row 10: three in a row. */
 const INNER: GridPos = [11, 9];
+const RIDGE_W: GridPos = [12, 8];
+const RIDGE: GridPos = [13, 8];
+/** Inside the east bend, the east gold seam above the Bore road, and below the Bore road. */
 const EAST_BEND: GridPos = [16, 9];
-/** The east gold seam above the Bore road (a power node), and below the Bore road. */
 const SEAM_E: GridPos = [19, 8];
 const BORE_S: GridPos = [18, 11];
 /** Below row 10, and either side of the colony's lane to the gate. */
@@ -81,37 +79,36 @@ const REBOOTS: readonly BuildStep[] = [4, 7, 12, 14, 17, 18].map((wave) => ({
 function parSteps(): BuildStep[] {
   return [
     ...RELIGHT,
-    { wave: 1, build: 'sproing', tile: GATE_E },
-    { wave: 1, build: 'mindspike', tile: INNER },
+    { wave: 1, build: 'mindspike', tile: BEND },
     { wave: 1, build: 'mindspike', tile: SEAM_W },
-    { wave: 1, build: 'burrow', tile: GAP_W },
-    { wave: 2, upgrade: INNER },
+    { wave: 1, build: 'burrow', tile: INNER },
+    { wave: 1, build: 'sproing', tile: GATE_E },
+    { wave: 2, upgrade: BEND },
     { wave: 3, build: 'sproing', tile: GATE_W },
+    { wave: 4, upgrade: BEND },
     { wave: 4, upgrade: SEAM_W },
-    { wave: 4, build: 'choir', tile: MID_N },
-    { wave: 5, upgrade: INNER },
-    { wave: 6, upgrade: GATE_E },
+    { wave: 5, build: 'choir', tile: BEND_E },
     { wave: 6, upgrade: SEAM_W },
-    { wave: 7, upgrade: GATE_W },
-    { wave: 7, specialize: INNER, spec: 'a' },
+    { wave: 7, specialize: BEND, spec: 'a' },
     { wave: 8, upgrade: GATE_E },
-    { wave: 9, build: 'mindspike', tile: CORNER },
+    { wave: 8, upgrade: GATE_W },
+    { wave: 9, build: 'choir', tile: MID_S },
     { wave: 10, specialize: SEAM_W, spec: 'a' },
-    { wave: 11, build: 'choir', tile: LEDGE_E },
-    { wave: 11, upgrade: CORNER },
-    { wave: 12, build: 'burrow', tile: HALLS_E },
-    { wave: 12, upgrade: CORNER },
-    { wave: 13, build: 'sproing', tile: LOW_MID },
-    { wave: 13, upgrade: GAP_W },
-    { wave: 14, build: 'mindspike', tile: LEDGE_W },
-    { wave: 14, upgrade: LEDGE_W },
-    { wave: 15, specialize: CORNER, spec: 'b' },
+    { wave: 11, build: 'mindspike', tile: MID_N },
+    { wave: 11, upgrade: MID_N },
+    { wave: 12, upgrade: BEND_E },
+    { wave: 12, upgrade: MID_S },
+    { wave: 13, build: 'sproing', tile: RIDGE },
+    { wave: 13, upgrade: INNER },
+    { wave: 14, build: 'mindspike', tile: LEDGE_E },
+    { wave: 14, build: 'choir', tile: HALLS_E },
     { wave: 15, upgrade: LEDGE_E },
-    { wave: 16, upgrade: LEDGE_W },
-    { wave: 16, upgrade: HALLS_E },
-    { wave: 17, specialize: LEDGE_W, spec: 'a' },
-    { wave: 17, upgrade: LOW_MID },
-    { wave: 18, upgrade: HALLS_E },
+    { wave: 15, upgrade: LEDGE_E },
+    { wave: 16, specialize: LEDGE_E, spec: 'b' },
+    { wave: 17, build: 'burrow', tile: CORNER },
+    { wave: 17, build: 'mindspike', tile: LEDGE_W },
+    { wave: 18, upgrade: LEDGE_W },
+    { wave: 18, upgrade: CORNER },
   ];
 }
 
@@ -182,7 +179,6 @@ export const builds = defineBuilds({
 
 /** Pads named for the tests (balance/finM01*.test.ts) and Phase 2's builds (T821). */
 export const PADS = {
-  HALLS_W,
   LEDGE_W,
   LEDGE_E,
   HALLS_E,
@@ -190,13 +186,14 @@ export const PADS = {
   RUN_N,
   WEST_IN,
   BEND,
+  BEND_E,
   MID_N,
+  MID_S,
   SEAM_W,
   GAP_E,
-  WEST_S,
-  GAP_W,
-  RIDGE,
   INNER,
+  RIDGE_W,
+  RIDGE,
   EAST_BEND,
   SEAM_E,
   BORE_S,

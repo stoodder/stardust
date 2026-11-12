@@ -16,7 +16,7 @@ import {
 } from './enemies/unsung.ts';
 import { M8_UNIT_ICONS } from './icons/m8_enemies.ts';
 import { SPRITES } from './index.ts';
-import { STANDARD_LEGEND } from './legend.ts';
+import { isCustomChar, STANDARD_LEGEND } from './legend.ts';
 import type { SpriteDef } from './types.ts';
 
 const FACINGS = ['se', 'sw', 'ne', 'nw'] as const;
@@ -43,7 +43,10 @@ function width(rows: readonly string[]): number {
 }
 
 function count(rows: readonly string[], chars: string): number {
-  return [...rows.join('')].filter((c) => chars.includes(c)).length;
+  return rows
+    .join('')
+    .split('')
+    .filter((c) => chars.includes(c)).length;
 }
 
 /** Every colour a frame shows under its default palette (custom legend and slots). */
@@ -52,7 +55,7 @@ function colours(def: SpriteDef, frame: string): Set<ColorName> {
   const out = new Set<ColorName>();
   for (const ch of grid(def.id, frame).join('')) {
     if (ch === '.' || ch === '_') continue;
-    const custom = def.legend?.[ch as keyof typeof def.legend];
+    const custom = isCustomChar(ch) ? def.legend?.[ch] : undefined;
     if (custom !== undefined) out.add(custom);
     else {
       const slot = STANDARD_LEGEND[ch];
@@ -69,6 +72,12 @@ function hasAnims(id: string, poses: readonly string[]): void {
 }
 
 const ramp = (c: ColorName): string => c.split('.')[0] ?? '';
+
+/** An authored anim's frame rate (0 for a mirror). */
+function fps(d: SpriteDef, a: string): number {
+  const an = d.anims?.[a];
+  return an !== undefined && 'fps' in an ? an.fps : 0;
+}
 
 describe('M8 registers real art for every finale unit (placeholders/m8.ts is gone)', () => {
   it('registers the units, the choir, the effects, and the icon', () => {
@@ -262,10 +271,6 @@ describe("the song's motes (fx/song_motes.ts)", () => {
     expect(rest.anims?.['rise']).toBeDefined();
     const ishael = sprite('fx.ishael_mote');
     expect(count(grid(ishael.id, 'i0'), 'W')).toBe(4);
-    const fps = (d: SpriteDef, a: string): number => {
-      const an = d.anims?.[a];
-      return an !== undefined && 'fps' in an ? an.fps : 0;
-    };
     expect(fps(ishael, 'glow')).toBeLessThan(fps(rest, 'rise'));
   });
 

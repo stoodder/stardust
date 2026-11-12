@@ -20,8 +20,10 @@
 //   onto the Halls descent; up from the south edge onto row 10; and along row 10 from the west
 //   edge onto the colony's lane. Each crosses decor and road only (maps.md § 4).
 // - **21 buildable tiles:** the two Halls-mouth ledges (10,2) and (12,2) as high ground, two gold
-//   seams as power nodes (10,6) between the Gap and the west run, and (19,8) above the Bore road,
-//   and 17 pads along the walk.
+//   seams as power nodes, (10,6) between the Gap and the row-4 run and (19,8) above the Bore road,
+//   and 17 pads along the walk, several in adjacent groups for links and the Hum Choir's aura
+//   (the west bend's (5,5)–(6,5), the Gap's (9,5)–(9,6)–(10,6), the ridge's (11,9)–(12,8)–(13,8),
+//   the Halls' (12,2)–(13,3)).
 // - **The four waymark lanterns** are wreckage on decor beside the road (`waymark_1..4`, in the
 //   choir's walking order); clearing one relights it (the tile stays decor, the salvage pays).
 // - **The memorial wreck** (`memorial_wreck`, (10,8), on the ridge above the Gap) is decor; render
@@ -90,14 +92,14 @@ export const map = defineMapLayout({
   // prettier-ignore
   tiles: [
     '...........S..........',
-    '.........o.#..........',
+    '...........#..........',
     '..........^#^.........',
-    '......o..x.#..o.......',
+    '......o..x.#.o........',
     '.o.#########..........',
-    '...#.o..o...o.........',
-    'S###x.....+....o......',
+    '...#.oo..o..o.........',
+    'S###x....o+....o......',
     '...###############....',
-    '..o...o......o...#.+..',
+    '............oo...#.+..',
     '...........o..x.o####S',
     '........##########....',
     '.......o#.x..o....o...',

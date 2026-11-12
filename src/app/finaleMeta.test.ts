@@ -32,6 +32,7 @@ import { battleConfig, slot1Beside } from './battleSetup.ts';
 import { checkpointOf, checkpointPlace, retryLabel } from './checkpoints.ts';
 import { countdownModel, countdownStart, trackCountdown } from './countdown.ts';
 import { permissionSceneId, waitSceneId } from './forcedInput.ts';
+import { presentSpeakers } from './dialogue.ts';
 import { createHost } from './host.ts';
 import { createRouter, resumedNotice, type Router } from './router.ts';
 import { checkpointPlaces, resultsStats } from './runResult.ts';
@@ -344,6 +345,31 @@ describe('speaker rules (T809)', () => {
     expect(evaluateCondition({ inputResolved: WHOS_THERE_INPUT }, fin)).toBe(false);
     expect(evaluateCondition({ phaseAtLeast: 1 }, live(1))).toBe(true);
     expect(evaluateCondition({ phaseAtLeast: 2 }, live(1))).toBe(false);
+  });
+});
+
+describe("who's on the finale's radio (presentSpeakers)", () => {
+  const FIN = {
+    companion: { pick: ['vesthara', 'bramble', 'zibzab', 'quill'] },
+    choir: { leader: 'pebble' },
+  } as const;
+  it("QUILL, the pick, Ves'thara whoever walks, and the choir's Pebble", () => {
+    expect(presentSpeakers(FIN, false, 'zibzab')).toEqual(['quill', 'zibzab', 'vesthara', 'pebble']);
+    expect(presentSpeakers(FIN, false, 'vesthara')).toEqual(['quill', 'vesthara', 'pebble']);
+    expect(presentSpeakers(FIN, false, 'bramble')).toEqual([
+      'quill',
+      'chitterbloom',
+      'vesthara',
+      'pebble',
+    ]);
+    expect(presentSpeakers(FIN, false, 'quill')).toEqual(['quill', 'vesthara', 'pebble']);
+    // Before the pick is known: still Ves'thara and Pebble.
+    expect(presentSpeakers(FIN)).toEqual(['quill', 'vesthara', 'pebble']);
+    // Other maps as before.
+    expect(presentSpeakers({ companion: { id: 'bricks', state: 'present' } })).toEqual([
+      'quill',
+      'bricks',
+    ]);
   });
 });
 

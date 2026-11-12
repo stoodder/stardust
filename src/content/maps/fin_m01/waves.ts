@@ -53,28 +53,28 @@ const CALL = { countdownSec: COUNTDOWN } as const;
 /** Phase 1, the Descent (W1–18). */
 export const PHASE_1: readonly WaveDef[] = [
   // W1 · Motes ahead of the choir
-  { groups: [motes(8, 'halls', 4), motes(6, 'halls', 14)] },
+  { groups: [motes(8, 'halls', 4, 0.8), motes(6, 'halls', 14, 0.8)] },
   // W2 · Fractures from the rift field
-  { ...CALL, groups: [fractures(1, 'rift_field', 0), motes(8, 'halls', 6)] },
+  { ...CALL, groups: [fractures(1, 'rift_field', 0), motes(8, 'halls', 6, 0.8)] },
   // W3 · Rift Moths
-  { ...CALL, groups: [moths(3, 'sky_n', 0), moths(3, 'sky_e', 6), motes(6, 'halls', 4)] },
+  { ...CALL, groups: [moths(3, 'sky_n', 0), moths(3, 'sky_e', 6), motes(6, 'halls', 4, 0.8)] },
   // W4 · Bore security: Auditors with a drone, on the Bore road the walk runs past
   {
     ...CALL,
     groups: [
       g('auditor', 1, 'bore_road', 0),
-      motes(10, 'halls', 4),
+      motes(10, 'halls', 4, 0.8),
       fractures(1, 'rift_field', 6),
     ],
   },
   // W5 · Maws
-  { ...CALL, groups: [maws(2, 'halls', 0, 5), motes(8, 'halls', 3), motes(6, 'rift_field', 8)] },
+  { ...CALL, groups: [maws(2, 'halls', 0, 5), motes(8, 'halls', 3, 0.8), motes(6, 'rift_field', 8, 0.8)] },
   // W6 · Mote clusters with an Undertow
   {
     ...CALL,
     groups: [
-      motes(10, 'halls', 0),
-      motes(10, 'rift_field', 4),
+      motes(10, 'halls', 0, 0.8),
+      motes(10, 'rift_field', 4, 0.8),
       fractures(4, 'halls', 8),
       maws(3, 'rift_field', 10, 4),
       g('undertow', 1, 'halls', 14),
@@ -83,7 +83,7 @@ export const PHASE_1: readonly WaveDef[] = [
   // W7 · Silencers
   {
     ...CALL,
-    groups: [silencers(3, 'halls', 0, 4), motes(8, 'halls', 2), motes(8, 'rift_field', 6)],
+    groups: [silencers(3, 'halls', 0, 4), motes(8, 'halls', 2, 0.8), motes(8, 'rift_field', 6, 0.8)],
   },
   // W8 · gunships over the road
   {
