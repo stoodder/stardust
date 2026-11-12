@@ -8,6 +8,7 @@
 // (content/dialogue/resultsFlow.ts `unskippableFirst`). Reduced motion cuts between frames.
 
 import type { DAWN_FRAMES, FinaleSceneId } from '../../content/sprites/scenes/finale.ts';
+import { stillAt, type TextCue } from '../dialogue/stillCues.ts';
 
 /** The Dawn still (T843's, 320×180 at 2×) and its frames, in the order they come. */
 export const DAWN_STILL: FinaleSceneId = 'scene.dawn';
@@ -15,11 +16,11 @@ export type DawnFrame = (typeof DAWN_FRAMES)[number];
 
 /**
  * The narrator lines that turn the still: a fragment of each, as written in the scene's data
- * (app/ending.test.ts holds them to it).
+ * (app/ending.test.ts holds them to it). One still, so only the frame changes (stillCues.ts).
  */
-export const DAWN_CUES: readonly { readonly frame: DawnFrame; readonly says: string }[] = [
-  { frame: 'mote', says: 'One gold mote rises' },
-  { frame: 'visor', says: 'The visor goes up' },
+export const DAWN_CUES: readonly TextCue<'scene.dawn', DawnFrame>[] = [
+  { still: 'scene.dawn', frame: 'mote', speaker: 'narrator', says: 'One gold mote rises' },
+  { still: 'scene.dawn', frame: 'visor', speaker: 'narrator', says: 'The visor goes up' },
 ];
 
 /** The sunrise alone before the first line (ms; `stagingLeadInMs` for `dawn`). */
@@ -44,13 +45,7 @@ interface SaidLine {
 
 /** The frame on show: the last cue said or on screen, else `dawn`. */
 export function dawnFrame(said: readonly SaidLine[], current: SaidLine | null): DawnFrame {
-  let frame: DawnFrame = 'dawn';
-  for (const l of current === null ? said : [...said, current]) {
-    if (l.speaker !== 'narrator') continue;
-    const cue = DAWN_CUES.find((c) => l.text.includes(c.says));
-    if (cue !== undefined) frame = cue.frame;
-  }
-  return frame;
+  return stillAt(DAWN_CUES, { still: 'scene.dawn', frame: 'dawn' }, said, current).frame;
 }
 
 /** The screen reader's account of the stage (aria-hidden; the lines speak). */

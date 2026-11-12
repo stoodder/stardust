@@ -1,0 +1,398 @@
+// The ad (`scene.prelude_ad`; act1.md § Prelude · Arrival, shot 1; art-direction § 6, *The
+// prelude's stills*): Everglow's public face, full screen, before the camera pulls back to show it
+// playing on a freighter's bulkhead. A candy-coloured brochure: a cyan sky in a sunburst of two
+// tones, Evie beaming at the left (the billboard's gold sun with its smile, big), BRIGHTER / EVERY
+// DAY! on two pink ribbons, a sunlit white dome with a lettuce window on green terraces of pink
+// clay, a NOW HIRING! starburst, sparkles everywhere. Frames:
+// - `ad`, `ad_1`: the ad, its sparkles twinkling (anim `ad`, 2 fps).
+// - `small_print`, `small_print_1`: the same with the small-print crawl across its foot, a glyph
+//   further on each step (anim `small_print`, 2 fps). LETTUCE NOT FOR EXPORT is in it.
+import { textPixels, textWidth } from '../../font3x5.ts';
+import type { CharGrid } from '../../helpers.ts';
+import { at, hash01, plot } from '../../helpers.ts';
+import { copyGrid, defineScene, dithered, eachOnLine, fill, SCENE_W, sceneGrid } from '../sceneKit.ts';
+
+/*
+ * Palette `act1`: 0–4 `act1.grass`, a–e `act1.clay`, 5–9 `act1.path`, + pink.3, * pink.4,
+ * x `act1.shade`, w `act1.light`, k ink.0.
+ * Custom: A–C `act1.sky`, D–F gold.2–gold.4 (Evie), G/H white.0/white.1, I–K steel.2–steel.4,
+ * L–O teal.1–teal.4, P/Q pink.1/pink.2, R–T orange.2–orange.4, U–W green.2–green.4 (lettuce),
+ * X coral.3 (Evie's cheeks), Y ink.2, Z `act1.water.2` (the window's glass).
+ */
+export const AD_LEGEND = {
+  A: 'act1.sky.0',
+  B: 'act1.sky.1',
+  C: 'act1.sky.2',
+  D: 'gold.2',
+  E: 'gold.3',
+  F: 'gold.4',
+  G: 'white.0',
+  H: 'white.1',
+  I: 'steel.2',
+  J: 'steel.3',
+  K: 'steel.4',
+  L: 'teal.1',
+  M: 'teal.2',
+  N: 'teal.3',
+  O: 'teal.4',
+  P: 'pink.1',
+  Q: 'pink.2',
+  R: 'orange.2',
+  S: 'orange.3',
+  T: 'orange.4',
+  U: 'green.2',
+  V: 'green.3',
+  W: 'green.4',
+  X: 'coral.3',
+  Y: 'ink.2',
+  Z: 'act1.water.2',
+} as const;
+
+/** Evie: her face's centre and radius (the rays reach past it). */
+export const AD_EVIE = { x: 70, y: 66, r: 25 } as const;
+/** The dome: its centre at the ring and its half-width and height. */
+const DOME = { x: 214, y: 120, rx: 46, ry: 40 } as const;
+/** The NOW HIRING! starburst. */
+const BADGE = { x: 289, y: 98, r: 19 } as const;
+/** The small-print crawl's band (its top row and height). */
+export const CRAWL = { y: 118, h: 11 } as const;
+/** The terraces' first lip (the land's top at the dome's foot). */
+const LAND_Y = 112;
+
+/** The crawl's words, on a loop (the narrator reads the second). */
+export const SMALL_PRINT =
+  'TERMS APPLY.  LETTUCE NOT FOR EXPORT.  HELMET PROVIDED. ONE SIZE FITS MOST.  SUNSHINE NOT GUARANTEED.  ';
+
+/** The sky: cyan, lighter toward the land, in a two-tone sunburst turning round Evie. */
+function skyAt(x: number, y: number): string {
+  const a = Math.atan2(y - AD_EVIE.y, x - AD_EVIE.x);
+  const wedge = Math.floor(((a + Math.PI) / (2 * Math.PI)) * 22) % 2 === 0;
+  const v = 0.12 + (y / LAND_Y) * 0.5 + (wedge ? 0.32 : 0);
+  return dithered(['A', 'B', 'C'], Math.min(1, v), x, y);
+}
+
+/**
+ * Evie's sun (the billboard's face, big): a gold disc, lighter at its heart, its rim a step darker;
+ * twelve rays round it, long and short in turn; two tall eyes with a glint, a wide smile with its
+ * ends turned up, coral cheeks.
+ */
+export function paintEvie(g: CharGrid, ex: number, ey: number, r: number): void {
+  for (let y = ey - r - 14; y <= ey + r + 14; y++) {
+    for (let x = ex - r - 14; x <= ex + r + 14; x++) {
+      const d = Math.hypot(x + 0.5 - ex, y + 0.5 - ey);
+      if (d <= r) {
+        // Lit from the upper left: the heart pale gold, the rim a ring of dark gold.
+        const lit = d + ((x - ex) + (y - ey)) * 0.18;
+        plot(g, x, y, d > r - 1.6 ? 'D' : lit < r * 0.55 ? 'F' : 'E');
+        continue;
+      }
+      if (d < r + 2.5) continue;
+      const a = Math.atan2(y + 0.5 - ey, x + 0.5 - ex) + Math.PI / 12;
+      const k = Math.round(a / (Math.PI / 6));
+      const off = Math.abs(a - k * (Math.PI / 6)) * d;
+      const long = k % 2 === 0;
+      const reach = long ? r + 14 : r + 9;
+      const half = 3.6 * (1 - (d - r - 2.5) / (reach - r - 2.5));
+      if (d <= reach && off <= half) plot(g, x, y, off > half - 1 ? 'D' : 'E');
+    }
+  }
+  // The eyes: tall ovals with a glint up and to the left.
+  for (const sx of [-1, 1] as const) {
+    const cx = ex + sx * 8;
+    const cy = ey - 5;
+    for (let y = -3; y <= 3; y++) {
+      for (let x = -1; x <= 1; x++) {
+        if (Math.abs(x) === 1 && Math.abs(y) === 3) continue;
+        plot(g, cx + x, cy + y, 'k');
+      }
+    }
+    plot(g, cx - 1, cy - 2, 'H');
+    // Cheeks: a coral blush under each eye, dithered on the gold.
+    for (let y = 3; y <= 5; y++) {
+      for (let x = -3; x <= 3; x++) {
+        if (Math.abs(x) + Math.abs(y - 4) > 3) continue;
+        if ((x + y) % 2 === 0) plot(g, cx + sx * 4 + x, cy + 6 + y, 'X');
+      }
+    }
+  }
+  // The smile: a wide arc two pixels thick, its ends turned up (the billboard's `k....k` / `.kkkk.`).
+  for (let x = -11; x <= 11; x++) {
+    const y = Math.round(ey + 5 + Math.sqrt(Math.max(0, 1 - (x / 12) ** 2)) * 7);
+    plot(g, ex + x, y, 'k');
+    if (Math.abs(x) < 10) plot(g, ex + x, y - 1, 'k');
+    if (Math.abs(x) < 7) plot(g, ex + x, y - 2, 'Q');
+  }
+  for (const sx of [-1, 1] as const) {
+    plot(g, ex + sx * 12, ey + 4, 'k');
+    plot(g, ex + sx * 13, ey + 3, 'k');
+  }
+}
+
+/** A ribbon: a pink band with notched tails, a darker underside, white letters with a shadow. */
+function paintRibbon(g: CharGrid, text: string, cx: number, y: number): void {
+  const scale = 3;
+  const w = textWidth(text, scale);
+  const x0 = cx - Math.round(w / 2) - 8;
+  const x1 = cx + Math.round(w / 2) + 7;
+  const h = 5 * scale + 8;
+  for (let yy = 0; yy < h; yy++) {
+    const notch = Math.abs(yy - (h - 1) / 2);
+    for (let x = x0 - 6; x <= x1 + 6; x++) {
+      const tail = x < x0 || x > x1;
+      // The tails sit a little lower and darker, cut in a V.
+      if (tail && (yy < 3 || (x < x0 ? x - (x0 - 6) : x1 + 6 - x) < 6 - notch * 0.9)) continue;
+      const ch = tail ? 'Q' : yy === 0 ? '*' : yy >= h - 2 ? 'Q' : '+';
+      plot(g, x, y + yy + (tail ? 2 : 0), ch);
+    }
+  }
+  const tx = cx - Math.round(w / 2);
+  const ty = y + 4;
+  for (const p of textPixels(text, tx + 1, ty + 1, scale)) plot(g, p.x, p.y, 'P');
+  for (const p of textPixels(text, tx, ty, scale)) plot(g, p.x, p.y, 'H');
+}
+
+/** The land's top row at column x: rolling terraces, higher toward the edges. */
+function landTop(x: number): number {
+  return LAND_Y + Math.round(Math.sin(x * 0.021 + 0.8) * 5 + Math.sin(x * 0.057) * 2);
+}
+
+/**
+ * The land: far hills hazed into the sky, then green terraces stepping down, each lip lit, a pink
+ * clay face under it, and butterhead lettuce in rows along them.
+ */
+function paintLand(g: CharGrid): void {
+  // Far hills: soft, pale, behind everything.
+  for (let x = 0; x < SCENE_W; x++) {
+    const top = 92 + Math.round(Math.sin(x * 0.034 + 2) * 6 + Math.sin(x * 0.011) * 5);
+    for (let y = top; y < 180; y++) plot(g, x, y, dithered(['C', '4', '3'], (y - top) / 24, x, y));
+  }
+  for (let x = 0; x < SCENE_W; x++) {
+    const top = landTop(x);
+    for (let y = top; y < 180; y++) {
+      const depth = y - top;
+      // Terraces 12 px deep: a lit lip, the grass, a clay face under the next lip.
+      const t = depth % 12;
+      const step = Math.floor(depth / 12);
+      let ch: string;
+      if (t === 0) ch = '4';
+      else if (t < 8) ch = dithered(['3', '2'], (t / 8) * 0.8 + step * 0.08, x, y);
+      else if (t === 8) ch = '1';
+      else ch = t === 11 ? 'b' : dithered(['d', 'c'], (t - 9) / 2, x, y);
+      plot(g, x, y, ch);
+    }
+  }
+  // Lettuce in rows on each terrace: little rosettes, lit on top.
+  for (let x = 4; x < SCENE_W; x += 7) {
+    const top = landTop(x);
+    for (let step = 0; step < 6; step++) {
+      const y = top + step * 12 + 4;
+      if (y > 176) break;
+      const lx = x + (step % 2) * 3;
+      plot(g, lx, y - 1, 'W');
+      plot(g, lx - 1, y, 'V');
+      plot(g, lx, y, 'W');
+      plot(g, lx + 1, y, 'V');
+      plot(g, lx - 1, y + 1, 'U');
+      plot(g, lx, y + 1, 'V');
+      plot(g, lx + 1, y + 1, 'U');
+    }
+  }
+}
+
+/**
+ * The dome (`prop.dome` big): white, lit from Evie's side, on a steel ring; a teal band with lit
+ * slits; on its lit side a round window, sunlit, with lettuce growing inside in rows.
+ */
+function paintDome(g: CharGrid): void {
+  const { x: cx, y: by, rx, ry } = DOME;
+  // The ring: a low steel band under the shell, its shadow on the terrace.
+  for (let x = cx - rx - 3; x <= cx + rx + 3; x++) {
+    plot(g, x, by + 3, '1');
+    plot(g, x, by + 2, x < cx ? 'J' : 'I');
+    plot(g, x, by + 1, x < cx ? 'K' : 'J');
+    plot(g, x, by, x < cx - rx + 4 ? 'H' : 'K');
+  }
+  for (let y = by - ry; y < by; y++) {
+    for (let x = cx - rx; x <= cx + rx; x++) {
+      const dx = (x + 0.5 - cx) / rx;
+      const dy = (y + 0.5 - by) / ry;
+      const d = Math.hypot(dx, dy);
+      if (d > 1) continue;
+      const lit = -0.75 * dx - 0.6 * dy;
+      const v = Math.max(0, Math.min(1, 0.55 + lit * 0.6));
+      plot(g, x, y, dithered(['I', 'J', 'K', 'G', 'H'], v, x, y));
+    }
+  }
+  // The band and its slits.
+  for (let x = cx - rx + 1; x < cx + rx; x++) {
+    const inShell = Math.hypot((x + 0.5 - cx) / rx, (by - 9.5 - by) / ry) <= 1;
+    if (!inShell) continue;
+    plot(g, x, by - 10, x < cx ? 'O' : 'N');
+    plot(g, x, by - 9, x < cx ? 'N' : 'M');
+    plot(g, x, by - 8, 'M');
+  }
+  for (let x = cx - rx + 6; x < cx + rx - 4; x += 9) {
+    plot(g, x, by - 13, 'O');
+    plot(g, x + 1, by - 13, 'H');
+  }
+  // The window: a round pane on the lit side, steel-framed, lettuce rows in the sun inside.
+  const wx = cx - 14;
+  const wy = by - 24;
+  for (let y = -11; y <= 11; y++) {
+    for (let x = -11; x <= 11; x++) {
+      const d = Math.hypot(x, y);
+      if (d > 11) continue;
+      let ch = d > 9.6 ? 'J' : d > 8.6 ? 'H' : dithered(['Z', 'C'], (-x - y) / 16 + 0.3, wx + x, wy + y);
+      if (d <= 8.6 && y >= -2 && (y + 2) % 4 < 3) {
+        // Rows of butterhead, nearer rows lower and bigger.
+        const row = Math.floor((y + 2) / 4);
+        const leaf = (x + row * 2 + 40) % 5;
+        if ((y + 2) % 4 === 0) ch = leaf < 3 ? 'W' : ch;
+        else ch = leaf < 4 ? (leaf === 0 ? 'U' : 'V') : 'U';
+      }
+      plot(g, wx + x, wy + y, ch);
+    }
+  }
+  // The pane's glare: a diagonal streak.
+  for (let k = -5; k <= 1; k++) plot(g, wx + k, wy - 5 - k, 'H');
+}
+
+/** The NOW HIRING! starburst: a sixteen-pointed orange star, white words, a lit upper edge. */
+function paintBadge(g: CharGrid): void {
+  const { x: cx, y: cy, r } = BADGE;
+  for (let y = cy - r - 1; y <= cy + r + 1; y++) {
+    for (let x = cx - r - 1; x <= cx + r + 1; x++) {
+      const a = Math.atan2(y + 0.5 - cy, x + 0.5 - cx);
+      const d = Math.hypot(x + 0.5 - cx, y + 0.5 - cy);
+      const edge = r - 2.6 + Math.abs(Math.cos(a * 8)) * 2.6;
+      if (d > edge) continue;
+      const lit = (x - cx) + (y - cy) < -r * 0.6;
+      plot(g, x, y, d > edge - 1 ? (lit ? 'T' : 'R') : 'S');
+    }
+  }
+  for (const [word, dy] of [
+    ['NOW', -7],
+    ['HIRING!', 1],
+  ] as const) {
+    const tx = cx - Math.floor(textWidth(word) / 2);
+    for (const p of textPixels(word, tx + 1, cy + dy + 1)) plot(g, p.x, p.y, 'R');
+    for (const p of textPixels(word, tx, cy + dy)) plot(g, p.x, p.y, 'H');
+  }
+}
+
+/** A sparkle: a white heart and four arms, `size` 1 or 2 long. */
+function sparkle(g: CharGrid, x: number, y: number, size: number, arm: string): void {
+  plot(g, x, y, 'H');
+  for (let k = 1; k <= size; k++) {
+    const ch = k === size && size > 1 ? arm : 'H';
+    plot(g, x + k, y, ch);
+    plot(g, x - k, y, ch);
+    plot(g, x, y + k, ch);
+    plot(g, x, y - k, ch);
+  }
+}
+
+/** The ad's sparkles: where, and which twinkle big on the even beat (the rest on the odd). */
+const SPARKLES: readonly (readonly [number, number, string])[] = [
+  [30, 22, 'F'],
+  [116, 30, 'F'],
+  [104, 98, 'O'],
+  [24, 98, 'F'],
+  [168, 70, 'O'],
+  [196, 86, 'H'],
+  [250, 78, 'O'],
+  [304, 60, 'F'],
+  [262, 112, 'F'],
+  [150, 104, 'O'],
+  [10, 60, 'O'],
+  [228, 98, 'H'],
+];
+
+function paintSparkles(g: CharGrid, beat: 0 | 1): void {
+  SPARKLES.forEach(([x, y, arm], i) => {
+    const big = (i + beat) % 2 === 0;
+    sparkle(g, x, y, big ? 2 : 1, big ? arm : 'H');
+    if (!big) plot(g, x, y, arm);
+  });
+}
+
+/** The wordmark, top left: EVERGLOW GARDENS in white over a teal shadow. */
+function paintWordmark(g: CharGrid): void {
+  const word = 'EVERGLOW GARDENS';
+  for (const p of textPixels(word, 9, 7)) plot(g, p.x, p.y, 'L');
+  for (const p of textPixels(word, 8, 6)) plot(g, p.x, p.y, 'H');
+  // The Evie sun as the logo's dot.
+  for (const [dx, dy, ch] of [
+    [0, 0, 'E'],
+    [1, 0, 'E'],
+    [0, 1, 'D'],
+    [1, 1, 'D'],
+  ] as const) {
+    plot(g, 3 + dx, 7 + dy, ch);
+  }
+}
+
+/**
+ * The small-print crawl: a teal band across the ad's foot, white words on it (font3x5), `shift`
+ * glyphs further on than the first step.
+ */
+export function paintCrawl(g: CharGrid, shift: number): void {
+  const { y, h } = CRAWL;
+  fill(g, 0, y, SCENE_W - 1, y + h - 1, (_x, yy) =>
+    yy === y ? 'N' : yy === y + h - 1 ? 'Y' : 'L',
+  );
+  const text = SMALL_PRINT.repeat(3);
+  const start = -(shift * 4) - 2;
+  for (const p of textPixels(text, start, y + 3)) {
+    if (p.x >= 0 && p.x < SCENE_W) plot(g, p.x, p.y, 'G');
+  }
+}
+
+/** Every frame of the ad. */
+function paintAd(): Record<string, CharGrid> {
+  const g = sceneGrid();
+  fill(g, 0, 0, SCENE_W - 1, 179, skyAt);
+  paintLand(g);
+  paintDome(g);
+  paintEvie(g, AD_EVIE.x, AD_EVIE.y, AD_EVIE.r);
+  paintRibbon(g, 'BRIGHTER', 214, 12);
+  paintRibbon(g, 'EVERY DAY!', 214, 38);
+  paintBadge(g);
+  paintWordmark(g);
+  // A thin teal frame: it is a screen.
+  for (let x = 0; x < SCENE_W; x++) {
+    plot(g, x, 0, 'L');
+    plot(g, x, 179, 'L');
+  }
+  for (let y = 0; y < 180; y++) {
+    plot(g, 0, y, 'L');
+    plot(g, SCENE_W - 1, y, 'L');
+  }
+  const frames: Record<string, CharGrid> = {};
+  for (const beat of [0, 1] as const) {
+    const ad = copyGrid(g);
+    paintSparkles(ad, beat);
+    frames[beat === 0 ? 'ad' : 'ad_1'] = ad;
+  }
+  for (const beat of [0, 1] as const) {
+    const sp = copyGrid(frames[beat === 0 ? 'ad' : 'ad_1']!);
+    paintCrawl(sp, beat * 2);
+    frames[beat === 0 ? 'small_print' : 'small_print_1'] = sp;
+  }
+  void at;
+  void hash01;
+  void eachOnLine;
+  return frames;
+}
+
+export const scenePreludeAd = defineScene({
+  id: 'scene.prelude_ad',
+  palette: 'act1',
+  legend: AD_LEGEND,
+  paint: paintAd,
+  anims: {
+    // The sparkles twinkle (2 fps); under the small print the crawl steps on with them.
+    ad: { frames: ['ad', 'ad_1'], fps: 2 },
+    small_print: { frames: ['small_print', 'small_print_1'], fps: 2 },
+  },
+});

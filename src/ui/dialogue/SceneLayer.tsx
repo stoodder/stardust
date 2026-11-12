@@ -5,6 +5,7 @@
 // leads the lines in, and the party's confetti and record counter). The briefing is the HUD's own
 // (hud/Briefing.tsx). Esc skips to the next choice or the end (app/keys.ts routes it here).
 import { useEffect, useState } from 'preact/hooks';
+import { skipScene } from '../../app/dialogue.ts';
 import { hud } from '../state.ts';
 import { NamePlate } from './CommsPanel.tsx';
 import { plateColor } from './plate.ts';
@@ -19,6 +20,7 @@ import {
   type SceneStep,
 } from './SceneParts.tsx';
 import { Staging } from './Staging.tsx';
+import { stagingSkipsAll } from './staging.ts';
 import { plainText } from './text.ts';
 import { dialogue, type LineView, type SceneView } from './state.ts';
 import './dialogue.css';
@@ -58,8 +60,26 @@ function Prompt({ line }: { line: LineView }) {
   );
 }
 
+/**
+ * A staging's Skip for the whole scene (`stagingSkipsAll`: the prelude's, T1001): always on show
+ * at the top right, reachable with Tab, the same as Esc (it waits out the staging's start lock).
+ */
+function SkipAll() {
+  return (
+    <button
+      type="button"
+      class="hud-btn chamfer dlg-skip-all"
+      data-testid="scene-skip"
+      onClick={() => skipScene()}
+    >
+      Skip
+    </button>
+  );
+}
+
 /** Everything under the current line: choices, the "will remember", and Next. */
 function Controls({ view, step }: { view: SceneView; step: SceneStep }) {
+  const skipsAll = view.staging !== null && stagingSkipsAll(view.staging.kind);
   return (
     <>
       {view.choices !== null && <ChoiceList choices={view.choices} />}
@@ -69,8 +89,13 @@ function Controls({ view, step }: { view: SceneView; step: SceneStep }) {
         </p>
       )}
       <div class="dlg-actions">
-        <NextButton step={step} lineKey={view.line?.id ?? (view.ended ? 'end' : 'choice')} />
+        <NextButton
+          step={step}
+          lineKey={view.line?.id ?? (view.ended ? 'end' : 'choice')}
+          {...(skipsAll ? { typingLabel: 'Next' } : {})}
+        />
       </div>
+      {skipsAll && <SkipAll />}
     </>
   );
 }

@@ -37,11 +37,60 @@ So Mk II matters on every Act I map but A1M2, and Bricks's Rapport on A1M5 only.
 
 ---
 
+## Prelude · Arrival
+
+*Day 61 of the haul: an Everglow ad, a long way down, and a form at your boots.*
+
+The Prelude is the cinematic a new campaign plays before the New Hire Intake (below): Start shift (or New game → a slot) → **Prelude** → intake → A1M1's briefing. Its last shot drops Form FF-1 at your boots, so the intake reads as that form's close-up. It plays once per campaign, can be skipped at any moment, and replays from Settings ("Watch the arrival"). When and how it plays (the auto-advance, Skip, the seen rule, reduced motion) is [core-loop.md §1](../../design/core-loop.md#1-session-loop-between-maps); the stills are code-drawn ([art-direction.md](../../art/art-direction.md)). Code home: `src/content/dialogue/a1/a1_m01/prelude.ts`, the full-screen scene `a1_m01_scene_prelude`.
+- **Canon limits.** It introduces no one A1M1 introduces (QUILL, Bricks and his "Sprout", Goldie, Sterling by memo): Bricks is a silhouette at the gate, so the briefing still introduces him. No tokens (there is no profile yet), no protected words, no reveals. Speakers: `pa`, `narrator`, `gerald`, `system`.
+- **Purpose.** Everglow's public face, the long haul played for laughs, one quiet look at the world, its shape (the Spires, the colony, the wilds), and the handoff into the intake. **Target: delight, then wonder.** Nothing says the view is beautiful ([style-guide.md §1](../style-guide.md#1-the-ten-rules), rule 7).
+- **Cues.** Each line marked with a label (`p_ad` …) switches the still or its frame as it shows; the labels are the stage's cue keys, in this order.
+
+**The script** (7 shots, 18 lines, 1 silence):
+1. **Brighter Every Day!** (`scene.prelude_ad`: Evie beams over a sunlit lettuce dome above the words BRIGHTER EVERY DAY!; the title theme, the PA's bright couplet under its third line.)
+   - PA (`p_ad`): "Everglow Gardens, Tumble IV! Sunshine, lettuce, and a career that's brighter every day!"
+   - PA: "Now hiring Junior Perimeter Technicians! No experience needed. Helmet provided. One size fits most!"
+   - PA: "Everglow, Everglow, brighter every day! Everglow, Everglow, clearing the way!"
+   - Narrator (`p_small_print`, the small-print crawl): "The small print scrolls too fast to read. You read it anyway: 'Lettuce not for export.'"
+2. **The Haul.** (`scene.freighter`: the ad is a small screen on a freighter's bulkhead; crash seats, crates stencilled CONFETTI, the Technician strapped in, helmet far too big. The theme with its drums down.)
+   - Narrator (`p_haul`): "Day 61 aboard the Everglow freighter *Positive Outlook*. The ad has played 4,212 times."
+   - Narrator: "Cargo: confetti, 6 tonnes. Helmets, one size. And you."
+3. **Tumble IV.** (`scene.viewport`: the Technician from behind at a round viewport, visor down, in **Dawn's exact pose**; the planet fills the glass. The theme drops to its base layer and holds alone through the silence.)
+   - Narrator (`p_view`): "Tumble IV. One day there lasts thirty-eight of yours. You're arriving just after noon."
+   - Narrator (`p_unplug`, the ad goes dark): "Behind you, the ad stops. Someone has unplugged it. Nobody plugs it back in."
+   - (Silence, 3 s.) The one thing that never shuts up finally does.
+4. **Descent.** (`scene.descent`, panning down through cloud: the Spires and their rigs, the terraces, the domes, the southern grass, where a long line of tiny coral points heads south. The layers return over a shuttle rumble.)
+   - PA (`p_descent`): "Now descending to Everglow Gardens! Local time: afternoon. It will be afternoon for a while!"
+   - Narrator: "Far below, small things move across the valley in a long line, all going the same way."
+   - PA: "Those are pests! Don't worry. Pests are why you're here!"
+5. **Touchdown.** (`scene.touchdown`: the pad, Evie's billboard `beaming`, and a sign, DAYS WITHOUT A PEST INCIDENT: 1. A Nibbler skitters across and it reads 0. The Peeker watches from a rock.)
+   - PA (`p_touchdown`): "Welcome to Everglow Gardens! Population: 340. Now 341!"
+   - PA (`p_incident`, the sign flips to 0): "Pest incident! Please continue to enjoy your arrival!"
+6. **Dome Row.** (`scene.dome_row`: the road down from the Spires, past the domes and the turrets on their pads, out through the perimeter gate into open grass. By the gate, a huge figure with a cannon on one shoulder.)
+   - Narrator (`p_dome_row`): "Dome Row. The domes, the turrets on their pads, and one road running out through the gate."
+   - Narrator (`p_wave`, the figure raises a hand): "By the gate, someone very large raises one hand. The other hand holds a cannon."
+7. **Delivery.** (`scene.dome_row`'s `gerald` frame: Gerald in the foreground, satchel open, a clipboard at the Technician's boots. On the system line the still dims and the intake rises over it.)
+   - Gerald (`p_delivery`): "DELIVERY: ATTEMPTED."
+   - Narrator: "The mail drone drops a clipboard at your boots and leaves. It doesn't wait for a signature."
+   - System (`p_form`): "Helmet link online. Form FF-1 detected."
+
+**Seeds** (never explained):
+- **Shot 3's pose is Dawn's.** At the First Dawn the same silhouette lifts the visor ([finale.md § FIN](finale.md#fin--clearing-the-way)): the first look at the world, and the last.
+- **"Clearing the way"** in the ad's couplet curdles into the PA's minor shift change at A2M6, then becomes the hymn and the finale's title.
+- **The line of small things going one way** is the Long Walk, seen and never named; it returns in Wayside's final image. "Pests are why you're here!" curdles by itself.
+- **"Afternoon for a while"** pays off at A2M6's sunset and at the Dawn.
+- **The Peeker's rock** pays off at A2M3's rescue and A3M6's "I watched you from the rock."
+- **"Doesn't wait for a signature"** pays off at epilogue card 11, the first form Gerald ever saw signed for ([bible.md §10](../bible.md#epilogue-cards)). It starts Gerald's rule of three: ATTEMPTED here, ATTEMPTED. RECIPIENT: ARMED at A1M3, then received.
+- **"Lettuce not for export"** pays off at Goldie's seed tin and the insurance fraud ([bible.md §3](../bible.md#everglow-dynamics-in-one-paragraph)).
+- **The confetti** is for A1M5's party; **"Helmets, one size"** echoes the intake's file note.
+
+---
+
 ## Character creation · New Hire Intake
 
 *Form FF-1: before your first shift, Everglow wants to know who you are. Mostly for the file.*
 
-The intake ([core-loop.md §6.1](../../design/core-loop.md#61-character-creation-and-callsigns)) opens on New game before A1M1, and on Continue, Load, or Import for a save with no profile yet. It is Act I system copy: Everglow's cheerful voice, never scolding. The name and the reason start blank; the optional form of address starts on Tech. (core-loop.md §6.1). Code home: `src/ui/screens/Intake.tsx` (copy) and `src/app/profile.ts` (the field problems and the file note).
+The intake ([core-loop.md §6.1](../../design/core-loop.md#61-character-creation-and-callsigns)) opens on New game before A1M1 (on a new campaign, after the [Prelude](#prelude--arrival)), and on Continue, Load, or Import for a save with no profile yet. It is Act I system copy: Everglow's cheerful voice, never scolding. The name and the reason start blank; the optional form of address starts on Tech. (core-loop.md §6.1). Code home: `src/ui/screens/Intake.tsx` (copy) and `src/app/profile.ts` (the field problems and the file note).
 - **Header:** kicker "Everglow · Frontier Futures · Form FF-1"; heading "New hire intake"; top right "Junior Perimeter Technician, Grade 1" (the employee number is on the badge).
 - **Intro:** "Welcome to the Everglow family! Please print clearly. Every answer goes in your file." For a save from before the intake: "Records switched to a new form! Fill it in once, and your shifts carry on where you left them."
 - **Fields** (labels, then the hint under each):
@@ -102,7 +151,7 @@ Dressing: Evie billboards (`beaming`), Goldie's Dome 1 with Duchess in the windo
 - **W7 is the finale.** The first Zoomer group runs in among the big clumps, and the second starts as the last clump finishes spawning. It's the one wave par doesn't hold whole: a single pest gets past Bricks at the gate. A1M1 has no teach-flagged waves: with no required counters it has no soft enemies to exempt.
 
 **Story delivery.**
-- *Before:* character creation (the onboarding form), then memo `memo_a1_00` *WELCOME TO THE GARDENS!* (grants Orbital Strike; small print per [style-guide.md §6.1](../style-guide.md#61-everglow-memos)).
+- *Before:* on a new campaign, the [Prelude](#prelude--arrival); character creation (the onboarding form), then memo `memo_a1_00` *WELCOME TO THE GARDENS!* (grants Orbital Strike; small print per [style-guide.md §6.1](../style-guide.md#61-everglow-memos)).
 - *Briefing* (`a1_m01_brief`, in this order): QUILL introduces itself; Bricks names you (the callsign beat: the scene sets your callsign to Sprout, once; a replay of the briefing never resets a later one); the threat intel; Bricks's how-to line (the W2 radio slot's line, played here instead since [D026](../../decisions.md#d026--2026-11-09--m1-review-round-1-rulings)); then his question and a choice (earnest / wry / quiet, [characters.md](../characters.md#the-protagonist)'s A1M1 set), each with its own one-line answer. The choice sets no flag: it's the player's first chance to speak, and every answer plants a seed (the Spires with QUILL's policy tell, Goldie, the survey's clipboard).
   - QUILL: "Hello, Technician! I'm QUILL, your Quantified Unified Integrated Logistics & Lethality assistant. I love my job!"
   - Bricks: "Name's Okonkwo. Sergeant. I'll call you Sprout, 'cause you're green and you work with lettuce."

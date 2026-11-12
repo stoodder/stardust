@@ -47,6 +47,8 @@ export interface LineView {
   readonly silence: boolean;
   /** The playfield points at the first-built turret while it shows (D059's Denise pointer). */
   readonly point: boolean;
+  /** The line's `label` in its scene's data, if it has one (a staging's cues read it; stillCues.ts). */
+  readonly label?: string;
 }
 
 /** The comms panel (top-left, never blocking): one line, the line it follows, and its button. */

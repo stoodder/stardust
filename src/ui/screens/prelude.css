@@ -1,0 +1,81 @@
+/* The prelude's stage (preludeStage.tsx; T1001; art-direction.md § Dialogue presentation): the
+   shot's still full-bleed at 2×, a new one fading in over the last (a cut under reduced motion),
+   the descent panned in whole pixels; the lines one at a time at the bottom on a dark panel edged in
+   teal; the Skip at the top right. The stage is its own stacking context, the still under the
+   lines. Whole pixels. */
+.dlg-stage[data-staging='prelude'] {
+  z-index: 0;
+  box-sizing: border-box;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding-bottom: 12px;
+  background: var(--sd-ink-0);
+}
+
+.dlg-stage[data-staging='prelude'] .dlg-history {
+  display: none;
+}
+
+/* The lead-in: the ad alone, the empty line panel held back until its first line. */
+.dlg-stage[data-staging='prelude'] .dlg-fullscreen:not(:has(.dlg-line, .dlg-caption, .dlg-choices)) {
+  opacity: 0;
+}
+
+.dlg-stage[data-staging='prelude'] .dlg-fullscreen {
+  background: var(--panel-fill);
+  box-shadow: 0 0 0 1px var(--sd-teal-2);
+}
+
+/* The Skip for the whole scene (SceneLayer.tsx `SkipAll`), over the still's top right corner. */
+.dlg-skip-all {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+.prelude {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.prelude-still {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transition: filter 900ms steps(9);
+}
+
+/* A new still or frame fades in over the last in nine steps (Dawn's 0.9 s). */
+.prelude-still.in {
+  animation: prelude-in 900ms steps(9) both;
+}
+
+@keyframes prelude-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* Form FF-1: the still dims under the system line, and the intake rises as the scene ends. */
+.prelude.dim .prelude-still {
+  filter: brightness(0.35);
+}
+
+.prelude.still .prelude-still {
+  transition: none;
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .prelude-still {
+    transition: none;
+    animation: none;
+  }
+}

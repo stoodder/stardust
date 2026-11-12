@@ -27,6 +27,7 @@ import {
   SCENE_W,
   sceneGrid,
 } from './sceneKit.ts';
+import { technicianBack, TECHNICIAN_HELM, type TechnicianInks } from './technicianBack.ts';
 
 /*
  * Palette `finale`: 0–4 `finale.ground` (violet-black warming to peach), e0/e1 gold.3/gold.4.
@@ -589,110 +590,31 @@ function paintIshaelMote(g: CharGrid): void {
 }
 
 /**
- * The Technician, from behind, three-quarter, turned toward the sun: the oversized Everglow helmet
- * (art-direction § 5's `player`) with its antenna, the collar, sloped shoulders and arms, the back
- * running out of the frame. A silhouette: no face is ever drawn.
+ * The Technician, from behind, three-quarter, turned toward the sun (`technicianBack.ts`, the pose
+ * the prelude's viewport opens on): the oversized helmet with its antenna, the back running out of
+ * the frame, rimmed gold to the shoulders, coral below. A silhouette: no face is ever drawn.
  */
-const HELM = { cx: 92, cy: 71, rx: 17, ry: 15 } as const;
+const HELM = TECHNICIAN_HELM;
+const TECH = technicianBack(HELM);
+const inHelmet = TECH.inHelmet;
 
-function inHelmet(x: number, y: number): boolean {
-  return ((x - HELM.cx) / HELM.rx) ** 2 + ((y - HELM.cy) / HELM.ry) ** 2 <= 1;
-}
-
-/** The helmet's visor, down: its band round the front, seen past the helmet's east edge. */
-function inVisor(x: number, y: number): boolean {
-  const dy = y - HELM.cy;
-  if (dy < -7 || dy > 6 || !inHelmet(x, y)) return false;
-  return x >= HELM.cx + 7 + (dy * dy) / 14;
-}
-
-/** The back: collar, then shoulders rounding out, arms hanging, a little narrower at the waist. */
-function backHalf(t: number): number {
-  if (t < 3) return 9;
-  if (t < 14) return 9 + Math.sqrt((t - 3) / 11) * 25;
-  return 34 - Math.min(4, (t - 14) / 12);
-}
-
-const COLLAR_Y = HELM.cy + HELM.ry - 4;
-
-function inBody(x: number, y: number): boolean {
-  if (y < COLLAR_Y) return false;
-  const half = backHalf(y - COLLAR_Y);
-  // Turned toward the sun: the far (east) shoulder a little narrower than the near one.
-  return x >= HELM.cx - half && x <= HELM.cx + half * 0.86;
-}
-
-function inTechnician(x: number, y: number): boolean {
-  return inHelmet(x, y) || inBody(x, y);
-}
-
-/** The gap between arm and torso: a dark line down each side, below the shoulder. */
-function armSeam(x: number, y: number): boolean {
-  const t = y - COLLAR_Y;
-  if (t < 18) return false;
-  const half = backHalf(t);
-  return x === Math.round(HELM.cx - half + 8) || x === Math.round(HELM.cx + half * 0.86 - 7);
-}
-
-/**
- * The back's east rim below the shoulders (M8 review R5): the sun's coral holds to the shoulder
- * line, then breaks up, dithered into the dark of the back over RIM_FADE rows, so it never runs as
- * an unbroken stroke to the frame's foot.
- */
-const RIM_SOLID = 22;
-const RIM_FADE = 40;
-
-function rimBelow(x: number, y: number): string {
-  return dithered(['S', 'Z', 'G'], (y - COLLAR_Y - RIM_SOLID - 8) / RIM_FADE, x, y);
-}
+/** The Dawn's light on the Technician: gold on the helmet and shoulders, coral below. */
+const TECH_INKS: TechnicianInks = {
+  body: 'G',
+  deep: 'F',
+  crown: 'I',
+  rimInner: 'Z',
+  rimSoft: 'S',
+  rimHelm: 'M',
+  rimShoulder: 'L',
+  antennaTip: 'Q',
+};
 
 function paintTechnician(g: CharGrid, visorUp: boolean): void {
-  // The helmet's antenna (its mic stub's partner), up off the back-left, tipped pink.
-  eachOnLine(HELM.cx - 11, HELM.cy - 9, HELM.cx - 15, HELM.cy - 22, (x, y) => plot(g, x, y, 'G'));
-  plot(g, HELM.cx - 15, HELM.cy - 23, 'Q');
-  for (let y = HELM.cy - HELM.ry - 1; y < SCENE_H; y++) {
-    for (let x = HELM.cx - 40; x <= HELM.cx + 40; x++) {
-      if (!inTechnician(x, y)) continue;
-      const helmet = inHelmet(x, y) && y < COLLAR_Y + 2;
-      const eastEdge = !inTechnician(x + 1, y);
-      const topEdge = !inTechnician(x, y - 1);
-      let ch = 'G';
-      if (helmet) {
-        // The shell catches a little sky on its crown.
-        const crown = ((x - HELM.cx + 4) / 10) ** 2 + ((y - HELM.cy + 9) / 4) ** 2 <= 1;
-        ch = crown ? 'I' : 'G';
-        if (!inTechnician(x + 2, y) && !eastEdge) ch = 'Z';
-      } else if (armSeam(x, y)) ch = 'F';
-      else if (!inTechnician(x + 2, y) && !eastEdge)
-        // The rim's inner pixel only on the shoulder; below it breaks into the back's dark.
-        ch = dithered(['Z', 'G'], (y - COLLAR_Y - RIM_SOLID) / RIM_FADE, x, y);
-      else if (y > 150) ch = dithered(['G', 'F'], (y - 150) / 30, x, y);
-      if (eastEdge) ch = y < COLLAR_Y ? 'M' : y < COLLAR_Y + 30 ? 'L' : rimBelow(x, y);
-      else if (topEdge) ch = x > HELM.cx - 4 ? (helmet ? 'S' : 'Z') : 'I';
-      plot(g, x, y, ch);
-    }
-  }
-  // The helmet's rim, wider than the collar under it, and the collar ring.
-  for (let x = HELM.cx - 14; x <= HELM.cx + 13; x++) {
-    if (inHelmet(x, COLLAR_Y - 1)) plot(g, x, COLLAR_Y - 1, x > HELM.cx + 9 ? 'Z' : 'I');
-  }
-  for (let x = HELM.cx - 9; x <= HELM.cx + 8; x++) plot(g, x, COLLAR_Y + 1, 'F');
+  TECH.paintBack(g, TECH_INKS);
   if (!visorUp) {
-    // Visor down: the mirrored glass wraps round the front in a dark frame, reflecting the sky
-    // behind us (violet to rose) with the sunrise's line across it and a white glint.
-    for (let y = HELM.cy - 7; y <= HELM.cy + 6; y++) {
-      for (let x = HELM.cx; x <= HELM.cx + HELM.rx; x++) {
-        if (!inVisor(x, y)) continue;
-        const framed = !inVisor(x - 1, y) || !inVisor(x, y - 1) || !inVisor(x, y + 1);
-        const dy = y - HELM.cy;
-        let ch = dithered(['X', 'B', 'C'], (dy + 6) / 10, x, y);
-        if (dy === 2) ch = 'L';
-        else if (dy === 3) ch = 'T';
-        plot(g, x, y, framed ? 'F' : ch);
-      }
-    }
-    plot(g, HELM.cx + 12, HELM.cy - 4, 'N');
-    plot(g, HELM.cx + 13, HELM.cy - 5, 'O');
+    // Visor down: the glass reflects the sky behind us (violet to rose), the sunrise's line on it.
+    TECH.paintVisorDown(g, 'F', { glass: ['X', 'B', 'C'], line: ['L', 'T'], glint: ['N', 'O'] });
     return;
   }
   // Visor up: the plate tipped back over the crown, its mirror full of sky; under it, where the

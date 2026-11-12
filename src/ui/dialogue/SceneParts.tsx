@@ -129,13 +129,25 @@ export function useFocusOn(key: unknown, when = true): { current: HTMLButtonElem
   return ref;
 }
 
-/** The Next button: focused as each line arrives, so Enter (or Space) reads on. */
-export function NextButton({ step, lineKey }: { step: SceneStep; lineKey: unknown }) {
+/**
+ * The Next button: focused as each line arrives, so Enter (or Space) reads on. While the line
+ * types it reads `typingLabel` (Skip: the press finishes the typing), except where a staging has
+ * its own Skip for the whole scene (the prelude's), where it stays Next.
+ */
+export function NextButton({
+  step,
+  lineKey,
+  typingLabel = 'Skip',
+}: {
+  step: SceneStep;
+  lineKey: unknown;
+  typingLabel?: string;
+}) {
   const ref = useFocusOn(lineKey);
   if (!step.canNext) return null;
   return (
     <button ref={ref} type="button" class="hud-btn chamfer dlg-next" onClick={step.next}>
-      {step.typed.done ? 'Next' : 'Skip'}
+      {step.typed.done ? 'Next' : typingLabel}
       <span class="dlg-next-mark" aria-hidden="true" />
     </button>
   );

@@ -13,10 +13,21 @@ import { nightShiftLeadInMs } from '../screens/nightShift.ts';
 import { waykeeperLeadInMs } from '../screens/waykeeper.ts';
 // T810: the First Dawn and C5 (their stages and lead-ins are in the finale's lazy chunk).
 import { finaleUi } from '../screens/epilogueState.ts';
+// T1001: the prelude (its rules are pure and in the core; its stage is in its own lazy chunk).
+import { PRELUDE_LOCK_MS, PRELUDE_SCENE, preludeLeadInMs } from '../screens/prelude.ts';
+import { typedLength } from './text.ts';
 
 /** A scene's staging, by kind. */
 export type StagingKind =
-  'rig9_feed' | 'party' | 'yield_log' | 'mail' | 'night_shift' | 'waykeeper' | 'dawn' | 'c5';
+  | 'rig9_feed'
+  | 'party'
+  | 'yield_log'
+  | 'mail'
+  | 'night_shift'
+  | 'waykeeper'
+  | 'dawn'
+  | 'c5'
+  | 'prelude';
 
 /** Which scenes are staged (a UI-owned table, keyed by scene id; K6). */
 export const SCENE_STAGING: Readonly<Record<string, StagingKind>> = {
@@ -33,6 +44,8 @@ export const SCENE_STAGING: Readonly<Record<string, StagingKind>> = {
   // T810: the First Dawn (the visor up, once), and the finale's last question at first light.
   fin_m01_scene_dawn: 'dawn',
   fin_m01_scene_c5: 'c5',
+  // T1001: the prelude, "Arrival", before the intake on a new campaign (and Settings' replay).
+  [PRELUDE_SCENE]: 'prelude',
 };
 
 /** The staging for `sceneId`, or null for a plain scene. */
@@ -114,15 +127,43 @@ export function stagingLeadInMs(kind: StagingKind, still: boolean): number {
   if (kind === 'night_shift') return nightShiftLeadInMs(still);
   if (kind === 'waykeeper') return waykeeperLeadInMs(still);
   if (kind === 'dawn' || kind === 'c5') return finaleUi.value?.leadInMs(kind, still) ?? 0;
+  if (kind === 'prelude') return preludeLeadInMs(still);
   return 0;
 }
 
 /**
  * How long after a staging's start Next and Esc are swallowed (ms), by kind: the Asset Yield Log
- * can be skipped only after its first pass (T614, yieldLog.ts); every other staging at once.
+ * can be skipped only after its first pass (T614, yieldLog.ts); the prelude takes no press for
+ * its first 700 ms, so the press that started the shift doesn't carry through (T1001); every other
+ * staging at once.
  */
 export function stagingLockMs(kind: StagingKind, still: boolean): number {
+  if (kind === 'prelude') return PRELUDE_LOCK_MS;
   return kind === 'yield_log' ? yieldLogLockMs(still) : 0;
+}
+
+/**
+ * Whether a staging's lines move on by themselves (T1001, `autoAdvance`): each holds its typing
+ * plus `autoAdvanceHoldMs`, then the next comes (Next still moves on sooner). The prelude only.
+ */
+export function stagingAutoAdvances(kind: StagingKind): boolean {
+  return kind === 'prelude';
+}
+
+/** An auto-advancing line's hold once typed (ms): 1.5 s plus 30 ms a character (the epilogue's pace). */
+export const AUTO_HOLD_BASE_MS = 1500;
+export const AUTO_HOLD_PER_CHAR_MS = 30;
+
+export function autoAdvanceHoldMs(text: string): number {
+  return AUTO_HOLD_BASE_MS + AUTO_HOLD_PER_CHAR_MS * typedLength(text);
+}
+
+/**
+ * Whether Esc and the staging's own Skip end the whole scene (T1001, `skipAll`), not just skip to
+ * its next choice: the prelude, which is skippable from the first moment past its start lock.
+ */
+export function stagingSkipsAll(kind: StagingKind): boolean {
+  return kind === 'prelude';
 }
 
 /**

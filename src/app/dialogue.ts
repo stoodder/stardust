@@ -246,6 +246,8 @@ interface Spoken {
   readonly button?: ReplyButton;
   /** The plate's name instead of the speaker's (`LineNode.plateAs`; D143 R12). */
   readonly plateAs?: string;
+  /** The line's label in its scene (a staging's still cues read it; ui/dialogue/stillCues.ts). */
+  readonly label?: string;
 }
 
 let lineSerial = 0;
@@ -315,6 +317,7 @@ export function lineView(
     text: silence ? '' : silkText(resolveText(s.text, text)),
     silence,
     point: s.point === 'firstTower',
+    ...(s.label === undefined ? {} : { label: s.label }),
   };
 }
 

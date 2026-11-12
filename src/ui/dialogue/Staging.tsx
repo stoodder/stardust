@@ -38,6 +38,7 @@ import { MailStage } from '../screens/mailStage.tsx'; // T714
 import { NightShiftStage } from '../screens/nightShiftStage.tsx'; // T714
 import { WaykeeperStage } from '../screens/waykeeperStage.tsx'; // T714
 import { finaleUi } from '../screens/epilogueState.ts'; // T810: C5's stage, lazy
+import { preludeUi } from '../screens/preludeState.ts'; // T1001: the prelude's stage, lazy
 
 /** How often a moving stage redraws (ms): faster than the quickest anim (12 fps). */
 const STAGE_TICK_MS = 40;
@@ -262,6 +263,11 @@ export function Staging({ staging }: { staging: StagingView }) {
     const ui = finaleUi.value;
     const Stage = ui === null ? null : kind === 'dawn' ? ui.DawnStage : ui.C5Stage;
     return Stage === null ? null : <Stage from={staging.from} />;
+  }
+  if (kind === 'prelude') {
+    // T1001: the prelude's chunk registers it (app/prelude.ts loads it before the scene plays).
+    const Stage = preludeUi.value?.PreludeStage;
+    return Stage === undefined ? null : <Stage from={staging.from} />;
   }
   return kind === 'rig9_feed' ? (
     <FeedStage ms={ms} still={still} />

@@ -5,6 +5,7 @@
 // (architecture.md § 5, *Bundle*). The shared bark pools are always registered.
 import type { CampaignMapId } from '../campaign.ts';
 import { barks as a1m01Barks } from './a1/a1_m01/barks.ts';
+import { scenes as a1m01PreludeScenes } from './a1/a1_m01/prelude.ts';
 import { scenes as a1m01Scenes } from './a1/a1_m01/scenes.ts';
 import { barks as a1m02Barks } from './a1/a1_m02/barks.ts';
 import { scenes as a1m02Scenes } from './a1/a1_m02/scenes.ts';
@@ -25,7 +26,7 @@ export type { BlipId, PortraitSpriteId, SpeakerDef, SpeakerFrame } from './speak
 
 /** Act I's dialogue, in campaign order: always registered (later acts' arrive with their chunk). */
 const ACT1_DIALOGUE: readonly MapDialogue[] = [
-  { map: 'a1_m01', scenes: a1m01Scenes, barks: a1m01Barks },
+  { map: 'a1_m01', scenes: [...a1m01Scenes, ...a1m01PreludeScenes], barks: a1m01Barks },
   { map: 'a1_m02', scenes: a1m02Scenes, barks: a1m02Barks },
   { map: 'a1_m03', scenes: [...a1m03Scenes, ...a1m03BaseScenes], barks: a1m03Barks },
   { map: 'a1_m04', scenes: a1m04Scenes, barks: a1m04Barks },

@@ -1,9 +1,11 @@
 // Dialogue is canon (D026, D048): every line, choice option, and bark in a map's dialogue must
 // appear word for word in its map's section of its act file (`a1_m02` → story/campaign/act1.md
-// § A1M2, `a2_m01` → act2.md § A2M1, `fin_m01` → finale.md § FIN, `ch_m01` → finale.md § CH1), and a shared bark in its act's file (by its id's act). The
-// other way round, every quoted line in a migrated map's *Story delivery* (from *Briefing* to
-// *Codex*) must be in its dialogue, so none is dropped. Reads the docs from disk, so it lives with
-// the other node-side checks.
+// § A1M2, `a2_m01` → act2.md § A2M1, `fin_m01` → finale.md § FIN, `ch_m01` → finale.md § CH1); a
+// scene with a section of its own in that section (`SCENE_SECTIONS`: the Prelude, act1.md
+// § Prelude · Arrival); and a shared bark in its act's file (by its id's act). The other way
+// round, every quoted line in a migrated map's *Story delivery* (from *Briefing* to *Codex*) must
+// be in its dialogue, so none is dropped. Reads the docs from disk, so it lives with the other
+// node-side checks.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -51,6 +53,14 @@ const SECTIONS: Readonly<Record<string, { readonly act: string; readonly label: 
   ch_m03: { act: 'fin', label: 'CH3' },
 };
 
+/**
+ * Scenes whose copy has its own section of an act file instead of their map's (D164): the
+ * Prelude plays before the intake, so act1.md § Prelude · Arrival is its home, ahead of § A1M1.
+ */
+const SCENE_SECTIONS: Readonly<Record<string, { readonly act: string; readonly label: string }>> = {
+  a1_m01_scene_prelude: { act: '1', label: 'Prelude' },
+};
+
 /** A map's display name: its campaign name, or a challenge map's own (`MapDef.challenge.name`). */
 function mapName(mapId: string): string {
   const campaign = CAMPAIGN_PLAN.find((m) => m.id === mapId)?.name;
@@ -72,11 +82,15 @@ function sectionKey(mapId: string): { readonly act: string; readonly label: stri
 
 /** Map `mapId`'s section of its act file: from its `## <label>` heading to the next. */
 function section(mapId: string): string {
-  const { act, label } = sectionKey(mapId);
+  return sectionOf(mapId, sectionKey(mapId));
+}
+
+/** The `## <label>` section of act `act`'s file, up to the next heading (`who` names the owner). */
+function sectionOf(who: string, { act, label }: { readonly act: string; readonly label: string }) {
   const doc = actFile(act);
   const heading = `\n## ${label} `;
   const start = doc.indexOf(heading);
-  if (start < 0) throw new Error(`${mapId}: no "${heading.trim()}" section in its act file`);
+  if (start < 0) throw new Error(`${who}: no "${heading.trim()}" section in its act file`);
   const end = doc.indexOf('\n## ', start + heading.length);
   return doc.slice(start, end < 0 ? undefined : end);
 }
@@ -109,12 +123,36 @@ describe('dialogue is verbatim from its map section of the act file', () => {
     expect(section('fin_m01')).toContain('fin_m01_scene_dawn');
   });
 
+  it('a scene with its own section is in it, headed with its title and naming the scene', () => {
+    expect(sectionOf('prelude', SCENE_SECTIONS.a1_m01_scene_prelude!).split('\n')[1]).toBe(
+      '## Prelude · Arrival',
+    );
+    for (const [id, key] of Object.entries(SCENE_SECTIONS)) {
+      expect(sectionOf(id, key), id).toContain(id);
+      expect(
+        MAP_DIALOGUE.some((d) => d.scenes.some((s) => s.id === id)),
+        id,
+      ).toBe(true);
+    }
+  });
+
   for (const { map, scenes, barks } of MAP_DIALOGUE) {
-    const all = texts(scenes, barks);
+    const own = scenes.filter((s) => !Object.hasOwn(SCENE_SECTIONS, s.id));
+    const all = texts(own, barks);
     if (all.length === 0) continue;
     it(map, () => {
       const doc = section(map);
       for (const t of all) expect(doc, `${map}: ${t}`).toContain(t);
+    });
+  }
+
+  for (const [id, key] of Object.entries(SCENE_SECTIONS)) {
+    it(id, () => {
+      const scene = MAP_DIALOGUE.flatMap((d) => d.scenes).filter((s) => s.id === id);
+      const all = texts(scene, []);
+      expect(all.length, id).toBeGreaterThan(0);
+      const doc = sectionOf(id, key);
+      for (const t of all) expect(doc, `${id}: ${t}`).toContain(t);
     });
   }
 

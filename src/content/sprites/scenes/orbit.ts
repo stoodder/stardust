@@ -21,6 +21,7 @@ import {
   SCENE_W,
   sceneGrid,
 } from './sceneKit.ts';
+import { limbBand, limbDistance, limbRelief, type Limb } from './limb.ts';
 
 /*
  * Palette `finale`: 0–3 `finale.ground` (the night side's violet-black, the day side's regolith),
@@ -56,7 +57,7 @@ const LEGEND = {
 } as const;
 
 /** The planet: a vast disc whose limb arcs across the lower half. */
-const PLANET = { cx: 214, cy: 520, r: 400 } as const;
+const PLANET: Limb = { cx: 214, cy: 520, r: 400 };
 /** The terminator: dusk runs along this column of the disc's face (day east of it). */
 const DUSK_X = 156;
 /** The Deep Halls on the dusk side: one warm point. */
@@ -86,7 +87,7 @@ const DOME_GLINTS: readonly (readonly [number, number, 'I' | 'J' | 'K'])[] = [
 ];
 
 function inPlanet(x: number, y: number): boolean {
-  return Math.hypot(x - PLANET.cx, y - PLANET.cy) <= PLANET.r;
+  return limbDistance(PLANET, x, y) <= 0;
 }
 
 /** Space: ink to violet-black, with stars, a few brighter, a faint band of the Fringe's sky. */
@@ -99,23 +100,6 @@ function spaceAt(x: number, y: number): string {
   return dithered(['A', 'B', 'E'], band * 0.6 + (y / 180) * 0.25, x, y);
 }
 
-/** Smoothstep. */
-function ease(t: number): number {
-  return t * t * (3 - 2 * t);
-}
-
-/** Smooth value noise in [0, 1): hashed lattice corners blended bilinearly (`cell` px apart). */
-function smooth(x: number, y: number, cell: number, seed: number): number {
-  const gx = Math.floor(x / cell);
-  const gy = Math.floor(y / cell);
-  const fx = x / cell - gx;
-  const fy = y / cell - gy;
-  const a = hash01(gx, gy, seed) + (hash01(gx + 1, gy, seed) - hash01(gx, gy, seed)) * ease(fx);
-  const b =
-    hash01(gx, gy + 1, seed) + (hash01(gx + 1, gy + 1, seed) - hash01(gx, gy + 1, seed)) * ease(fx);
-  return a + (b - a) * ease(fy);
-}
-
 /** The terminator's column at row y: it leans and bows with the globe's curve (M8 R2), an arc. */
 function duskX(y: number): number {
   const t = y - 120;
@@ -124,16 +108,15 @@ function duskX(y: number): number {
 
 function paintPlanet(g: CharGrid): void {
   fill(g, 0, 0, SCENE_W - 1, 179, (x, y) => {
-    const d = Math.hypot(x - PLANET.cx, y - PLANET.cy) - PLANET.r;
-    if (d > 3) return spaceAt(x, y);
+    const d = limbDistance(PLANET, x, y);
+    const band = limbBand(d);
+    if (band === 'space') return spaceAt(x, y);
     // The atmosphere: a thin glowing rim, Tumble IV's own violet on the day side (no Earth blue),
     // rose and orange at dusk.
     const dusk = x - duskX(y);
-    if (d > 0) {
-      if (d > 2) return dusk > 24 ? 'F' : dusk > -12 ? 'F' : 'E';
-      return dusk > 24 ? 'b' : dusk > -8 ? 'X' : 'F';
-    }
-    if (d > -1.5) return dusk > 30 ? 'c' : dusk > -6 ? 'W' : 'F';
+    if (band === 'air_high') return dusk > 24 ? 'F' : dusk > -12 ? 'F' : 'E';
+    if (band === 'air') return dusk > 24 ? 'b' : dusk > -8 ? 'X' : 'F';
+    if (band === 'rim') return dusk > 30 ? 'c' : dusk > -6 ? 'W' : 'F';
     const depth = -d;
     // Night, west of the terminator: violet-black, deepening inward, the colony's domes glinting.
     if (dusk < -8) {
@@ -150,7 +133,7 @@ function paintPlanet(g: CharGrid): void {
     // colours): the ridges' crystal reads as a dim violet line, lit only in a few places, the
     // highlands' outcrops a sparse speckle, and the peach of the brightest regolith only where the
     // sun stands highest.
-    const relief = smooth(x, y * 2.2, 22, 51) * 0.7 + smooth(x, y * 2.2, 9, 52) * 0.3;
+    const relief = limbRelief(x, y, 51);
     const light = Math.min(1, (dusk - 6) / 46);
     const lit = light > 0.15 + 0.85 * (1 - bayerOf(x, y));
     if (relief > 0.6 && relief < 0.63) return lit && hash01(x, y, 53) < 0.3 ? 'c' : 'b';
