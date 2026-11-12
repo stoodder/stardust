@@ -29,6 +29,7 @@ import { sceneTouchdown as indexTouchdown } from './index.ts';
 import { colorOfChar, framePixels, frameRows, sceneInk } from './stamp.ts';
 import {
   BILLBOARD_AT,
+  LINE_PANEL_TOP,
   NIBBLER_AT,
   PEEKER_AT,
   sceneTouchdown,
@@ -180,6 +181,8 @@ describe('scene.touchdown', () => {
     expect(x1).toBeLessThan(SIGN.x + SIGN.w);
     expect(y0).toBeGreaterThan(SIGN.y);
     expect(y1).toBeLessThan(NIBBLER_AT.y + 3);
+    // The punchline is seen: the Nibbler and its dust stay above the line panel.
+    expect(y1).toBeLessThan(LINE_PANEL_TOP);
     // The 0 is lit orange; the 1 is white.
     const sign = [SIGN.x, SIGN.y, SIGN.x + SIGN.w - 1, SIGN.y + SIGN.h - 1] as const;
     expect(count(sceneTouchdown, 'one', ['orange.3'], ...sign)).toBe(0);

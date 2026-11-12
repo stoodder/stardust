@@ -72,8 +72,13 @@ export const PAD = { cx: 122, cy: 126, rx: 80, ry: 19 } as const;
 /** The colony's sign: its board's box and the flip counter's card. */
 export const SIGN = { x: 220, y: 72, w: 84, h: 44 } as const;
 const CARD = { x: SIGN.x + 34, y: SIGN.y + 20, w: 17, h: 21 } as const;
-/** The Nibbler's anchor on `zero` (in front of the sign, running east) and the Peeker's rock. */
-export const NIBBLER_AT = { x: 226, y: 140 } as const;
+/**
+ * The Nibbler's anchor on `zero` (in front of the sign's left post, running east), kept above the
+ * stage's line panel (still rows ~128–174 over columns ~52–268), so the pest the sign counts is seen.
+ */
+export const NIBBLER_AT = { x: 226, y: 122 } as const;
+/** The first still row the stage's line panel covers (over columns ~52–268). */
+export const LINE_PANEL_TOP = 128;
 export const PEEKER_AT = { x: 297, y: 156 } as const;
 /** Evie's billboard, beyond the pad. */
 export const BILLBOARD_AT = { x: 178, y: 101 } as const;

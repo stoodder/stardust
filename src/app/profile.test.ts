@@ -63,7 +63,6 @@ describe('the intake writes', () => {
     expect(withPreludeSeen(save)).toBe(save);
   });
 
-
   it('the profile with the first callsign, and the arrival_reason flag', () => {
     const save = withIntake(createNewSave(), { name: 'Ada', address: 'ms' }, 'lettuce');
     expect(save.profile).toEqual({
