@@ -1963,3 +1963,15 @@ Three reviewers (story and emotional impact, gameplay and correctness, UX/feel a
 - **A script cue plays only when its scene's condition holds** (each QUILL answer heard its own Phase 2 line only by luck of order).
 - Veteran bonuses pay only when a replay beats its stored best.
 Details and owners: the M8 review round 1 resolutions (orchestrator's scratchpad).
+
+### D157 — 2026-11-12 — M8 review round 2: rulings
+
+Round 2 verified round 1's fixes in play: each QUILL answer hears its own line, the gate counts, no wave is a wall, a late rebuild wins, the finale checkpoints, every build wins all 24 flag cells on Standard and Story, and the post-game never fields the people the player walked home. Runtime holds (5–7 ms frames, no leak, 786 kB initial JS); the gate's overrun is CPU. The rulings:
+- **The joke lands before the logistics.** After "Who's there?", "Not Everglow." / "…That's the joke." play while the clock is held, and only then does QUILL ask the player to rebuild ("…Rebuild, then press play."). A forced input arms only after its permission line has typed on screen.
+- **Damage never makes the Unsung harder, for every build:** every alt still wins with its damage on the boss at ×1.5 and ×2, and a dug-out Unsung is driven back like a surfaced one. The forms' time floors count unfrozen time.
+- **Story never gives less than Standard:** Story's core integrity is a floor, not a value. Rush Hour is dimmed on a choir map ("The walk sets its own pace.").
+- **The credits end on the player:** "And you" is the roll's last block, the player's name at title size, held under "Thank you for playing."
+- **A checkpoint retry on the finale keeps the walk:** it writes the persisted run at the checkpoint it resumes from.
+- **The sim runs a seed only when it can differ:** a build whose first seed drew no random number reuses that result for its other seeds (re-enabled by any future draw). The finale's 24-cell tests run in the whole gate's slow lane, not in a task's fast gate.
+- One disclosure style: a trailing ▸.
+Gate-time and architecture follow-ups that change no behaviour are logged in tasks.md (T878).
