@@ -14,6 +14,7 @@ import { createHost, type Host } from './host.ts';
 import { bindHud, hudSaveInfo, showNotice, type HudOptions } from './hud.ts';
 import { rejectText } from './hudText.ts';
 import { activeSave } from './save.ts';
+import { memorialFor } from './memorial.ts'; // T831
 import { bindBattleAudio } from './audio.ts';
 import { bindDialogue } from './dialogue.ts';
 import { bindClickables, bindPeeker } from './peeker.ts';
@@ -95,6 +96,8 @@ export function startBattle(
       nameTag: () => hud.nameTag.value,
       // T740b: the classes the save holds jailbroken draw jailbroken (towers.md § 9).
       jailbroken: activeSave()?.unlocks.jailbroken ?? [],
+      // T831: the finale's memorial wreck draws the save's tagged class, its tooltip the name.
+      ...memorialFor(activeSave()),
     },
     key,
   );

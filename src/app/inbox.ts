@@ -34,7 +34,8 @@ import { activeSave, updateActiveSave, type SaveResult } from './save.ts';
 
 // ── Shared ───────────────────────────────────────────────────────────────────────────────────
 
-function textContext(save: SaveData): TextContext {
+/** The text tokens' context for `save` (its profile and lifetime Pests Processed). */
+export function textContext(save: SaveData): TextContext {
   return { profile: save.profile, pestsProcessed: save.stats.pestsProcessed, evacuated: null };
 }
 
@@ -111,29 +112,37 @@ export interface MemoView {
 /** The Inbox: every delivered memo, newest first (core-loop.md § 6.4). */
 export function inboxView(save: SaveData | null = activeSave()): readonly MemoView[] {
   if (save === null) return [];
-  const ctx = baseStoryContext(save);
-  const text = textContext(save);
-  const r = (s: string): string => resolveText(s, text);
   const out: MemoView[] = [];
   for (const id of save.story.memosDelivered) {
-    const m = Object.hasOwn(MEMOS, id) ? MEMOS[id] : undefined;
     // A memo the build doesn't know (a save from a newer content set) stays filed, unshown.
-    if (m === undefined) continue;
-    out.push({
-      id,
-      format: m.format ?? 'memo',
-      letterhead: m.letterhead ?? 'full',
-      stamp: m.stamp ?? null,
-      from: r(m.from),
-      to: r(m.to),
-      subject: r(m.subject),
-      paragraphs: memoBody(m, ctx).map(r),
-      signOff: m.signOff === undefined ? null : r(m.signOff),
-      smallPrint: m.smallPrint === undefined ? null : r(m.smallPrint),
-      unread: !save.story.memosRead.includes(id),
-    });
+    const view = memoView(save, id);
+    if (view !== null) out.push(view);
   }
   return out.toReversed();
+}
+
+/**
+ * Memo `id` resolved for `save` (its text and extras as the save reads them), delivered or not
+ * (T810: Sterling's farewell shown as a card after the finale's Results); null for an unknown id.
+ */
+export function memoView(save: SaveData, id: string): MemoView | null {
+  const m = Object.hasOwn(MEMOS, id) ? MEMOS[id] : undefined;
+  if (m === undefined) return null;
+  const ctx = baseStoryContext(save);
+  const r = (s: string): string => resolveText(s, textContext(save));
+  return {
+    id,
+    format: m.format ?? 'memo',
+    letterhead: m.letterhead ?? 'full',
+    stamp: m.stamp ?? null,
+    from: r(m.from),
+    to: r(m.to),
+    subject: r(m.subject),
+    paragraphs: memoBody(m, ctx).map(r),
+    signOff: m.signOff === undefined ? null : r(m.signOff),
+    smallPrint: m.smallPrint === undefined ? null : r(m.smallPrint),
+    unread: !save.story.memosRead.includes(id),
+  };
 }
 
 /** Marks a delivered memo read (its NEW badge clears). A no-op for one read already. */

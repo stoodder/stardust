@@ -184,7 +184,7 @@ function Form({ memo }: { memo: MemoView }) {
  * `memo_a3_01`); `automated` (worn, sunless and unsigned, branded with the sender's name: from
  * A3M2, "Everglow Automated Systems").
  */
-function Letter({ memo }: { memo: MemoView }) {
+export function Letter({ memo }: { memo: MemoView }) {
   if (memo.format === 'form') return <Form memo={memo} />;
   const look = memo.letterhead;
   const automated = look === 'automated';

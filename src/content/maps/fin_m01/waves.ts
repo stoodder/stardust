@@ -265,7 +265,11 @@ export const PHASE_2_WAVES: readonly WaveDef[] = [
   // W22 · Fractures, and a Silencer up the Bore road
   {
     ...P2,
-    groups: [fractures(3, 'halls', 0, 2), silencers(1, 'bore_road', 2), motes(8, 'rift_ne', 4, 0.5)],
+    groups: [
+      fractures(3, 'halls', 0, 2),
+      silencers(1, 'bore_road', 2),
+      motes(8, 'rift_ne', 4, 0.5),
+    ],
   },
   // W23 · rifts both sides
   {

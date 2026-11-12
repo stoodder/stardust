@@ -151,6 +151,13 @@ function noWin(): MapDef<IdSpace>['events'] {
   return (RAW.maps[MAP]!.events ?? []).filter((e) => !e.actions.some((a) => 'endMap' in a));
 }
 
+/** dev_phases' validation messages about `inPhase` with `ws` for its waves. */
+function inPhaseIssues(ws: WaveDef<IdSpace>[]): string[] {
+  return validate({ ...RAW, maps: { ...RAW.maps, [MAP]: { ...RAW.maps[MAP]!, waves: ws } } })
+    .map(String)
+    .filter((m) => m.includes('inPhase'));
+}
+
 describe('waves of a script phase (inPhase)', () => {
   const base = RAW.maps[MAP]!.waves;
   // W3 (the Unsung) belongs to Phase 2, and a W4 of Motes after it.
@@ -181,19 +188,15 @@ describe('waves of a script phase (inPhase)', () => {
   });
 
   it('validates: a whole phase ≥ 2 some setPhase reaches, not on wave 1 nor with bossEnded', () => {
-    const bad = (ws: WaveDef<IdSpace>[]): string[] =>
-      validate({ ...RAW, maps: { ...RAW.maps, [MAP]: { ...RAW.maps[MAP]!, waves: ws } } })
-        .map(String)
-        .filter((m) => m.includes('inPhase'));
-    expect(bad([{ ...base[0]!, inPhase: 2 }, base[1]!, base[2]!])[0]).toContain(
+    expect(inPhaseIssues([{ ...base[0]!, inPhase: 2 }, base[1]!, base[2]!])[0]).toContain(
       'wave 1 is started by the player',
     );
-    expect(bad([base[0]!, { ...base[1]!, inPhase: 1 }, base[2]!])[0]).toContain('≥ 2');
-    expect(bad([base[0]!, { ...base[1]!, inPhase: 5 }, base[2]!])[0]).toContain(
+    expect(inPhaseIssues([base[0]!, { ...base[1]!, inPhase: 1 }, base[2]!])[0]).toContain('≥ 2');
+    expect(inPhaseIssues([base[0]!, { ...base[1]!, inPhase: 5 }, base[2]!])[0]).toContain(
       'no setPhase action reaches phase 5',
     );
     expect(
-      bad([base[0]!, base[1]!, { ...base[2]!, inPhase: 2, countdownAfter: 'bossEnded' }])[0],
+      inPhaseIssues([base[0]!, base[1]!, { ...base[2]!, inPhase: 2, countdownAfter: 'bossEnded' }])[0],
     ).toContain("can't wait for a phase and a boss");
   });
 });
@@ -201,13 +204,13 @@ describe('waves of a script phase (inPhase)', () => {
 describe('the echoArrived trigger', () => {
   const events = [
     ...(RAW.maps[MAP]!.events ?? []),
-    { id: 'she_heard', on: { echoArrived: 'thrum' }, actions: [{ cue: 'heard' }] },
+    { id: 'she_heard', on: { echoArrived: 'thrum' }, actions: [{ cue: 'dev_phases_cue_heard' }] },
   ];
   const played = play(content({ events }), { quill_choice: 'rewrite', spared_quiet_wave: false });
 
   it('fires the tick after the echo reaches the song, once', () => {
     const arrived = of(played.events, 'EchoArrived');
-    const cue = of(played.events, 'ScriptCue').filter((e) => e.cueId === 'heard');
+    const cue = of(played.events, 'ScriptCue').filter((e) => e.cueId === 'dev_phases_cue_heard');
     expect(arrived).toHaveLength(1);
     expect(cue).toHaveLength(1);
     expect(played.at.get(cue[0]!)! - played.at.get(arrived[0]!)!).toBe(1);

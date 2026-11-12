@@ -240,7 +240,12 @@ function validateFinaleScripts(issues: Issues, def: MapDef<IdSpace>, where: stri
   // A wave of a script phase (`inPhase`; T821) waits for a phase some setPhase reaches.
   for (const [i, wave] of def.waves.entries()) {
     const n = wave.inPhase;
-    if (n !== undefined && Number.isInteger(n) && n >= 2 && !actions.some(([a]) => 'setPhase' in a && a.setPhase === n)) {
+    if (
+      n !== undefined &&
+      Number.isInteger(n) &&
+      n >= 2 &&
+      !actions.some(([a]) => 'setPhase' in a && a.setPhase === n)
+    ) {
       issues.add('script', `${where}.waves[${i}].inPhase`, `no setPhase action reaches phase ${n}`);
     }
   }

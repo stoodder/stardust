@@ -34,6 +34,7 @@
 //   leak there (core integrity 30: the air exam's meter, so no-air loses on it).
 import { defineMapLayout } from '../../define.ts';
 import { WHOS_THERE_INPUT } from '../../forcedInputs.ts';
+import { FIN_SKY } from './lighting.ts';
 import type { GridPos, ScriptedEvent } from '../../types.ts';
 
 /** The choir's road, from the Halls (11,0) to the colony gate (8,13). */
@@ -154,6 +155,7 @@ export const map = defineMapLayout({
   // Act III's night until Dawn's `setLighting` (Phase 3). The eastern sky's warming per Phase 1
   // wave (D154's T701 ruling: sky-only lighting keys) is T831's, with its sky stops.
   env: 'act3',
+  lighting: FIN_SKY,
   objective: 'choir',
   meterLabel: 'voices',
   // Won by Dawn's hold (`endMap` 8 s into Phase 3), never by the waves resolving: the Unsung's
