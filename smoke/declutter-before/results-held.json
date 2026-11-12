@@ -1,0 +1,29 @@
+{
+  "id": "results-held",
+  "group": "e",
+  "voice": {
+    "held-card": {
+      "count": 1,
+      "area": 143360,
+      "shown": 143360,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 320,
+          "y": 248,
+          "w": 640,
+          "h": 224
+        }
+      ]
+    }
+  },
+  "critical": {},
+  "density": {
+    "elements": 3,
+    "controls": 1,
+    "words": 4,
+    "numbers": 1,
+    "repeated": [],
+    "longCopy": []
+  }
+}

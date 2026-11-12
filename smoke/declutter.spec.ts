@@ -260,7 +260,8 @@ test('declutter d: Research, Shop, Engineering, Xenotech, the Bounty Board', asy
   await baseTab(page, 'Research');
   await capture(page, 'research-early');
 
-  await boot(page, '&save=all_unlocked');
+  // Act II's close: every shelf open, with things still to buy (prices up) and 300 Stardust.
+  await boot(page, '&save=after_a2m6');
   await baseTab(page, 'Research');
   await capture(page, 'research');
   await baseTab(page, 'Shop');

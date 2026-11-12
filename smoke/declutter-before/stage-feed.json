@@ -1,0 +1,57 @@
+{
+  "id": "stage-feed",
+  "group": "e",
+  "voice": {
+    "kicker": {
+      "count": 1,
+      "area": 0,
+      "shown": 10160,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 208,
+          "y": 95,
+          "w": 508,
+          "h": 20
+        }
+      ]
+    },
+    "callsign": {
+      "count": 1,
+      "area": 0,
+      "shown": 10160,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 208,
+          "y": 147,
+          "w": 508,
+          "h": 20
+        }
+      ]
+    },
+    "stage": {
+      "count": 1,
+      "area": 180224,
+      "shown": 180224,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 384,
+          "y": 32,
+          "w": 512,
+          "h": 352
+        }
+      ]
+    }
+  },
+  "critical": {},
+  "density": {
+    "elements": 3,
+    "controls": 1,
+    "words": 1,
+    "numbers": 0,
+    "repeated": [],
+    "longCopy": []
+  }
+}

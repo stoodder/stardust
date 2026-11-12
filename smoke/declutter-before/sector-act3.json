@@ -1,0 +1,135 @@
+{
+  "id": "sector-act3",
+  "group": "c",
+  "voice": {
+    "chart": {
+      "count": 1,
+      "area": 667152,
+      "shown": 921600,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 1280,
+          "h": 720
+        }
+      ]
+    },
+    "region": {
+      "count": 4,
+      "area": 14563,
+      "shown": 15276,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 587,
+          "y": 9,
+          "w": 202,
+          "h": 22
+        },
+        {
+          "x": 476,
+          "y": 117,
+          "w": 136,
+          "h": 22
+        },
+        {
+          "x": 406,
+          "y": 652,
+          "w": 196,
+          "h": 40
+        }
+      ]
+    },
+    "kicker": {
+      "count": 1,
+      "area": 7840,
+      "shown": 7840,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 28,
+          "y": 24,
+          "w": 392,
+          "h": 20
+        }
+      ]
+    },
+    "callsign": {
+      "count": 1,
+      "area": 7840,
+      "shown": 7840,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 28,
+          "y": 76,
+          "w": 392,
+          "h": 20
+        }
+      ]
+    },
+    "tagline": {
+      "count": 1,
+      "area": 17496,
+      "shown": 17496,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 418,
+          "y": 324,
+          "w": 324,
+          "h": 54
+        }
+      ]
+    }
+  },
+  "critical": {
+    "threats": {
+      "count": 1,
+      "area": 22032,
+      "shown": 22032,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 418,
+          "y": 396,
+          "w": 324,
+          "h": 68
+        }
+      ]
+    },
+    "counters": {
+      "count": 2,
+      "area": 12960,
+      "shown": 12960,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 418,
+          "y": 470,
+          "w": 324,
+          "h": 20
+        },
+        {
+          "x": 418,
+          "y": 496,
+          "w": 324,
+          "h": 20
+        }
+      ]
+    }
+  },
+  "density": {
+    "elements": 49,
+    "controls": 10,
+    "words": 74,
+    "numbers": 5,
+    "repeated": [],
+    "longCopy": [
+      "3 lines: Surge corridorThe Long Walk",
+      "3 lines: The Hollow is inside the Preserve, where you led them. Get them out."
+    ]
+  }
+}

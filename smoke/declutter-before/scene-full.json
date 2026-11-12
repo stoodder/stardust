@@ -1,0 +1,119 @@
+{
+  "id": "scene-full",
+  "group": "e",
+  "voice": {
+    "kicker": {
+      "count": 1,
+      "area": 0,
+      "shown": 10160,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 208,
+          "y": 95,
+          "w": 508,
+          "h": 20
+        }
+      ]
+    },
+    "callsign": {
+      "count": 1,
+      "area": 0,
+      "shown": 10160,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 208,
+          "y": 147,
+          "w": 508,
+          "h": 20
+        }
+      ]
+    },
+    "stage": {
+      "count": 2,
+      "area": 58752,
+      "shown": 58752,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 80,
+          "y": 508,
+          "w": 144,
+          "h": 204
+        },
+        {
+          "x": 1056,
+          "y": 508,
+          "w": 144,
+          "h": 204
+        }
+      ]
+    },
+    "counter": {
+      "count": 1,
+      "area": 99840,
+      "shown": 99840,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 0,
+          "y": 16,
+          "w": 1280,
+          "h": 78
+        }
+      ]
+    },
+    "portrait": {
+      "count": 1,
+      "area": 10000,
+      "shown": 10000,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 224,
+          "y": 334,
+          "w": 100,
+          "h": 100
+        }
+      ]
+    },
+    "speaker": {
+      "count": 1,
+      "area": 11456,
+      "shown": 11456,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 340,
+          "y": 334,
+          "w": 716,
+          "h": 16
+        }
+      ]
+    },
+    "line": {
+      "count": 1,
+      "area": 28640,
+      "shown": 28640,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 340,
+          "y": 358,
+          "w": 716,
+          "h": 40
+        }
+      ]
+    }
+  },
+  "critical": {},
+  "density": {
+    "elements": 8,
+    "controls": 1,
+    "words": 9,
+    "numbers": 1,
+    "repeated": [],
+    "longCopy": []
+  }
+}

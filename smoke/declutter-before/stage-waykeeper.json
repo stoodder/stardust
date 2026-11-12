@@ -1,0 +1,85 @@
+{
+  "id": "stage-waykeeper",
+  "group": "e",
+  "voice": {
+    "kicker": {
+      "count": 1,
+      "area": 0,
+      "shown": 9080,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 232,
+          "y": 40,
+          "w": 454,
+          "h": 20
+        }
+      ]
+    },
+    "stage": {
+      "count": 1,
+      "area": 750933,
+      "shown": 921600,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 1280,
+          "h": 720
+        }
+      ]
+    },
+    "portrait": {
+      "count": 1,
+      "area": 10000,
+      "shown": 10000,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 224,
+          "y": 540,
+          "w": 100,
+          "h": 100
+        }
+      ]
+    },
+    "speaker": {
+      "count": 1,
+      "area": 11456,
+      "shown": 11456,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 340,
+          "y": 540,
+          "w": 716,
+          "h": 16
+        }
+      ]
+    },
+    "line": {
+      "count": 1,
+      "area": 28640,
+      "shown": 28640,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 340,
+          "y": 564,
+          "w": 716,
+          "h": 40
+        }
+      ]
+    }
+  },
+  "critical": {},
+  "density": {
+    "elements": 7,
+    "controls": 1,
+    "words": 6,
+    "numbers": 1,
+    "repeated": [],
+    "longCopy": []
+  }
+}

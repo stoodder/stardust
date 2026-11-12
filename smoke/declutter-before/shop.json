@@ -1,0 +1,84 @@
+{
+  "id": "shop",
+  "group": "d",
+  "voice": {
+    "kicker": {
+      "count": 1,
+      "area": 9080,
+      "shown": 9080,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 232,
+          "y": 40,
+          "w": 454,
+          "h": 20
+        }
+      ]
+    },
+    "store-line": {
+      "count": 1,
+      "area": 31360,
+      "shown": 31360,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 248,
+          "y": 210,
+          "w": 784,
+          "h": 40
+        }
+      ]
+    },
+    "shelf-copy": {
+      "count": 31,
+      "area": 51016,
+      "shown": 51016,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 264,
+          "y": 358,
+          "w": 528,
+          "h": 36
+        },
+        {
+          "x": 264,
+          "y": 476,
+          "w": 528,
+          "h": 36
+        },
+        {
+          "x": 264,
+          "y": 594,
+          "w": 500,
+          "h": 26
+        }
+      ]
+    }
+  },
+  "critical": {
+    "price": {
+      "count": 24,
+      "area": 2720,
+      "shown": 2720,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 780,
+          "y": 570,
+          "w": 136,
+          "h": 20
+        }
+      ]
+    }
+  },
+  "density": {
+    "elements": 30,
+    "controls": 9,
+    "words": 131,
+    "numbers": 5,
+    "repeated": ["200 ×2"],
+    "longCopy": []
+  }
+}

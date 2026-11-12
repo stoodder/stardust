@@ -1,0 +1,43 @@
+{
+  "id": "shift-board",
+  "group": "c",
+  "voice": {
+    "kicker": {
+      "count": 1,
+      "area": 10160,
+      "shown": 10160,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 208,
+          "y": 95,
+          "w": 508,
+          "h": 20
+        }
+      ]
+    },
+    "callsign": {
+      "count": 1,
+      "area": 10160,
+      "shown": 10160,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 208,
+          "y": 147,
+          "w": 508,
+          "h": 20
+        }
+      ]
+    }
+  },
+  "critical": {},
+  "density": {
+    "elements": 36,
+    "controls": 7,
+    "words": 55,
+    "numbers": 10,
+    "repeated": [],
+    "longCopy": []
+  }
+}

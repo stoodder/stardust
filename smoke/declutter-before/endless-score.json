@@ -1,0 +1,29 @@
+{
+  "id": "endless-score",
+  "group": "e",
+  "voice": {
+    "stamp": {
+      "count": 1,
+      "area": 8064,
+      "shown": 8064,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 514,
+          "y": 280,
+          "w": 252,
+          "h": 32
+        }
+      ]
+    }
+  },
+  "critical": {},
+  "density": {
+    "elements": 9,
+    "controls": 3,
+    "words": 29,
+    "numbers": 4,
+    "repeated": [],
+    "longCopy": []
+  }
+}

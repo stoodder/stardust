@@ -685,7 +685,7 @@ function HeldBody({ result, card }: { result: RunResult; card: HeldCard }) {
       aria-describedby="sd-results-held-line"
       onKeyDown={trapTab}
       data-testid="results-held"
-      data-voice="stamp"
+      data-voice="held-card"
     >
       <h1 id="sd-results-heading" class="sd-results-heading sd-results-held-heading">
         {card.headline}

@@ -1,0 +1,137 @@
+{
+  "id": "epilogue-counter",
+  "group": "e",
+  "voice": {
+    "chart": {
+      "count": 1,
+      "area": 0,
+      "shown": 921600,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 1280,
+          "h": 720
+        }
+      ]
+    },
+    "region": {
+      "count": 5,
+      "area": 0,
+      "shown": 28612,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 587,
+          "y": 9,
+          "w": 202,
+          "h": 22
+        },
+        {
+          "x": 476,
+          "y": 117,
+          "w": 136,
+          "h": 22
+        },
+        {
+          "x": 329,
+          "y": 536,
+          "w": 230,
+          "h": 40
+        },
+        {
+          "x": 406,
+          "y": 652,
+          "w": 196,
+          "h": 40
+        },
+        {
+          "x": 730,
+          "y": 73,
+          "w": 188,
+          "h": 22
+        }
+      ]
+    },
+    "kicker": {
+      "count": 1,
+      "area": 0,
+      "shown": 7840,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 28,
+          "y": 24,
+          "w": 392,
+          "h": 20
+        }
+      ]
+    },
+    "callsign": {
+      "count": 1,
+      "area": 0,
+      "shown": 7840,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 28,
+          "y": 76,
+          "w": 392,
+          "h": 20
+        }
+      ]
+    },
+    "heading": {
+      "count": 1,
+      "area": 0,
+      "shown": 4880,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 30,
+          "y": 124,
+          "w": 244,
+          "h": 20
+        }
+      ]
+    },
+    "tagline": {
+      "count": 1,
+      "area": 0,
+      "shown": 17496,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 314,
+          "y": 196,
+          "w": 324,
+          "h": 54
+        }
+      ]
+    },
+    "counter": {
+      "count": 1,
+      "area": 11904,
+      "shown": 11904,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 454,
+          "y": 344,
+          "w": 372,
+          "h": 32
+        }
+      ]
+    }
+  },
+  "critical": {},
+  "density": {
+    "elements": 1,
+    "controls": 0,
+    "words": 2,
+    "numbers": 1,
+    "repeated": [],
+    "longCopy": []
+  }
+}

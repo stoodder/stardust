@@ -1,0 +1,99 @@
+{
+  "id": "research-early",
+  "group": "d",
+  "voice": {
+    "kicker": {
+      "count": 1,
+      "area": 9080,
+      "shown": 9080,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 232,
+          "y": 40,
+          "w": 454,
+          "h": 20
+        }
+      ]
+    },
+    "store-line": {
+      "count": 1,
+      "area": 31360,
+      "shown": 31360,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 248,
+          "y": 210,
+          "w": 784,
+          "h": 40
+        }
+      ]
+    },
+    "shelf-copy": {
+      "count": 5,
+      "area": 59184,
+      "shown": 59184,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 264,
+          "y": 314,
+          "w": 528,
+          "h": 36
+        },
+        {
+          "x": 264,
+          "y": 414,
+          "w": 528,
+          "h": 36
+        },
+        {
+          "x": 264,
+          "y": 514,
+          "w": 504,
+          "h": 36
+        },
+        {
+          "x": 264,
+          "y": 614,
+          "w": 504,
+          "h": 6
+        }
+      ]
+    }
+  },
+  "critical": {
+    "price": {
+      "count": 2,
+      "area": 2800,
+      "shown": 2800,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 846,
+          "y": 299,
+          "w": 70,
+          "h": 20
+        },
+        {
+          "x": 846,
+          "y": 399,
+          "w": 70,
+          "h": 20
+        }
+      ]
+    }
+  },
+  "density": {
+    "elements": 37,
+    "controls": 9,
+    "words": 152,
+    "numbers": 13,
+    "repeated": ["15% ×4"],
+    "longCopy": [
+      "3 lines: Arrives after Special Delivery",
+      "3 lines: Arrives after Special Delivery"
+    ]
+  }
+}

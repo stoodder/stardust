@@ -1,0 +1,170 @@
+{
+  "id": "hud-fin-phase1",
+  "group": "b",
+  "voice": {
+    "callsign": {
+      "count": 1,
+      "area": 3200,
+      "shown": 3200,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 20,
+          "y": 20,
+          "w": 200,
+          "h": 16
+        }
+      ]
+    },
+    "companion": {
+      "count": 1,
+      "area": 1024,
+      "shown": 1024,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 110,
+          "y": 654,
+          "w": 32,
+          "h": 32
+        }
+      ]
+    },
+    "playfield": {
+      "count": 1,
+      "area": 768832,
+      "shown": 921600,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 1280,
+          "h": 720
+        }
+      ]
+    }
+  },
+  "critical": {
+    "finale-clock": {
+      "count": 1,
+      "area": 13393,
+      "shown": 13440,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 472,
+          "y": 98,
+          "w": 336,
+          "h": 40
+        }
+      ]
+    },
+    "escort": {
+      "count": 1,
+      "area": 14400,
+      "shown": 14400,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 20,
+          "y": 44,
+          "w": 200,
+          "h": 72
+        }
+      ]
+    },
+    "integrity": {
+      "count": 1,
+      "area": 3200,
+      "shown": 3200,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 20,
+          "y": 124,
+          "w": 200,
+          "h": 16
+        }
+      ]
+    },
+    "credits": {
+      "count": 1,
+      "area": 6400,
+      "shown": 6400,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 20,
+          "y": 148,
+          "w": 200,
+          "h": 32
+        }
+      ]
+    },
+    "wave": {
+      "count": 1,
+      "area": 2736,
+      "shown": 2736,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 1096,
+          "y": 56,
+          "w": 72,
+          "h": 38
+        }
+      ]
+    },
+    "preview": {
+      "count": 1,
+      "area": 25088,
+      "shown": 25088,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 1038,
+          "y": 102,
+          "w": 224,
+          "h": 112
+        }
+      ]
+    },
+    "abilities": {
+      "count": 1,
+      "area": 12376,
+      "shown": 12376,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 8,
+          "y": 644,
+          "w": 182,
+          "h": 68
+        }
+      ]
+    },
+    "build": {
+      "count": 1,
+      "area": 17544,
+      "shown": 17544,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 1014,
+          "y": 644,
+          "w": 258,
+          "h": 68
+        }
+      ]
+    }
+  },
+  "density": {
+    "elements": 49,
+    "controls": 13,
+    "words": 59,
+    "numbers": 24,
+    "repeated": ["16 ×2", "130 ×2"],
+    "longCopy": []
+  }
+}

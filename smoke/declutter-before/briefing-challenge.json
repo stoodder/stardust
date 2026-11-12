@@ -1,0 +1,228 @@
+{
+  "id": "briefing-challenge",
+  "group": "e",
+  "voice": {
+    "callsign": {
+      "count": 1,
+      "area": 0,
+      "shown": 3200,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 20,
+          "y": 20,
+          "w": 200,
+          "h": 16
+        }
+      ]
+    },
+    "portrait": {
+      "count": 1,
+      "area": 10000,
+      "shown": 10000,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 256,
+          "y": 191,
+          "w": 100,
+          "h": 100
+        }
+      ]
+    },
+    "speaker": {
+      "count": 3,
+      "area": 8800,
+      "shown": 8800,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 372,
+          "y": 191,
+          "w": 88,
+          "h": 40
+        },
+        {
+          "x": 372,
+          "y": 241,
+          "w": 88,
+          "h": 40
+        },
+        {
+          "x": 372,
+          "y": 291,
+          "w": 88,
+          "h": 20
+        }
+      ]
+    },
+    "line": {
+      "count": 3,
+      "area": 55200,
+      "shown": 55200,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 472,
+          "y": 191,
+          "w": 552,
+          "h": 40
+        },
+        {
+          "x": 472,
+          "y": 241,
+          "w": 552,
+          "h": 40
+        },
+        {
+          "x": 472,
+          "y": 291,
+          "w": 552,
+          "h": 20
+        }
+      ]
+    },
+    "playfield": {
+      "count": 1,
+      "area": 0,
+      "shown": 921600,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 1280,
+          "h": 720
+        }
+      ]
+    }
+  },
+  "critical": {
+    "integrity": {
+      "count": 1,
+      "area": 0,
+      "shown": 6400,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 20,
+          "y": 44,
+          "w": 200,
+          "h": 32
+        }
+      ]
+    },
+    "credits": {
+      "count": 1,
+      "area": 0,
+      "shown": 6400,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 20,
+          "y": 84,
+          "w": 200,
+          "h": 32
+        }
+      ]
+    },
+    "wave": {
+      "count": 1,
+      "area": 0,
+      "shown": 2736,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 1086,
+          "y": 56,
+          "w": 72,
+          "h": 38
+        }
+      ]
+    },
+    "preview": {
+      "count": 1,
+      "area": 0,
+      "shown": 15232,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 1028,
+          "y": 102,
+          "w": 224,
+          "h": 68
+        }
+      ]
+    },
+    "abilities": {
+      "count": 1,
+      "area": 0,
+      "shown": 10200,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 8,
+          "y": 644,
+          "w": 150,
+          "h": 68
+        }
+      ]
+    },
+    "build": {
+      "count": 1,
+      "area": 0,
+      "shown": 17544,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 1014,
+          "y": 644,
+          "w": 258,
+          "h": 68
+        }
+      ]
+    },
+    "threats": {
+      "count": 1,
+      "area": 81408,
+      "shown": 81408,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 256,
+          "y": 327,
+          "w": 768,
+          "h": 106
+        }
+      ]
+    },
+    "counters": {
+      "count": 2,
+      "area": 24576,
+      "shown": 24576,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 256,
+          "y": 383,
+          "w": 768,
+          "h": 16
+        },
+        {
+          "x": 256,
+          "y": 407,
+          "w": 768,
+          "h": 16
+        }
+      ]
+    }
+  },
+  "density": {
+    "elements": 32,
+    "controls": 1,
+    "words": 73,
+    "numbers": 0,
+    "repeated": [],
+    "longCopy": []
+  }
+}

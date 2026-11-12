@@ -1,0 +1,95 @@
+{
+  "id": "bounty",
+  "group": "d",
+  "voice": {
+    "kicker": {
+      "count": 1,
+      "area": 9080,
+      "shown": 9080,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 232,
+          "y": 40,
+          "w": 454,
+          "h": 20
+        }
+      ]
+    },
+    "bounty-head": {
+      "count": 1,
+      "area": 23280,
+      "shown": 23280,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 252,
+          "y": 188,
+          "w": 776,
+          "h": 30
+        }
+      ]
+    },
+    "bounty-note": {
+      "count": 5,
+      "area": 62880,
+      "shown": 62880,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 324,
+          "y": 260,
+          "w": 620,
+          "h": 20
+        },
+        {
+          "x": 324,
+          "y": 322,
+          "w": 620,
+          "h": 20
+        },
+        {
+          "x": 324,
+          "y": 384,
+          "w": 622,
+          "h": 20
+        },
+        {
+          "x": 324,
+          "y": 446,
+          "w": 640,
+          "h": 20
+        },
+        {
+          "x": 324,
+          "y": 508,
+          "w": 642,
+          "h": 20
+        }
+      ]
+    },
+    "bounty-foot": {
+      "count": 1,
+      "area": 27936,
+      "shown": 27936,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 252,
+          "y": 546,
+          "w": 776,
+          "h": 36
+        }
+      ]
+    }
+  },
+  "critical": {},
+  "density": {
+    "elements": 37,
+    "controls": 8,
+    "words": 85,
+    "numbers": 15,
+    "repeated": [],
+    "longCopy": []
+  }
+}

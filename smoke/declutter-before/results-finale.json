@@ -1,0 +1,58 @@
+{
+  "id": "results-finale",
+  "group": "e",
+  "voice": {
+    "kicker": {
+      "count": 1,
+      "area": 6040,
+      "shown": 6040,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 489,
+          "y": 198,
+          "w": 302,
+          "h": 20
+        }
+      ]
+    },
+    "heading": {
+      "count": 1,
+      "area": 11904,
+      "shown": 11904,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 454,
+          "y": 230,
+          "w": 372,
+          "h": 32
+        }
+      ]
+    }
+  },
+  "critical": {
+    "outcome": {
+      "count": 1,
+      "area": 31104,
+      "shown": 31104,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 208,
+          "y": 274,
+          "w": 864,
+          "h": 36
+        }
+      ]
+    }
+  },
+  "density": {
+    "elements": 23,
+    "controls": 3,
+    "words": 47,
+    "numbers": 9,
+    "repeated": ["26 ×2"],
+    "longCopy": []
+  }
+}

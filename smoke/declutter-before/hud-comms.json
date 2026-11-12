@@ -1,0 +1,184 @@
+{
+  "id": "hud-comms",
+  "group": "b",
+  "voice": {
+    "callsign": {
+      "count": 1,
+      "area": 3200,
+      "shown": 3200,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 20,
+          "y": 20,
+          "w": 200,
+          "h": 16
+        }
+      ]
+    },
+    "portrait": {
+      "count": 1,
+      "area": 10000,
+      "shown": 10000,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 16,
+          "y": 168,
+          "w": 100,
+          "h": 100
+        }
+      ]
+    },
+    "speaker": {
+      "count": 1,
+      "area": 800,
+      "shown": 800,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 126,
+          "y": 168,
+          "w": 50,
+          "h": 16
+        }
+      ]
+    },
+    "line": {
+      "count": 1,
+      "area": 27360,
+      "shown": 27360,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 126,
+          "y": 190,
+          "w": 342,
+          "h": 80
+        }
+      ]
+    },
+    "companion": {
+      "count": 1,
+      "area": 1024,
+      "shown": 1024,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 110,
+          "y": 654,
+          "w": 32,
+          "h": 32
+        }
+      ]
+    },
+    "playfield": {
+      "count": 1,
+      "area": 722480,
+      "shown": 921600,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 1280,
+          "h": 720
+        }
+      ]
+    }
+  },
+  "critical": {
+    "integrity": {
+      "count": 1,
+      "area": 6400,
+      "shown": 6400,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 20,
+          "y": 44,
+          "w": 200,
+          "h": 32
+        }
+      ]
+    },
+    "credits": {
+      "count": 1,
+      "area": 6400,
+      "shown": 6400,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 20,
+          "y": 84,
+          "w": 200,
+          "h": 32
+        }
+      ]
+    },
+    "wave": {
+      "count": 1,
+      "area": 2736,
+      "shown": 2736,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 1035.9,
+          "y": 56,
+          "w": 72,
+          "h": 38
+        }
+      ]
+    },
+    "preview": {
+      "count": 1,
+      "area": 21504,
+      "shown": 21504,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 977.9,
+          "y": 102,
+          "w": 224,
+          "h": 96
+        }
+      ]
+    },
+    "abilities": {
+      "count": 1,
+      "area": 12376,
+      "shown": 12376,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 8,
+          "y": 644,
+          "w": 182,
+          "h": 68
+        }
+      ]
+    },
+    "build": {
+      "count": 1,
+      "area": 17544,
+      "shown": 17544,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 1014,
+          "y": 644,
+          "w": 258,
+          "h": 68
+        }
+      ]
+    }
+  },
+  "density": {
+    "elements": 37,
+    "controls": 14,
+    "words": 65,
+    "numbers": 20,
+    "repeated": [],
+    "longCopy": ["4 lines: Joke of the Shift! It's a knock-knock. Your line is 'Who's there?' The"]
+  }
+}

@@ -1,0 +1,132 @@
+{
+  "id": "sector-dusk",
+  "group": "c",
+  "voice": {
+    "chart": {
+      "count": 1,
+      "area": 676461,
+      "shown": 921600,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 1280,
+          "h": 720
+        }
+      ]
+    },
+    "region": {
+      "count": 4,
+      "area": 9372,
+      "shown": 9372,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 329,
+          "y": 545,
+          "w": 230,
+          "h": 22
+        },
+        {
+          "x": 406,
+          "y": 661,
+          "w": 196,
+          "h": 22
+        }
+      ]
+    },
+    "kicker": {
+      "count": 1,
+      "area": 7840,
+      "shown": 7840,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 28,
+          "y": 24,
+          "w": 392,
+          "h": 20
+        }
+      ]
+    },
+    "callsign": {
+      "count": 1,
+      "area": 7840,
+      "shown": 7840,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 28,
+          "y": 76,
+          "w": 392,
+          "h": 20
+        }
+      ]
+    },
+    "tagline": {
+      "count": 1,
+      "area": 17496,
+      "shown": 17496,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 466,
+          "y": 98,
+          "w": 324,
+          "h": 54
+        }
+      ]
+    }
+  },
+  "critical": {
+    "threats": {
+      "count": 1,
+      "area": 29808,
+      "shown": 29808,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 466,
+          "y": 170,
+          "w": 324,
+          "h": 92
+        }
+      ]
+    },
+    "counters": {
+      "count": 3,
+      "area": 19440,
+      "shown": 19440,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 466,
+          "y": 268,
+          "w": 324,
+          "h": 20
+        },
+        {
+          "x": 466,
+          "y": 294,
+          "w": 324,
+          "h": 20
+        },
+        {
+          "x": 466,
+          "y": 320,
+          "w": 324,
+          "h": 20
+        }
+      ]
+    }
+  },
+  "density": {
+    "elements": 54,
+    "controls": 10,
+    "words": 69,
+    "numbers": 5,
+    "repeated": [],
+    "longCopy": ["3 lines: Ves'thara comes for the Preserve Road in a glass giant."]
+  }
+}

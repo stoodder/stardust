@@ -1,0 +1,43 @@
+{
+  "id": "inbox",
+  "group": "e",
+  "voice": {
+    "kicker": {
+      "count": 1,
+      "area": 9080,
+      "shown": 9080,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 232,
+          "y": 40,
+          "w": 454,
+          "h": 20
+        }
+      ]
+    },
+    "memo": {
+      "count": 1,
+      "area": 149464,
+      "shown": 149464,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 556,
+          "y": 184,
+          "w": 476,
+          "h": 314
+        }
+      ]
+    }
+  },
+  "critical": {},
+  "density": {
+    "elements": 34,
+    "controls": 18,
+    "words": 122,
+    "numbers": 9,
+    "repeated": ["2361 ×2"],
+    "longCopy": ["3 lines: I fought for that Preserve, Four-Forty-Seven. I really did. Engineers "]
+  }
+}

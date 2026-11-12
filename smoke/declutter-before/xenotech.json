@@ -1,0 +1,90 @@
+{
+  "id": "xenotech",
+  "group": "d",
+  "voice": {
+    "kicker": {
+      "count": 1,
+      "area": 9080,
+      "shown": 9080,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 232,
+          "y": 40,
+          "w": 454,
+          "h": 20
+        }
+      ]
+    },
+    "store-line": {
+      "count": 1,
+      "area": 31360,
+      "shown": 31360,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 248,
+          "y": 210,
+          "w": 784,
+          "h": 40
+        }
+      ]
+    },
+    "shelf-copy": {
+      "count": 4,
+      "area": 57024,
+      "shown": 57024,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 264,
+          "y": 314,
+          "w": 528,
+          "h": 36
+        },
+        {
+          "x": 264,
+          "y": 432,
+          "w": 528,
+          "h": 36
+        },
+        {
+          "x": 264,
+          "y": 550,
+          "w": 528,
+          "h": 36
+        }
+      ]
+    }
+  },
+  "critical": {
+    "price": {
+      "count": 2,
+      "area": 2800,
+      "shown": 2800,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 838,
+          "y": 408,
+          "w": 70,
+          "h": 20
+        },
+        {
+          "x": 838,
+          "y": 526,
+          "w": 70,
+          "h": 20
+        }
+      ]
+    }
+  },
+  "density": {
+    "elements": 31,
+    "controls": 10,
+    "words": 141,
+    "numbers": 4,
+    "repeated": [],
+    "longCopy": []
+  }
+}

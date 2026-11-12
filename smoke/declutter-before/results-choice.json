@@ -1,0 +1,112 @@
+{
+  "id": "results-choice",
+  "group": "e",
+  "voice": {
+    "kicker": {
+      "count": 1,
+      "area": 6040,
+      "shown": 6040,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 489,
+          "y": 114,
+          "w": 302,
+          "h": 20
+        }
+      ]
+    },
+    "heading": {
+      "count": 1,
+      "area": 12160,
+      "shown": 12160,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 450,
+          "y": 146,
+          "w": 380,
+          "h": 32
+        }
+      ]
+    },
+    "debrief": {
+      "count": 1,
+      "area": 45760,
+      "shown": 45760,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 200,
+          "y": 414,
+          "w": 880,
+          "h": 52
+        }
+      ]
+    },
+    "stake": {
+      "count": 1,
+      "area": 17280,
+      "shown": 17280,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 208,
+          "y": 482,
+          "w": 864,
+          "h": 20
+        }
+      ]
+    },
+    "choice": {
+      "count": 3,
+      "area": 28302,
+      "shown": 28480,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 300,
+          "y": 518,
+          "w": 324,
+          "h": 32
+        },
+        {
+          "x": 636,
+          "y": 518,
+          "w": 344,
+          "h": 32
+        },
+        {
+          "x": 529,
+          "y": 566,
+          "w": 222,
+          "h": 32
+        }
+      ]
+    }
+  },
+  "critical": {
+    "outcome": {
+      "count": 1,
+      "area": 31104,
+      "shown": 31104,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 208,
+          "y": 190,
+          "w": 864,
+          "h": 36
+        }
+      ]
+    }
+  },
+  "density": {
+    "elements": 27,
+    "controls": 3,
+    "words": 81,
+    "numbers": 8,
+    "repeated": ["16 ×2"],
+    "longCopy": []
+  }
+}

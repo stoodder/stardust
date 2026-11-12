@@ -14,7 +14,8 @@
 // no baseline file is measured but not compared.
 // DECLUTTER_RECORD=<dir> writes each screen's measure to <dir>/<id>.json instead of comparing: to
 // re-record a screen after a deliberate change, run its flow (`-g`) with
-// DECLUTTER_RECORD=smoke/declutter-before and commit only that screen's file.
+// DECLUTTER_RECORD=smoke/declutter-before, `npx prettier --write smoke/declutter-before`, and commit
+// only that screen's file.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { Locator, Page } from '@playwright/test';
@@ -163,11 +164,12 @@ interface Raw {
  * Measures the page (runs in the browser; self-contained). A box is the element's client rect
  * clipped to the viewport and to every ancestor that clips its overflow; null when the element
  * isn't rendered (display none, visibility hidden, opacity 0 on it or an ancestor) or is clipped
- * away. What is on top is hit-tested with every #ui element taking the pointer for the moment
- * (`elementFromPoint` then finds what is drawn over it: a modal, a stage, a panel): a mark's share
- * on top is sampled on a grid of up to ~600 points, a density unit at its center. The playfield
- * is the battle canvas's area that no opaque UI covers (a background at least half opaque, an
- * image or a canvas), sampled every 4 px: transparent layout boxes cover nothing.
+ * away. What is on top is hit-tested with every #ui element taking the pointer for the moment:
+ * at a point, the mark shows unless something that paints (a half-opaque background, an image, a
+ * canvas, its own text; a transparent layer doesn't) is drawn over it first, so a modal, a stage or
+ * a panel covers it and a full-screen layout box doesn't. A mark's share on top is sampled on a
+ * grid of up to ~600 points, a density unit at its center. The playfield is the battle canvas's
+ * area that no opaque UI covers (as above, without text), sampled every 4 px.
  */
 /* oxlint-disable unicorn/consistent-function-scoping -- it runs in the page, so its helpers live inside it */
 function measurePage(): Raw {
@@ -203,9 +205,34 @@ function measurePage(): Raw {
   const probe = document.createElement('style');
   probe.textContent = '#ui * { pointer-events: auto !important; }';
   document.head.append(probe);
+  const alpha = (c: string): number => {
+    if (c === 'transparent') return 0;
+    const m = /\(([^)]*)\)/.exec(c);
+    const parts = (m?.[1] ?? '').split(/[\s,/]+/).filter((p) => p !== '');
+    if (parts.length < 4) return 1;
+    const a = parts[parts.length - 1] ?? '1';
+    return a.endsWith('%') ? Number.parseFloat(a) / 100 : Number.parseFloat(a);
+  };
+  // Whether an element draws over what's under it: a background at least half opaque, an image,
+  // a canvas, or its own text. A transparent layout box (a full-screen layer) draws nothing.
+  const paints = (e: Element): boolean => {
+    const cs = getComputedStyle(e);
+    if (alpha(cs.backgroundColor) >= 0.5 || cs.backgroundImage !== 'none') return true;
+    if (e.tagName === 'IMG' || e.tagName === 'CANVAS' || e.tagName === 'svg') return true;
+    for (const n of e.childNodes) {
+      if (n.nodeType === Node.TEXT_NODE && (n.textContent ?? '').trim() !== '') return true;
+    }
+    return false;
+  };
+  // Whether `el` is what shows at (x, y): the first element there, top down, that is `el` (or
+  // inside it) before any that paints over it; its own ancestors are behind it.
   const onTopAt = (el: Element, x: number, y: number): boolean => {
-    const hit = document.elementFromPoint(x, y);
-    return hit !== null && (hit === el || el.contains(hit));
+    for (const hit of document.elementsFromPoint(x, y)) {
+      if (hit === el || el.contains(hit)) return true;
+      if (hit.contains(el)) continue;
+      if (paints(hit)) return false;
+    }
+    return false;
   };
   const shareOnTop = (el: Element, b: Box): number => {
     const step = Math.max(2, Math.sqrt((b.w * b.h) / 600));
@@ -301,14 +328,6 @@ function measurePage(): Raw {
   const hud = document.querySelector('[data-testid="hud"]');
   const cb = canvas === null ? null : visibleBox(canvas);
   if (cb !== null && hud !== null && rendered(hud) && ui !== null) {
-    const alpha = (c: string): number => {
-      if (c === 'transparent') return 0;
-      const m = /\(([^)]*)\)/.exec(c);
-      const parts = (m?.[1] ?? '').split(/[\s,/]+/).filter((p) => p !== '');
-      if (parts.length < 4) return 1;
-      const a = parts[parts.length - 1] ?? '1';
-      return a.endsWith('%') ? Number.parseFloat(a) / 100 : Number.parseFloat(a);
-    };
     const covers: Box[] = [];
     for (const el of ui.querySelectorAll('*')) {
       const cs = getComputedStyle(el);
@@ -363,7 +382,7 @@ function fold(raw: readonly RawMark[], kind: RawMark['kind']): Record<string, Ma
 
 function writeJson(path: string, data: unknown): void {
   mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(path, `${JSON.stringify(data, null, 1)}\n`);
+  writeFileSync(path, `${JSON.stringify(data, null, 2)}\n`);
 }
 
 /** Whether `v` reads as a measure this file wrote (the parts the guard compares). */

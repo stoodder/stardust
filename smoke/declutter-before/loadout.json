@@ -1,0 +1,104 @@
+{
+  "id": "loadout",
+  "group": "d",
+  "voice": {
+    "kicker": {
+      "count": 1,
+      "area": 4744,
+      "shown": 5200,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 56,
+          "y": 20,
+          "w": 260,
+          "h": 20
+        }
+      ]
+    },
+    "brings": {
+      "count": 1,
+      "area": 3760,
+      "shown": 3760,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 1008,
+          "y": 190,
+          "w": 188,
+          "h": 20
+        }
+      ]
+    }
+  },
+  "critical": {
+    "threats": {
+      "count": 1,
+      "area": 32569,
+      "shown": 32569,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 483.8,
+          "y": 28,
+          "w": 740.2,
+          "h": 44
+        }
+      ]
+    },
+    "counters": {
+      "count": 1,
+      "area": 4360,
+      "shown": 4360,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 1006,
+          "y": 52,
+          "w": 218,
+          "h": 20
+        }
+      ]
+    },
+    "tower-counters": {
+      "count": 12,
+      "area": 31733,
+      "shown": 31733,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 132,
+          "y": 174,
+          "w": 264,
+          "h": 44
+        },
+        {
+          "x": 488,
+          "y": 174,
+          "w": 264,
+          "h": 20
+        },
+        {
+          "x": 132,
+          "y": 276,
+          "w": 264,
+          "h": 36.2
+        },
+        {
+          "x": 488,
+          "y": 276,
+          "w": 264,
+          "h": 20
+        }
+      ]
+    }
+  },
+  "density": {
+    "elements": 43,
+    "controls": 25,
+    "words": 202,
+    "numbers": 32,
+    "repeated": ["10% ×2", "50% ×2"],
+    "longCopy": []
+  }
+}

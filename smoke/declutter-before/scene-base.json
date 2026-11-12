@@ -1,0 +1,71 @@
+{
+  "id": "scene-base",
+  "group": "e",
+  "voice": {
+    "kicker": {
+      "count": 1,
+      "area": 9080,
+      "shown": 9080,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 232,
+          "y": 40,
+          "w": 454,
+          "h": 20
+        }
+      ]
+    },
+    "portrait": {
+      "count": 1,
+      "area": 10000,
+      "shown": 10000,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 256,
+          "y": 552,
+          "w": 100,
+          "h": 100
+        }
+      ]
+    },
+    "speaker": {
+      "count": 1,
+      "area": 10432,
+      "shown": 10432,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 372,
+          "y": 552,
+          "w": 652,
+          "h": 16
+        }
+      ]
+    },
+    "line": {
+      "count": 1,
+      "area": 13040,
+      "shown": 13040,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 372,
+          "y": 576,
+          "w": 652,
+          "h": 20
+        }
+      ]
+    }
+  },
+  "critical": {},
+  "density": {
+    "elements": 17,
+    "controls": 7,
+    "words": 31,
+    "numbers": 3,
+    "repeated": [],
+    "longCopy": []
+  }
+}

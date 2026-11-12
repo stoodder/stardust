@@ -1,0 +1,57 @@
+{
+  "id": "stage-mail",
+  "group": "e",
+  "voice": {
+    "kicker": {
+      "count": 1,
+      "area": 0,
+      "shown": 9080,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 232,
+          "y": 40,
+          "w": 454,
+          "h": 20
+        }
+      ]
+    },
+    "stage": {
+      "count": 1,
+      "area": 819200,
+      "shown": 921600,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 1280,
+          "h": 720
+        }
+      ]
+    },
+    "line": {
+      "count": 1,
+      "area": 5560,
+      "shown": 5560,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 501,
+          "y": 620,
+          "w": 278,
+          "h": 20
+        }
+      ]
+    }
+  },
+  "critical": {},
+  "density": {
+    "elements": 16,
+    "controls": 1,
+    "words": 32,
+    "numbers": 2,
+    "repeated": ["19 ×2"],
+    "longCopy": []
+  }
+}

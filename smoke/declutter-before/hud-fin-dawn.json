@@ -1,0 +1,107 @@
+{
+  "id": "hud-fin-dawn",
+  "group": "b",
+  "voice": {
+    "callsign": {
+      "count": 1,
+      "area": 3200,
+      "shown": 3200,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 20,
+          "y": 20,
+          "w": 200,
+          "h": 16
+        }
+      ]
+    },
+    "companion": {
+      "count": 1,
+      "area": 0,
+      "shown": 0,
+      "inMore": 0,
+      "boxes": []
+    },
+    "playfield": {
+      "count": 1,
+      "area": 902784,
+      "shown": 921600,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 1280,
+          "h": 720
+        }
+      ]
+    }
+  },
+  "critical": {
+    "finale-clock": {
+      "count": 1,
+      "area": 18691,
+      "shown": 18816,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 472,
+          "y": 98,
+          "w": 336,
+          "h": 56
+        }
+      ]
+    },
+    "escort": {
+      "count": 1,
+      "area": 0,
+      "shown": 0,
+      "inMore": 0,
+      "boxes": []
+    },
+    "integrity": {
+      "count": 1,
+      "area": 0,
+      "shown": 0,
+      "inMore": 0,
+      "boxes": []
+    },
+    "credits": {
+      "count": 1,
+      "area": 0,
+      "shown": 0,
+      "inMore": 0,
+      "boxes": []
+    },
+    "wave": {
+      "count": 1,
+      "area": 0,
+      "shown": 0,
+      "inMore": 0,
+      "boxes": []
+    },
+    "abilities": {
+      "count": 1,
+      "area": 0,
+      "shown": 0,
+      "inMore": 0,
+      "boxes": []
+    },
+    "build": {
+      "count": 1,
+      "area": 0,
+      "shown": 0,
+      "inMore": 0,
+      "boxes": []
+    }
+  },
+  "density": {
+    "elements": 3,
+    "controls": 0,
+    "words": 6,
+    "numbers": 2,
+    "repeated": [],
+    "longCopy": []
+  }
+}

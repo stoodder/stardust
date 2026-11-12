@@ -1,0 +1,86 @@
+{
+  "id": "results-win",
+  "group": "e",
+  "voice": {
+    "kicker": {
+      "count": 1,
+      "area": 6240,
+      "shown": 6240,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 484,
+          "y": 133,
+          "w": 312,
+          "h": 20
+        }
+      ]
+    },
+    "heading": {
+      "count": 1,
+      "area": 12160,
+      "shown": 12160,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 450,
+          "y": 165,
+          "w": 380,
+          "h": 32
+        }
+      ]
+    },
+    "counter": {
+      "count": 1,
+      "area": 9514,
+      "shown": 9514,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 302.1,
+          "y": 265,
+          "w": 475.7,
+          "h": 20
+        }
+      ]
+    },
+    "debrief": {
+      "count": 1,
+      "area": 68640,
+      "shown": 68640,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 200,
+          "y": 457,
+          "w": 880,
+          "h": 78
+        }
+      ]
+    }
+  },
+  "critical": {
+    "outcome": {
+      "count": 1,
+      "area": 31104,
+      "shown": 31104,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 208,
+          "y": 209,
+          "w": 864,
+          "h": 36
+        }
+      ]
+    }
+  },
+  "density": {
+    "elements": 26,
+    "controls": 2,
+    "words": 79,
+    "numbers": 10,
+    "repeated": [],
+    "longCopy": []
+  }
+}

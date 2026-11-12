@@ -1,0 +1,85 @@
+{
+  "id": "intake",
+  "group": "c",
+  "voice": {
+    "kicker": {
+      "count": 1,
+      "area": 9680,
+      "shown": 9680,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 160,
+          "y": 83,
+          "w": 484,
+          "h": 20
+        }
+      ]
+    },
+    "intro": {
+      "count": 1,
+      "area": 19200,
+      "shown": 19200,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 160,
+          "y": 161,
+          "w": 960,
+          "h": 20
+        }
+      ]
+    },
+    "badge": {
+      "count": 1,
+      "area": 64584,
+      "shown": 64584,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 652,
+          "y": 251,
+          "w": 468,
+          "h": 138
+        }
+      ]
+    },
+    "file-note": {
+      "count": 1,
+      "area": 18720,
+      "shown": 18720,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 652,
+          "y": 401,
+          "w": 468,
+          "h": 40
+        }
+      ]
+    },
+    "small-print": {
+      "count": 1,
+      "area": 37440,
+      "shown": 37440,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 652,
+          "y": 453,
+          "w": 468,
+          "h": 80
+        }
+      ]
+    }
+  },
+  "critical": {},
+  "density": {
+    "elements": 29,
+    "controls": 9,
+    "words": 138,
+    "numbers": 6,
+    "repeated": ["447 ×2"],
+    "longCopy": ["4 lines: Small print: Name and pronouns can be updated in Settings. Your reason"]
+  }
+}

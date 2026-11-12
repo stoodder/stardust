@@ -1,0 +1,14 @@
+{
+  "id": "settings",
+  "group": "c",
+  "voice": {},
+  "critical": {},
+  "density": {
+    "elements": 21,
+    "controls": 6,
+    "words": 44,
+    "numbers": 3,
+    "repeated": ["80 ×2"],
+    "longCopy": []
+  }
+}

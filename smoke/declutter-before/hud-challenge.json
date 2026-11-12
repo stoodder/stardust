@@ -1,0 +1,114 @@
+{
+  "id": "hud-challenge",
+  "group": "b",
+  "voice": {
+    "callsign": {
+      "count": 1,
+      "area": 3200,
+      "shown": 3200,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 20,
+          "y": 20,
+          "w": 200,
+          "h": 16
+        }
+      ]
+    },
+    "playfield": {
+      "count": 1,
+      "area": 801408,
+      "shown": 921600,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 1280,
+          "h": 720
+        }
+      ]
+    }
+  },
+  "critical": {
+    "integrity": {
+      "count": 1,
+      "area": 6400,
+      "shown": 6400,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 20,
+          "y": 44,
+          "w": 200,
+          "h": 32
+        }
+      ]
+    },
+    "credits": {
+      "count": 1,
+      "area": 6400,
+      "shown": 6400,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 20,
+          "y": 84,
+          "w": 200,
+          "h": 32
+        }
+      ]
+    },
+    "wave": {
+      "count": 1,
+      "area": 2736,
+      "shown": 2736,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 1096,
+          "y": 56,
+          "w": 72,
+          "h": 38
+        }
+      ]
+    },
+    "preview": {
+      "count": 1,
+      "area": 15232,
+      "shown": 15232,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 1038,
+          "y": 102,
+          "w": 224,
+          "h": 68
+        }
+      ]
+    },
+    "build": {
+      "count": 1,
+      "area": 17544,
+      "shown": 17544,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 1014,
+          "y": 644,
+          "w": 258,
+          "h": 68
+        }
+      ]
+    }
+  },
+  "density": {
+    "elements": 34,
+    "controls": 13,
+    "words": 48,
+    "numbers": 19,
+    "repeated": [],
+    "longCopy": []
+  }
+}

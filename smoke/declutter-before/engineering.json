@@ -1,0 +1,70 @@
+{
+  "id": "engineering",
+  "group": "d",
+  "voice": {
+    "kicker": {
+      "count": 1,
+      "area": 9080,
+      "shown": 9080,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 232,
+          "y": 40,
+          "w": 454,
+          "h": 20
+        }
+      ]
+    },
+    "store-line": {
+      "count": 1,
+      "area": 31360,
+      "shown": 31360,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 248,
+          "y": 210,
+          "w": 784,
+          "h": 40
+        }
+      ]
+    }
+  },
+  "critical": {
+    "price": {
+      "count": 4,
+      "area": 4200,
+      "shown": 4200,
+      "inMore": 0,
+      "boxes": [
+        {
+          "x": 834,
+          "y": 279,
+          "w": 70,
+          "h": 20
+        },
+        {
+          "x": 834,
+          "y": 459,
+          "w": 70,
+          "h": 20
+        },
+        {
+          "x": 834,
+          "y": 579,
+          "w": 70,
+          "h": 20
+        }
+      ]
+    }
+  },
+  "density": {
+    "elements": 37,
+    "controls": 11,
+    "words": 116,
+    "numbers": 12,
+    "repeated": [],
+    "longCopy": []
+  }
+}
