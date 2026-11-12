@@ -210,6 +210,13 @@ export interface ChoirState {
   thrum: boolean;
   /** Ticks the choir has spent halted this run (T804; the ≤ 15% pin on par's Phase 1, D154). */
   haltTicks: number;
+  /**
+   * The choir waits at a leg's end for the next wave (`walkWaves`, T820): not halted, still
+   * singing, facing on (render tells it from `halted` by this). Never with `halted`.
+   */
+  waiting: boolean;
+  /** Ticks the choir has spent waiting at a leg's end this run (T820; reported beside halts). */
+  waitTicks: number;
 }
 
 /** A secondary timer now (sim/timers.ts, T806), index-aligned with `map.timers`. */
@@ -652,6 +659,8 @@ export function createState(map: CompiledMapDef<IdSpace>, seed: number): SimStat
       stopDist: 0,
       thrum: false,
       haltTicks: 0,
+      waiting: false,
+      waitTicks: 0,
     },
     lightingKey: null,
     lightingTick: 0,

@@ -4,32 +4,34 @@
 // (the Unsung) and Phase 3 (Dawn) add their song, waves, and events in T821 (see `PHASE_2`).
 //
 // **The road** (`halls`, 44 tiles from the Halls to the gate) is the choir's: Pebble leads it from
-// the gate (8,13) up the colony's lane, east along row 10 past the Bore road's mouth, up to the Gap,
-// west along row 7 past the memorial wreck (10,8), up the west bend, east along row 4 under the
-// Halls ledges, and up to the Halls mouth, where she stops (`halls_mouth` beside (11,4), 4 tiles
-// below the Halls). The Hollow come down it the other way, so they meet her head on. The road
-// reads 2-wide: the sim walks one lane, and render draws the second on the decor beside it (as
-// maps.md § 4 allows; the 2-wide lanes are presentation).
+// the gate (8,13) up the colony's lane, east along row 10, up the east bend, west along row 7 (the
+// Gap) under the memorial wreck on its ridge (13,6), up the west bend past the rift field's mouth,
+// east along row 4, and up to the Halls mouth, where she stops (`halls_mouth` beside (11,4), 4
+// tiles below the Halls). The Hollow come down it the other way, so they meet her head on. Her
+// walk keeps time with the waves (`walkWaves`: a leg a wave), so she passes the memorial in W9 and
+// reaches the Halls mouth in W18 whatever the countdowns. The road reads 2-wide: the sim walks
+// one lane, and render draws the second on the decor beside it (maps.md § 4 allows it; the 2-wide
+// lanes are presentation).
 // - **Three spawns:** the Halls mouth (11,0) at the top of the road; the west rift field (0,6),
-//   onto the road's west bend at (3,6) (the choir passes it at about 70% of her walk, so it feeds
-//   her until late); and the east Bore road (21,9), past the Deep Bore rig (`bore_rig`) onto the
-//   road at (17,9), which the choir passes early (its units then walk to the gate behind her).
+//   onto the road's west bend at (3,6) (the choir passes its mouth in W14, so it feeds her until
+//   then and walks on behind her after); and the east Bore road (21,3), past the Deep Bore rig
+//   (`bore_rig`) along row 3 onto the Halls descent at (11,3), ahead of her the whole walk.
 // - **Air lanes** (Rift Moths, gunships): in from the north edge, the east edge, and the west
-//   corner, each to the gate.
-// - **Rift lanes** (they open as W15 starts: "rifts everywhere"): along row 1 from the east edge
-//   onto the Halls descent; up from the south edge onto row 10; and along row 10 from the west
-//   edge onto the colony's lane. Each crosses decor and road only (maps.md § 4).
+//   corner, each over the ridge by the memorial and on to the gate.
+// - **Rift lanes** (they open as W15 starts: "rifts everywhere"): along row 1 from either edge onto
+//   the Halls descent at (11,1). Each crosses decor and road only (maps.md § 4).
 // - **21 buildable tiles:** the two Halls-mouth ledges (10,2) and (12,2) as high ground, two gold
-//   seams as power nodes, (10,6) between the Gap and the row-4 run and (19,8) above the Bore road,
+//   seams as power nodes, (10,6) between the Gap and the row-4 run and (15,4) under the Bore road,
 //   and 17 pads along the walk, several in adjacent groups for links and the Hum Choir's aura
 //   (the west bend's (5,5)–(6,5), the Gap's (9,5)–(9,6)–(10,6), the ridge's (11,9)–(12,8)–(13,8),
-//   the Halls' (12,2)–(13,3)).
+//   the Halls' (12,2)–(13,2)).
 // - **The four waymark lanterns** are wreckage on decor beside the road (`waymark_1..4`, in the
 //   choir's walking order); clearing one relights it (the tile stays decor, the salvage pays).
-// - **The memorial wreck** (`memorial_wreck`, (10,8), on the ridge above the Gap) is decor; render
-//   draws the wrecked variant of `memorialTower` with the `{name}` plate.
+// - **The memorial wreck** (`memorial_wreck`, (13,6), on the ridge above the Gap) is decor; render
+//   draws the wrecked variant of `memorialTower` with the `{name}` plate. The choir passing it
+//   cues Pebble's hum and Bricks's silence (W9, whose waves hold off 10 s).
 // - **The colony gate** is the core: Everglow units, flyers, and the Heavy Hollow walk on to it and
-//   leak there (core integrity, 20).
+//   leak there (core integrity 30: the air exam's meter, so no-air loses on it).
 import { defineMapLayout } from '../../define.ts';
 import type { GridPos, ScriptedEvent } from '../../types.ts';
 
@@ -80,10 +82,9 @@ const CONVOY = { flag: 'door_choice', eq: 'convoy' } as const;
 export const map = defineMapLayout({
   id: 'fin_m01',
   act: 'finale',
-  // Act III's night; the eastern sky warms one step per Phase 1 wave (a sky-only key: the world
-  // stays dark until Dawn's `setLighting`; D154's T701 ruling).
+  // Act III's night until Dawn's `setLighting` (Phase 3). The eastern sky's warming per Phase 1
+  // wave (D154's T701 ruling: sky-only lighting keys) is T831's, with its sky stops.
   env: 'act3',
-  lighting: [{ wave: PHASE_1_WAVES, env: 'finale', skyOnly: true }],
   objective: 'choir',
   meterLabel: 'voices',
   // D154: the floor is 40% of the run's choir, rounded up (10 → 4, warren 14 → 6, convoy 8 → 4).
@@ -93,16 +94,16 @@ export const map = defineMapLayout({
   tiles: [
     '...........S..........',
     '...........#..........',
-    '..........^#^.........',
-    '......o..x.#.o........',
-    '.o.#########..........',
+    '..........^#^o....o...',
+    '......o..x.##########S',
+    '.o.#########...+......',
     '...#.oo..o..o.........',
     'S###x....o+....o......',
     '...###############....',
-    '............oo...#.+..',
-    '...........o..x.o####S',
+    '............oo...#....',
+    '...........o..x.o#....',
     '........##########....',
-    '.......o#.x..o....o...',
+    '.......o#.x..o........',
     '........#o............',
     '........C.............',
   ],
@@ -113,11 +114,18 @@ export const map = defineMapLayout({
     { id: 'halls', tiles: ROAD },
     // The west rift field, onto the road's west bend.
     { id: 'rift_field', tiles: [[0, 6], [1, 6], [2, 6], ...roadFrom(3, 6)] },
-    // The Bore road, past the Deep Bore rig, onto the road's east bend.
-    { id: 'bore_road', tiles: [[21, 9], [20, 9], [19, 9], [18, 9], ...roadFrom(17, 9)] },
+    // The Bore road, in from the east past the Deep Bore rig, onto the Halls descent.
+    {
+      id: 'bore_road',
+      // prettier-ignore
+      tiles: [
+        [21, 3], [20, 3], [19, 3], [18, 3], [17, 3], [16, 3], [15, 3], [14, 3], [13, 3], [12, 3],
+        ...roadFrom(11, 3),
+      ],
+    },
   ],
   riftLanes: [
-    // In along row 1 from the east edge onto the Halls descent.
+    // Along row 1 from either edge onto the Halls descent, either side of the Halls.
     {
       id: 'rift_ne',
       opensAtWave: 15,
@@ -127,14 +135,14 @@ export const map = defineMapLayout({
         ...roadFrom(11, 1),
       ],
     },
-    // Up from the south edge onto row 10.
-    { id: 'rift_s', opensAtWave: 15, tiles: [[14, 13], [14, 12], [14, 11], ...roadFrom(14, 10)] },
-    // In along row 10 from the west edge onto the colony's lane.
     {
-      id: 'rift_sw',
+      id: 'rift_nw',
       opensAtWave: 15,
       // prettier-ignore
-      tiles: [[0, 10], [1, 10], [2, 10], [3, 10], [4, 10], [5, 10], [6, 10], [7, 10], ...roadFrom(8, 10)],
+      tiles: [
+        [0, 1], [1, 1], [2, 1], [3, 1], [4, 1], [5, 1], [6, 1], [7, 1], [8, 1], [9, 1], [10, 1],
+        ...roadFrom(11, 1),
+      ],
     },
   ],
   airLanes: [
@@ -142,15 +150,15 @@ export const map = defineMapLayout({
       id: 'sky_n',
       points: [
         [16, 0],
-        [13, 6],
+        [12, 8],
         [8, 13],
       ],
     },
     {
       id: 'sky_e',
       points: [
-        [21, 3],
-        [14, 9],
+        [21, 6],
+        [13, 8],
         [8, 13],
       ],
     },
@@ -158,30 +166,33 @@ export const map = defineMapLayout({
       id: 'sky_w',
       points: [
         [0, 2],
-        [4, 9],
+        [9, 7],
         [8, 13],
       ],
     },
   ],
   markers: {
     halls_mouth: [12, 4],
-    memorial_wreck: [10, 8],
-    bore_rig: [20, 11],
+    memorial_wreck: [13, 6],
+    bore_rig: [20, 2],
     waymark_1: [10, 11],
     waymark_2: [14, 9],
     waymark_3: [4, 6],
     waymark_4: [9, 3],
     militia_gate: [9, 11],
     militia_gap: [7, 8],
-    militia_bore: [18, 10],
+    militia_bore: [19, 4],
   },
   markerWhen: Object.fromEntries(MILITIA.map((m) => [m, CONVOY])),
   startCredits: 900,
+  // The colony gate behind the walk: what the flyers and Everglow's units cost when they get through
+  // (the air exam's meter: no-air loses on it).
+  coreIntegrity: 30,
   stardust: 500,
   // Air (Rift Moths, gunships), jam (Silencers, the Auditor), and splash (Motes, Fractures, the
   // Maws' gathering) are the finale's answers (campaign.md § 4.8). Armored, cloaked, and burrowing
-  // units are soft: Everglow's drones, Associates, the Liability, the Black Budget Operatives, and
-  // the Undertows stay ≤ 15% of every wave's threat.
+  // units are soft: Everglow's Associate and Black Budget Operative, and the Undertows, stay ≤ 15% of
+  // every wave's threat.
   threatIntel: [
     'clustered',
     'splitting',
@@ -201,7 +212,8 @@ export const map = defineMapLayout({
     challenge: {
       id: 'laid_to_rest',
       name: 'Laid to Rest',
-      description: 'In Phase 2, lay at least 90% of the Hollow you destroy to rest inside the song.',
+      description:
+        'In Phase 2, lay at least 90% of the Hollow you destroy to rest inside the song.',
       condition: { restedPct: 0.9 },
     },
   },
@@ -224,10 +236,11 @@ export const map = defineMapLayout({
     route: 'halls',
     stopAt: 'halls_mouth',
     singers: 10,
-    // Tuned so par's choir reaches the Halls mouth as W18 clears (T820; maps.md § 5.5's "about
-    // 0.35 tiles/s" was D154's proposal before the walk was measured on this road).
-    pace: 0.06,
+    // A procession (D154's ~0.35 tiles/s), paced to Phase 1's waves: a leg a wave (`walkWaves`),
+    // so she passes the memorial in W9 and reaches the Halls mouth in W18 whatever the countdowns.
+    pace: 0.35,
     haltTiles: 1.5,
+    walkWaves: PHASE_1_WAVES,
     groups: [
       { when: { flag: 'door_choice', eq: 'warren' }, singers: 4 },
       { when: CONVOY, singers: -2 },
@@ -282,7 +295,11 @@ export const map = defineMapLayout({
       actions: [{ spawnWave: 'breakthrough_motes' }, { spawnWave: 'breakthrough_maws' }],
     },
     // W9: the choir passes the memorial (Pebble's hum, Bricks's silence); W9 sends nothing for 10 s.
-    { id: 'memorial', on: { wave: 9, phase: 'start' }, actions: [{ cue: 'fin_m01_cue_memorial' }] },
+    {
+      id: 'memorial',
+      on: { choirAt: 'memorial_wreck' },
+      actions: [{ cue: 'fin_m01_cue_memorial' }],
+    },
     PHASE_2,
   ],
 });

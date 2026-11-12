@@ -2,13 +2,14 @@
 // (W1–18, T820); Phase 2's add waves (W19–26) and the Unsung follow in T821, appended after
 // `PHASE_1` (see the end of the file). Routes: `halls` (the Halls mouth (11,0) down the choir's
 // road to the gate: the Hollow meet the choir head on), `rift_field` (the west rift field, onto
-// the road's west bend), `bore_road` (the east Bore road, past the rig, onto the road's east bend,
-// which the choir passes early), the air lanes `sky_n`, `sky_e`, `sky_w`, and the rift lanes
-// `rift_ne` (onto the Halls descent), `rift_s`, `rift_sw` (onto the road behind the choir), which
-// open as W15 starts. A countdown opens once the wave before it finishes spawning.
+// the road's west bend: ahead of the choir until she passes its mouth in W14, behind her after),
+// `bore_road` (the east Bore road along row 3 onto the Halls descent, ahead of her throughout),
+// the air lanes `sky_n`, `sky_e`, `sky_w` (over the ridge to the gate), and the rift lanes
+// `rift_ne`, `rift_nw` (along row 1 onto the Halls descent), which open as W15 starts. A countdown
+// opens once the wave before it finishes spawning. The choir walks a leg as each wave starts.
 //
 // Air, jam, and splash are required; armored, cloaked, and burrowing units are soft (≤ 15% of a
-// wave's threat): the drones, Associates, the Liability, the Operatives, and the Undertows ride
+// wave's threat): the drones, the Associate, the Operative, and the Undertows ride
 // inside big Hollow waves. Every Hollow ground unit that reaches the choir hushes one singer.
 import { defineWaves } from '../../define.ts';
 import type { EnemyId, RouteId, WaveDef, WaveGroup } from '../../types.ts';
@@ -53,47 +54,57 @@ const CALL = { countdownSec: COUNTDOWN } as const;
 /** Phase 1, the Descent (W1–18). */
 export const PHASE_1: readonly WaveDef[] = [
   // W1 · Motes ahead of the choir
-  { groups: [motes(8, 'halls', 4, 0.8), motes(6, 'halls', 14, 0.8)] },
+  {
+    groups: [motes(5, 'halls', 4, 1.2), fractures(1, 'rift_field', 10), motes(5, 'halls', 16, 1.2)],
+  },
   // W2 · Fractures from the rift field
-  { ...CALL, groups: [fractures(1, 'rift_field', 0), motes(8, 'halls', 6, 0.8)] },
+  { ...CALL, groups: [fractures(2, 'rift_field', 0, 4), motes(6, 'halls', 6, 1.2)] },
   // W3 · Rift Moths
-  { ...CALL, groups: [moths(3, 'sky_n', 0), moths(3, 'sky_e', 6), motes(6, 'halls', 4, 0.8)] },
-  // W4 · Bore security: Auditors with a drone, on the Bore road the walk runs past
+  { ...CALL, groups: [moths(2, 'sky_n', 0), moths(2, 'sky_e', 6), motes(6, 'halls', 4, 1.2)] },
+  // W4 · Bore security: an Auditor on the Bore road, which runs past the rig onto the Halls descent
   {
     ...CALL,
     groups: [
       g('auditor', 1, 'bore_road', 0),
-      motes(10, 'halls', 4, 0.8),
-      fractures(1, 'rift_field', 6),
+      fractures(2, 'rift_field', 4, 4),
+      motes(6, 'halls', 8, 1.2),
     ],
   },
   // W5 · Maws
-  { ...CALL, groups: [maws(2, 'halls', 0, 5), motes(8, 'halls', 3, 0.8), motes(6, 'rift_field', 8, 0.8)] },
+  {
+    ...CALL,
+    groups: [maws(2, 'halls', 0, 5), motes(8, 'halls', 3, 0.8), motes(6, 'rift_field', 8, 0.8)],
+  },
   // W6 · Mote clusters (the canon's pair of Undertows walks in W16 and W18 instead: at 15% of a
   // wave's threat, a soft pair needs a wave ~7,500 strong, past W6's size)
   {
     ...CALL,
     groups: [
-      motes(8, 'halls', 0, 0.8),
-      motes(8, 'rift_field', 4, 0.8),
-      fractures(2, 'halls', 8, 3),
+      motes(8, 'halls', 0, 0.5),
+      motes(8, 'rift_field', 4, 0.5),
+      fractures(3, 'halls', 8, 3),
     ],
   },
   // W7 · Silencers
   {
     ...CALL,
-    groups: [silencers(3, 'halls', 0, 4), motes(8, 'halls', 2, 0.8), motes(8, 'rift_field', 6, 0.8)],
+    groups: [
+      silencers(2, 'halls', 0, 4),
+      motes(8, 'halls', 2, 0.5),
+      motes(8, 'rift_field', 6, 0.5),
+      fractures(2, 'rift_field', 10, 3),
+    ],
   },
   // W8 · gunships over the road
   {
     ...CALL,
-    groups: [gunships(1, 'sky_n', 0), gunships(1, 'sky_e', 6), moths(3, 'sky_w', 8)],
+    groups: [gunships(1, 'sky_n', 0), moths(3, 'sky_w', 8), fractures(3, 'halls', 4, 3)],
   },
   // W9 · the choir passes the memorial: nothing for MEMORIAL_QUIET_SEC, then the rift field
   {
     ...CALL,
     groups: [
-      fractures(2, 'rift_field', MEMORIAL_QUIET_SEC + 2, 3),
+      fractures(3, 'rift_field', MEMORIAL_QUIET_SEC + 2, 3),
       motes(10, 'halls', MEMORIAL_QUIET_SEC + 4),
       moths(3, 'sky_n', MEMORIAL_QUIET_SEC + 6),
     ],
@@ -102,31 +113,31 @@ export const PHASE_1: readonly WaveDef[] = [
   {
     ...CALL,
     groups: [
-      motes(12, 'halls', 0),
-      fractures(4, 'rift_field', 2),
-      maws(2, 'bore_road', 4, 4),
+      motes(10, 'halls', 0, 0.5),
+      fractures(3, 'rift_field', 2, 3),
+      fractures(1, 'bore_road', 6),
       moths(3, 'sky_e', 8),
     ],
   },
-  // W11 · a Fracture column, and behind it a Bore crew (an Associate) with two Operatives
+  // W11 · a Fracture column, and behind it a Bore crew (an Associate). From here to W14 the choir
+  // passes the rift field's mouth, so the Hollow come down from the Halls
   {
     ...CALL,
     groups: [
-      fractures(12, 'halls', 0, 1.2),
-      motes(12, 'rift_field', 4),
-      maws(3, 'halls', 10, 4),
+      fractures(5, 'halls', 0, 2),
+      motes(10, 'halls', 10, 0.5),
+      maws(2, 'halls', 16, 4),
       g('associate', 1, 'bore_road', 12),
-      g('blackbudget', 1, 'bore_road', 14),
     ],
   },
   // W12 · Maws + Silencers
   {
     ...CALL,
     groups: [
-      maws(3, 'halls', 0, 4),
+      maws(2, 'halls', 0, 5),
       silencers(3, 'halls', 4, 4),
-      motes(10, 'rift_field', 6),
-      maws(2, 'rift_field', 10, 4),
+      motes(10, 'halls', 14, 0.5),
+      fractures(1, 'bore_road', 6),
     ],
   },
   // W13 · a Rift Moth flock
@@ -136,20 +147,20 @@ export const PHASE_1: readonly WaveDef[] = [
       moths(5, 'sky_n', 0, 0.8),
       moths(4, 'sky_e', 4, 0.8),
       moths(4, 'sky_w', 8, 0.8),
-      motes(10, 'halls', 6),
+      motes(10, 'halls', 6, 0.5),
+      fractures(2, 'halls', 12, 3),
     ],
   },
-  // W14 · Associates and a Liability on the Bore road, behind a Mote screen
+  // W14 · an Associate on the Bore road, behind a Mote screen (the canon's Liability stays home:
+  // at 15% of a wave's threat it needs one ~6,000 strong beside its crew)
   {
     ...CALL,
     groups: [
-      motes(18, 'halls', 0),
-      maws(4, 'halls', 4, 4),
-      fractures(8, 'rift_field', 4),
-      silencers(3, 'rift_field', 10, 4),
+      motes(16, 'halls', 0),
+      maws(3, 'halls', 4, 4),
+      fractures(3, 'halls', 14, 2),
+      silencers(2, 'halls', 20, 4),
       g('associate', 1, 'bore_road', 8),
-      g('liability', 1, 'bore_road', 12),
-      maws(2, 'bore_road', 14, 4),
     ],
   },
   // W15 · rifts everywhere
@@ -157,10 +168,10 @@ export const PHASE_1: readonly WaveDef[] = [
     ...CALL,
     groups: [
       motes(12, 'rift_ne', 0),
-      fractures(4, 'rift_s', 2),
-      maws(2, 'rift_sw', 4, 4),
+      fractures(3, 'rift_nw', 2, 2),
+      maws(2, 'rift_nw', 8, 4),
       motes(10, 'rift_field', 6),
-      maws(2, 'rift_ne', 10, 4),
+      maws(1, 'rift_ne', 12),
       moths(4, 'sky_n', 8),
     ],
   },
@@ -168,40 +179,41 @@ export const PHASE_1: readonly WaveDef[] = [
   {
     ...CALL,
     groups: [
-      fractures(8, 'halls', 0, 1.2),
-      fractures(6, 'rift_field', 4, 1.2),
-      maws(2, 'halls', 10, 4),
-      g('undertow', 1, 'halls', 14),
+      fractures(7, 'halls', 0, 1.5),
+      fractures(3, 'rift_nw', 6, 1.5),
+      maws(3, 'halls', 12, 4),
+      g('undertow', 1, 'halls', 16),
     ],
   },
   // W17 · the largest surge
   {
     ...CALL,
     groups: [
-      motes(16, 'halls', 0),
-      fractures(6, 'rift_ne', 2),
-      maws(3, 'halls', 6, 3),
-      silencers(2, 'halls', 10, 4),
-      motes(12, 'rift_field', 4),
+      motes(12, 'halls', 0, 0.5),
+      fractures(3, 'rift_ne', 4, 3),
+      maws(3, 'halls', 10, 4),
+      silencers(2, 'halls', 16, 4),
+      motes(8, 'rift_nw', 8, 0.5),
       moths(4, 'sky_e', 6),
       gunships(2, 'sky_n', 10, 4),
-      g('compliance', 2, 'bore_road', 12, 2),
+      g('blackbudget', 1, 'bore_road', 14),
     ],
   },
-  // W18 · the Halls mouth: everything converges
+  // W18 · the Halls mouth: everything converges (the second Undertow among it)
   {
     ...CALL,
     groups: [
-      motes(16, 'halls', 0),
-      maws(3, 'halls', 4, 3),
-      fractures(6, 'rift_field', 2),
+      motes(12, 'halls', 0),
+      maws(2, 'halls', 4, 4),
+      fractures(2, 'rift_nw', 2, 2),
       silencers(2, 'rift_ne', 6, 4),
-      maws(2, 'rift_ne', 10, 4),
+      maws(1, 'rift_ne', 12),
       moths(4, 'sky_n', 4),
       moths(4, 'sky_w', 8),
       gunships(2, 'sky_e', 10, 4),
       g('auditor', 1, 'bore_road', 6),
-      fractures(4, 'rift_sw', 8),
+      fractures(3, 'rift_field', 8, 2),
+      g('undertow', 1, 'halls', 16),
     ],
   },
 ];

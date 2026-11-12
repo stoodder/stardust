@@ -16,7 +16,7 @@ import { WAYMARKS } from './map.ts';
 /** The Halls mouth: its two ledges (high ground), east of the descent, and below its corner. */
 const LEDGE_W: GridPos = [10, 2];
 const LEDGE_E: GridPos = [12, 2];
-const HALLS_E: GridPos = [13, 3];
+const HALLS_E: GridPos = [13, 2];
 const CORNER: GridPos = [12, 5];
 /** Above the row-4 run, west, and beside the rift field's mouth. */
 const RUN_N: GridPos = [6, 3];
@@ -34,10 +34,11 @@ const GAP_E: GridPos = [15, 6];
 const INNER: GridPos = [11, 9];
 const RIDGE_W: GridPos = [12, 8];
 const RIDGE: GridPos = [13, 8];
-/** Inside the east bend, the east gold seam above the Bore road, and below the Bore road. */
+/** Inside the east bend. */
 const EAST_BEND: GridPos = [16, 9];
-const SEAM_E: GridPos = [19, 8];
-const BORE_S: GridPos = [18, 11];
+/** The Bore road: the east gold seam below it (a power node), and a pad above it by the rig. */
+const SEAM_E: GridPos = [15, 4];
+const BORE_N: GridPos = [18, 2];
 /** Below row 10, and either side of the colony's lane to the gate. */
 const LOW_MID: GridPos = [13, 11];
 const GATE_W: GridPos = [7, 11];
@@ -82,33 +83,32 @@ function parSteps(): BuildStep[] {
     { wave: 1, build: 'mindspike', tile: BEND },
     { wave: 1, build: 'mindspike', tile: SEAM_W },
     { wave: 1, build: 'burrow', tile: INNER },
-    { wave: 1, build: 'sproing', tile: GATE_E },
-    { wave: 2, upgrade: BEND },
-    { wave: 3, build: 'sproing', tile: GATE_W },
+    { wave: 1, build: 'sproing', tile: RIDGE },
+    { wave: 2, build: 'mindspike', tile: MID_N },
+    { wave: 3, upgrade: BEND },
     { wave: 4, upgrade: BEND },
-    { wave: 4, upgrade: SEAM_W },
-    { wave: 5, build: 'choir', tile: BEND_E },
+    { wave: 5, specialize: BEND, spec: 'a' },
+    { wave: 6, build: 'sproing', tile: RIDGE_W },
     { wave: 6, upgrade: SEAM_W },
-    { wave: 7, specialize: BEND, spec: 'a' },
-    { wave: 8, upgrade: GATE_E },
-    { wave: 8, upgrade: GATE_W },
+    { wave: 7, build: 'choir', tile: BEND_E },
+    { wave: 8, upgrade: RIDGE },
+    { wave: 8, upgrade: RIDGE_W },
     { wave: 9, build: 'choir', tile: MID_S },
-    { wave: 10, specialize: SEAM_W, spec: 'a' },
-    { wave: 11, build: 'mindspike', tile: MID_N },
-    { wave: 11, upgrade: MID_N },
-    { wave: 12, upgrade: BEND_E },
-    { wave: 12, upgrade: MID_S },
-    { wave: 13, build: 'sproing', tile: RIDGE },
-    { wave: 13, upgrade: INNER },
-    { wave: 14, build: 'mindspike', tile: LEDGE_E },
-    { wave: 14, build: 'choir', tile: HALLS_E },
-    { wave: 15, upgrade: LEDGE_E },
-    { wave: 15, upgrade: LEDGE_E },
-    { wave: 16, specialize: LEDGE_E, spec: 'b' },
-    { wave: 17, build: 'burrow', tile: CORNER },
-    { wave: 17, build: 'mindspike', tile: LEDGE_W },
-    { wave: 18, upgrade: LEDGE_W },
-    { wave: 18, upgrade: CORNER },
+    { wave: 9, upgrade: SEAM_W },
+    { wave: 10, upgrade: MID_N },
+    { wave: 11, build: 'mindspike', tile: LEDGE_E },
+    { wave: 12, upgrade: LEDGE_E },
+    { wave: 12, build: 'choir', tile: HALLS_E },
+    { wave: 13, upgrade: LEDGE_E },
+    { wave: 14, specialize: SEAM_W, spec: 'a' },
+    { wave: 15, specialize: LEDGE_E, spec: 'b' },
+    { wave: 16, build: 'burrow', tile: CORNER },
+    { wave: 16, build: 'mindspike', tile: LEDGE_W },
+    { wave: 17, upgrade: LEDGE_W },
+    { wave: 17, upgrade: LEDGE_W },
+    { wave: 17, upgrade: CORNER },
+    { wave: 18, upgrade: HALLS_E },
+    { wave: 18, upgrade: INNER },
   ];
 }
 
@@ -196,7 +196,7 @@ export const PADS = {
   RIDGE,
   EAST_BEND,
   SEAM_E,
-  BORE_S,
+  BORE_N,
   LOW_MID,
   GATE_W,
   GATE_E,

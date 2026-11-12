@@ -17,6 +17,13 @@
 //   up behind a hushed singer, and the hushed singer drifts back through it to the tail); one held
 //   in a hush tell stands. She stops for good at the road's point nearest the
 //   `stopAt` marker (`arrived`: the Halls mouth).
+// - **Paced to the waves** (`walkWaves`, T820; fin_m01: 18). With it, she walks no further than
+//   wave ÷ `walkWaves` of the way to her stop once that wave has started (`legCap`: a leg a wave,
+//   walked at her pace as the wave starts, all the way from wave `walkWaves` on). The cap is a
+//   ceiling, not a schedule: halted mid-leg, she finishes it when free, and a whole leg behind
+//   she walks on into the next. At a leg's end she waits (`waiting`, `waitTicks`): not halted, no
+//   halt scan, no ChoirHalted, still singing (render tells waiting from halted by this flag). So
+//   the beats keep time with the waves whatever the countdowns (Story, early calls, Rush Hour).
 // - **The halt rule.** While she walks, the choir halts while a Hollow unit walking the ground
 //   within reach (not burrowed, Phased or leaving) is within `haltTiles` ahead of her: on her
 //   road, 0–`haltTiles` route tiles toward its spawn; on another ground route, within `haltTiles`
@@ -140,24 +147,47 @@ export function choir(state: SimState, ctx: TickContext): void {
   const ch = state.choir;
   const route = c.route;
   if (!ch.arrived && state.wave >= 1) {
-    const halted = hollowAhead(state, c, route.lengthTiles - ch.dist);
+    // Paced to the waves (`walkWaves`; T820): this wave's leg ends at `cap`. Waiting there isn't a
+    // halt, so the halt scan doesn't run.
+    const cap = legCap(c, ch.stopDist, state.wave);
+    const waiting = ch.dist >= cap - EPS;
+    const halted = !waiting && hollowAhead(state, c, route.lengthTiles - ch.dist);
     if (halted !== ch.halted) {
       ch.halted = halted;
       emit(state, { type: 'ChoirHalted', on: halted });
     }
+    ch.waiting = waiting;
     if (halted) {
       ch.haltTicks++;
+    } else if (waiting) {
+      ch.waitTicks++;
     } else {
-      ch.dist += c.paceTilesPerTick;
+      const next = ch.dist + c.paceTilesPerTick;
+      ch.dist = next < cap ? next : cap;
       if (ch.dist >= ch.stopDist - EPS) {
         ch.dist = ch.stopDist;
         ch.arrived = true;
+        ch.waiting = false;
       }
     }
   }
   const lead = route.lengthTiles - ch.dist;
   pointAt(route, lead, ch, 0);
   walkColumn(state, c, lead);
+}
+
+/**
+ * How far the leader may have walked once wave `wave` has started (`walkWaves`; T820): wave ÷
+ * `walkWaves` of the way to her stop, all of it from that wave on; the whole way when unpaced.
+ */
+export function legCap(
+  c: Pick<CompiledChoir, 'walkWaves'>,
+  stopDist: number,
+  wave: number,
+): number {
+  const n = c.walkWaves ?? 0;
+  if (n <= 0 || wave >= n) return stopDist;
+  return (stopDist * wave) / n;
 }
 
 /** Spawns the column at the road's core end (tick 0; see the header). */
