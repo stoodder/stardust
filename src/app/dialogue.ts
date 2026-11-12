@@ -52,7 +52,7 @@ import {
   SPEAKER_IDS,
 } from '../content/dialogue/types.ts';
 import type { AllyKind, CompanionId, EnemyId, IdSpace, MapDef, TowerId } from '../content/types.ts';
-import { quillOffline, resolveC4, setDoorChoice, type SaveData } from '../meta/index.ts';
+import { quillOffline, resolveC4, resolveC5, setDoorChoice, type SaveData } from '../meta/index.ts';
 import { baseStoryContext } from '../meta/story.ts';
 import { escortMaxLost, isBossWave } from '../sim/index.ts';
 import { TICK_HZ } from '../shared/time.ts';
@@ -192,19 +192,22 @@ export function holdAtSpeedMs(ms: number, text: string, gameSpeed: number): numb
  * `door_choice` (A3M3's briefing) is committed through meta's `setDoorChoice`, so a door already
  * chosen is never changed (D141: asked once; T610); C4's `quill_choice` through `resolveC4`, so
  * Keep's inheritance and Purge's refund come with it (T710; Results and the base take it out of
- * the effects and commit it themselves, app/resultsFlow.ts).
+ * the effects and commit it themselves, app/resultsFlow.ts); C5's `ending_choice` (the finale's
+ * `fin_m01_scene_c5`) through `resolveC5`, so it is made once and never changed (T810).
  */
 export function withSceneEffects(
   save: SaveData,
   sceneId: string,
   effects: DialogueEffects,
 ): SaveData {
-  const { door_choice: door, quill_choice: quill, ...rest } = effects.flags;
+  const { door_choice: door, quill_choice: quill, ending_choice: ending, ...rest } = effects.flags;
   const base = withPlainSceneEffects(save, sceneId, { ...effects, flags: rest });
   const doored = door === undefined ? base : setDoorChoice(base, door).save;
-  if (quill === undefined) return doored;
-  const c4 = resolveC4(doored, quill);
-  return c4.ok ? c4.save : doored;
+  const c4 = quill === undefined ? null : resolveC4(doored, quill);
+  const directed = c4?.ok === true ? c4.save : doored;
+  if (ending === undefined) return directed;
+  const c5 = resolveC5(directed, ending);
+  return c5.ok ? c5.save : directed;
 }
 
 function withPlainSceneEffects(
@@ -518,7 +521,7 @@ interface Holding {
   readonly instant: boolean;
   /** The speed to put back as it ends (a battle scene other than the briefing), else null. */
   readonly resume: Speed | null;
-  readonly onEnd: (() => void) | null;
+  readonly onEnd: ((effects: DialogueEffects) => void) | null;
   /** Whether its effects and seen id go into the save as it ends (not for the results fixture). */
   readonly record: boolean;
   cursor: DialogueCursor;
@@ -544,8 +547,11 @@ export interface PlayOptions {
   readonly mode?: SceneMode;
   /** Text shows whole (the briefing while dialogue is off). */
   readonly instant?: boolean;
-  /** Runs as the scene ends (after its effects are saved). */
-  readonly onEnd?: () => void;
+  /**
+   * Runs as the scene ends (after its effects are saved), with what it did: the flags its choices
+   * set (read even when `record` is false; T810's C5 on the results fixture).
+   */
+  readonly onEnd?: (effects: DialogueEffects) => void;
   /** Default true; false: nothing it does is saved (the results fixture, `__sd.results`). */
   readonly record?: boolean;
   /** A countdown's radio (`w<NN>`): the wave it's for, dropped unplayed once that wave starts. */
@@ -752,7 +758,7 @@ function finish(): void {
   if (h.record) commit(h.scene.id, h.cursor.effects);
   if (h.resume !== null && session !== null && speed.value === 0) setSpeed(h.resume);
   dialogue.scene.value = null;
-  h.onEnd?.();
+  h.onEnd?.(h.cursor.effects);
   const next = waiting.shift();
   if (next !== undefined) {
     playScene(next.scene, next.opts);
@@ -829,9 +835,10 @@ export const STORY_CHOICE_LOCK_MS = 700;
 /**
  * The flags whose choice is locked for STORY_CHOICE_LOCK_MS and holds the briefing until answered:
  * C3's door (D141) and C4's directives (D146: asked with C3's lock; on the card its own lock is
- * StoryChoice's, the same 700 ms). Other choices, flag-setting or not, take a press at once.
+ * StoryChoice's, the same 700 ms), and C5's ending (T810: the finale's last question waits the same
+ * beat). Other choices, flag-setting or not, take a press at once.
  */
-export const LOCKED_CHOICE_FLAGS: readonly string[] = ['door_choice', 'quill_choice'];
+export const LOCKED_CHOICE_FLAGS: readonly string[] = ['door_choice', 'quill_choice', 'ending_choice'];
 
 /** Whether a choice is a locked story choice: one of its options sets a LOCKED_CHOICE_FLAGS flag. */
 export function isStoryChoice(

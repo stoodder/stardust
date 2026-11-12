@@ -463,16 +463,40 @@ describe('dev_voices in the whole sim', () => {
 
 // ── The harness (#2): a Choir's margin is Voices % ──────────────────────────────────────────────
 
-function choirResult(voices: number, size: number, outcome: 'won' | 'lost' = 'won') {
-  return { ...fakeResult(outcome, 20), objective: 'choir' as const, voices, choirSize: size };
+/** A choir run's result: `voices` the fewest singing (`stats.voicesMin`), `now` at the end. */
+function choirResult(
+  voices: number,
+  size: number,
+  outcome: 'won' | 'lost' = 'won',
+  extra: { readonly now?: number; readonly base?: number } = {},
+) {
+  const r = fakeResult(outcome, 20);
+  return {
+    ...r,
+    objective: 'choir' as const,
+    voices: extra.now ?? voices,
+    choirSize: size,
+    choirBase: extra.base ?? 0,
+    stats: { ...r.stats, voicesMin: voices },
+  };
 }
 
 describe('the Choir margin (#2)', () => {
-  it('is Voices % of the run’s choir, 0 on a loss', () => {
+  it('is Voices % of the run’s choir at its lowest, 0 on a loss', () => {
     expect(marginOf(choirResult(10, 10))).toBe(100);
     expect(marginOf(choirResult(6, 15))).toBe(40);
     expect(marginOf(choirResult(6, 8, 'lost'))).toBe(0);
     expect(marginOf(choirResult(0, 0))).toBe(0);
+    // Dawn wakes the hushed (T821): the margin is the low point, not the full choir at the end.
+    expect(marginOf(choirResult(6, 15, 'won', { now: 15 }))).toBe(40);
+  });
+
+  it('with a hush allowance, is Voices % of the base choir: same hushes, same margin (T821)', () => {
+    // fin_m01: base 20; the convoy's 16, the warren's 28, each with 9 hushed, all read 55%.
+    expect(marginOf(choirResult(7, 16, 'won', { base: 20 }))).toBe(55);
+    expect(marginOf(choirResult(11, 20, 'won', { base: 20 }))).toBe(55);
+    expect(marginOf(choirResult(19, 28, 'won', { base: 20 }))).toBe(55);
+    expect(marginOf(choirResult(19, 28, 'lost', { base: 20 }))).toBe(0);
   });
 
   it('is judged in the finale’s band, in the Escort chain, and no longer refused', () => {
