@@ -17,6 +17,10 @@
 //   stands in a soft additive `violet.3` ground pool (`decal`); the floaters, bursts and sparks that
 //   start on or round its frame draw dimmed (TransientFx `setDim`). Render-only: the fight is
 //   unchanged.
+// - **Thrown back** (D156; unsungLook.ts `thrownAt`): up among the singers the song drives it back
+//   at once to where it dug in; the sim moves it in a tick, so its body is carried back from where
+//   it came up (BossSurfaced's `at`) over THROW_MS (EnemyView `setThrowOffset`), a `violet.3` streak
+//   trailing from there; a cut under reduced motion. The surfacing burst rings out at `at`.
 // The rest progress under the boss bar is the HUD's (T832: the finale clock's countdown, its gold
 // bar the song's rest; ui/hud/FinaleClock.tsx).
 // One Graphics, redrawn each frame only while a mark shows. Allocation-free per frame.
@@ -46,6 +50,8 @@ import {
   rimToward,
   SURFACE_BURST_MS,
   surfaceBurstAt,
+  THROW_MIN_TILES,
+  thrownAt,
   UNSUNG_DIM_ALPHA,
   UNSUNG_DIM_MARGIN_PX,
   UNSUNG_HOLD_LIFT_PX,
@@ -58,6 +64,8 @@ import type { ViewContext } from './ViewContext.ts';
 const BLINK_MS = 120;
 /** Surfacing bursts at once (two digs a fight; room to spare). */
 const MAX_BURSTS = 4;
+/** Throws back at once (one boss; room to spare). */
+const MAX_THROWS = 2;
 /** Bodies the song can hold at once: the Unsung, or its split's three parts (room to spare). */
 const MAX_HELD = 4;
 const POOL_KEY = 'fx.unsung_pool';
@@ -83,6 +91,14 @@ interface Burst {
   y: number;
 }
 
+/** A throw back (see the header): who, from where it came up (grid), and how far in (ms; −1 off). */
+interface Throw {
+  uid: number;
+  x: number;
+  y: number;
+  ms: number;
+}
+
 /** The sim state as this view reads it: the enemy pool, the script phase, the song's circles. */
 export type UnsungState = {
   readonly enemies: { readonly used: number; readonly items: readonly DeepReadonly<Enemy>[] };
@@ -93,6 +109,7 @@ export type UnsungState = {
 export interface HeldBody {
   snapshot(out: BodySnapshot): boolean;
   setHoldLift(px: number): void;
+  setThrowOffset(dx: number, dy: number): void;
   readonly alpha: number;
   readonly depth: number;
 }
@@ -121,6 +138,8 @@ const snap: BodySnapshot = {
   id: null,
 };
 const rim = { dx: 0, dy: 0 };
+const thrown = { left: 0, alpha: 0 };
+const t0: Vec2 = { x: 0, y: 0 };
 const c0: Vec2 = { x: 0, y: 0 };
 
 const p: Vec2 = { x: 0, y: 0 };
@@ -153,6 +172,11 @@ export class UnsungView {
   readonly #lifted: number[] = [];
   #held = 0;
   #dimmed = false;
+  readonly #throws: Throw[] = [];
+  #nextThrow = 0;
+  /** Throws back this battle, and the largest offset drawn this frame (px; the smoke flow's). */
+  throwsSeen = 0;
+  #thrownPx = 0;
 
   constructor(ctx: ViewContext, reducedMotion: () => boolean, hold: UnsungHoldDeps | null = null) {
     this.#ctx = ctx;
@@ -162,6 +186,7 @@ export class UnsungView {
     ctx.layers.vfx.add(this.#g);
     for (let i = 0; i < MAX_BURSTS; i++) this.#bursts.push({ ms: -1, x: 0, y: 0 });
     for (let i = 0; i < MAX_HELD; i++) this.#lifted.push(0);
+    for (let i = 0; i < MAX_THROWS; i++) this.#throws.push({ uid: 0, x: 0, y: 0, ms: -1 });
   }
 
   bind(
@@ -172,17 +197,26 @@ export class UnsungView {
       bus.on('BossSurfaced', (e) => {
         this.surfacesSeen++;
         if (e.dugOut) this.dugOutSeen++;
-        // T830: the light pours up where it comes up.
+        // T830: the light pours up where it comes up (`at`: the sim has already driven it back).
+        const b = this.#bursts[this.#nextBurst]!; // index < MAX_BURSTS
+        this.#nextBurst = (this.#nextBurst + 1) % MAX_BURSTS;
+        b.ms = 0;
+        b.x = e.at[0];
+        b.y = e.at[1];
+        // D156: driven back to where it dug in; its body is carried there (see the header).
         const en = pool();
         if (en === null) return;
         for (let i = 0; i < en.used; i++) {
           const u = en.items[i]!; // i < used ≤ items.length
           if (u.uid !== e.uid) continue;
-          const b = this.#bursts[this.#nextBurst]!; // index < MAX_BURSTS
-          this.#nextBurst = (this.#nextBurst + 1) % MAX_BURSTS;
-          b.ms = 0;
-          b.x = u.x;
-          b.y = u.y;
+          if (Math.hypot(u.x - e.at[0], u.y - e.at[1]) < THROW_MIN_TILES) break;
+          const t = this.#throws[this.#nextThrow]!; // index < MAX_THROWS
+          this.#nextThrow = (this.#nextThrow + 1) % MAX_THROWS;
+          t.uid = u.uid;
+          t.x = e.at[0];
+          t.y = e.at[1];
+          t.ms = 0;
+          this.throwsSeen++;
           break;
         }
       }),
@@ -202,13 +236,19 @@ export class UnsungView {
     calls: number;
     bursts: number;
     held: number;
+    thrown: number;
+    thrownPx: number;
   } {
+    let throwing = 0;
+    for (const t of this.#throws) if (t.ms >= 0) throwing++;
     return {
       digs: this.#digs,
       surfaceTells: this.#tells,
       calls: this.#calls,
       bursts: this.#burstsShown,
       held: this.#held,
+      thrown: throwing,
+      thrownPx: this.#thrownPx,
     };
   }
 
@@ -239,8 +279,47 @@ export class UnsungView {
         this.#calls++;
       }
     }
-    this.#drawBursts(Number.isFinite(deltaMs) && deltaMs > 0 ? deltaMs : 0);
+    const dt = Number.isFinite(deltaMs) && deltaMs > 0 ? deltaMs : 0;
+    this.#drawBursts(dt);
+    this.#drawThrows(state, dt);
     this.#drawHold(state);
+  }
+
+  /** Each throw back (see the header): the body carried from where it came up, its streak. */
+  #drawThrows(state: UnsungState, dt: number): void {
+    this.#thrownPx = 0;
+    const hold = this.#hold;
+    const still = this.#still();
+    for (const t of this.#throws) {
+      if (t.ms < 0) continue;
+      const view = hold?.view(t.uid);
+      let e: DeepReadonly<Enemy> | null = null;
+      for (let i = 0; i < state.enemies.used; i++) {
+        const u = state.enemies.items[i]!; // i < used ≤ items.length
+        if (u.uid === t.uid && u.alive) {
+          e = u;
+          break;
+        }
+      }
+      thrownAt(t.ms, still, thrown);
+      t.ms += dt;
+      if (e === null || view === undefined || thrown.left <= 0) {
+        view?.setThrowOffset(0, 0);
+        t.ms = -1;
+        continue;
+      }
+      gridToScreen(t.x, t.y, this.#ctx.origin, t0);
+      gridToScreen(e.x, e.y, this.#ctx.origin, s);
+      const ox = (t0.x - s.x) * thrown.left;
+      const oy = (t0.y - s.y) * thrown.left;
+      view.setThrowOffset(ox, oy);
+      this.#thrownPx = Math.max(this.#thrownPx, Math.hypot(ox, oy));
+      // The streak: from where it came up to where its body is now.
+      const g = this.#g;
+      g.lineStyle(3, C.frame, thrown.alpha * 0.6).lineBetween(t0.x, t0.y, s.x + ox, s.y + oy);
+      g.lineStyle(1, C.dig, thrown.alpha).lineBetween(t0.x, t0.y, s.x + ox, s.y + oy);
+      this.#drew = true;
+    }
   }
 
   /** The song's hold on the Unsung and its parts (see the header). */
@@ -388,6 +467,11 @@ export class UnsungView {
     this.#dimmed = false;
     this.#lifted.fill(0);
     this.#held = 0;
+    for (const t of this.#throws) {
+      if (t.ms >= 0) this.#hold?.view(t.uid)?.setThrowOffset(0, 0);
+      t.ms = -1;
+    }
+    this.#thrownPx = 0;
   }
 
   #blink(): number {

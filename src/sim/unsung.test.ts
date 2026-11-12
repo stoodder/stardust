@@ -186,7 +186,7 @@ describe('the Unsung’s data (enemies.md § 6; D154)', () => {
     expect(P3!.phase).toEqual({ everyTicks: 480, durationTicks: 120, tellTicks: 90 });
     expect(P3!.phase!.tellTicks).toBeGreaterThanOrEqual(secToTicks(BOSS_MIN_TELL_SEC));
     expect(P4).toMatchObject({ floorPct: 0.01, adds: { enemy: 'silencer', count: 1 } });
-    expect(P4!.adds!.everyTicks).toBe(1200);
+    expect(P4!.adds!.everyTicks).toBe(1800);
     // Forms 3 and 4 wait for their time (D156): never sooner than 60 s and 120 s into Phase 2.
     expect(PHASES.map((p) => p.notBeforeTicks)).toEqual([0, 0, secToTicks(60), secToTicks(120)]);
     for (const g of [
@@ -367,7 +367,7 @@ describe('phase 4: the Song (the floor, the adds)', () => {
     expect(u.leaving).toBe(false);
   });
 
-  it('a Silencer walks in at the road’s spawn every 20 s, after a 1.5 s call', () => {
+  it('a Silencer walks in at the road’s spawn every 30 s, after a 1.5 s call', () => {
     const { state, ctx, u } = song();
     const every = P4!.adds!.everyTicks;
     run(state, ctx, BOSS_PHASE_INVULNERABLE_TICKS + every - TELL - 1, false);

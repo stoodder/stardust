@@ -1098,6 +1098,7 @@ export class BattleScene extends Phaser.Scene {
         surfacesSeen: this.#unsung.surfacesSeen,
         dugOutSeen: this.#unsung.dugOutSeen,
         risesSeen: this.#unsung.risesSeen,
+        throwsSeen: this.#unsung.throwsSeen, // D156
         forms: unsungForms(this.#enemies.live.values()), // T830
       }, // T808
       bossShield: this.#bossBar.shieldPx,

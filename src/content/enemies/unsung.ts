@@ -10,8 +10,10 @@
 //    surfacing among the singers and hushing one each time, unless a burrow answer digs it out on
 //    the way (D154 Fork 2).
 // 4. (25% and below) the Song: its HP can't fall below 1%, and a Silencer walks in from the Halls
-//    every 20 s. Damage dealt to it inside the song feeds rest points (song.ts), and when the
-//    countdown completes it is laid to rest (`layToRest`; design/maps.md § 5.5).
+//    every 30 s (D156: 20 s overran the Mindspike-free answer in Purge's long song). Damage dealt
+//    to it inside the song feeds rest points (song.ts), and when the countdown completes it is laid
+//    to rest (`layToRest`; design/maps.md § 5.5).
+// Forms 3 and 4 have time floors (D156): never sooner than 60 s and 120 s into Phase 2.
 // As built (T808): enemyAbilities/unsung.ts (the dig, the phasing, the adds, the ending),
 // bossSplit.ts/bossMerge.ts (the split with no merge and the rise), bossPhases.ts (the floor).
 // T808's numbers where the docs give none (D154's addenda): the parts' share, the phasing cycle,
@@ -65,7 +67,7 @@ export const unsung = defineEnemy({
         fromPct: 0.25,
         notBeforeSec: 120,
         floorPct: 0.01,
-        adds: { enemy: 'silencer', everySec: 20 },
+        adds: { enemy: 'silencer', everySec: 30 },
       },
     ],
     ending: 'layToRest',

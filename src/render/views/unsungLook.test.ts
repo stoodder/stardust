@@ -14,6 +14,8 @@ import {
   isUnsungBody,
   rimToward,
   SONG_SCRIPT_PHASE,
+  THROW_MS,
+  thrownAt,
   SURFACE_BURST_MS,
   surfaceBurstAt,
   UNSUNG_FLIP_MS,
@@ -134,5 +136,37 @@ describe('held by the song (M8 R1)', () => {
     expect(rimToward(100, 100, 60, 140, out)).toEqual({ dx: -1, dy: 1 });
     expect(rimToward(100, 100, 102, 60, out)).toEqual({ dx: 0, dy: -1 });
     expect(rimToward(100, 100, 100, 100, out)).toEqual({ dx: 0, dy: -1 });
+  });
+});
+
+/** The throw at `ms` (unsungLook.ts `thrownAt`). */
+function throwAt(ms: number, still = false): { left: number; alpha: number } {
+  return thrownAt(ms, still, { left: 0, alpha: 0 });
+}
+
+describe('thrown back (D156)', () => {
+  it('starts where it came up and lands where the sim put it, leaving fast and settling', () => {
+    expect(throwAt(0)).toEqual({ left: 1, alpha: 1 });
+    const quarter = throwAt(THROW_MS / 4).left;
+    const half = throwAt(THROW_MS / 2).left;
+    const late = throwAt((THROW_MS * 3) / 4).left;
+    expect(1 - quarter).toBeGreaterThan(half - late); // more ground early than late
+    expect(half).toBeLessThan(quarter);
+    expect(late).toBeLessThan(half);
+    expect(throwAt(THROW_MS)).toEqual({ left: 0, alpha: 0 });
+  });
+
+  it('never jumps between frames: each 16 ms moves it at most a tenth of the way', () => {
+    for (let ms = 0; ms + 16 <= THROW_MS; ms += 16) {
+      expect(throwAt(ms).left - throwAt(ms + 16).left).toBeLessThan(0.1);
+    }
+  });
+
+  it('steps the streak out', () => {
+    expect(throwAt(THROW_MS * 0.1).alpha).toBeGreaterThan(throwAt(THROW_MS * 0.9).alpha);
+  });
+
+  it('cuts under reduced motion: no carry, no streak', () => {
+    expect(throwAt(0, true)).toEqual({ left: 0, alpha: 0 });
   });
 });

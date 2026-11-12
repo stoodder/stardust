@@ -237,3 +237,36 @@ export function rimToward(
   out.dy = Math.abs(vy) > Math.abs(vx) * tan ? Math.sign(vy) : 0;
   return out;
 }
+
+// --- Thrown back (D156; M8 R1 relay) -------------------------------------------------------------
+// Up among the singers, the song drives the Unsung back at once to where it dug in (sim
+// `digFromDist`; BossSurfaced's `at` is where it came up). The sim moves it in one tick; render
+// carries its body back over THROW_MS (`thrownAt`: the share of the way still to go, easing out),
+// a `violet.3` streak trailing from where it came up to the body (stepping out), so nothing pops.
+// Under reduced motion it cuts there: no carry, no streak.
+
+/** How long the throw back takes on screen (ms). */
+export const THROW_MS = 400;
+/** A move shorter than this (tiles) is no throw (a dug-out surfacing stays where it came up). */
+export const THROW_MIN_TILES = 0.25;
+
+/**
+ * The throw at `ms` after it began: `left`, the share of the way from where it came up still to
+ * go (1 at the start, 0 once landed; eased out, so it leaves fast and settles), and the streak's
+ * `alpha` (stepped; 0 once landed). Both 0 under reduced motion.
+ */
+export function thrownAt(
+  ms: number,
+  still: boolean,
+  out: { left: number; alpha: number },
+): { left: number; alpha: number } {
+  const t = ms / THROW_MS;
+  if (still || !(t >= 0) || t >= 1) {
+    out.left = 0;
+    out.alpha = 0;
+    return out;
+  }
+  out.left = (1 - t) ** 2;
+  out.alpha = STEPPED_ALPHA[Math.min(3, Math.floor(t * 4))]!;
+  return out;
+}

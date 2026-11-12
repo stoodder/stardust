@@ -368,6 +368,14 @@ export class EnemyView implements PooledView {
   #depthFloor = Number.NEGATIVE_INFINITY;
   /** Its sort lift while the song holds it (px of foot y; UnsungView, M8 R1), 0 otherwise. */
   #holdLift = 0;
+  /**
+   * Its drawn offset from where the sim stands it (px; UnsungView: the Unsung thrown back from where
+   * it surfaced, easing to 0), and its shadow's ground point without it.
+   */
+  #throwX = 0;
+  #throwY = 0;
+  #groundX = 0;
+  #groundY = 0;
   /** The scene's keep-clear spots (null: none), and whether it stands near one now. */
   readonly #keepClear: KeepClear | null;
   #clear = false;
@@ -676,6 +684,8 @@ export class EnemyView implements PooledView {
     this.#tellStart = -1;
     this.#depthFloor = Number.NEGATIVE_INFINITY;
     this.#holdLift = 0;
+    this.#throwX = 0;
+    this.#throwY = 0;
     this.#stopFlash();
     const layer = flying ? this.#ctx.layers.air : this.#ctx.layers.world;
     layer.add(this.#body);
@@ -817,7 +827,11 @@ export class EnemyView implements PooledView {
     this.#ownDepth = worldDepth(gy + oy + this.#depthLift, 'enemy', this.#uid);
     // The overhead sorts like the body: a front unit's bar over the one behind it (T501i).
     this.#overDepth = overheadDepth(gy + oy, this.#uid);
-    this.#shadow.setPosition(gx + ox, gy + oy).setVisible(!this.#burrowedLook());
+    this.#groundX = gx + ox;
+    this.#groundY = gy + oy;
+    this.#shadow
+      .setPosition(this.#groundX + this.#throwX, this.#groundY + this.#throwY)
+      .setVisible(!this.#burrowedLook());
     this.#mound.setPosition(gx + ox, gy + oy);
     this.#applyDepth();
     this.#syncClear();
@@ -834,6 +848,22 @@ export class EnemyView implements PooledView {
     if (px === this.#holdLift) return;
     this.#holdLift = px;
     if (!Number.isNaN(this.#x)) this.#applyDepth();
+  }
+
+  /**
+   * Draws the body and its shadow `dx`, `dy` px from where the sim stands it (0, 0: none): the
+   * Unsung thrown back from where it surfaced (UnsungView, unsungLook.ts `thrownAt`; M8 R1 relay).
+   * Its sort and its overhead keep its true spot.
+   */
+  setThrowOffset(dx: number, dy: number): void {
+    const x = Math.round(dx);
+    const y = Math.round(dy);
+    if (x === this.#throwX && y === this.#throwY) return;
+    this.#throwX = x;
+    this.#throwY = y;
+    if (Number.isNaN(this.#x)) return;
+    this.#placeBody();
+    this.#shadow.setPosition(this.#groundX + x, this.#groundY + y);
   }
 
   /**
@@ -887,7 +917,10 @@ export class EnemyView implements PooledView {
 
   /** Puts the body where it stands now (its bob and look offsets on top), and its overhead. */
   #placeBody(): void {
-    this.#body.setPosition(this.#bodyX + this.#offX, this.#bodyY - this.#bob + this.#offY);
+    this.#body.setPosition(
+      this.#bodyX + this.#offX + this.#throwX,
+      this.#bodyY - this.#bob + this.#offY + this.#throwY,
+    );
     this.#placeOverhead();
   }
 
@@ -1320,6 +1353,8 @@ export class EnemyView implements PooledView {
     this.#fray = 0;
     this.#overClear = false;
     this.#holdLift = 0;
+    this.#throwX = 0;
+    this.#throwY = 0;
     this.#dress.hideAll();
     this.#stopFlash();
     this.#body.stop();

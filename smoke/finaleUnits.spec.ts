@@ -1,5 +1,6 @@
 // T830: the finale's units as drawn (render/views/ChoirWalkView.ts, SongView.ts, UnsungView.ts,
-// EchoView.ts; their looks choirWalkLook.ts, songLook.ts, unsungLook.ts, echoLook.ts).
+// EchoView.ts; their looks choirWalkLook.ts, songLook.ts, unsungLook.ts, echoLook.ts). The Unsung
+// surfacing among the singers is carried back to where it dug in, never popped (D156).
 // - FIN with the strongest choir (`after_a3m6_strongest`: the warren's 28, Thrum, the Returned):
 //   the column waits queued beside the colony gate and files out; Pebble leads in her own sprite
 //   with Thrum beside her, the song rings round her and each of the Returned; waiting at a leg's
@@ -183,8 +184,18 @@ test("finale units: the Unsung's forms by phase, its surfacing, laid to rest in 
   await shot(page, 'finale-units', 6, 'risen-parts-at-rest');
 
   expect(await phasesUntil(page, 'surfaced')).toBe(true);
-  expect((await page.evaluate(() => globalThis.__sd!.render()!.unsung)).bursts).toBe(1);
+  const up = await page.evaluate(() => globalThis.__sd!.render()!.unsung);
+  expect(up.bursts).toBe(1);
+  // D156: the song drives it back to where it dug in; its body is carried there, never popped.
+  expect(up.throwsSeen).toBe(1);
+  expect(up.thrown === 0 || up.thrownPx > 0).toBe(true);
   await shot(page, 'finale-units', 7, 'surfaced-among-the-singers');
+  await page.waitForTimeout(600); // past THROW_MS: landed
+  await nextFrames(page);
+  expect(await page.evaluate(() => globalThis.__sd!.render()!.unsung)).toMatchObject({
+    thrown: 0,
+    thrownPx: 0,
+  });
 
   await edge(page, 'unsung', 0.25);
   expect(await phasesUntil(page, 'song')).toBe(true);

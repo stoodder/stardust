@@ -369,6 +369,10 @@ export interface RenderState {
     readonly bursts: number;
     /** M8 R1: bodies the song holds now, drawn rimmed and lifted (the boss's in its pool). */
     readonly held: number;
+    /** D156: throws back drawing now, the largest body offset drawn (px), and throws so far. */
+    readonly thrown: number;
+    readonly thrownPx: number;
+    readonly throwsSeen: number;
   };
   /**
    * The boss bar's shield strip fill (px of 160; −1: none shows, or the boss has no shield) and

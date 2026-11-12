@@ -71,9 +71,13 @@ test('loadout declutter: threats row, protocol peek, Every link, heads-ups besid
   const back = await page.getByRole('button', { name: 'Sector map' }).boundingBox();
   expect(foot!.x + foot!.width).toBeLessThanOrEqual(back!.x);
 
-  // The formed links' names in view; the whole list one press away, above Lock in; Esc closes it.
+  // The formed links in view, each with its bonus in the Technician column's open band (D156); the
+  // whole list one press away, above Lock in; Esc closes it.
   await towerCard(page, 'Rivet').click();
-  await expect(page.locator('.sd-lo-linked')).toHaveText('Crossfire');
+  const linked = page.getByTestId('loadout-linked');
+  await expect(linked.getByRole('listitem')).toHaveCount(1);
+  await expect(linked).toContainText('Crossfire');
+  await expect(page.locator('.sd-lo-linked-bonus')).not.toHaveText('');
   const more = page.getByRole('button', { name: /^Every link/ });
   await more.click();
   const list = page.getByTestId('loadout-links');

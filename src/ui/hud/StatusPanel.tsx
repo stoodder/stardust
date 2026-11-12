@@ -111,7 +111,8 @@ function objectiveWord(o: ObjectiveView): string {
  * The objective tracker (T312c), beside the medals on their row (T803b): one box per optional
  * objective (Objective Intel; "Clean Audit") that fills gold once done and dims quietly when this
  * run can't do it any more ("Next time!", like the medals; "Next time." from Act III:
- * `nextTimeMark`), its name beside it with its progress where it counts ("Waymarks 2/4"; D156);
+ * `nextTimeMark`), its name beside it with its progress where it counts while it's in play
+ * ("Waymarks 2/4"; D156);
  * what completes it is its tooltip, its screen-reader label, and the row's "more" (RecordsMore).
  */
 function ObjectiveTracker() {
@@ -130,16 +131,19 @@ function ObjectiveTracker() {
           title={`${o.name}: ${o.status === 'failed' ? nextTime : o.description} (+${o.intel} Intel)`}
         >
           <span class="hud-objective-box" aria-hidden="true" />
-          {/* Its name beside its box, and how far along it is (D156: "Waymarks 2/4"). */}
-          <span class="hud-objective-name" data-testid="objective-name" aria-hidden="true">
-            {o.name}
-            {o.progress !== undefined && (
-              <span class="num">
-                {' '}
-                {o.progress.n}/{o.progress.of}
-              </span>
-            )}
-          </span>
+          {/* Its name beside its box, and how far along it is, while it's still in play (D156:
+              "Waymarks 2/4"); settled, the box says it alone, as a medal's diamond does. */}
+          {o.status === 'open' && (
+            <span class="hud-objective-name" data-testid="objective-name" aria-hidden="true">
+              {o.name}
+              {o.progress !== undefined && (
+                <span class="num">
+                  {' '}
+                  {o.progress.n}/{o.progress.of}
+                </span>
+              )}
+            </span>
+          )}
           {/* The group it follows on the road (A3M1: Bramble's column), while it walks. */}
           {o.walking !== undefined && o.walking !== null && o.status === 'open' && (
             <span

@@ -31,6 +31,9 @@ const ledgeOrChoirLate = (s: CompiledBuild['steps'][number]): boolean =>
   s.wave >= 19 &&
   (s.kind === 'upgrade' || s.kind === 'specialize') &&
   (sameTile(s.tile, PADS.LEDGE_W) || sameTile(s.tile, PADS.HALLS_E));
+/** A run's Voices % at their lowest (the margin's choir half; balance/checks.ts `marginOf`). */
+const voicesPct = (r: { choirBase: number; choirSize: number; stats: { voicesMin: number } }) =>
+  (100 * (r.choirBase - (r.choirSize - r.stats.voicesMin))) / r.choirBase;
 /** A3M6's par Sheltered % (balance/a3m6.test.ts): the escort chain's previous map. */
 const A3M6_PAR_PCT = (32 / 54) * 100;
 
@@ -149,6 +152,8 @@ describe('FIN Phase 2 and Dawn', { timeout: HARNESS_TEST_TIMEOUT_MS * 2 }, () =>
   });
 
   it('Fork 2: with no burrow answer (no Den, no Dread) par ends ≥ 10 Voices under par', () => {
+    // Voices %, not the margin: the margin is the lower of Voices and the gate (D156), and the
+    // Unsung's digs cost singers, never the gate.
     const par = map.builds.parBuild;
     const noBurrow: CompiledBuild = {
       ...par,
@@ -164,30 +169,35 @@ describe('FIN Phase 2 and Dawn', { timeout: HARNESS_TEST_TIMEOUT_MS * 2 }, () =>
     const base = headless('par');
     const cost = headless('par', noBurrow);
     expect(cost.outcome).toBe('won');
-    expect(marginOf(base) - marginOf(cost)).toBeGreaterThanOrEqual(10);
+    expect(voicesPct(base) - voicesPct(cost)).toBeGreaterThanOrEqual(10);
   });
 
-  it("Laid to Rest: the Halls ring earns it, par (the west ledge's Echo Spike) does not", () => {
-    // Par's Phase 2 spent on the Hum Choir at the Halls (tier 3 by W20) instead of the west
-    // ledge's tier 3 and Echo Spike, whose echoes break the Hollow up the descent, outside the song.
-    const par = map.builds.parBuild;
-    const ring: CompiledBuild = {
-      ...par,
-      steps: par.steps.flatMap((s) =>
-        ledgeOrChoirLate(s)
-          ? []
-          : s.wave === 19 && s.kind === 'upgrade' && sameTile(s.tile, PADS.CORNER)
-            ? [s, { ...s, tile: PADS.HALLS_E }, { ...s, wave: 20, tile: PADS.HALLS_E }]
-            : [s],
-      ),
-    };
-    const plain = headless('par');
-    const ringed = headless('par', ring);
-    expect(plain.medals.challenge).toBe('forfeited');
-    expect(ringed.outcome).toBe('won');
-    expect(ringed.medals.challenge).toBe('earned');
-    expect(marginOf(ringed)).toBe(marginOf(plain)); // the choice costs no singer
-  });
+  it.each(['true', 'false'])(
+    "Laid to Rest with Thrum spared=%s: the Halls ring earns it, par (the west ledge's Echo Spike) does not",
+    (spared) => {
+      // Par's Phase 2 spent on the Hum Choir at the Halls (tier 3 by W20) instead of the west
+      // ledge's tier 3 and Echo Spike, whose echoes break the Hollow up the descent, outside the song.
+      // In both Thrum cells (D156): his +0.5 tiles of song must not decide it.
+      const label = `flag:spared_quiet_wave=${spared}`;
+      const par = map.builds.parBuild;
+      const ring: CompiledBuild = {
+        ...par,
+        steps: par.steps.flatMap((s) =>
+          ledgeOrChoirLate(s)
+            ? []
+            : s.wave === 19 && s.kind === 'upgrade' && sameTile(s.tile, PADS.CORNER)
+              ? [s, { ...s, tile: PADS.HALLS_E }, { ...s, wave: 20, tile: PADS.HALLS_E }]
+              : [s],
+        ),
+      };
+      const plain = headless(label);
+      const ringed = headless(label, ring);
+      expect(plain.medals.challenge).toBe('forfeited');
+      expect(ringed.outcome).toBe('won');
+      expect(ringed.medals.challenge).toBe('earned');
+      expect(marginOf(ringed)).toBeGreaterThanOrEqual(marginOf(plain) - 5); // it costs ≤ 1 singer
+    },
+  );
 
   it('par closes the escort chain (≤ A3M6 + 5) and plays under 25 minutes at 1×', () => {
     const par = headless('par');

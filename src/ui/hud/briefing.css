@@ -3,8 +3,8 @@
    they win whichever stylesheet loads last. Authored in game pixels, spaced with the density tokens
    (theme.css). */
 
-/* Every run of one speaker's lines beside that speaker's face: a 44 px face column (every face
-   one size, a window on its portrait; D156), then the lines. */
+/* Every run of one speaker's lines beside that speaker's face: a 48 px face column (every face
+   one size, a 44 px window on its portrait, at the column's right; D156), then the lines. */
 .hud-briefing .hud-briefing-comms {
   display: block;
 }
@@ -13,7 +13,7 @@
    longest name on it, at least 44 px; D156: "VES'THARA" crowded its line), then the words, so every
    run's words start on one edge. */
 .hud-briefing .hud-briefing-lines {
-  grid-template-columns: 44px minmax(44px, max-content) 1fr;
+  grid-template-columns: 48px minmax(44px, max-content) 1fr;
   gap: var(--space-m) 8px;
 }
 
@@ -72,12 +72,11 @@
   grid-column: 2 / -1;
 }
 
-/* Each line on the log's plate and words columns, top-aligned. */
+/* Each line on the log's plate and words columns (the plate stands as tall as its words). */
 .hud-briefing .hud-briefing-line {
   grid-column: 1 / -1;
   grid-template-columns: subgrid;
   gap: 8px;
-  align-items: start;
 }
 
 /* ── The required counters: "Required: Air" in view, the towers that answer it one press away ── */
