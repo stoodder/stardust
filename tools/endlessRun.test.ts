@@ -45,13 +45,15 @@ describe('Endless on the sim', () => {
     "runs a seed's 60 waves inside assertion 13's CPU budget",
     () => {
       // A core that can't fall to leaks (a boss's leak still drains it all), so the run plays all
-      // 60 waves: seed 2's reference build drives off all five bosses (W20–W60).
-      const { result, cpuMs } = run(2, 60, [
+      // 60 waves: seed 3's reference build drives off all four bosses (W25–W55; seeds 2 and 4–8
+      // fall to the second "Shareholder Value", at W55).
+      const { result, cpuMs } = run(3, 60, [
         { kind: 'economy', stat: 'coreIntegrity', flat: 1_000_000, source: 'test:endless' },
       ]);
       expect(result.outcome).toBe('won');
       expect(held(result)).toBe(60);
-      // ~1.0 s on the T861 machine (60 waves, ~123,000 ticks, ~2,000 units).
+      // ~1.0 s on the T861 machine (60 waves, ~123,000 ticks, ~2,000 units); seed 3 since D156's
+      // roster ~1.1–1.2 s where seed 2 had taken 1.4–1.7 s on the same machine.
       expect(cpuMs).toBeLessThan(RUN_BUDGET_MS);
     },
     HARNESS_TEST_TIMEOUT_MS,
@@ -60,7 +62,8 @@ describe('Endless on the sim', () => {
   it(
     'holds past the warm-up with the reference build, and loses in it doing nothing',
     () => {
-      // Held on Standard (T861, growth 1.07): seed 1 29, seed 2 22, seed 3 24 (seeds 1–8: 22–47).
+      // Held on Standard (D156's roster, first boss W25): seed 1 40, seed 2 41, seed 3 28 (seeds
+      // 1–8: 22–43).
       for (const seed of [1, 2, 3]) {
         const { result, cpuMs } = run(seed, ENDLESS.waves);
         expect(result.outcome).toBe('lost');

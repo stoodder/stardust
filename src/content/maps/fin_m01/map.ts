@@ -261,7 +261,7 @@ export const map = defineMapLayout({
   startCredits: 900,
   // The colony gate behind the walk: what the flyers and Everglow's units cost when they get through
   // (the air exam's meter: no-air loses on it).
-  coreIntegrity: 30,
+  coreIntegrity: 50,
   stardust: 500,
   // Air (Rift Moths, gunships), jam (Silencers, the Auditor), and splash (Motes, Fractures, the
   // Maws' gathering) are the finale's answers (campaign.md § 4.8). Armored, cloaked, and burrowing

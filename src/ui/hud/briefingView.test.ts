@@ -81,12 +81,9 @@ describe('the toggles', () => {
     expect(answersLabel(1)).toBe('1 of yours answers it');
   });
 
-  it('names the medals, the optional objectives, and how many are on file', () => {
-    expect(medalsLabel([m(false), m(false), m(false)], [])).toBe('3 medals');
-    expect(medalsLabel([m(true), m(false), m(false)], [m(true)])).toBe(
-      '3 medals · 1 optional · 2 on file',
-    );
-    expect(medalsLabel([], [m(false)])).toBe('1 optional');
-    expect(medalsLabel([m(false)], [])).toBe('1 medal');
+  it("names what it folds (what earns the medals) and how many are on file (D156)", () => {
+    expect(medalsLabel([m(false), m(false), m(false)])).toBe('What earns them');
+    expect(medalsLabel([m(true), m(false), m(true)])).toBe('What earns them · 2 on file');
+    expect(medalsLabel([m(false)])).toBe('What earns it');
   });
 });

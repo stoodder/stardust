@@ -88,11 +88,14 @@
   min-width: 0;
 }
 
-/* A memo's subject on one line (T803e); the reader's Re line and the tooltip say it whole. */
+/* A memo's subject in up to two lines (M8 r1, D156: Sterling's jokes live in them); the reader's
+   Re line and the tooltip say a longer one whole. */
 .sd-inbox-subject {
+  display: -webkit-box;
   overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .sd-story-item:hover,

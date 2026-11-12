@@ -52,17 +52,11 @@ export function answersLabel(n: number): string {
 }
 
 /**
- * The toggle over the medals and optional objectives: "3 medals", "3 medals · 1 optional",
- * "3 medals · 2 on file" (what's on file counts both).
+ * The toggle beside the medals' names, over what earns each (D156): "What earns them", or
+ * "What earns them · 2 on file" with medals on file ("What earns it" for a lone medal).
  */
-export function medalsLabel(
-  medals: readonly { readonly held: boolean }[],
-  objectives: readonly { readonly held: boolean }[],
-): string {
-  const parts: string[] = [];
-  if (medals.length > 0) parts.push(medals.length === 1 ? '1 medal' : `${medals.length} medals`);
-  if (objectives.length > 0) parts.push(`${objectives.length} optional`);
-  const held = [...medals, ...objectives].filter((m) => m.held).length;
-  if (held > 0) parts.push(`${held} on file`);
-  return parts.join(' · ');
+export function medalsLabel(medals: readonly { readonly held: boolean }[]): string {
+  const what = medals.length === 1 ? 'What earns it' : 'What earns them';
+  const held = medals.filter((m) => m.held).length;
+  return held > 0 ? `${what} · ${held} on file` : what;
 }

@@ -105,6 +105,13 @@ describe('checkpoint labels (core-loop.md § 2.12; finale.md: "Retry from the Ha
       'Resumed from the Halls: Perfect Core and the Challenge need a shift from wave 1.',
     );
     expect(resumedNote(5)).toMatch(/^Resumed from wave 5:/);
+    // The finale names its medal as the card does: "Perfect" (no singer hushed; T871, A13).
+    expect(resumedNotice(18, 'the Halls', 'Perfect')).toBe(
+      'Resumed at the Halls. Unpause when ready. Perfect and the Challenge need a shift from wave 1.',
+    );
+    expect(resumedNote(18, 'the Halls', 'Perfect')).toBe(
+      'Resumed from the Halls: Perfect and the Challenge need a shift from wave 1.',
+    );
   });
 
   it("gives the card a labelled loss's retry button and a resumed run's place", () => {

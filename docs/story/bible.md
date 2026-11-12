@@ -369,7 +369,7 @@ Modular cards of 240 characters or fewer, shown in this order over the credits, 
 | 3 | Thrum and Pebble | `spared` | "Old Thrum lived to see three more Long Walks. She told everyone about the tall one who let the small ones walk. You got taller every time." |
 | 3 | Pebble | `cleared` | "Pebble leads the Leaving Song now. She is very small for it. She doesn't care. On the first note, she always looks up." |
 | 4 | QUILL | `rewrite` + `stay` | "The Skitterkin gave QUILL a name, a hum that means 'the one who saw.' It keeps the Halls' records now. Every one. Still a joke a day." |
-| 4 | QUILL | `rewrite` + `go` | "QUILL keeps the orbital relay over Tumble IV. The Skitterkin named it with a hum that means 'the one who saw.' Every dusk it sends down one joke. Still a joke a day." |
+| 4 | QUILL | `rewrite` + `go` | "QUILL keeps the orbital relay over Tumble IV. The Skitterkin named it with a hum that means 'the one who saw.' Every dusk it sends down one joke. Pebble still laughs." |
 | 4 | QUILL | `keep` + `stay` | "QUILL's voice came back a word at a time. It knows three jokes now and tells them in order, forever. The young ones shout the punchlines first." |
 | 4 | QUILL | `keep` + `go` | "QUILL's voice came back a word at a time, on the orbital relay. It knows three jokes now and sends them down in order, every dusk. The valley hums the punchlines first." |
 | 4 | QUILL | `purge` + `stay` | "QUILL runs Wayside's water, lights, and weather net. It doesn't tell jokes. On day 212 it asked Pebble why the scarecrow won an award. No one taught it that." |
@@ -384,7 +384,7 @@ Modular cards of 240 characters or fewer, shown in this order over the credits, 
 | 9 | Kip | `stay` | "Kip's testimony was ruled inadmissible. He read it aloud in Wayside's square anyway: every batch, every date. It took two days. Nobody left." |
 | 10 | Sterling | `stay` | "Joy Sterling was promoted to Vice President of Frontier Yield. Her first memo was titled 'Lessons Learned!' It contained none." |
 | 10 | Sterling | `go` | "Director Joy Sterling testified before the Frontier Tribunal for nine hours. She smiled the whole time. It did not help." |
-| 11 | Gerald | any | "Gerald delivered the Amended Survey to the KFA relay. Signature: received. It was the first form Gerald had ever seen approved." |
+| 11 | Gerald | any | "Gerald delivered the Amended Survey to the KFA relay. Signature: received. It was the first form Gerald had ever seen signed for." |
 | 12 | You | `family` + `go` | "Your family's residency came through. They live somewhere safe now, by a lake. You send them pictures of something nice." |
 | 12 | You | `family` + `stay` | "The residency points lapsed with the charter. You wrote home to explain. They wrote back: 'Send us a picture of something nice.' You sent the road." |
 | 13 | Final | any | Counter: **PESTS PROCESSED: 0**, then it flips to **REMEMBERED: {n}**. The jingle plays in a major key, hummed by many voices. |

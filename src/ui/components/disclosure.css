@@ -36,6 +36,23 @@
   text-align: center;
 }
 
+/* `caret: 'trail'`: a small chevron after the words (a CSS triangle: Silkscreen has no arrows),
+   pointing right while closed, down while open. */
+.sd-disclosure-chevron {
+  width: 0;
+  height: 0;
+  border-top: 3px solid transparent;
+  border-bottom: 3px solid transparent;
+  border-left: 3px solid currentcolor;
+}
+
+.sd-disclosure-open > .sd-disclosure-toggle .sd-disclosure-chevron {
+  border-top: 3px solid currentcolor;
+  border-right: 3px solid transparent;
+  border-bottom: 0;
+  border-left: 3px solid transparent;
+}
+
 .sd-disclosure-region {
   margin-top: var(--gap-stack);
 }

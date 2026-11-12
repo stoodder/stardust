@@ -1,5 +1,5 @@
 // The Everglow Inbox (T303, T411; design/core-loop.md § 6.4, art-direction § 9 *Memos*): the base's
-// memo pane. Delivered memos, newest first, in a narrow list of one-line subjects beside a wide
+// memo pane. Delivered memos, newest first, in a narrow list of two-line subjects beside a wide
 // reader on Everglow letterhead that fills it (T803e; a KFA form on its own off-white form panel,
 // with a stamp box), From and To on one routing line; the small print collapses under its toggle,
 // one click away. Showing a memo reads it, which clears its NEW tag (and, with the last one, the
@@ -306,7 +306,7 @@ export function InboxPane() {
                 tabIndex={m.id === shown.id ? 0 : -1}
                 onClick={() => pick(i)}
               >
-                {/* One line each (T803e): the reader's Re line says the whole subject. */}
+                {/* Two lines at most (D156): the reader's Re line and the tooltip say the whole subject. */}
                 <span
                   class="sd-story-item-name sd-inbox-subject"
                   title={silkText(m.subject.replace(GLYPH_CHARS.sun, '').trim())}

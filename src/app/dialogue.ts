@@ -681,11 +681,15 @@ function publish(): void {
     line: h.line,
     choices:
       step.kind === 'choice' && !stopped
-        ? step.node.options.map((o) => ({
-            text: silkText(resolveText(o.text, textContext())),
-            tone: o.tone,
-            ...(locked ? { lockedUntil } : {}),
-          }))
+        ? step.node.options.map((o) => {
+            const voices = optionVoices(o, h.transcript);
+            return {
+              text: silkText(resolveText(o.text, textContext())),
+              tone: o.tone,
+              ...(locked ? { lockedUntil } : {}),
+              ...(voices.length > 0 ? { voices } : {}),
+            };
+          })
         : null,
     remember: h.remember,
     ended: step.kind === 'end' || stopped,
@@ -696,6 +700,33 @@ function publish(): void {
     staging: h.staging,
   };
   dialogue.scene.value = view;
+}
+
+/**
+ * Who speaks for each answer of the ending's choice (C5; D156): `ending_choice`'s value → the
+ * voices whose faces sit beside it. Pebble and Ves'thara ask to stay; Bramble asks to give it back.
+ */
+export const ENDING_VOICES: Readonly<Record<string, readonly SpeakerId[]>> = {
+  stay: ['pebble', 'vesthara'],
+  go: ['chitterbloom'],
+};
+
+/**
+ * The voices beside an option (`ChoiceView.voices`): each named speaker's last line in the scene so
+ * far, so the face and plate are the ones the player just heard. None for an option without them.
+ */
+export function optionVoices(
+  option: { readonly set?: FlagSet },
+  transcript: readonly LineView[],
+): LineView[] {
+  const ending = option.set?.['ending_choice'];
+  const speakers = typeof ending === 'string' ? (ENDING_VOICES[ending] ?? []) : [];
+  const out: LineView[] = [];
+  for (const id of speakers) {
+    const said = transcript.findLast((l) => l.speaker === id && l.portrait !== null);
+    if (said !== undefined) out.push(said);
+  }
+  return out;
 }
 
 /** Whether a scene's speakers are there in person, not on the radio (a pausing panel, a briefing). */

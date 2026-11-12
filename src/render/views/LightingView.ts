@@ -19,7 +19,8 @@
 // (`setLighting`, content/lightingSets.ts: Dawn) is a last stop of both, reached from the tick
 // it ran (`state.lightingKey`, `state.lightingTick`) over the set's turn, from wherever the
 // schedule stood (stepped under reduced motion). A map whose script sets one draws even without a
-// schedule; its own env's sky stays void until the set's fades in.
+// schedule; its own env's sky stays void until the set's fades in. On a song map (the finale) the
+// set turns the sky only: Dawn's light on the world is SongNightView's additive sun (M8 R2).
 import * as Phaser from 'phaser';
 import { LIGHTING_SETS, lightingSetProgress, lightingSetsOf } from '../../content/lightingSets.ts';
 import { ENV_PALETTE_IDS } from '../../content/palettes/env.ts';
@@ -104,17 +105,25 @@ export class LightingView {
       readonly env: string;
       readonly lighting: readonly ViewLightingKey[];
       readonly events?: readonly { readonly actions: readonly object[] }[];
+      /** The finale's song (MapDef.song): its night and Dawn's light are SongNightView's. */
+      readonly song?: unknown;
     },
     reducedMotion: () => boolean,
   ) {
     const base = ENV_PALETTE_IDS.find((id) => id === map.env);
     const sets = map.events === undefined ? [] : lightingSetsOf({ events: map.events });
     const setStops = sets.map((k) => ({ wave: SET_WAVE, env: LIGHTING_SETS[k]!.env })); // a set
+    // M8 R2: on a song map Dawn lights the world additively (SongNightView's sun), never by a
+    // multiply grade (it took the blue out of Act III's violet ground: olive-brown), so the grade's
+    // set stops keep the base env (white); the sky still turns.
+    const song = map.song !== undefined && map.song !== null;
+    const worldSetStops =
+      song && base !== undefined ? sets.map(() => ({ wave: SET_WAVE, env: base })) : setStops;
     const draws = base !== undefined && (map.lighting.length > 0 || sets.length > 0);
     this.#sets = sets;
     this.#voidBase = map.lighting.length === 0;
     this.#stops = draws ? [...skyStops(base, map.lighting), ...setStops] : [];
-    this.#worldStops = draws ? [...worldStops(base, map.lighting), ...setStops] : [];
+    this.#worldStops = draws ? [...worldStops(base, map.lighting), ...worldSetStops] : [];
     this.#grades = base === undefined ? [] : stopGrades(base, this.#worldStops);
     this.#reducedMotion = reducedMotion;
     const { scene, layers } = ctx;

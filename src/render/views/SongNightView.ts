@@ -11,7 +11,8 @@
 // From Dawn's `setLighting` (`state.lightingKey`, `state.lightingTick`) the sun rakes in from the
 // east over the set's turn (8 s; at once under reduced motion): the night's mask clears behind its
 // front, an additive sunlight image over the ground (`overGround`) draws the rake and the morning's
-// wash, and once it has crossed the night and the pools are gone and the wash stays.
+// light (a rose wash, gold toward the east and on the road, the pads and the gate: songNightPixels'
+// `sunLightAt`), and once it has crossed the night and the pools are gone and the light stays.
 // Allocation-free per frame: the masks redraw only when a circle's pixel or radius or the sun's
 // step changes (the leader walks a pixel every half second or so); the pools only move.
 import * as Phaser from 'phaser';
@@ -30,6 +31,7 @@ import {
   SONG_POOL,
   songNightTones,
   sunKeys,
+  sunLifts,
   sunStep,
   SUN_STEPS,
 } from '../vfx/songNightPixels.ts';
@@ -76,6 +78,8 @@ export class SongNightView implements NightTint {
   #base: Uint32Array | null = null;
   /** Each pixel's place in the sun's sweep (`sunKeys`; NaN beyond the drawn ground). */
   #keys: Float32Array | null = null;
+  /** Each pixel's highlight flag for the sun (`sunLifts`: road, pads, gate). */
+  #lifts: Uint8Array | null = null;
   /** Circles drawn, and the sun's step drawn (−1: nothing drawn yet). */
   #count = -1;
   #step = -1;
@@ -118,6 +122,11 @@ export class SongNightView implements NightTint {
     this.#sunPx = new Uint32Array(this.#sunData.data.buffer);
     this.#base = baseMask(ground, env, w, h, origin);
     this.#keys = sunKeys(w, h, -OVERHANG_PX, -OVERHANG_PX, origin, map.cols, this.#base);
+    this.#lifts = sunLifts(w, h, -OVERHANG_PX, -OVERHANG_PX, origin, (c, r) =>
+      c >= 0 && r >= 0 && c < ground.cols && r < ground.rows
+        ? (ground.tiles[r * ground.cols + c] ?? null)
+        : null,
+    );
     this.#night = new Phaser.GameObjects.Image(scene, -OVERHANG_PX, -OVERHANG_PX, NIGHT_KEY)
       .setOrigin(0, 0)
       .setBlendMode(Phaser.BlendModes.MULTIPLY)
@@ -303,7 +312,7 @@ export class SongNightView implements NightTint {
   #drawSun(): void {
     const data = this.#sunData!; // set with the night
     const px = this.#sunPx!;
-    drawSunMask(px, this.#keys!, this.#step); // set with the night
+    drawSunMask(px, this.#keys!, this.#step, this.#lifts); // set with the night
     this.#sunTex!.getContext().putImageData(data, 0, 0);
     this.#sunTex!.refresh();
     this.#sunImg!.setVisible(this.#step > 0);

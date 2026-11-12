@@ -5,7 +5,10 @@
 // first light (the KFA's form, the voices, the two lines); "We stay." Then the epilogue (Esc skips
 // nothing; a click moves on a card): the world card under Stay, Thrum's card, the counter's flip
 // to REMEMBERED, the credits, and the final image (PERIMETER STATUS: OPEN over Wayside); then the
-// Sector map at dawn. Screenshots in <out>/screens/ending-stay/ (look at every one).
+// star map. The card (D156) headlines PESTS PROCESSED: 0 on the dawn (the first REMEMBERED is the
+// epilogue's flip), its medal "Perfect"; C5 is answered from the keyboard (Enter, then Enter). The
+// fixture writes nothing, so the post-game star map at dawn is shot from `save=after_fin_stay`.
+// Screenshots in <out>/screens/ending-stay/ (look at every one).
 import { expect, test } from './fixtures.ts';
 import { answerC5, playDawn, watchEpilogueThrough, winFinale } from './ending.ts';
 import { nextFrames, shot, waitForReady } from './hooks.ts';
@@ -26,6 +29,12 @@ test('the close under Stay: Dawn, the memo, C5, the epilogue, the post-game star
   // The card, then Continue: Sterling's farewell, on Everglow's letterhead.
   const onward = page.getByRole('button', { name: 'Continue' });
   await expect(onward).toBeVisible();
+  await expect(page.locator('#sd-results-heading')).toHaveText('PESTS PROCESSED: 0');
+  await expect(page.locator('.sd-results')).toHaveClass(/sd-results-dawn/);
+  await expect(page.getByText(/REMEMBERED/)).toHaveCount(0);
+  const medals = page.getByRole('list', { name: 'Medals' });
+  await expect(medals).toContainText('Perfect');
+  await expect(medals).not.toContainText('Perfect Core');
   await nextFrames(page);
   await shot(page, FLOW, 4, 'results');
   await onward.click();
@@ -36,7 +45,7 @@ test('the close under Stay: Dawn, the memo, C5, the epilogue, the post-game star
   await page.waitForTimeout(800); // its Continue waits a beat
   await memo.getByRole('button', { name: 'Continue' }).click();
 
-  await answerC5(page, FLOW, 6, 'We stay. We keep the way open.');
+  await answerC5(page, FLOW, 6, 'We stay. We keep the way open.', 'enter');
   const cards = await watchEpilogueThrough(page, FLOW, 9, 'stay');
   expect(cards[0]).toMatch(/^The domes on the Long Walk came down/);
   // Spared: Thrum's card; the warren: Bricks's hum; Rewrite + Stay: QUILL keeps the Halls' records.
@@ -46,8 +55,12 @@ test('the close under Stay: Dawn, the memo, C5, the epilogue, the post-game star
   for (const c of cards) expect(c).not.toMatch(/[{}]/);
   await expect(page.getByText('PERIMETER STATUS: OPEN')).toHaveCount(0);
 
-  // The post-game star map (the Sector map at dawn until T863).
+  // The star map the fixture returns to; then the post-game one at dawn, from the save a won
+  // finale under Stay leaves (the fixture writes nothing).
   await expect(page.getByTestId('star-map')).toBeVisible();
+  await page.goto('/?test=1&seed=1&save=after_fin_stay');
+  await waitForReady(page);
+  await expect(page.getByTestId('post-game')).toBeVisible();
   await nextFrames(page);
   await shot(page, FLOW, 14, 'post-game');
 });

@@ -66,6 +66,11 @@ export interface ChoiceView {
    * STORY_CHOICE_LOCK_MS); absent for any other choice.
    */
   readonly lockedUntil?: number;
+  /**
+   * The voices who spoke for this answer, as they last appeared in the scene (C5: Pebble and
+   * Ves'thara by Stay, Bramble by Go; D156): small faces beside the option. Absent for most.
+   */
+  readonly voices?: readonly LineView[];
 }
 
 /** The scene on screen (it holds input; the briefing, a panel, or full-screen). */

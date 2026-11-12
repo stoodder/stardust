@@ -1550,11 +1550,20 @@ section.chamfer,
   border: 1px solid var(--accent);
 }
 
+/* Its name beside its box, with its progress where it counts (D156: "Waymarks 2/4"). */
+.hud-objective-name {
+  overflow: hidden;
+  max-width: 96px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 .hud-objective.done .hud-objective-box {
   border-color: var(--sd-gold-4);
   background: var(--sd-gold-3);
 }
 
+.hud-objective.done .hud-objective-name,
 .hud-objective.done .hud-records-name {
   color: var(--sd-gold-3);
 }

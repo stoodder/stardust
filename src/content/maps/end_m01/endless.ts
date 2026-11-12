@@ -66,13 +66,13 @@ export const ENDLESS: EndlessDef = {
   // The warm-up, then one counter, two, and three from the fourth block (W16–W20) on. A boss's
   // own categories can raise its block's count ("Shareholder Value" brings jam to its armor).
   countersPerBlock: [0, 1, 2, 3],
-  // Splash first: the first block (W6–W10) is the Long Night's swarm. Then armor, air, and
-  // shields; detection, burrowing, and jamming once the third block (W11–W15) is past. A block
-  // with no plain unit tops its waves up with its lightest unit (sim/endless.ts), and before ~W20
-  // only a Mote (32 threat) is fine enough for that on a rising budget: a lone armor, air, or
-  // shield block there (Compliance 168, Rift Moth 174, Glimmer 126) overshoots its band. Splash
-  // in block 1 keeps a Mote in every block until W20 (block 2 adds one category to it, block 3
-  // one more), and from W21 each block's lightest unit is under 8% of its budget.
+  // Splash first: block 1 (W6–W10) is the Long Night's swarm. Then armor, air, and shields from
+  // block 2 (W11–W15); detection, burrowing, and jamming from block 3 (W16–W20). A block with no
+  // plain unit tops its waves up with its lightest unit (sim/endless.ts), and before ~W20 only a
+  // Mote (32 threat) is fine enough for that on a rising budget: a lone armor, air, or shield
+  // block there (Compliance 168, Rift Moth 174, Glimmer 126) overshoots its band. Splash in block 1
+  // keeps a Mote in every block until W20 (block 2 adds one category to it, block 3 one more), and
+  // from W21 each block's lightest unit is under 8% of its budget.
   categoryFrom: { splash: 1, armor: 2, air: 2, shield: 2, detection: 3, burrowed: 3, jam: 3 },
   // No Skitterkin (D156): the post-game is QUILL's sim deck, and after "Remember them." it never
   // asks the player to shoot the people they walked home. Ves'thara's lumenglass constructs stay:
@@ -101,14 +101,15 @@ export const ENDLESS: EndlessDef = {
     'blackbudget',
     'auditor',
   ],
-  firstBossWave: 20,
+  firstBossWave: 25,
   bossEvery: 10,
-  // The first boss at W20, once a build has had three blocks to grow (at W10 the reference build,
-  // five towers in, lost to the run's first boss on every seed tried). The Gathering Maw first,
-  // then it and "Shareholder Value" (Sterling's platform, its plates landing on the map's crash
-  // site) in turn. Not Bramble (Chitterbloom) or Ves'thara (the Glass Witch, and the Sunderglass
-  // Penitent she piloted): people the player walked home are never targets here (D156). Not the
-  // Unsung either (it is laid to rest only by the Leaving Song).
+  // The first boss at W25, then every ten waves. The Gathering Maw first (the Long Night's own,
+  // back at Dome Row), then it and "Shareholder Value" (Sterling's platform, its plates landing on
+  // the map's crash site) in turn. At W20 the reference build lost to the Maw on seeds 1 and 8; at
+  // W25 seeds 1–8 hold 22–43 waves (tools/endlessRun.test.ts). Not Bramble (Chitterbloom) or
+  // Ves'thara (the Glass Witch, and the Sunderglass Penitent she piloted): people the player
+  // walked home are never targets here (D156). Not the Unsung either (it is laid to rest only by
+  // the Leaving Song).
   bosses: ['gathering_maw', 'shareholder_value'],
   maxGroupCount: 24,
   spawnWindowSec: 16,

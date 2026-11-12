@@ -43,6 +43,25 @@ export function isPressKey(code: string): boolean {
   return code === 'Enter' || code === 'NumpadEnter' || code === 'Space';
 }
 
+/**
+ * The option a number key names (`Digit1`/`Numpad1` → 0 … 9 → 8), the number on its badge; null for
+ * any other key (M8 r1, D156: a locked choice answers 1 and 2 as well as the arrows and Enter).
+ */
+export function optionKey(code: string): number | null {
+  const m = /^(?:Digit|Numpad)([1-9])$/.exec(code);
+  return m === null ? null : Number(m[1]) - 1;
+}
+
+/**
+ * The one-line keyboard hint under a locked choice of `n` options (D156): the badges' numbers
+ * answer, as do the arrows and Enter. In words: Silkscreen has no arrow glyphs.
+ */
+export function choiceKeysHint(n: number): string {
+  const keys = Array.from({ length: n }, (_, i) => String(i + 1));
+  const nums = keys.length <= 1 ? keys.join('') : `${keys.slice(0, -1).join(', ')} or ${keys.at(-1)}`;
+  return `Keys: ${nums}, or arrows and Enter`;
+}
+
 /** A pointer's position in client px. */
 export interface PointerAt {
   readonly x: number;

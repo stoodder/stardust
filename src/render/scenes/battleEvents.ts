@@ -28,6 +28,7 @@ import type { CoreView } from '../views/CoreView.ts';
 import { presentationOfMap } from '../../story/presentation.ts';
 import { deathStyle } from '../views/deathLook.ts';
 import { splats } from '../views/gloopLook.ts'; // T730a
+import { gateFloatAt } from '../views/gateFloat.ts'; // M8 R4
 import type { EnemyView } from '../views/EnemyView.ts';
 import type { FxView } from '../views/FxView.ts';
 import {
@@ -61,6 +62,8 @@ import {
 /** Where floating numbers start above a ground point (px): a tower's head, the core's heart. */
 const TOWER_FLOAT_LIFT_PX = 24;
 const CORE_FLOAT_LIFT_PX = 46;
+/** A gate's loss number's start (gateFloat.ts), reused. */
+const gateAt: Vec2 = { x: 0, y: 0 };
 /** A link's callout (D059): its rings, and its name floated above the pair, held to be read. */
 const LINK_RING_TILES = 0.75;
 const LINK_RING_MS = 450;
@@ -470,7 +473,9 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
       fx.leakShake();
       if (core !== null) {
         fx.ring(core.x, core.y, LEAK_RING_TILES, 'red.3', LEAK_RING_MS, true);
-        fx.floatText(`−${e.leak}`, 'red.3', core.x, core.y, CORE_FLOAT_LIFT_PX);
+        // M8 R4: clear of a lettered memorial beside the gate (gateFloat.ts).
+        const at = gateFloatAt(core, map.markers, gateAt);
+        fx.floatText(`−${e.leak}`, 'red.3', at.x, at.y, CORE_FLOAT_LIFT_PX);
       }
     }),
     // Flash Freeze's burst (T407a; stasisLook.ts): a pale ice ring over the pulse's reach.

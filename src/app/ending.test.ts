@@ -311,8 +311,8 @@ describe("the finale's card (D156: PESTS PROCESSED: 0; the first REMEMBERED is t
     // The epilogue's flip still reads the lifetime count (story/counter.ts's `remembered` style).
     expect(counter.line).toBe(`REMEMBERED: ${save.stats.pestsProcessed.toLocaleString('en-US')}`);
     // The medal reads "Perfect" (no singer hushed; T871), on the fixture's card as in a battle.
-    expect(r.medals.map((m) => m.name)).toContain('Perfect');
-    expect(r.medals.map((m) => m.name)).not.toContain('Perfect Core');
+    expect(r.rewards!.medals.map((m) => m.name)).toContain('Perfect');
+    expect(r.rewards!.medals.map((m) => m.name)).not.toContain('Perfect Core');
     expect(resultsHeader(r.counter, 'won').headline).toBe('PERIMETER SECURED.');
     const rows = resultsStats(r);
     // A win's waves go unsaid (its headline says them; T803e): Voices held is the one row.

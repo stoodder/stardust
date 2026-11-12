@@ -57,6 +57,7 @@ export async function answerC5(
   flow: string,
   first: number,
   answer: 'We stay. We keep the way open.' | 'We go. We give it back.',
+  by: 'click' | 'enter' | 'digit' = 'click',
 ): Promise<void> {
   const stage = page.getByTestId('stage-c5');
   await expect(stage).toBeVisible();
@@ -67,9 +68,30 @@ export async function answerC5(
   const option = page.getByRole('button', { name: answer });
   await nextUntil(page, async () => (await option.count()) > 0);
   await expect(page.getByRole('button', { name: /^We (stay|go)\./ })).toHaveCount(2);
-  await shot(page, flow, first + 2, 'c5-choice');
+  // The voices beside their answers (D156): Pebble and Ves'thara by Stay, Bramble by Go.
+  const voices = (n: RegExp) =>
+    page.getByRole('button', { name: n }).locator('.dlg-choice-voices .dlg-portrait');
+  await expect(voices(/^We stay\./)).toHaveCount(2);
+  await expect(voices(/^We go\./)).toHaveCount(1);
+  // The keys it answers, one quiet line (D156).
+  await expect(page.getByTestId('choice-hint')).toHaveText('Keys: 1 or 2, or arrows and Enter');
   await page.waitForTimeout(800); // the story choice's lock
-  await option.click();
+  await nextFrames(page);
+  await shot(page, flow, first + 2, 'c5-choice');
+  if (by === 'click') {
+    await option.click();
+  } else if (by === 'digit') {
+    // The badge's number answers its option.
+    await page.keyboard.press(answer.startsWith('We stay') ? 'Digit1' : 'Digit2');
+  } else {
+    // Enter on the group puts the focus on the first option; the next Enter picks it.
+    await expect(page.getByTestId('choice-group')).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('button', { name: /^We stay\./ })).toBeFocused();
+    if (!answer.startsWith('We stay')) await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Enter');
+  }
+  await expect(page.getByRole('button', { name: /^We (stay|go)\./ })).toHaveCount(0);
   await expect(page.getByText(/will remember/i)).toHaveCount(0);
 }
 

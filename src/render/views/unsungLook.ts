@@ -171,7 +171,6 @@ export const UNSUNG_RIM_COLOR = 'gold.4';
 export const UNSUNG_DIM_MARGIN_PX = 10;
 export const UNSUNG_DIM_ALPHA: number = STEPPED_ALPHA[2];
 
-
 /** What the hold reads of a unit (sim `Enemy`). */
 export interface HeldFacts {
   readonly alive: boolean;

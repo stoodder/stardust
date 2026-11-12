@@ -1,8 +1,9 @@
 // The credits roll (T810; design/core-loop.md § 6.8): after the epilogue's counter card, before the
 // final image. Data: the blocks in order, each a heading and its lines. The cast is the story's
-// (story/characters.md, by their full names), the protagonist last; then what the game is made of
-// (its libraries and its two SIL Open Font License fonts, art-direction.md § Fonts). Copy is UI
-// copy (style-guide.md § 6): plain, no jokes, no exclamation marks. Part of the finale's chunk.
+// (story/characters.md, by their full names), the protagonist last, by the player's name over
+// "Waykeeper"; then what the game is made of (its libraries and its two SIL Open Font License
+// fonts, art-direction.md § Fonts). Copy is UI copy (style-guide.md § 6): plain, no jokes, no
+// exclamation marks. Part of the finale's chunk.
 
 /** One block of the roll: a small heading over its lines. */
 export interface CreditBlock {
@@ -32,10 +33,19 @@ export const CREDITS: readonly CreditBlock[] = [
   },
   {
     heading: 'And',
-    lines: ['Old Thrum', 'Bramble', 'Gerald', 'Compliance Officer Prim', 'The Everglow PA'],
+    lines: [
+      'Old Thrum',
+      'Bramble',
+      'Ishael',
+      'Gerald',
+      'Compliance Officer Prim',
+      'The Everglow PA',
+    ],
   },
   { heading: 'The choir', lines: ['Every voice that walked the Long Walk'] },
-  { heading: 'And you', lines: ['Waykeeper'] },
+  // The player's own name over the one Pebble gave them (`{name}`: the roll's text resolves it,
+  // story/text.ts `resolveText`).
+  { heading: 'And you', lines: ['{name}', 'Waykeeper'] },
   {
     heading: 'Made with',
     lines: ['TypeScript', 'Phaser', 'Preact', 'Vite'],

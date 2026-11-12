@@ -322,6 +322,34 @@
   text-align: center;
 }
 
+/* The voices who spoke for an answer (C5; D156): small faces at its end, each a 26 px window on
+   its portrait's face (the bust's head, whole pixels, never scaled). */
+.dlg-choice-voices {
+  display: flex;
+  flex: none;
+  gap: 2px;
+  margin-left: 6px;
+}
+
+.dlg-choice-voices .dlg-portrait {
+  overflow: hidden;
+  width: 26px;
+  height: 26px;
+  place-items: start center;
+}
+
+.dlg-choice-voices .dlg-portrait img {
+  margin-top: -6px;
+}
+
+/* The keys a locked choice answers (D156): one quiet line under its options. */
+.dlg-choice-hint {
+  margin: 0;
+  color: var(--sd-steel-3);
+  text-transform: none;
+  text-align: right;
+}
+
 .dlg-line.prompt {
   cursor: default;
 }

@@ -1,6 +1,7 @@
 // The map's briefing as a scene (T302b), a blocking modal over the battle: its lines in the comms
 // style, each run of one speaker's lines beside that speaker's face (T803e), the threat-intel strip,
-// and the medals on offer with the optional objectives (T431) one press away (T803e's declutter).
+// the medals on offer by name and the optional objectives (T431) in view, and what earns each
+// medal one press away (T803e's declutter, D156).
 import { dismissBriefing } from '../../app/commands.ts';
 import { hud, type MedalView, type ObjectiveView, type ThreatIntelView } from '../state.ts';
 import { changeLoadout } from '../../app/navigation.ts';
@@ -67,6 +68,7 @@ function IntelStrip({ intel }: { intel: ThreatIntelView }) {
           ) : (
             <Disclosure
               class="hud-intel-more"
+              caret="trail"
               label={answersLabel(r.answers.length)}
               about={`the towers that answer ${r.label}`}
             >
@@ -98,6 +100,25 @@ function BriefingMedals({ medals }: { medals: readonly MedalView[] }) {
           <span class="hud-briefing-medal-name">{m.name}</span>
           <span class="hud-briefing-medal-desc">{m.description}</span>
           {m.held && <span class="hud-briefing-medal-held">On file</span>}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/**
+ * The medals by name in one compact row (D156: their names are the jokes, "Teamwork Makes the
+ * Dream Work™", so they stay in view): a diamond each, lit for one on file. What earns each folds
+ * under the row (`BriefingMedals`).
+ */
+function MedalNames({ medals }: { medals: readonly MedalView[] }) {
+  return (
+    <ul class="hud-briefing-medal-row" aria-label="Medals" data-testid="briefing-medal-row">
+      {medals.map((m) => (
+        <li key={m.id} class={m.held ? 'held' : ''}>
+          <span class={m.held ? 'hud-medal earned' : 'hud-medal'} aria-hidden="true" />
+          <span class="hud-briefing-medal-name">{m.name}</span>
+          {m.held && <span class="hud-sr-only"> (on file)</span>}
         </li>
       ))}
     </ul>
@@ -142,8 +163,8 @@ function BriefingObjectives({ objectives }: { objectives: readonly ObjectiveView
  * app/keys.ts routes here wherever the focus is). Each run of one speaker's lines sits beside that
  * speaker's face (`briefingRuns`); the current line types, and Next (focused) reads on. Once it has
  * played out, Clock in takes the focus. With dialogue off (`?test=1`) the lines show whole at once.
- * The threat intel and the required counters are always up; the medals and objectives, and the
- * towers that answer each counter, are one press away. The rest of the HUD is `inert` while it's
+ * The threat intel, the required counters, the medals by name and the optional objectives are always
+ * up; what earns each medal, and the towers that answer each counter, are one press away. The rest of the HUD is `inert` while it's
  * open, and Tab cycles inside it.
  */
 export function Briefing({ view }: { view: SceneView }) {
@@ -197,17 +218,26 @@ export function Briefing({ view }: { view: SceneView }) {
         ) : (
           <>
             {intel !== null && <IntelStrip intel={intel} />}
-            {/* The medals and objectives one press away (T803e); T860: the veteran picker's grid,
-                open, stands in their place. */}
+            {/* The medals by name and the optional objectives in view; only what earns each medal
+                is one press away (D156, after T803e). T860: the veteran picker's grid, open,
+                stands in their place. */}
             {goals && (
-              <Disclosure
-                class="hud-briefing-goals"
-                label={medalsLabel(medals, objectives)}
-                about="the medals and optional objectives"
-              >
-                {medals.length > 0 && <BriefingMedals medals={medals} />}
+              <div class="hud-briefing-goals" data-testid="briefing-goals">
+                {medals.length > 0 && (
+                  <div class="hud-briefing-medal-line">
+                    <MedalNames medals={medals} />
+                    <Disclosure
+                      class="hud-briefing-why"
+                      caret="trail"
+                      label={medalsLabel(medals)}
+                      about="what earns each medal"
+                    >
+                      <BriefingMedals medals={medals} />
+                    </Disclosure>
+                  </div>
+                )}
                 {objectives.length > 0 && <BriefingObjectives objectives={objectives} />}
-              </Disclosure>
+              </div>
             )}
             <VeteranPicker />
           </>

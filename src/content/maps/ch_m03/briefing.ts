@@ -1,11 +1,17 @@
-// CH_M03's briefing (Glass Core; T862): the console's two facts, then Zibzab in person (comms are
+// CH_M03's briefing (Glass Core; T862): the sim deck's two facts, then Zibzab in person (comms are
 // down), pricing it first. It loads with the finale's chunk (content/acts/fin.ts) and plays as
 // `<map>_brief` (app/dialogue.ts `briefingScene`).
 import { defineScene, defineScenes } from '../../dialogue/index.ts';
 
 export const scenes = defineScenes([
   defineScene('ch_m03_brief', [
-    { kind: 'line', speaker: 'system', text: 'COMMS: OFFLINE. CORE INTEGRITY: 5.' },
+    // The sim deck's own plate (the post-game is QUILL's sim deck, D156), not Everglow's.
+    {
+      kind: 'line',
+      speaker: 'system',
+      plateAs: 'SIM DECK',
+      text: 'COMMS: OFFLINE. CORE INTEGRITY: 5.',
+    },
     {
       kind: 'line',
       speaker: 'zibzab',

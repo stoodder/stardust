@@ -330,7 +330,14 @@ export class UnsungView {
     const w = f?.width ?? 0;
     const h = f?.height ?? 0;
     const left = body.flipX ? body.x - (w - body.originX) : body.x - body.originX;
-    this.#hold?.fx?.setDim(left, body.y - body.originY, w, h, UNSUNG_DIM_MARGIN_PX, UNSUNG_DIM_ALPHA);
+    this.#hold?.fx?.setDim(
+      left,
+      body.y - body.originY,
+      w,
+      h,
+      UNSUNG_DIM_MARGIN_PX,
+      UNSUNG_DIM_ALPHA,
+    );
     this.#dimmed = true;
   }
 

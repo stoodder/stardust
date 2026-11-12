@@ -61,7 +61,7 @@ export const EPILOGUE_CARDS: readonly EpilogueCardDef[] = [
   {
     slot: 'quill',
     when: { quill_choice: 'rewrite', ending_choice: 'go' },
-    text: "QUILL keeps the orbital relay over Tumble IV. The Skitterkin named it with a hum that means 'the one who saw.' Every dusk it sends down one joke. Still a joke a day.",
+    text: "QUILL keeps the orbital relay over Tumble IV. The Skitterkin named it with a hum that means 'the one who saw.' Every dusk it sends down one joke. Pebble still laughs.",
   },
   {
     slot: 'quill',
@@ -143,7 +143,7 @@ export const EPILOGUE_CARDS: readonly EpilogueCardDef[] = [
   {
     slot: 'gerald',
     when: {},
-    text: 'Gerald delivered the Amended Survey to the KFA relay. Signature: received. It was the first form Gerald had ever seen approved.',
+    text: 'Gerald delivered the Amended Survey to the KFA relay. Signature: received. It was the first form Gerald had ever seen signed for.',
   },
   // 12 · You (only `family` has a card: the residency points C5's form names)
   {

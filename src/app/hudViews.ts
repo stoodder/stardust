@@ -770,9 +770,11 @@ export function objectiveViews(
   status: Readonly<Record<string, ObjectiveStatusView>> = {},
   held: readonly string[] = [],
   walking: Readonly<Record<string, number>> = {},
+  progress: Readonly<Record<string, { readonly n: number; readonly of: number }>> = {},
 ): ObjectiveView[] {
   return map.objectives.map((o) => {
     const n = Object.hasOwn(walking, o.id) ? (walking[o.id] ?? 0) : 0;
+    const p = Object.hasOwn(progress, o.id) ? progress[o.id] : undefined;
     return {
       id: o.id,
       name: silkText(o.name),
@@ -781,8 +783,31 @@ export function objectiveViews(
       status: Object.hasOwn(status, o.id) ? (status[o.id] ?? 'open') : 'open',
       held: held.includes(o.id),
       ...(n > 0 ? { walking: n } : {}),
+      ...(p === undefined ? {} : { progress: p }),
     };
   });
+}
+
+/**
+ * Each counting objective's progress by id (D156): a `cleared` one's markers the drone has cleared
+ * so far (the finale's Waymarks: lanterns relit, of four). Others are absent.
+ */
+export function objectiveProgress(
+  map: Pick<CompiledMapDef<IdSpace>, 'objectives' | 'markers' | 'cols'>,
+  cleared: readonly number[],
+): Record<string, { n: number; of: number }> {
+  const out: Record<string, { n: number; of: number }> = {};
+  for (const o of map.objectives) {
+    const c = o.condition;
+    if (!('cleared' in c)) continue;
+    let n = 0;
+    for (const m of c.cleared) {
+      const pos = map.markers[m];
+      if (pos !== undefined && cleared.includes(pos[1] * map.cols + pos[0])) n++;
+    }
+    out[o.id] = { n, of: c.cleared.length };
+  }
+  return out;
 }
 
 /**

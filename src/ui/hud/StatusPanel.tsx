@@ -97,6 +97,11 @@ function walkingWords(o: ObjectiveView): string {
     : '';
 }
 
+/** How far along a counting objective is, for its row's label: ", 2 of 4". */
+function progressWords(o: ObjectiveView): string {
+  return o.progress === undefined ? '' : `, ${o.progress.n} of ${o.progress.of}`;
+}
+
 /** An objective's standing in words (its row's label and tooltip). */
 function objectiveWord(o: ObjectiveView): string {
   return o.status === 'done' ? 'done' : o.status === 'failed' ? 'next time' : 'in reach';
@@ -106,8 +111,8 @@ function objectiveWord(o: ObjectiveView): string {
  * The objective tracker (T312c), beside the medals on their row (T803b): one box per optional
  * objective (Objective Intel; "Clean Audit") that fills gold once done and dims quietly when this
  * run can't do it any more ("Next time!", like the medals; "Next time." from Act III:
- * `nextTimeMark`); its name and what completes it are its tooltip, its screen-reader label, and the
- * row's "more" (RecordsMore).
+ * `nextTimeMark`), its name beside it with its progress where it counts ("Waymarks 2/4"; D156);
+ * what completes it is its tooltip, its screen-reader label, and the row's "more" (RecordsMore).
  */
 function ObjectiveTracker() {
   const objectives = hud.objectives.value;
@@ -121,10 +126,20 @@ function ObjectiveTracker() {
           class={`hud-objective ${o.status}`}
           data-objective={o.id}
           data-status={o.status}
-          aria-label={`${o.name}, ${objectiveWord(o)}${walkingWords(o)}: ${o.description} +${o.intel} Intel`}
+          aria-label={`${o.name}, ${objectiveWord(o)}${progressWords(o)}${walkingWords(o)}: ${o.description} +${o.intel} Intel`}
           title={`${o.name}: ${o.status === 'failed' ? nextTime : o.description} (+${o.intel} Intel)`}
         >
           <span class="hud-objective-box" aria-hidden="true" />
+          {/* Its name beside its box, and how far along it is (D156: "Waymarks 2/4"). */}
+          <span class="hud-objective-name" data-testid="objective-name" aria-hidden="true">
+            {o.name}
+            {o.progress !== undefined && (
+              <span class="num">
+                {' '}
+                {o.progress.n}/{o.progress.of}
+              </span>
+            )}
+          </span>
           {/* The group it follows on the road (A3M1: Bramble's column), while it walks. */}
           {o.walking !== undefined && o.walking !== null && o.status === 'open' && (
             <span

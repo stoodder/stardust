@@ -1,8 +1,8 @@
 // END_M01's builds. Endless isn't a campaign map, so the balance harness doesn't judge it (it has no
 // par band: its score is the waves held); its one build is the reference the Endless tests run
 // (tools/endlessRun.test.ts: a seed's 60 waves within assertion 13's CPU budget, and how far it
-// holds on Standard: 22–47 waves on seeds 1–8, T861). Its profile is the finale's (campaign.md § 4.9): a post-game player
-// owns at least that.
+// holds on Standard: 22–43 waves on seeds 1–8 since D156's roster). Its profile is the finale's
+// (campaign.md § 4.9): a post-game player owns at least that.
 //
 // The reference loadout answers every counter category between four towers, so it meets every
 // block (sim/endless.ts) with something: the Prism Spire (armor, shield, air), the Zapcoil (shield, air, splash),

@@ -277,6 +277,11 @@ export interface ObjectiveView {
    * released, or all off the road) or the objective follows no group.
    */
   readonly walking?: number | null;
+  /**
+   * How far along it is, where its condition counts something (`cleared`: the finale's Waymarks,
+   * lanterns relit of four), shown beside its name ("Waymarks 2/4"; D156). Absent otherwise.
+   */
+  readonly progress?: { readonly n: number; readonly of: number };
 }
 
 /** Which of a map's three medals (design/progression.md § 3). */

@@ -336,7 +336,7 @@ describe('the run', () => {
   it('names the block each wave is in', () => {
     expect(endlessBlockAt(plan, 1)?.index).toBe(0);
     expect(endlessBlockAt(plan, 6)?.index).toBe(1);
-    expect(endlessBlockAt(plan, 20)?.boss).toBe(ENDLESS.bosses[0]);
+    expect(endlessBlockAt(plan, ENDLESS.firstBossWave)?.boss).toBe(ENDLESS.bosses[0]);
     expect(endlessBlockAt(plan, ENDLESS.waves + 1)).toBeNull();
   });
 

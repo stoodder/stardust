@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { rgbOf } from '../../content/palettes/master.ts';
 import { HALF_H, HALF_W } from '../iso.ts';
 import { lumOf, MASK_DARK, MASK_LIT, noDark } from './darknessPixels.ts';
 import {
@@ -6,11 +7,14 @@ import {
   drawSunMask,
   sunKeys,
   isSunlit,
+  LIFT_GOLD,
+  LIFT_NONE,
+  LIFT_PAD,
   songNightTones,
+  sunLifts,
+  sunLightAt,
   sunStep,
-  SUN_RAKE_ALPHA,
   SUN_STEPS,
-  SUN_WASH_ALPHA,
 } from './songNightPixels.ts';
 
 // A 10×10 map seen whole: its grid (0, 0) at the top of a 360×200 buffer.
@@ -23,8 +27,20 @@ const KEYS = sunKeys(W, H, 0, 0, origin, COLS);
 const pixelAt = (gx: number, gy: number): number =>
   Math.floor((gx + gy) * HALF_H + origin.y) * W + Math.floor((gx - gy) * HALF_W + origin.x);
 
-/** A sun pixel's additive alpha (0–1). */
-const alpha = (word: number): number => (word >>> 24) / 255;
+/** The light a sun pixel adds (rgb × alpha, 0–255 a channel). */
+const added = (word: number): { r: number; g: number; b: number } => {
+  const a = (word >>> 24) / 255;
+  return { r: (word & 0xff) * a, g: ((word >>> 8) & 0xff) * a, b: ((word >>> 16) & 0xff) * a };
+};
+const sum = (c: { r: number; g: number; b: number }): number => c.r + c.g + c.b;
+/** The light `sunLightAt` adds there, as the test reads it back. */
+const lightAt = (k: number, raked: boolean, lift: number) =>
+  sunLightAt(k, raked, lift, { r: 0, g: 0, b: 0 });
+const near = (a: { r: number; g: number; b: number }, b: { r: number; g: number; b: number }) => {
+  expect(Math.abs(a.r - b.r)).toBeLessThan(1.5);
+  expect(Math.abs(a.g - b.g)).toBeLessThan(1.5);
+  expect(Math.abs(a.b - b.b)).toBeLessThan(1.5);
+};
 
 describe("the finale's night (T831)", () => {
   it('darkens the world only: no veil and no lift on the actors', () => {
@@ -106,16 +122,71 @@ describe('Dawn: the sun rakes in from the east (T831)', () => {
     expect(night[east]).toBe(MASK_LIT);
     expect(night[west]).toBe(MASK_DARK);
     expect(sun[west]).toBe(0);
-    expect(alpha(sun[east]!)).toBeCloseTo(SUN_WASH_ALPHA, 2);
-    // Somewhere along the row the rake shows, brighter than the wash.
+    near(added(sun[east]!), lightAt(KEYS[east]!, false, LIFT_NONE));
+    // Somewhere along the row the rake shows, brighter than the light behind it.
     let raked = 0;
     for (let gx = 0; gx < 10; gx += 0.1) {
-      if (Math.abs(alpha(sun[pixelAt(gx, 5)]!) - SUN_RAKE_ALPHA) < 0.01) raked++;
+      const i = pixelAt(gx, 5);
+      if (sun[i] !== 0 && sum(added(sun[i]!)) > sum(lightAt(KEYS[i]!, false, LIFT_NONE)) + 20)
+        raked++;
     }
     expect(raked).toBeGreaterThan(0);
-    // Risen: the wash everywhere it reached, no rake.
+    // Risen: the morning's light everywhere it reached, no rake; warmer to the east.
     drawSunMask(sun, KEYS, SUN_STEPS);
-    expect(alpha(sun[west]!)).toBeCloseTo(SUN_WASH_ALPHA, 2);
-    expect(alpha(sun[pixelAt(5, 5)]!)).toBeCloseTo(SUN_WASH_ALPHA, 2);
+    near(added(sun[west]!), lightAt(KEYS[west]!, false, LIFT_NONE));
+    near(added(sun[pixelAt(5, 5)]!), lightAt(KEYS[pixelAt(5, 5)]!, false, LIFT_NONE));
+    expect(added(sun[east]!).g).toBeGreaterThan(added(sun[west]!).g);
+  });
+});
+
+describe('Dawn’s morning light (M8 R2): rose on the darks, gold and teal on the highlights', () => {
+  const GROUND = ['act3.ground.0', 'act3.ground.1', 'act3.ground.2', 'act3.ground.3'] as const;
+
+  it('never turns Act III’s ground olive: the darks stay violet, east and west, raked or not', () => {
+    for (const name of GROUND) {
+      const g = rgbOf(name);
+      for (const k of [0, 0.5, 1]) {
+        for (const raked of [false, true]) {
+          const l = lightAt(k, raked, LIFT_NONE);
+          const r = g.r + l.r;
+          const gr = g.g + l.g;
+          const b = g.b + l.b;
+          expect(b, `${name} @${k}${raked ? ' raked' : ''}`).toBeGreaterThan(gr);
+          expect(r, `${name} @${k}${raked ? ' raked' : ''}`).toBeGreaterThan(gr);
+        }
+      }
+    }
+  });
+
+  it('warms toward the east, where the sun stands', () => {
+    expect(lightAt(1, false, LIFT_NONE).g).toBeGreaterThan(lightAt(0, false, LIFT_NONE).g);
+    expect(lightAt(1, false, LIFT_NONE).r).toBeGreaterThan(lightAt(0, false, LIFT_NONE).r);
+  });
+
+  it('lifts the road a step in gold and the pads in teal', () => {
+    const plain = lightAt(0.5, false, LIFT_NONE);
+    const road = lightAt(0.5, false, LIFT_GOLD);
+    const pad = lightAt(0.5, false, LIFT_PAD);
+    expect(road.r).toBeGreaterThan(plain.r);
+    expect(road.g).toBeGreaterThan(plain.g);
+    expect(pad.g).toBeGreaterThan(plain.g);
+    expect(pad.b).toBeGreaterThan(plain.b);
+    expect(pad.g - plain.g).toBeGreaterThan(pad.r - plain.r);
+  });
+
+  it('flags each pixel by its ground: road and gate gold, pads teal, the rest none', () => {
+    const tiles = ['#', 'o', 'C', '.'];
+    const lifts = sunLifts(W, H, 0, 0, origin, (c, r) =>
+      c >= 0 && r >= 0 && c < 4 && r < 1
+        ? tiles[c]!
+        : c >= 0 && r >= 0 && c < 10 && r < 10
+          ? '.'
+          : null,
+    );
+    expect(lifts[pixelAt(0.5, 0.5)]).toBe(LIFT_GOLD);
+    expect(lifts[pixelAt(1.5, 0.5)]).toBe(LIFT_PAD);
+    expect(lifts[pixelAt(2.5, 0.5)]).toBe(LIFT_GOLD);
+    expect(lifts[pixelAt(3.5, 0.5)]).toBe(LIFT_NONE);
+    expect(lifts[pixelAt(5.5, 5.5)]).toBe(LIFT_NONE);
   });
 });

@@ -46,6 +46,7 @@ import {
   medalViews,
   groupWalking,
   objectiveGroups,
+  objectiveProgress,
   objectiveViews,
   priceKey,
   priceOf,
@@ -446,6 +447,7 @@ export function bindHud(
       objectiveStatusById(sim.state, sim.map),
       saveInfo.heldObjectives,
       walking,
+      objectiveProgress(sim.map, sim.state.wreckage.cleared),
     );
   };
   const syncWalking = (): void => {
@@ -763,6 +765,8 @@ export function bindHud(
     // A3M2's Clean Exit folds a class away (T606): its towers leave the field like sold ones.
     host.bus.on('TowerRevoked', syncTowers),
     host.bus.on('ObjectiveProgress', syncObjectives),
+    // A counting objective's progress (the finale's Waymarks, a lantern relit; D156).
+    host.bus.on('WreckageCleared', syncObjectives),
     host.bus.on('SpareRunnersChanged', (e) => {
       if (e.on) spareUsed = true;
     }),

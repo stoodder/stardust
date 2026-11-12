@@ -11,8 +11,10 @@ import {
   STORY_CHOICE_LOCK_MS,
 } from '../../app/dialogue.ts';
 import {
+  choiceKeysHint,
   choicePressAccepted,
   isPressKey,
+  optionKey,
   nextRevealTap,
   pointerMoved,
   restartChoiceLock,
@@ -20,6 +22,7 @@ import {
   type PointerAt,
 } from './choiceLock.ts';
 import { useTypewriter, type Typewriter } from './LineText.tsx';
+import { Portrait } from './Portrait.tsx';
 import { plainText } from './text.ts';
 import { dialogue, type ChoiceView, type LineView, type SceneView } from './state.ts';
 
@@ -219,8 +222,22 @@ export function ChoiceList({ choices }: { choices: readonly ChoiceView[] }) {
   }, [choices]);
   const onKeyDown = (e: KeyboardEvent & { currentTarget: HTMLElement }): void => {
     moveChoiceFocus(e);
-    if (!lockedChoice || !isPressKey(e.code)) return;
-    // On the group itself, Enter and Space do nothing (no game key, no pause, no answer).
+    if (!lockedChoice) return;
+    // A number key answers its badge's option, as a fresh key-down past the lock (D156), and is
+    // never a game key here (no tower slot behind a story choice).
+    const n = optionKey(e.code);
+    if (n !== null && n < choices.length) {
+      e.preventDefault();
+      e.stopPropagation();
+      const at = performance.now();
+      if (choicePressAccepted({ until: end.current, downAt: at, now: at, repeat: e.repeat })) {
+        chooseOption(n);
+      }
+      return;
+    }
+    if (!isPressKey(e.code)) return;
+    // On the group itself, Enter and Space answer nothing (no game key, no pause, no answer). Past
+    // the lock, Enter there puts the focus on the first option, so the next Enter picks it.
     const onOption = e.target instanceof HTMLButtonElement;
     const now = performance.now();
     const fresh = choicePressAccepted({ until: end.current, downAt: now, now, repeat: e.repeat });
@@ -228,6 +245,9 @@ export function ChoiceList({ choices }: { choices: readonly ChoiceView[] }) {
       e.preventDefault();
       e.stopPropagation();
       if (e.code === 'Space') spaceRefused.current = true;
+      if (!onOption && fresh && e.code !== 'Space') {
+        e.currentTarget.querySelector<HTMLButtonElement>('button')?.focus();
+      }
       return;
     }
     down.current = { at: now, pointer: false, onReveal: false };
@@ -292,8 +312,20 @@ export function ChoiceList({ choices }: { choices: readonly ChoiceView[] }) {
             {i + 1}
           </span>
           <span class="grow">{c.text}</span>
+          {c.voices !== undefined && (
+            <span class="dlg-choice-voices" aria-hidden="true">
+              {c.voices.map((v) => (
+                <Portrait key={v.speaker} line={v} talking={false} still />
+              ))}
+            </span>
+          )}
         </button>
       ))}
+      {lockedChoice && (
+        <p class="dlg-choice-hint" aria-hidden="true" data-testid="choice-hint">
+          {choiceKeysHint(choices.length)}
+        </p>
+      )}
     </div>
   );
 }

@@ -1,8 +1,9 @@
 // T810, the campaign's close under Go, then a replay (story/campaign/finale.md § FIN; core-loop.md
 // § 6.8): the weakest choir into the finale (`after_a3m6_weakest`: the Quiet Wave cleared, C2 Sell,
 // the convoy, C4 Purge), its win by the results fixture with dialogue on: Dawn (unskippable), the
-// card, the memo, C5 ("We go."), the epilogue (the freighter, Pebble leading the song, the
-// lighthouse, Purge + Go's QUILL), the final image from orbit, then the Sector map. Then
+// card, the memo, C5 ("We go.", by its badge's 2 key; D156), the epilogue (the freighter, Pebble
+// leading the song, the lighthouse, Purge + Go's QUILL), the final image from orbit, then the
+// Sector map. Then
 // `after_fin_go` (C5 answered) wins it again: Dawn now skips with Esc, and Continue goes straight
 // to the star map, with no memo, no C5, and no epilogue. All of it under reduced motion.
 // Screenshots in <out>/screens/ending-go/.
@@ -29,7 +30,7 @@ test('the close under Go, then a replay that skips C5', async ({ page }) => {
   await page.waitForTimeout(800);
   await memo.getByRole('button', { name: 'Continue' }).click();
 
-  await answerC5(page, FLOW, 4, 'We go. We give it back.');
+  await answerC5(page, FLOW, 4, 'We go. We give it back.', 'digit');
   const cards = await watchEpilogueThrough(page, FLOW, 7, 'go');
   expect(cards[0]).toMatch(/^The last freighter lifted at first light/);
   const all = cards.join('\n');
