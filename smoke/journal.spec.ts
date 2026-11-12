@@ -18,19 +18,31 @@ async function baseOn(page: Page, save: string): Promise<void> {
   await expect(page.getByRole('heading', { name: 'Base' })).toBeVisible();
 }
 
-/** The Elder's entry in the Journal: picked from the list, both versions side by side. */
+/**
+ * The Elder's entry in the Journal: picked from the list, the original over the correction, each
+ * across the reader in at most 5 lines (T900).
+ */
 async function openElder(page: Page) {
   await page.getByRole('tab', { name: /^Journal/ }).click();
   const pane = page.getByRole('tabpanel');
   await pane.getByRole('button', { name: /^Elder/ }).click();
   const entry = pane.getByRole('article');
-  await expect(entry.locator('.sd-codex-side')).toBeVisible();
+  await expect(entry.locator('.sd-codex-pair')).toBeVisible();
   const versions = entry.locator('.sd-codex-version');
   await expect(versions).toHaveCount(2);
   await expect(versions.nth(0)).toContainText('Pest Field Guide');
   await expect(versions.nth(0)).toContainText('Slow, old, and in the way.');
   await expect(versions.nth(1)).toContainText('Field Journal');
   await expect(versions.nth(1)).toContainText('The vocalizations are linguistic.');
+  const lines = await versions.evaluateAll((els) =>
+    els.map((v) =>
+      [...v.querySelectorAll<HTMLElement>('.sd-codex-text')].reduce(
+        (n, p) => n + Math.round(p.offsetHeight / parseFloat(getComputedStyle(p).lineHeight)),
+        0,
+      ),
+    ),
+  );
+  for (const n of lines) expect(n).toBeLessThanOrEqual(5);
   return { pane, versions };
 }
 

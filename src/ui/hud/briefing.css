@@ -17,6 +17,12 @@
   gap: var(--space-m) 8px;
 }
 
+/* One voice carries the briefing (T900): its face is the whole portrait, 1:1 in its 50 px frame
+   (as the comms panel shows it), so a lone speaker keeps the portrait room two faces would share. */
+.hud-briefing .hud-briefing-lines.hud-briefing-lone {
+  grid-template-columns: 50px minmax(44px, max-content) 1fr;
+}
+
 .hud-briefing-run {
   display: grid;
   grid-column: 1 / -1;

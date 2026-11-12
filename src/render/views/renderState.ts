@@ -328,6 +328,8 @@ export interface RenderState {
     /** Scenery in `world` in the night now, and out of it (both 0 while no night shows). */
     readonly darkScenery: number;
     readonly litScenery: number;
+    /** Actors wearing Dawn's gold and cyan rims now (T901; DawnRimView; 0 before Dawn). */
+    readonly rims: number;
   };
   /** The Deep Bore's rig: its gauge frame, the head's state, the breakthrough (T831; null: none). */
   readonly bore: {

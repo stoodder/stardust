@@ -698,8 +698,21 @@ function publish(): void {
     instant: h.instant,
     typing: { from: h.typedFrom, done: h.typedOut },
     staging: h.staging,
+    speakers: sceneSpeakers(h.scene),
   };
   dialogue.scene.value = view;
+}
+
+/**
+ * How many speakers `scene`'s lines name, the narrator aside (`SceneView.speakers`), whether or not
+ * each line's condition holds: a briefing knows from its first line whether one voice carries it,
+ * so its faces never change size mid-briefing (T900).
+ */
+export function sceneSpeakers(scene: Pick<Scene, 'nodes'>): number {
+  const who = new Set<string>();
+  for (const n of scene.nodes)
+    if (n.kind === 'line' && n.speaker !== 'narrator') who.add(n.speaker);
+  return who.size;
 }
 
 /**

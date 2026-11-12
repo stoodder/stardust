@@ -242,3 +242,11 @@ export function fieldAlpha(elapsed: number, ticksLeft: number, reduced: boolean)
   if (!reduced && ticksLeft < FIELD_FADE_TICKS && blinkOff) return 0;
   return STEPPED_ALPHA[3];
 }
+
+/**
+ * StaleFx (T663; TransientFx `setClock`): a burst or ring is stale if more sim ticks than this ran
+ * between its making and the frame that first shows it. No played frame steps more (the host's
+ * MAX_STEPS_PER_FRAME, 4, at its top speed, 3×), so only a fast-forward (`__sd.fastForward`, no
+ * frames between) leaves one stale; it starts older by the time it missed and mostly burns out.
+ */
+export const FF_STALE_TICKS = 12;

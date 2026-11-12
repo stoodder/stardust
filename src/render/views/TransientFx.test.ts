@@ -1,7 +1,8 @@
 // TransientFx's per-tile cap on shell bursts (review R14): a choke under several Thumpers shows a
 // couple of blasts, not a wall of stacked fireballs.
 import { describe, expect, it } from 'vitest';
-import { BURSTS_PER_TILE } from '../vfx/fxTiming.ts';
+import { TICK_HZ } from '../../shared/time.ts';
+import { BURST_MS, BURSTS_PER_TILE, FF_STALE_TICKS } from '../vfx/fxTiming.ts';
 import { TransientFx } from './TransientFx.ts';
 import type { ViewContext } from './ViewContext.ts';
 
@@ -96,5 +97,47 @@ describe('one pop per unit (T803b)', () => {
     expect(fx.floatsUp).toBe(0);
     fx.floatText('+40', 'gold.4', 2, 2, 24);
     expect(fx.floatsUp).toBe(0);
+  });
+});
+
+describe('a fast-forward never replays its bursts all at once (T663)', () => {
+  it('ages a burst made ticks before its first frame, and leaves a played frame’s alone', () => {
+    const fx = make();
+    let tick = 0;
+    fx.setClock(() => tick);
+    // A fast-forward: forty ticks, a shell bursting on a different tile every tick, no frame.
+    for (let i = 0; i < 40; i++) {
+      tick++;
+      fx.shellBurst(i % 8, Math.floor(i / 8));
+    }
+    // The frame after: only the bursts of the fast-forward's last BURST_MS are still under way (on
+    // their own clocks); the rest burnt out in the time it skipped.
+    fx.step(16);
+    expect(fx.burstsLive).toBeLessThanOrEqual(Math.ceil((BURST_MS * TICK_HZ) / 1000) + 1);
+    expect(fx.burstsLive).toBeGreaterThan(0);
+    // A burst on a played frame (made a tick ago) plays whole, at every speed's step.
+    const fresh = make();
+    let t = 100;
+    fresh.setClock(() => t);
+    fresh.shellBurst(2, 2);
+    t += FF_STALE_TICKS;
+    fresh.step(16);
+    expect(fresh.burstsLive).toBe(1);
+  });
+
+  it('lets a fresh burst through the per-tile cap past stale ones on its tile', () => {
+    const fx = make();
+    let tick = 0;
+    fx.setClock(() => tick);
+    for (let i = 0; i < BURSTS_PER_TILE.big; i++) fx.shellBurst(3.5, 3.5);
+    tick += FF_STALE_TICKS + 1;
+    expect(fx.shellBurst(3.5, 3.5)).toBe(true);
+  });
+
+  it('never ages anything without a clock', () => {
+    const fx = make();
+    fx.shellBurst(1, 1);
+    fx.step(16);
+    expect(fx.burstsLive).toBe(1);
   });
 });

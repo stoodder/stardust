@@ -8,7 +8,7 @@
 // warm-up waves), the HUD's Next line naming the block, 3x speed offered, and the
 // run's end on the score screen with the seed's record. Screenshots in <out>/screens/post-game/
 // (look at every one: the plate's calm, the chart's dawn, the one column clear of the west nodes).
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 import { nextFrames, shot, waitForReady } from './hooks.ts';
 
@@ -17,6 +17,50 @@ const FLOW = 'post-game';
 /** The post-game plate's row for `name`. */
 const row = (page: Page, name: RegExp) =>
   page.getByTestId('post-game').getByRole('button', { name });
+
+/** A menu notice's words (app/router.ts BATTLE_FAILED: a battle that couldn't start). */
+const NOTICE =
+  "That shift couldn't start: Records found a problem with this save. It's safe; export a code " +
+  'from Settings, and try another shift.';
+
+type Box = { x: number; y: number; width: number; height: number };
+/** Whether two boxes share no pixel (edges may meet). */
+const apart = (a: Box, b: Box): boolean =>
+  a.x >= b.x + b.width || b.x >= a.x + a.width || a.y >= b.y + b.height || b.y >= a.y + a.height;
+
+/** `el`'s box (it must be rendered). */
+async function box(el: Locator): Promise<Box> {
+  const b = await el.boundingBox();
+  expect(b).not.toBeNull();
+  return b ?? { x: 0, y: 0, width: 0, height: 0 };
+}
+
+/**
+ * The post-game column (T900): none of its boxes touches The Long Walk's node, and the column ends
+ * inside the 1280×720 screen; a menu notice, when one shows, overlaps neither the column nor the
+ * footer.
+ */
+async function columnClear(page: Page): Promise<void> {
+  const walk = await box(
+    page
+      .getByRole('list', { name: 'Shifts' })
+      .getByRole('button', { name: /^Shift \d+, The Long Walk, / }),
+  );
+  const boxes = await page.locator('[data-testid="post-game"] > .sd-pg-box').all();
+  const notice = page.locator('.sd-menu-notice:not([hidden])');
+  const shown = (await notice.count()) > 0 ? await box(notice) : null;
+  for (const el of boxes) {
+    // oxlint-disable-next-line no-await-in-loop -- one box at a time
+    const b = await box(el);
+    expect(apart(b, walk), "the column clears The Long Walk's node").toBe(true);
+    expect(b.y + b.height, 'the column ends inside the screen').toBeLessThanOrEqual(720);
+    if (shown !== null) expect(apart(b, shown), 'the notice clears the column').toBe(true);
+  }
+  if (shown !== null) {
+    expect(apart(shown, await box(page.locator('.sd-starmap-footer')))).toBe(true);
+    expect(shown.y + shown.height).toBeLessThanOrEqual(720);
+  }
+}
 
 test('post-game: the Title at dawn, the Sector map at dawn under Stay, the plate, the epilogue', async ({
   page,
@@ -59,6 +103,13 @@ test('post-game: the Title at dawn, the Sector map at dawn under Stay, the plate
   await expect(page.getByRole('heading', { name: "QUILL's sim deck" })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Start The Long Shift' })).toBeFocused();
   await expect(row(page, /^Endless: The Long Shift/)).toHaveAttribute('aria-pressed', 'true');
+  // The header after the finale (S3-5): the colony's new name, and the Technician by the name the
+  // Aelari gave, no Everglow badge.
+  await expect(page.locator('.sd-starmap-header .sd-kicker').first()).toHaveText(
+    'Wayside · Slot 1',
+  );
+  await expect(page.getByTestId('technician')).toHaveText(/^Waykeeper \S/);
+  await expect(page.getByTestId('technician')).not.toContainText('JPT-1');
   // Stay: the colony's label is Wayside, Everglow's old words struck above it.
   const gardens = page.locator('[data-region="gardens"]');
   await expect(gardens).toContainText('Wayside');
@@ -95,6 +146,15 @@ test('post-game: the Title at dawn, the Sector map at dawn under Stay, the plate
     });
     expect(hit, `${west}'s node is clear of the post-game column`).toBe(true);
   }
+  await columnClear(page);
+
+  // T900: a menu notice (a shift that couldn't start) stands over the footer, so the column never
+  // moves down onto The Long Walk's node.
+  await page.evaluate((t) => globalThis.__sd!.notice(t), NOTICE);
+  await expect(page.getByRole('alert')).toHaveText(NOTICE, { ignoreCase: true });
+  await columnClear(page);
+  await nextFrames(page);
+  await shot(page, FLOW, 10, 'notice');
 
   // A challenge: its panel under the heading, its tagline, threats and required counters in view,
   // its medals and what they pay one press away; Esc closes that, then returns to its row.
@@ -110,6 +170,14 @@ test('post-game: the Title at dawn, the Sector map at dawn under Stay, the plate
   await more.click();
   await expect(panel.getByRole('list', { name: 'Medals' })).toBeVisible();
   await expect(panel).toContainText('Medals here pay Intel.');
+  // With its medals open (and the notice up) the column still ends inside the screen (T803c): the
+  // plate under the panel gives way and scrolls its rows.
+  await columnClear(page);
+  await shot(page, FLOW, 11, 'challenge-medals-notice');
+  await page.evaluate(() => globalThis.__sd!.notice(null));
+  await expect(page.getByRole('alert')).toBeHidden();
+  await columnClear(page);
+  await shot(page, FLOW, 12, 'challenge-medals');
   await page.keyboard.press('Escape');
   await expect(panel.getByRole('list', { name: 'Medals' })).toBeHidden();
   await expect(more).toBeFocused();
@@ -144,6 +212,11 @@ test('post-game: Go leaves the colony unlit and keeps its old name', async ({ pa
   await expect(page.getByTestId('star-map')).toHaveAttribute('data-phase', 'dawn');
   const gardens = page.locator('[data-region="gardens"]');
   await expect(gardens).toHaveText('Everglow Gardens');
+  // The header: QUILL's sim deck, and the Waykeeper (S3-5).
+  await expect(page.locator('.sd-starmap-header .sd-kicker').first()).toHaveText(
+    "QUILL's sim deck · Dev save",
+  );
+  await expect(page.getByTestId('technician')).toHaveText(/^Waykeeper \S/);
   await nextFrames(page);
   await shot(page, FLOW, 6, 'go');
 });

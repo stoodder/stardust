@@ -172,7 +172,8 @@ export function Briefing({ view }: { view: SceneView }) {
   const objectives = hud.objectives.value;
   const step = useSceneStep(view);
   // Each run of one speaker's lines beside that speaker's face (the one being read, whole).
-  const runs = briefingRuns(view.transcript, view.line);
+  const runs = briefingRuns(view.transcript, view.line, view.speakers);
+  const lone = runs.some((r) => r.whole);
   const goals = medals.length + objectives.length > 0 && !veteranOpen.value;
   const clockIn = useFocusOn(view.ended, view.ended);
   const listUp = quillListUp(view.line, view.transcript.at(-1) ?? null);
@@ -190,7 +191,10 @@ export function Briefing({ view }: { view: SceneView }) {
           Shift briefing
         </h2>
         <div class="hud-briefing-comms">
-          <div class="hud-briefing-lines" data-testid="briefing-lines">
+          <div
+            class={lone ? 'hud-briefing-lines hud-briefing-lone' : 'hud-briefing-lines'}
+            data-testid="briefing-lines"
+          >
             {runs.map((run) => (
               <Run key={run.lines[0]?.id ?? 0} run={run} view={view} step={step} />
             ))}
@@ -269,7 +273,8 @@ export function Briefing({ view }: { view: SceneView }) {
 /**
  * A run of one speaker's lines beside their face, every face the same size (D156): a 44 px window
  * on the portrait, its mouth moving on the run being read while the line types, at rest on an
- * earlier run; Gerald's icon as it is; nothing for a caption. The plate stays on every line.
+ * earlier run; the whole portrait when one voice carries the briefing (T900); Gerald's icon as it
+ * is; nothing for a caption. The plate stays on every line.
  */
 function Run({ run, view, step }: { run: BriefingRun; view: SceneView; step: SceneStep }) {
   const face = run.face;
@@ -278,6 +283,12 @@ function Run({ run, view, step }: { run: BriefingRun; view: SceneView; step: Sce
       <span class="hud-briefing-face">
         {face === null ? null : face.portrait?.icon === true ? (
           <Portrait line={face} talking={false} still={!run.focus} />
+        ) : run.whole ? (
+          <Portrait
+            line={face}
+            talking={run.focus && view.line !== null && !step.typed.done}
+            still={!run.focus}
+          />
         ) : (
           // One size for every face (D156): the run being read talks in its window; an earlier
           // one rests.

@@ -435,12 +435,16 @@
   padding-top: 6px;
 }
 
-.sd-codex-side {
-  flex-direction: row;
+/* The Field Journal's pair (T900): the original over the corrected, each across the reader's
+   width (side by side, the Elder's ran 7 lines a column), the older version's words dimmed and
+   the correction's bright, a rule between them. */
+.sd-codex-pair .sd-codex-version + .sd-codex-version {
+  padding-top: 6px;
+  border-top: 1px solid var(--sd-ink-3);
 }
 
-.sd-codex-side .sd-codex-version {
-  flex: 1;
+.sd-codex .sd-codex-pair .sd-codex-version:not(:last-child) .sd-codex-text:not(.sd-codex-note) {
+  color: var(--sd-steel-3);
 }
 
 .sd-codex .sd-codex-version-label {

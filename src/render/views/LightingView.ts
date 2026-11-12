@@ -20,7 +20,10 @@
 // it ran (`state.lightingKey`, `state.lightingTick`) over the set's turn, from wherever the
 // schedule stood (stepped under reduced motion). A map whose script sets one draws even without a
 // schedule; its own env's sky stays void until the set's fades in. On a song map (the finale) the
-// set turns the sky only: Dawn's light on the world is SongNightView's additive sun (M8 R2).
+// set turns the sky only: Dawn's light on the world is SongNightView's additive sun (M8 R2), and
+// the set's sky wipes in from the east with it (M9, T901): not a crossfade but the same front as
+// the sun's on the ground (songNightPixels `sunKeys`, `sunStep`), carried on up the sky, so the
+// whole morning sky rises behind it, step for step, while the night's sky holds west of it.
 import * as Phaser from 'phaser';
 import { LIGHTING_SETS, lightingSetProgress, lightingSetsOf } from '../../content/lightingSets.ts';
 import { ENV_PALETTE_IDS } from '../../content/palettes/env.ts';
@@ -41,6 +44,7 @@ import {
 } from '../vfx/lighting.ts';
 import type { LightingLook } from './renderState.ts';
 import { isLongNight } from '../vfx/nightGlow.ts';
+import { sunFront, sunKeys, sunStep } from '../vfx/songNightPixels.ts';
 import { isScenery } from './scenery.ts';
 import type { ViewContext } from './ViewContext.ts';
 
@@ -71,6 +75,24 @@ interface ViewLightingKey {
 /** A lighting set's stop: past every wave, so the schedule never reaches it on its own. */
 const SET_WAVE = Number.POSITIVE_INFINITY;
 
+/**
+ * A song map's Dawn sky wiping in from the east (M9): the set's sky drawn east of the sun's front
+ * only, into a canvas the set's sky image shows, redrawn as the front steps.
+ */
+interface SkyWipe {
+  /** The set's stop index in the sky's stops. */
+  readonly stop: number;
+  readonly key: string;
+  readonly tex: Phaser.Textures.CanvasTexture;
+  readonly data: ImageData;
+  readonly px: Uint32Array;
+  /** The set's whole sky (RGBA words), and each pixel's place in the sun's sweep. */
+  readonly src: Uint32Array;
+  readonly keys: Float32Array;
+  /** The step drawn (−1: none yet). */
+  step: number;
+}
+
 export class LightingView {
   /** The sky's stops: the map's env, every key, then each lighting set the script turns to. */
   readonly #stops: readonly LightStop[];
@@ -98,6 +120,8 @@ export class LightingView {
   /** The grade's color now (white: none). */
   #color = WHITE;
   #night: NightTint | null = null;
+  /** A song map's Dawn sky wipe (null: the set crossfades, or there is none). */
+  #wipe: SkyWipe | null = null;
 
   constructor(
     ctx: ViewContext,
@@ -107,6 +131,8 @@ export class LightingView {
       readonly events?: readonly { readonly actions: readonly object[] }[];
       /** The finale's song (MapDef.song): its night and Dawn's light are SongNightView's. */
       readonly song?: unknown;
+      /** The grid's width (the sun's sweep runs over it: the Dawn sky's wipe). */
+      readonly cols?: number;
     },
     reducedMotion: () => boolean,
   ) {
@@ -147,6 +173,30 @@ export class LightingView {
       img.setOrigin(0, 0).setVisible(false);
       layers.backdrop.add(img);
       this.#skies.push(img);
+    }
+    // A song map's Dawn sky wipes in behind the sun (its first set: the finale has one, Dawn).
+    const first = this.#stops.length - sets.length;
+    const last = this.#skies[first];
+    const setStop = this.#stops[first];
+    if (song && sets.length > 0 && map.cols !== undefined && last !== undefined && setStop) {
+      const key = `${skyKey(setStop)}.wipe`;
+      if (scene.textures.exists(key)) scene.textures.remove(key);
+      const tex = scene.textures.createCanvas(key, w, h);
+      if (tex !== null) {
+        const data = tex.getContext().createImageData(w, h);
+        const whole = skyImage(setStop.env, w, h, moons);
+        this.#wipe = {
+          stop: first,
+          key,
+          tex,
+          data,
+          px: new Uint32Array(data.data.buffer),
+          src: new Uint32Array(whole.data.buffer),
+          keys: sunKeys(w, h, -OVERHANG_PX, -OVERHANG_PX, ctx.origin, map.cols),
+          step: -1,
+        };
+        last.setTexture(key);
+      }
     }
     this.#grade = new Phaser.GameObjects.Rectangle(
       scene,
@@ -193,6 +243,9 @@ export class LightingView {
     const reduced = this.#reducedMotion();
     let pos = lightAt(this.#stops, wave, started, tick, reduced);
     let world = lightAt(this.#worldStops, wave, started, tick, reduced);
+    /** The sky drawn (the schedule's, under a wipe) and the wipe's step (−1: none). */
+    let drawn = pos;
+    let wipe = -1;
     const set = lightingKey === null ? -1 : this.#sets.indexOf(lightingKey);
     if (set >= 0) {
       const t = reduced ? 1 : lightingSetProgress(lightingKey, lightingTick, tick);
@@ -200,14 +253,16 @@ export class LightingView {
       const worldAt = this.#worldStops.length - this.#sets.length + set;
       pos += (skyAt - pos) * t;
       world += (worldAt - world) * t;
-    }
+      if (this.#wipe?.stop === skyAt) wipe = sunStep(t);
+      else drawn = pos;
+    } else drawn = pos;
     if (pos === this.#shown && world === this.#shownWorld) return;
     this.#shown = pos;
     this.#shownWorld = world;
-    this.#draw(pos, world);
+    this.#draw(drawn, world, wipe);
   }
 
-  #draw(pos: number, world: number): void {
+  #draw(pos: number, world: number, wipe = -1): void {
     const grade = this.#grade;
     if (grade === null) return;
     const mix = lightMix(this.#stops, pos, this.#mix);
@@ -224,6 +279,27 @@ export class LightingView {
       else if (own && k === mix.stop + 1) img.setVisible(mix.t > 0).setAlpha(mix.t);
       else img.setVisible(false);
     }
+    this.#drawWipe(wipe);
+  }
+
+  /** The Dawn sky east of the sun's front at `step` (of SUN_STEPS; ≤ 0 or −1: not shown). */
+  #drawWipe(step: number): void {
+    const w = this.#wipe;
+    if (w === null) return;
+    const img = this.#skies[w.stop];
+    if (step <= 0) {
+      img?.setVisible(false);
+      return;
+    }
+    if (step !== w.step) {
+      w.step = step;
+      const front = sunFront(step);
+      const { px, src, keys } = w;
+      for (let i = 0; i < px.length; i++) px[i] = keys[i]! >= front ? src[i]! : 0; // i < length
+      w.tex.getContext().putImageData(w.data, 0, 0);
+      w.tex.refresh();
+    }
+    img?.setVisible(true).setAlpha(1);
   }
 
   /** The scenery standing on the ground takes the grade (a multiply tint), and the night's say. */
@@ -301,6 +377,7 @@ export class LightingView {
   reset(): void {
     this.#shown = Number.NaN;
     this.#shownWorld = Number.NaN;
+    if (this.#wipe !== null) this.#wipe.step = -1;
   }
 }
 

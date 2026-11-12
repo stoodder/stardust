@@ -30,6 +30,7 @@ import {
   readMs,
   REPLY_BEAT_MS,
   sceneMode,
+  sceneSpeakers,
   setDialogueEnabled,
   skipScene,
   withSceneEffects,
@@ -93,6 +94,19 @@ describe('dialogue helpers', () => {
     expect(sceneMode({ ...hi, pause: true })).toBe('panel');
     // A base topic is always a panel over the base (T513), choice or not.
     expect(sceneMode(defineScene('a2_m04_base_handover', [{ kind: 'end' }]))).toBe('panel');
+  });
+
+  it("counts a scene's speakers, the narrator aside (a lone briefing voice's whole portrait; T900)", () => {
+    const byId = (id: string): Scene => SCENES[id]!;
+    expect(sceneSpeakers(byId('a1_m03_brief'))).toBe(1); // QUILL alone
+    expect(sceneSpeakers(byId('a2_m03_brief'))).toBe(1); // Bricks alone
+    expect(sceneSpeakers(byId('a1_m01_brief'))).toBe(2); // QUILL and Bricks
+    const said = defineScene('a1_m01_brief', [
+      { kind: 'line', speaker: 'kip', text: 'Hi.' },
+      { kind: 'line', speaker: 'narrator', text: '(A pause.)' },
+      { kind: 'line', speaker: 'kip', text: 'Bye.' },
+    ]);
+    expect(sceneSpeakers(said)).toBe(1);
   });
 
   it('queues only the first leak and a tagged sale (never lost); every other bark drops', () => {

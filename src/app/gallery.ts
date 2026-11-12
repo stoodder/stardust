@@ -10,7 +10,8 @@
 // night (vfx/darknessPixels.ts, vfx/glowPixels.ts) so the trail shows the night as play draws it.
 // Then the M6 corners (review R10, app/galleryM6.ts): A3M1's Preserve and A3M3's Gap at the SEAL;
 // and the M7 corners (T740c, app/galleryM7.ts): A3M4's Shelters, A3M5's Second Harvest at night,
-// A3M6's Dome Row at night. The act3 diorama and the Act III corners hang the two moons in their sky
+// A3M6's Dome Row at night; and the M8 corner (T901, app/galleryM8.ts): the Deep Halls' mouth at
+// Dawn. The act3 diorama and the Act III corners hang the two moons in their sky
 // (app/galleryKit.ts).
 import { ENV_PALETTE_IDS } from '../content/palettes/env.ts';
 import { PALETTES } from '../content/palettes/index.ts';
@@ -65,6 +66,7 @@ import { GHOST_REST_ALPHA } from '../render/views/LightGhostView.ts';
 import { backdrop, cssOf, el, FLY_LIFT_PX, glowOf, isTileChar, type Placed } from './galleryKit.ts';
 import { m6Corner, M6_CORNERS } from './galleryM6.ts';
 import { m7Corner, M7_CORNERS } from './galleryM7.ts';
+import { m8Corner, M8_CORNER_LABEL } from './galleryM8.ts';
 import { logError } from './log.ts';
 
 function hasOpaque(img: RgbaImage): boolean {
@@ -1237,6 +1239,12 @@ function render(root: HTMLElement): void {
   for (const [scene, label] of M7_CORNERS) {
     const box = el('div', 'frame');
     box.append(m7Corner(byId, scene, 2), el('span', undefined, label));
+    pack.add(box);
+  }
+  // The M8 corner (T901): the Deep Halls' mouth at Dawn, the finale's end.
+  {
+    const box = el('div', 'frame');
+    box.append(m8Corner(byId, 2), el('span', undefined, M8_CORNER_LABEL));
     pack.add(box);
   }
 

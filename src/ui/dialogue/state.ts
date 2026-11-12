@@ -98,6 +98,12 @@ export interface SceneView {
   readonly typing: { readonly from: number; readonly done: boolean };
   /** A full-screen scene's staging (staging.ts, D097 R3), or null for a plain scene. */
   readonly staging: StagingView | null;
+  /**
+   * How many speakers the scene's lines name, the narrator aside (app/dialogue.ts
+   * `sceneSpeakers`): a briefing with one gives that speaker the whole portrait (T900). Absent:
+   * not counted (the briefing's faces are chips).
+   */
+  readonly speakers?: number;
 }
 
 /** A staged scene's clock: its kind, when its timeline started, and how long it leads the lines. */

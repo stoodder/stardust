@@ -1,6 +1,7 @@
 // The briefing's view logic (T803e; DOM-free, so it's unit-tested): its lines grouped into runs of
-// one speaker, each run beside its own speaker's face (the run on screen beside the whole portrait,
-// earlier runs beside a face chip), and the words on its two "more" toggles.
+// one speaker, each run beside its own speaker's face (every face one size: a chip, a window on the
+// portrait; a briefing one voice carries, the whole portrait; T900), and the words on its two
+// "more" toggles.
 import type { LineView } from '../dialogue/state.ts';
 
 /** One speaker's lines in a row, beside one face. */
@@ -11,8 +12,13 @@ export interface BriefingRun {
    * else its first. Null for a caption (the narrator has no face).
    */
   readonly face: LineView | null;
-  /** The run being read (the last): its face is the whole portrait, the others a chip. */
+  /** The run being read (the last): its face talks, the others rest. */
   readonly focus: boolean;
+  /**
+   * Its face is the whole portrait (1:1, framed as the comms panel's), not a chip: the briefing's
+   * one speaker (T900: a lone voice keeps the portrait room two would share). False with no face.
+   */
+  readonly whole: boolean;
 }
 
 /** Whether two lines belong in one run: the same speaker, plate, and neither a caption. */
@@ -25,10 +31,13 @@ function sameRun(a: LineView, b: LineView): boolean {
 /**
  * The briefing's lines (those said, then the one on screen, if any) as runs of one speaker, in
  * order, so every line sits beside its own speaker's face (on A1M1, QUILL's beside QUILL's).
+ * `speakers`: how many the whole scene names (`SceneView.speakers`); with one, every face is the
+ * whole portrait.
  */
 export function briefingRuns(
   transcript: readonly LineView[],
   current: LineView | null,
+  speakers?: number,
 ): BriefingRun[] {
   const all = current === null ? transcript : [...transcript, current];
   const groups: LineView[][] = [];
@@ -42,7 +51,7 @@ export function briefingRuns(
     const focus = i === groups.length - 1;
     const pick = focus ? lines.at(-1) : lines[0];
     const face = pick === undefined || pick.portrait === null ? null : pick;
-    return { lines, face, focus };
+    return { lines, face, focus, whole: face !== null && speakers === 1 };
   });
 }
 

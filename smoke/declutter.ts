@@ -51,6 +51,7 @@ export const SCREENS = {
   'title-saves': 'c',
   'title-load': 'c',
   'title-postgame': 'c',
+  'title-resume': 'c',
   import: 'c',
   intake: 'c',
   'shift-board': 'c',

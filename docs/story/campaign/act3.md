@@ -2,7 +2,7 @@
 
 The six Act III maps, A3M1–A3M6, during the Long Night. The campaign overview, introduction schedule, flag ledger, and pacing check are in [../campaign.md](../campaign.md); the entry format is described at the top of [act1.md](act1.md).
 
-**Act III presentation from A3M1:** the counter is hidden (results show the map's meter line), no stars, no wave-clear jingle, no Tidybots, Skitterkin are never enemies, Evie billboards `dark` with the hum-glyph, loading tips "Remember.", the codex is the *Field Journal* (original and corrected side by side), and the Bounty Board is gone without comment. Exclamation points belong to Sterling and Pebble only. After A3M3, Bricks's radio and bark slots play authored silence.
+**Act III presentation from A3M1:** the counter is hidden (results show the map's meter line), no stars, no wave-clear jingle, no Tidybots, Skitterkin are never enemies, Evie billboards `dark` with the hum-glyph, loading tips "Remember.", the codex is the *Field Journal* (the original and the corrected version together, the original above, dimmed), and the Bounty Board is gone without comment. Exclamation points belong to Sterling and Pebble only. After A3M3, Bricks's radio and bark slots play authored silence.
 
 **Act III Stardust is given, not harvested.** From A3M1 the warrens give the player sung stones, warm gold, and the results screen shows them that way ([progression.md §2](../../design/progression.md#2-earning-stardust)). The first gift is framed once, in A3M1's debrief; after that it is simply how Stardust arrives.
 

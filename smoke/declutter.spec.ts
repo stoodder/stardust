@@ -5,7 +5,7 @@
 import type { Page } from '@playwright/test';
 import type { ResultsFixture } from '../src/app/testHookTypes.ts';
 import { expect, test } from './fixtures.ts';
-import { nextFrames, shot } from './hooks.ts';
+import { nextFrames, playShift, shot } from './hooks.ts';
 import {
   attr,
   baseTab,
@@ -251,6 +251,46 @@ test('declutter c: the post-game Title', async ({ page }) => {
   await capture(page, 'title-postgame');
 });
 
+test('declutter c: the Title with the Long Walk to resume (T900)', async ({ page }) => {
+  test.setTimeout(150_000);
+  // The finale's save into a real slot by its code (a dev save plays in memory, and only a slot
+  // keeps the walk's pending run), then the finale played to its first persisted checkpoint.
+  await boot(page, '&save=after_a3m6_keep');
+  await page.evaluate(() => globalThis.__sd!.goto('settings'));
+  await page.getByRole('button', { name: 'Export code' }).click();
+  const code = await page.getByRole('textbox', { name: 'Shift code' }).inputValue();
+  await page.evaluate(() => globalThis.__sd!.goto('title'));
+  await page.getByRole('button', { name: 'Import code' }).click();
+  await page.getByRole('textbox', { name: 'Paste a shift code' }).fill(code);
+  await page.getByRole('button', { name: 'Check code' }).click();
+  await page
+    .getByRole('list', { name: 'Import into' })
+    .getByRole('listitem')
+    .first()
+    .getByRole('button', { name: 'Import here' })
+    .click();
+  await playShift(page, 'Clearing the Way');
+  await page.getByRole('button', { name: /lock in/i }).click();
+  await clockIn(page);
+  const pending = await page.evaluate(() => {
+    const sd = globalThis.__sd!;
+    sd.setSpeed(0);
+    sd.autoplay('par');
+    sd.fastForward(0);
+    const st = sd.state()!;
+    for (let k = 0; k < 400 && sd.save()?.pendingRun === undefined; k++) {
+      if (st.outcome !== 'playing') break;
+      sd.fastForward(300);
+    }
+    return sd.save()?.pendingRun !== undefined;
+  });
+  expect(pending).toBe(true);
+  // The tab closes mid-walk; the Title offers the walk back first.
+  await boot(page, '');
+  await expect(page.getByTestId('title-resume')).toBeFocused();
+  await capture(page, 'title-resume');
+});
+
 test('declutter c: Intake and the Shift board', async ({ page }) => {
   await boot(page, '&intake=1');
   await page.getByRole('button', { name: 'Start shift' }).click();
@@ -437,7 +477,7 @@ test('declutter e: Inbox and Journal', async ({ page }) => {
   await capture(page, 'inbox');
   const journal = await baseTab(page, /^Journal/);
   await journal.getByRole('button', { name: /^Elder/ }).click();
-  await expect(journal.getByRole('article').locator('.sd-codex-side')).toBeVisible();
+  await expect(journal.getByRole('article').locator('.sd-codex-pair')).toBeVisible();
   await capture(page, 'journal');
 });
 

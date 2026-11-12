@@ -1,6 +1,7 @@
 // The codex (T303, T411; design/core-loop.md § 6.5): the base's *Pest Field Guide* pane. Unlocked
 // entries, grouped by kind, in a list beside the open entry: its picture (the subject's icon, or a
-// prop or portrait), its title, and the version it shows (from A3M1, original beside corrected). A
+// prop or portrait), its title, and the version it shows (from A3M1, original over corrected, each
+// across the reader's width so neither runs long; T900). A
 // note (annotated, margin) shows the original it annotates, dimmed, with the bracketed notes under
 // it, oldest first, each behind its rule (the record and what was written on it; Ves'thara's margin
 // note under QUILL's, behind a sapphire rule, T501e). Opening an entry reads it, which clears its
@@ -89,9 +90,11 @@ function Version({ id, v, label }: { id: string; v: CodexVersionView; label: boo
 
 function Entry({ entry, title }: { entry: CodexEntryView; title: string }) {
   const section = CODEX_SECTIONS.find((s) => s.kind === entry.kind)?.label ?? '';
-  const sideBySide = entry.versions.length > 1;
-  // A single note version says so in the kicker (side by side, each version is labelled).
-  const annotated = !sideBySide && (entry.versions[0]?.record ?? null) !== null;
+  // The Field Journal's pair (T900): the original over the corrected, each labelled, the older
+  // dimmed (art-direction's annotation look: old words dimmed, new words bright).
+  const paired = entry.versions.length > 1;
+  // A single note version says so in the kicker (in a pair, each version is labelled).
+  const annotated = !paired && (entry.versions[0]?.record ?? null) !== null;
   return (
     <article class="sd-codex-entry" data-voice="journal" aria-labelledby="sd-codex-title">
       <header class="sd-codex-head">
@@ -119,9 +122,9 @@ function Entry({ entry, title }: { entry: CodexEntryView; title: string }) {
           </h2>
         </div>
       </header>
-      <div class={sideBySide ? 'sd-codex-versions sd-codex-side' : 'sd-codex-versions'}>
+      <div class={paired ? 'sd-codex-versions sd-codex-pair' : 'sd-codex-versions'}>
         {entry.versions.map((v) => (
-          <Version key={v.version} id={entry.id} v={v} label={sideBySide} />
+          <Version key={v.version} id={entry.id} v={v} label={paired} />
         ))}
       </div>
     </article>

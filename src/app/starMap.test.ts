@@ -5,14 +5,19 @@ import { CAMPAIGN_PLAN } from '../content/campaign.ts';
 import { DEV_SAVES } from '../meta/__fixtures__/devSaves.ts';
 import { campaign, type CampaignView } from '../ui/screens/state.ts';
 import { MemoryStore } from '../meta/index.ts';
-import { initSaves, loadDevSave } from './save.ts';
+import { activeSave, initSaves, loadDevSave } from './save.ts';
+import { POST_GAME_PLATE } from '../content/postGame.ts';
 import {
   campaignScreenName,
+  headerKicker,
   phaseFor,
+  SIM_DECK_KICKER,
   showsStateLine,
   starKicker,
   starMapView,
   STAR_MAP_SEEN_ID,
+  technicianLine,
+  WAYSIDE_LABEL,
 } from './starMap.ts';
 
 /** A campaign view to vary (any save's). */
@@ -263,5 +268,33 @@ describe('campaignScreenName', () => {
     expect(campaignScreenName()).toBe('Sector map');
     campaign.value = { ...campaignView(), mode: 'shiftBoard' };
     expect(campaignScreenName()).toBe('Shift board');
+  });
+});
+
+describe("the Sector map's header (S3-5, T900)", () => {
+  it("reads Everglow's in the campaign, and the ending's after the finale", () => {
+    const campaignMap = { postGame: false, ending: null } as const;
+    expect(headerKicker(campaignMap)).toBe('Everglow · Perimeter Ops');
+    expect(technicianLine(campaignMap, 'Ada')).toBe('JPT-1 Ada · #ED-447');
+    // Stay: the colony is Wayside now; Go: the post-game is QUILL's sim deck (the plate's heading).
+    expect(headerKicker({ postGame: true, ending: 'stay' })).toBe(WAYSIDE_LABEL);
+    expect(headerKicker({ postGame: true, ending: 'go' })).toBe(SIM_DECK_KICKER);
+    expect(SIM_DECK_KICKER).toBe(POST_GAME_PLATE.heading);
+    // Either way, the name the Aelari gave, and no Everglow badge.
+    expect(technicianLine({ postGame: true }, 'Ada')).toBe('Waykeeper Ada');
+  });
+
+  it('heads the post-game dev saves by their ending', () => {
+    for (const [id, kicker] of [
+      ['after_fin_stay', 'Wayside'],
+      ['after_fin_go', "QUILL's sim deck"],
+    ] as const) {
+      initSaves(new MemoryStore());
+      loadDevSave(id);
+      const save = activeSave();
+      expect(save).not.toBeNull();
+      if (save === null) continue;
+      expect(headerKicker(starMapView(save))).toBe(kicker);
+    }
   });
 });

@@ -190,12 +190,16 @@ test("finale units: the Unsung's forms by phase, its surfacing, laid to rest in 
   expect(up.throwsSeen).toBe(1);
   expect(up.thrown === 0 || up.thrownPx > 0).toBe(true);
   await shot(page, 'finale-units', 7, 'surfaced-among-the-singers');
-  await page.waitForTimeout(600); // past THROW_MS: landed
-  await nextFrames(page);
-  expect(await page.evaluate(() => globalThis.__sd!.render()!.unsung)).toMatchObject({
-    thrown: 0,
-    thrownPx: 0,
-  });
+  // Landed once THROW_MS has passed on the render clock (polled: wall time under load runs ahead of
+  // the frames that move it).
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const u = globalThis.__sd!.render()!.unsung;
+        return { thrown: u.thrown, thrownPx: u.thrownPx };
+      }),
+    )
+    .toEqual({ thrown: 0, thrownPx: 0 });
 
   await edge(page, 'unsung', 0.25);
   expect(await phasesUntil(page, 'song')).toBe(true);

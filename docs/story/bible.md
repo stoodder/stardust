@@ -250,7 +250,7 @@ Then **C5** and the epilogue (§10).
 - **Tidybots.** Cute cleanup drones that vacuum up remains with a cheerful chime (I). Seen unloading at Second Harvest (A2M4). Gone in Act III, when bodies stay on the path for a moment.
 - **Lettuce.** Never eaten. "Very crunchy water," Pebble decides, if she ever tries it (the Stay epilogue). The punchline of two of QUILL's jokes.
 - **Loading tips.** "Remember: a clean perimeter is a happy perimeter!" (I), then "Remember: a clean perimeter." (II), then "Remember." (III), then "Remember them." (post-game).
-- **The codex.** The *Pest Field Guide* is written by Everglow PR: smug, funny, redacted (I). QUILL unredacts it and Ves'thara writes in the margins (II). Original and corrected entries sit side by side, and the guide is retitled *Field Journal* (III).
+- **The codex.** The *Pest Field Guide* is written by Everglow PR: smug, funny, redacted (I). QUILL unredacts it and Ves'thara writes in the margins (II). The original and the corrected version sit together, the original above, dimmed, and the guide is retitled *Field Journal* (III).
 - **Warm gold and cold violet.** Remembered and forgotten (§3).
 
 ### Joke-to-tragedy ledger

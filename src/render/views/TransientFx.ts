@@ -25,9 +25,13 @@
 //   reach in a green ring, and green drops flung up (none under reduced motion).
 // - A dim box (`setDim`; M8 R1): floaters, bursts, debris and motes inside it draw at its alpha
 //   (UnsungView sets it round the held Unsung, so its silhouette stays whole at its climax).
+// - Fast-forwarded (StaleFx, T663): a burst or ring the frame first shows more than FF_STALE_TICKS
+//   after it was made (`setClock`: the sim's tick) starts that much older, so the bursts a
+//   fast-forward queued burn out instead of replaying all at once.
 // FxView adds the abilities' effects on top (the Orbital Strike, Suppressing Fire).
 import type * as Phaser from 'phaser';
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
+import { TICK_HZ } from '../../shared/time.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
 import {
   BOMBLET_BURST_MS,
@@ -35,6 +39,7 @@ import {
   BURST_MS,
   BURSTS_PER_TILE,
   fadeAlpha,
+  FF_STALE_TICKS,
   floatRise,
   lobVelocity,
   FLOAT_MS,
@@ -113,6 +118,8 @@ interface Tracer {
 interface Pulse {
   active: boolean;
   ms: number;
+  /** The sim tick it was made on, until its first frame (−1 after: StaleFx). */
+  born: number;
   durationMs: number;
   radiusTiles: number;
   grow: boolean;
@@ -176,6 +183,8 @@ interface Burst {
   /** The tile it bursts on (the per-tile cap's; −1 for one placed by screen offset). */
   col: number;
   row: number;
+  /** The sim tick it was made on, until its first frame (−1 after: StaleFx). */
+  born: number;
   sprite: Phaser.GameObjects.Sprite;
 }
 
@@ -304,6 +313,8 @@ export class TransientFx {
   #shakeSmall = false;
   /** Shell bursts skipped by the per-tile cap since the view was made (the smoke flow's check). */
   burstsCapped = 0;
+  /** The sim's tick now (StaleFx; none set: 0, so nothing is ever stale). */
+  #clock: () => number = () => 0;
 
   constructor(ctx: ViewContext, reducedMotion: () => boolean) {
     this.ctx = ctx;
@@ -326,6 +337,7 @@ export class TransientFx {
       this.#pulses.push({
         active: false,
         ms: 0,
+        born: -1,
         durationMs: PULSE_MS,
         radiusTiles: 0,
         grow: true,
@@ -369,7 +381,7 @@ export class TransientFx {
       sprite.setTexture(boomFrame.texture, boomFrame.frame).setDisplayOrigin(boom.x, boom.y);
       sprite.setVisible(false);
       layers.vfx.add(sprite);
-      this.#bursts.push({ active: false, ms: 0, small: false, col: -1, row: -1, sprite });
+      this.#bursts.push({ active: false, ms: 0, small: false, col: -1, row: -1, born: -1, sprite });
     }
     const moteAnchor = sprites.meta(MOTE_SPRITE).anchor;
     const moteFrame = sprites.frame(MOTE_SPRITE, 'm0');
@@ -437,6 +449,13 @@ export class TransientFx {
       layers.vfx.add(img);
       this.#splats.push({ active: false, ms: 0, durationMs: SPLAT_MS, img });
     }
+  }
+
+  /** Bursts under way (waiting on a delay, or playing): the stale-effects test's count. */
+  get burstsLive(): number {
+    let n = 0;
+    for (const b of this.#bursts) if (b.active) n++;
+    return n;
   }
 
   /** Debris pixels in flight (the render-state hook's count). */
@@ -672,6 +691,7 @@ export class TransientFx {
     p.color = color;
     p.shownRadius = 0;
     p.ms = 0;
+    p.born = this.#clock();
     p.active = true;
     this.#syncPulse(p);
   }
@@ -898,6 +918,7 @@ export class TransientFx {
     b.sprite.setPosition(pos.x, pos.y + 4 - liftPx);
     b.sprite.stop().setVisible(false);
     b.ms = -delayMs;
+    b.born = this.#clock();
     b.active = true;
   }
 
@@ -911,7 +932,9 @@ export class TransientFx {
     let n = 0;
     for (let i = 0; i < this.#bursts.length; i++) {
       const b = this.#bursts[i]!; // i < length
-      if (b.active && b.small === small && b.col === col && b.row === row) n++;
+      // A burst a fast-forward left behind (StaleFx) burns out on the next frame: it doesn't count.
+      if (b.active && b.small === small && b.col === col && b.row === row && !this.#stale(b.born))
+        n++;
     }
     if (n >= BURSTS_PER_TILE[small ? 'small' : 'big']) {
       this.burstsCapped++;
@@ -919,6 +942,25 @@ export class TransientFx {
     }
     this.burst(x, y, 0, small, liftPx);
     return true;
+  }
+
+  /**
+   * The sim's clock (StaleFx, T663): a burst or ring made more than FF_STALE_TICKS before the frame
+   * that first shows it was made inside a fast-forward (`__sd.fastForward`, no frames between), so
+   * it starts that much older, and a stack of them never replays all at once at 1×.
+   */
+  setClock(tick: () => number): void {
+    this.#clock = tick;
+  }
+
+  /** ms a pooled effect made on tick `born` missed in a fast-forward (0: none, or shown already). */
+  #skipped(born: number): number {
+    return this.#stale(born) ? ((this.#clock() - born) * 1000) / TICK_HZ : 0;
+  }
+
+  /** Whether an effect made on tick `born` and not shown yet was left behind by a fast-forward. */
+  #stale(born: number): boolean {
+    return born >= 0 && this.#clock() - born > FF_STALE_TICKS;
   }
 
   /** Advances every pooled effect by a frame of `dt` ms (FxView's update, before the abilities). */
@@ -938,7 +980,8 @@ export class TransientFx {
     for (let i = 0; i < this.#pulses.length; i++) {
       const p = this.#pulses[i]!; // i < length
       if (!p.active) continue;
-      p.ms += dt;
+      p.ms += dt + this.#skipped(p.born);
+      p.born = -1;
       if (p.ms >= p.durationMs) {
         p.active = false;
         p.img.setVisible(false);
@@ -995,17 +1038,20 @@ export class TransientFx {
     for (let i = 0; i < this.#bursts.length; i++) {
       const b = this.#bursts[i]!; // i < length
       if (!b.active) continue;
-      b.ms += dt;
+      b.ms += dt + this.#skipped(b.born);
+      b.born = -1;
       // Starts once its delay is up (a burst with no delay starts on its first frame: −0 < 0 is
       // false, so the time alone can't say it hasn't started).
       const look = BURST_LOOKS[b.small ? 'small' : 'big'];
-      if (!b.sprite.visible && b.ms >= 0) {
-        b.sprite.setVisible(true).play(this.ctx.sprites.anim(look.id, 'burst'));
-      }
       if (b.ms >= look.ms) {
         b.active = false;
         b.sprite.stop().setVisible(false);
-      } else if (b.ms >= 0) {
+        continue;
+      }
+      if (!b.sprite.visible && b.ms >= 0) {
+        b.sprite.setVisible(true).play(this.ctx.sprites.anim(look.id, 'burst'));
+      }
+      if (b.ms >= 0) {
         // Its smoke thins by alpha over the last frame.
         b.sprite.setAlpha(
           burstAlpha(b.ms, look.ms, look.frames) * this.dimAt(b.sprite.x, b.sprite.y),

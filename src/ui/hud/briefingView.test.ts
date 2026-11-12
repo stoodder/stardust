@@ -67,6 +67,18 @@ describe('briefingRuns', () => {
     expect(runs.at(-1)!.face).toBe(bramble);
   });
 
+  it('gives a briefing one voice carries the whole portrait, from its first line (T900)', () => {
+    // A1M3: QUILL alone. The count is the whole scene's, so the face is whole before line two.
+    const q1 = line('quill');
+    expect(briefingRuns([], q1, 1).map((r) => r.whole)).toEqual([true]);
+    const cap = line('narrator');
+    const q2 = line('quill');
+    expect(briefingRuns([q1, cap], q2, 1).map((r) => r.whole)).toEqual([true, false, true]);
+    // Two voices (or a count not given): every face is a chip, from the first line on.
+    expect(briefingRuns([], q1, 2).map((r) => r.whole)).toEqual([false]);
+    expect(briefingRuns([q1], line('bricks')).map((r) => r.whole)).toEqual([false, false]);
+  });
+
   it('is empty with nothing said yet', () => {
     expect(briefingRuns([], null)).toEqual([]);
   });

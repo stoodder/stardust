@@ -141,6 +141,7 @@ import { SongView } from '../views/SongView.ts'; // T805
 import { UnsungView } from '../views/UnsungView.ts'; // T808
 import { DarknessView } from '../views/DarknessView.ts';
 import { SongNightView } from '../views/SongNightView.ts'; // T831
+import { DawnRimView } from '../views/DawnRimView.ts'; // T901
 import { BoreView } from '../views/BoreView.ts'; // T831
 import { MemorialView } from '../views/MemorialView.ts'; // T831
 import { WorldGlowView } from '../views/WorldGlowView.ts';
@@ -278,6 +279,7 @@ export class BattleScene extends Phaser.Scene {
   /** Sundown's darkness overlay, from the sim's `state.dark` and light sources (T505). */
   #darkness!: DarknessView;
   #songNight!: SongNightView; // T831: the finale's night, the song's light, Dawn
+  #dawnRims!: DawnRimView; // M9 (T901): Dawn's gold and cyan rims on the actors
   #bore!: BoreView; // T831: the Deep Bore's rig at work
   #memorial!: MemorialView; // T831: the memorial wreck's name
   /** The world's glow: lamps, windows, vats, seams, pools of lamplight, the Prism's crystal (T530b). */
@@ -477,6 +479,7 @@ export class BattleScene extends Phaser.Scene {
     this.#placement = new PlacementView(ctx, this.#elevationOf);
     this.#links = new LinkView(ctx, prefersReducedMotion);
     this.#fx = new FxView(ctx, prefersReducedMotion);
+    this.#fx.setClock(() => this.#deps.sim.state.tick); // T663: fast-forwarded bursts burn out
     this.#fx.setKeepClear(this.#keepClear);
     this.#sacks = new SackBurstView(ctx);
     this.#chains = new ChainFx(ctx);
@@ -498,6 +501,7 @@ export class BattleScene extends Phaser.Scene {
       map.env,
       prefersReducedMotion,
     ); // T831
+    this.#dawnRims = new DawnRimView(ctx, map.cols); // T901
     this.#glow = new WorldGlowView(
       ctx,
       this.#darkness,
@@ -762,6 +766,7 @@ export class BattleScene extends Phaser.Scene {
       this.#lighting.reset();
       this.#darkness.reset();
       this.#songNight.reset(); // T831
+      this.#dawnRims.reset(); // T901
       this.#bore.reset(); // T831
       this.#memorial.reset(); // T831
       this.#glow.reset();
@@ -898,6 +903,8 @@ export class BattleScene extends Phaser.Scene {
     this.#clickables.update(dt, state.clickable);
     this.#core.update(state.integrity, state.towerAtTile);
     this.#syncTeach();
+    // Last: every actor has its frame and place for this frame (T901).
+    this.#dawnRims.update(this.#songNight.sunStep);
   }
 
   /**
@@ -1083,7 +1090,7 @@ export class BattleScene extends Phaser.Scene {
       },
       debris: this.#fx.debrisLive,
       bossBar: this.bossBarFill,
-      songNight: this.#songNight.look(), // T831
+      songNight: { ...this.#songNight.look(), rims: this.#dawnRims.rimmed }, // T831; T901
       bore: this.#bore.look(), // T831
       memorial: { tile: this.#memorial.tile, shown: this.#memorial.shown }, // T831
       song: {
