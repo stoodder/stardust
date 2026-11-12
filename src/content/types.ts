@@ -14,6 +14,7 @@ import type { BooleanFlagId, FLAGS, FlagValueOf } from './dialogue/flags.ts';
 import type { ENEMIES } from './enemies/index.ts';
 import type { LINKS } from './links/index.ts';
 import type { MAPS } from './maps/index.ts';
+import type { CHALLENGE_MAPS } from './maps/challenge.ts';
 import type { AuraKind } from './rules.ts';
 import type { SpriteId as RegisteredSpriteId } from './sprites/index.ts';
 import type { EnvPaletteId } from './sprites/types.ts';
@@ -28,7 +29,13 @@ export type TowerId = Extract<keyof typeof TOWERS, string>;
 export type EnemyId = Extract<keyof typeof ENEMIES, string>;
 /** Commander abilities (Technician and companion), not enemy abilities. */
 export type AbilityId = Extract<keyof typeof ABILITIES, string>;
-export type MapId = Extract<keyof typeof MAPS, string>;
+export type MapId = Extract<keyof typeof MAPS | LazyMapKey, string>;
+/**
+ * The maps a lazy act chunk registers (content/registry.ts `registerActMaps`; architecture.md § 5,
+ * *Lazy chunks*): absent from `RAW_CONTENT.maps` until their chunk loads. One `keyof typeof` per
+ * registry, imported as a type only so nothing of theirs reaches the initial JS.
+ */
+type LazyMapKey = keyof typeof CHALLENGE_MAPS;
 
 /** The ids one set of registries defines. Cross-kind references are typed through this. */
 export interface IdSpace {

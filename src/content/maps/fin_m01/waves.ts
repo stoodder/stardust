@@ -237,7 +237,7 @@ export const SCRIPT_GROUPS = {
 } as const;
 
 /** Phase 2's build phase between add waves: with ≤ 8 s of spawning, a wave every ~20 s. */
-export const PHASE_2_COUNTDOWN = 12;
+export const PHASE_2_COUNTDOWN = 11;
 /**
  * W20's: the add waves wait while the Unsung rises, so Directive 0 (Keep, 20 s in) folds a class
  * and "Who's there?" restores it between add waves (T821: it stings, it doesn't decide the run).
@@ -297,7 +297,7 @@ export const PHASE_2_WAVES: readonly WaveDef[] = [
   // W26 · the last of the Halls
   {
     ...P2,
-    groups: [motes(8, 'halls', 0, 0.6), fractures(2, 'halls', 6, 3), maws(1, 'rift_ne', 5)],
+    groups: [motes(8, 'halls', 0, 0.6), fractures(1, 'halls', 6), maws(1, 'rift_ne', 5)],
   },
 ];
 

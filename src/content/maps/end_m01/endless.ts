@@ -17,7 +17,18 @@
 //   a boss waits for the fight to end.
 // This file is data only: content never imports the sim (architecture.md § 4), so the type lives
 // here and the generator imports it.
-import type { CounterId, EnemyId } from '../../types.ts';
+import type { AbilityId, CounterId, EnemyId, MapId, TowerId } from '../../types.ts';
+
+/**
+ * The id space of content with Endless's map in it (the live content plus `ENDLESS_MAPS`, as the
+ * finale chunk registers it).
+ */
+export interface EndlessIds {
+  readonly tower: TowerId;
+  readonly enemy: EnemyId;
+  readonly ability: AbilityId;
+  readonly map: MapId | 'end_m01';
+}
 
 /** The rules of an Endless map's generator (one map today: END_M01). */
 export interface EndlessDef {

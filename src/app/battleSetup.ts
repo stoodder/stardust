@@ -8,7 +8,7 @@
 import { compileContent } from '../content/compile.ts';
 import { compileContentUnchecked } from '../content/compileCore.ts';
 import type { CompiledContent, CompiledMapDef } from '../content/compiled.ts';
-import { RAW_CONTENT } from '../content/registry.ts';
+import { contentVersion, RAW_CONTENT } from '../content/registry.ts';
 import { MAX_LOADOUT } from '../content/rules.ts';
 import type { IdSpace, RawContent } from '../content/types.ts';
 import { technicianClashes, technicianOffBeside } from '../content/technician.ts';
@@ -51,17 +51,32 @@ interface ContentSet {
   readonly compile: () => CompiledContent<IdSpace>;
 }
 
-function lazy<K extends IdSpace>(raw: RawContent<K>): ContentSet & { readonly raw: RawContent<K> } {
+function lazy<K extends IdSpace>(
+  raw: RawContent<K>,
+  version: () => number = () => 0,
+): ContentSet & { readonly raw: RawContent<K> } {
   let compiled: CompiledContent<IdSpace> | null = null;
+  let compiledAt = -1;
   // Vite folds `import.meta.env.DEV` to false in a production build, so validate() isn't bundled;
   // plain Node (the smoke specs' imports) has no `import.meta.env` and validates.
   // oxlint-disable-next-line typescript/no-unnecessary-condition -- undefined outside Vite
   const dev = import.meta.env === undefined || import.meta.env.DEV;
   const compile = dev ? compileContent : compileContentUnchecked;
-  return { raw, compile: () => (compiled ??= compile(raw)) };
+  // A lazy chunk's maps (content/registry.ts `registerActMaps`) bump the version: the next compile
+  // takes them in. A battle already running keeps the content it was built with.
+  return {
+    raw,
+    compile: () => {
+      if (compiled === null || compiledAt !== version()) {
+        compiledAt = version();
+        compiled = compile(raw);
+      }
+      return compiled;
+    },
+  };
 }
 
-const LIVE_SET = lazy(RAW_CONTENT);
+const LIVE_SET = lazy(RAW_CONTENT, contentVersion);
 let devSet: (ContentSet & { readonly raw: RawContent<IdSpace> }) | null = null;
 
 /**

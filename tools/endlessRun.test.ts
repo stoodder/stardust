@@ -7,14 +7,21 @@ import { describe, expect, it } from 'vitest';
 import { HARNESS_TEST_TIMEOUT_MS, RUN_BUDGET_MS } from '../src/balance/rules.ts';
 import { referenceRunProfile, runConfig } from '../src/balance/profile.ts';
 import { compileContent } from '../src/content/compile.ts';
-import { ENDLESS } from '../src/content/maps/end_m01/endless.ts';
+import { ENDLESS, type EndlessIds } from '../src/content/maps/end_m01/endless.ts';
+import { ENDLESS_MAPS } from '../src/content/maps/end_m01/index.ts';
 import { RAW_CONTENT } from '../src/content/registry.ts';
+import type { RawContent } from '../src/content/types.ts';
 import type { SimConfig } from '../src/sim/config.ts';
 import { endlessContent } from '../src/sim/endless.ts';
 import { runHeadless, type HeadlessResult } from '../src/sim/index.ts';
 import { cpuClockMs } from './simClock.ts';
 
-const base = compileContent(RAW_CONTENT);
+/** The live content with Endless's map (as the finale chunk registers it). */
+const RAW: RawContent<EndlessIds> = {
+  ...RAW_CONTENT,
+  maps: { ...RAW_CONTENT.maps, ...ENDLESS_MAPS },
+};
+const base = compileContent(RAW);
 
 /** Waves held: every wave resolved. */
 const held = (r: HeadlessResult): number => r.waves.filter((w) => w.clearedTick >= 0).length;

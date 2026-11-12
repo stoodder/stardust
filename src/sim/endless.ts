@@ -35,7 +35,7 @@ import type {
   CompiledWave,
   CompiledWaveGroup,
 } from '../content/compiled.ts';
-import type { EndlessDef } from '../content/maps/end_m01/endless.ts';
+import type { EndlessDef, EndlessIds } from '../content/maps/end_m01/endless.ts';
 import {
   COUNTER_ANSWERS,
   COUNTER_CATEGORIES,
@@ -196,8 +196,8 @@ export function endlessBudgets(def: EndlessDef, n: number): number[] {
 /** What `endlessPlan` reads of the content. */
 interface Ctx {
   readonly def: EndlessDef;
-  readonly enemies: CompiledContent['enemies'];
-  readonly map: CompiledMapDef;
+  readonly enemies: CompiledContent<EndlessIds>['enemies'];
+  readonly map: CompiledMapDef<EndlessIds>;
   readonly roster: readonly CompiledEnemyDef<EnemyId>[];
   readonly threat: ReadonlyMap<string, number>;
   readonly cats: ReadonlyMap<string, ReadonlySet<CounterId>>;
@@ -206,7 +206,7 @@ interface Ctx {
 /** The problems with `def` against `content` (empty: none). `endlessPlan` throws on any. */
 export function endlessDefErrors(
   def: EndlessDef,
-  content: Pick<CompiledContent, 'enemies' | 'maps'>,
+  content: Pick<CompiledContent<EndlessIds>, 'enemies' | 'maps'>,
 ): string[] {
   const out: string[] = [];
   const map = Object.hasOwn(content.maps, def.map) ? content.maps[def.map] : undefined;
@@ -261,7 +261,11 @@ export function endlessDefErrors(
 }
 
 /** The routes a unit can walk on wave `w`: flyers the air lanes, ground Hollow also open rifts. */
-function routesFor(map: CompiledMapDef, e: CompiledEnemyDef, w: number): CompiledRoute[] {
+function routesFor(
+  map: CompiledMapDef<EndlessIds>,
+  e: CompiledEnemyDef,
+  w: number,
+): CompiledRoute[] {
   const out: CompiledRoute[] = [];
   for (const r of map.routeList) {
     if (e.layer === 'air' ? r.kind !== 'air' : r.kind === 'air') continue;
@@ -575,7 +579,7 @@ function planWave(
 }
 
 /** The compiled groups of a planned wave: spawn intervals fitted to the window, starts staggered. */
-function compileDrafts(ctx: Ctx, drafts: readonly Draft[]): CompiledWaveGroup[] {
+function compileDrafts(ctx: Ctx, drafts: readonly Draft[]): CompiledWaveGroup<EndlessIds>[] {
   const window = secToTicks(ctx.def.spawnWindowSec);
   const minInterval = secToTicks(ctx.def.minIntervalSec);
   const stagger = secToTicks(ctx.def.groupStaggerSec);
@@ -599,9 +603,9 @@ function compileDrafts(ctx: Ctx, drafts: readonly Draft[]): CompiledWaveGroup[] 
 /** A seed's whole run on `def.map`: its blocks and every wave (the warm-up as authored). */
 export function endlessPlan(
   def: EndlessDef,
-  content: CompiledContent,
+  content: CompiledContent<EndlessIds>,
   seed: number,
-): EndlessPlan & { readonly compiled: readonly CompiledWave[] } {
+): EndlessPlan & { readonly compiled: readonly CompiledWave<EndlessIds>[] } {
   const errors = endlessDefErrors(def, content);
   if (errors.length > 0) throw new RangeError(`invalid EndlessDef:\n- ${errors.join('\n- ')}`);
   const enemies = content.enemies;
@@ -625,7 +629,7 @@ export function endlessPlan(
   const budgets = endlessBudgets(def, def.waves);
   const countdownTicks = secToTicks(DEFAULT_COUNTDOWN_SEC[map.act]);
   const waves: EndlessWave[] = [];
-  const compiled: CompiledWave[] = [];
+  const compiled: CompiledWave<EndlessIds>[] = [];
   let floor = 0;
   for (let w = 1; w <= def.waves; w++) {
     const b = Math.floor((w - 1) / def.blockWaves);
@@ -710,13 +714,13 @@ export function endlessIntel(
  */
 export function endlessContent(
   def: EndlessDef,
-  content: CompiledContent,
+  content: CompiledContent<EndlessIds>,
   seed: number,
-): { readonly content: CompiledContent; readonly plan: EndlessPlan } {
+): { readonly content: CompiledContent<EndlessIds>; readonly plan: EndlessPlan } {
   const { compiled, ...plan } = endlessPlan(def, content, seed);
   const id = def.map;
   const map = content.maps[id];
-  const run: CompiledMapDef = {
+  const run: CompiledMapDef<EndlessIds> = {
     ...map,
     waves: compiled,
     threatIntel: endlessIntel(plan, content.enemies),

@@ -5,7 +5,8 @@
 // on their waves along the road, and every group walks a route it may.
 import { describe, expect, it } from 'vitest';
 import { compileContent } from '../content/compile.ts';
-import { ENDLESS, type EndlessDef } from '../content/maps/end_m01/endless.ts';
+import { ENDLESS, type EndlessDef, type EndlessIds } from '../content/maps/end_m01/endless.ts';
+import { ENDLESS_MAPS } from '../content/maps/end_m01/index.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
 import {
   MAX_REQUIRED_COUNTERS,
@@ -13,7 +14,7 @@ import {
   COUNTER_CATEGORIES,
 } from '../content/rules.ts';
 import type { CompiledEnemyDef, CompiledRoute } from '../content/compiled.ts';
-import type { CounterId } from '../content/types.ts';
+import type { CounterId, RawContent } from '../content/types.ts';
 import { threatOf } from '../content/validateThreats.ts';
 import { ENEMIES } from '../content/enemies/index.ts';
 import {
@@ -34,7 +35,12 @@ import {
 } from './endless.ts';
 import { createSim } from './sim.ts';
 
-const content = compileContent(RAW_CONTENT);
+/** The live content with Endless's map (as the finale chunk registers it). */
+const RAW: RawContent<EndlessIds> = {
+  ...RAW_CONTENT,
+  maps: { ...RAW_CONTENT.maps, ...ENDLESS_MAPS },
+};
+const content = compileContent(RAW);
 const map = content.maps.end_m01;
 /** The seeds the invariants run over. */
 const SEEDS = Array.from({ length: 40 }, (_, i) => i + 1).concat([0, 4_294_967_295, 123_456_789]);
@@ -49,6 +55,24 @@ const route = (id: string): CompiledRoute => ROUTE.get(id)!;
 const cats = (id: string): Set<CounterId> => categoriesOf(enemy(id));
 const within = (a: ReadonlySet<CounterId>, b: readonly CounterId[]): boolean =>
   [...a].every((c) => b.includes(c));
+
+describe('END_M01 · The Open Perimeter', () => {
+  it('is A1M1 revisited at dawn: a Defend map with ten pads of its own around the old ten', () => {
+    expect(map).toMatchObject({ act: 'endless', env: 'finale', objective: 'defend' });
+    expect(map.revisitOf).toBe('a1_m01');
+    expect(content.campaign).not.toContain('end_m01');
+    const buildable = map.tiles.filter((t) => t === 'o' || t === '^' || t === '+').length;
+    expect(buildable).toBe(20);
+    expect(map.routeList.map((r) => `${r.id}:${r.kind}`).toSorted()).toEqual([
+      'rift_e:rift',
+      'rift_w:rift',
+      'road:path',
+      'sky_e:air',
+      'sky_w:air',
+    ]);
+    expect(map.tiles[11 * map.cols + 8]).toBe('C'); // A1M1's gate, the core again
+  });
+});
 
 describe('the rules', () => {
   it('are valid against the content', () => {
@@ -225,8 +249,7 @@ describe.each(SEEDS)('seed %i', (seed) => {
       }
       for (const c of block.counters) {
         const demands = w.groups.some((g) => g.role !== 'spice' && cats(g.enemy).has(c));
-        const bossBrings =
-          w.boss !== null && bossCategories(enemy(w.boss), content.enemies).has(c);
+        const bossBrings = w.boss !== null && bossCategories(enemy(w.boss), content.enemies).has(c);
         expect(demands || bossBrings).toBe(true);
       }
       expect(w.spiceThreat).toBeLessThanOrEqual(SOFT_THREAT_MAX_SHARE * w.threat + 1e-9);

@@ -15,6 +15,8 @@ import type { MapDialogue, StoryAct } from '../dialogue/types.ts';
 import { mapAct } from '../dialogue/rules.ts';
 import { registerMemos } from '../memos/index.ts';
 import type { MemoDef } from '../memos/types.ts';
+import { registerActMaps } from '../registry.ts';
+import type { MapDef } from '../types.ts';
 
 /** The story's acts, in campaign order. */
 export const STORY_ACTS = [1, 2, 3, 'finale'] as const satisfies readonly StoryAct[];
@@ -57,6 +59,11 @@ export interface ActStory {
   readonly memos: readonly MemoDef[];
   /** The epilogue's cards (the finale's only: dialogue/epilogue.ts `registerEpilogueCards`). */
   readonly epilogue?: readonly EpilogueCardDef[];
+  /**
+   * Maps that load with this act (the finale's: the post-game maps; registry.ts `registerActMaps`,
+   * T862). A map here is never in the static registry (maps/index.ts).
+   */
+  readonly maps?: Readonly<Record<string, MapDef>>;
 }
 
 /** Adds `story`'s parts to the registries (again: replaces them, so it's idempotent). */
@@ -66,4 +73,5 @@ export function registerActStory(story: ActStory): void {
   registerCodex(rank, story.codex, story.codexVersions);
   registerMemos(rank, story.memos);
   if (story.epilogue !== undefined) registerEpilogueCards(story.epilogue);
+  if (story.maps !== undefined) registerActMaps(story.maps);
 }
