@@ -27,7 +27,7 @@ import { rgbOf } from '../../content/palettes/master.ts';
 import { compileContent } from '../../content/compile.ts';
 import { LIGHTING_SETS, lightingSetsOf } from '../../content/lightingSets.ts';
 import { RAW_CONTENT } from '../../content/registry.ts';
-import { darkTarget } from '../../sim/darkness.ts';
+import { hasDarkness } from '../../sim/index.ts';
 import {
   gradeAt,
   gradeOf,
@@ -157,12 +157,14 @@ describe("the finale's light: Act III's bands under its grade, its sky warming a
       });
     }
 
-    it(`${map.id}: its sky-only keys carry no darkness, and the sim's darkness skips them`, () => {
-      const sky = map.lighting.filter((k) => k.skyOnly === true);
-      for (const k of sky) expect(k.dark ?? 0, `wave ${k.wave}`).toBe(0);
-      const without = map.lighting.filter((k) => k.skyOnly !== true);
-      for (let w = 0; w <= waves + 2; w++) {
-        expect(darkTarget(map.lighting, w), `wave ${w}`).toBe(darkTarget(without, w));
+    it(`${map.id}: its sky-only keys carry no darkness, so the sim's darkness never falls`, () => {
+      for (const key of map.lighting.filter((k) => k.skyOnly === true)) {
+        expect(key.dark ?? 0, `wave ${key.wave}`).toBe(0);
+      }
+      // Sundown's darkness skips sky-only keys (sim/darkness.ts `darkTarget`, its tests); with no
+      // other key carrying any, the map has none.
+      if (map.lighting.every((k) => k.skyOnly === true || (k.dark ?? 0) === 0)) {
+        expect(hasDarkness(map)).toBe(false);
       }
     });
 

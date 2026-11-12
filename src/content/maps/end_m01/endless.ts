@@ -9,7 +9,7 @@
 //   and no block repeats the one before. The block's units carry only its categories (or none);
 //   other units are spice, at most the soft share of a wave (rules.ts SOFT_THREAT_MAX_SHARE), and
 //   the spice of a block's last two waves tells the next block's new category.
-// - **Bosses:** every `bossEvery`-th wave sends a boss from `bosses` (the first boss is always the
+// - **Bosses:** wave `firstBossWave`, then every `bossEvery`-th wave, sends a boss from `bosses` (the first boss is always the
 //   first listed; after it, a seeded rotation through them all), and its block requires what the
 //   boss and its brood demand. The wave after a boss waits for the fight to end.
 // This file is data only: content never imports the sim (architecture.md § 4), so the type lives
@@ -38,7 +38,9 @@ export interface EndlessDef {
    * list to the campaign's).
    */
   readonly roster: readonly EnemyId[];
-  /** A boss every this many waves (its wave closes a block). */
+  /** The first boss wave (it closes a block). */
+  readonly firstBossWave: number;
+  /** A boss every this many waves after it. */
   readonly bossEvery: number;
   /** The bosses, the first one the run's first; each must walk any map (no markers, no story). */
   readonly bosses: readonly EnemyId[];
@@ -97,6 +99,7 @@ export const ENDLESS: EndlessDef = {
     'blackbudget',
     'auditor',
   ],
+  firstBossWave: 20,
   bossEvery: 10,
   // Chitterbloom first (the colony's oldest pest, back at Dome Row), then the Glass Witch and the
   // Gathering Maw with it in a seeded rotation. Not "Shareholder Value" (its jettison needs the

@@ -81,12 +81,18 @@ const companion = (wave: number, afterSec: number, target: GridPos): BuildStep =
 const byWave = (steps: readonly BuildStep[]): BuildStep[] =>
   steps.toSorted((a, b) => a.wave - b.wave);
 
-/** System Reboot (slot 1) a little into each wave that sends a jammer (the reboot alt). */
-const REBOOTS: readonly BuildStep[] = [4, 7, 12, 14, 17, 18].map((wave) => ({
-  wave,
-  ability: 1,
-  when: { afterSec: 12 },
-}));
+/**
+ * The alts' air at the gate (every air lane ends there): two Skyhooks either side of the colony's
+ * lane, the first in W3 (the first Rift Moths), the second before W14's gunships.
+ */
+const GATE_SKYHOOKS: readonly BuildStep[] = [
+  { wave: 3, build: 'skyhook', tile: GATE_E },
+  { wave: 5, upgrade: GATE_E },
+  { wave: 8, upgrade: GATE_E },
+  { wave: 12, build: 'skyhook', tile: GATE_W },
+  { wave: 13, upgrade: GATE_W },
+  { wave: 15, upgrade: GATE_W },
+];
 
 /** Par's Phase 1 (finale.md § FIN, Par build). */
 function parSteps(): BuildStep[] {
@@ -144,23 +150,6 @@ export const builds = defineBuilds({
   // The finale's no-counter builds must lose in Phase 1 (finale.md § FIN): by W17, the harness's
   // ⌊⅔ × 26⌋ once Phase 2's waves land (T821).
   noCounterLoseByWave: 17,
-  // Voices % moves with the choir's size by flag (16–28 singers) while hushes count singers, so the
-  // cells spread ~12 points: the band widens to 40–70 to hold them all (D154 addendum, T820). The
-  // reference cell (the convoy's) stays inside 40–60 and ≤ A3M6 + 5 (balance/finM01.test.ts).
-  marginBand: { minPct: 40, maxPct: 70 },
-  // Pending T821's whole-map pass (D154 addendum, T820): both alts lose in Phase 1 (the column is
-  // too exposed in W12–W16 for anything without Psionic ×1.5), and the warren's 28 singers read
-  // 75% where the convoy's 16 read 50% for the same losses (the margin in singers should match by
-  // cell). Pinned out of shipping by tools/pendingChecks.test.ts.
-  pendingChecks: {
-    task: 'T821',
-    reason:
-      'the alts and the warren cell wait for the whole-map pass (column exposure, per-cell floor)',
-    subjects: ['alt:cluster', 'alt:reboot', 'flag:door_choice=warren'],
-    // #18, the song's timing per C4: refused until T821 lifts HARNESS_GATES.songTiming (the map
-    // carries its song for the Laid to Rest medal).
-    checks: ['18'],
-  },
   flagVariants: {
     door_choice: ['convoy', 'warren'],
     spared_quiet_wave: [true, false],
@@ -192,94 +181,18 @@ export const builds = defineBuilds({
     },
   },
   altBuilds: {
-    // Mindspike (Echo Spike, then Dread on the ledge), Thumper (Cluster), Skyhook, Stasis Bloom
-    // (D154 addendum, T820: finale.md's alt with a Mindspike for the Hum Choir: the Hollow-heavy
-    // Descent needs one void answer): the Thumpers' shells and the echoes carry the swarms, the
-    // Skyhooks the air, the Blooms' Stasis the jammers' tells.
+    // Mindspike (Echo Spike on the road, Dread at the Halls), Hum Choir, Skyhook, Thumper (T821;
+    // finale.md § FIN, Alt builds): par's placements with the Skyhooks on the ridge and at the gate
+    // for the air, and Thumpers where par digs its Dens (no burrow answer but Dread's tell).
     cluster: {
-      loadout: ['mindspike', 'thumper', 'skyhook', 'bloom'],
-      steps: [
-        ...RELIGHT,
-        { wave: 1, build: 'mindspike', tile: BEND },
-        { wave: 1, build: 'mindspike', tile: SEAM_W },
-        { wave: 1, build: 'thumper', tile: INNER },
-        { wave: 1, build: 'thumper', tile: EAST_BEND },
-        { wave: 2, upgrade: BEND },
-        { wave: 2, upgrade: SEAM_W },
-        { wave: 3, build: 'skyhook', tile: RIDGE },
-        { wave: 4, upgrade: INNER },
-        { wave: 4, build: 'mindspike', tile: MID_N },
-        { wave: 5, upgrade: BEND },
-        { wave: 6, upgrade: SEAM_W },
-        { wave: 6, build: 'skyhook', tile: RIDGE_W },
-        { wave: 7, upgrade: MID_N },
-        { wave: 8, upgrade: RIDGE },
-        { wave: 8, upgrade: RIDGE_W },
-        { wave: 9, specialize: BEND, spec: 'a' },
-        { wave: 10, build: 'thumper', tile: BEND_E },
-        { wave: 10, upgrade: MID_N },
-        { wave: 11, upgrade: RIDGE },
-        { wave: 11, upgrade: RIDGE_W },
-        { wave: 12, specialize: SEAM_W, spec: 'a' },
-        { wave: 12, build: 'bloom', tile: MID_S },
-        { wave: 13, build: 'mindspike', tile: LEDGE_E },
-        { wave: 13, upgrade: LEDGE_E },
-        { wave: 14, upgrade: LEDGE_E },
-        { wave: 14, build: 'skyhook', tile: HALLS_E },
-        { wave: 15, build: 'bloom', tile: CORNER },
-        { wave: 15, build: 'thumper', tile: LEDGE_W },
-        { wave: 16, upgrade: LEDGE_W },
-        { wave: 16, upgrade: LEDGE_W },
-        { wave: 17, specialize: LEDGE_E, spec: 'b' },
-        { wave: 18, upgrade: HALLS_E },
-        WHOS_THERE,
-      ],
+      loadout: ['mindspike', 'choir', 'skyhook', 'thumper'],
+      steps: byWave([...swapped({ sproing: 'skyhook', burrow: 'thumper' }), ...GATE_SKYHOOKS]),
     },
-    // Sproing, Scuttle Den, Gloop, Prism; System Reboot (slot 1) carries the jam (finale.md § FIN):
-    // the Sproings one-shot the Motes and bonk the air, the Prisms' beams burn the big units.
-    reboot: {
-      loadout: ['sproing', 'burrow', 'gloop', 'prism'],
-      technicianAbility: 'system_reboot',
-      steps: byWave([
-        ...RELIGHT,
-        { wave: 1, build: 'sproing', tile: MID_N },
-        { wave: 1, build: 'sproing', tile: SEAM_W },
-        { wave: 1, build: 'prism', tile: BEND },
-        { wave: 1, build: 'burrow', tile: INNER },
-        { wave: 2, build: 'sproing', tile: RIDGE },
-        { wave: 3, upgrade: MID_N },
-        { wave: 3, upgrade: SEAM_W },
-        ...REBOOTS,
-        { wave: 4, upgrade: BEND },
-        { wave: 5, build: 'gloop', tile: BEND_E },
-        { wave: 5, upgrade: RIDGE },
-        { wave: 6, upgrade: MID_N },
-        { wave: 6, upgrade: SEAM_W },
-        { wave: 7, upgrade: BEND },
-        { wave: 7, build: 'sproing', tile: RIDGE_W },
-        { wave: 8, build: 'prism', tile: MID_S },
-        { wave: 8, upgrade: RIDGE_W },
-        { wave: 9, upgrade: MID_S },
-        { wave: 9, upgrade: BEND_E },
-        { wave: 10, build: 'prism', tile: CORNER },
-        { wave: 10, upgrade: INNER },
-        { wave: 11, upgrade: CORNER },
-        { wave: 11, upgrade: MID_S },
-        { wave: 12, build: 'sproing', tile: LEDGE_E },
-        { wave: 12, upgrade: LEDGE_E },
-        { wave: 13, upgrade: CORNER },
-        { wave: 13, build: 'burrow', tile: HALLS_E },
-        { wave: 14, upgrade: LEDGE_E },
-        { wave: 14, build: 'prism', tile: LEDGE_W },
-        { wave: 15, upgrade: LEDGE_W },
-        { wave: 15, upgrade: HALLS_E },
-        { wave: 16, upgrade: LEDGE_W },
-        { wave: 16, build: 'gloop', tile: GAP_E },
-        { wave: 17, upgrade: HALLS_E },
-        { wave: 17, upgrade: BEND_E },
-        { wave: 18, upgrade: RIDGE },
-        WHOS_THERE,
-      ]),
+    // Mindspike, Hum Choir, Skyhook, Stasis Bloom: the same road, with Blooms holding the Silencers'
+    // and the Unsung's tells where par digs its Dens.
+    stasis: {
+      loadout: ['mindspike', 'choir', 'skyhook', 'bloom'],
+      steps: byWave([...swapped({ sproing: 'skyhook', burrow: 'bloom' }), ...GATE_SKYHOOKS]),
     },
   },
 });

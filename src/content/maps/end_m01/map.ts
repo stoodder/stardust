@@ -106,7 +106,7 @@ export const map = defineMapLayout({
   ],
   // A1M1's markers come with its layout (the Peeker rock (7,3), Bricks's old post by the gate
   // (9,10), empty now). No script, no story beat: the shift that never ends.
-  startCredits: 700,
+  startCredits: 900,
   coreIntegrity: 20,
   // Endless pays no first-clear Stardust: its reward is the score (waves held, one record per seed;
   // meta/endless.ts).

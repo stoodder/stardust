@@ -123,7 +123,7 @@ export function sunKeys(
         continue;
       }
       const u = (x + 0.5 + left - origin.x) / HALF_W;
-      keys[i] = sunKey((u + v) / 2, cols, BAYER4[(y % 4) * 4 + (x % 4)]!); // index < 16
+      keys[i] = sunKey((u + v) / 2, cols, BAYER4[(y % 4) * 4 + (x % 4)]);
     }
   }
   return keys;

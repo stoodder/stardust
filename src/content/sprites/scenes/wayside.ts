@@ -172,10 +172,28 @@ function paintWalker(g: CharGrid, cx: number, foot: number, size: number, note: 
       plot(g, x, y, ch);
     }
   }
-  if (size >= 4) {
-    plot(g, Math.round(cx), foot - size - 1, 'S');
-    if (size >= 7) plot(g, Math.round(cx) + 1, foot - size - 2, 'T');
-  }
+  if (size >= 6) {
+    // Fur tufts sticking up off the top of the head, the sun's side lit.
+    const top = foot - size - 1;
+    for (const [dx, ch] of [
+      [-Math.round(r / 2), 'U'],
+      [0, 'S'],
+      [Math.round(r / 2), 'T'],
+    ] as const) {
+      plot(g, Math.round(cx) + dx, top, ch);
+      plot(g, Math.round(cx) + dx + (dx > 0 ? 1 : dx < 0 ? -1 : 0), top - 1, ch);
+    }
+    // One big dark eye turned toward us over its shoulder, a white glint in it.
+    if (size >= 8) {
+      const ex = Math.round(cx + r * 0.4);
+      const ey = Math.round(foot - r * 1.3);
+      plot(g, ex, ey, 'G');
+      plot(g, ex + 1, ey, 'G');
+      plot(g, ex, ey + 1, 'G');
+      plot(g, ex + 1, ey + 1, 'F');
+      plot(g, ex, ey, 'N');
+    }
+  } else if (size >= 4) plot(g, Math.round(cx), foot - size - 1, 'S');
   if (size >= 6) {
     // Little feet, mid-step.
     plot(g, Math.round(cx - r / 2), foot + 1, 'U');
