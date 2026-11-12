@@ -136,7 +136,9 @@ test("A1, A6: the crate card is framed and carries Zibzab's word", async ({ page
   const card = page.getByTestId('crate-card');
   await expect(card).toBeVisible();
   await expect(card.getByTestId('crate-quote')).toHaveText('ZibzabPrice first: nothing.');
-  await expectFilled(page, card, await cssColor(card.locator('.cr-title'), 'color'));
+  // The lid's ZIBZAB stencil is the card's heading (T803e), in the title's orange.
+  await expect(card.getByRole('heading', { name: "Zibzab's crate" })).toBeVisible();
+  await expectFilled(page, card, await cssColor(card.locator('.cr-lid-brand'), 'color'));
   await shot(page, 'm7r1-app', 5, 'crate-card');
 });
 
