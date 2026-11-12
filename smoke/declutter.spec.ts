@@ -16,11 +16,14 @@ import {
   type ScreenId,
 } from './declutter.ts';
 
+// Most flows boot several saves, and the whole gate runs the sim beside the smoke step.
+test.describe.configure({ timeout: 90_000 });
+
 // ---- T803b: the battle ----
 
 test('declutter b: Act I HUD, armed slot, tower panel, comms, bark, pause', async ({ page }) => {
-  test.setTimeout(60_000);
-  await boot(page, '&dialogue=1&fasttext=1&map=a1_m03');
+  // Full-length holds (no fasttext): the comms line stays up while it's measured, even under load.
+  await boot(page, '&dialogue=1&map=a1_m03');
   await clockIn(page);
   await page.evaluate(() => globalThis.__sd!.setSpeed(0));
   await capture(page, 'hud-a1-build');
@@ -49,7 +52,7 @@ test('declutter b: Act I HUD, armed slot, tower panel, comms, bark, pause', asyn
   await capture(page, 'hud-comms');
 
   await page.evaluate(() => globalThis.__sd!.dialogue.bark('quill_map_start_a1_99'));
-  await expect(page.getByRole('button', { name: "Who's there?" })).toBeVisible();
+  await expect(page.getByRole('button', { name: "Who's there?" })).toBeVisible({ timeout: 15_000 });
   await capture(page, 'hud-bark');
 
   await page.getByRole('button', { name: 'Menu', exact: true }).click();
@@ -58,7 +61,6 @@ test('declutter b: Act I HUD, armed slot, tower panel, comms, bark, pause', asyn
 });
 
 test('declutter b: Act III HUD mid-wave', async ({ page }) => {
-  test.setTimeout(60_000);
   await boot(page, '&map=a3_m05');
   await clockIn(page);
   await playTo(page, 'par', 6, 600);
@@ -66,7 +68,6 @@ test('declutter b: Act III HUD mid-wave', async ({ page }) => {
 });
 
 test('declutter b: a boss on the HUD', async ({ page }) => {
-  test.setTimeout(60_000);
   await boot(page, '&map=a1_m05');
   await clockIn(page);
   const boss = await page.evaluate(() => {
@@ -133,7 +134,6 @@ test('declutter b: the finale HUD, Descent to Dawn', async ({ page }) => {
 });
 
 test('declutter b: the Endless HUD and a challenge HUD', async ({ page }) => {
-  test.setTimeout(60_000);
   await boot(page, '&save=after_fin_stay&map=end_m01');
   const lockIn = page.getByRole('button', { name: 'Lock in' });
   if (await lockIn.isVisible()) await lockIn.click();
@@ -321,7 +321,6 @@ test('declutter e: the veteran picker, closed and open', async ({ page }) => {
 });
 
 test('declutter e: Results cards', async ({ page }) => {
-  test.setTimeout(60_000);
   const card = async (save: string, fixture: ResultsFixture, id: ScreenId): Promise<void> => {
     await boot(page, `&save=${save}`);
     await page.evaluate((f) => {
@@ -342,7 +341,6 @@ test('declutter e: Results cards', async ({ page }) => {
 });
 
 test('declutter e: the Endless score screen', async ({ page }) => {
-  test.setTimeout(60_000);
   await boot(page, '&save=after_fin_stay&map=end_m01');
   const lockIn = page.getByRole('button', { name: 'Lock in' });
   if (await lockIn.isVisible()) await lockIn.click();
@@ -392,7 +390,6 @@ test('declutter e: scenes, the feed and the yield log', async ({ page }) => {
 });
 
 test("declutter e: Gerald's mail, C4's card, Night Shift", async ({ page }) => {
-  test.setTimeout(60_000);
   await boot(page, '&dialogue=1&fasttext=1&save=after_a3m3_convoy');
   await page.evaluate(() => globalThis.__sd!.goto('base'));
   // Not awaited: the fixture resolves once the card shows, after the mail.
@@ -441,7 +438,6 @@ test('declutter e: Dawn and C5', async ({ page }) => {
 });
 
 test('declutter e: the epilogue (card, counter, credits, final image)', async ({ page }) => {
-  test.setTimeout(60_000);
   await boot(page, '&save=after_fin_stay');
   await page.getByRole('button', { name: 'Watch the epilogue' }).click();
   const epi = page.getByTestId('epilogue');

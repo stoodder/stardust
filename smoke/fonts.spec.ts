@@ -3,9 +3,32 @@
 // (Pixelify Sans drew "1.5" as "1.S" and "files" as "Ales"). Screenshots of every screen with body
 // text, for a look: Research, Shop, Engineering, Settings, the loadout screen, and Results. In
 // test-results/screens/fonts/.
-import type { Locator } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 import { playShift, shot, waitForReady } from './hooks.ts';
+
+/**
+ * After the finale (`all_unlocked` has won it) the Sector map opens on the post-game plate, Endless
+ * selected and its panel over the chart's west side (Hatching Season's node under it): as a player
+ * does, pick Shift 1, step back to its node (Esc), and arrow along the campaign to `name`'s node,
+ * whose own panel then sits clear of it, ready for `playShift`.
+ */
+async function toCampaignShift(page: Page, name: string): Promise<void> {
+  await page.getByRole('heading', { name: 'Sector map' }).waitFor();
+  const shifts = page.getByRole('list', { name: 'Shifts' });
+  // A click opens Shift 1's panel and focuses its button; Esc returns to the node.
+  await shifts.getByRole('button', { name: /^Shift 1, / }).click();
+  await page.keyboard.press('Escape');
+  const target = shifts.getByRole('button', { name: new RegExp(`^Shift \\d+, ${name}, `) });
+  const there = (): Promise<boolean> => target.evaluate((el) => el === document.activeElement);
+  for (let i = 0; i < 30; i++) {
+    // oxlint-disable-next-line no-await-in-loop -- one key press after another
+    if (await there()) break;
+    // oxlint-disable-next-line no-await-in-loop -- one key press after another
+    await page.keyboard.press('ArrowRight');
+  }
+  await expect(target).toBeFocused();
+}
 
 /** The font family an element renders with. */
 const fontOf = (el: Locator) => el.evaluate((e) => getComputedStyle(e).fontFamily);
@@ -41,6 +64,7 @@ test('fonts: Research, Shop, Engineering, and Settings body text is Silkscreen',
 test('fonts: the loadout screen and Results read plainly', async ({ page }) => {
   await page.goto('/?test=1&seed=1&save=all_unlocked');
   await waitForReady(page);
+  await toCampaignShift(page, 'Hatching Season');
   await playShift(page, 'Hatching Season');
   await expect(page.getByRole('heading', { name: 'Loadout' })).toBeVisible();
   await page.waitForTimeout(200);
