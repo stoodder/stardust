@@ -1,7 +1,9 @@
 // CH_M01 balance-harness builds (Skitterkin Only; T862). The reference profile is the campaign's
 // end (FIN's row, campaign.md § 4.9): a post-game player owns at least that, and it holds no spec
-// for a Skitterkin tower, so every home here tops out at tier 3. The par band is the challenge
-// maps' own (below).
+// for a Skitterkin tower, so every home here tops out at tier 3. Par splits the work between the
+// Gloops (the crowds) and the Sproing Pads (the sky, and they bonk the ground well too); it carries
+// the Hum Choir but never builds one, since no two of A3M1's pads stand close enough for its aura.
+// The par band is the challenge maps' own (below).
 import { defineBuilds } from '../../define.ts';
 import { REFERENCE_PROFILES } from '../../upgrades/reference.ts';
 import type { BuildStep, GridPos, TowerId } from '../../types.ts';
@@ -70,8 +72,7 @@ function swapped(swap: Readonly<Partial<Record<TowerId, TowerId>>>): BuildStep[]
 
 export const builds = defineBuilds({
   referenceProfile: REFERENCE_PROFILES.fin_m01,
-  // The challenge maps' band (T862): a post-game map asks for the campaign's end and then some, so
-  // par is judged in 50–70 (Act III's floor, a little narrower at the top), never against the
+  // The challenge maps' band (T862): par is judged in 50–70 (Act III's band), never against the
   // campaign's curve (outside the monotonic chain, balance/harness.ts).
   marginBand: { minPct: 50, maxPct: 70 },
   parBuild: { loadout: ['gloop', 'burrow', 'sproing', 'choir'], steps: parSteps() },

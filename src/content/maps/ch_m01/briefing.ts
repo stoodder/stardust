@@ -8,6 +8,8 @@ export const scenes = defineScenes([
     {
       kind: 'line',
       speaker: 'chitterbloom',
+      // Her plate's campaign rule (Bramble from A3M1 on) reads campaign maps; this isn't one.
+      plateAs: 'Bramble',
       text: 'Your machines stay home today. My families hold this road.',
     },
     {
@@ -19,6 +21,7 @@ export const scenes = defineScenes([
     {
       kind: 'line',
       speaker: 'chitterbloom',
+      plateAs: 'Bramble',
       text: 'You walked our road once. Today, walk it our way.',
     },
   ]),

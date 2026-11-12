@@ -98,8 +98,9 @@ test('challenge CH3 Glass Core: a core of 5 and the radio dead', async ({ page }
   expect(s.max).toBeGreaterThanOrEqual(5);
   expect(s.max).toBeLessThanOrEqual(8);
   expect(s.integrity).toBe(s.max);
-  // Radio Silence: slot 1 is empty, and there's no companion to call.
-  await expect(page.getByTestId('ability-1')).toHaveAccessibleName(/empty|Silence/);
+  // Radio Silence: no ability to cast in either slot, and no companion to call.
+  await expect(page.getByTestId('ability-1')).toHaveCount(0);
+  await expect(page.getByTestId('ability-2')).toHaveCount(0);
   await expect(page.getByTestId('companion-face')).toHaveCount(0);
   await nextFrames(page);
   await shot(page, FLOW, 6, 'glass-core-hud');
