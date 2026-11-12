@@ -332,9 +332,9 @@ export const map = defineMapLayout({
   // boss's rest to the ~3 min countdown at Keep (#18).
   song: {
     baseRadius: 2.5,
-    restTarget: 500,
-    restPerSec: 1.1,
-    restPerBossHp: 0.0025,
+    restTarget: 560,
+    restPerSec: 2,
+    restPerBossHp: 0.001,
     multipliers: [
       { flag: 'quill_choice', value: 'rewrite', mul: 1.5 },
       { flag: 'quill_choice', value: 'keep', mul: 1.25 },

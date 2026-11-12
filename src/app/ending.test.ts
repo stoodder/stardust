@@ -290,6 +290,32 @@ describe('the stages (dawn.ts, c5.ts)', () => {
   });
 });
 
+describe("the finale's card (finale.md § FIN, Dawn: the results screen reads REMEMBERED: {n})", () => {
+  it('a win headlines REMEMBERED: {n}, not the cheer, then lists Voices held', async () => {
+    const { fixtureResult } = await import('./resultsFixture.ts');
+    const { counterIsHeadline, resultsHeader } = await import('../ui/screens/presentationText.ts');
+    const { resultsCounter } = await import('../story/counter.ts');
+    const save = DEV_SAVES.after_a3m6_strongest.build();
+    const r = fixtureResult({ map: 'fin_m01', outcome: 'won' }, save);
+    expect(r.counter).toBe('remembered');
+    expect(counterIsHeadline(r.counter, r.outcome)).toBe(true);
+    const line = resultsCounter(r.counter, r.pestsProcessed, r.remembered!).line;
+    expect(line).toBe(`REMEMBERED: ${save.stats.pestsProcessed.toLocaleString('en-US')}`);
+    expect(resultsHeader(r.counter, 'won').headline).toBe('PERIMETER SECURED.');
+    const rows = resultsStats(r);
+    expect(rows.map((x) => x.id)).toEqual(['waves', 'voices']);
+    expect(rows[1]).toMatchObject({
+      label: 'Voices held',
+      value: `${r.voices!.n} of ${r.voices!.total}`,
+    });
+    expect(r.voices!.n).toBeLessThan(r.voices!.total);
+    // A loss keeps the system's headline; every other map keeps its counter under the cheer.
+    expect(counterIsHeadline('remembered', 'lost')).toBe(false);
+    expect(counterIsHeadline('meter', 'won')).toBe(false);
+    expect(counterIsHeadline('starred', 'won')).toBe(false);
+  });
+});
+
 describe('Results: Voices held (T821 relay)', () => {
   it('scores the fewest that sang, not the choir Dawn woke whole', () => {
     expect(voicesHeld({ choir: { singers: 20, voices: 20 }, stats: { voicesMin: 13 } })).toEqual({

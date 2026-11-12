@@ -11,7 +11,7 @@ import { runEnd, type SaveData } from '../meta/index.ts';
 import type { FlagRuleStats } from '../story/flags.ts';
 import { DEV_SCENES } from '../ui/dialogue/dev.ts';
 import type { RunAsset, RunBearers, RunEscort, RunResult } from '../ui/screens/state.ts';
-import { bearerTotal, createSim, escortTotal } from '../sim/index.ts';
+import { bearerTotal, choirSize, createSim, escortTotal } from '../sim/index.ts';
 import { battleConfig } from './battleSetup.ts';
 import { meterLabelText } from './hudText.ts';
 import type { ResultsScenes } from './router.ts';
@@ -110,6 +110,23 @@ function protectOf(
   return { asset, bearers: { home, lost: f.bearers?.lost ?? total - home, total } };
 }
 
+/**
+ * The fixture's choir (the finale; T810): its Voices held, 60% of the singers its flags walk on a
+ * win and a quarter on a loss, and REMEMBERED: {n}, the lifetime count the countdown starts from
+ * (the save's). None on a map with no choir.
+ */
+function choirOf(
+  f: ResultsFixture,
+  save: SaveData | null,
+): { voices?: { n: number; total: number }; remembered?: number } {
+  const config = battleConfig(f.map, 0, save);
+  const choir = config.content.maps[f.map]?.choir ?? null;
+  if (choir === null) return {};
+  const total = choirSize(choir, config.scriptFlags);
+  const n = f.outcome === 'won' ? Math.ceil(total * 0.6) : Math.floor(total / 4);
+  return { voices: { n, total }, remembered: save?.stats.pestsProcessed ?? 0 };
+}
+
 /** The run's facts: the map's own when it's registered, else a 10-wave map paying nothing. */
 function inputOf(f: ResultsFixture, save: SaveData | null): RunEndInput {
   const won = f.outcome === 'won';
@@ -148,6 +165,7 @@ function inputOf(f: ResultsFixture, save: SaveData | null): RunEndInput {
     ...(f.revoked === undefined ? {} : { revoked: revokedAtEnd(f.revoked) }),
     ...(map === undefined ? {} : escortOf(f, save)),
     ...(map === undefined ? {} : protectOf(f, save)),
+    ...(map === undefined ? {} : choirOf(f, save)),
   };
 }
 

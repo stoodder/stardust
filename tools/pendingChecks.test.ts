@@ -23,12 +23,8 @@ describe('pending harness checks', () => {
     expect(completeMaps()).toContain('a3_m06');
   });
 
-  it("fin_m01's alts and warren cell wait for T821", () => {
-    expect(RAW_CONTENT.maps.fin_m01.pendingChecks).toMatchObject({
-      task: 'T821',
-      subjects: ['alt:cluster', 'alt:reboot', 'flag:door_choice=warren'],
-      checks: ['18'],
-    });
+  it('fin_m01 has none since T821 (its alts and the warren cell pass)', () => {
+    expect(RAW_CONTENT.maps.fin_m01.pendingChecks).toBeUndefined();
   });
 
   it.each(pending.map((m) => [m.id, m.pendingChecks!.task] as const))(
