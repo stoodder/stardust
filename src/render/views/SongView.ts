@@ -17,6 +17,7 @@ import * as Phaser from 'phaser';
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
 import { UNSUNG_REST_SPRITE } from '../../content/sprites/enemies/unsung.ts';
 import type { SpriteId } from '../../content/sprites/index.ts';
+import { hasSprite } from '../../content/sprites/registry.ts';
 import type { IdSpace } from '../../content/types.ts';
 import type { Bus } from '../../shared/bus.ts';
 import type { DeepReadonly } from '../../shared/types.ts';
@@ -49,6 +50,8 @@ import {
   UNSUNG_RISE_MS,
 } from './unsungLook.ts';
 import type { ViewContext } from './ViewContext.ts';
+
+const ORIGIN: Vec2 = { x: 0, y: 0 };
 
 /** The enemy pool as this view reads it (to find a scattered unit's resting place). */
 export interface SongPool {
@@ -161,12 +164,16 @@ export class SongView {
     this.#ctx = ctx;
     this.#still = reducedMotion;
     const { scene, layers, sprites } = ctx;
-    const rest = sprites.frame(REST_MOTE, 'r0');
-    const restA = sprites.meta(REST_MOTE).anchor;
-    const scat = sprites.frame(SCATTER_MOTE, 'm0');
-    const scatA = sprites.meta(SCATTER_MOTE).anchor;
+    // The motes are the finale's sprites (T871: its chunk's lazy atlas page). A battle without
+    // the finale's chunk has no song, so its motes stay blank and hidden.
+    const lazy = hasSprite(REST_MOTE);
+    const rest = lazy ? sprites.frame(REST_MOTE, 'r0') : null;
+    const restA = lazy ? sprites.meta(REST_MOTE).anchor : ORIGIN;
+    const scat = lazy ? sprites.frame(SCATTER_MOTE, 'm0') : null;
+    const scatA = lazy ? sprites.meta(SCATTER_MOTE).anchor : ORIGIN;
     const mote = (f: typeof rest, an: Vec2): Phaser.GameObjects.Sprite => {
-      const s = scene.make.sprite({}, false).setTexture(f.texture, f.frame);
+      const s = scene.make.sprite({}, false);
+      if (f !== null) s.setTexture(f.texture, f.frame);
       s.setDisplayOrigin(an.x, an.y).setVisible(false);
       layers.vfx.add(s);
       return s;

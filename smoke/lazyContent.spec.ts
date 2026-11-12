@@ -38,7 +38,7 @@ test('lazy content: the Title loads no later act; idle time preloads Act II and 
     .poll(() => [...chunks].toSorted(), { timeout: 10_000 })
     .toEqual(['BattleScene', 'a2', 'portraits']);
   await settle(page);
-  expect([...chunks].toSorted()).toEqual(['BattleScene', 'a2']);
+  expect([...chunks].toSorted()).toEqual(['BattleScene', 'a2', 'portraits']);
 });
 
 test('lazy content: an Act I campaign plays without Act III or the finale', async ({ page }) => {
