@@ -8,7 +8,9 @@ import { CAMPAIGN, CAMPAIGN_PLAN } from '../content/campaign.ts';
 import type { CompiledContent, CompiledMapDef } from '../content/compiled.ts';
 import { LINKS } from '../content/links/index.ts';
 import { MAX_LOADOUT } from '../content/rules.ts';
+import { technicianOffBeside } from '../content/technician.ts';
 import type {
+  CompanionId,
   CounterId,
   IdSpace,
   LinkBonusDef,
@@ -20,12 +22,14 @@ import type {
 import { PROTOCOLS } from '../content/upgrades/index.ts';
 import {
   abilityAnswers,
+  companionChoices,
   equippedProtocols,
   abilitiesOffOn,
   initialPick,
   linksAmong,
   loadoutPools,
   mapCounters,
+  pickedCompanion,
   takesTowerPick,
   toggleProtocol,
   toggleTower,
@@ -43,6 +47,7 @@ import { silkText } from '../ui/silk.ts';
 import {
   loadout,
   type LoadoutAbilityView,
+  type LoadoutCompanionView,
   type LoadoutLinkView,
   type LoadoutLockedAbilityView,
   type LoadoutPickView,
@@ -52,7 +57,7 @@ import {
   type LoadoutView,
 } from '../ui/screens/loadoutView.ts';
 import { grantText } from '../ui/screens/storeText.ts';
-import { battleConfig, defaultPick } from './battleSetup.ts';
+import { battleConfig, defaultPick, slot1Beside } from './battleSetup.ts';
 import { displayName, lockedAbilityReason, towerName, towerRoleText } from './hudText.ts';
 import { SPEAKERS } from '../content/dialogue/speakers.ts';
 import { mapThreats } from './hudViews.ts';
@@ -143,6 +148,10 @@ interface Context {
   readonly pools: LoadoutPools;
   readonly map: LoadoutMap;
   readonly specName: (tower: string, spec: 'a' | 'b') => string | null;
+  /** Who may walk with you (the finale's pick list; meta `companionChoices`), else empty. */
+  readonly companions: readonly CompanionId[];
+  /** The abilities slot 1 can't hold beside each companion (content/technician.ts). */
+  readonly offBeside: Readonly<Partial<Record<CompanionId, readonly string[]>>>;
 }
 
 let ctx: Context | null = null;
@@ -156,6 +165,18 @@ function loadoutMap(map: CompiledMapDef<IdSpace>, slot2: string | null): Loadout
     enemies: map.waves.flatMap((w) => w.groups.map((g) => g.enemy)),
     slot2,
   };
+}
+
+/** A companion's name as the screen says it ("Ves'thara", "QUILL", "Bramble"). */
+export function companionName(id: CompanionId): string {
+  // Bramble speaks as `chitterbloom`, whose name plate reads "Bramble" from Act III (speakers.ts).
+  if (id === 'bramble') return 'Bramble';
+  return SPEAKERS[id].name;
+}
+
+/** Why a Technician ability greys beside the companion that brings it (T501): "QUILL brings it". */
+export function bringsText(companion: CompanionId): string {
+  return `${companionName(companion)} brings it`;
 }
 
 /**
@@ -316,12 +337,18 @@ export function openLoadout(mapId: string): boolean {
   // Slot 1 leaves out what the map locks under the save's flags (A3M5's System Reboot, Rewrite).
   const off = abilitiesOffOn(map, save);
   const pools = loadoutPools(save, [], off);
+  // The finale's companion pick (QUILL gone under C4 Purge; the first, Ves'thara, by default).
+  const companions = companionChoices(save, map.companion);
+  const offBeside: Partial<Record<CompanionId, readonly string[]>> = {};
+  for (const id of companions) offBeside[id] = technicianOffBeside(content.abilities, id);
   const c: Context = {
     mapId,
     save,
     pools,
     map: loadoutMap(map, cfg.abilities.slot2),
     specName: (tower, spec) => content.towers[tower]?.specs?.[spec].name ?? null,
+    companions,
+    offBeside,
   };
   ctx = c;
   const required: readonly string[] = map.requiredCounters;
@@ -331,8 +358,17 @@ export function openLoadout(mapId: string): boolean {
     save.unlocks.protocols.filter((o) => o === p),
   );
   const offered = owned.map((o) => protocolView(o, map.objective));
+  const first = initialPick(save, mapId, defaultPick(save, map.builds.parBuild, off), off);
+  const companion = companions.length === 0 ? null : pickedCompanion(save, mapId, companions);
   const start = {
-    ...initialPick(save, mapId, defaultPick(save, map.builds.parBuild, off), off),
+    ...first,
+    // Slot 1 starts off what the companion brings (T501: Time Dilation beside QUILL).
+    ...(companion === null
+      ? {}
+      : {
+          companion,
+          ability: slot1Beside(content, first.ability, companion, pools.abilities),
+        }),
     ...equippedView(save),
   };
   // A core-only protocol carried onto a map with no core is benched for one that acts (D144 S1b).
@@ -356,12 +392,17 @@ export function openLoadout(mapId: string): boolean {
     abilities: pools.abilities.map((id): LoadoutAbilityView => {
       const def = content.abilities[id]!; // pool abilities are registered (validateSave)
       const from = inheritedFrom(save, id, def.companion);
+      // Its own companion on the pick list brings it in slot 2: slot 1 greys it beside them.
+      const brings = companions.find((k) => offBeside[k]?.includes(id) === true);
       return {
         id,
         name: silkText(def.name),
         icon: def.sprites.icon,
         answers: abilityAnswers(id, c.map).map((k) => COUNTER_LABELS[k]),
         ...(from === null ? {} : { inheritedFrom: silkText(from) }),
+        ...(brings === undefined
+          ? {}
+          : { brings: { companion: brings, reason: silkText(bringsText(brings)) } }),
       };
     }),
     // What the map locks under the save's story (T731: A3M5's System Reboot under Rewrite), as
@@ -391,6 +432,20 @@ export function openLoadout(mapId: string): boolean {
         : silkText(
             `${displayName(cfg.companion)} · ${content.abilities[slot2]?.name ?? displayName(slot2)}`,
           ),
+    // The pick list (each with the ability they bring), when the map has one.
+    ...(companions.length === 0
+      ? {}
+      : {
+          companions: companions.map((id): LoadoutCompanionView => {
+            const ability = Object.values(content.abilities).find((a) => a.companion === id);
+            return {
+              id,
+              name: silkText(companionName(id)),
+              ability: silkText(ability?.name ?? ''),
+              icon: ability?.sprites.icon ?? '',
+            };
+          }),
+        }),
     protocols,
     protocolSlots: pools.protocolSlots ?? 0,
     initial: { ...start, ...bench.pick },
@@ -429,19 +484,57 @@ function typed(c: Context, pick: LoadoutPickView): LoadoutPick {
     const tower = c.pools.towers.find((t) => t === pick.protocolPicks[id]);
     if (tower !== undefined) picks[id] = tower;
   }
+  const companion = c.companions.find((k) => k === pick.companion) ?? null;
   return {
     towers: pick.towers.flatMap((t) => c.pools.towers.filter((o) => o === t)),
     ability: c.pools.abilities.find((a) => a === pick.ability) ?? null,
     equip: { equipped, picks },
+    ...(companion === null ? {} : { companion }),
   };
+}
+
+/**
+ * Whether `ability` greys in slot 1 for the pick's companion (T501; content/technician.ts): the
+ * companion brings it in slot 2 ("QUILL brings it"). Never without a pick list.
+ */
+export function abilityGreyed(pick: Pick<LoadoutPickView, 'companion'>, ability: string): boolean {
+  const c = ctx;
+  if (c === null || pick.companion === undefined || pick.companion === null) return false;
+  const k = c.companions.find((id) => id === pick.companion);
+  return k !== undefined && (c.offBeside[k]?.includes(ability) ?? false);
+}
+
+/**
+ * Picks who walks with you (the finale): the pick's companion, with slot 1 moved off an ability
+ * they bring (to the first one that doesn't clash). Unchanged for a companion the list doesn't
+ * offer.
+ */
+export function pickCompanion(pick: LoadoutPickView, id: string): LoadoutPickView {
+  const c = ctx;
+  if (c === null) return pick;
+  const k = c.companions.find((x) => x === id);
+  if (k === undefined || k === pick.companion) return pick;
+  const off = c.offBeside[k] ?? [];
+  const ability =
+    pick.ability !== null && off.includes(pick.ability)
+      ? (c.pools.abilities.find((a) => !off.includes(a)) ?? null)
+      : pick.ability;
+  return { ...pick, companion: k, ability };
+}
+
+/** Picks the Technician's ability, unless the pick's companion brings it (T501: greyed). */
+export function pickAbility(pick: LoadoutPickView, id: string): LoadoutPickView {
+  if (abilityGreyed(pick, id) || pick.ability === id) return pick;
+  return { ...pick, ability: id };
 }
 
 /** Toggles a tower in the pick (meta/loadout.ts toggleTower: up to four, in build-slot order). */
 export function togglePickTower(pick: LoadoutPickView, tower: string): LoadoutPickView {
   if (ctx === null) return pick;
   const pools: LoadoutPools<string, string> = ctx.pools;
-  const next = toggleTower(pick, tower, pools);
-  return next === pick ? pick : { ...pick, towers: next.towers };
+  const from = { towers: pick.towers, ability: pick.ability };
+  const next = toggleTower(from, tower, pools);
+  return next === from ? pick : { ...pick, towers: next.towers };
 }
 
 /**

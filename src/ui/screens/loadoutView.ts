@@ -45,6 +45,22 @@ export interface LoadoutAbilityView {
    * "QUILL's" for Time Dilation under C4 Keep, "Bricks's" for Suppressing Fire); absent: none.
    */
   readonly inheritedFrom?: string;
+  /**
+   * The companion on the pick list who brings it in slot 2 (T501; the finale: QUILL's Time
+   * Dilation), and why the card greys beside them ("QUILL brings it"); absent: none does.
+   */
+  readonly brings?: { readonly companion: string; readonly reason: string };
+}
+
+/** A companion on the finale's pick list (core-loop.md § 3.1): who walks with you, in slot 2. */
+export interface LoadoutCompanionView {
+  readonly id: string;
+  /** "Ves'thara". */
+  readonly name: string;
+  /** Their slot-2 ability's name ("Stillness"). */
+  readonly ability: string;
+  /** That ability's icon sprite id. */
+  readonly icon: string;
 }
 
 /**
@@ -118,6 +134,8 @@ export interface LoadoutPickView {
   readonly protocols: readonly string[];
   /** The tower each equipped tower-pick protocol (Specialist) takes. */
   readonly protocolPicks: Readonly<Record<string, string>>;
+  /** Who walks with you, on a pick-list map (the finale); absent or null elsewhere. */
+  readonly companion?: string | null;
 }
 
 /** The loadout screen for one map and the save in play. */
@@ -144,6 +162,11 @@ export interface LoadoutView {
   readonly links: readonly LoadoutLinkView[];
   /** Slot 2 is the map's companion's ("Bricks · Suppressing Fire"), or null for none. */
   readonly companion: string | null;
+  /**
+   * The finale's companion pick, in list order (the first is the default; QUILL gone under C4
+   * Purge): the screen shows it in slot 2's place. Absent: no pick list.
+   */
+  readonly companions?: readonly LoadoutCompanionView[];
   /** The Field Protocols owned, in ownership order (none before Zibzab's shop). */
   readonly protocols: readonly LoadoutProtocolView[];
   /** Field Protocol slots: 0 before the shop opens, then 1, plus R&D's. */
