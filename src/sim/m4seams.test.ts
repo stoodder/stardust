@@ -308,7 +308,7 @@ describe('FEATURE_GATES (T400a rows)', () => {
       'status.unnerved': null, // T507
       'enemy.boss.pivot': null, // T506
       'attack.spawner': null, // T604
-      'enemy.boss.layToRest': 'T808', // D154
+      'enemy.boss.layToRest': null, // T808
     });
   });
 

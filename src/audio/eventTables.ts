@@ -230,6 +230,15 @@ export const BOSS_SOUNDS: Readonly<Partial<Record<string, BossSounds>>> = {
     end: 'gmaw_strain',
     endCue: null,
   },
+  // Its split's parts (T808): the Gathering Maw's parts' voices until T850.
+  unsung_part: {
+    arrive: 'gmaw_arrive',
+    phase: 'gmaw_strain',
+    spawnTell: null,
+    spawn: null,
+    end: 'gmaw_strain',
+    endCue: null,
+  },
 };
 
 /** A boss's sounds by enemy id. */

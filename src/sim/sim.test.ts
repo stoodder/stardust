@@ -30,21 +30,6 @@ function rejections(events: readonly Ev[]): string[] {
   return events.flatMap((e) => (e.type === 'CommandRejected' ? [e.reason] : []));
 }
 
-/**
- * fx_map with its walkers a boss that ends `layToRest` (the finale's ending): a feature the sim
- * still refuses (FEATURE_GATES, M8). The Stasis Bloom's field was the example until T608 lifted it.
- */
-const LAID_TO_REST = (() => {
-  const boss = { phases: [], ending: 'layToRest', endAtPct: 0, ward: null } as const;
-  const walker = { ...FIXTURE_CONTENT.enemies.fx_walker, boss };
-  const map = FIXTURE_CONTENT.maps.fx_map;
-  const waves = map.waves.map((w) => ({
-    ...w,
-    groups: w.groups.map((g) => ({ ...g, enemy: walker })),
-  }));
-  return { ...FIXTURE_CONTENT, maps: { fx_map: { ...map, waves } } } as typeof FIXTURE_CONTENT;
-})();
-
 /** createSim's error message for a config with `over` applied; fails if it doesn't throw. */
 function bad(over: Parameters<typeof fixtureConfig>[0]): string {
   try {
@@ -88,9 +73,8 @@ describe('createSim', () => {
       bad({ loadout: ['fx_gun', 'fx_mortar', 'fx_sprinkler', 'fx_gun', 'fx_mortar'] }),
     ).toMatch(/limit is 4/);
     expect(bad({ companion: 'bricks' })).toMatch(/companion 'bricks' needs a slot/);
-    expect(bad({ content: LAID_TO_REST })).toMatch(
-      /a boss ending 'layToRest' \(fx_walker\) is not simulated until T808/,
-    );
+    // Every FEATURE_GATES row is lifted since T808 (the Unsung's `layToRest` was the last); a gate
+    // refusal's listing is sim/gates.test.ts's (with a gate table of its own).
     // @ts-expect-error -- an unknown tower id is a type error too
     expect(bad({ specsUnlocked: ['nope'] })).toMatch(/specsUnlocked: unknown tower 'nope'/);
     expect(bad({ specsUnlocked: ['fx_gun', 'fx_gun'] })).toMatch(/'fx_gun' appears twice/);
@@ -103,9 +87,9 @@ describe('createSim', () => {
     expect(bad({ content: { ...FIXTURE_CONTENT, maps: { fx_map: waveless } } })).toMatch(
       /map 'fx_map' has no waves/,
     );
-    const both = bad({ seed: -1, content: LAID_TO_REST });
+    const both = bad({ seed: -1, companion: 'bricks' });
     expect(both).toMatch(/seed/);
-    expect(both).toMatch(/until T808/);
+    expect(both).toMatch(/companion 'bricks' needs a slot/);
   });
 
   it('accepts a loadout of exactly 4 and an empty one', () => {

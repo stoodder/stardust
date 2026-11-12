@@ -153,7 +153,7 @@ describe('FEATURE_GATES (T300a rows)', () => {
       'enemy.huddle': null, // T304c
       'enemy.boss': null, // T304c
       'enemy.boss.pivot': null, // the Penitent (T506)
-      'enemy.boss.layToRest': 'T808', // the Unsung (D154; sim/m8seams.test.ts)
+      'enemy.boss.layToRest': null, // the Unsung (T808; sim/unsung.test.ts)
       'ability.slowAll': null, // T304d
       'ability.discount': null, // T304d
       'modifier.firstBuildFree': null, // T304d
@@ -194,12 +194,10 @@ describe('FEATURE_GATES (T300a rows)', () => {
     expect(closed(e.bunchling)).toEqual(['splitting (bunchling) is not simulated until T304c']);
     expect(closed(e.elder)).toEqual(['a huddle (elder) is not simulated until T304c']);
     expect(closed(e.chitterbloom)).toEqual(['a boss (chitterbloom) is not simulated until T304c']);
-    // Boss endings Act I doesn't use stay refused (`pivot` runs since T506).
-    for (const [ending, owner] of [['layToRest', 'T808']] as const) {
+    // Every boss ending runs (`pivot` since T506, `layToRest` since T808).
+    for (const ending of ['pivot', 'layToRest'] as const) {
       const boss = { ...e.chitterbloom.boss!, ending };
-      expect(refusedWith({ ...e.chitterbloom, boss })).toEqual([
-        `a boss ending '${ending}' (chitterbloom) is not simulated until ${owner}`,
-      ]);
+      expect(refusedWith({ ...e.chitterbloom, boss })).toEqual([]);
     }
     // A ground unit on an air lane is a flyer too.
     const air = { ...MAP.routes.a!, kind: 'air' as const, layer: 'air' as const };

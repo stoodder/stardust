@@ -190,22 +190,17 @@ describe('balance harness', () => {
   });
 
   it('reports a run whose config is refused as a failed run, not a crash', () => {
-    // A boss ending `layToRest` (the finale's, M8) on every walker, which the sim refuses (the
-    // Stasis Bloom's field was the example until T608 lifted it).
+    // A map with no waves, which createSim refuses (every FEATURE_GATES row is lifted since T808;
+    // a boss ending `layToRest` was the example until then, the Stasis Bloom's field before it).
     const fx = PLAIN_CONTENT.maps.fx_map;
-    const boss = { phases: [], ending: 'layToRest', endAtPct: 0, ward: null } as const;
-    const waves = fx.waves.map((w) => ({
-      ...w,
-      groups: w.groups.map((g) => ({ ...g, enemy: { ...g.enemy, boss } })),
-    }));
     const refused: CompiledContent<FixtureIds> = {
       ...PLAIN_CONTENT,
-      maps: { ...PLAIN_CONTENT.maps, fx_map: { ...fx, waves } },
+      maps: { ...PLAIN_CONTENT.maps, fx_map: { ...fx, waves: [] } },
     };
     const r = runMap(refused, 'fx_map', { seeds: 1, build: 'par' });
     expect(r.ok).toBe(false);
     expect(r.checks.find((c) => c.id === '1')?.failures[0]).toMatch(
-      /seed 1: error: [^]*a boss ending 'layToRest' \([a-z_]+\) is not simulated until T808/,
+      /seed 1: error: [^]*map 'fx_map' has no waves/,
     );
   });
 

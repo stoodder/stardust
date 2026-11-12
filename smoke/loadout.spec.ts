@@ -74,12 +74,20 @@ test('loadout: pick towers and an ability, lock in, change it from the briefing,
   await expect(towerCard(page, 'Thumper')).toHaveAccessibleName(/build slot 3/);
   await page.keyboard.press('Enter');
   await expect(towerCard(page, 'Thumper')).toHaveAttribute('aria-pressed', 'false');
-  // The ability radio group: the arrows pick Suppressing Fire.
+  // The ability radio group: Suppressing Fire is Bricks's own in slot 2, so slot 1 can't hold it
+  // (T501): dimmed, with why, and the arrows step over it to the next ability.
+  const suppress = page.getByRole('radio', { name: /Suppressing Fire/ });
+  await expect(suppress).toHaveAttribute('aria-disabled', 'true');
+  await expect(suppress.getByTestId('loadout-brings')).toContainText(/Bricks brings it/i);
   await page.getByRole('radio', { name: /Orbital Strike/ }).focus();
   await page.keyboard.press('ArrowDown');
-  const suppress = page.getByRole('radio', { name: /Suppressing Fire/ });
-  await expect(suppress).toBeFocused();
-  await expect(suppress).toHaveAttribute('aria-checked', 'true');
+  const picked = page.locator('[data-testid="loadout-ability"][aria-checked="true"]');
+  await expect(picked).toBeFocused();
+  await expect(picked).not.toHaveAttribute('data-ability', /^(orbital_strike|suppressing_fire)$/);
+  const ability = (await picked.getAttribute('data-ability'))!; // the checked card has one
+  const abilityName = (await picked.locator('.sd-lo-ability-name').innerText())
+    .split('·')[0]!
+    .trim();
   await shot(page, 'loadout', 2, 'picked');
 
   // Lock in: the pick is the map's preset (and the last one), then the briefing.
@@ -87,7 +95,7 @@ test('loadout: pick towers and an ability, lock in, change it from the briefing,
   const briefing = page.getByRole('dialog', { name: 'Shift briefing' });
   await expect(briefing).toBeVisible();
   const saved = await page.evaluate(() => globalThis.__sd!.save()!.loadouts);
-  const preset = { towers: ['rivet', 'sprinkler'], ability: 'suppressing_fire' };
+  const preset = { towers: ['rivet', 'sprinkler'], ability };
   expect(saved).toEqual({
     last: preset,
     byMap: { a1_m01: preset },
@@ -101,7 +109,7 @@ test('loadout: pick towers and an ability, lock in, change it from the briefing,
   await expect(page.getByRole('heading', { name: 'Loadout' })).toBeVisible();
   await expect(towerCard(page, 'Thumper')).toHaveAttribute('aria-pressed', 'false');
   await expect(towerCard(page, 'Sprinkler')).toHaveAccessibleName(/build slot 2/);
-  await expect(suppress).toHaveAttribute('aria-checked', 'true');
+  await expect(page.locator(`[data-ability="${ability}"]`)).toHaveAttribute('aria-checked', 'true');
   // Esc goes back to the campaign screen (the Sector map: every map is won); Start brings the
   // screen back with the same pick.
   await page.keyboard.press('Escape');
@@ -115,14 +123,14 @@ test('loadout: pick towers and an ability, lock in, change it from the briefing,
   await page.keyboard.press('Enter');
   await expect(briefing).toBeHidden();
 
-  // The battle's loadout: Rivet and Sprinkler in build slots 1 and 2, Suppressing Fire in slot 1.
+  // The battle's loadout: Rivet and Sprinkler in build slots 1 and 2, the picked ability in slot 1.
   const build = page.getByRole('navigation', { name: 'Build' });
   await expect(build.getByRole('button')).toHaveCount(2);
   await expect(build.getByRole('button').nth(0)).toHaveAccessibleName(/^Build Rivet/);
   await expect(build.getByRole('button').nth(1)).toHaveAccessibleName(/^Build Sprinkler/);
-  // Both ability slots hold Suppressing Fire: the Technician's pick and Bricks's own.
+  // Slot 1 holds the Technician's pick; Bricks's Suppressing Fire stays his, in slot 2.
   const abilities = page.getByRole('navigation', { name: 'Abilities' }).getByRole('button');
-  await expect(abilities.nth(0)).toHaveAccessibleName(/^Suppressing Fire/);
+  await expect(abilities.nth(0)).toHaveAccessibleName(new RegExp(`^${abilityName}`, 'i'));
   await nextFrames(page);
   await shot(page, 'loadout', 4, 'battle');
 });

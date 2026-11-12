@@ -162,7 +162,7 @@ describe('FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES (T600a rows; D141)', ()
       'ally.blocker': null, // T605
       'status.lulled': null, // T607
       'tower.field': null, // T608
-      'enemy.boss.layToRest': 'T808', // D154
+      'enemy.boss.layToRest': null, // T808
     });
     // T605's forcedInputResolved, forceInput, and endMap run (sim/holdout.test.ts), and T606's
     // revokeTowerClass, revokeAbility, and setModifier (sim/revoke.test.ts).
