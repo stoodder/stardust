@@ -61,13 +61,19 @@ export function resultsHeader(
   };
 }
 
+/**
+ * The finale's win headline (D156): the counter as Dawn left it. The first REMEMBERED is the
+ * epilogue's flip (epilogue.ts `COUNTER_ZERO` flips from this same line).
+ */
+export const FINALE_HEADLINE = 'PESTS PROCESSED: 0';
+
 /** The campaign's last map: its win is the card's last beat (T810, T803e). */
 export const FINALE_MAP = 'fin_m01';
 
 /**
- * Whether the card's headline is its counter line instead of Everglow's cheer: the finale's win
- * (T810; finale.md § FIN, *Dawn*: "The results screen reads REMEMBERED: {n}"), where the system has
- * nothing left to say. The counter line then doesn't repeat under it. Only the finale's own map: a
+ * Whether the card's headline is the counter instead of Everglow's cheer: the finale's win (T810,
+ * D156: `FINALE_HEADLINE`, the counter at 0 as Dawn left it), where the system has nothing left to
+ * say. No counter line repeats under it. Only the finale's own map: a
  * post-game challenge in the finale's dials keeps the cheer, its count the counter line (T803e).
  * That card is also the campaign's last beat, so its way on is Continue alone.
  */

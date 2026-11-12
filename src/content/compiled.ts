@@ -575,6 +575,8 @@ export interface CompiledBossPhase {
   } | null;
   /** The finale's phase kinds (BossPhaseDef; T800a seams, T808): the floor, 0 for none. */
   readonly floorPct: number;
+  /** BossPhaseDef.notBeforeSec in ticks (D156), 0 for none. */
+  readonly notBeforeTicks: number;
   readonly burrowTo: 'choir' | null;
   readonly adds: {
     readonly enemy: string;

@@ -282,7 +282,7 @@ export const PHASE_2_WAVES: readonly WaveDef[] = [
   {
     ...P2,
     countdownSec: UNSUNG_COUNTDOWN,
-    groups: [g('unsung', 1, 'halls', 0), motes(6, 'rift_ne', 4, 0.6)],
+    groups: [g('unsung', 1, 'halls', 0), motes(6, 'rift_ne', 0, 0.3)],
   },
   // W20 · Motes down the descent (after a lull: Directive 0's window under Keep)
   {

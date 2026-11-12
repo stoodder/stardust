@@ -151,7 +151,10 @@ function finishSpawning(state: SimState, ctx: TickContext): void {
 /** The countdown before wave `next` begins (CountdownStarted; the `countdown` trigger). */
 function beginCountdown(state: SimState, ctx: TickContext, next: CompiledWave<IdSpace>): void {
   const s = state.schedule;
-  const ticks = countdownTicksFor(next.countdownTicks, runWaveModifiers(ctx.config).countdownPct);
+  // A script phase's waves keep their clock (`inPhase`; D156): a cut (veteran Rush Hour) never
+  // shortens them, so the finale's lull still spans Directive 0; Story's stretch still applies.
+  const pct = runWaveModifiers(ctx.config).countdownPct;
+  const ticks = countdownTicksFor(next.countdownTicks, next.inPhase > 0 && pct < 0 ? 0 : pct);
   s.phase = 'countdown';
   s.countdownTicks = ticks;
   s.countdownTotalTicks = ticks;

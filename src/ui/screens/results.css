@@ -7,6 +7,24 @@
   background: rgb(5 3 10 / 45%);
 }
 
+/* The finale's win (D156): the dawn C5 rises into (c5.css `.c5-sky`'s stops, held still), not the
+   night the battle ended in. */
+.sd-results-dawn {
+  background: linear-gradient(
+    var(--sd-ink-0) 0,
+    var(--sd-violet-0) 46%,
+    var(--sd-pink-0) 72%,
+    var(--sd-coral-1) 88%,
+    var(--sd-gold-1) 100%
+  );
+}
+
+/* Its headline: the counter as Dawn left it, steel at zero (the epilogue's `.end-counter`). */
+.sd-results-heading.sd-results-zero {
+  color: var(--sd-steel-3);
+  text-shadow: 1px 1px 0 var(--sd-ink-0);
+}
+
 .sd-results-panel {
   display: flex;
   flex-direction: column;

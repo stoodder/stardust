@@ -9,6 +9,7 @@
 import type { EndingChoice, EpilogueView } from './epilogueState.ts';
 import { assertNever } from '../../shared/types.ts';
 import { CREDITS } from './credits.ts';
+import { FINALE_HEADLINE } from './presentationText.ts';
 
 /** A card's time on screen: about 6 s, plus reading time past 120 characters (ms). */
 export const CARD_MS = 6000;
@@ -22,8 +23,11 @@ export function cardMs(text: string): number {
 /** How long a card fades in and out (ms; none under reduced motion). */
 export const FADE_MS = 600;
 
-/** The counter before its flip: the number Everglow kept, at zero (UI copy, bible.md § 10 #13). */
-export const COUNTER_ZERO = 'PESTS PROCESSED: 0';
+/**
+ * The counter before its flip: the number Everglow kept, at zero (UI copy, bible.md § 10 #13), the
+ * line the finale's Results card headlined (`FINALE_HEADLINE`).
+ */
+export const COUNTER_ZERO = FINALE_HEADLINE;
 /** How long the zero holds before it flips, and the flip itself (ms). */
 export const COUNTER_ZERO_MS = 2400;
 export const COUNTER_FLIP_MS = 400;

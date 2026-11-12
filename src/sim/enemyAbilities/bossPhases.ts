@@ -17,6 +17,10 @@
 //   unsung.ts lays it to rest when the song's countdown completes.
 // - A phase's HP floor (`floorPct`, the Unsung's Song; T808): a hit stops at the floor, so the HP
 //   never falls below it while the phase lasts (the damage past it still feeds the song: song.ts).
+// - A phase's time floor (`notBeforeTicks`, the Unsung's forms 3 and 4; D156): reached by HP before
+//   it is that long into the map's script phase, the HP holds at the phase's threshold and the
+//   phase waits; the next hit after the time comes begins it (`phaseWaitTicks`). A split boss's
+//   rise into such a phase is bossMerge.ts's.
 import {
   BOSS_BURROW_GAP_SEC,
   BOSS_LEAVE_MAX_SEC,
@@ -80,6 +84,11 @@ export function bossDamage(state: SimState, boss: Enemy, damage: number): number
   const next = nextHpPhase(def, boss.bossPhase);
   if (next > 0 && before - damage <= def.phases[next - 1]!.fromPct * max + HP_EPS) {
     boss.hp = def.phases[next - 1]!.fromPct * max; // nextHpPhase returns 0 or a phase number
+    // D156: a phase with a time floor holds the HP at its threshold until its time comes.
+    if (phaseWaitTicks(state, def.phases[next - 1]!) > 0) {
+      if (before < boss.hp) boss.hp = before;
+      return before - boss.hp;
+    }
     enterBossPhase(state, boss, def, next, true);
     return before - boss.hp;
   }
@@ -97,6 +106,19 @@ export function bossDamage(state: SimState, boss: Enemy, damage: number): number
   }
   boss.hp = before - damage;
   return damage;
+}
+
+/**
+ * The ticks before boss phase `p` may begin (its `notBeforeTicks` into the map's current script
+ * phase, `state.phaseTick`; D156), 0 when it may now or has no time floor.
+ */
+export function phaseWaitTicks(
+  state: Pick<SimState, 'tick' | 'phaseTick'>,
+  p: Pick<CompiledBoss['phases'][number], 'notBeforeTicks'>,
+): number {
+  if (p.notBeforeTicks <= 0) return 0;
+  const left = p.notBeforeTicks - (state.tick - state.phaseTick);
+  return left > 0 ? left : 0;
 }
 
 /**

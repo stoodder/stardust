@@ -60,6 +60,7 @@ import type { SpokenLine } from '../state.ts';
 import { resultsCounter, type ResultsCounter } from '../../story/counter.ts';
 import {
   counterIsHeadline,
+  FINALE_HEADLINE,
   handoverLine,
   medalMarks,
   resultsHeader,
@@ -641,7 +642,11 @@ function Body({ result }: { result: RunResult }) {
       <p class="sd-results-kicker" data-voice="kicker">
         {header.kicker}
       </p>
-      <h1 id="sd-results-heading" class="sd-results-heading" data-voice="heading">
+      <h1
+        id="sd-results-heading"
+        class={finaleWin ? 'sd-results-heading sd-results-zero' : 'sd-results-heading'}
+        data-voice="heading"
+      >
         {headline}
       </h1>
       {result.stamps.map((t, i) => (
@@ -816,10 +821,16 @@ export function Results() {
       </main>
     );
   }
+  // The finale's win sits on the dawn C5 rises into (D156), not the night it ended.
+  const dawn = counterIsHeadline(result.counter, result.outcome, result.mapId);
   return (
     // Inert under a scene (the stinger plays over the card as it's dismissed).
     // The map's UI act theme (its presentation dial): Act II's card edges in orange.
-    <main class="sd-screen sd-results" inert={sceneBlocks.value} data-act={result.theme}>
+    <main
+      class={dawn ? 'sd-screen sd-results sd-results-dawn' : 'sd-screen sd-results'}
+      inert={sceneBlocks.value}
+      data-act={result.theme}
+    >
       {held === null ? <Body result={result} /> : <HeldBody result={result} card={held} />}
     </main>
   );

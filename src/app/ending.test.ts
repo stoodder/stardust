@@ -290,10 +290,16 @@ describe('the stages (dawn.ts, c5.ts)', () => {
   });
 });
 
-describe("the finale's card (finale.md § FIN, Dawn: the results screen reads REMEMBERED: {n})", () => {
-  it('a win headlines REMEMBERED: {n}, not the cheer, then lists Voices held', async () => {
+describe("the finale's card (D156: PESTS PROCESSED: 0; the first REMEMBERED is the epilogue's)", () => {
+  it('a win headlines the counter at 0, not the cheer, then lists Voices held', async () => {
     const { fixtureResult } = await import('./resultsFixture.ts');
-    const { counterIsHeadline, resultsHeader } = await import('../ui/screens/presentationText.ts');
+    const { counterIsHeadline, FINALE_HEADLINE, resultsHeader } =
+      await import('../ui/screens/presentationText.ts');
+    const { COUNTER_ZERO } = await import('../ui/screens/epilogue.ts');
+    expect(FINALE_HEADLINE).toBe('PESTS PROCESSED: 0');
+    // The card's headline is the line the epilogue's counter card flips from.
+    expect(COUNTER_ZERO).toBe(FINALE_HEADLINE);
+    expect(FINALE_HEADLINE).not.toMatch(/REMEMBERED/);
     const { resultsCounter } = await import('../story/counter.ts');
     const save = DEV_SAVES.after_a3m6_strongest.build();
     const r = fixtureResult({ map: 'fin_m01', outcome: 'won' }, save);
@@ -302,7 +308,11 @@ describe("the finale's card (finale.md § FIN, Dawn: the results screen reads RE
     const counter = resultsCounter(r.counter, r.pestsProcessed, r.remembered!);
     expect(counter).not.toBeNull();
     if (counter === null) return;
+    // The epilogue's flip still reads the lifetime count (story/counter.ts's `remembered` style).
     expect(counter.line).toBe(`REMEMBERED: ${save.stats.pestsProcessed.toLocaleString('en-US')}`);
+    // The medal reads "Perfect" (no singer hushed; T871), on the fixture's card as in a battle.
+    expect(r.medals.map((m) => m.name)).toContain('Perfect');
+    expect(r.medals.map((m) => m.name)).not.toContain('Perfect Core');
     expect(resultsHeader(r.counter, 'won').headline).toBe('PERIMETER SECURED.');
     const rows = resultsStats(r);
     // A win's waves go unsaid (its headline says them; T803e): Voices held is the one row.

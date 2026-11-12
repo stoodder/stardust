@@ -260,6 +260,8 @@ function compileBoss(ctx: Ctx, b: BossDef, where: string): CompiledBoss {
             },
       // The finale's phase kinds (T800a seams; T808 runs them).
       floorPct: p.floorPct ?? 0,
+      notBeforeTicks:
+        p.notBeforeSec === undefined ? 0 : ticks(ctx, p.notBeforeSec, `${w}.notBeforeSec`),
       burrowTo: p.burrowTo ?? null,
       adds:
         p.adds === undefined

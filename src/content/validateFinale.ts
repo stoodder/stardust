@@ -334,7 +334,8 @@ function atomsOf(c: ConditionDef<IdSpace>): ConditionDef<IdSpace>[] {
  * HP above 0 and below its phase's start, and only on a `layToRest` boss, whose last phase has one
  * (the song ends it, never its HP) and which is Hollow; `burrowTo` goes with a `burrow` in its
  * phase, longer than its surfacing tell; adds name an enemy (never itself), a whole count ≥ 1, and
- * a period longer than their tell; a phase-scoped Phased cycle tells for at least
+ * a period longer than their tell; a `notBeforeSec` is ≥ 0 (D156; on a boss by construction: it is
+ * a boss phase's field); a phase-scoped Phased cycle tells for at least
  * BOSS_MIN_TELL_SEC and fits in its period; a split with no merge has a later phase to rise into
  * (T808).
  */
@@ -355,6 +356,10 @@ export function validateFinalePhases(
         bad(`${w}.floorPct`, "must be above 0 and below its phase's start");
       }
       if (!layToRest) bad(`${w}.floorPct`, "only a 'layToRest' boss has an HP floor");
+    }
+    // D156: a time floor on a phase's start (the Unsung's forms 3 and 4).
+    if (p.notBeforeSec !== undefined && !(p.notBeforeSec >= 0 && Number.isFinite(p.notBeforeSec))) {
+      bad(`${w}.notBeforeSec`, 'must be ≥ 0 (seconds into the script phase)');
     }
     if (p.burrowTo !== undefined && p.burrow === undefined) {
       bad(`${w}.burrowTo`, 'goes with a `burrow` in the same phase');

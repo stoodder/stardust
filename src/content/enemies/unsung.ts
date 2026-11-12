@@ -51,13 +51,22 @@ export const unsung = defineEnemy({
       },
       // The split: three parts carry the band to 50% between them; no merge (it rises instead).
       { fromPct: 0.75, split: { part: 'unsung_part', count: 3, hpPct: 0.25 / 3 } },
+      // Forms 3 and 4 wait for their time (D156): never sooner than 60 s and 120 s into Phase 2, so
+      // hitting it shortens the song (its damage feeds the rest) but never brings its digs or its
+      // Silencers on sooner.
       {
         fromPct: 0.5,
+        notBeforeSec: 60,
         burrow: { times: 2, durationSec: 4 },
         burrowTo: 'choir',
         phase: { everySec: 8, durationSec: 2, tellSec: 1.5 },
       },
-      { fromPct: 0.25, floorPct: 0.01, adds: { enemy: 'silencer', everySec: 20 } },
+      {
+        fromPct: 0.25,
+        notBeforeSec: 120,
+        floorPct: 0.01,
+        adds: { enemy: 'silencer', everySec: 20 },
+      },
     ],
     ending: 'layToRest',
     endAtPct: 0,

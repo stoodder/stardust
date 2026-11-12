@@ -928,6 +928,14 @@ export interface BossPhaseDef {
    */
   readonly floorPct?: number;
   /**
+   * The phase begins no earlier than this long into the map's current script phase (the Unsung's
+   * forms 3 and 4: 60 s and 120 s into Phase 2; D156), so damage never brings a form's threat on
+   * sooner. Reached by HP sooner, the HP holds at the phase's threshold until then (the hits still
+   * feed the song); risen after a split sooner, the rise's invulnerability lasts until then.
+   * Without it a phase begins as soon as its HP share (or its rise) comes.
+   */
+  readonly notBeforeSec?: number;
+  /**
    * Where this phase's `burrow` surfaces (the Unsung's phase 3: `'choir'`, among the singers;
    * D154 Fork 2). Needs a `burrow` in the same phase, longer than its 1.5 s surfacing tell;
    * without it a burrow surfaces where it dug. Run by enemyAbilities/unsung.ts (T808).

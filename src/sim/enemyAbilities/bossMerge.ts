@@ -26,13 +26,19 @@
 //   or out: cleanup calls `riseAfterSplit` over the tick's dead), the boss rises again where it
 //   fell: a fresh whole boss of its def (a new uid; not split-born, so its own phases, floor, and
 //   ending run), at its next phase's share of its max HP, in that phase with its 1.5 s of
-//   invulnerability (BossPhase, then BossRisen; a map's `bossPhase` trigger cues it). A part that
+//   invulnerability (BossPhase, then BossRisen; a map's `bossPhase` trigger cues it), held until
+//   that phase's time floor if it rises sooner (`notBeforeTicks`; D156). A part that
 //   leaks or is laid to rest by `restAll` raises nothing.
 import { BOSS_ABILITY_TELL_SEC, HASTE_CAP } from '../../content/rules.ts';
 import { secToTicks } from '../../shared/time.ts';
 import type { Enemy } from '../entities.ts';
 import { emit, type SimState } from '../state.ts';
-import { BOSS_PHASE_INVULNERABLE_TICKS, enterBossPhase, nextHpPhase } from './bossPhases.ts';
+import {
+  BOSS_PHASE_INVULNERABLE_TICKS,
+  enterBossPhase,
+  nextHpPhase,
+  phaseWaitTicks,
+} from './bossPhases.ts';
 import { removeGone, spawnSplitBorn, splitOf } from './bossSplit.ts';
 import { wasKilled } from './split.ts';
 
@@ -176,5 +182,8 @@ export function riseAfterSplit(state: SimState, dead: Enemy): void {
   const m = spawnSplitBorn(state, root, dead, dead.dist, 0, 0); // a whole boss: not split-born
   m.hp = root.boss.phases[next - 1]!.fromPct * root.hp; // next ≤ phases.length
   enterBossPhase(state, m, root.boss, next, true);
+  // D156: risen before its phase's time floor, it stays in its rise's telegraph until then.
+  const wait = phaseWaitTicks(state, root.boss.phases[next - 1]!);
+  if (wait > m.invulnerableTicks) m.invulnerableTicks = wait;
   emit(state, { type: 'BossRisen', uid: m.uid });
 }
