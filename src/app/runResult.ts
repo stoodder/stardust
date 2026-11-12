@@ -41,6 +41,7 @@ import type {
 } from '../ui/screens/state.ts';
 import { dialogueEnabled, setStoryRun, withSceneEffects } from './dialogue.ts';
 import { towerName } from './hudText.ts';
+import { checkpointPlace, retryLabel } from './checkpoints.ts';
 import { perfectMedalName } from './hudViews.ts';
 import { storyRewardsOf } from './resultsStory.ts';
 import { activeSave, updateActiveSave } from './save.ts';
@@ -124,6 +125,18 @@ export interface RunEndInput {
   readonly resumedFromWave?: number | null;
   /** The latest checkpoint's wave, which a loss offers to retry from ("Retry from wave N"). */
   readonly checkpointWave?: number | null;
+  /**
+   * That checkpoint's label (the finale's `'halls'`: "Retry from the Halls"), or null/absent for
+   * a wave checkpoint.
+   */
+  readonly checkpointLabel?: string | null;
+  /** The label of the checkpoint this attempt resumed from (`resumedFromWave`'s), if it had one. */
+  readonly resumedFromLabel?: string | null;
+  /**
+   * The finale's REMEMBERED: {n} (finale.md § Dawn; app/countdown.ts): the lifetime Pests Processed
+   * the Phase 2 countdown started from. Absent: the card counts the lifetime after this run.
+   */
+  readonly remembered?: number;
   /**
    * What the run's script revoked (the sim's `state.revoked`; app/storyMeta.ts `revokedAtEnd`):
    * meta's run end saves it on the run that first wins the map (step 3). Absent: nothing.
@@ -454,12 +467,40 @@ export function runResultOf(
     resumedFromWave: input.resumedFromWave ?? null,
     // "Retry from wave N" (core-loop.md § 2.12): a loss offers the run's latest checkpoint.
     retryFromWave: outcome === 'lost' ? (input.checkpointWave ?? null) : null,
+    // A labelled checkpoint names its place ("Retry from the Halls"; app/checkpoints.ts).
+    ...checkpointPlaces(input, outcome),
+    ...(input.remembered === undefined ? {} : { remembered: input.remembered }),
     escort: input.escort ?? null,
     meter: meterOf(input),
     // The debrief's choice (C2) is app/resultsFlow.ts's `withResultsChoice`, over the save in play.
     choice: null,
     // A3M3's Holdout plays the card identically at any score: its rewards wait for the base.
     heldRewards: dials.holdRewardToasts,
+  };
+}
+
+/**
+ * The card's checkpoint words (app/checkpoints.ts): a loss's retry button ("Retry from the Halls")
+ * and a resumed run's place ("the Halls"), each only where its checkpoint is known.
+ */
+export function checkpointPlaces(
+  input: Pick<
+    RunEndInput,
+    'checkpointWave' | 'checkpointLabel' | 'resumedFromWave' | 'resumedFromLabel'
+  >,
+  outcome: RunOutcome,
+): { retryLabel?: string; resumedPlace?: string } {
+  const wave = input.checkpointWave ?? null;
+  const label = input.checkpointLabel ?? null;
+  const from = input.resumedFromWave ?? null;
+  const fromLabel = input.resumedFromLabel ?? null;
+  return {
+    ...(outcome === 'lost' && wave !== null
+      ? { retryLabel: retryLabel(label === null ? { wave } : { wave, label }) }
+      : {}),
+    ...(from !== null && fromLabel !== null
+      ? { resumedPlace: checkpointPlace({ wave: from, label: fromLabel }) }
+      : {}),
   };
 }
 

@@ -19,6 +19,7 @@ import { CALLSIGNS } from '../content/dialogue/profile.ts';
 import { presentationOfMap } from '../story/presentation.ts';
 import { hud, speed, type AbilityCooldownView } from '../ui/state.ts';
 import { silkText } from '../ui/silk.ts';
+import { checkpointPlace } from './checkpoints.ts';
 import type { Host } from './host.ts';
 import { bindAssetMeter } from './hudAsset.ts';
 import { bindEscortMeter, refugeesWalking } from './hudEscort.ts';
@@ -741,7 +742,13 @@ export function bindHud(
     // A checkpoint taken (T305b; core-loop §2.12): a small cue for a few seconds (T450: its sound).
     host.bus.on('CheckpointReached', (e) => {
       if (host.replaying) return;
-      hud.checkpoint.value = { id: e.tick, wave: e.wave };
+      // A labelled one names its place (the finale's "The Halls"; app/checkpoints.ts).
+      const place = checkpointPlace(e);
+      hud.checkpoint.value = {
+        id: e.tick,
+        wave: e.wave,
+        place: place.charAt(0).toUpperCase() + place.slice(1),
+      };
       if (checkpointTimer !== null) clearTimeout(checkpointTimer);
       checkpointTimer = setTimeout(() => {
         checkpointTimer = null;

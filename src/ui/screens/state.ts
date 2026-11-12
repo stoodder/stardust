@@ -50,6 +50,21 @@ export interface RunResult {
   /** A loss's latest checkpoint wave: the card offers "Retry from wave N". Null: none. */
   readonly retryFromWave: number | null;
   /**
+   * The retry button's text when `retryFromWave` is set ("Retry from the Halls" for the finale's
+   * labelled checkpoint; app/checkpoints.ts `retryLabel`). Absent: "Retry from wave N".
+   */
+  readonly retryLabel?: string;
+  /**
+   * Where a resumed run picked up, when its checkpoint had a label ("the Halls"); absent: the
+   * card says "wave {resumedFromWave}".
+   */
+  readonly resumedPlace?: string;
+  /**
+   * The finale's REMEMBERED: {n} (app/countdown.ts): the lifetime Pests Processed its countdown
+   * started from. Absent: a `remembered` card reads the lifetime after the run.
+   */
+  readonly remembered?: number;
+  /**
    * The run's Escort meter as it ended (the map was an Escort at the end: from the start, or
    * after a pivot; T305c), or null on other runs. Results lists it in Core integrity's place
    * (app/runResult.ts `resultsStats`), and a `meter` counter shows its line.

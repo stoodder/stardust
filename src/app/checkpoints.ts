@@ -10,7 +10,12 @@ import type { CommandLogEntry, Sim } from '../sim/index.ts';
 
 /** A point a lost run can be retried from. */
 export interface Checkpoint {
-  /** The wave whose countdown it marks ("Retry from wave 5"). */
+  /**
+   * A script checkpoint's label (the finale's `'halls'` at Phase 2's start: "Retry from the
+   * Halls"; `CheckpointReached.label`); absent on a wave checkpoint.
+   */
+  readonly label?: string;
+  /** The wave whose countdown it marks ("Retry from wave 5"); a labelled one's last wave started. */
   readonly wave: number;
   /** The tick the retry resumes at: replay steps the sim until `state.tick` reaches it. */
   readonly tick: number;
@@ -23,12 +28,31 @@ export interface Checkpoint {
  * host dispatches it (a frame may have run a few ticks, and logged a few commands, past it).
  */
 export function checkpointOf(
-  e: { readonly wave: number; readonly tick: number },
+  e: { readonly wave: number; readonly tick: number; readonly label?: string | undefined },
   log: readonly { readonly tick: number }[],
 ): Checkpoint {
   let n = log.length;
   while (n > 0 && log[n - 1]!.tick >= e.tick) n--; // n > 0
-  return { wave: e.wave, tick: e.tick, commandCount: n };
+  const at = { wave: e.wave, tick: e.tick, commandCount: n };
+  return e.label === undefined ? at : { label: e.label, ...at };
+}
+
+/** Where each script checkpoint label puts the player, as the retry and the HUD name it. */
+const CHECKPOINT_PLACES: Readonly<Record<string, string>> = { halls: 'the Halls' };
+
+/**
+ * Where a checkpoint resumes, in words: "the Halls" for the finale's `'halls'` (an unknown label
+ * reads as its id), else "wave N". The Results button is "Retry from {place}" (core-loop.md
+ * § 2.12); the HUD's cue and the resumed notice read it too.
+ */
+export function checkpointPlace(c: { readonly label?: string; readonly wave: number }): string {
+  if (c.label === undefined) return `wave ${c.wave}`;
+  return Object.hasOwn(CHECKPOINT_PLACES, c.label) ? CHECKPOINT_PLACES[c.label]! : c.label; // hasOwn
+}
+
+/** The Results button that resumes a lost run from `c`: "Retry from wave 5", "Retry from the Halls". */
+export function retryLabel(c: { readonly label?: string; readonly wave: number }): string {
+  return `Retry from ${checkpointPlace(c)}`;
 }
 
 /**

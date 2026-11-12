@@ -253,9 +253,13 @@ function Revoked({ revocations }: { revocations: RunRewards['revocations'] }) {
   );
 }
 
-/** Why a checkpoint run's card lights Victory only (core-loop.md § 2.12). */
-export function resumedNote(wave: number): string {
-  return `Resumed from wave ${wave}: Perfect Core and the Challenge need a shift from wave 1.`;
+/**
+ * Why a checkpoint run's card lights Victory only (core-loop.md § 2.12); `place` names a labelled
+ * checkpoint ("the Halls"), else it reads "wave {wave}".
+ */
+export function resumedNote(wave: number, place?: string): string {
+  const from = place ?? `wave ${wave}`;
+  return `Resumed from ${from}: Perfect Core and the Challenge need a shift from wave 1.`;
 }
 
 /**
@@ -402,11 +406,14 @@ function Payroll({
   rewards,
   won,
   resumedFromWave,
+  resumedPlace,
   marks,
 }: {
   rewards: RunRewards;
   won: boolean;
   resumedFromWave: number | null;
+  /** A labelled checkpoint's place ("the Halls"), else absent. */
+  resumedPlace?: string;
   marks: MedalMarks;
 }) {
   const { label, note } = (rewards.stones ? stonesLine : stardustLine)(rewards.stardust);
@@ -456,7 +463,7 @@ function Payroll({
       {/* A checkpoint run keeps Victory only (core-loop.md § 2.12): say why, without a scolding. */}
       {won && resumedFromWave !== null && (
         <p class="sd-results-pay-aside" data-testid="results-resumed">
-          {silkText(resumedNote(resumedFromWave))}
+          {silkText(resumedNote(resumedFromWave, resumedPlace))}
         </p>
       )}
       {/* Under the medals (core-loop.md § 2.13): a loss pays none, so like the medals, a win's only. */}
@@ -539,7 +546,8 @@ function Body({ result }: { result: RunResult }) {
   const full = resultsCounter(
     result.counter,
     result.pestsProcessed,
-    rewards?.lifetimePests ?? result.pestsProcessed,
+    // The finale's REMEMBERED: {n} is the count its countdown started from (app/countdown.ts).
+    result.remembered ?? rewards?.lifetimePests ?? result.pestsProcessed,
     result.meter,
   );
   // A meter line that only repeats its stat row goes (D143 R13: "Evacuated" once).
@@ -588,6 +596,7 @@ function Body({ result }: { result: RunResult }) {
           rewards={rewards}
           won={won}
           resumedFromWave={result.resumedFromWave}
+          {...(result.resumedPlace === undefined ? {} : { resumedPlace: result.resumedPlace })}
           marks={medalMarks(result.counter)}
         />
       )}
@@ -626,7 +635,7 @@ function WayOn({
           ref={focusOnce}
           onClick={retryFromCheckpoint}
         >
-          Retry from wave {checkpoint}
+          {result.retryLabel ?? `Retry from wave ${checkpoint}`}
         </button>
       )}
       <button

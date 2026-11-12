@@ -193,8 +193,8 @@ export function WaveBannerView() {
 
 /**
  * The "Checkpoint" cue (T431; core-loop §2.12) under the wave panel for a few seconds as a
- * checkpoint is taken (the countdown to every 5th wave, Act II on): a flag and the wave a lost run
- * could retry from. Screen readers hear it once.
+ * checkpoint is taken (the countdown to every 5th wave, Act II on; the finale's Halls): a flag and
+ * where a lost run could retry from ("Wave 5", "The Halls"). Screen readers hear it once.
  */
 export function CheckpointCueView() {
   const c = hud.checkpoint.value;
@@ -203,7 +203,7 @@ export function CheckpointCueView() {
     <div key={c.id} class="hud-checkpoint chamfer" role="status" data-testid="checkpoint-cue">
       <span class="hud-checkpoint-flag" aria-hidden="true" />
       Checkpoint
-      <span class="hud-checkpoint-wave">Wave {c.wave}</span>
+      <span class="hud-checkpoint-wave">{c.place}</span>
     </div>
   );
 }

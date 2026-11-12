@@ -420,6 +420,8 @@ export interface NameTagView {
 export interface CheckpointCue {
   readonly id: number;
   readonly wave: number;
+  /** Where it resumes, capitalized as the cue reads it ("Wave 5", "The Halls"; app/checkpoints.ts). */
+  readonly place: string;
 }
 
 /** The "WAVE n" banner as a wave starts. `id` changes with every wave. */
