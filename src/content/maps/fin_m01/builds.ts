@@ -140,9 +140,15 @@ function parSteps(): BuildStep[] {
   ];
 }
 
+/** Par's Phase 1 (its Halls ring's last upgrades in Phase 2 are par's alone). */
+const parPhase1 = (): BuildStep[] => parSteps().filter((st) => st.wave < 21 || 'scriptInput' in st);
+
 /** Par's placements and spending with each tower swapped by `swap` (a no-counter build). */
-function swapped(swap: Readonly<Partial<Record<TowerId, TowerId>>>): BuildStep[] {
-  return parSteps().flatMap((st): BuildStep[] => {
+function swapped(
+  swap: Readonly<Partial<Record<TowerId, TowerId>>>,
+  steps: readonly BuildStep[] = parSteps(),
+): BuildStep[] {
+  return steps.flatMap((st): BuildStep[] => {
     if (!('build' in st)) return [st];
     const to = swap[st.build];
     return [to === undefined ? st : { ...st, build: to }];
@@ -193,13 +199,21 @@ export const builds = defineBuilds({
     // for the air, and Thumpers where par digs its Dens (no burrow answer but Dread's tell).
     cluster: {
       loadout: ['mindspike', 'choir', 'skyhook', 'thumper'],
-      steps: byWave([...swapped({ sproing: 'skyhook', burrow: 'thumper' }), ...GATE_SKYHOOKS, ...SEAM_SPIKE]),
+      steps: byWave([
+        ...swapped({ sproing: 'skyhook', burrow: 'thumper' }, parPhase1()),
+        ...GATE_SKYHOOKS,
+        ...SEAM_SPIKE,
+      ]),
     },
     // Mindspike, Hum Choir, Skyhook, Stasis Bloom: the same road, with Blooms holding the Silencers'
     // and the Unsung's tells where par digs its Dens.
     stasis: {
       loadout: ['mindspike', 'choir', 'skyhook', 'bloom'],
-      steps: byWave([...swapped({ sproing: 'skyhook', burrow: 'bloom' }), ...GATE_SKYHOOKS, ...SEAM_SPIKE]),
+      steps: byWave([
+        ...swapped({ sproing: 'skyhook', burrow: 'bloom' }, parPhase1()),
+        ...GATE_SKYHOOKS,
+        ...SEAM_SPIKE,
+      ]),
     },
   },
 });

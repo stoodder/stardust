@@ -475,7 +475,13 @@ function runLevelChecks<K extends IdSpace>(
     for (const s of r.steps) {
       if (s.error !== null)
         steps.push(`${name}: step ${s.index} (${s.kind}, W${s.wave}) ${s.error}`);
-      else if (mustFinish && s.issuedTick < 0) {
+      // A press for a forced input the run's script never asked (Keep's "Who's there?" under the
+      // other C4 answers, T821) has nothing to press.
+      else if (
+        mustFinish &&
+        s.issuedTick < 0 &&
+        !(s.kind === 'scriptInput' && r.forcedInputs.length === 0)
+      ) {
         steps.push(
           `${name}: step ${s.index} (${s.kind}, W${s.wave}) never issued (${describeRun(rec)})`,
         );
@@ -513,6 +519,8 @@ export function monotonicCheck<K extends IdSpace>(
   const last = new Map<string, number>();
   for (const report of reports) {
     const map = content.maps[report.mapId as K['map']];
+    // A challenge map stands alone (T862): post-game, never part of the campaign's curve.
+    if (map.act === 'challenge') continue;
     const chain = marginChain(map);
     const pars = report.runs.filter((r) => r.build === 'par' && !r.repeat).map((r) => r.marginPct);
     if (chain === null || pars.length === 0) continue;
@@ -601,16 +609,30 @@ function rebaselineOutcome<K extends IdSpace>(
   };
 }
 
-/** The campaign maps a run covers: every one, or `mapId` only (a RangeError for an unknown id). */
+/**
+ * The maps a run covers: every campaign map in order, then the challenge maps (act 'challenge',
+ * T862: judged like any map, outside the monotonic chain), or `mapId` only (a RangeError for an
+ * unknown id). The other post-game map, Endless, has no par band: its tests judge it.
+ */
 export function campaignMapIds<K extends IdSpace>(
   content: CompiledContent<K>,
   mapId?: string,
 ): K['map'][] {
-  const ids = content.campaign.filter((id) => mapId === undefined || id === mapId);
+  const all = [...content.campaign, ...challengeMapIds(content)];
+  const ids = all.filter((id) => mapId === undefined || id === mapId);
   if (mapId !== undefined && ids.length === 0) {
-    throw new RangeError(`unknown campaign map '${mapId}' (maps: ${content.campaign.join(', ')})`);
+    throw new RangeError(`unknown campaign map '${mapId}' (maps: ${all.join(', ')})`);
   }
   return ids;
+}
+
+/** The challenge maps in `content` (act 'challenge'), in registry order (T862). */
+export function challengeMapIds<K extends IdSpace>(content: CompiledContent<K>): K['map'][] {
+  const maps: Readonly<Record<string, CompiledMapDef<K>>> = content.maps;
+  return Object.keys(maps).filter(
+    (id): id is K['map'] =>
+      maps[id]?.act === 'challenge' && !content.campaign.includes(id as K['map']),
+  );
 }
 
 /**

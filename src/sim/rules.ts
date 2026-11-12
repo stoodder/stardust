@@ -32,7 +32,11 @@ export type SimRule =
   | { readonly kind: 'noAbilities'; readonly source: ModifierSource }
   | { readonly kind: 'maxTowerTypes'; readonly max: number; readonly source: ModifierSource }
   | { readonly kind: 'noProtocols'; readonly source: ModifierSource }
-  | { readonly kind: 'towerFaction'; readonly faction: TowerFaction; readonly source: ModifierSource }
+  | {
+      readonly kind: 'towerFaction';
+      readonly faction: TowerFaction;
+      readonly source: ModifierSource;
+    }
   | { readonly kind: 'allCloaked'; readonly source: ModifierSource };
 export type SimRuleKind = SimRule['kind'];
 

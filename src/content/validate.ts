@@ -92,6 +92,7 @@ import type {
 } from './types.ts';
 import { dialogueErrors } from './validateDialogue.ts';
 import { validateCampaignMaps } from './validateMap.ts';
+import { validateChallenges } from './validateChallenge.ts';
 import { validateMedals } from './validateMedals.ts';
 import { validateLinks } from './validateLinks.ts';
 import { validatePurchasable, type PurchaseRules } from './validatePurchasable.ts';
@@ -134,6 +135,7 @@ export function validate<K extends IdSpace>(
     issues.add('campaign', 'campaign', `map '${id}' is listed more than once`);
   }
   validateCampaignMaps(issues, raw, rules);
+  validateChallenges(issues, raw); // T862
   validateMedals(issues, raw);
   validateLinks(issues, raw);
   validatePurchasable(issues, raw, rules.purchases);

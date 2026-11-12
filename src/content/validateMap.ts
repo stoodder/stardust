@@ -83,6 +83,7 @@ import {
   SALVAGE_MAX,
   SALVAGE_MIN,
 } from './rules.ts';
+import { cloakedEnemyDef, enemiesOnMap } from './challenge.ts'; // T862
 import type { EnemyDef, GridPos, IdSpace, MapDef, RawContent, TowerFaction } from './types.ts';
 import type { ValidationRules } from './validate.ts';
 import { validateBuilds } from './validateBuilds.ts';
@@ -181,7 +182,10 @@ export function validateCampaignMaps<K extends IdSpace>(
     validateMap(issues, ctx, def, { index, history });
   }
   for (const [id, def] of maps) {
-    if (!done.has(id)) validateMap(issues, ctx, def, null);
+    // A challenge map is judged by its own view of the enemies (every one cloaked under
+    // `allCloaked`; challenge.ts, T862).
+    const own = { ...ctx, enemies: enemiesOnMap(def, ctx.enemies, cloakedEnemyDef) };
+    if (!done.has(id)) validateMap(issues, own, def, null);
   }
 }
 

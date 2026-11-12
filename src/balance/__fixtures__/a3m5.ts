@@ -18,9 +18,9 @@ export const TICK_HZ = 60;
 export const ROAD_TILES = 38;
 
 /**
- * What a player who heeds Kip's w13 line ("Save what you have. Freeze them on the back path, by the old intake.")
- * saves their targeted casts for: the hunt's Silencers by the old intake, in W13 and again in W15
- * (the same hunt, one Silencer; a player who learned it in W13 meets it the same way).
+ * What a player who heeds Kip's radio saves their targeted casts for: the hunt's Silencers by the
+ * old intake, in W13 ("Save what you have. Freeze them on the back path, by the old intake.") and
+ * again in W15 ("Same as before. Save what you have for the old intake."; T776).
  */
 export const HUNT_HEED: Heed = {
   waves: [13, 15],

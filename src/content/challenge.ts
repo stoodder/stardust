@@ -7,7 +7,9 @@
 // the validator checks it against cloaked raw defs (validateChallenge.ts). Pure.
 import type { CompiledEnemyDef } from './compiled.ts';
 import type { Refs } from './compileHelpers.ts';
-import type { ChallengeDef, ChallengeRuleDef, EnemyDef, IdSpace } from './types.ts';
+import type { ChallengeDef, ChallengeRuleDef, EnemyDef, IdSpace, Trait } from './types.ts';
+
+const CLOAKED: Trait = 'cloaked';
 
 /** A challenge's rule of `kind`, or undefined. */
 export function challengeRule<T extends ChallengeRuleDef['kind']>(
@@ -29,7 +31,7 @@ export function mapCloaksAll(map: {
 /** `def` cloaked (its traits gain `cloaked`); a neutral or already cloaked def as it is. */
 export function cloakedEnemyDef<E extends EnemyDef>(def: E): E {
   if (def.neutral === true || def.traits.includes('cloaked')) return def;
-  return { ...def, traits: [...def.traits, 'cloaked'] };
+  return { ...def, traits: [...def.traits, CLOAKED] };
 }
 
 const COMPILED_CLOAKED = new WeakMap<object, object>();
@@ -48,7 +50,7 @@ export function cloakedCompiledEnemy<Id extends string>(
   const out: CompiledEnemyDef<Id> = Object.freeze({
     ...def,
     cloaked: true,
-    traits: [...def.traits, 'cloaked'],
+    traits: [...def.traits, CLOAKED],
   });
   COMPILED_CLOAKED.set(def, out);
   return out;

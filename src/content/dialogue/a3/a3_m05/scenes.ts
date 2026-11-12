@@ -7,7 +7,8 @@
 //   line (Purge), or `system`'s advisory (Rewrite: QUILL is offline here, and app/dialogue.ts skips
 //   its lines wherever it is; T713).
 // - The radio: w05 Ves'thara, w06 Kip, w09 Pebble (Grandmother if Old Thrum was spared, else
-//   Bramble), w13 Kip on the hunt (save the casts for the old intake; every C4 answer; D151).
+//   Bramble), w13 Kip on the hunt (save the casts for the old intake; every C4 answer; D151), and
+//   w15 Kip on the last bearers' hunt (the same again; T776).
 // - The Choir's hint (`a3_m05_cue_choir`, map.ts's `choir_hint`: W9's countdown, with a Hum Choir
 //   on the field): Pebble's hint for Declined, every C4 answer (D151).
 // - Cut the Feed (`a3_m05_cue_feed_cut`, the objective's `objectiveCompleted`): QUILL's line, or
@@ -111,6 +112,22 @@ export const scenes = defineScenes([
       speaker: 'kip',
       expression: 'worried',
       text: 'Save what you have. Freeze them on the back path, by the old intake.',
+    },
+  ]),
+  // The countdown before the last bearers (T776): the same hunt, one Silencer, so the player who
+  // answered W13 at the old intake is told to save the casts for it again.
+  defineScene('a3_m05_w15', [
+    {
+      kind: 'line',
+      speaker: 'kip',
+      expression: 'worried',
+      text: 'These are the last of them. A Silencer is coming up the sluice behind them.',
+    },
+    {
+      kind: 'line',
+      speaker: 'kip',
+      expression: 'worried',
+      text: 'Same as before. Save what you have for the old intake.',
     },
   ]),
   // The hint for Declined, before the layout is set (D151): the Hum Choir shortens a hostile jam
