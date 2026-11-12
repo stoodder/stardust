@@ -14,6 +14,7 @@ import {
   facingOfKey,
   frontTowerNear,
   heldBySong,
+  HOLD_REACH_TILES,
   PART_OUTLINE_ALPHA,
   PART_OUTLINE_SIDES,
   partOutline,
@@ -130,6 +131,15 @@ describe('held by the song (M8 R1)', () => {
     expect(heldBySong({ ...unit, alive: false }, SONG_SCRIPT_PHASE, [circle])).toBeNull();
     expect(heldBySong(unit, SONG_SCRIPT_PHASE + 1, [circle])).toBeNull();
     expect(heldBySong(unit, SONG_SCRIPT_PHASE, [])).toBeNull();
+  });
+
+  it('holds a step past the edge only with the reach (M8 R2)', () => {
+    const outside = { ...unit, x: 3.5 }; // 2.5 tiles from the centre: half a tile out
+    expect(heldBySong(outside, SONG_SCRIPT_PHASE, [circle])).toBeNull();
+    expect(heldBySong(outside, SONG_SCRIPT_PHASE, [circle], HOLD_REACH_TILES)).toBe(circle);
+    expect(
+      heldBySong({ ...unit, x: 2.5 }, SONG_SCRIPT_PHASE, [circle], HOLD_REACH_TILES),
+    ).toBeNull();
   });
 
   it('picks the nearest circle when two hold it', () => {

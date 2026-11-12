@@ -127,6 +127,14 @@ function toTheKnock(sim: Sim<IdSpace>, lagMs: number) {
   return { permitted, shownAt, release, panel: p, knock };
 }
 
+/** Presses "Who's there?" once permitted: the line moves on, the next tick restores the class. */
+function press(sim: Sim<IdSpace>, release: () => void): void {
+  host.enqueue({ type: 'scriptInput', id: 'whos_there' });
+  release();
+  host.fastForward(1);
+  expect(sim.state.pendingInput).toBeNull();
+}
+
 beforeEach(() => {
   vi.useFakeTimers();
   setDialogueEnabled(true);
@@ -164,14 +172,6 @@ describe('"Who\'s there?" arms from the typewriter, not a clock (A2-2)', () => {
 });
 
 describe('the knock-knock lands before the rebuild note (A2-1)', () => {
-  /** Presses "Who's there?" once permitted: the line moves on, the next tick restores the class. */
-  function press(sim: Sim<IdSpace>, release: () => void): void {
-    host.enqueue({ type: 'scriptInput', id: 'whos_there' });
-    release();
-    host.fastForward(1);
-    expect(sim.state.pendingInput).toBeNull();
-  }
-
   it('freezes the battle, plays "Not Everglow." / "...That\'s the joke.", then shows the note', () => {
     const sim = keepPhaseTwo();
     const { release, panel: p, knock } = toTheKnock(sim, 0);

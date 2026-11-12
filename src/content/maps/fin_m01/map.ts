@@ -336,11 +336,11 @@ export const map = defineMapLayout({
   // render's), rest and scatter in Phase 2 only. Tuned to ~3 min at Keep (#18; T821, D156): the
   // trickle is most of it, so the kills (all in by ~110 s) and the Unsung's damage (~10 s off the
   // phase for par) can't skew each C4 answer's length past ±30% of Keep's, and alone it still ends
-  // the phase in 215 s under Keep.
+  // the phase in 207 s under Keep.
   song: {
     baseRadius: 2.5,
     restTarget: 1400,
-    restPerSec: 5.2,
+    restPerSec: 5.4,
     restPerBossHp: 0.004,
     multipliers: [
       { flag: 'quill_choice', value: 'rewrite', mul: 1.5 },

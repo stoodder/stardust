@@ -75,7 +75,11 @@ describe('a finale checkpoint retry is pending at its checkpoint (N1)', () => {
 
     let pending = activeSave()?.pendingRun;
     expect(pending?.map).toBe('fin_m01');
-    expect(pending?.checkpoint).toEqual({ wave: 15, tick: w15.tick, commandCount: w15.commandCount });
+    expect(pending?.checkpoint).toEqual({
+      wave: 15,
+      tick: w15.tick,
+      commandCount: w15.commandCount,
+    });
     expect(pending?.retriedFrom?.wave).toBe(15);
     expect(validateSave(JSON.parse(JSON.stringify(activeSave()))).ok).toBe(true);
     // It rebuilds: a closed tab now resumes at wave 15.

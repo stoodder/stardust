@@ -189,7 +189,12 @@ describe('the Unsung’s data (enemies.md § 6; D154)', () => {
     expect(P4).toMatchObject({ floorPct: 0.01, adds: { enemy: 'silencer', count: 1 } });
     expect(P4!.adds!.everyTicks).toBe(1800);
     // Forms 3 and 4 wait for their time (D156): never sooner than 60 s and 120 s into Phase 2.
-    expect(PHASES.map((p) => p.notBeforeTicks)).toEqual([0, 0, secToTicks(60), secToTicks(120)]);
+    expect(PHASES.map((p) => p.notBeforeTicks)).toEqual([
+      0,
+      secToTicks(90),
+      secToTicks(120),
+      secToTicks(150),
+    ]);
     for (const g of [
       'enemy.boss.layToRest',
       'enemy.boss.floor',
@@ -527,7 +532,8 @@ describe("the forms' time floors (D156): damage never brings a form on sooner", 
 
   it('risen after the split early, it holds in its rise until form 3 may begin', () => {
     const { state, ctx } = world();
-    state.phaseTick = state.tick; // Phase 2 just began: form 3 waits 60 s
+    // Phase 2 began as the split may first come (90 s): form 3 waits 30 s more (D157).
+    state.phaseTick = state.tick - P2!.notBeforeTicks;
     const u = risen(state, ctx);
     expect(u.bossPhase).toBe(3);
     const left = state.phaseTick + P3!.notBeforeTicks - state.tick;

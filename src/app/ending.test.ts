@@ -249,8 +249,8 @@ describe('the epilogue (bible.md § 10)', () => {
     expect(cardMs('x'.repeat(170))).toBe(8000);
     // Every beat moves on by itself but the credits, which hold at rest until a press.
     for (const b of beats) {
-      if (b.kind === 'credits') expect(beatMs(b, view, false)).toBeNull();
-      else expect(beatMs(b, view, false)).toBeGreaterThan(0);
+      if (b.kind === 'credits') expect(beatMs(b, view)).toBeNull();
+      else expect(beatMs(b, view)).toBeGreaterThan(0);
     }
     expect(counterFlipped(COUNTER_ZERO_MS - 1)).toBe(false);
     expect(counterFlipped(COUNTER_ZERO_MS)).toBe(true);

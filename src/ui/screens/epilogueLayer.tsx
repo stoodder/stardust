@@ -142,7 +142,7 @@ function Epilogue({ view }: { view: EpilogueView }) {
   // Each beat moves on by itself when its time is up (the credits hold at rest until a press).
   useEffect(() => {
     if (beat === undefined) return undefined;
-    const ms = beatMs(beat, view, still);
+    const ms = beatMs(beat, view);
     if (ms === null) return undefined;
     const id = setTimeout(advance, ms);
     return () => clearTimeout(id);
@@ -280,7 +280,9 @@ function Credits({
             {b.lines.map((l, j) => (
               <p
                 key={`${j}${l}`}
-                class={b.style === 'you' && j === 0 ? 'end-roll-line end-roll-name' : 'end-roll-line'}
+                class={
+                  b.style === 'you' && j === 0 ? 'end-roll-line end-roll-name' : 'end-roll-line'
+                }
               >
                 {l}
               </p>

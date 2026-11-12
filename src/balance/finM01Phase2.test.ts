@@ -105,7 +105,7 @@ describe('FIN Phase 2 and Dawn', { timeout: HARNESS_TEST_TIMEOUT_MS * 2 }, () =>
     expect(trickleSec).toBeGreaterThan(SONG_TARGET_SEC); // the kills and the Unsung still count
   });
 
-  it('hitting the Unsung shortens the song, and its forms keep their time floors (D156)', () => {
+  it('hitting the Unsung shortens the song, and its forms keep their time floors (D156, D157)', () => {
     // The same par with the boss's damage worth nothing to the song: a longer Phase 2.
     const raw = RAW_CONTENT.maps.fin_m01;
     const deaf = compileContent({
@@ -118,14 +118,31 @@ describe('FIN Phase 2 and Dawn', { timeout: HARNESS_TEST_TIMEOUT_MS * 2 }, () =>
     const profile = referenceRunProfile(m, deaf, 'standard', undefined, flags);
     const unheard = runHeadless(runConfig(deaf, m, b, profile, 1, flags), b);
     expect(songSeconds(unheard)! - songSeconds(c4.keep)!).toBeGreaterThanOrEqual(5);
-    // On Story (the most damage par deals) form 3's digs never come before 60 s into Phase 2 (a
-    // rise sooner holds in its telegraph), and form 4 never begins before 120 s.
+    // On Story (the most damage par deals) the split never comes before 90 s into Phase 2, form
+    // 3's digs (and its invulnerability: a rise sooner holds in its telegraph) never before 120 s,
+    // and form 4 never begins before 150 s: each form's floor (`notBeforeSec`).
+    const floors = content.enemies.unsung.boss!.phases.map((p) => p.notBeforeTicks);
+    expect(floors).toEqual([0, 90, 120, 150].map((s) => s * TICK_HZ));
     const story = played('par@story');
     const p2 = story.at('PhaseChanged', (e) => 'phase' in e && e.phase === 2);
-    const form4 = story.at('BossPhase', (e) => 'phase' in e && e.phase === 4);
-    const dig = story.at('BossSurfaced');
-    expect(dig - p2).toBeGreaterThanOrEqual(60 * TICK_HZ);
-    expect(form4 - p2).toBeGreaterThanOrEqual(120 * TICK_HZ);
+    const form = (n: number): number =>
+      story.at('BossPhase', (e) => e.type === 'BossPhase' && e.phase === n && e.enemy === 'unsung');
+    expect(form(2) - p2).toBeGreaterThanOrEqual(floors[1]!);
+    expect(form(4) - p2).toBeGreaterThanOrEqual(floors[3]!);
+    // Form 3's first hittable tick (after its rise's telegraph) and its digs, if any.
+    const rise = story.log.find(
+      (x) => x.e.type === 'BossPhase' && 'phase' in x.e && x.e.phase === 3,
+    );
+    expect(rise).toBeDefined();
+    const digs = story.log.filter((x) => x.e.type === 'BossSurfaced');
+    for (const d of digs) expect(d.tick - p2).toBeGreaterThanOrEqual(floors[2]!);
+    // Par on Standard reaches form 2 well before its floor would let it: the floor is what holds.
+    const std = played('par');
+    const p2s = std.at('PhaseChanged', (e) => 'phase' in e && e.phase === 2);
+    expect(
+      std.at('BossPhase', (e) => e.type === 'BossPhase' && e.phase === 2 && e.enemy === 'unsung') -
+        p2s,
+    ).toBeLessThanOrEqual(floors[1]! + 2 * TICK_HZ);
   });
 
   it("Thrum's echo at rest progress 50% when she was cleared; Pebble's line as it arrives", () => {

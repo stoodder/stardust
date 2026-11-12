@@ -188,23 +188,32 @@ export interface HoldCircle {
 }
 
 /**
+ * How far past a song circle's edge (tiles) its light still holds a body (M8 R2): the split's
+ * three parts crowd its edge, and one a step outside must read with the others.
+ */
+export const HOLD_REACH_TILES = 1;
+
+/**
  * The song circle holding a song-bound unit (the Unsung or a split part, `laidToRestBySong`) in
- * script phase `phase`, or null: it stands inside one, above ground, while the song sings. The
- * nearest centre wins when circles overlap.
+ * script phase `phase`, or null: it stands inside one, or within `reach` tiles of its edge, above
+ * ground, while the song sings. The nearest centre wins when circles overlap.
  */
 export function heldBySong(
   e: HeldFacts,
   phase: number,
   circles: readonly HoldCircle[],
+  reach = 0,
 ): HoldCircle | null {
   if (phase !== SONG_SCRIPT_PHASE || !e.alive || e.burrowed || e.leaving) return null;
   let best: HoldCircle | null = null;
   let bestD = Number.POSITIVE_INFINITY;
-  for (const c of circles) {
+  for (let i = 0; i < circles.length; i++) {
+    const c = circles[i]!; // i < length
     const dx = e.x - c.x;
     const dy = e.y - c.y;
     const d = dx * dx + dy * dy;
-    if (d <= c.r * c.r && d < bestD) {
+    const r = c.r + reach;
+    if (d <= r * r && d < bestD) {
       best = c;
       bestD = d;
     }
@@ -248,6 +257,8 @@ export function rimToward(
 // - a held **part** wears a whole 1 px `gold.4` silhouette (`partOutline`): a copy each way, at
 //   full strength on the side facing the song and a ladder step down (PART_OUTLINE_ALPHA) on the
 //   other sides; the boss keeps its one-sided rim (its bulk reads on its own);
+// - the song's light holds a body a tile past its circle's edge (HOLD_REACH_TILES), so a part a step
+//   outside reads with the two inside;
 // - the dim round held bodies covers every one of them (the box round them all), and the Mindspike's
 //   Unnerved squiggles over them dim with the floaters (MindView reads TransientFx `dimOf`).
 

@@ -16,7 +16,8 @@
 //   under it: `rimToward`), sorts over the towers round it (EnemyView `setHoldLift`), and the boss
 //   stands in a soft additive `violet.3` ground pool (`decal`); the floaters, bursts and sparks that
 //   start on or round its frame draw dimmed (TransientFx `setDim`). Render-only: the fight is
-//   unchanged. At night the split's parts must read among the spires (M8 R2): every held body
+//   unchanged. At night the split's parts must read among the spires (M8 R2): the light holds a
+//   body a tile past the circle's edge (HOLD_REACH_TILES), every held body
 //   also sorts over each tower within one tile of it (`frontTowerNear`, depth.ts `held`), a held
 //   part wears a whole 1 px `gold.4` silhouette (`partOutline`: four copies, the song's side whole),
 //   and the dim box spans every held body.
@@ -52,6 +53,7 @@ import {
   digRingTiles,
   frontTowerNear,
   heldBySong,
+  HOLD_REACH_TILES,
   PART_OUTLINE_SIDES,
   partOutline,
   rimToward,
@@ -356,7 +358,7 @@ export class UnsungView {
     for (let i = 0; i < state.enemies.used && n < MAX_HELD; i++) {
       const e = items[i]!; // i < used ≤ items.length
       if (!laidToRestBySong(e)) continue;
-      const c = heldBySong(e, state.phase, circles);
+      const c = heldBySong(e, state.phase, circles, HOLD_REACH_TILES);
       if (c === null) continue;
       const v = hold.view(e.uid);
       if (v === undefined || !v.snapshot(snap)) continue;
@@ -370,7 +372,8 @@ export class UnsungView {
       gridToScreen(e.x, e.y, origin, p);
       gridToScreen(c.x, c.y, origin, c0);
       rimToward(p.x, p.y, c0.x, c0.y, rim);
-      const isBoss = e.def !== null && e.def.boss !== null;
+      // A split's part (`splitFrom`) wears the silhouette; the Unsung itself, its rim.
+      const isBoss = e.splitFrom === null;
       if (isBoss) {
         // The copy under the body (its depth reads the lift just applied).
         this.#placeRim(rims++, v, rim.dx, rim.dy, 1);

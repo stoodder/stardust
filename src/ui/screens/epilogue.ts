@@ -52,7 +52,8 @@ export const STAGE_PX = 360;
 export function creditBlockPx(b: Pick<CreditBlock, 'heading' | 'lines' | 'style'>): number {
   const lines = b.lines.reduce(
     (h, _l, i) =>
-      h + (b.style === 'title' || (b.style === 'you' && i === 0) ? CREDIT_TITLE_PX : CREDIT_LINE_PX),
+      h +
+      (b.style === 'title' || (b.style === 'you' && i === 0) ? CREDIT_TITLE_PX : CREDIT_LINE_PX),
     0,
   );
   return (b.heading === null ? 0 : CREDIT_LINE_PX) + lines + CREDIT_GAP_PX;
@@ -114,7 +115,7 @@ export function epilogueBeats(view: EpilogueView): EpilogueBeat[] {
  * How long `beat` stays before it moves on by itself (ms), or null for one that holds until a click
  * or a key (the credits, at rest on the player).
  */
-export function beatMs(beat: EpilogueBeat, view: EpilogueView, still: boolean): number | null {
+export function beatMs(beat: EpilogueBeat, view: EpilogueView): number | null {
   switch (beat.kind) {
     case 'card':
       return cardMs(view.cards[beat.index]?.text ?? '');

@@ -13,7 +13,8 @@
 //    every 30 s (D156: 20 s overran the Mindspike-free answer in Purge's long song). Damage dealt
 //    to it inside the song feeds rest points (song.ts), and when the countdown completes it is laid
 //    to rest (`layToRest`; design/maps.md § 5.5).
-// Forms 3 and 4 have time floors (D156): never sooner than 60 s and 120 s into Phase 2.
+// Forms 2–4 have time floors (D156, D157): never sooner than 90 s, 120 s and 150 s into Phase 2
+// (unfrozen time: a forced input's freeze doesn't count).
 // As built (T808): enemyAbilities/unsung.ts (the dig, the phasing, the adds, the ending),
 // bossSplit.ts/bossMerge.ts (the split with no merge and the rise), bossPhases.ts (the floor).
 // T808's numbers where the docs give none (D154's addenda): the parts' share, the phasing cycle,
@@ -51,21 +52,26 @@ export const unsung = defineEnemy({
           bountyPerHollowAbsorb: 0,
         },
       },
+      // Forms 2–4 wait for their time (D156, D157): never sooner than 90 s, 120 s and 150 s into
+      // Phase 2, so hitting it shortens the song (its damage feeds the rest) but never brings its
+      // split, its digs or its Silencers on sooner. The add waves are all in by ~107 s: the split
+      // comes among the last of them and the digs after them, whatever a build's damage.
       // The split: three parts carry the band to 50% between them; no merge (it rises instead).
-      { fromPct: 0.75, split: { part: 'unsung_part', count: 3, hpPct: 0.25 / 3 } },
-      // Forms 3 and 4 wait for their time (D156): never sooner than 60 s and 120 s into Phase 2, so
-      // hitting it shortens the song (its damage feeds the rest) but never brings its digs or its
-      // Silencers on sooner.
+      {
+        fromPct: 0.75,
+        notBeforeSec: 90,
+        split: { part: 'unsung_part', count: 3, hpPct: 0.25 / 3 },
+      },
       {
         fromPct: 0.5,
-        notBeforeSec: 60,
+        notBeforeSec: 120,
         burrow: { times: 2, durationSec: 4 },
         burrowTo: 'choir',
         phase: { everySec: 8, durationSec: 2, tellSec: 1.5 },
       },
       {
         fromPct: 0.25,
-        notBeforeSec: 120,
+        notBeforeSec: 150,
         floorPct: 0.01,
         adds: { enemy: 'silencer', everySec: 30 },
       },
