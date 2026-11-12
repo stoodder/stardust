@@ -3,9 +3,7 @@
 // JS. Only `import type` of this file is allowed outside the finale's chunk.
 import { defineRegistry } from '../define.ts';
 import { chM01 } from './ch_m01/index.ts';
-import { chM02 } from './ch_m02/index.ts';
 
 export const CHALLENGE_MAPS = defineRegistry({
   ch_m01: chM01,
-  ch_m02: chM02,
 });

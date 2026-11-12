@@ -28,6 +28,7 @@ import {
 } from '../meta/index.ts';
 import { activeVeteranMods, veteranConfig } from '../meta/veteran.ts'; // T860
 import { devFixtures } from './devRegistry.ts';
+import { withRunContent } from './postGameHooks.ts'; // T863
 import { scriptFlagsOf } from '../story/flags.ts';
 import {
   companionSlot,
@@ -238,6 +239,17 @@ export function battleConfig(
   seed: number,
   save: SaveData | null = null,
   fixed: FixedLoadout | null = null,
+): SimConfig<IdSpace> {
+  // T863: a run's own content (Endless plays its seed's generated waves; app/postGameHooks.ts).
+  return withRunContent(savedBattleConfig(mapId, seed, save, fixed));
+}
+
+/** battleConfig before the run's own content (the map's authored waves). */
+function savedBattleConfig(
+  mapId: string,
+  seed: number,
+  save: SaveData | null,
+  fixed: FixedLoadout | null,
 ): SimConfig<IdSpace> {
   for (const [setIndex, set] of contentSets().entries()) {
     if (!Object.hasOwn(set.raw.maps, mapId)) continue;
