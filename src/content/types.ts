@@ -1879,8 +1879,8 @@ export type RunStat =
   | 'bearersHome'
   /**
    * The finale (T800a seams; each counted by the task named): Hollow units laid to rest and
-   * scattered in Phase 2 (Laid to Rest: rested ≥ 90% of both; T805), and the Deep Bore's highest
-   * fill in whole percent (T806).
+   * scattered in Phase 2 (Laid to Rest: rested ≥ 60% of both; T805, T874), and the Deep Bore's
+   * highest fill in whole percent (T806).
    */
   | 'restedKills'
   | 'scatteredKills'
