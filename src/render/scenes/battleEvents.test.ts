@@ -36,10 +36,20 @@ function stage(): {
 }
 
 describe('the boss bar and the song', () => {
-  it('steps out when its boss is laid to rest, held a moment like any ending', () => {
+  it('steps out at once when its boss is laid to rest, never held over the sunrise', () => {
     const { bus, ended } = stage();
+    bus.emit({ type: 'BossEnded', uid: 5, enemy: 'unsung', how: 'layToRest' });
     bus.emit({ type: 'LaidToRest', uid: 7, at: [3, 4], points: 0 });
-    expect(ended).toEqual([[7, false]]);
+    expect(ended).toEqual([
+      [5, true],
+      [7, true],
+    ]);
+  });
+
+  it('holds a moment after any other ending', () => {
+    const { bus, ended } = stage();
+    bus.emit({ type: 'BossEnded', uid: 3, enemy: 'unsung', how: 'driveOff' });
+    expect(ended).toEqual([[3, false]]);
   });
 
   it('still ends a boss driven off at once on a pivot', () => {

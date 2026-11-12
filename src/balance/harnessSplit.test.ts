@@ -58,8 +58,10 @@ describe('the harness in pieces (T778)', () => {
     const { report, ran } = viaPieces(content, opts);
     expect(report).toEqual(whole);
     expect(JSON.stringify(report)).toBe(JSON.stringify(whole));
-    // Each planned run is asked for once, in the order runMap ran them, and none is unplanned.
-    expect(ran).toBe(whole.runs.length);
+    // Each planned run is asked for once, in the order runMap ran them, and none is unplanned;
+    // a later seed whose seed 1 drew no random number is never asked (its copy; D157).
+    expect(ran).toBe(whole.runs.filter((r) => r.reusedFrom === undefined).length);
+    expect(ran).toBeGreaterThan(0);
     expect(planMap(content, 'fx_map', opts).requests.map(runKey)).toEqual(whole.runs.map(keyOf));
   });
 

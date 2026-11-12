@@ -1,13 +1,17 @@
 // Veteran modifiers on the finale (T860, with T820's walkWaves ruling: the procession keeps wave
-// time, not clock time). Every modifier that changes the clock (Rush Hour's countdowns −50%, Double
-// Time's +20% enemy speed, and both at once) still lands FIN's beats: the memorial cue in W9, and
-// Phase 2 ("Retry from the Halls") at the later of W18 cleared and the choir at the Halls mouth.
-// Runs par until Phase 2 starts (W19 waits for it: `inPhase`, T821).
+// time, not clock time). Every modifier the finale offers that changes the clock (Double Time's
+// +20% enemy speed) still lands FIN's beats: the memorial cue in W9, and Phase 2 ("Retry from the
+// Halls") at the later of W18 cleared and the choir at the Halls mouth. Rush Hour (countdowns
+// −50%) isn't offered on a choir map (D157: the walk sets its own pace; meta/veteran.ts), so the
+// cases are read from the offer rules, and a clock modifier the finale offers one day is run here
+// by itself. Runs par until Phase 2 starts (W19 waits for it: `inPhase`, T821).
 import { describe, expect, it } from 'vitest';
 import { compileContent } from '../content/compile.ts';
 import type { CompiledContent } from '../content/compiled.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
-import { veteranGrants, type VeteranModifierId } from '../meta/veteran.ts';
+import { MAPS } from '../content/maps/index.ts';
+import { DEV_SAVES } from '../meta/__fixtures__/devSaves.ts';
+import { veteranGrants, veteranOffers, type VeteranModifierId } from '../meta/veteran.ts';
 import { createBuildExecutor, createSim, type SimEvent } from '../sim/index.ts';
 import { flagsFor } from './checks.ts';
 import { buildFor } from './harness.ts';
@@ -72,10 +76,23 @@ describe(
   },
   () => {
     const c = compileContent(RAW_CONTENT);
+    // The modifiers that change the clock, and those the finale offers once it is won.
+    const CLOCK: readonly VeteranModifierId[] = ['rush_hour', 'double_time'];
+    const offers = veteranOffers(DEV_SAVES.after_fin_stay.build(), MAPS.fin_m01);
+    const offered = CLOCK.filter((id) => offers.some((o) => o.id === id && o.available));
+
+    it('offers Double Time and not Rush Hour: the walk sets its own pace', () => {
+      expect(offered).toEqual(['double_time']);
+      expect(offers.find((o) => o.id === 'rush_hour')).toEqual({
+        id: 'rush_hour',
+        available: false,
+        why: 'The walk sets its own pace.',
+      });
+    });
+
     const cases: readonly (readonly VeteranModifierId[])[] = [
-      ['rush_hour'],
-      ['double_time'],
-      ['rush_hour', 'double_time'],
+      ...offered.map((id) => [id]),
+      ...(offered.length > 1 ? [offered] : []),
     ];
     for (const mods of cases) {
       it(`${mods.join(' + ')}: the memorial in W9, Phase 2 at the Halls after W18`, () => {

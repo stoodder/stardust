@@ -450,12 +450,14 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
     bus.on('BossEnded', (e) => {
       // Driven off: she turns and runs for the edge with her brood (EnemyView's `flee`); the bar
       // holds a moment and steps out.
-      views.bossBar.ended(e.uid, e.how === 'pivot'); // a pivot steps out at once (T530a)
+      // A pivot steps out at once (T530a), and so does the Unsung laid to rest: no bar holds over
+      // the sunrise (M8 R2).
+      views.bossBar.ended(e.uid, e.how === 'pivot' || e.how === 'layToRest');
     }),
-    // The Unsung laid to rest (or a boss laid to rest at Dawn): its bar steps out with it, never
-    // left empty over the sunrise (M8 R2; `ended` passes over any unit whose bar isn't up).
+    // A boss laid to rest by the song without an ending of its own (Dawn's `restAll`): its bar
+    // steps out at once too (`ended` passes over any unit whose bar isn't up).
     bus.on('LaidToRest', (e) => {
-      views.bossBar.ended(e.uid, false);
+      views.bossBar.ended(e.uid, true);
     }),
     bus.on('CountdownStarted', (e) => {
       views.cueProps.reveal(e.wave);
