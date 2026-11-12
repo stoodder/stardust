@@ -1,12 +1,13 @@
-// A3M4's tuning is robust where it matters (T720, retuned by T760 with jamming's teeth). As tuned,
-// par wins at 15/22 (68.2%), the Defend chain after A3M2's 63.6 (act3.md § A3M4): it holds every
-// wave before W10's surge, and W16 (Silencers up both rifts and the tunnel, a lighter Everglow
+// A3M4's tuning is robust where it matters (T720, retuned by T760 with jamming's teeth, and by T874
+// for the Head Start the reference now carries in from A3M3, T771/T773). As tuned, par wins at
+// 14/22 (63.6%), level with A3M2's 63.6 in the Defend chain (act3.md § A3M4): it holds every wave
+// before W11's Everglow column, and W16 (Silencers up both rifts and the tunnel, a lighter Everglow
 // column) is its exam. The warren's par (Gloop for the junction Rivet, a Mindspike under the Moths'
-// lane) wins at 54.5, and both C1 branches play the same (the Choir is owned either way). The jam
+// lane) wins at 50, and both C1 branches play the same (the Choir is owned either way). The jam
 // exam: no-jam (par with a Prism where its Choir stands, no Reboot) loses in W16 on the reference
 // (A3M4 is jam's teach map: `teachMap`, the loss by its final wave); harness #6 never runs for jam
 // (the jam limit caps what jamming takes below what the catalog adds; D146 addendum, T760).
-// No-armor and no-air lose by W11 (W6, W7). Both alts win (54.5, 59.1); Story wins; alwaysCallEarly
+// No-armor and no-air lose by W11 (W5, W6). Both alts win (50, 54.5); Story wins; alwaysCallEarly
 // wins.
 //
 // Jamming must be felt: par sees jams land in its Silencer waves (1.5 s on the towers in its
@@ -39,7 +40,7 @@ const content = compileContent(RAW_CONTENT);
 const TICK_HZ = 60;
 const WAVES = 16;
 /** Par's integrity left, of 22 (Reinforced Core 2). */
-const PAR_INTEGRITY = 15;
+const PAR_INTEGRITY = 14;
 /** The waves that send Silencers. */
 const SILENCER_WAVES = [4, 6, 9, 10, 12, 13, 14, 15, 16];
 

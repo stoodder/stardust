@@ -85,7 +85,7 @@ describe(
       const carried = equippedProtocols(live).equipped;
       expect(carried).toEqual(ref.protocols);
       expect(play({ ...ref, protocols: carried }, par)).toBe(play(ref, par));
-      expect(play(ref, par)).toBe(15);
+      expect(play(ref, par)).toBe(14);
     });
   },
 );

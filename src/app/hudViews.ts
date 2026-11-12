@@ -27,6 +27,7 @@ import {
   type PurchasePrice,
   type PurchaseState,
   type SchedulePhase,
+  towerFactionRule,
   type Sim,
   type SimConfig,
 } from '../sim/index.ts';
@@ -320,20 +321,30 @@ export const HOLDOUT_PERFECT = {
  */
 export const BEARER_PERFECT = 'Win with the core and the bearers unhurt.';
 
+/** Perfect's one-liner on a choir map (maps.md § 5, *Choir escort*; T871): no singer hushed. */
+export const CHOIR_PERFECT = 'Win with no singer hushed.';
+
+/** Whether `map` walks a choir (the finale: maps.md § 5.5). */
+function walksChoir(map: Partial<Pick<CompiledMapDef<IdSpace>, 'choir'>>): boolean {
+  return (map.choir ?? null) !== null;
+}
+
 /** Whether `map` is a Protect map whose escort walks (A3M5's bearers). */
 function protectsBearers(map: Partial<Pick<CompiledMapDef<IdSpace>, 'objective' | 'escort'>>) {
   return map.objective === 'protect' && (map.escort ?? null) !== null;
 }
 
 /**
- * Perfect Core's name on `map`: "Perfect" on an Escort or a map that pivots to one, and on a
- * Protect map with bearers (A3M5: no core alone to keep), "Held the Door" on a Holdout.
+ * Perfect Core's name on `map`: "Perfect" on an Escort or a map that pivots to one, on a Protect
+ * map with bearers (A3M5: no core alone to keep), and on a choir map (the finale: no singer
+ * hushed; T871), "Held the Door" on a Holdout.
  */
 export function perfectMedalName(
-  map: Partial<Pick<CompiledMapDef<IdSpace>, 'objective' | 'escort'>>,
+  map: Partial<Pick<CompiledMapDef<IdSpace>, 'objective' | 'escort' | 'choir'>>,
 ): string {
   if (map.objective === 'holdout') return HOLDOUT_PERFECT.name;
   const escort =
+    walksChoir(map) ||
     map.objective === 'escort' ||
     (map.objective === 'defend' && (map.escort ?? null) !== null) ||
     protectsBearers(map);
@@ -341,13 +352,16 @@ export function perfectMedalName(
 }
 
 /** Perfect Core's one-liner for a map: its Escort's, or the core's. */
-function perfectText(map: Partial<Pick<CompiledMapDef<IdSpace>, 'objective' | 'escort'>>): {
+function perfectText(
+  map: Partial<Pick<CompiledMapDef<IdSpace>, 'objective' | 'escort' | 'choir'>>,
+): {
   readonly name: string;
   readonly description: string;
 } {
   const core = MEDAL_TEXT.perfectCore;
   if (map.objective === 'holdout') return HOLDOUT_PERFECT;
   const name = perfectMedalName(map);
+  if (walksChoir(map)) return { name, description: CHOIR_PERFECT };
   if (map.objective === 'escort') return { name, description: ESCORT_PERFECT.escort };
   if (map.objective === 'defend' && (map.escort ?? null) !== null) {
     return { name, description: ESCORT_PERFECT.pivot };
@@ -363,7 +377,7 @@ function perfectText(map: Partial<Pick<CompiledMapDef<IdSpace>, 'objective' | 'e
  */
 export function medalViews(
   map: Pick<CompiledMapDef<IdSpace>, 'medals'> &
-    Partial<Pick<CompiledMapDef<IdSpace>, 'objective' | 'escort'>>,
+    Partial<Pick<CompiledMapDef<IdSpace>, 'objective' | 'escort' | 'choir'>>,
   status: Readonly<Record<MedalKind, MedalStatus>>,
   held: readonly string[],
 ): MedalView[] {
@@ -477,6 +491,19 @@ export function mapThreats(
  */
 export function threatNames(map: Pick<CompiledMapDef<IdSpace>, 'threatIntel' | 'waves'>): string[] {
   return mapThreats(map).map((t) => t.label);
+}
+
+/**
+ * The towers the briefing may name as answers: the save's owned towers, less any the run's rules
+ * leave home (a challenge map's `towerFaction`, sim/rules.ts; T862: Skitterkin Only names only the
+ * warrens' towers).
+ */
+export function intelTowers(config: SimConfig<IdSpace>, owned: readonly string[]): string[] {
+  const faction = towerFactionRule(config);
+  if (faction === null) return [...owned];
+  const towers: Readonly<Record<string, { readonly faction: string } | undefined>> =
+    config.content.towers;
+  return owned.filter((t) => towers[t]?.faction === faction);
 }
 
 /**

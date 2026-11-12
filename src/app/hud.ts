@@ -49,6 +49,7 @@ import {
   priceKey,
   priceOf,
   saleView,
+  intelTowers,
   threatIntel,
   towerPoints,
   towerUnlockWaves,
@@ -417,7 +418,12 @@ export function bindHud(
   );
   hud.notice.value = null;
   const specLock = specLockText(saveInfo.engineeringOpen);
-  hud.intel.value = threatIntel(sim.map, saveInfo.ownedTowers, saveInfo.specsUnlocked);
+  // The answers name only towers this run may bring (a challenge's faction rule; T862).
+  hud.intel.value = threatIntel(
+    sim.map,
+    intelTowers(sim.config, saveInfo.ownedTowers),
+    saveInfo.specsUnlocked,
+  );
   // A checkpoint retry keeps Victory only (core-loop.md § 2.12): the tracker shows the other two
   // forfeited from the start.
   const resumed = host.resumedFrom !== null;

@@ -138,6 +138,14 @@ export class SongNightView implements NightTint {
     }
   }
 
+  /**
+   * The Dawn's sun step now (0…SUN_STEPS, east to west; −1 before Dawn or without the night): the
+   * rift cracks heal behind it (RiftView, T871).
+   */
+  get sunStep(): number {
+    return this.#night === null ? -1 : this.#step;
+  }
+
   /** Whether this map has the night (a song map without Sundown's darkness). */
   get active(): boolean {
     return this.#night !== null;

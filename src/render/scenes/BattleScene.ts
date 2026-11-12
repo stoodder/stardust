@@ -865,7 +865,7 @@ export class BattleScene extends Phaser.Scene {
     this.#site.update(state); // T730b
     this.#domes.update(state.wave, state.tick); // T730b
     this.#hollow.update(dt, state.enemies, state.allies); // T602
-    this.#rifts.update(state.wave); // T630b
+    this.#rifts.update(state.wave, this.#songNight.sunStep); // T630b; T871: healed at Dawn
     this.#shuttle.update(state.tick, state.scriptFired); // T630b
     this.#doors.update(state.forcedResolved); // T630b
     this.#blocker.update(dt, state); // T605

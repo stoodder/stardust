@@ -181,3 +181,17 @@ describe("A3M5's Perfect", () => {
     expect(perfectMedalName({ objective: 'protect', escort: null })).toBe('Perfect Core');
   });
 });
+
+describe("the finale's Perfect (T871)", () => {
+  it('is plain "Perfect" on a choir map, no singer hushed, in the briefing and on Results', () => {
+    const save = DEV_SAVES.after_a3m6.build();
+    const map = battleConfig('fin_m01', 0, save).content.maps.fin_m01!;
+    expect(perfectMedalName(map)).toBe('Perfect');
+    const open = { victory: 'open', perfectCore: 'open', challenge: 'open' } as const;
+    expect(medalViews(map, open, [])[1]).toMatchObject({
+      name: 'Perfect',
+      description: 'Win with no singer hushed.',
+    });
+    expect(offeredMedals(map)[1]?.name).toBe('Perfect');
+  });
+});

@@ -132,7 +132,7 @@ export const map = defineMapLayout({
     held_door: { flag: 'door_choice', eq: 'convoy' },
     humming_ring: { flag: 'door_choice', eq: 'warren' },
   },
-  startCredits: 700,
+  startCredits: 660,
   stardust: 330,
   // Jam (the Silencers), armor (the drones, the Expediters, and the Liability Enforcers' heavy
   // plate), and air (the Rift Moths) are the map's answers (campaign.md § 4.8): jam is the new
