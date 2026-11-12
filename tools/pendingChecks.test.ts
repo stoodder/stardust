@@ -1,5 +1,5 @@
-// T820: a map's pending harness checks (BuildsDef.pendingChecks: checks that pass as "pending
-// <task>" until that task's pass) can't ship. A map with any is never in dialogueCanon's COMPLETE
+// T820: a map's pending harness checks (BuildsDef.pendingChecks: the checks about its subjects,
+// and its checks by id, pass as "pending <task>" until that task's pass) can't ship. A map with any is never in dialogueCanon's COMPLETE
 // list (the map isn't finished), and each pending task is still open on the board.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -27,12 +27,15 @@ describe('pending harness checks', () => {
     expect(RAW_CONTENT.maps.fin_m01.pendingChecks).toMatchObject({
       task: 'T821',
       subjects: ['alt:cluster', 'alt:reboot', 'flag:door_choice=warren'],
+      checks: ['18'],
     });
   });
 
   it.each(pending.map((m) => [m.id, m.pendingChecks!.task] as const))(
-    '%s (pending %s) is not marked finished',
+    '%s (pending %s: its subjects and its checks by id) is not marked finished',
     (id, task) => {
+      const p = RAW_CONTENT.maps[id as keyof typeof RAW_CONTENT.maps].pendingChecks!;
+      expect(p.subjects.length + (p.checks ?? []).length).toBeGreaterThan(0);
       expect(completeMaps()).not.toContain(id);
       const board = readFileSync(join(ROOT, 'tasks.md'), 'utf8');
       const line = board.split('\n').find((l) => l.includes(`**${task}**`));

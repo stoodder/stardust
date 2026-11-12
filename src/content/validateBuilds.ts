@@ -250,7 +250,15 @@ export function validateBuilds(
       issues.add('builds-range', `${w}.task`, `'${pending.task}' must name a task (T821)`);
     }
     if (pending.reason.trim() === '') issues.add('builds-range', `${w}.reason`, 'needs a reason');
-    if (pending.subjects.length === 0) issues.add('builds-range', `${w}.subjects`, 'lists none');
+    if (pending.subjects.length === 0 && (pending.checks ?? []).length === 0) {
+      issues.add('builds-range', w, 'lists no subject or check');
+    }
+    // Check ids are the harness's numbered assertions (conventions.md § Balance sims: #1–#18).
+    for (const id of pending.checks ?? []) {
+      if (!/^(?:[1-9]|1[0-8])$/.test(id)) {
+        issues.add('builds-range', `${w}.checks`, `'${id}' is no harness check id (1–18)`);
+      }
+    }
     for (const subject of pending.subjects) {
       const alt = /^alt:(.+)$/.exec(subject)?.[1];
       const cell = /^flag:([a-z_]+)=(.+)$/.exec(subject);

@@ -142,6 +142,9 @@ export const builds = defineBuilds({
     reason:
       'the alts and the warren cell wait for the whole-map pass (column exposure, per-cell floor)',
     subjects: ['alt:cluster', 'alt:reboot', 'flag:door_choice=warren'],
+    // #18, the song's timing per C4: refused until T821 lifts HARNESS_GATES.songTiming (the map
+    // carries its song for the Laid to Rest medal).
+    checks: ['18'],
   },
   flagVariants: {
     door_choice: ['convoy', 'warren'],

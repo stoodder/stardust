@@ -1720,19 +1720,25 @@ export interface BuildsDef<K extends IdSpace = LiveIds> {
    */
   readonly counterExemptions?: readonly CounterExemption[];
   /**
-   * Harness checks pending a named task (T820: the finale's alts and its warren cell wait for T821's
-   * whole-map pass): the checks about each listed subject (`alt:<name>`, or a #14 cell
-   * `flag:<flag>=<value>`) still run and report, but pass as "pending <task>". Only on a map whose
+   * Harness checks pending a named task (T820: the finale's alts, its warren cell, and #18 wait for
+   * T821's whole-map pass): the checks about each listed subject (`alt:<name>`, or a #14 cell
+   * `flag:<flag>=<value>`) and each listed check id still run and report, but pass as
+   * "pending <task>". Only on a map whose
    * dialogue isn't COMPLETE yet (tools/pendingChecks.test.ts), so it can't ship. Default none.
    */
   readonly pendingChecks?: PendingChecks;
 }
 
-/** Harness checks pending a task (BuildsDef.pendingChecks): its id, why, and the subjects. */
+/**
+ * Harness checks pending a task (BuildsDef.pendingChecks): its id, why, the subjects whose checks
+ * wait, and checks that wait by id whatever their subject (`'18'`: the finale's song timing, a
+ * refusal until T821 lifts it).
+ */
 export interface PendingChecks {
   readonly task: string;
   readonly reason: string;
   readonly subjects: readonly string[];
+  readonly checks?: readonly string[];
 }
 
 /** A required counter the harness exempts from #5 and #6 (BuildsDef.counterExemptions). */
