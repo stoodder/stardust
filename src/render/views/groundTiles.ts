@@ -685,6 +685,23 @@ export function cliffFrames(g: GroundGrid, col: number, row: number): string[] {
 /** Each grid's rift-crack tiles (tile indices), built once per grid. */
 const CRACKS = new WeakMap<GroundGrid, ReadonlySet<number>>();
 
+/**
+ * The post-game maps (QUILL's sim deck: Endless `end_*`, the Challenges `ch_*`; M8 review R5) read
+ * busy with every map's sparse decor on their open ground, so they drop SPARSE_THIN of it: a tile's
+ * flora or rock stays only when its hash clears the share (deterministic, so a map always looks the
+ * same).
+ */
+export const SPARSE_THIN = 0.3;
+const THINNED_MAPS = ['end_', 'ch_'] as const;
+
+function thinnedOut(g: GroundGrid, col: number, row: number): boolean {
+  const id = g.id;
+  if (id === undefined || !THINNED_MAPS.some((p) => id.startsWith(p))) return false;
+  // A small integer hash of the tile, spread over [0, 1).
+  const h = (Math.imul(col + 1, 73856093) ^ Math.imul(row + 1, 19349663)) >>> 0;
+  return (h % 1000) / 1000 < SPARSE_THIN;
+}
+
 /** True when a rift lane's crack crosses (col, row) (`riftCrackTiles`): no sparse decor there. */
 function onCrack(g: GroundGrid, col: number, row: number): boolean {
   let set = CRACKS.get(g);
@@ -818,6 +835,8 @@ function dressBase(g: GroundGrid, col: number, row: number): TileDressing {
         else if (onCrack(g, col, row))
           sprite = null; // a rift lane's crack runs here (T640c)
         else if (onWall(g, col, row)) sprite = 'prop.wall';
+        else if (thinnedOut(g, col, row))
+          sprite = null; // the sim deck's maps: sparser (M8 R5)
         else if ((col * 3 + row * 5) % 7 === 0) sprite = 'prop.flora';
         else if ((col * 5 + row * 3) % 11 === 0) sprite = 'prop.rock';
       }

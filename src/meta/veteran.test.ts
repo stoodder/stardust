@@ -172,6 +172,42 @@ describe('run end: the replay bonus, the Veteran medal, the best', () => {
     expect(lost.save.veteran?.[RIG]?.best).toBe(0);
   });
 
+  it('pays the bonus only when the win beats the stored best (D156: no farming)', () => {
+    const mods = ['hardened_hides', 'glass_core', 'short_handed'] as const; // +120%
+    const first = won(mods);
+    expect(first.summary.veteranPaidPct).toBe(120);
+    expect(first.save.veteran?.[RIG]?.best).toBe(120);
+    const replay = (save: typeof first.save, picks: readonly VeteranModifierId[]) =>
+      runEnd(withVeteranPick(save, RIG, picks), {
+        mapId: RIG,
+        outcome: 'won',
+        mapStardust: 200,
+        waveCount: 10,
+        wavesResolved: 10,
+        earnedMedals: ['victory'],
+        skitterkinKilled: 0,
+        meter: 10,
+        veteranMods: picks,
+      });
+    // The same picks again: the plain replay share, no bonus.
+    const same = replay(first.save, mods);
+    expect(same.summary.veteranPaidPct).toBe(0);
+    expect(same.summary.stardust.amount).toBe(Math.round(REWARD_RULES.replayShare * 200));
+    // A smaller total: no bonus either, and the best stays.
+    const less = replay(first.save, ['rush_hour']);
+    expect(less.summary.veteranPaidPct).toBe(0);
+    expect(less.save.veteran?.[RIG]?.best).toBe(120);
+    // A bigger one beats it: its whole bonus pays, and it's the new best.
+    const more = replay(first.save, [...mods, 'lean_budget']);
+    const pct = veteranBonusPct([...mods, 'lean_budget']);
+    expect(pct).toBeGreaterThan(120);
+    expect(more.summary.veteranPaidPct).toBe(pct);
+    expect(more.summary.stardust.amount).toBe(
+      Math.round(REWARD_RULES.replayShare * 200 * (1 + pct / 100)),
+    );
+    expect(more.save.veteran?.[RIG]?.best).toBe(pct);
+  });
+
   it('the record and the medal survive an export code round trip', async () => {
     const r = won(['hardened_hides', 'glass_core', 'short_handed']);
     const back = await importCode(await exportCode(r.save, 0));

@@ -86,6 +86,7 @@ function card(save: SaveData, record: boolean, outcome: 'won' | 'lost' = 'won') 
     codex: [],
     transactions: [],
     revocations: [],
+    veteranPaidPct: 0,
   } as const;
   const base = runResultOf(story, outcome, {
     ...summary,

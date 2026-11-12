@@ -162,8 +162,7 @@ export const PHASE_1: readonly WaveDef[] = [
       moths(4, 'sky_n', 0, 0.8),
       moths(3, 'sky_e', 4, 0.8),
       moths(3, 'sky_w', 8, 0.8),
-      motes(14, 'halls', 6, 0.25),
-      motes(8, 'rift_field', 10, 0.12),
+      motes(10, 'halls', 6, 0.5),
       fractures(2, 'halls', 12, 3),
     ],
   },
@@ -175,7 +174,6 @@ export const PHASE_1: readonly WaveDef[] = [
       motes(10, 'halls', 0),
       maws(1, 'halls', 4),
       fractures(2, 'halls', 14, 3),
-      motes(14, 'rift_field', 16, 0.1),
       silencers(2, 'halls', 20, 4),
       g('associate', 1, 'bore_road', 8),
       g('auditor', 1, 'bore_road', 10),
@@ -186,7 +184,7 @@ export const PHASE_1: readonly WaveDef[] = [
   {
     ...CALL,
     groups: [
-      motes(8, 'rift_ne', 0, 0.2),
+      motes(4, 'rift_ne', 0),
       fractures(1, 'rift_nw', 2),
       maws(1, 'rift_nw', 8),
       motes(10, 'rift_field', 6, 0.12),
@@ -203,10 +201,8 @@ export const PHASE_1: readonly WaveDef[] = [
     groups: [
       fractures(2, 'halls', 0, 2),
       fractures(1, 'rift_nw', 6, 2),
-      fractures(2, 'rift_ne', 14, 4),
       silencers(2, 'halls', 8, 4),
-      motes(10, 'rift_ne', 8, 0.2),
-      motes(8, 'halls', 4, 0.4),
+      motes(6, 'rift_ne', 8),
       maws(1, 'halls', 12),
       g('undertow', 1, 'halls', 16),
       auditors(2, 2),
@@ -216,7 +212,7 @@ export const PHASE_1: readonly WaveDef[] = [
   {
     ...CALL,
     groups: [
-      motes(8, 'halls', 0, 0.4),
+      motes(16, 'halls', 0, 0.4),
       fractures(1, 'rift_ne', 4, 2),
       maws(2, 'halls', 10, 4),
       silencers(1, 'halls', 16),
@@ -263,12 +259,12 @@ export const SCRIPT_GROUPS = {
 } as const;
 
 /** Phase 2's build phase between add waves: with ≤ 8 s of spawning, a wave every ~20 s. */
-export const PHASE_2_COUNTDOWN = 11;
+export const PHASE_2_COUNTDOWN = 6;
 /**
  * W20's: the add waves wait while the Unsung rises, so Directive 0 (Keep, 20 s in) folds a class
  * and "Who's there?" restores it between add waves (T821: it stings, it doesn't decide the run).
  */
-export const DIRECTIVE_LULL = 26;
+export const DIRECTIVE_LULL = 30;
 /** W19's: the Unsung rises a few seconds after the choir reaches the Halls. */
 export const UNSUNG_COUNTDOWN = 5;
 
@@ -300,7 +296,7 @@ export const PHASE_2_WAVES: readonly WaveDef[] = [
   {
     ...P2,
     groups: [
-      fractures(2, 'halls', 0, 3),
+      fractures(1, 'halls', 0),
       silencers(1, 'bore_road', 2),
       motes(6, 'rift_ne', 4, 0.6),
     ],
@@ -313,7 +309,7 @@ export const PHASE_2_WAVES: readonly WaveDef[] = [
   // W24 · Fractures, and Rift Moths over the song (they scatter past it)
   {
     ...P2,
-    groups: [fractures(1, 'halls', 0), moths(3, 'sky_n', 2), motes(10, 'halls', 4, 0.25)],
+    groups: [fractures(1, 'halls', 0), moths(3, 'sky_n', 2), motes(8, 'halls', 4, 0.5)],
   },
   // W25 · a Maw and a Silencer
   {
@@ -323,10 +319,8 @@ export const PHASE_2_WAVES: readonly WaveDef[] = [
   // W26 · the last of the Halls
   {
     ...P2,
-    groups: [motes(10, 'halls', 0, 0.25), fractures(1, 'halls', 6), maws(1, 'rift_ne', 5)],
+    groups: [motes(6, 'halls', 0, 0.5), fractures(1, 'halls', 6), maws(1, 'rift_ne', 5)],
   },
 ];
 
-const SWEEP = (globalThis as any).process?.env?.SWEEP as string | undefined;
-if (SWEEP) for (const item of SWEEP.split(';')) { const [w, json] = item.split('='); (PHASE_1 as any)[Number(w) - 1] = { ...PHASE_1[Number(w) - 1], groups: [...PHASE_1[Number(w) - 1]!.groups, ...JSON.parse(json!)] }; }
 export const waves = defineWaves([...PHASE_1, ...PHASE_2_WAVES]);

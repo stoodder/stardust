@@ -55,9 +55,12 @@ test('specs: the briefing shows the medals and the threat intel', async ({ page 
   await expect(briefing).toBeVisible();
   const intel = briefing.getByTestId('threat-intel');
   await expect(intel).toContainText('Fast');
-  // One press away (T803e): the toggle names them, "3 medals · 3 on file".
-  const toggle = briefing.getByRole('button', { name: /medals and optional objectives$/ });
-  await expect(toggle).toHaveText(/3 medals · 3 on file/);
+  // The medals by name in view (D156: their names are jokes); what earns each, one press away.
+  const row = briefing.getByTestId('briefing-medal-row');
+  await expect(row.getByRole('listitem')).toHaveCount(3);
+  await expect(row).toContainText('Teamwork Makes the Dream Work');
+  const toggle = briefing.getByRole('button', { name: /what earns each medal$/ });
+  await expect(toggle).toHaveText(/What earns them · 3 on file/);
   await toggle.click();
   const medals = briefing.getByTestId('briefing-medals');
   await expect(medals.getByRole('listitem')).toHaveCount(3);

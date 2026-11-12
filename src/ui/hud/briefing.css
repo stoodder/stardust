@@ -9,14 +9,18 @@
   display: block;
 }
 
+/* One grid for the whole log (subgrids below): the face column, the plate column (as wide as the
+   longest name on it, at least 44 px; D156: "VES'THARA" crowded its line), then the words, so every
+   run's words start on one edge. */
 .hud-briefing .hud-briefing-lines {
-  gap: var(--space-m);
+  grid-template-columns: 42px minmax(44px, max-content) 1fr;
+  gap: var(--space-m) 8px;
 }
 
 .hud-briefing-run {
   display: grid;
-  grid-template-columns: 42px 1fr;
-  gap: var(--space-l);
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
   align-items: start;
 }
 
@@ -28,7 +32,9 @@
 
 .hud-briefing-run-lines {
   display: grid;
-  gap: var(--space-xs);
+  grid-column: 2 / -1;
+  grid-template-columns: subgrid;
+  gap: var(--space-xs) 8px;
   align-content: start;
 }
 
@@ -63,13 +69,13 @@
 }
 
 .hud-briefing-after > * {
-  margin-left: 50px;
+  grid-column: 2 / -1;
 }
 
-/* The plate column fits its speaker's name with room to spare (D156: "VES'THARA" crowded its
-   line), top-aligned with the words. */
+/* Each line on the log's plate and words columns, top-aligned. */
 .hud-briefing .hud-briefing-line {
-  grid-template-columns: minmax(44px, max-content) 1fr;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
   gap: 8px;
   align-items: start;
 }

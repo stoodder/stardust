@@ -209,8 +209,9 @@ export const STAR_MAP_REGIONS: readonly StarMapRegion[] = [
     y: 336,
     corrected: { after: 'a2_m05', text: 'The Long Walk' },
   },
-  // Over the Halls' mouth, in the north band, clear of the finale's node below it.
-  { id: 'deep_halls', text: 'The Deep Halls', x: 412, y: 42, shownAfter: 'a3_m04' },
+  // Over the Halls' mouth, in the north band, clear of the finale's node below it and west of the
+  // "you are here" pin over that node (M8 R5: the pin cut the label in the post-game chart).
+  { id: 'deep_halls', text: 'The Deep Halls', x: 362, y: 42, shownAfter: 'a3_m04' },
 ];
 
 /**

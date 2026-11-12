@@ -30,7 +30,7 @@ import { linesUntilChoice, readThrough } from '../story/runner.ts';
 import type { ResultsMeter } from '../story/counter.ts';
 import { resolveText, type TextContext } from '../story/text.ts';
 import { PERFECT_CORE_MEDAL_ID, VICTORY_MEDAL_ID } from '../sim/index.ts';
-import { veteranBonusPct, type VeteranModifierId } from '../meta/veteran.ts'; // T860
+import type { VeteranModifierId } from '../meta/veteran.ts'; // T860
 import type { SpokenLine } from '../ui/state.ts';
 import type {
   MedalResult,

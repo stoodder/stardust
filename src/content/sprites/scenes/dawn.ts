@@ -570,6 +570,18 @@ function armSeam(x: number, y: number): boolean {
   return x === Math.round(HELM.cx - half + 8) || x === Math.round(HELM.cx + half * 0.86 - 7);
 }
 
+/**
+ * The back's east rim below the shoulders (M8 review R5): the sun's coral holds to the shoulder
+ * line, then breaks up, dithered into the dark of the back over RIM_FADE rows, so it never runs as
+ * an unbroken stroke to the frame's foot.
+ */
+const RIM_SOLID = 22;
+const RIM_FADE = 40;
+
+function rimBelow(x: number, y: number): string {
+  return dithered(['S', 'Z', 'G'], (y - COLLAR_Y - RIM_SOLID - 8) / RIM_FADE, x, y);
+}
+
 function paintTechnician(g: CharGrid, visorUp: boolean): void {
   // The helmet's antenna (its mic stub's partner), up off the back-left, tipped pink.
   eachOnLine(HELM.cx - 11, HELM.cy - 9, HELM.cx - 15, HELM.cy - 22, (x, y) => plot(g, x, y, 'G'));
@@ -587,9 +599,11 @@ function paintTechnician(g: CharGrid, visorUp: boolean): void {
         ch = crown ? 'I' : 'G';
         if (!inTechnician(x + 2, y) && !eastEdge) ch = 'Z';
       } else if (armSeam(x, y)) ch = 'F';
-      else if (!inTechnician(x + 2, y) && !eastEdge) ch = 'Z';
+      else if (!inTechnician(x + 2, y) && !eastEdge)
+        // The rim's inner pixel only on the shoulder; below it breaks into the back's dark.
+        ch = dithered(['Z', 'G'], (y - COLLAR_Y - RIM_SOLID) / RIM_FADE, x, y);
       else if (y > 150) ch = dithered(['G', 'F'], (y - 150) / 30, x, y);
-      if (eastEdge) ch = y < COLLAR_Y ? 'M' : y < COLLAR_Y + 30 ? 'L' : 'S';
+      if (eastEdge) ch = y < COLLAR_Y ? 'M' : y < COLLAR_Y + 30 ? 'L' : rimBelow(x, y);
       else if (topEdge) ch = x > HELM.cx - 4 ? (helmet ? 'S' : 'Z') : 'I';
       plot(g, x, y, ch);
     }

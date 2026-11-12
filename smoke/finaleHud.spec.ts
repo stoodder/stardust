@@ -81,6 +81,8 @@ test('finale HUD: Voices and the Bore, the countdown, Dawn steps back', async ({
   expect(await until(page, 'walking')).toMatchObject({ held: true, phase: 1 });
   await nextFrames(page);
   expect(Number(await clock.getAttribute('data-fill'))).toBeGreaterThan(0);
+  // The optional objective by name beside its box, with its progress (D156: "Waymarks n/4").
+  await expect(page.getByTestId('objective-name')).toHaveText(/^Waymarks [0-4]\/4$/);
   await shot(page, FLOW, 2, 'phase1');
 
   // W18 spawned before the choir is at the Halls: W19 is held, not counting down.

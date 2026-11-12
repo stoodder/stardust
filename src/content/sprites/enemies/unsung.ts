@@ -193,14 +193,15 @@ function hollowAt(
     return;
   }
   const song = form === 'song';
+  // A part's hollow glows wider (M8 R5: a small torn lump must still read at 1× on the dark).
+  const core = song ? 0.42 : form === 'part' ? 0.5 : 0.3;
   for (let y = Math.floor(hy - ry) - 1; y <= Math.ceil(hy + ry) + 1; y++) {
     for (let x = Math.floor(hx - rx) - 1; x <= Math.ceil(hx + rx) + 1; x++) {
       const d = Math.hypot((x + 0.5 - hx) / rx, (y + 0.5 - hy) / ry);
       if (d > 1) continue;
       // The pale lip (broken: a ring the Hollow can't quite draw), then the dark, then the violet.
       if (d > 0.78) plot(g, x, y, (x * 3 + y + step) % 7 === 0 ? 'k' : 'w');
-      else if (d < (song ? 0.42 : 0.3) - (step === 1 ? 0.06 : 0))
-        plot(g, x, y, d < 0.18 ? 'U' : 'V');
+      else if (d < core - (step === 1 ? 0.06 : 0)) plot(g, x, y, d < 0.22 ? 'U' : 'V');
       else plot(g, x, y, 'k');
     }
   }
@@ -287,8 +288,8 @@ function unsung(form: Form, stage: number, facing: Facing, step: number, look: L
   const hx = main.x + main.rx * (form === 'part' ? 0.3 : 0.28);
   const hy = main.y + main.ry * 0.18;
   const gape = tell && form !== 'song' ? 1.35 : song ? 1.12 : 1;
-  const hrx = main.rx * (form === 'part' ? 0.36 : 0.34) * gape;
-  const hry = main.ry * 0.38 * gape;
+  const hrx = main.rx * (form === 'part' ? 0.46 : 0.34) * gape;
+  const hry = main.ry * (form === 'part' ? 0.48 : 0.38) * gape;
   if (facing === 'se') hollowAt(g, hx, hy, hrx, hry, look, form, step);
   else {
     const x0 = Math.round(main.x - main.rx * 0.1);

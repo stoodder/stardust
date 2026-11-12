@@ -332,14 +332,14 @@
 }
 
 .dlg-choice-voices .dlg-portrait {
+  display: block;
   overflow: hidden;
   width: 26px;
   height: 26px;
-  place-items: start center;
 }
 
 .dlg-choice-voices .dlg-portrait img {
-  margin-top: -6px;
+  margin: -5px 0 0 -12px;
 }
 
 /* The keys a locked choice answers (D156): one quiet line under its options. */

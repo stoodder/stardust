@@ -81,6 +81,7 @@ export function challengeRunEnd(
       codex: [],
       transactions: [],
       revocations: [],
+      veteranPaidPct: 0,
     },
   };
 }

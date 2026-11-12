@@ -58,6 +58,22 @@ async function skyAt(page: Page, wave: number, before: number): Promise<number> 
   return l.sky;
 }
 
+/** Plays to wave `wave` (Phase 2), then on in short steps until the song holds the Unsung (M8 R1). */
+async function heldAt(page: Page, wave: number): Promise<void> {
+  expect(await until(page, wave)).toMatchObject({ held: true, phase: 2, outcome: 'playing' });
+  let held = 0;
+  for (let k = 0; k < 30 && held === 0; k++) {
+    // oxlint-disable-next-line no-await-in-loop -- a step, a frame, a look
+    await page.evaluate(() => globalThis.__sd!.fastForward(30));
+    // oxlint-disable-next-line no-await-in-loop -- a step, a frame, a look
+    await nextFrames(page);
+    // oxlint-disable-next-line no-await-in-loop -- a step, a frame, a look
+    held = (await page.evaluate(() => globalThis.__sd!.render()!.unsung)).held;
+  }
+  expect(held, `W${wave}: the Unsung held`).toBeGreaterThan(0);
+  await shot(page, 'fin-light', 9 + wave / 100, `w${wave}-unsung-held`);
+}
+
 async function open(page: Page, url = URL): Promise<void> {
   await page.goto(url);
   await waitForReady(page);
@@ -96,17 +112,8 @@ test('FIN light: the night, the song, the warming sky, the Bore, and Dawn', asyn
 
   // Phase 2 (M8 R1): the song holds the Unsung at the Halls mouth, and it reads as the final boss:
   // rimmed gold on the song's side, lifted over the towers round it, in its violet pool.
-  for (const w of [20, 24]) {
-    expect(await until(page, w)).toMatchObject({ held: true, phase: 2, outcome: 'playing' });
-    let held = 0;
-    for (let k = 0; k < 30 && held === 0; k++) {
-      await page.evaluate(() => globalThis.__sd!.fastForward(30));
-      await nextFrames(page);
-      held = (await page.evaluate(() => globalThis.__sd!.render()!.unsung)).held;
-    }
-    expect(held, `W${w}: the Unsung held`).toBeGreaterThan(0);
-    await shot(page, 'fin-light', 9 + w / 100, `w${w}-unsung-held`);
-  }
+  await heldAt(page, 20);
+  await heldAt(page, 24);
 
   // Dawn: the sun rakes in from the east over 8 s, the night lifting behind its front.
   expect(await until(page, 'dawn')).toMatchObject({ held: true, phase: 3, outcome: 'playing' });

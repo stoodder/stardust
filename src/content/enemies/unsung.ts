@@ -65,7 +65,7 @@ export const unsung = defineEnemy({
         fromPct: 0.25,
         notBeforeSec: 120,
         floorPct: 0.01,
-        adds: { enemy: 'silencer', everySec: 20 },
+        adds: { enemy: 'silencer', everySec: 30 },
       },
     ],
     ending: 'layToRest',

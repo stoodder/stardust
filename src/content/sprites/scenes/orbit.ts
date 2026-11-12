@@ -2,8 +2,10 @@
 // finale's stills*): the Go ending's final image, with nothing drawn over it. Tumble IV from orbit
 // at dusk: deep space and its stars above, QUILL's relay in the upper half (an Everglow relay, its
 // solar wings spread, QUILL's hexagon screen on its body with the one round eye LED lit teal), and
-// the planet's limb across the lower half, its thin atmosphere glowing, the terminator crossing the
-// valley. On the dusk side, one warm gold point: the Deep Halls. From the relay's dish to it, six
+// the planet's limb across the lower half, its thin atmosphere glowing violet, the terminator
+// crossing the valley; Tumble IV's own ground, not an Earth (M8 R5): dust-rose regolith, rust
+// basins, violet crystal ridges, the colony's domes glinting night steel on the dark side. On the
+// dusk side, one warm gold point: the Deep Halls. From the relay's dish to it, six
 // small notes, not quite in a line: the recording it plays every dusk, hummed off-key by someone
 // very small. Frames: `still` (the eye lit) and `blink_1` (the eye dimmed); anim `blink` (QUILL
 // blinking, slowly, now and then).
@@ -21,9 +23,10 @@ import {
 } from './sceneKit.ts';
 
 /*
- * Palette `finale`: 0–2 `finale.ground` (the night side, violet-black).
+ * Palette `finale`: 0–3 `finale.ground` (the night side's violet-black, the day side's regolith),
+ * 6–8 `act3.path` (rust basins), a–d `act3.crystal` (violet ridges, glints).
  * Custom: A–D ink, E/F violet.0/violet.1, G–K steel, L/M white, N–P teal.2–teal.4, Q–S
- * blue.1–blue.3, T/U gold.3/gold.4, V coral.3, W orange.3, X pink.3, Y/Z green.1/green.2.
+ * blue.1–blue.3, T/U gold.3/gold.4, V coral.3, W orange.3, X pink.3.
  */
 const LEGEND = {
   A: 'ink.0',
@@ -50,8 +53,6 @@ const LEGEND = {
   V: 'coral.3',
   W: 'orange.3',
   X: 'pink.3',
-  Y: 'green.1',
-  Z: 'green.2',
 } as const;
 
 /** The planet: a vast disc whose limb arcs across the lower half. */
@@ -62,6 +63,16 @@ const DUSK_X = 156;
 export const ORBIT_HALLS = { x: 128, y: 158 } as const;
 /** QUILL's relay: its body's centre. */
 const RELAY = { x: 112, y: 52 } as const;
+
+/** The colony's domes on the night side: night steel catching the starlight (`Go`: no window lit). */
+const DOME_GLINTS: readonly (readonly [number, number, 'I' | 'J' | 'K'])[] = [
+  [121, 161, 'K'],
+  [124, 163, 'J'],
+  [118, 164, 'I'],
+  [133, 164, 'J'],
+  [137, 167, 'K'],
+  [113, 170, 'I'],
+];
 
 function inPlanet(x: number, y: number): boolean {
   return Math.hypot(x - PLANET.cx, y - PLANET.cy) <= PLANET.r;
@@ -103,26 +114,39 @@ function paintPlanet(g: CharGrid): void {
   fill(g, 0, 0, SCENE_W - 1, 179, (x, y) => {
     const d = Math.hypot(x - PLANET.cx, y - PLANET.cy) - PLANET.r;
     if (d > 3) return spaceAt(x, y);
-    // The atmosphere: a thin glowing rim, blue on the day side, rose and orange at dusk.
+    // The atmosphere: a thin glowing rim, Tumble IV's own violet on the day side (no Earth blue),
+    // rose and orange at dusk.
     const dusk = x - duskX(y);
     if (d > 0) {
-      if (d > 2) return dusk > 24 ? 'Q' : dusk > -12 ? 'F' : 'E';
-      return dusk > 24 ? 'S' : dusk > -8 ? 'X' : 'F';
+      if (d > 2) return dusk > 24 ? 'F' : dusk > -12 ? 'F' : 'E';
+      return dusk > 24 ? 'b' : dusk > -8 ? 'X' : 'F';
     }
-    if (d > -1.5) return dusk > 30 ? 'P' : dusk > -6 ? 'W' : 'F';
+    if (d > -1.5) return dusk > 30 ? 'c' : dusk > -6 ? 'W' : 'F';
     const depth = -d;
-    // Night, west of the terminator: violet-black, deepening inward.
-    if (dusk < -8) return dithered(['1', '0', '0'], Math.min(1, depth / 30 + 0.2), x, y);
+    // Night, west of the terminator: violet-black, deepening inward, the colony's domes glinting.
+    if (dusk < -8) {
+      const dome = DOME_GLINTS.find(([gx, gy]) => gx === x && gy === y);
+      if (dome !== undefined) return dome[2];
+      return dithered(['1', '0', '0'], Math.min(1, depth / 30 + 0.2), x, y);
+    }
     // The dusk band: violet into coral and orange.
     if (dusk < 6) return dithered(['F', 'V', 'W'], (dusk + 8) / 14, x, y);
-    // Day: land and sea under a little cloud, darkening toward dusk.
-    const land = smooth(x, y * 2.2, 22, 51) * 0.7 + smooth(x, y * 2.2, 9, 52) * 0.3 > 0.52;
-    const cloud = smooth(x + y, y * 3, 14, 53) > 0.74;
+    // Day: Tumble IV's regolith (art-direction § 2, the Fringe's dust-rose ground), rust basins in
+    // its lows, violet crystal ridges along its highs, a crystal glint here and there catching the
+    // sun; darkening toward dusk.
+    const relief = smooth(x, y * 2.2, 22, 51) * 0.7 + smooth(x, y * 2.2, 9, 52) * 0.3;
     const light = Math.min(1, (dusk - 6) / 46);
     const lit = light > 0.15 + 0.85 * (1 - bayerOf(x, y));
-    if (cloud) return lit ? (light > 0.6 ? 'L' : 'K') : 'I';
-    if (land) return lit ? dithered(['Y', 'Z'], light * 0.8, x, y) : 'Y';
-    return lit ? dithered(['Q', 'R'], light * 0.8, x, y) : 'Q';
+    if (relief > 0.6 && relief < 0.64) return lit ? 'c' : 'b';
+    if (relief >= 0.64) {
+      // The highlands: pale regolith, crystal outcrops speckled violet, a glint where they catch it.
+      const h = hash01(x, y, 54);
+      if (lit && light > 0.5 && h < 0.025) return 'd';
+      if (h < 0.09) return lit ? 'c' : 'b';
+      return lit ? dithered(['3', '3', '4'], light * 0.6, x, y) : '2';
+    }
+    if (relief < 0.42) return lit ? dithered(['7', '8'], light * 0.8, x, y) : '6';
+    return lit ? dithered(['2', '3'], light * 0.9, x, y) : '2';
   });
   // The Deep Halls: a warm point on the dusk side, a dim halo round it.
   const { x, y } = ORBIT_HALLS;

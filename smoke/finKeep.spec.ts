@@ -1,9 +1,9 @@
 // T821: FIN under Keep (`?save=after_a3m6_keep&map=fin_m01`), played by par (`autoplay('par')`) to
 // Directive 0, 20 s into Phase 2: QUILL folds the most-invested class (its build slot under the
 // LICENSE REVOKED stamp), Time Dilation goes dark, and the one button, "Who's there?", shows and
-// arms after the cue's last line ("...Knock knock."). Pressed, it restores the class (no stamp left),
-// and par plays on through Dawn (it rebuilds the class, sim/headless.ts) to the win, the stamp never
-// back. Screenshots in <out>/screens/fin-keep/ (look at them: the button over the Halls, the bar
+// arms after the cue's last line ("...Knock knock."). Pressed, it restores the class (no stamp left)
+// and the battle stands paused for the rebuild under QUILL's word (D156) until Space; par plays on
+// through Dawn (it rebuilds the class, sim/headless.ts) to the win, the stamp never back. Screenshots in <out>/screens/fin-keep/ (look at them: the button over the Halls, the bar
 // after the press).
 import { expect, test } from './fixtures.ts';
 import { nextFrames, shot, waitForReady } from './hooks.ts';
@@ -61,8 +61,19 @@ test('FIN under Keep: Directive 0, "Who\'s there?", the class restored through D
   await expect.poll(() => page.evaluate(() => globalThis.__sd!.state()?.pendingInput)).toBeNull();
   expect(await page.evaluate(() => [...globalThis.__sd!.state()!.revoked.towers])).toEqual([]);
   await expect(page.getByTestId('slot-revoked')).toHaveCount(0);
+  // The battle stands paused for the rebuild, QUILL's word under PAUSED (D156); the sim holds.
+  const note = page.getByTestId('pause-note');
+  await expect(note).toBeVisible();
+  await expect(note).toContainText('QUILL');
+  await expect(note).toContainText('rebuild');
+  const held = await page.evaluate(() => globalThis.__sd!.state()!.tick);
+  await page.waitForTimeout(500);
+  expect(await page.evaluate(() => globalThis.__sd!.state()!.tick)).toBe(held);
   await nextFrames(page);
   await shot(page, FLOW, 2, 'restored');
+  // Space resumes; the word goes with the pause.
+  await page.keyboard.press('Space');
+  await expect(note).toHaveCount(0);
 
   // Par plays on (rebuilding the class) through Dawn to the win; no stamp comes back.
   const dawn = await page.evaluate(() => {

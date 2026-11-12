@@ -3,7 +3,9 @@
 // lazy chunk, so this stays out of the initial JS) passes `dawnChartLook(C5's answer)` to the
 // chart's generator (ui/screens/starMapChart.ts), which paints:
 // - Both endings: the first morning's light washes in from the east edge (a warm dither fading
-//   west across the valley); the Halls' mouth's sung glow is the `dawn` look's own.
+//   west across the valley); the north edge warms under the north band, the Spires' lit tips go
+//   gold, and the south stays in the night's shadow, darkening toward ink (M8 R5); the Halls'
+//   mouth's sung glow is the `dawn` look's own.
 // - **Stay** (Wayside): the Long Walk runs open through the colony, gold, the domes that stood on it
 //   taken down to bare footings beside it, and a few Skitterkin walking it from the north gate to
 //   the south (coral points, nobody counting). The region label "Everglow Gardens" reading
@@ -100,6 +102,40 @@ function paintMorning(c: ChartPixels): void {
   }
 }
 
+/** The north edge's warm sky (y below the north band) and how far south it reaches. */
+const NORTH_FROM = 16;
+const NORTH_TO = 96;
+/** The Spires' lit tips turn gold north of this row (their clay's top step, `finale.ground.3`). */
+const SPIRES_TO = 150;
+/** The south darkens toward ink from this row, to SOUTH_ALPHA at the south edge. */
+const SOUTH_FROM = 220;
+const SOUTH_ALPHA = 0.5;
+
+/**
+ * The north faces the sunrise (M8 review R2/R5: the chart was flat mauve): a warm edge under the
+ * north band (gold and coral, dithered, fading south), and the Spires' lit tips in gold.
+ */
+function paintNorthLight(c: ChartPixels): void {
+  const tip = rgbOf('finale.ground.3');
+  for (let y = NORTH_FROM; y < SPIRES_TO; y++) {
+    const t = y < NORTH_TO ? 1 - (y - NORTH_FROM) / (NORTH_TO - NORTH_FROM) : 0;
+    for (let x = 0; x < W; x++) {
+      const i = (y * W + x) * 4;
+      if (c.data[i] === tip.r && c.data[i + 1] === tip.g && c.data[i + 2] === tip.b)
+        put(c, x, y, bayer(x, y) < 10 ? 'gold.2' : 'gold.3');
+      if (t > 0) blend(c, x, y, bayer(x, y) < 8 ? 'gold.2' : 'coral.2', 0.3 * t ** 1.5);
+    }
+  }
+}
+
+/** The south still in the night's shadow: toward ink, dithered so it never bands (M8 R5). */
+function paintSouthDark(c: ChartPixels): void {
+  for (let y = SOUTH_FROM; y < H; y++) {
+    const a = SOUTH_ALPHA * ((y - SOUTH_FROM) / (H - SOUTH_FROM)) ** 1.2;
+    for (let x = 0; x < W; x++) blend(c, x, y, bayer(x, y) < 8 ? 'ink.0' : 'finale.shade', a);
+  }
+}
+
 /**
  * Stay: the Long Walk open through Wayside. Its trail runs gold from the north gate to the south
  * gate, bare footings (`steel.1` rings) where the domes on it stood, and Skitterkin walking it.
@@ -177,6 +213,8 @@ function paintGo(c: ChartPixels): void {
  */
 export function paintDawn(c: ChartPixels, ending: StarMapEnding | null): void {
   paintMorning(c);
+  paintNorthLight(c);
+  paintSouthDark(c);
   if (ending === 'stay') paintStay(c);
   else if (ending === 'go') paintGo(c);
 }

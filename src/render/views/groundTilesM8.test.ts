@@ -162,3 +162,37 @@ describe("A3M3's tunnel mouths", () => {
     });
   });
 });
+
+/** The sparse flora and rocks drawn on a map's open ground. */
+function sparseProps(g: GroundGrid): number {
+  let n = 0;
+  for (let r = 0; r < g.rows; r++) {
+    for (let c = 0; c < g.cols; c++) {
+      const p = dressTile(g, c, r).prop?.sprite;
+      if (p === 'prop.flora' || p === 'prop.rock') n++;
+    }
+  }
+  return n;
+}
+
+describe('the sim deck’s maps (M8 R5): sparser decor', () => {
+  it('drops about a third of the open ground’s flora and rocks on Endless and the Challenges', () => {
+    let seen = 0;
+    for (const id of ['end_m01', 'ch_m01', 'ch_m02', 'ch_m03']) {
+      const m = maps[id];
+      if (m === undefined) continue; // registered by the finale's chunk
+      seen++;
+      const thinned = sparseProps(m);
+      const full = sparseProps({ ...m, id: 'a1_m01' });
+      expect(full, id).toBeGreaterThan(0);
+      expect(thinned / full, id).toBeGreaterThan(0.5);
+      expect(thinned / full, id).toBeLessThan(0.85);
+    }
+    expect(seen).toBeGreaterThan(0);
+  });
+
+  it('leaves the campaign’s maps as they were', () => {
+    const m = map('fin_m01');
+    expect(sparseProps(m)).toBe(sparseProps({ ...m, id: 'a1_m01' }));
+  });
+});

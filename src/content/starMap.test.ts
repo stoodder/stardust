@@ -91,6 +91,8 @@ describe('the star map data', () => {
       ).toBe(false);
     }
     expect(box.y + box.h).toBeLessThanOrEqual(STAR_MAP_NODES.fin_m01.y + NODE_BOX.dy);
+    // West of the "you are here" pin standing over the finale's node (M8 R5), a few px clear.
+    expect(box.x + box.w).toBeLessThanOrEqual(STAR_MAP_NODES.fin_m01.x - 4);
     expect(STAR_MAP_LONG_WALK).toContainEqual({
       x: STAR_MAP_NODES.fin_m01.x,
       y: STAR_MAP_NODES.fin_m01.y,
