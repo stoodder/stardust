@@ -313,7 +313,7 @@ Per map: the **threat intel** (`threatIntel`: every trait present in the waves, 
 | A3M1 | + Scuttle Den | 7 | Ability Coolant 1; Emergency Bulkhead |
 | A3M2 | + Harpoon | + Mindspike (10) | — |
 | A3M3 | −1 Everglow class (revoked) | 10 | Seed Money 2 |
-| A3M4 | + jailbroken class, Hum Choir (+Gloop if warren) | 10 | Jailbreak bought (warren) or free (convoy) |
+| A3M4 | + jailbroken class, Hum Choir (+Gloop if warren) | 10 | Jailbreak bought (warren) or free (convoy); Head Start stays equipped from A3M3 on (A3M3 benched the Bulkhead; T771) |
 | A3M5 | + Sproing | + Stasis Bloom (13) | Mindspike tune 1 |
 | A3M6 | (+Gloop if convoy) | 13 | Harpoon tune 1–2 |
 | FIN | same (the reference never buys Crane or Lantern) | + Mindspike specs (16) | — |

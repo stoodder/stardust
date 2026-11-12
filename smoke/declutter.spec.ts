@@ -446,7 +446,9 @@ test('declutter e: the epilogue (card, counter, credits, final image)', async ({
   const epi = page.getByTestId('epilogue');
   await expect(epi).toHaveAttribute('data-beat', 'card');
   await capture(page, 'epilogue-card');
-  for (let i = 0; i < 20 && (await epi.getAttribute('data-beat')) === 'card'; i++) {
+  for (let i = 0; i < 20; i++) {
+    // oxlint-disable-next-line no-await-in-loop -- one card after another
+    if ((await epi.getAttribute('data-beat')) !== 'card') break;
     // oxlint-disable-next-line no-await-in-loop -- one card after another
     await epi.click();
   }

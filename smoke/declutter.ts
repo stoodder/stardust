@@ -164,6 +164,7 @@ interface Raw {
  * is the battle canvas's area that no opaque UI covers (a background at least half opaque, an
  * image or a canvas), sampled every 4 px: transparent layout boxes cover nothing.
  */
+/* oxlint-disable unicorn/consistent-function-scoping -- it runs in the page, so its helpers live inside it */
 function measurePage(): Raw {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
@@ -331,6 +332,8 @@ function measurePage(): Raw {
   };
 }
 
+/* oxlint-enable unicorn/consistent-function-scoping */
+
 /** Folds the raw marks into one record per name (a name may mark several elements). */
 function fold(raw: readonly RawMark[], kind: RawMark['kind']): Record<string, MarkRecord> {
   const out: Record<string, { count: number; area: number; shown: number; boxes: Box[] }> = {};
@@ -353,11 +356,22 @@ function writeJson(path: string, data: unknown): void {
   writeFileSync(path, `${JSON.stringify(data, null, 1)}\n`);
 }
 
+/** Whether `v` reads as a measure this file wrote (the parts the guard compares). */
+function isScreenRecord(v: unknown): v is ScreenRecord {
+  if (typeof v !== 'object' || v === null) return false;
+  const voice: unknown = Reflect.get(v, 'voice');
+  const critical: unknown = Reflect.get(v, 'critical');
+  return (
+    typeof voice === 'object' && voice !== null && typeof critical === 'object' && critical !== null
+  );
+}
+
 function baselineOf(id: ScreenId): ScreenRecord | null {
   const path = join(BASELINE, `${id}.json`);
   if (!existsSync(path)) return null;
-  // A file this spec wrote (DECLUTTER_RECORD): its shape is ScreenRecord.
-  return JSON.parse(readFileSync(path, 'utf8')) as ScreenRecord;
+  const parsed: unknown = JSON.parse(readFileSync(path, 'utf8'));
+  if (!isScreenRecord(parsed)) throw new Error(`${path} isn't a declutter measure`);
+  return parsed;
 }
 
 /**
