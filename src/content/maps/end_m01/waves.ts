@@ -40,10 +40,10 @@ export const waves = defineWaves([
       { enemy: 'zoomer', count: 7, delaySec: 10, route: ROUTE },
     ],
   },
-  // W5 · 796: a long Nibbler knot, then a Zoomer run.
+  // W5 · 766: a long Nibbler knot, then a Zoomer run.
   {
     groups: [
-      { enemy: 'nibbler', count: 19, intervalSec: 0.45, route: ROUTE },
+      { enemy: 'nibbler', count: 18, intervalSec: 0.45, route: ROUTE },
       { enemy: 'zoomer', count: 8, delaySec: 9, route: ROUTE },
     ],
   },
