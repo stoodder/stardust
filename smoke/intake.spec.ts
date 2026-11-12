@@ -19,10 +19,16 @@ test('intake: a new game files the profile, then A1M1; the name shows on the Shi
   await page.getByRole('button', { name: 'Start shift' }).click();
   const form = intake(page);
   await expect(form).toBeVisible();
-  await expect(form).toContainText('Employee #ED-447');
+  // The employee number once, on the ID badge (T803c); the name's hint while the name has focus.
+  await expect(form.getByRole('figure', { name: 'ID badge preview' })).toContainText(
+    'JPT-1 · #ED-447',
+  );
+  await expect(form).not.toContainText('Employee #ED-447');
   await expect(form).toContainText('Assigned in the field by your supervisor');
   const name = form.getByRole('textbox', { name: 'Name' });
   await expect(name).toBeFocused();
+  const hint = form.getByText(/^As it goes on your name tag/);
+  await expect(hint).toBeVisible();
   // Nothing is picked for the player.
   await expect(form.getByRole('radio')).toHaveCount(6);
   await expect(form.getByRole('radio', { checked: true })).toHaveCount(0);
@@ -42,6 +48,7 @@ test('intake: a new game files the profile, then A1M1; the name shows on the Shi
   await expect(page.getByTestId('badge-name')).toHaveText('Ada Okafor-Quinn');
   await page.keyboard.press('Tab');
   await expect(form.getByRole('radio', { name: 'she/her' })).toBeFocused();
+  await expect(hint).toBeHidden();
   await page.keyboard.press('ArrowRight');
   await page.keyboard.press('ArrowRight');
   await expect(form.getByRole('radio', { name: 'he/him' })).toHaveAttribute('aria-checked', 'true');

@@ -58,10 +58,7 @@ export function ImportPanel({
   if (step.kind === 'paste') {
     return (
       <div class="sd-import">
-        <label
-          class={quietLabel ? 'sd-visually-hidden' : 'sd-field-label'}
-          for="sd-import-code"
-        >
+        <label class={quietLabel ? 'sd-visually-hidden' : 'sd-field-label'} for="sd-import-code">
           Paste a shift code
         </label>
         <textarea

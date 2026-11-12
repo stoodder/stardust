@@ -98,6 +98,19 @@ describe('the post-game plate', () => {
     expect(entries.every((e) => e.tagline.length > 0)).toBe(true);
   });
 
+  it("a challenge's record in save.campaign.maps shows as cleared, with its medals by name (T803c)", () => {
+    const save = DEV_SAVES.after_fin_stay.build();
+    const first = postGameEntries(save).find((e) => e.id === 'ch_m01')!;
+    const [victory, perfect] = first.brief!.medals.map((m) => m.id);
+    const maps: Record<string, unknown> = save.campaign.maps;
+    maps.ch_m01 = { completed: true, medals: [victory, perfect], bestMeter: 1 };
+    const ch = postGameEntries(save).find((e) => e.id === 'ch_m01')!;
+    expect(ch.cleared).toBe(true);
+    expect(ch.medals).toBe(2);
+    expect(ch.brief!.medals.filter((m) => m.earned).map((m) => m.id)).toEqual([victory, perfect]);
+    expect(ch.label).toBe('Challenge: Skitterkin Only. Cleared. 2 of 3 medals.');
+  });
+
   it('a seed is a whole number in 32 bits', () => {
     expect(parseSeed(' 42 ')).toBe(42);
     expect(parseSeed('4294967295')).toBe(2 ** 32 - 1);

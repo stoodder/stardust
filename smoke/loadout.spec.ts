@@ -3,7 +3,8 @@
 // choice of ability; the 4-tower cap itself is unit-tested in meta/loadout.test.ts, since only
 // three towers exist yet). Shift board → Loadout → pick → Lock in → briefing (Change loadout and
 // back: the pick is remembered) → battle with that loadout. A1M2: which towers answer its
-// required Armor, and the heads-up when the pick has none. The skip rule: a save without the
+// required Armor, and the heads-up when the pick has none. (The declutter's layout, T803d:
+// loadoutDeclutter.spec.ts.) The skip rule: a save without the
 // loadout system (after_a1m1) goes straight to the briefing with no Change loadout.
 // Screenshots in test-results/screens/loadout/.
 import type { Page } from '@playwright/test';
@@ -69,7 +70,12 @@ test('loadout: pick towers and an ability, lock in, change it from the briefing,
   // Keepers on the Scuttle Den (T604), Harmony on the Mindspike and the Hum Choir (T607), Pinned
   // Down and Stillmind on the Stasis Bloom (T608), Acid Rain and Sticky Flak on the Gloop (T705),
   // Lookie Here and Bounce Chorus on the Sproing Pad (T704).
-  await expect(page.getByText('Bricks · Suppressing Fire')).toBeVisible();
+  // Bricks's card says he brings Suppressing Fire, so slot 2 needs no line of its own (T803d).
+  await expect(page.getByTestId('loadout-brings')).toContainText(/Bricks brings it/i);
+  await expect(page.locator('.sd-lo-companion')).toHaveCount(0);
+  // The formed links' names in view; the whole list behind "Every link" (T803d).
+  await expect(page.locator('.sd-lo-linked')).toHaveText('Crossfire · Sitting Ducks');
+  await page.getByRole('button', { name: /^Every link/ }).click();
   const links = page.locator('.sd-lo-link');
   await expect(links).toHaveCount(17);
   await expect(links.filter({ hasText: 'Conductive' })).toContainText('Needs Zapcoil');
@@ -81,6 +87,7 @@ test('loadout: pick towers and an ability, lock in, change it from the briefing,
   await expect(links.filter({ hasText: 'Sitting Ducks' })).toContainText('Linked');
   await page.waitForTimeout(200);
   await shot(page, 'loadout', 1, 'screen');
+  await page.getByRole('button', { name: /^Hide links/ }).click();
 
   // Drop Thumper by click: both links break, and the others take build slots 1 and 2.
   await towerCard(page, 'Thumper').click();
@@ -178,9 +185,9 @@ test("loadout: A1M2's counters, and a heads-up when the pick has no answer to Ar
   await towerCard(page, 'Rivet').click();
   await towerCard(page, 'Thumper').click();
   await towerCard(page, 'Skyhook').click();
+  // The first three that would answer, then how many more (T803d: the cards' chips show them all).
   await expect(warning).toHaveText(
-    'Heads up: this shift needs an answer to Armor, and nothing here has one. Rivet (T3) or ' +
-      'Thumper or Grapple Harpoon or Prism Spire or Gloop Spitter would.',
+    'Heads up: nothing here answers Armor. Rivet (T3), Thumper, Grapple Harpoon or 2 more would.',
   );
   await shot(page, 'loadout', 5, 'heads-up');
   await page.getByRole('button', { name: 'Lock in' }).click();

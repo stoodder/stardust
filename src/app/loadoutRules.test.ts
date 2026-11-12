@@ -7,12 +7,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { MemoryStore, validateSave, withVeteranPick } from '../meta/index.ts';
 import { loadout } from '../ui/screens/loadoutView.ts';
 import { battleConfig } from './battleSetup.ts';
-import {
-  closeLoadout,
-  openLoadout,
-  savePick,
-  togglePickTower,
-} from './loadout.ts';
+import { closeLoadout, openLoadout, savePick, togglePickTower } from './loadout.ts';
 import {
   activeSave,
   initSaves,
@@ -45,9 +40,11 @@ describe('the post-game maps offer the loadout (T803d)', () => {
     for (const t of deploy) expect(FACTION[t.id]).toBe('skitterkin');
     for (const t of home) {
       expect(FACTION[t.id]).not.toBe('skitterkin');
-      expect(t.stays).toBe('Stays home: Skitterkin Only');
+      expect(t.stays).toBe('Skitterkin Only');
     }
     expect(home.length).toBeGreaterThan(0);
+    // The towers that deploy lead the grid; those that stay home follow.
+    expect(view.towers.slice(0, deploy.length)).toEqual(deploy);
     expect(view.initial.towers.length).toBeGreaterThan(0);
     for (const t of view.initial.towers) expect(FACTION[t]).toBe('skitterkin');
     // A stay-home tower never joins the pick.

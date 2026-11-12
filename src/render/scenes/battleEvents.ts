@@ -181,6 +181,11 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
   const content = sim.config.content;
   /** The map's Skitterkin death, a presentation dial (core-loop.md § 6.7). */
   const skitterkinDeath = presentationOfMap(map).skitterkinDeath;
+  /** The Harmony link's callout as this map floats it (Phase 2 takes it down; T803b). */
+  const harmonyCallout = calloutText(
+    content.links.find((l) => l.id === HARMONY_LINK)?.name ?? '',
+    presentationOfMap(map).counter,
+  );
   /**
    * Lobbed shells in flight, by uid → splash radius (tiles; negative for a bomblet): their impact
    * draws a burst and a ring (a bomblet: its small pop, no ring).
@@ -608,7 +613,9 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
     }),
     // The finale's Dawn (T803b): no number or callout rises over the sunrise.
     bus.on('PhaseChanged', (e) => {
-      if (map.song !== null && e.phase >= DAWN_PHASE) fx.muteText();
+      if (map.song === null) return;
+      if (e.phase >= DAWN_PHASE) fx.muteText();
+      else if (e.phase === SONG_PHASE) fx.dropText(harmonyCallout);
     }),
   ];
   if (map.song !== null && sim.state.phase >= DAWN_PHASE) fx.muteText();

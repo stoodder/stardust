@@ -32,6 +32,7 @@ export const SCREENS = {
   'hud-a1-build': 'b',
   'hud-a1-armed': 'b',
   'hud-tower-panel': 'b',
+  'hud-tower-panel-comms': 'b',
   'hud-a3-wave': 'b',
   'hud-boss': 'b',
   'hud-comms': 'b',

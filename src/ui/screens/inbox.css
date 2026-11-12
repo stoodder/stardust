@@ -22,9 +22,10 @@
 
 /* ---- The list ---- */
 
+/* Narrow (T803e): an index, so the reader gets the width. */
 .sd-story-list {
   display: flex;
-  flex: 0 0 150px;
+  flex: 0 0 124px;
   flex-direction: column;
   min-height: 0;
   overflow-y: auto;
@@ -87,6 +88,13 @@
   min-width: 0;
 }
 
+/* A memo's subject on one line (T803e); the reader's Re line and the tooltip say it whole. */
+.sd-inbox-subject {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 .sd-story-item:hover,
 .sd-story-item:focus-visible {
   outline: none;
@@ -138,6 +146,12 @@
 
 /* ---- The memo: Everglow letterhead ---- */
 
+/* The letter fills its reader (T803e): a whole sheet, not a slip over the dark. */
+.sd-story-reader > .sd-memo {
+  box-sizing: border-box;
+  min-height: 100%;
+}
+
 .sd-memo {
   padding: 6px 8px 6px;
   background: var(--sd-white-0);
@@ -173,8 +187,7 @@
 
 .sd-memo-fields {
   display: grid;
-  grid-template-columns: 24px 1fr;
-  gap: 1px 4px;
+  gap: 1px;
   margin: 0;
 }
 
@@ -186,6 +199,26 @@
 
 .sd-memo-fields dd {
   margin: 0;
+}
+
+/* From and To flow as one routing line (T803e), each label before its name. */
+.sd-memo-route dt,
+.sd-memo-route dd {
+  display: inline;
+}
+
+.sd-memo-route dt {
+  margin-right: 4px;
+}
+
+.sd-memo-route dd + dt {
+  margin-left: 4px;
+}
+
+.sd-memo-re {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px;
 }
 
 .sd-memo-subject {

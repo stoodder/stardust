@@ -110,6 +110,7 @@ export function WavePanel() {
   const block = endless && next !== null ? endlessNextLine(run, next.number) : null;
   // T606: QUILL's lockout hides the preview's threats (it never shows anything false).
   const restricted = revokedHud.value.previewHidden;
+  const named = next?.groups.some((g) => g.spawn !== null) === true;
   const leak = revokedHud.value.leakLine;
   // A `noCall` wave walks in on its own (the Quiet Wave, D097; A2M5's W6): no button, no bonus.
   const callLabel =
@@ -155,7 +156,9 @@ export function WavePanel() {
       </div>
       {next !== null && (
         <ul class="hud-preview" data-critical="preview" aria-label={`Next: wave ${next.number}`}>
-          <li class="hud-label">Next</li>
+          {/* On a map that names its spawns, the first spawn's chip heads the row in the label's
+              place (T803b): "Warren ×1 ×6" under the wave counter reads as the next wave. */}
+          {(restricted || !named) && <li class="hud-label">Next</li>}
           {/* QUILL's lockout (T606, T631): the threats hidden behind ACCESS RESTRICTED and a
               struck blank where the icons were; its leak line under it, in its color. */}
           {restricted && (

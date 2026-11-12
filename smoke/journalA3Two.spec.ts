@@ -2,7 +2,7 @@
 // opens on the plant's automated memo (no sign-off, its small print one click away) and the
 // Journal holds the Silencer, the pension form (Form P-19, no picture), the warren's Gloop Spitter
 // and Gerald's correction beside his Pest Field Guide entry; after A3M5, Dome Row's notice with the
-// plant offline in its small print, and Kip's ledger. The delivery rules are unit-tested
+// plant offline in its small print, Kip's ledger, and the Stasis Bloom's entry. The delivery rules are unit-tested
 // (app/journalAct3Two.test.ts); this checks the page. Screenshots in <out>/screens/journal-a3-two/.
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
@@ -93,4 +93,8 @@ test("journal part two: after A3M5, Dome Row's notice and Kip's ledger", async (
   await pane.getByRole('button', { name: /^"Shareholder Value"/ }).click();
   await expect(entry).toContainText('Director Sterling says it is just a name.');
   await shot(page, 'journal-a3-two', 7, 'shareholder-value');
+  // The Stasis Bloom, attuned before A3M5 (T769, T872): Ves'thara's margin under the record.
+  await pane.getByRole('button', { name: /^Stasis Bloom/ }).click();
+  await expect(entry).toContainText('The Concord allows that much.');
+  await shot(page, 'journal-a3-two', 8, 'stasis-bloom');
 });

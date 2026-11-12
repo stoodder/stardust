@@ -247,6 +247,14 @@ export interface KnownIds {
   readonly flagValues: Readonly<Partial<Record<StoryFlagId, readonly FlagValue[]>>>;
 }
 
+/**
+ * A post-game map's id (content/postGame.ts; T803d): a MapId whose content registers with the
+ * finale's lazy chunk, so a save may name it before that chunk loads.
+ */
+function isPostGameMapId(id: string): id is MapId {
+  return POST_GAME_MAPS.some((m) => m.id === id);
+}
+
 /** The live registries' ids. */
 export const LIVE_KNOWN_IDS: KnownIds = {
   towers: Object.values(TOWERS).map((t) => t.id),
@@ -254,7 +262,7 @@ export const LIVE_KNOWN_IDS: KnownIds = {
   abilities: Object.values(ABILITIES).map((a) => a.id),
   // The post-game maps too (Endless, the challenges; T803d): their loadout presets are kept per map,
   // though their content registers later, with the finale's chunk.
-  maps: [...Object.values(MAPS).map((m) => m.id), ...POST_GAME_MAPS.map((m) => m.id as MapId)],
+  maps: [...Object.values(MAPS).map((m) => m.id), ...POST_GAME_MAPS.map((m) => m.id).filter(isPostGameMapId)],
   upgradeRanks: Object.fromEntries(Object.values(UPGRADES).map((u) => [u.id, u.ranks.length])),
   protocols: Object.values(PROTOCOLS).map((p) => p.id),
   protocolsWithPick: Object.values(PROTOCOLS)

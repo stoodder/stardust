@@ -176,7 +176,8 @@ test('m1: title → briefing → HUD build → wave → par plays out → Victor
   const dialog = page.getByRole('dialog', { name: 'PERIMETER SECURED!' });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByText('Shift report · Exemplary!')).toBeVisible();
-  await expect(dialog.getByText('Waves survived')).toBeVisible();
+  // A win's waves go unsaid: the headline says every one was survived (T803e).
+  await expect(dialog.getByText('Waves survived')).toHaveCount(0);
   await expect(dialog.getByText('Core integrity')).toBeVisible();
   const killed = await page.evaluate(() => globalThis.__sd!.state()!.stats.skitterkinKilled);
   expect(killed).toBeGreaterThan(0);

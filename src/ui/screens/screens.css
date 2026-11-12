@@ -494,6 +494,14 @@
   text-transform: uppercase;
 }
 
+/* The Stardust icon before its label (Banks.tsx), 1:1 in game px. */
+.sd-banks-icon {
+  display: inline-block;
+  margin-right: 2px;
+  vertical-align: -1px;
+  image-rendering: pixelated;
+}
+
 .sd-banks dd {
   margin: 0;
   color: var(--sd-white-1);

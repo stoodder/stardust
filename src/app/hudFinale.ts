@@ -29,7 +29,7 @@ import {
 } from '../ui/hud/finaleState.ts';
 import { COUNTDOWN_PHASE, trackCountdown } from './countdown.ts';
 import type { Host } from './host.ts';
-import { displayName } from './hudText.ts';
+import { cueStale, displayName } from './hudText.ts';
 
 /** The countdown's label: the counter's own name, the one the epilogue's last card lands on 0. */
 export const COUNTER_LABEL = 'Pests processed';
@@ -111,9 +111,12 @@ export function bindFinaleHud(host: Host<IdSpace>, lifetime: number): () => void
   const boreLabel = bore === null ? '' : displayName(bore.id);
   let bannerId = 0;
   let bannerTimer: ReturnType<typeof setTimeout> | null = null;
+  /** The sim tick the banner showed at (−1: none up): it leaves after its beat in sim time too. */
+  let bannerTick = -1;
   const banner = (kicker: string, title: string): void => {
     if (host.replaying) return;
     phaseBanner.value = { id: ++bannerId, kicker, title };
+    bannerTick = sim.state.tick;
     if (bannerTimer !== null) clearTimeout(bannerTimer);
     bannerTimer = setTimeout(() => {
       bannerTimer = null;
@@ -135,6 +138,11 @@ export function bindFinaleHud(host: Host<IdSpace>, lifetime: number): () => void
   };
   const sync = (): void => {
     const s = sim.state;
+    // A fast-forward doesn't leave "The Descent / Wave 1" over wave 6 (T803b).
+    if (bannerTick >= 0 && cueStale(bannerTick, s.tick, PHASE_BANNER_MS)) {
+      bannerTick = -1;
+      phaseBanner.value = null;
+    }
     if (finalePhase.value !== s.phase) finalePhase.value = s.phase;
     const clock = clockNow();
     if (!sameClock(finaleClock.value, clock)) finaleClock.value = clock;

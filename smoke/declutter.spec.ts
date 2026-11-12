@@ -5,6 +5,7 @@
 import type { Page } from '@playwright/test';
 import type { ResultsFixture } from '../src/app/testHookTypes.ts';
 import { expect, test } from './fixtures.ts';
+import { shot } from './hooks.ts';
 import {
   attr,
   baseTab,
@@ -28,6 +29,18 @@ test('declutter b: Act I HUD, armed slot, tower panel', async ({ page }) => {
   await page.evaluate(() => globalThis.__sd!.setSpeed(0));
   await capture(page, 'hud-a1-build');
 
+  // The records row's "+" (T803b): the medals' names one press away, Enter in, Esc out.
+  const more = page.getByRole('button', { name: /^More: the medals/ });
+  await more.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByTestId('records-more')).toContainText('Victory');
+  await shot(page, 'declutter-b', 1, 'records-open');
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId('records-more')).toBeHidden();
+  await expect(more).toBeFocused();
+  await expect(page.getByRole('dialog', { name: 'Shift paused' })).toHaveCount(0);
+  await more.blur();
+
   await page.getByRole('navigation', { name: 'Build' }).getByRole('button').first().click();
   await capture(page, 'hud-a1-armed');
   await page.keyboard.press('Escape');
@@ -43,6 +56,44 @@ test('declutter b: Act I HUD, armed slot, tower panel', async ({ page }) => {
   await expect(page.getByRole('region', { name: / tower$/ })).toBeVisible();
   await page.mouse.move(0, 0);
   await capture(page, 'hud-tower-panel');
+});
+
+test('declutter b: the tower panel opens clear of a comms line (T803b)', async ({ page }) => {
+  // The audit's finding #8: A1M3's W3 Rivet, whose panel opened over QUILL's line.
+  // The line first (the radio runs on real time), then par's opening build, its first turret
+  // selected while the line is up.
+  await boot(page, '&dialogue=1&map=a1_m03');
+  await clockIn(page);
+  await page.evaluate(() => globalThis.__sd!.setSpeed(0));
+  const comms = () => page.evaluate(() => globalThis.__sd!.dialogue.shown().comms ?? '');
+  await page.evaluate(() => globalThis.__sd!.dialogue.play('a1_m03_w05'));
+  await expect.poll(comms, { timeout: 45_000 }).toContain('ten Puffwings');
+  const at = await page.evaluate(() => {
+    const sd = globalThis.__sd!;
+    sd.autoplay('par');
+    sd.fastForward(1);
+    const t = sd.state()!.towers.items.find((x) => x.alive);
+    return t === undefined ? null : sd.tileToClient(t.col, t.row);
+  });
+  expect(at).not.toBeNull();
+  if (at !== null) await page.mouse.click(at.x, at.y);
+  const panel = page.getByRole('region', { name: / tower$/ });
+  await expect(panel).toBeVisible();
+  await page.mouse.move(0, 0);
+  await expect.poll(comms).toContain('ten Puffwings');
+  await capture(page, 'hud-tower-panel-comms');
+  // The panel and the comms box don't overlap.
+  const a = await panel.boundingBox();
+  const b = await page.getByTestId('comms').boundingBox();
+  expect(a !== null && b !== null).toBe(true);
+  if (a !== null && b !== null) {
+    const apart =
+      a.x >= b.x + b.width ||
+      b.x >= a.x + a.width ||
+      a.y >= b.y + b.height ||
+      b.y >= a.y + a.height;
+    expect(apart).toBe(true);
+  }
 });
 
 test('declutter b: a comms line, a bark, pause', async ({ page }) => {
@@ -110,8 +161,9 @@ test('declutter b: the finale HUD, Descent to Dawn', async ({ page }) => {
             return st.wave >= 6 && st.choir.dist > 8;
           case 'held':
             return st.schedule.phase === 'held';
+          // 2 s in: the Halls' banner still up, as in play (it leaves after its beat; T803b).
           case 'phase2':
-            return st.phase >= 2 && st.tick - st.phaseTick > 60 * 25;
+            return st.phase >= 2 && st.tick - st.phaseTick > 60 * 2;
           case 'dawn':
             return st.phase >= 3 && st.tick - st.phaseTick > 60 * 2;
           default:
@@ -435,6 +487,10 @@ test("declutter e: the Waykeeper's naming", async ({ page }) => {
 test('declutter e: Dawn and C5', async ({ page }) => {
   await playScene(page, 'after_a3m6_keep', 'fin_m01_scene_dawn', false);
   await expect(page.getByTestId('stage-dawn')).toBeVisible();
+  // Its first line up (T803e): the stage is measured with its words, never mid-lead-in.
+  await expect(
+    page.getByTestId('scene').getByRole('button', { name: /^(Next|Skip)/ }),
+  ).toBeVisible();
   await capture(page, 'stage-dawn');
   await playScene(page, 'after_a3m6_keep', 'fin_m01_scene_c5', false);
   await expect(page.getByTestId('stage-c5')).toBeVisible();

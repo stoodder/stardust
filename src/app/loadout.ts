@@ -426,7 +426,7 @@ export function openLoadout(mapId: string): boolean {
   const deploys = (tower: string): boolean =>
     faction === null || factionOf[tower]?.faction === faction;
   const staysText =
-    faction === null ? null : silkText(`Stays home: ${ruleNamed(cfg, 'towerFaction', 'Rules')}`);
+    faction === null ? null : silkText(ruleNamed(cfg, 'towerFaction', 'Run rules'));
   // A map's one companion, present in slot 2, brings its ability too (A1M5's Bricks beside an
   // inherited Suppressing Fire); an absent one brings nothing.
   const fixed =
@@ -487,8 +487,9 @@ export function openLoadout(mapId: string): boolean {
       label: COUNTER_LABELS[id],
       required: required.includes(id),
     })),
-    towers: pools.towers.map((id) =>
-      towerView(content, c, cfg.modifiers, id, deploys(id) ? null : staysText),
+    // Those that deploy first (a challenge's faction; T862), then those that stay home.
+    towers: [...pools.towers.filter(deploys), ...pools.towers.filter((id) => !deploys(id))].map(
+      (id) => towerView(content, c, cfg.modifiers, id, deploys(id) ? null : staysText),
     ),
     revoked: save.unlocks.revokedTowers.flatMap((id): LoadoutRevokedView[] => {
       const def = content.towers[id];
@@ -689,9 +690,22 @@ export function formedLinks(pick: LoadoutPickView): string[] {
   return linksAmong(pick.towers, Object.values(LINKS)).map((l) => l.id);
 }
 
+/** How many answering towers a heads-up names before "or N more" (T803d: it stays two lines). */
+export const WARNING_NAMES = 3;
+
+/** "Rivet", "Rivet or Thumper", "Rivet, Thumper or Prism Spire", "…, Prism Spire or 2 more". */
+function namesText(names: readonly string[]): string {
+  if (names.length <= 1) return names[0] ?? '';
+  if (names.length <= WARNING_NAMES) {
+    return `${names.slice(0, -1).join(', ')} or ${names[names.length - 1]}`;
+  }
+  return `${names.slice(0, WARNING_NAMES).join(', ')} or ${names.length - WARNING_NAMES} more`;
+}
+
 /**
- * A heads-up for each required counter the pick leaves unanswered, naming the owned towers that
- * would answer it. Never a scold: the player may know something the warning doesn't.
+ * A heads-up for each required counter the pick leaves unanswered, naming the first owned towers
+ * that would answer it (the cards' gold chips show them all). Never a scold: the player may know
+ * something the warning doesn't.
  */
 export function pickWarnings(pick: LoadoutPickView): string[] {
   const c = ctx;
@@ -706,8 +720,8 @@ export function pickWarnings(pick: LoadoutPickView): string[] {
         return a === undefined ? null : a.via === null ? t.name : `${t.name} (${a.via})`;
       })
       .filter((n) => n !== null);
-    const hint = who.length === 0 ? '' : ` ${who.join(' or ')} would.`;
-    return `Heads up: this shift needs an answer to ${label}, and nothing here has one.${hint}`;
+    const hint = who.length === 0 ? '' : ` ${namesText(who)} would.`;
+    return `Heads up: nothing here answers ${label}.${hint}`;
   });
 }
 

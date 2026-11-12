@@ -1,5 +1,6 @@
 /* The loadout screen (T201), in the menu-panel style (art-direction §9): a wider panel with the
-   tower grid on the left and the Technician, slot 2, heads-ups, and links on the right. Game
+   tower grid on the left and the Technician, slot 2, and links on the right; heads-ups in the
+   footer. Game
    pixels; colors are theme.css tokens. Declutter (T803d): the kicker on its own line, the threats
    beside the heading; one-line protocol rows; the links list behind a floating "Every link". */
 
@@ -44,24 +45,27 @@
   text-transform: uppercase;
 }
 
+/* Each row runs as one right-aligned line of text, its term leading its first line, so a long
+   list (Endless's, the finale's) wraps under itself with the term beside its start. */
 .sd-lo-intel div {
-  display: flex;
-  justify-content: flex-end;
-  gap: 6px;
   max-width: 100%;
+  line-height: 10px;
+  text-align: right;
+}
+
+.sd-lo-intel dt,
+.sd-lo-intel dd {
+  display: inline;
 }
 
 .sd-lo-intel dt {
-  flex: none;
+  margin-right: 6px;
   color: var(--sd-steel-3);
 }
 
 .sd-lo-intel dd {
-  min-width: 0;
   margin: 0;
   color: var(--sd-white-1);
-  line-height: 10px;
-  text-align: right;
 }
 
 .sd-lo-intel .sd-lo-need {
@@ -395,10 +399,22 @@
   color: var(--sd-gold-4);
 }
 
-/* A notice (the limit, a stay-home tower) sits in the footer, left of the buttons. */
-.sd-lo-hint {
+/* The footer's left part (T803d; T871): a notice (the limit, a stay-home tower), then the
+   heads-ups, across the width the buttons leave, so one never runs under them. */
+.sd-lo-foot {
+  display: flex;
   flex: 1;
+  flex-direction: column;
   align-self: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sd-lo-hint:empty {
+  display: none;
+}
+
+.sd-lo-hint {
   margin: 0;
   color: var(--sd-steel-3);
   font-family: var(--font-heading);
@@ -407,15 +423,18 @@
   text-transform: uppercase;
 }
 
-/* The Technician's ability: a radio group of rows. */
+/* The Technician's ability: a radio group of rows; it never shrinks under the links. */
 .sd-lo-abilities {
   display: flex;
+  flex: none;
   flex-direction: column;
   gap: 2px;
 }
 
 .sd-lo-ability {
   align-items: center;
+  padding-top: 2px;
+  padding-bottom: 2px;
 }
 
 .sd-lo-ability-name {
@@ -432,6 +451,12 @@
 .sd-lo-companions {
   display: grid;
   grid-template-columns: 1fr 1fr;
+}
+
+/* The ability rows' tighter padding isn't theirs: each card keeps its height (data-voice). */
+.sd-lo-ability.sd-lo-companion-card {
+  padding-top: 3px;
+  padding-bottom: 3px;
 }
 
 .sd-lo-companion-ability {
@@ -468,6 +493,7 @@
 .sd-lo-links-section {
   position: relative;
   display: flex;
+  flex: none;
   flex-direction: column;
   gap: 2px;
   margin-top: auto;
@@ -503,19 +529,19 @@
   bottom: 100%;
   left: 0;
   min-width: 0;
-  max-height: 232px;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--sd-steel-1) var(--sd-ink-1);
 }
 
 .sd-lo-links {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  max-height: 200px;
   margin: 0;
   padding: 0;
+  overflow-y: auto;
   list-style: none;
+  scrollbar-width: thin;
+  scrollbar-color: var(--sd-steel-1) var(--sd-ink-1);
 }
 
 .sd-lo-link {
@@ -710,8 +736,7 @@
   outline: 1px solid var(--sd-teal-4);
 }
 
-/* Heads-ups: orange, never red (a warning, not a scold), above the links (T871: never under the
-   footer's buttons). */
+/* Heads-ups: orange, never red (a warning, not a scold), in the footer beside Lock in. */
 .sd-lo-warnings {
   display: flex;
   flex-direction: column;

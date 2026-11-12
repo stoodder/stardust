@@ -120,9 +120,19 @@ test('star map: after A1M5, the keyboard, Replay, and every way back', async ({ 
     'Rig Nine stopped answering. Go take a peek. Minor operational hiccup!',
   );
   await expect(panel).toContainText('Required: Splash');
-  await expect(panel).toContainText('Hiccup Contained');
+  // T803c: no "Next up" beside Start; the medals one press away, Esc closing them.
+  await expect(panel).not.toContainText('Next up');
+  const medals = panel.getByRole('list', { name: 'Medals' });
+  await expect(medals).toBeHidden();
   const start = page.getByRole('button', { name: 'Start Rig Nine' });
   await expect(start).toBeFocused();
+  const more = panel.getByRole('button', { name: /^Medals/ });
+  await more.click();
+  await expect(medals).toContainText('Hiccup Contained');
+  await page.keyboard.press('Escape');
+  await expect(medals).toBeHidden();
+  await expect(more).toBeFocused();
+  await start.focus();
   for (const later of ['The Glass Witch', 'Second Look', 'Second Harvest', 'The Long Walk']) {
     // oxlint-disable-next-line no-await-in-loop -- one assertion per name
     await expect(page.locator('body')).not.toContainText(later);
@@ -235,10 +245,10 @@ test('star map: reduced motion holds still; after A2M4 the Long Walk next up at 
   await shot(page, 'starmap', 3, 'after-a2m4-next');
 });
 
-// T863 (T860's note): Orientation Day's node takes a click wherever the Sector map stands, unless
-// the open node panel lies over it (a tall panel beside a west node covers the colony: T803c's
-// declutter), and then Home still reaches it. Nothing else (the marker, a neighbour's plate or
-// pips, the chrome) catches the pointer first.
+// T863 (T860's note): Orientation Day's node takes a click wherever the Sector map stands: since
+// T803c's declutter, no arrival's panel (nor the post-game column) lies over it. Nothing else (the
+// marker, a neighbour's plate or pips, the chrome) catches the pointer first. The arrival's panel
+// keeps clear of the header and the banks too.
 for (const [i, save] of [
   'after_a1m5_ref',
   'after_a2m6',
@@ -260,14 +270,22 @@ for (const [i, save] of [
         ? 'panel'
         : (at?.outerHTML.slice(0, 160) ?? 'nothing');
     });
-    expect(['ok', 'panel']).toContain(hit);
-    if (hit === 'ok') {
-      await button.click();
-    } else {
-      await nodes(page).first().focus();
-      await page.keyboard.press('Home');
-      await page.keyboard.press('Enter');
+    expect(hit).toBe('ok');
+    const panel = page.getByTestId('star-panel').or(page.getByTestId('post-game-panel'));
+    const box = await panel.first().boundingBox();
+    for (const chrome of ['.sd-starmap-header', '.sd-starmap-banks']) {
+      // oxlint-disable-next-line no-await-in-loop -- one corner at a time
+      const c = await page.locator(chrome).boundingBox();
+      const clear =
+        box === null ||
+        c === null ||
+        box.x >= c.x + c.width ||
+        c.x >= box.x + box.width ||
+        box.y >= c.y + c.height ||
+        c.y >= box.y + box.height;
+      expect(clear, `the arrival's panel keeps clear of ${chrome}`).toBe(true);
     }
+    await button.click();
     await expect(page.getByTestId('star-panel')).toContainText('Orientation Day');
   });
 }

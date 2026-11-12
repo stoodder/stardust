@@ -1,44 +1,43 @@
 import { describe, expect, it } from 'vitest';
+import type { SpeakerId } from '../../content/dialogue/types.ts';
 import type { LineView } from '../dialogue/state.ts';
 import { answersLabel, briefingRuns, medalsLabel } from './briefingView.ts';
 
 let next = 0;
 /** A line by `speaker` (a caption with no face for the narrator). */
-function line(speaker: string, name = speaker.toUpperCase()): LineView {
+function line(speaker: SpeakerId, name: string = speaker.toUpperCase()): LineView {
   const caption = speaker === 'narrator';
   return {
     id: next++,
-    speaker: speaker as LineView['speaker'],
+    speaker,
     name: caption ? '' : name,
-    color: 'teal.4' as LineView['color'],
-    frame: caption ? 'caption' : 'comms',
+    color: 'teal.4',
+    frame: caption ? 'caption' : 'portrait',
     portrait: caption
       ? null
       : {
           sprite: `portrait.${speaker}`,
           variant: null,
           expression: 'neutral',
-          policy: false,
-          blink: false,
           dark: false,
           icon: false,
+          policy: false,
+          blink: false,
         },
     text: 'words',
     silence: false,
     point: false,
-  } as LineView;
+  };
 }
 
 describe('briefingRuns', () => {
   it("puts every line beside its own speaker's face (A1M1: QUILL's beside QUILL's)", () => {
-    const [q1, b1, q2, b2, b3] = [
-      line('quill'),
-      line('bricks'),
-      line('quill'),
-      line('bricks'),
-      line('bricks'),
-    ];
-    const runs = briefingRuns([q1!, b1!, q2!, b2!], b3!);
+    const q1 = line('quill');
+    const b1 = line('bricks');
+    const q2 = line('quill');
+    const b2 = line('bricks');
+    const b3 = line('bricks');
+    const runs = briefingRuns([q1, b1, q2, b2], b3);
     expect(runs.map((r) => r.lines.map((l) => l.speaker))).toEqual([
       ['quill'],
       ['bricks'],
@@ -73,6 +72,9 @@ describe('briefingRuns', () => {
   });
 });
 
+/** A medal or objective, on file or not. */
+const m = (held: boolean) => ({ held });
+
 describe('the toggles', () => {
   it('counts the towers that answer a counter', () => {
     expect(answersLabel(8)).toBe('8 of yours answer it');
@@ -80,7 +82,6 @@ describe('the toggles', () => {
   });
 
   it('names the medals, the optional objectives, and how many are on file', () => {
-    const m = (held: boolean) => ({ held });
     expect(medalsLabel([m(false), m(false), m(false)], [])).toBe('3 medals');
     expect(medalsLabel([m(true), m(false), m(false)], [m(true)])).toBe(
       '3 medals · 1 optional · 2 on file',

@@ -5,7 +5,9 @@
 // page. The nodes are one tab stop (a roving tabindex): the arrows walk them in campaign order,
 // Home and End reach the first and the frontier, Enter or a click focuses the panel's button, and
 // Esc in the panel returns to its node. On arrival the frontier is selected and its Start is
-// focused. The first visit reveals the chart with a survey sweep and a one-time notice.
+// focused. The first visit reveals the chart with a survey sweep and a one-time notice. The panel
+// keeps what the player decides on in view (the tagline, the threats, the required counters, the
+// button) and its medals and objectives one press away under "Medals" (T803c, D153).
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { openSettings, playMap, toBase, toTitle } from '../../app/navigation.ts';
 import {
@@ -487,7 +489,9 @@ export function StarMap() {
     // the panel's button once the panel has rendered (a teaser has none: stay on the node).
     buttons.current[i]?.focus();
     if (focus === 'panel') {
-      requestAnimationFrame(() => panel.current?.querySelector('button')?.focus());
+      requestAnimationFrame(() =>
+        panel.current?.querySelector<HTMLElement>('.sd-star-actions .sd-button')?.focus(),
+      );
     }
   };
   const onKey = (i: number) => (e: KeyboardEvent) => {

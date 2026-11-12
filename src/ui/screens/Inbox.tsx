@@ -1,8 +1,9 @@
 // The Everglow Inbox (T303, T411; design/core-loop.md § 6.4, art-direction § 9 *Memos*): the base's
-// memo pane. Delivered memos, newest first, in a list beside a reader on Everglow letterhead (a KFA
-// form on its own off-white form panel, with a stamp box); the small print collapses under its
-// toggle, one click away. Showing a memo reads it, which clears its
-// NEW tag (and, with the last one, the Inbox tab's badge). The view models are app/inbox.ts.
+// memo pane. Delivered memos, newest first, in a narrow list of one-line subjects beside a wide
+// reader on Everglow letterhead that fills it (T803e; a KFA form on its own off-white form panel,
+// with a stamp box), From and To on one routing line; the small print collapses under its toggle,
+// one click away. Showing a memo reads it, which clears its NEW tag (and, with the last one, the
+// Inbox tab's badge). The view models are app/inbox.ts.
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { inboxView, markMemoRead, type MemoView } from '../../app/inbox.ts';
@@ -126,6 +127,33 @@ export function listKeys(e: KeyboardEvent, pick: (index: number) => void, count:
 // ── The Inbox ────────────────────────────────────────────────────────────────────────────────
 
 /**
+ * A memo's header fields: From and To flowing on one line (T803e: the sender and the addressee read
+ * as one routing line, wrapping only when they must), then Re, the subject.
+ */
+function MemoFields({ memo }: { memo: MemoView }) {
+  return (
+    <dl class="sd-memo-fields">
+      <div class="sd-memo-route">
+        <dt>From</dt>
+        <dd>
+          <GlyphText text={memo.from} />
+        </dd>{' '}
+        <dt>To</dt>
+        <dd>
+          <GlyphText text={memo.to} />
+        </dd>
+      </div>
+      <div class="sd-memo-re">
+        <dt>Re</dt>
+        <dd id="sd-memo-subject" class="sd-memo-subject">
+          <GlyphText text={memo.subject} />
+        </dd>
+      </div>
+    </dl>
+  );
+}
+
+/**
  * A KFA form (art-direction § 9, *Portrait-less speakers*): the off-white form panel in ink, its
  * header the KFA's, the clauses as written, and a stamp box. No Everglow sun anywhere on it.
  */
@@ -134,20 +162,7 @@ function Form({ memo }: { memo: MemoView }) {
     <article class="sd-memo sd-form" data-voice="memo" aria-labelledby="sd-memo-subject">
       <header class="sd-memo-head sd-form-head">
         <span class="sd-memo-brand">Kepler Frontier Authority</span>
-        <dl class="sd-memo-fields">
-          <dt>From</dt>
-          <dd>
-            <GlyphText text={memo.from} />
-          </dd>
-          <dt>To</dt>
-          <dd>
-            <GlyphText text={memo.to} />
-          </dd>
-          <dt>Re</dt>
-          <dd id="sd-memo-subject" class="sd-memo-subject">
-            <GlyphText text={memo.subject} />
-          </dd>
-        </dl>
+        <MemoFields memo={memo} />
       </header>
       <div class="sd-memo-body">
         {memo.paragraphs.map((p, i) => (
@@ -208,20 +223,7 @@ export function Letter({ memo }: { memo: MemoView }) {
             Everglow · Memo
           </span>
         )}
-        <dl class="sd-memo-fields">
-          <dt>From</dt>
-          <dd>
-            <GlyphText text={memo.from} />
-          </dd>
-          <dt>To</dt>
-          <dd>
-            <GlyphText text={memo.to} />
-          </dd>
-          <dt>Re</dt>
-          <dd id="sd-memo-subject" class="sd-memo-subject">
-            <GlyphText text={memo.subject} />
-          </dd>
-        </dl>
+        <MemoFields memo={memo} />
       </header>
       <div class="sd-memo-body">
         {memo.paragraphs.map((p, i) => (
@@ -304,7 +306,11 @@ export function InboxPane() {
                 tabIndex={m.id === shown.id ? 0 : -1}
                 onClick={() => pick(i)}
               >
-                <span class="sd-story-item-name">
+                {/* One line each (T803e): the reader's Re line says the whole subject. */}
+                <span
+                  class="sd-story-item-name sd-inbox-subject"
+                  title={silkText(m.subject.replace(GLYPH_CHARS.sun, '').trim())}
+                >
                   <GlyphText text={m.subject} />
                 </span>
                 {m.unread && <NewTag />}

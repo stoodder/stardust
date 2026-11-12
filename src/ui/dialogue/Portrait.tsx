@@ -116,7 +116,9 @@ export function Portrait({
   if (p === null) return null;
   const s = spriteFrames(p.sprite);
   const frame =
-    s === null ? null : pickFrame(s.names, p.variant, p.expression, held ? 'rest' : phaseAt(p, ms, talking, still));
+    s === null
+      ? null
+      : pickFrame(s.names, p.variant, p.expression, held ? 'rest' : phaseAt(p, ms, talking, still));
   const img = s === null || frame === null ? null : frameUrl(s, p.sprite, frame, p.dark);
   return (
     <span

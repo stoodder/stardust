@@ -149,8 +149,7 @@ describe('the loadout screen (app side)', () => {
     expect(pick.towers).toEqual(['sprinkler']);
     expect(formedLinks(pick)).toEqual([]);
     expect(pickWarnings(pick)).toEqual([
-      'Heads up: this shift needs an answer to Armor, and nothing here has one. Rivet (T3) or ' +
-        'Thumper or Grapple Harpoon or Prism Spire or Gloop Spitter would.',
+      'Heads up: nothing here answers Armor. Rivet (T3), Thumper, Grapple Harpoon or 2 more would.',
     ]);
     // Not Suppressing Fire: Bricks walks A1M2 and brings it in slot 2 (T501; loadoutCompanion.test.ts).
     expect(savePick({ ...pick, ability: 'scanner_sweep' })).toEqual({ ok: true });

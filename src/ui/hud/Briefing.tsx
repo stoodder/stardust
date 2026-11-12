@@ -243,15 +243,7 @@ export function Briefing({ view }: { view: SceneView }) {
  * mouth moving while the line types), a chip of the face on an earlier run (still), nothing for a
  * caption. The plate stays on every line.
  */
-function Run({
-  run,
-  view,
-  step,
-}: {
-  run: BriefingRun;
-  view: SceneView;
-  step: SceneStep;
-}) {
+function Run({ run, view, step }: { run: BriefingRun; view: SceneView; step: SceneStep }) {
   const face = run.face;
   return (
     <div class={run.focus ? 'hud-briefing-run focus' : 'hud-briefing-run'}>

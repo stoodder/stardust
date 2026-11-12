@@ -65,6 +65,12 @@
   border-color: var(--sd-orange-3);
 }
 
+/* The name's hint while the field has the focus (its place kept, so nothing below moves under
+   the pointer; T803c). */
+.sd-intake-field:not(:focus-within) > .sd-intake-focus-hint {
+  visibility: hidden;
+}
+
 /* Radio groups of small buttons. */
 .sd-choices {
   display: flex;

@@ -697,6 +697,15 @@ export class TransientFx {
     }
   }
 
+  /** Takes down every floater up with the words `text` (Phase 2's start drops HARMONY; T803b). */
+  dropText(text: string): void {
+    for (const f of this.#floats) {
+      if (!f.active || f.text !== text) continue;
+      f.active = false;
+      f.img.setVisible(false);
+    }
+  }
+
   /** How many floaters are up (tests' view of them). */
   get floatsUp(): number {
     let n = 0;

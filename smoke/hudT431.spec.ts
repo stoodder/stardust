@@ -203,6 +203,8 @@ test('hud: the loadout scrolls its links, and Scanner Sweep aims its own circle'
   await page.evaluate(() => globalThis.__sd!.goto('loadout'));
   // Every link the pool can form is listed (formed first, with the bonus; the rest one line
   // each), the heading counts the formed ones, and the last scrolls into view inside the panel.
+  // The list is one press away (T803d: "Every link", a floating Disclosure over the column).
+  await page.getByRole('button', { name: /^Every link/ }).click();
   const list = page.getByTestId('loadout-links');
   const links = list.locator('.sd-lo-link');
   const total = await links.count();
@@ -221,6 +223,7 @@ test('hud: the loadout scrolls its links, and Scanner Sweep aims its own circle'
   expect(lastBox!.y + lastBox!.height).toBeLessThanOrEqual(listBox!.y + listBox!.height + 1);
   expect(listBox!.y + listBox!.height).toBeLessThanOrEqual(lockBox!.y);
   await shot(page, FLOW, 8, 'loadout-links-scrolled');
+  await page.getByRole('button', { name: /^Hide links/ }).click();
 
   // Scanner Sweep in slot 1: aiming it previews the sweep's green circle, not the strike reticle.
   await page.getByRole('radio', { name: /Scanner Sweep/ }).click();

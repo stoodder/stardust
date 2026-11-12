@@ -734,3 +734,16 @@ export function holdFireText(on: boolean, tower: string | null): string {
   if (tower === null) return on ? 'All turrets holding fire.' : 'All turrets firing again.';
   return on ? `${tower} holding fire.` : `${tower} firing again.`;
 }
+
+/**
+ * A cue on a wall-clock timer (the WAVE banner, the Checkpoint chip, the finale's phase banner)
+ * also leaves once the sim has run this many times its length past it (T803b): at 1×–3× its timer
+ * ends it first, but a fast-forward (a minute of play in a frame) doesn't leave a stale
+ * "Checkpoint Wave 5" over wave 6.
+ */
+export const CUE_SIM_SPAN = 4;
+
+/** Whether a cue shown at sim tick `shownTick`, `ms` long, is stale at tick `now`. */
+export function cueStale(shownTick: number, now: number, ms: number): boolean {
+  return now - shownTick > Math.ceil((ms * TICK_HZ * CUE_SIM_SPAN) / 1000);
+}

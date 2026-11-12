@@ -46,12 +46,8 @@ describe('the Stardust line', () => {
   });
 
   it("wears the act's Stardust icon: the gem in Acts I–II, the gift stone from Act III", () => {
-    expect([1, 2, 3, 'finale'].map((t) => stardustPhase(t as 1 | 2 | 3 | 'finale'))).toEqual([
-      'act1',
-      'act2',
-      'act3',
-      'finale',
-    ]);
+    const acts: readonly (1 | 2 | 3 | 'finale')[] = [1, 2, 3, 'finale'];
+    expect(acts.map((t) => stardustPhase(t))).toEqual(['act1', 'act2', 'act3', 'finale']);
   });
 });
 

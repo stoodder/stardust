@@ -65,16 +65,16 @@ export class NameTagView {
   }
 
   /**
-   * Whether the plate, as drawn now, overlaps the screen box (left, top)–(right, bottom): a floater
+   * Whether the plate, as drawn now, overlaps the screen box (left, upper)–(right, bottom): a floater
    * that would cover the tag starts above it instead (TransientFx's FloatObstacle; T803b).
    */
-  overlaps(left: number, top: number, right: number, bottom: number): boolean {
+  overlaps(left: number, upper: number, right: number, bottom: number): boolean {
     if (!this.#plate.visible) return false;
     const half = this.#plate.width / 2;
     return (
       left < this.#x + half &&
       this.#x - half < right &&
-      top < this.#y &&
+      upper < this.#y &&
       this.#y - this.#plate.height < bottom
     );
   }

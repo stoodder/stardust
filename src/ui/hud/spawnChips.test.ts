@@ -21,6 +21,11 @@ const MULTI_SPAWN = [
   'fin_m01',
 ];
 
+/** A preview group as `bySpawn` reads it. */
+function group(enemy: string, spawn: string | null): { enemy: string; spawn: string | null } {
+  return { enemy, spawn };
+}
+
 describe('spawn chips (T803b)', () => {
   it('reads as words: a generic last word dropped, compass words in capitals', () => {
     expect(spawnShort('Halls')).toBe('Halls');
@@ -48,14 +53,18 @@ describe('spawn chips (T803b)', () => {
   });
 
   it("orders the groups by spawn, its chip on the first of each spawn's", () => {
-    const g = (enemy: string, spawn: string | null) => ({ enemy, spawn });
-    const out = bySpawn([g('a', 'Halls'), g('b', 'Bore'), g('c', 'Halls'), g('d', 'Rift')]);
+    const out = bySpawn([
+      group('a', 'Halls'),
+      group('b', 'Bore'),
+      group('c', 'Halls'),
+      group('d', 'Rift'),
+    ]);
     expect(out.map((x) => [x.group.enemy, x.chip])).toEqual([
       ['a', true],
       ['c', false],
       ['b', true],
       ['d', true],
     ]);
-    expect(bySpawn([g('a', null), g('b', null)]).every((x) => !x.chip)).toBe(true);
+    expect(bySpawn([group('a', null), group('b', null)]).every((x) => !x.chip)).toBe(true);
   });
 });

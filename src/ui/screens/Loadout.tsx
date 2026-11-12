@@ -10,7 +10,7 @@
 // The router shows it only when there's a choice to make (meta/loadout.ts, the skip rule).
 // Declutter (T803d; D153): what the pick decides stays in first view (the threats on their own row
 // under the kicker, every card's counter chips, the picked protocols' effects, the formed links'
-// names, the heads-up); the rest is one hover, focus or press away: an unpicked protocol's effect
+// names, the heads-ups, now in the footer beside Lock in); the rest is one hover, focus or press away: an unpicked protocol's effect
 // shows on the line under the list while it's hovered or focused, the whole Links list opens from
 // its toggle (a floating Disclosure), and the pick-order hint is the grid's tooltip. Slot 2's line
 // shows only where no Technician card already says who brings it. The run's rules show where they
@@ -88,7 +88,7 @@ function TowerCard(props: {
         aria-disabled={blocked}
         aria-label={
           `${t.name}${t.jailbroken === true ? ', jailbroken' : ''}, ${t.role}, ${t.cost} credits` +
-          (stays ? `, ${t.stays}` : '') +
+          (stays ? `, stays home: ${t.stays}` : '') +
           (answers.length > 0 ? `, answers ${answers.join(', ')}` : '') +
           (slot !== null ? `, build slot ${slot}` : '')
         }
@@ -131,7 +131,7 @@ function TowerCard(props: {
           {/* A challenge's faction rule leaves it home (T862): greyed, and says why. */}
           {stays && (
             <span class="sd-lo-stays-why" data-testid="loadout-stays">
-              {t.stays}
+              Stays home
             </span>
           )}
           {t.answers.length > 0 && (
@@ -601,7 +601,7 @@ export function Loadout() {
       const cap = view.rules?.cap ?? null;
       setNotice(
         t?.stays !== undefined
-          ? `${t.name}: ${t.stays}.`
+          ? `${t.name} stays home: ${t.stays}.`
           : `${view.max} towers is the limit${cap === null ? '' : ` (${cap})`}. Drop one to swap this one in.`,
       );
       return;
@@ -805,7 +805,17 @@ export function Loadout() {
                 </p>
               )
             )}
-            {/* The heads-up before the links, so it always has room (T871). */}
+            <LinksSection view={view} pick={pick} />
+          </aside>
+        </div>
+        <footer class="sd-row sd-menu-footer">
+          {/* Left of the buttons, where the pick is locked in (D144; T871: the full width, so a
+              heads-up never runs under them): a notice (the limit, a stay-home tower), then the
+              heads-ups. */}
+          <div class="sd-lo-foot">
+            <p class="sd-lo-hint" role="status">
+              {notice ?? ''}
+            </p>
             <div class="sd-lo-warnings" aria-live="polite">
               {warnings.map((w) => (
                 <p key={w} class="sd-lo-warning">
@@ -813,14 +823,7 @@ export function Loadout() {
                 </p>
               ))}
             </div>
-            <LinksSection view={view} pick={pick} />
-          </aside>
-        </div>
-        <footer class="sd-row sd-menu-footer">
-          {/* A notice (the limit, a stay-home tower), left of the buttons (D144). */}
-          <p class="sd-lo-hint" role="status">
-            {notice ?? ''}
-          </p>
+          </div>
           <button type="button" class="sd-button" onClick={toCampaign}>
             {campaignScreenName()}
           </button>

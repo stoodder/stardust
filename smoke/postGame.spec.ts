@@ -7,7 +7,7 @@
 // Wayside. Endless launched from its panel on a typed seed: the generated run (more than its five
 // warm-up waves), the HUD's Next line naming the block, 3x speed offered, and the
 // run's end on the score screen with the seed's record. Screenshots in <out>/screens/post-game/
-// (look at every one: the plate's calm, the chart's dawn, the panel beside the plate).
+// (look at every one: the plate's calm, the chart's dawn, the one column clear of the west nodes).
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 import { nextFrames, shot, waitForReady } from './hooks.ts';
@@ -70,14 +70,38 @@ test('post-game: the Title at dawn, the Sector map at dawn under Stay, the plate
   await nextFrames(page);
   await shot(page, FLOW, 2, 'stay-endless');
 
-  // A challenge: its panel beside the plate, its tagline, threats and medals; Esc back to its row.
+  // One column (T803c): with Endless open, neither box covers the west nodes (The Long Walk,
+  // The Preserve), which take a click.
+  for (const west of ['The Long Walk', 'The Preserve']) {
+    const at = page
+      .getByRole('list', { name: 'Shifts' })
+      .getByRole('button', { name: new RegExp(`^Shift \\d+, ${west}, `) });
+    // oxlint-disable-next-line no-await-in-loop -- one node at a time
+    const hit = await at.evaluate((el) => {
+      const b = el.getBoundingClientRect();
+      const top = document.elementFromPoint(b.x + b.width / 2, b.y + b.height / 2);
+      return top === el || el.contains(top);
+    });
+    expect(hit, `${west}'s node is clear of the post-game column`).toBe(true);
+  }
+
+  // A challenge: its panel under the heading, its tagline, threats and required counters in view,
+  // its medals and what they pay one press away; Esc closes that, then returns to its row.
   const skitterkin = row(page, /^Challenge: Skitterkin Only/);
   await skitterkin.click();
   const panel = page.getByTestId('post-game-panel');
   await expect(panel).toContainText("Only the warrens' towers deploy.");
-  await expect(panel.getByRole('list', { name: 'Medals' })).toBeVisible();
+  await expect(panel.getByRole('list', { name: 'Threat intel' })).toBeVisible();
+  await expect(panel.getByRole('list', { name: 'Medals' })).toBeHidden();
   await expect(page.getByRole('button', { name: 'Start Skitterkin Only' })).toBeFocused();
   await shot(page, FLOW, 3, 'challenge');
+  const more = panel.getByRole('button', { name: /^Medals/ });
+  await more.click();
+  await expect(panel.getByRole('list', { name: 'Medals' })).toBeVisible();
+  await expect(panel).toContainText('Medals here pay Intel.');
+  await page.keyboard.press('Escape');
+  await expect(panel.getByRole('list', { name: 'Medals' })).toBeHidden();
+  await expect(more).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(skitterkin).toBeFocused();
 
@@ -187,8 +211,10 @@ test('post-game: Endless on a typed seed, the Next line, 3x, and the score scree
   expect(outcome).toBe('lost');
   const score = page.getByTestId('endless-score');
   await expect(score).toBeVisible();
-  await expect(page.getByTestId('endless-score-seed')).toContainText('Seed 31337');
-  await expect(score.getByRole('list', { name: 'Your records' })).toContainText('Seed 31337');
+  await expect(page.getByTestId('endless-score-seed')).toHaveText('Seed 31337 · New best.');
+  // The save's only record is this run: no list to repeat it (T803e; it shows once another seed's
+  // record is there to compare with).
+  await expect(score.getByRole('list', { name: 'Your records' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Run it again' })).toBeFocused();
   await shot(page, FLOW, 9, 'endless-score');
   await page.getByRole('button', { name: 'Sector map' }).click();

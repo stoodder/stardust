@@ -51,10 +51,8 @@ import { sceneBlocks } from '../dialogue/state.ts';
 import { trapTab } from '../dialogue/SceneParts.tsx';
 import { colorVar } from '../color.ts';
 import { Icon } from '../hud/Icon.tsx';
-import {
-  STARDUST_ICON,
-  type StardustPhase,
-} from '../../content/sprites/icons/stardust.ts'; // T843: the currency icon by phase
+// T843: the Stardust currency icon by phase.
+import { STARDUST_ICON, type StardustPhase } from '../../content/sprites/icons/stardust.ts';
 import type { StoryAct } from '../../content/dialogue/types.ts';
 import { assertNever } from '../../shared/types.ts';
 import { prefersReducedMotion } from '../motion.ts';

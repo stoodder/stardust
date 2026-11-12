@@ -19,8 +19,8 @@ import { CALLSIGNS } from '../content/dialogue/profile.ts';
 import { presentationOfMap } from '../story/presentation.ts';
 import { hud, speed, type AbilityCooldownView } from '../ui/state.ts';
 import { silkText } from '../ui/silk.ts';
-import { TICK_HZ } from '../shared/time.ts';
 import { checkpointPlace } from './checkpoints.ts';
+import { cueStale } from './hudText.ts';
 import type { Host } from './host.ts';
 import { bindAssetMeter } from './hudAsset.ts';
 import { bindEscortMeter, refugeesWalking } from './hudEscort.ts';
@@ -284,18 +284,6 @@ export function runnerWaves(
 
 /** How long the "Checkpoint" cue shows, in ms of real time (T431). */
 export const CHECKPOINT_CUE_MS = 3000;
-
-/**
- * A cue on a wall-clock timer (the WAVE banner, the Checkpoint chip) also leaves once the sim has
- * run this many times its length past it (T803b): at 1×–3× its timer ends it first, but a
- * fast-forward (a minute of play in a frame) doesn't leave a stale "Checkpoint Wave 5" over wave 6.
- */
-export const CUE_SIM_SPAN = 4;
-
-/** Whether a cue shown at sim tick `shownTick`, `ms` long, is stale at tick `now`. */
-export function cueStale(shownTick: number, now: number, ms: number): boolean {
-  return now - shownTick > Math.ceil((ms * TICK_HZ * CUE_SIM_SPAN) / 1000);
-}
 
 /** An air group this big is a flock (A1M3's W5: ten Puffwings), what Time Dilation is taught on. */
 export const FLOCK_SIZE = 10;

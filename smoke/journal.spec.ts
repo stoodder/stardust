@@ -3,8 +3,8 @@
 // original, citing the old survey; Sterling's last sincere memo and its small print; A3M2's
 // automated memo and Sterling's profile beside its correction; then, after A3M3, the same Elder
 // entry read again: its citation reworded to the Amended Survey, NEW once more, and the Personnel
-// Update in the Inbox. The unlock rules are unit-tested (app/inboxAct3.test.ts,
-// story/codexRevision.test.ts); this checks the page. Screenshots in <out>/screens/journal/.
+// Update in the Inbox; and A3M1's gifts (the Den and the Choir). The unlock rules are unit-tested
+// (app/inboxAct3.test.ts, story/codexRevision.test.ts); this checks the page. Screenshots in <out>/screens/journal/.
 import type { Page } from '@playwright/test';
 import { SAVE_VERSION } from '../src/meta/saveData.ts';
 import { expect, test } from './fixtures.ts';
@@ -70,6 +70,17 @@ test("journal: A3M1's Field Journal and Sterling's last sincere memo", async ({ 
   await expect(entry.locator('img.sd-codex-sprite')).toBeVisible();
   await expect(pane.getByRole('button', { name: /^The Small Ones' Walk/ })).toHaveCount(0);
   await shot(page, 'journal', 4, 'old-thrum');
+
+  // A3M1's gifts (T769, T872): the Scuttle Den corrected beside its Nest Mound, the Hum Choir
+  // under QUILL's note and Ves'thara's margin (the Stasis Bloom, attuned before A3M5, is
+  // journalA3Two's).
+  await pane.getByRole('button', { name: /^Scuttle Den/ }).click();
+  await expect(entry).toContainText('A warren home.');
+  await expect(entry).toContainText('Nest Mound.');
+  await shot(page, 'journal', 12, 'scuttle-den');
+  await pane.getByRole('button', { name: /^Hum Choir/ }).click();
+  await expect(entry).toContainText('They sing so that no one walks alone');
+  await shot(page, 'journal', 13, 'hum-choir');
 });
 
 test("journal: A3M2's automated memo and Sterling corrected", async ({ page }) => {

@@ -373,13 +373,33 @@ export function heldHeadline(held: number, waves: number | null): string {
 }
 
 /**
+ * The score card's seed line and whether it lists the records (T803e: each fact once). The seed is
+ * always named, with "New best." when this run set it; the records show only when they hold
+ * another seed to compare with (a list of this run alone would repeat the headline), and then this
+ * seed's old best is its marked row, not a second line.
+ */
+export function scoreLines(
+  result: Pick<EndlessResultView, 'seed' | 'held' | 'newBest' | 'bestBefore' | 'scores'>,
+): { readonly seed: string; readonly records: boolean } {
+  const best = result.newBest && result.held > (result.bestBefore ?? 0);
+  const records = result.scores.some((r) => r.seed !== result.seed);
+  const listed = records && result.scores.some((r) => r.seed === result.seed);
+  const note = best
+    ? ' · New best.'
+    : result.bestBefore !== null && !listed
+      ? ` · Best on this seed: ${wavesText(result.bestBefore)}.`
+      : '';
+  return { seed: `Seed ${result.seed}${note}`, records };
+}
+
+/**
  * The Endless score screen (in the results card's place after an Endless run): the waves held, the
- * seed and its best, the save's records (this seed's marked), and the way on: the same seed again,
- * a new seed, or the Sector map.
+ * seed and its best, the save's records when there are others (this seed's marked), and the way
+ * on: the same seed again, a new seed, or the Sector map.
  */
 export function EndlessScore({ result }: { result: EndlessResultView }) {
   const inCampaign = campaign.value !== null;
-  const best = result.newBest && result.held > (result.bestBefore ?? 0);
+  const lines = scoreLines(result);
   const name = POST_GAME_MAPS.find((m) => m.id === result.map)?.name ?? result.map;
   return (
     <section
@@ -395,15 +415,10 @@ export function EndlessScore({ result }: { result: EndlessResultView }) {
         {heldHeadline(result.held, null)}
       </h1>
       <p class="sd-pg-score-seed" data-testid="endless-score-seed">
-        Seed {result.seed}
-        {best
-          ? ' · New best for this seed.'
-          : result.bestBefore !== null
-            ? ` · Best on this seed: ${wavesText(result.bestBefore)}.`
-            : ''}
+        {lines.seed}
       </p>
-      {result.scores.length > 0 && <p class="sd-pg-records-head">Best runs</p>}
-      {result.scores.length > 0 && (
+      {lines.records && <p class="sd-pg-records-head">Best runs</p>}
+      {lines.records && (
         <ol class="sd-pg-records" aria-label="Your records">
           {result.scores.map((r) => (
             <li key={r.seed} class={r.seed === result.seed ? 'sd-pg-this' : ''}>

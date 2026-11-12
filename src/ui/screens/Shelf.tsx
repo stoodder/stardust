@@ -223,7 +223,9 @@ function OfferRow({
         </p>
         <p class="sd-offer-effect">
           {specs && shownEffect !== effect && (
-            <span class="sd-visually-hidden">{effect.slice(0, effect.length - shownEffect.length)}</span>
+            <span class="sd-visually-hidden">
+              {effect.slice(0, effect.length - shownEffect.length)}
+            </span>
           )}
           {shownEffect}
         </p>

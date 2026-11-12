@@ -42,16 +42,17 @@ class Stepped extends TransientFx {
   }
 }
 
-describe('one pop per unit (T803b)', () => {
-  const make = (): Stepped => {
-    const ctx = chain();
-    return new Stepped(
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- nothing here draws
-      { scene: ctx, sprites: ctx, layers: ctx, origin: { x: 0, y: 0 } } as unknown as ViewContext,
-      () => false,
-    );
-  };
+/** A TransientFx over stand-ins (nothing draws). */
+function make(): Stepped {
+  const ctx = chain();
+  return new Stepped(
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- nothing here draws
+    { scene: ctx, sprites: ctx, layers: ctx, origin: { x: 0, y: 0 } } as unknown as ViewContext,
+    () => false,
+  );
+}
 
+describe('one pop per unit (T803b)', () => {
   it("merges a target's numbers into one pop, and keeps other targets' and kinds apart", () => {
     const fx = make();
     // Three upgrades on one tower in one frame: one "−495".

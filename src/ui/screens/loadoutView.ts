@@ -32,9 +32,9 @@ export interface LoadoutTowerView {
    */
   readonly jailbroken?: boolean;
   /**
-   * Why it can't deploy on this run, or absent: a challenge map's faction rule leaves it home
-   * (T862; `towerFaction`: "Stays home: Skitterkin Only"). Shown greyed with the reason, never a
-   * pick.
+   * The rule that leaves it home on this run, or absent: a challenge map's faction rule (T862;
+   * `towerFaction`: "Skitterkin Only"). The card greys and reads "Stays home", never a pick; the
+   * grid lists these after the towers that deploy.
    */
   readonly stays?: string;
 }

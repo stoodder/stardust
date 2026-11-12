@@ -2,7 +2,8 @@
 // Futures: New Hire Intake". It opens on New game before A1M1, and on Continue, Load, or Import
 // for a save with no profile yet. Name, pronouns, and the reason for joining, with nothing picked
 // for the player; the callsign is assigned in the field (Bricks, A1M1). An ID badge previews the
-// name and a file note shows the pronouns in a sentence. The copy's home is
+// name (and carries the employee number) and a file note shows the pronouns in a sentence. The
+// name's hint shows while the field has the focus (or a problem takes its place; T803c). The copy's home is
 // docs/story/campaign/act1.md § Character creation; the rules are app/profile.ts.
 import { useRef, useState } from 'preact/hooks';
 import type { TargetedKeyboardEvent } from 'preact';
@@ -35,7 +36,6 @@ import './Intake.css';
 export const INTAKE_COPY = {
   kicker: 'Everglow · Frontier Futures · Form FF-1',
   heading: 'New hire intake',
-  employee: 'Employee #ED-447',
   grade: 'Junior Perimeter Technician, Grade 1',
   intro: 'Welcome to the Everglow family! Please print clearly. Every answer goes in your file.',
   introExisting:
@@ -220,9 +220,8 @@ export function Intake() {
               {INTAKE_COPY.heading}
             </h1>
           </div>
+          {/* The employee number is on the ID badge (T803c: once, where it's voice). */}
           <dl class="sd-intake-ids">
-            <dt class="sd-visually-hidden">Employee number</dt>
-            <dd>{INTAKE_COPY.employee}</dd>
             <dt class="sd-visually-hidden">Grade</dt>
             <dd class="sd-dim">{INTAKE_COPY.grade}</dd>
           </dl>
@@ -261,7 +260,7 @@ export function Intake() {
                     {problems.name}
                   </p>
                 ) : (
-                  <p id="sd-intake-name-hint" class="sd-message sd-dim">
+                  <p id="sd-intake-name-hint" class="sd-message sd-dim sd-intake-focus-hint">
                     {INTAKE_COPY.nameHint}
                   </p>
                 )}

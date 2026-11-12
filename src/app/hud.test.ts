@@ -9,13 +9,13 @@ import {
   announce,
   callPulses,
   CHECKPOINT_CUE_MS,
-  cueStale,
   staysArmed,
   UPGRADE_TEACH_WAVE,
   upgradeHintShows,
   WAVE_BANNER_MS,
 } from './hud.ts';
 import { selectedView } from './hudPanel.ts';
+import { cueStale } from './hudText.ts';
 import {
   abilityDescription,
   cursorText,

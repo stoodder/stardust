@@ -233,12 +233,14 @@ describe('phaseFor', () => {
 });
 
 describe('the node panel (T803c)', () => {
-  it('names the place in the kicker unless it is the map\'s own name', () => {
+  it("names the place in the kicker unless it is the map's own name", () => {
     expect(starKicker({ index: 6, place: 'The Diggings', name: 'Rig Nine' })).toBe(
       'Shift 6 · The Diggings',
     );
     expect(starKicker({ index: 12, place: 'The Preserve', name: 'The Preserve' })).toBe('Shift 12');
-    expect(starKicker({ index: 12, place: 'the preserve ', name: 'The Preserve' })).toBe('Shift 12');
+    expect(starKicker({ index: 12, place: 'the preserve ', name: 'The Preserve' })).toBe(
+      'Shift 12',
+    );
   });
 
   it('drops "Next up" beside Start, and keeps Cleared and Coming soon', () => {

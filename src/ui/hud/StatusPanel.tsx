@@ -176,8 +176,8 @@ function MedalTracker() {
 
 /**
  * The records row (T803b; D153's declutter): the medal diamonds and the objective boxes on one
- * line at the panel's foot, the names and what earns each behind the row's "+" (a Disclosure,
- * floated over the playfield; Enter or a click opens it, Esc closes it). Neither is a critical
+ * line at the panel's foot, the names and what earns each behind the row's "+" (a Disclosure that
+ * opens under the row, inside the panel; Enter or a click opens it, Esc closes it). Neither is a critical
  * readout (smoke/declutter.ts): the state is the shapes; the words are a hover or a press away.
  */
 function Records() {
@@ -189,7 +189,6 @@ function Records() {
       <MedalTracker />
       <ObjectiveTracker />
       <Disclosure
-        float
         label="More"
         lessLabel="Less"
         about={objectives.length > 0 ? 'the medals and objectives' : 'the medals'}

@@ -431,13 +431,12 @@ section.chamfer,
   color: var(--sd-steel-3);
 }
 
-/* Up to 128 px (T803b: room for a spawn's chip before its groups, inside the corner's 150). */
 .hud-preview {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 2px 5px;
-  max-width: 128px;
+  max-width: 112px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -1435,23 +1434,26 @@ section.chamfer,
 }
 
 /* The records row (T803b): the medal diamonds, then the objective boxes, on one 8 px line at the
-   panel's foot; the "+" at its right end opens their names over the playfield (a floated
-   Disclosure). The "+" is a 16 px button laid over the row's edge, so the row stays 8 px tall. */
+   panel's foot; the "+" at its right end (a 16 px button laid over the row's edge, so the row stays
+   8 px tall) opens their names under it, inside the panel (its chamfer clips anything floated out),
+   which grows while they show. */
 .hud-records {
   position: relative;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 6px;
-  height: 8px;
+  min-height: 8px;
 }
 
 .hud-records-more {
-  position: absolute;
-  right: -4px;
-  top: -4px;
+  display: contents;
 }
 
 .hud-records-more > .sd-disclosure-toggle {
+  position: absolute;
+  right: -4px;
+  top: -4px;
   min-width: 16px;
   justify-content: center;
   padding: 0;
@@ -1463,11 +1465,8 @@ section.chamfer,
 }
 
 .hud-records-more > .sd-disclosure-region {
-  left: auto;
-  right: -6px;
-  top: calc(100% + 2px);
-  width: 168px;
-  min-width: 0;
+  flex-basis: 100%;
+  margin-top: 2px;
 }
 
 .hud-records-list {
