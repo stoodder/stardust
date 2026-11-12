@@ -14,7 +14,8 @@ import { triggers } from '../src/sim/systems/triggers.ts';
 import { createScratch } from '../src/sim/tick.ts';
 
 const DEV = compileContent(DEV_CONTENT);
-const BASE: CompiledMapDef<IdSpace> = DEV.maps.dev_voices!;
+const MAPS: Readonly<Record<string, CompiledMapDef<IdSpace>>> = DEV.maps;
+const BASE: CompiledMapDef<IdSpace> = MAPS.dev_voices!;
 const MAP: CompiledMapDef<IdSpace> = {
   ...BASE,
   events: [
@@ -61,7 +62,10 @@ describe('{ choirAt, afterWave }', () => {
 
   it('without afterWave it is the choir alone', () => {
     const s = fresh();
-    const plain = { ...ctx, map: { ...MAP, events: [{ ...MAP.events[0]!, on: { choirAt: 'halls' } }] } };
+    const plain = {
+      ...ctx,
+      map: { ...MAP, events: [{ ...MAP.events[0]!, on: { choirAt: 'halls' } }] },
+    };
     s.choir.arrived = true;
     triggers(s, plain);
     expect(s.phase).toBe(2);
