@@ -326,8 +326,7 @@ export function notGradual(r: HeadlessResult): string | null {
     const first =
       r.waves.find(
         (w) => w.integrityLost > 0 || w.assetLost > 0 || w.refugeesLost > 0 || w.singersHushed > 0,
-      )?.wave ??
-      lost;
+      )?.wave ?? lost;
     if (first > lost - LEAK_LEAD_WAVES) {
       return `it loses in W${lost}, but its leaks only start in W${first} (they must start by W${lost - LEAK_LEAD_WAVES})`;
     }
