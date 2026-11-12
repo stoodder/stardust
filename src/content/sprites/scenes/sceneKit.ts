@@ -31,9 +31,9 @@ export function dithered(ramp: readonly string[], v: number, x: number, y: numbe
   return ramp[i] ?? ramp[n] ?? '.';
 }
 
-/** A blank still (transparent everywhere). */
-export function sceneGrid(blank = '.'): CharGrid {
-  return grid(SCENE_W, SCENE_H, blank);
+/** A blank still (transparent everywhere), `h` rows tall (a tall still pans; default SCENE_H). */
+export function sceneGrid(blank = '.', h: number = SCENE_H): CharGrid {
+  return grid(SCENE_W, h, blank);
 }
 
 /** A copy of a still (to paint a later frame over an earlier one). */
@@ -41,7 +41,10 @@ export function copyGrid(g: CharGrid): CharGrid {
   return g.map((row) => [...row]);
 }
 
-/** Paints every pixel in the box that `pick` names a character for (null leaves it). */
+/**
+ * Paints every pixel in the box that `pick` names a character for (null leaves it), clipped to
+ * the grid (SCENE_W wide, as tall as the grid: a tall still's rows below SCENE_H paint too).
+ */
 export function fill(
   g: CharGrid,
   x0: number,
@@ -50,7 +53,8 @@ export function fill(
   y1: number,
   pick: (x: number, y: number) => string | null,
 ): void {
-  for (let y = Math.max(0, y0); y <= Math.min(SCENE_H - 1, y1); y++) {
+  const h = Math.max(SCENE_H, g.length);
+  for (let y = Math.max(0, y0); y <= Math.min(h - 1, y1); y++) {
     for (let x = Math.max(0, x0); x <= Math.min(SCENE_W - 1, x1); x++) {
       const ch = pick(x, y);
       if (ch !== null) plot(g, x, y, ch);
@@ -63,23 +67,30 @@ export interface SceneSpec<Id extends string> {
   readonly id: Id;
   readonly palette: PaletteId;
   readonly legend: Readonly<Partial<Record<CustomChar, ColorName>>>;
-  /** Paints every frame, each SCENE_W × SCENE_H (called once, on the first read). */
+  /**
+   * The still's height in authored px (default SCENE_H). Only a still the stage pans is taller
+   * (the prelude's descent, 320×300); it is still SCENE_W wide and anchored at its bottom centre.
+   */
+  readonly h?: number;
+  /** Paints every frame, each SCENE_W × `h` (called once, on the first read). */
   readonly paint: () => Readonly<Record<string, CharGrid>>;
   readonly anims?: Readonly<Record<string, AnimDef>>;
 }
 
 /**
- * Declares a still: a 320×180 sprite, no outline (its own edges are its pixels), anchored at its
- * bottom centre. Painting is lazy: `frames` paints every frame the first time it is read.
+ * Declares a still: a 320×180 sprite (or 320×`h`), no outline (its own edges are its pixels),
+ * anchored at its bottom centre. Painting is lazy: `frames` paints every frame the first time it
+ * is read.
  */
 export function defineScene<const Id extends string>(spec: SceneSpec<Id>): SpriteDef<Id> {
+  const h = spec.h ?? SCENE_H;
   let painted: Readonly<Record<string, readonly string[]>> | null = null;
   const frames = (): Readonly<Record<string, readonly string[]>> => {
     if (painted !== null) return painted;
     const out: Record<string, readonly string[]> = {};
     for (const [name, g] of Object.entries(spec.paint())) {
-      if (g.length !== SCENE_H || g.some((row) => row.length !== SCENE_W)) {
-        throw new Error(`${spec.id}: frame ${name} is not ${SCENE_W}×${SCENE_H}`);
+      if (g.length !== h || g.some((row) => row.length !== SCENE_W)) {
+        throw new Error(`${spec.id}: frame ${name} is not ${SCENE_W}×${h}`);
       }
       out[name] = g.map((row) => row.join(''));
     }
@@ -88,8 +99,8 @@ export function defineScene<const Id extends string>(spec: SceneSpec<Id>): Sprit
   };
   return defineSprite({
     id: spec.id,
-    size: { w: SCENE_W, h: SCENE_H },
-    anchor: { x: SCENE_W / 2, y: SCENE_H },
+    size: { w: SCENE_W, h },
+    anchor: { x: SCENE_W / 2, y: h },
     palette: spec.palette,
     outline: 'none',
     legend: spec.legend,
