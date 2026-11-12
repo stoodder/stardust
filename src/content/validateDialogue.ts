@@ -67,6 +67,7 @@ import {
   RUN_STORY_STATS,
   type Bark,
   type Condition,
+  type DialogueMapId,
   type DialogueNode,
   type MapDialogue,
   type ReplyButton,
@@ -127,7 +128,7 @@ interface Place {
   readonly speaker: string;
   readonly act: StoryAct;
   /** Null for a shared bark (its map is whatever its `when` allows). */
-  readonly map: CampaignMapId | null;
+  readonly map: DialogueMapId | null;
   readonly when?: Condition;
 }
 
@@ -160,7 +161,7 @@ export function validateDialogue(content: DialogueContent): string[] {
 
 function validateScene(
   issues: Issues,
-  map: CampaignMapId,
+  map: DialogueMapId,
   scene: Scene,
   known: ReadonlySet<string>,
 ): void {
@@ -364,7 +365,7 @@ function actOfBarkId(id: string): StoryAct | null {
 function validateBark(
   issues: Issues,
   b: Bark,
-  map: CampaignMapId | null,
+  map: DialogueMapId | null,
   ids: Set<string>,
   known: ReadonlySet<string>,
 ): void {

@@ -7,8 +7,10 @@ import { CAMPAIGN_PLAN_IDS, type CampaignMapId } from '../campaign.ts';
 import { CALLSIGNS, PLAYER_NAME, PRONOUN_SETS, type PronounSet } from './profile.ts';
 import {
   GLYPH_IDS,
+  POST_GAME_DIALOGUE_MAPS,
   SCENE_ID,
   TEXT_TOKENS,
+  type DialogueMapId,
   type GlyphId,
   type SceneId,
   type SceneSlot,
@@ -190,9 +192,14 @@ export function usesName(text: string): boolean {
 
 // ─── Maps, acts, and scene ids (style-guide § 5.3) ────────────────────────────────────────────
 
-/** A campaign map's place in the plan (0-based). */
-export function mapIndex(map: CampaignMapId): number {
-  return CAMPAIGN_PLAN_IDS.indexOf(map);
+/** A campaign map's place in the plan (0-based); a post-game map's comes after the finale. */
+export function mapIndex(map: DialogueMapId): number {
+  return isCampaignMapId(map) ? CAMPAIGN_PLAN_IDS.indexOf(map) : CAMPAIGN_PLAN_IDS.length;
+}
+
+/** Whether `id` is a map that files dialogue (a campaign map or a challenge map; T862). */
+export function isDialogueMapId(id: string): id is DialogueMapId {
+  return isCampaignMapId(id) || POST_GAME_DIALOGUE_MAPS.some((m) => m === id);
 }
 
 /** Whether `id` is a planned campaign map id. */
@@ -200,9 +207,12 @@ export function isCampaignMapId(id: string): id is CampaignMapId {
   return CAMPAIGN_PLAN_IDS.some((m) => m === id);
 }
 
-/** The act a campaign map belongs to (`a1_*` → 1, …, `fin_*` → 'finale'). */
-export function mapAct(map: CampaignMapId): StoryAct {
-  if (map.startsWith('fin_')) return 'finale';
+/**
+ * The act a map belongs to (`a1_*` → 1, …, `fin_*` → 'finale'; a post-game map's is the finale's,
+ * the world after the dawn).
+ */
+export function mapAct(map: DialogueMapId): StoryAct {
+  if (map.startsWith('fin_') || !isCampaignMapId(map)) return 'finale';
   const act = Number(map.charAt(1));
   return act === 2 ? 2 : act === 3 ? 3 : 1;
 }
@@ -210,11 +220,11 @@ export function mapAct(map: CampaignMapId): StoryAct {
 /** A scene id parsed: its map and its slot; null when malformed (`SCENE_ID`). */
 export function parseSceneId(
   id: SceneId,
-): { readonly map: CampaignMapId; readonly slot: SceneSlot } | null {
+): { readonly map: DialogueMapId; readonly slot: SceneSlot } | null {
   const m = SCENE_ID.exec(id);
   const map = m?.[1];
   const slot = m?.[2];
-  if (map === undefined || slot === undefined || !isCampaignMapId(map)) return null;
+  if (map === undefined || slot === undefined || !isDialogueMapId(map)) return null;
   if (slot === 'brief') return { map, slot: { kind: 'brief' } };
   if (slot === 'debrief') return { map, slot: { kind: 'debrief' } };
   if (/^w\d\d$/.test(slot)) {

@@ -297,7 +297,7 @@ export const PHASE_2_WAVES: readonly WaveDef[] = [
   // W26 · the last of the Halls
   {
     ...P2,
-    groups: [motes(8, 'halls', 0, 0.6), fractures(1, 'halls', 6), maws(1, 'rift_ne', 5)],
+    groups: [motes(10, 'halls', 0, 0.25), fractures(1, 'halls', 6), maws(1, 'rift_ne', 5)],
   },
 ];
 

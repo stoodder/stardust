@@ -363,9 +363,10 @@ const JINGLE_BARKS: ReadonlySet<string> = new Set(
 
 let session: Session | null = null;
 
-/** The map a scene outside a battle is about: its id's map. */
+/** The campaign map a scene outside a battle is about: its id's map (none for a post-game one). */
 function mapOfScene(sceneId: string): CampaignMapId | null {
-  return parseSceneId(sceneId)?.map ?? null;
+  const map = parseSceneId(sceneId)?.map;
+  return map !== undefined && isCampaignMapId(map) ? map : null;
 }
 
 const NO_FLAGS: FlagSet = {};

@@ -86,9 +86,15 @@ export type SceneSlot =
   | { readonly kind: 'scene'; readonly name: string }
   | { readonly kind: 'base'; readonly name: string };
 
-/** The scene-id pattern: `<map_id>_<slot>`. */
+/** The scene-id pattern: `<map_id>_<slot>` (the challenge maps' briefings too; T862). */
 export const SCENE_ID =
-  /^(a[1-3]_m0[1-6]|fin_m01)_(brief|w\d\d|cue_[a-z0-9_]+|debrief|scene_[a-z0-9_]+|base_[a-z0-9_]+)$/;
+  /^(a[1-3]_m0[1-6]|fin_m01|ch_m0[1-3])_(brief|w\d\d|cue_[a-z0-9_]+|debrief|scene_[a-z0-9_]+|base_[a-z0-9_]+)$/;
+
+/** The post-game maps with dialogue (T862: the challenge maps' briefings), after the campaign. */
+export const POST_GAME_DIALOGUE_MAPS = ['ch_m01', 'ch_m02', 'ch_m03'] as const;
+export type PostGameDialogueMapId = (typeof POST_GAME_DIALOGUE_MAPS)[number];
+/** A map that files dialogue: a campaign map, or a post-game map with a briefing. */
+export type DialogueMapId = CampaignMapId | PostGameDialogueMapId;
 /** The bark-id pattern: `<speaker>_<trigger>_a<act>_<nn>` (the finale's act is `fin`). */
 export const BARK_ID = /^[a-z]+_[a-z0-9_]+_a(1|2|3|fin)_\d\d$/;
 
@@ -405,7 +411,7 @@ export type Bark = {
 
 /** One map's dialogue: its scenes and its map-scoped barks (they fire only on that map). */
 export interface MapDialogue {
-  readonly map: CampaignMapId;
+  readonly map: DialogueMapId;
   readonly scenes: readonly Scene[];
   readonly barks: readonly Bark[];
 }
