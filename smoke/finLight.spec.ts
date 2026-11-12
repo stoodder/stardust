@@ -101,7 +101,7 @@ test('FIN light: the night, the song, the warming sky, the Bore, and Dawn', asyn
   await page.evaluate(() => globalThis.__sd!.fastForward(120));
   await nextFrames(page);
   const w1 = await look(page);
-  expect(w1.night).toMatchObject({ night: true, sun: 0 });
+  expect(w1.night).toMatchObject({ night: true, sun: 0, rims: 0 }); // no Dawn rims in the night
   expect(w1.night.circles).toBeGreaterThanOrEqual(1);
   expect(w1.night.darkScenery).toBeGreaterThan(w1.night.litScenery);
   expect(w1.bore).toMatchObject({ head: 'drill', full: false });
@@ -141,6 +141,8 @@ test('FIN light: the night, the song, the warming sky, the Bore, and Dawn', asyn
   await nextFrames(page);
   const end = (await look(page)).night;
   expect(end).toMatchObject({ night: false, sun: SUN_STEPS });
+  // The morning edges the actors gold toward the sun and cyan from the sky (T901).
+  expect(end.rims).toBeGreaterThan(0);
   // Dawn lights the world additively (M8 R2): the world's grade stays white, only the sky turns.
   expect((await look(page)).grade).toBe(0xffffff);
   // The rifts have healed to their old scars behind the sun (T871).
