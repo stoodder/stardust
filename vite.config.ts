@@ -14,6 +14,14 @@ const ISOLATED_TESTS: string[] = TEST_GLOBS.flatMap((g) => globSync(g)).filter((
   /\bvi\.(?:mock|doMock|resetModules)\(|\/\/ vitest: isolate\b/.test(readFileSync(f, 'utf8')),
 );
 
+/**
+ * The slow lane (D157; conventions.md § The test loop): the finale's sweeps over all 24 story cells
+ * (par and every alt, Story, and the alts with more damage on the Unsung). The whole gate runs them
+ * (`npm run check`, beside smoke); a task's fast gate skips them (`--project shared --project
+ * isolated`). Plain `npm run test` runs every project.
+ */
+const SLOW_TESTS: string[] = globSync('src/balance/finM01Combos*.test.ts');
+
 export default defineConfig({
   // Relative asset URLs so the build works from any subpath (GitHub Pages).
   base: './',
@@ -57,6 +65,15 @@ export default defineConfig({
         test: {
           name: 'shared',
           include: TEST_GLOBS,
+          exclude: [...ISOLATED_TESTS, ...SLOW_TESTS],
+          isolate: false,
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: 'slow',
+          include: SLOW_TESTS,
           exclude: ISOLATED_TESTS,
           isolate: false,
         },

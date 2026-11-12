@@ -1,7 +1,7 @@
 // The authoritative module-boundary check (docs/tech/architecture.md § 2 and § 4).
 // Scans every source file under src/ for forbidden imports, and the code the sim executes
-// (src/sim/, src/shared/, src/content/rules.ts) for nondeterministic globals and the banned Math
-// members. Lint repeats some of this for editor feedback; this test
+// (src/sim/, src/shared/, src/content/ but its sprite painters) for nondeterministic globals and
+// the banned Math members. Lint repeats some of this for editor feedback; this test
 // is what the gate trusts. Type-checked by tsconfig.node.json (it reads files with node:fs).
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, posix, relative } from 'node:path';
@@ -197,12 +197,15 @@ function checkImport(file: string, spec: string): string | null {
 
 /**
  * Whether the sim executes `file` (relative to src/), so it must be deterministic: src/sim/,
- * src/shared/, and content/rules.ts (rule formulas the sim calls). The rest of content/ is data the
- * sim reads after compiling, not code it runs per tick.
+ * src/shared/, and src/content/ (its rule formulas the sim calls, and the data and compile step
+ * every run starts from, which must come out the same on every engine; D157). Except content's
+ * sprite painters (content/sprites/): render draws them into textures at boot, and their curves
+ * and dithers may use any Math (none is a sim input).
  */
 function isSimExecuted(file: string): boolean {
   const mod = moduleOf(file);
-  return mod === 'sim' || mod === 'shared' || file === 'content/rules.ts';
+  if (mod === 'content') return !file.startsWith('content/sprites/');
+  return mod === 'sim' || mod === 'shared';
 }
 
 /** Banned Math members and globals in sim-executed code (determinism). */
@@ -326,13 +329,21 @@ describe('scanner catches violations', () => {
     expect(messages('sim/a.ts', 'const M = Math; M.atan2(1, 2);')).toHaveLength(1);
   });
 
-  it('scans shared/ and content/rules.ts like sim/', () => {
+  it('scans shared/ and content/ (but its sprite painters) like sim/ (D157)', () => {
     expect(messages('shared/rng.ts', 'const r = Math.random();')).toEqual([
       '1: Math.random is banned in sim code',
     ]);
     expect(messages('content/rules.ts', 'const t = Date.now();')).toEqual([
       "1: 'Date' is banned in sim code",
     ]);
+    expect(messages('content/maps/fin_m01/waves.ts', 'const n = Math.random();')).toEqual([
+      '1: Math.random is banned in sim code',
+    ]);
+    expect(messages('content/towers/rivet.ts', 'const a = Math.sin(t);')).toEqual([
+      '1: Math.sin is banned in sim code',
+    ]);
+    // Render draws the painters into textures at boot: their curves may use any Math.
+    expect(messages('content/sprites/helpers.ts', 'const a = Math.sin(t);')).toEqual([]);
   });
 
   it('flags nondeterministic globals in src/sim/', () => {
@@ -356,7 +367,6 @@ describe('scanner catches violations', () => {
     ].join('\n');
     expect(messages('sim/a.ts', ok)).toEqual([]);
     expect(messages('render/a.ts', 'const a = Math.sin(t) + Date.now();')).toEqual([]);
-    expect(messages('content/towers/rivet.ts', 'const a = Math.sin(t);')).toEqual([]);
     expect(messages('sim/a.ts', "// import * as Phaser from 'phaser';")).toEqual([]);
   });
 

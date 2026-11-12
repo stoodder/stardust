@@ -286,7 +286,8 @@ function economyTerms(modifiers: readonly Modifier<IdSpace>[], stat: EconomyStat
   for (const m of modifiers) {
     if (m.kind !== 'economy' || m.stat !== stat) continue;
     if (m.set !== undefined) set = set === null ? m.set : Math.min(set, m.set);
-    if (m.atLeast !== undefined) atLeast = atLeast === null ? m.atLeast : Math.max(atLeast, m.atLeast);
+    if (m.atLeast !== undefined)
+      atLeast = atLeast === null ? m.atLeast : Math.max(atLeast, m.atLeast);
     flat += m.flat ?? 0;
     pct += m.pct ?? 0;
   }

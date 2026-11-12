@@ -2,10 +2,13 @@
 // par under one flag at a time, but the finale reads four (C1's Thrum, C2's Returned, C3's door,
 // C4's answer: 2 × 2 × 2 × 3 = 24 cells), and its balance is chaotic enough that one more unit can
 // move a run by several singers. So par and every alt run in all 24 on Standard, and on Story in
-// the hardest cells.
+// the hardest cells; and every alt again with ×1.5 and ×2 damage on the Unsung (D157:
+// balance/bossDamage.ts `withBossDamage`). These files are the test step's slow lane: the whole
+// gate runs them, a task's fast gate doesn't (conventions.md § The test loop).
 import type { CompiledContent } from '../../content/compiled.ts';
 import { runHeadless, type HeadlessResult } from '../../sim/index.ts';
-import { flagCombinationLabel, flagsFor, marginOf } from '../checks.ts';
+import { flagCombinationLabel, flagsFor, marginOf, notGradual } from '../checks.ts';
+import { FORGIVING_FLOOR_PCT } from '../rules.ts';
 import { buildFor } from '../harness.ts';
 import { referenceRunProfile, runConfig } from '../profile.ts';
 
@@ -80,3 +83,25 @@ export const maxWaveHushes = (r: HeadlessResult): number =>
 /** The first wave that hushed a singer, or 0 for none. */
 export const firstHushWave = (r: HeadlessResult): number =>
   r.waves.find((w) => w.singersHushed > 0)?.wave ?? 0;
+
+/**
+ * An alt in every cell (D156): it wins at the forgiving floor or better, its losses gradual (D028:
+ * no wave hushes more than half the allowance). Its failures, one line a cell; `content` may be a
+ * boss-damage variant (`withBossDamage`, D157).
+ */
+export function altCellFailures(
+  content: CompiledContent,
+  build: string,
+  cells: readonly FinCell[] = FIN_CELLS,
+): string[] {
+  const bad: string[] = [];
+  for (const cell of cells) {
+    const { result: r, margin } = runFinCell(content, build, cell);
+    const name = cellName(cell);
+    if (r.outcome !== 'won') bad.push(`${name}: ${r.outcome} at W${r.lostAtWave}`);
+    else if (margin < FORGIVING_FLOOR_PCT) bad.push(`${name}: margin ${margin}`);
+    const wall = notGradual(r);
+    if (wall !== null) bad.push(`${name}: ${wall}`);
+  }
+  return bad;
+}

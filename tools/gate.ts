@@ -8,13 +8,17 @@
 // warning, not a failure: wall time is noisy under load, and a red gate must mean broken code. The
 // table is the guardrail: read it on every run, and fix the step that drifts (conventions.md § Gate
 // time says how). The `build` step also measures the initial JS (tools/bundleSize.ts): a warning
-// over 900 kB gzipped, a failure over the 1 MB budget.
+// over 800 kB gzipped, a failure over the 900 kB budget. The test step's slow lane (the Vitest
+// project `slow`: the finale's 24-cell sweeps; D157) runs beside smoke in the whole gate, and not
+// at all in the fast one.
 import { spawn } from 'node:child_process';
 import { performance } from 'node:perf_hooks';
 import { reportInitialJs } from './bundleSize.ts';
 
 interface Step {
   readonly step: string;
+  /** Its name in the table, when it isn't the step's (`test:slow`). */
+  readonly label?: string;
   /** Extra arguments after `npm run <step> --` (the fast gate's smoke specs). */
   readonly args?: readonly string[];
   /** Its share, in seconds of its own wall time (it shares the machine with its phase's others). */
@@ -29,14 +33,19 @@ interface Step {
  * than they saved (T764, measured). Each step needs only what an earlier phase made (`smoke`
  * serves `build`'s dist/).
  */
+/** The test step's lanes (vite.config.ts projects): the quick ones, then the slow one (D157). */
+const QUICK_TESTS = ['--project', 'shared', '--project', 'isolated'] as const;
+const SLOW_TESTS = ['--project', 'slow'] as const;
 const PHASES: readonly (readonly Step[])[] = [
   [{ step: 'typecheck', budgetSec: 10 }],
   [{ step: 'lint', budgetSec: 20 }],
-  [{ step: 'test', budgetSec: 85 }],
+  [{ step: 'test', args: QUICK_TESTS, budgetSec: 85 }],
   [{ step: 'build', budgetSec: 5 }],
   [
     { step: 'smoke', budgetSec: 420 },
     { step: 'sim', budgetSec: 90 },
+    // Beside smoke, as `sim` is: its browsers leave cores idle (T764).
+    { step: 'test', label: 'test:slow', args: SLOW_TESTS, budgetSec: 240 },
   ],
   [{ step: 'check:docs', budgetSec: 5 }],
 ];
@@ -52,6 +61,7 @@ const FAST_BUDGET_SEC = 300;
 const phases: readonly (readonly Step[])[] = fast
   ? PHASES.map((phase) =>
       phase.flatMap((s): Step[] => {
+        if (s.label === 'test:slow') return []; // the slow lane is the whole gate's (D157)
         if (s.step !== 'smoke') return [s];
         return fastSpecs.length > 0 ? [{ ...s, args: fastSpecs, budgetSec: 120 }] : [];
       }),
@@ -69,7 +79,7 @@ interface Outcome {
 }
 
 /** Runs `npm run <step>`, streaming its output (`live`) or holding it until it ends. */
-function run({ step, budgetSec, args = [] }: Step, live: boolean): Promise<Outcome> {
+function run({ step, label = step, budgetSec, args = [] }: Step, live: boolean): Promise<Outcome> {
   const t0 = performance.now();
   return new Promise((resolve) => {
     const argv = args.length > 0 ? ['run', step, '--', ...args] : ['run', step];
@@ -79,13 +89,13 @@ function run({ step, budgetSec, args = [] }: Step, live: boolean): Promise<Outco
     child.stderr?.on('data', (b: Buffer) => held.push(b));
     child.on('close', (code) => {
       if (!live) {
-        console.log(`\n▶ npm run ${step} (ran beside the phase's first step; its output:)`);
+        console.log(`\n▶ npm run ${label} (ran beside the phase's first step; its output:)`);
         process.stdout.write(Buffer.concat(held));
       }
       // The build's size budget (D143): part of the step, so a bundle over it is a red build.
       const sized = step === 'build' && code === 0 ? reportInitialJs('dist') : 0;
       const sec = (performance.now() - t0) / 1000;
-      resolve({ step, budgetSec, sec, ok: code === 0 && sized === 0 });
+      resolve({ step: label, budgetSec, sec, ok: code === 0 && sized === 0 });
     });
   });
 }
@@ -93,7 +103,7 @@ function run({ step, budgetSec, args = [] }: Step, live: boolean): Promise<Outco
 const t0 = performance.now();
 const outcomes: Outcome[] = [];
 for (const phase of phases) {
-  console.log(`\n▶ npm run ${phase.map((s) => s.step).join(' + ')}`);
+  console.log(`\n▶ npm run ${phase.map((s) => s.label ?? s.step).join(' + ')}`);
   // oxlint-disable-next-line no-await-in-loop -- phases run in order, the steps of each at once
   const done = await Promise.all(phase.map((s, i) => run(s, i === 0)));
   outcomes.push(...done);
@@ -115,7 +125,7 @@ console.log(
 if (fast) {
   const ran = fastSpecs.length > 0 ? fastSpecs.join(', ') : 'none';
   console.log(
-    `  fast gate: smoke ran only ${ran}; the full gate runs per wave and milestone (D148)`,
+    `  fast gate: smoke ran only ${ran}, and not the slow tests; the full gate runs per wave and milestone (D148)`,
   );
 }
 const failed = outcomes.filter((o) => !o.ok).map((o) => `'${o.step}'`);

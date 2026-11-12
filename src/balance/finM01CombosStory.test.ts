@@ -13,7 +13,7 @@ const BUILDS = [
   ...Object.keys(content.maps.fin_m01.builds.altBuilds).map((n) => `alt:${n}`),
 ];
 
-describe('FIN on Story in the hardest cells', { timeout: HARNESS_TEST_TIMEOUT_MS * 2 }, () => {
+describe('FIN on Story in the hardest cells', { timeout: HARNESS_TEST_TIMEOUT_MS * 4 }, () => {
   it('par and every alt win, each at least its Standard margin', () => {
     expect(FIN_HARDEST_CELLS.length).toBeGreaterThan(0);
     const bad: string[] = [];

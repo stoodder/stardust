@@ -16,7 +16,7 @@ import { HARNESS_TEST_TIMEOUT_MS, PAR_BAND_FLOOR_PCT, PAR_BAND_WIDTH } from './r
 
 const content = compileContent(RAW_CONTENT);
 
-describe('FIN par in every story cell', { timeout: HARNESS_TEST_TIMEOUT_MS * 2 }, () => {
+describe('FIN par in every story cell', { timeout: HARNESS_TEST_TIMEOUT_MS * 4 }, () => {
   it('wins in band with gradual hushes in all 24', () => {
     const lo = PAR_BAND_FLOOR_PCT.finale!;
     const allowance = content.maps.fin_m01.choir!.maxHushed!;

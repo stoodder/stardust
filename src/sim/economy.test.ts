@@ -261,9 +261,9 @@ describe('economy modifiers (progression.md § 4.3, § 5, § 9; T202a)', () => {
         { kind: 'economy', stat: 'coreIntegrity', flat: 2, source: 'shop:core2' },
       ]),
     ).toBe(7);
-    expect(() =>
-      sim([{ kind: 'economy', stat: 'bounty', atLeast: 1, source: 'test' }]),
-    ).toThrow(/economy 'bounty' takes pct only/);
+    expect(() => sim([{ kind: 'economy', stat: 'bounty', atLeast: 1, source: 'test' }])).toThrow(
+      /economy 'bounty' takes pct only/,
+    );
   });
 
   it('refuses a flat or set on bounty or the early-call bonus (pct only)', () => {

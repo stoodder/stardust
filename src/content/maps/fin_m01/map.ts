@@ -334,7 +334,7 @@ export const map = defineMapLayout({
   },
   // The Leaving Song (maps.md § 5.5): its circle round Pebble from the start (a light in the dark;
   // render's), rest and scatter in Phase 2 only. Tuned to ~3 min at Keep (#18; T821, D156): the
-  // trickle is most of it, so the kills (all in by ~110 s) and the Unsung's damage (~10 s off the
+  // trickle is most of it, so the kills (all in by ~110 s) and the Unsung's damage (~12 s off the
   // phase for par) can't skew each C4 answer's length past ±30% of Keep's, and alone it still ends
   // the phase in 207 s under Keep.
   song: {
