@@ -91,6 +91,7 @@ import { auditor } from '../../content/enemies/auditor.ts';
 import { gathering_maw } from '../../content/enemies/gathering_maw.ts';
 import { gathering_maw_part } from '../../content/enemies/gathering_maw_part.ts';
 import { unsung } from '../../content/enemies/unsung.ts'; // T800a (devM8.ts)
+import { devUnsung } from './devUnsung.ts'; // D156
 import { unsung_part } from '../../content/enemies/unsung_part.ts'; // T808 (devM8.ts)
 import { gunship } from '../../content/enemies/gunship.ts';
 import { liability } from '../../content/enemies/liability.ts';
@@ -321,8 +322,9 @@ const DEV_ENTITIES = {
     shareholder_value,
     gathering_maw,
     gathering_maw_part,
-    // The finale's dev maps (devM8.ts; T800a): the Unsung (T808).
-    unsung,
+    // The finale's dev maps (devM8.ts; T800a): the Unsung (T808), its forms' time floors lifted
+    // (D156: dev_phases's song is a minute, not three).
+    unsung: devUnsung(unsung),
     unsung_part, // T808
   }),
   // Bricks's real Suppressing Fire, so slot 2, its aiming, and its sounds run here (T207b), and
