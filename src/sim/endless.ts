@@ -46,7 +46,7 @@ import {
   THREAT_TRAIT_FACTOR,
   TRAIT_COUNTER,
 } from '../content/rules.ts';
-import type { CounterId, IdSpace, LiveIds, ThreatIntelId } from '../content/types.ts';
+import type { CounterId, EnemyId, ThreatIntelId } from '../content/types.ts';
 import { createRng, forkRng, nextInt, type Rng } from '../shared/rng.ts';
 import { TICK_HZ, secToTicks } from '../shared/time.ts';
 import type { SimState } from './state.ts';
@@ -73,7 +73,7 @@ export interface EndlessBlock {
   /** Its required counters, in COUNTER_CATEGORIES order (none for the warm-up). */
   readonly counters: readonly CounterId[];
   /** The boss on its boss wave, or null. */
-  readonly boss: string | null;
+  readonly boss: EnemyId | null;
   /** Categories it brings that the run hadn't required before. */
   readonly fresh: readonly CounterId[];
   /** Whether the draw had to drop a rule to find a set (never, with ENDLESS; the tests hold it). */
@@ -173,9 +173,9 @@ export function endlessBudgets(def: EndlessDef, n: number): number[] {
 /** What `endlessPlan` reads of the content. */
 interface Ctx {
   readonly def: EndlessDef;
-  readonly enemies: Readonly<Record<string, CompiledEnemyDef>>;
-  readonly map: CompiledMapDef<IdSpace>;
-  readonly roster: readonly CompiledEnemyDef[];
+  readonly enemies: CompiledContent['enemies'];
+  readonly map: CompiledMapDef;
+  readonly roster: readonly CompiledEnemyDef<EnemyId>[];
   readonly threat: ReadonlyMap<string, number>;
   readonly cats: ReadonlyMap<string, ReadonlySet<CounterId>>;
 }
@@ -183,7 +183,7 @@ interface Ctx {
 /** The problems with `def` against `content` (empty: none). `endlessPlan` throws on any. */
 export function endlessDefErrors(
   def: EndlessDef,
-  content: Pick<CompiledContent<IdSpace>, 'enemies' | 'maps'>,
+  content: Pick<CompiledContent, 'enemies' | 'maps'>,
 ): string[] {
   const out: string[] = [];
   const map = Object.hasOwn(content.maps, def.map) ? content.maps[def.map] : undefined;
@@ -237,7 +237,7 @@ export function endlessDefErrors(
 }
 
 /** The routes a unit can walk on wave `w`: flyers the air lanes, ground Hollow also open rifts. */
-function routesFor(map: CompiledMapDef<IdSpace>, e: CompiledEnemyDef, w: number): CompiledRoute[] {
+function routesFor(map: CompiledMapDef, e: CompiledEnemyDef, w: number): CompiledRoute[] {
   const out: CompiledRoute[] = [];
   for (const r of map.routeList) {
     if (e.layer === 'air' ? r.kind !== 'air' : r.kind === 'air') continue;
@@ -282,8 +282,8 @@ function subsets(k: number, must: ReadonlySet<CounterId>): CounterId[][] {
 }
 
 /** The run's bosses in order, one per boss block: the first listed, then seeded rotations. */
-function bossOrder(def: EndlessDef, rng: Rng, n: number): string[] {
-  const out: string[] = [];
+function bossOrder(def: EndlessDef, rng: Rng, n: number): EnemyId[] {
+  const out: EnemyId[] = [];
   if (n > 0) out.push(def.bosses[0]!); // validated non-empty
   while (out.length < n) {
     const cycle = [...def.bosses];
@@ -329,7 +329,7 @@ function planBlocks(ctx: Ctx, rng: Rng): EndlessBlock[] {
   for (let b = 1; b < count; b++) {
     const boss = isBossBlock(b) ? bosses[bossAt++]! : null; // bossAt < bossBlocks
     const must =
-      boss === null ? new Set<CounterId>() : bossCategories(ctx.enemies[boss]!, ctx.enemies);
+      boss === null ? new Set<CounterId>() : bossCategories(ctx.enemies[boss], ctx.enemies);
     const per = def.countersPerBlock;
     const k = Math.max(per[Math.min(b, per.length - 1)]!, must.size); // per is non-empty
     const before = blocks[b - 1]!.counters;
@@ -386,9 +386,9 @@ function planBlocks(ctx: Ctx, rng: Rng): EndlessBlock[] {
 function pickUnit(
   ctx: Ctx,
   rng: Rng,
-  pool: readonly CompiledEnemyDef[],
+  pool: readonly CompiledEnemyDef<EnemyId>[],
   share: number,
-): CompiledEnemyDef {
+): CompiledEnemyDef<EnemyId> {
   const fits = pool.filter((e) => {
     const n = share / ctx.threat.get(e.id)!;
     return n >= MIN_GROUP_COUNT && n <= ctx.def.maxGroupCount;
@@ -417,7 +417,7 @@ function pickUnit(
 
 /** A group in the making. */
 interface Draft {
-  readonly enemy: CompiledEnemyDef;
+  readonly enemy: CompiledEnemyDef<EnemyId>;
   count: number;
   readonly route: CompiledRoute;
   readonly role: EndlessGroup['role'];
@@ -433,7 +433,6 @@ function planWave(
   next: EndlessBlock | undefined,
   floor: number,
 ): Draft[] {
-  const { def } = ctx;
   const set = new Set(block.counters);
   const core = ctx.roster.filter(
     (e) => within(ctx.cats.get(e.id)!, set) && routesFor(ctx.map, e, w).length > 0,
@@ -443,10 +442,11 @@ function planWave(
     return rs[nextInt(rng, rs.length)]!; // core and spice units have a route
   };
   const drafts: Draft[] = [];
-  const isBossWave = block.boss !== null && w === block.lastWave;
+  const bossId = w === block.lastWave ? block.boss : null;
+  const isBossWave = bossId !== null;
   let coreBudget = budget;
-  if (isBossWave) {
-    const boss = ctx.enemies[block.boss!]!;
+  if (bossId !== null) {
+    const boss = ctx.enemies[bossId];
     drafts.push({ enemy: boss, count: 1, route: route(boss), role: 'boss' });
     coreBudget = Math.max(BOSS_ESCORT_MIN_SHARE * budget, budget - ctx.threat.get(boss.id)!);
   }
@@ -480,7 +480,7 @@ function planWave(
     [order[i], order[j]] = [order[j]!, order[i]!];
   }
   const slots: {
-    readonly pool: CompiledEnemyDef[];
+    readonly pool: CompiledEnemyDef<EnemyId>[];
     readonly role: Draft['role'];
     readonly weight: number;
   }[] = order.map((c) => ({
@@ -509,16 +509,21 @@ function planWave(
   const lo = isBossWave ? budget * BUDGET_BAND.below : Math.max(budget * BUDGET_BAND.below, floor);
   const hi = isBossWave ? Infinity : budget * BUDGET_BAND.above;
   for (;;) {
-    const total = sum();
-    if (total <= hi) break;
-    const cut = adjustable
-      .filter((d) => d.count > 1 && total - t(d) >= lo)
-      .sort((a, b) => t(b) - t(a))[0];
-    if (cut === undefined) break;
+    const now = sum();
+    if (now <= hi) break;
+    // The heaviest unit that can go without dropping under the band (the first such, on a tie).
+    let cut: Draft | null = null;
+    for (const d of adjustable) {
+      if (d.count > 1 && now - t(d) >= lo && (cut === null || t(d) > t(cut))) cut = d;
+    }
+    if (cut === null) break;
     cut.count--;
   }
-  const lightest = [...adjustable].sort((a, b) => t(a) - t(b))[0]!; // a wave has a core slot
-  while (sum() < lo || (!isBossWave && sum() <= floor)) lightest.count++;
+  let lightest = adjustable[0]!; // a wave has a core slot
+  for (const d of adjustable) if (t(d) < t(lightest)) lightest = d;
+  // Strictly above the last wave without a boss (a boss wave is a spike, so it needn't be).
+  const above = isBossWave ? -Infinity : floor;
+  for (let now = sum(); now < lo || now <= above; now += t(lightest)) lightest.count++;
   if (spice !== null) {
     while (spice.count > 0 && spice.count * t(spice) > SOFT_THREAT_MAX_SHARE * sum()) spice.count--;
     if (spice.count === 0) drafts.splice(drafts.indexOf(spice), 1);
@@ -527,7 +532,7 @@ function planWave(
 }
 
 /** The compiled groups of a planned wave: spawn intervals fitted to the window, starts staggered. */
-function compileDrafts(ctx: Ctx, drafts: readonly Draft[]): CompiledWaveGroup<IdSpace>[] {
+function compileDrafts(ctx: Ctx, drafts: readonly Draft[]): CompiledWaveGroup[] {
   const window = secToTicks(ctx.def.spawnWindowSec);
   const minInterval = secToTicks(ctx.def.minIntervalSec);
   const stagger = secToTicks(ctx.def.groupStaggerSec);
@@ -549,15 +554,15 @@ function compileDrafts(ctx: Ctx, drafts: readonly Draft[]): CompiledWaveGroup<Id
 }
 
 /** A seed's whole run on `def.map`: its blocks and every wave (the warm-up as authored). */
-export function endlessPlan<K extends IdSpace = LiveIds>(
+export function endlessPlan(
   def: EndlessDef,
-  content: CompiledContent<K>,
+  content: CompiledContent,
   seed: number,
-): EndlessPlan & { readonly compiled: readonly CompiledWave<K>[] } {
+): EndlessPlan & { readonly compiled: readonly CompiledWave[] } {
   const errors = endlessDefErrors(def, content);
   if (errors.length > 0) throw new RangeError(`invalid EndlessDef:\n- ${errors.join('\n- ')}`);
-  const enemies: Readonly<Record<string, CompiledEnemyDef>> = content.enemies;
-  const map = content.maps[def.map as K['map']] as CompiledMapDef<IdSpace>;
+  const enemies = content.enemies;
+  const map = content.maps[def.map];
   const threat = new Map<string, number>();
   const cats = new Map<string, ReadonlySet<CounterId>>();
   for (const e of Object.values(enemies)) {
@@ -568,7 +573,7 @@ export function endlessPlan<K extends IdSpace = LiveIds>(
     def,
     enemies,
     map,
-    roster: def.roster.map((id) => enemies[id]!),
+    roster: def.roster.map((id) => content.enemies[id]),
     threat,
     cats,
   };
@@ -577,7 +582,7 @@ export function endlessPlan<K extends IdSpace = LiveIds>(
   const budgets = endlessBudgets(def, def.waves);
   const countdownTicks = secToTicks(DEFAULT_COUNTDOWN_SEC[map.act]);
   const waves: EndlessWave[] = [];
-  const compiled: CompiledWave<IdSpace>[] = [];
+  const compiled: CompiledWave[] = [];
   let floor = 0;
   for (let w = 1; w <= def.waves; w++) {
     const b = Math.floor((w - 1) / def.blockWaves);
@@ -611,7 +616,7 @@ export function endlessPlan<K extends IdSpace = LiveIds>(
       (a, g) => Math.max(a, g.delayTicks + Math.max(0, g.count - 1) * g.intervalTicks),
       0,
     );
-    const afterBoss = waves[w - 2]?.boss != null; // the wave after a boss waits for its fight
+    const afterBoss = (waves[w - 2]?.boss ?? null) !== null; // the wave after a boss waits for its fight
     compiled.push({
       number: w,
       countdownTicks,
@@ -640,7 +645,7 @@ export function endlessPlan<K extends IdSpace = LiveIds>(
     });
   }
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- built from content's own defs and routes
-  return { seed, blocks, waves, compiled: compiled as unknown as readonly CompiledWave<K>[] };
+  return { seed, blocks, waves, compiled };
 }
 
 /** Every trait in a plan's waves, plus `boss` (the briefing's threat intel for the seed). */
@@ -653,22 +658,22 @@ export function endlessIntel(
     for (const g of w.groups) for (const t of enemies[g.enemy]?.traits ?? []) out.add(t);
     if (w.boss !== null) out.add('boss');
   }
-  return [...out].sort();
+  return [...out].toSorted();
 }
 
 /**
  * `content` with `def.map`'s waves swapped for `seed`'s plan (and its threat intel for the plan's),
  * ready for a SimConfig on that map with the same seed. Everything else is `content`'s own.
  */
-export function endlessContent<K extends IdSpace = LiveIds>(
+export function endlessContent(
   def: EndlessDef,
-  content: CompiledContent<K>,
+  content: CompiledContent,
   seed: number,
-): { readonly content: CompiledContent<K>; readonly plan: EndlessPlan } {
+): { readonly content: CompiledContent; readonly plan: EndlessPlan } {
   const { compiled, ...plan } = endlessPlan(def, content, seed);
-  const id = def.map as K['map'];
+  const id = def.map;
   const map = content.maps[id];
-  const run: CompiledMapDef<K> = {
+  const run: CompiledMapDef = {
     ...map,
     waves: compiled,
     threatIntel: endlessIntel(plan, content.enemies),
@@ -684,8 +689,21 @@ export function endlessBlockAt(plan: EndlessPlan, wave: number): EndlessBlock | 
 /** A run's score: the waves it held (every wave resolved, its last unit killed or leaked). */
 export function endlessWavesHeld(state: Pick<SimState, 'schedule'>): number {
   let n = 0;
-  for (const r of state.schedule.resolved) if (r === true) n++;
+  for (const r of state.schedule.resolved) if (r) n++;
   return n;
+}
+
+/** The categories tower `t` answers unconditionally (no act, body, or air condition). */
+function towerAnswers(t: string): Set<CounterId> {
+  const out = new Set<CounterId>();
+  for (const c of COUNTER_CATEGORIES) {
+    const ok = COUNTER_ANSWERS[c].towers.some(
+      (a) =>
+        a.tower === t && a.acts === undefined && a.vsBodies === undefined && a.vsAir === undefined,
+    );
+    if (ok) out.add(c);
+  }
+  return out;
 }
 
 /**
@@ -697,27 +715,13 @@ export function answeringLoadout(
   counters: readonly CounterId[],
   towers: readonly string[],
 ): string[] | null {
-  const answers = (t: string): Set<CounterId> => {
-    const out = new Set<CounterId>();
-    for (const c of COUNTER_CATEGORIES) {
-      const ok = COUNTER_ANSWERS[c].towers.some(
-        (a) =>
-          a.tower === t &&
-          a.acts === undefined &&
-          a.vsBodies === undefined &&
-          a.vsAir === undefined,
-      );
-      if (ok) out.add(c);
-    }
-    return out;
-  };
-  const useful = towers.filter((t) => counters.some((c) => answers(t).has(c)));
+  const useful = towers.filter((t) => counters.some((c) => towerAnswers(t).has(c)));
   const best = (from: number, left: readonly CounterId[], acc: string[]): string[] | null => {
     if (left.length === 0) return acc;
     if (acc.length === MAX_LOADOUT) return null;
     for (let i = from; i < useful.length; i++) {
       const t = useful[i]!; // i < length
-      const a = answers(t);
+      const a = towerAnswers(t);
       if (!left.some((c) => a.has(c))) continue;
       const got = best(
         i + 1,
