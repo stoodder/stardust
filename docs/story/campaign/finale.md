@@ -58,27 +58,27 @@ The one-map finale, `fin_m01`, from the end of the Long Night to the First Dawn.
 **Rewards.** Stardust 500 · Intel 3 (+1).
 **Par build.** Mindspike, Hum Choir, Sproing Pad, Scuttle Den; companion Ves'thara; Technician Suppressing Fire. Mindspikes take both specs: Echo Spike on the road for the Mote and Fracture swarms, Dread at the Halls mouth for the Silencers' tells. Choir + Mindspike (Harmony) leapfrogging along the road; Sproing at the Gap ridge for gunships and Rift Moths; Den at the Halls mouth for the Undertows and the Unsung's burrow phase; build the Halls-mouth ring before W17 so Phase 2 kills land inside the song. Target ~50 (Voices % of the 20-strong choir, on the escort band, 40–60). **Alt builds:** Mindspike + Hum Choir + Skyhook + Thumper (`cluster`), and Mindspike + Hum Choir + Skyhook + Stasis Bloom (`stasis`): par's road with Skyhooks on the ridge and at the gate for the air, a fifth Mindspike on the east gold seam, and Thumpers or Blooms where par digs its Dens; and with **no Mindspike**, Thumper + Hum Choir + Sproing Pad + Harpoon (`no_mindspike`, T874): Thumpers on par's road and ledge pads for the swarms, Harpoons through the Gap, at the Halls and either side of the gate for the plated Silencers and Maws and Everglow's walkers, the Choirs late, Sproing Pads for the air once the gate has paid for the early flyers, and Suppressing Fire its only cast (so any companion walks with it). **Story variants:** the harness runs par once per companion on the pick list; the weakest choir (cleared, `sold` or `none`, `convoy`, `purge`) and the strongest (spared, `returned`, `warren`, `rewrite`); and every `quill_choice` for the Phase 2 length check. Under Keep the build script presses "Who's there?". `noCounterBuilds` (each must lose in Phase 1): **no-air**, Hum Choir + Gloop + Scuttle Den + Thumper, nothing in reach of the air lanes; **no-jam**, Sproing + Mindspike (Echo Spike only) + Gloop + Scuttle Den with companion Zibzab and Technician Suppressing Fire, no Choir, System Reboot, Bloom, Dread, or Stillness; **no-splash**, Hum Choir + Mindspike (Dread only) + Sproing + Prism, no Thumper, Zapcoil, Gloop, Echo Spike, or Big Bonk.
 
-**As tuned** (T821; the harness's runs, seeds 1–5 alike: the map doesn't move with the seed). The margin is Voices % of the 20-strong choir at its lowest, `(20 − hushed) ÷ 20`, and the map is lost at 15 hushed, in every cell ([maps.md §5.5](../../design/maps.md#55-the-leaving-song-finale-rules)).
+**As tuned** (T821, retuned by T874; the harness's runs, seeds 1–5 alike: the map doesn't move with the seed). The margin is Voices % of the 20-strong choir at its lowest, `(20 − hushed) ÷ 20`, and the map is lost at 15 hushed, in every cell ([maps.md §5.5](../../design/maps.md#55-the-leaving-song-finale-rules)).
 
 | Run | Result |
 |---|---|
 | Par (the convoy's 16, no C4 set) | won, 9 hushed: **55** (7 singing at the Halls; none hushed in Phase 2); ≤ A3M6's 59.3 + 5 |
-| Every C4 answer, the Thrum cells, the Returned cells, each companion | 55 (spared: 50) |
-| The warren (28 singers) | 50 |
-| Story | 95 |
+| Every C4 answer, the Thrum cells, the Returned cells, each companion | 55 (Purge: 40; Phase 2 runs longer and its add waves hush three) |
+| The warren (28 singers) | 40 |
+| Story | 100 |
 | alwaysCallEarly | 60 (W18 cleared long before the choir arrives; Phase 2 keeps its clock: its waves are never called) |
-| Alt `cluster` / `stasis` | 55 / 60 |
-| No burrow answer (par without its Dens or Dread) | 35: the Unsung's two digs surface among the singers (Fork 2's pinned cost, ≥ 10 under par) |
-| No air / no jam / no splash | lost in Phase 1: W14 / W18 / W17 (no splash with the full catalog: W24) |
+| Alt `cluster` / `stasis` / `no_mindspike` | 65 / 60 / **45** (the Mindspike-free answer; it wins on seeds 1–5, with every companion, through the warren, and on Story: `finM01NoMindspike.test.ts`) |
+| No burrow answer (par without its Dens or Dread) | 40: the Unsung's two digs surface among the singers (Fork 2's pinned cost, ≥ 10 under par) |
+| No air / no jam / no splash | lost in Phase 1: W14 / W18 / W17 (with the full catalog: no air W15, no splash W17) |
 | None | lost W2 |
-| Phase 2 length (#18) | Keep 180 s, Purge 232 s (1.28×), Rewrite 152 s (0.84×); the trickle alone ends it in 200 s under Keep |
-| Phase 1 / whole map, par at 1× | 13.8 min / ~17.9 min |
+| Phase 2 length (#18) | Keep 181 s, Purge 225 s (1.24×), Rewrite 150 s (0.83×); the trickle alone ends it in 200 s under Keep |
+| Phase 1 / whole map, par at 1× | 13.5 min / ~17.5 min |
 | Directive 0 (Keep par) | 20 s into Phase 2: the Mindspikes fold, refunded in full, Time Dilation locks, "Who's there?" waits (the sim frozen); pressed, the class is back and par rebuilds it (3,600 refunded and spent again); a rebuild 15 s slower costs no singer (W20 waits in the lull) |
 | Thrum's echo (cleared) | spawns as rest progress crosses 50%, rises inside the song at once; Pebble's line the tick after |
-| Laid to Rest | not par's: about two thirds of par's Phase 2 kills land inside the song (the ledge Mindspikes reach the Halls' approaches outside it) |
-| #13 | slowest run 1.3 s CPU |
+| Laid to Rest (60%) | not par's: 49% of its Phase 2 kills land inside the song (the west ledge's Echo Spike breaks the Hollow up the descent, outside it); par with its Phase 2 spent on the Halls Choir instead (tier 3 by W20, no Echo Spike) earns it at 67%, for the same singers (`finM01Phase2.test.ts`); `cluster` and `stasis` land ~64%. Par itself earns it where the song is wider or longer: with Thrum beside Pebble (69%) and under Purge (62%) |
+| #13 | slowest run 1.5 s CPU |
 
-The Descent is all void, and Psionic (×1.5 against void, through armor) is about twice the damage per credit of anything else, so every winning build carries the Mindspike: a Thumper, Zapcoil, Gloop, or Lantern road (with gate Skyhooks) loses in W14–W18 even on Story. Moving some of W12–W18's pressure from void swarms to Everglow ground units is T874's.
+Psionic (×1.5 against void, through armor) is still the Descent's best damage per credit, but it isn't the only answer (pillar 2; T874): W14–W18 carry a third of their threat as Everglow's Bore security, which Psionic barely scratches and which hushes no one, and the plated Silencers that walked through a Thumper road into the choir are mostly Auditors now. A Thumper road with Harpoons for the plate wins without a Mindspike; it pays the gate for the early flyers instead of building air until W18.
 
 ---
 
