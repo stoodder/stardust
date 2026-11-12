@@ -4,7 +4,8 @@
 import type * as Phaser from 'phaser';
 import type { IdSpace } from '../content/types.ts';
 import { BattleInteraction } from '../render/input/BattleInteraction.ts';
-import { BATTLE_SCENE_KEY, BattleScene } from '../render/scenes/BattleScene.ts';
+import type { BattleScene } from '../render/scenes/BattleScene.ts';
+import { battleRenderer } from './battleRenderer.ts'; // T802: a lazy chunk
 import { createSim, type SimConfig } from '../sim/index.ts';
 import { speaking } from '../ui/dialogue/state.ts';
 import { hud } from '../ui/state.ts';
@@ -50,7 +51,8 @@ export interface BattleStart {
 }
 
 /**
- * Starts a battle on `cfg` in a new BattleScene. Throws a RangeError on an invalid config. A
+ * Starts a battle on `cfg` in a new BattleScene. Throws a RangeError on an invalid config, and
+ * before the battle renderer has loaded (app/battleRenderer.ts). A
  * resumed run is replayed up to its checkpoint once the HUD, dialogue, and `listen` are wired
  * (they rebuild their state from its events; `Host.replaying`), and before audio and the scene,
  * which start from the state it reached.
@@ -69,8 +71,10 @@ export function startBattle(
   const firstFrame = new Promise<void>((resolve) => {
     resolveFirstFrame = resolve;
   });
+  // The renderer's chunk is loaded before any battle starts (app/contentGate.ts; T802).
+  const { BATTLE_SCENE_KEY, BattleScene: Scene } = battleRenderer();
   const key = `${BATTLE_SCENE_KEY}.${++battleCount}`;
-  const scene = new BattleScene(
+  const scene = new Scene(
     {
       sim,
       bus: host.bus,

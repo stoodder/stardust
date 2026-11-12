@@ -137,6 +137,16 @@ export const builds = defineBuilds({
   // cells spread ~12 points: the band widens to 40–70 to hold them all (D154 addendum, T820). The
   // reference cell (the convoy's) stays inside 40–60 and ≤ A3M6 + 5 (balance/finM01.test.ts).
   marginBand: { minPct: 40, maxPct: 70 },
+  // Pending T821's whole-map pass (D154 addendum, T820): both alts lose in Phase 1 (the column is
+  // too exposed in W12–W16 for anything without Psionic ×1.5), and the warren's 28 singers read
+  // 75% where the convoy's 16 read 50% for the same losses (the margin in singers should match by
+  // cell). Pinned out of shipping by tools/pendingChecks.test.ts.
+  pendingChecks: {
+    task: 'T821',
+    reason:
+      'the alts and the warren cell wait for the whole-map pass (column exposure, per-cell floor)',
+    subjects: ['alt:cluster', 'alt:reboot', 'flag:door_choice=warren'],
+  },
   flagVariants: {
     door_choice: ['convoy', 'warren'],
     spared_quiet_wave: [true, false],

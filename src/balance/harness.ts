@@ -60,6 +60,8 @@ export interface HarnessOptions {
   readonly maxTicks?: number;
   /** The meta catalog profiles are built from (default: the live one; tests pass a fixture's). */
   readonly catalog?: MetaCatalog;
+  /** Run only one part of the map's checks (`partSpecs`: a heavy map's balance tests, T778). */
+  readonly part?: HarnessPart;
 }
 
 export interface CheckResult extends CheckOutcome {
@@ -153,25 +155,21 @@ function mapTag<K extends IdSpace>(map: CompiledMapDef<K>, name: string): WaveTa
 const selects = (name: string, subject: string): boolean =>
   subject === name || subject.slice(subject.indexOf(':') + 1) === name;
 
-/** Runs and judges every check for one map. */
-export function runMap<K extends IdSpace = LiveIds>(
+/** A map's run profiles by meta and story flags, each built once (a refusal is its reason). */
+type ProfileFor<K extends IdSpace> = (meta: RunMeta, flags?: ScriptFlags) => RunProfile<K> | string;
+
+/**
+ * The run profiles (conventions.md § Balance sims, Profiles), each built once per meta and story
+ * flags (a `referenceProfileByFlag` cell gives its own reference profile, T700a); a profile the
+ * mapping refuses fails every run that needs it, with the reason.
+ */
+function profileCache<K extends IdSpace>(
+  map: CompiledMapDef<K>,
   content: CompiledContent<K>,
-  mapId: K['map'],
-  opts: HarnessOptions = {},
-): MapReport {
-  const now = opts.now ?? ((): number => 0);
-  const cpuNow = opts.cpuNow ?? now;
-  const t0 = now();
-  const map = content.maps[mapId];
-  const n = opts.seeds ?? DEFAULT_SEED_COUNT;
-  const every = range(n);
-  const few = range(Math.min(FEW_SEED_COUNT, n));
-  const catalog = opts.catalog ?? LIVE_CATALOG;
-  // The run profiles (conventions.md § Balance sims, Profiles), each built once per meta and story
-  // flags (a `referenceProfileByFlag` cell gives its own reference profile, T700a); a profile the
-  // mapping refuses fails every run that needs it, with the reason.
+  catalog: MetaCatalog,
+): ProfileFor<K> {
   const profiles = new Map<string, RunProfile<K> | string>();
-  const profileFor = (meta: RunMeta, flags: ScriptFlags = {}): RunProfile<K> | string => {
+  return (meta, flags = {}) => {
     const key = `${meta}|${JSON.stringify(Object.entries(flags).toSorted(([a], [b]) => (a < b ? -1 : 1)))}`;
     let p = profiles.get(key);
     if (p === undefined) {
@@ -195,6 +193,42 @@ export function runMap<K extends IdSpace = LiveIds>(
     }
     return p;
   };
+}
+
+/**
+ * One map's checks and the runs they need (T778): `runMap` is `planMap`, then each request run
+ * (`mapRunner`), then `judgeMap`. tools/sim.ts plans on its main thread, spreads the requests of
+ * every map over its workers, and judges each map once its runs are back, so a heavy map's runs
+ * share the cores.
+ */
+export interface MapPlan<K extends IdSpace = LiveIds> {
+  readonly mapId: K['map'];
+  readonly specs: readonly CheckSpec[];
+  /** Every run the specs need, each once (by `runKey`), in the order `runMap` runs them. */
+  readonly requests: readonly RunRequest[];
+}
+
+/** Plans one map's checks (`HarnessOptions.build` and `part` select among them). */
+export function planMap<K extends IdSpace = LiveIds>(
+  content: CompiledContent<K>,
+  mapId: K['map'],
+  opts: HarnessOptions = {},
+): MapPlan<K> {
+  const map = content.maps[mapId];
+  return planWith(content, mapId, opts, profileCache(map, content, opts.catalog ?? LIVE_CATALOG));
+}
+
+function planWith<K extends IdSpace>(
+  content: CompiledContent<K>,
+  mapId: K['map'],
+  opts: HarnessOptions,
+  profileFor: ProfileFor<K>,
+): MapPlan<K> {
+  const map = content.maps[mapId];
+  const n = opts.seeds ?? DEFAULT_SEED_COUNT;
+  const every = range(n);
+  const few = range(Math.min(FEW_SEED_COUNT, n));
+  const catalog = opts.catalog ?? LIVE_CATALOG;
   const catalogProfile = profileFor('fullCatalog');
   const leftOut = typeof catalogProfile === 'string' ? [] : catalogProfile.leftOut;
   let specs: CheckSpec[] = [
@@ -213,9 +247,88 @@ export function runMap<K extends IdSpace = LiveIds>(
     }
     specs = specs.filter((s) => s.subject === '*' || selects(only, s.subject));
   }
+  if (opts.part !== undefined) specs = partSpecs(specs, opts.part);
+  const requests = new Map<string, RunRequest>();
+  for (const spec of specs) {
+    for (const req of spec.needs) if (!requests.has(runKey(req))) requests.set(runKey(req), req);
+  }
+  return { mapId, specs, requests: [...requests.values()] };
+}
 
-  const runs = new Map<string, RunRecord>();
-  const execute = (req: RunRequest): RunRecord => {
+/**
+ * One share of a map's harness: part `index` (from 0) of `count` (T778). A heavy map's balance
+ * tests split across files, one part each, so each file stays under ~30 s (conventions.md § Gate
+ * time, *The `test` step*).
+ */
+export interface HarnessPart {
+  readonly index: number;
+  readonly count: number;
+}
+
+/**
+ * The checks in one part (`HarnessOptions.part`). Checks about one build (one subject) stay
+ * together, with the map-level ones (`'*'`) in part 0; the subjects go, the most runs first, to the
+ * part they add the fewest runs to (a run two parts need runs in both), the earlier part on a tie.
+ * The split depends only on the checks, so every part's file sees the same one, and the parts
+ * together hold every check once.
+ */
+export function partSpecs(specs: readonly CheckSpec[], part: HarnessPart): CheckSpec[] {
+  const { index, count } = part;
+  if (!Number.isInteger(count) || count < 1 || !Number.isInteger(index)) {
+    throw new RangeError(`harness part ${index} of ${count}: needs whole numbers, count ≥ 1`);
+  }
+  if (index < 0 || index >= count) {
+    throw new RangeError(`harness part ${index} of ${count}: index must be 0–${count - 1}`);
+  }
+  const groups = new Map<string, Set<string>>();
+  for (const s of specs) {
+    let keys = groups.get(s.subject);
+    if (keys === undefined) groups.set(s.subject, (keys = new Set()));
+    for (const r of s.needs) keys.add(runKey(r));
+  }
+  const parts = Array.from({ length: count }, () => new Set<string>());
+  const owner = new Map<string, number>();
+  const assign = (subject: string, p: number): void => {
+    owner.set(subject, p);
+    for (const k of groups.get(subject)!) parts[p]!.add(k); // every subject has a group
+  };
+  if (groups.has('*')) assign('*', 0);
+  const bySize = [...groups.keys()]
+    .filter((s) => s !== '*')
+    .toSorted((a, b) => groups.get(b)!.size - groups.get(a)!.size); // stable: first seen first
+  for (const subject of bySize) {
+    const keys = groups.get(subject)!;
+    let best = 0;
+    let bestLoad = Infinity;
+    for (const [p, held] of parts.entries()) {
+      let load = held.size;
+      for (const k of keys) if (!held.has(k)) load++;
+      if (load < bestLoad) [best, bestLoad] = [p, load];
+    }
+    assign(subject, best);
+  }
+  return specs.filter((s) => owner.get(s.subject) === index);
+}
+
+/** Runs one of a map's requests (`planMap`); its profiles are built once per runner. */
+export function mapRunner<K extends IdSpace = LiveIds>(
+  content: CompiledContent<K>,
+  mapId: K['map'],
+  opts: HarnessOptions = {},
+): (req: RunRequest) => RunRecord {
+  const map = content.maps[mapId];
+  return runnerWith(content, mapId, opts, profileCache(map, content, opts.catalog ?? LIVE_CATALOG));
+}
+
+function runnerWith<K extends IdSpace>(
+  content: CompiledContent<K>,
+  mapId: K['map'],
+  opts: HarnessOptions,
+  profileFor: ProfileFor<K>,
+): (req: RunRequest) => RunRecord {
+  const map = content.maps[mapId];
+  const cpuNow = opts.cpuNow ?? opts.now ?? ((): number => 0);
+  return (req) => {
     const build = buildFor(req.build, map, content);
     const flags = flagsFor(req.build, map) ?? {};
     const profile = profileFor(splitMeta(req.build).meta, flags);
@@ -246,21 +359,66 @@ export function runMap<K extends IdSpace = LiveIds>(
       return { ...base, error, result: null, marginPct: 0, ms: cpuNow() - start };
     }
   };
+}
+
+/**
+ * Judges a planned map from its runs: `run` gives each request's record (run here, or looked up
+ * among a worker's), asked once per request in the plan's order, and `elapsedMs` the map's time
+ * as the report shows it. A check that reads a run it didn't plan for gets it from `run` too.
+ */
+export function judgeMap<K extends IdSpace>(
+  content: CompiledContent<K>,
+  plan: MapPlan<K>,
+  run: (req: RunRequest) => RunRecord,
+  elapsedMs: () => number,
+): MapReport {
+  const map = content.maps[plan.mapId];
+  const runs = new Map<string, RunRecord>();
   const get = (req: RunRequest): RunRecord => {
     const key = runKey(req);
     let rec = runs.get(key);
     if (rec === undefined) {
-      rec = execute(req);
+      rec = run(req);
       runs.set(key, rec);
     }
     return rec;
   };
-  for (const spec of specs) for (const req of spec.needs) get(req);
+  for (const spec of plan.specs) for (const req of spec.needs) get(req);
 
   const checks: CheckResult[] = [];
-  for (const s of specs) {
+  for (const s of plan.specs) {
     const { ok, summary, failures } = s.evaluate(get);
     checks.push({ id: s.id, title: s.title, subject: s.subject, ok, summary, failures });
+  }
+  const all = [...runs.values()];
+  checks.push(...runLevelChecks(map, all));
+  return {
+    mapId: plan.mapId,
+    act: map.act,
+    objective: map.objective,
+    band: map.objective === 'holdout' ? holdoutBand(map) : parBand(map.act, map.builds.marginBand),
+    ok: checks.every((c) => c.ok),
+    checks,
+    runs: all,
+    notChecked: [...NOT_CHECKED],
+    ms: elapsedMs(),
+  };
+}
+
+/** Runs and judges every check for one map, on this thread. */
+export function runMap<K extends IdSpace = LiveIds>(
+  content: CompiledContent<K>,
+  mapId: K['map'],
+  opts: HarnessOptions = {},
+): MapReport {
+  const now = opts.now ?? ((): number => 0);
+  const t0 = now();
+  const map = content.maps[mapId];
+  const profileFor = profileCache(map, content, opts.catalog ?? LIVE_CATALOG);
+  const plan = planWith(content, mapId, opts, profileFor);
+  const run = runnerWith(content, mapId, opts, profileFor);
+  return judgeMap(content, plan, run, () => now() - t0);
+}
   }
   const all = [...runs.values()];
   checks.push(...runLevelChecks(map, all));
@@ -290,6 +448,8 @@ export function mustIssueEveryStep<K extends IdSpace>(
   const { build, meta } = splitMeta(label);
   if (build === 'par') return meta !== 'story';
   if (!build.startsWith('alt:')) return false;
+  // A pending alt (BuildsDef.pendingChecks; T820) may lose before its plan ends.
+  if (map.builds.pendingChecks?.subjects.includes(build) === true) return false;
   const name = build.slice(4);
   const expect = Object.hasOwn(map.builds.altExpectations, name)
     ? map.builds.altExpectations[name]

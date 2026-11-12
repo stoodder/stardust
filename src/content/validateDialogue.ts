@@ -101,15 +101,20 @@ export const LIVE_DIALOGUE: DialogueContent = {
   },
 };
 
-let cache: readonly string[] | null = null;
+let cache: { readonly maps: number; readonly errors: readonly string[] } | null = null;
 
 /**
  * The live dialogue's errors, with the epilogue cards' (validateEpilogue.ts), computed once per
- * process (the registries are static).
+ * process for each set of registered acts (an act registering later is validated then too).
  */
 export function dialogueErrors(): readonly string[] {
-  cache ??= [...validateDialogue(LIVE_DIALOGUE), ...validateEpilogue()];
-  return cache;
+  if (cache?.maps !== MAP_DIALOGUE.length) {
+    cache = {
+      maps: MAP_DIALOGUE.length,
+      errors: [...validateDialogue(LIVE_DIALOGUE), ...validateEpilogue()],
+    };
+  }
+  return cache.errors;
 }
 
 const RULE_FLAGS: ReadonlySet<string> = new Set(FLAG_RULES.map((r) => r.flag));
