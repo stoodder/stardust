@@ -1059,8 +1059,52 @@ function clearCommsTimer(): void {
 const typedScenes = new Set<string>();
 /** Who waits for a scene's last line to type (`whenSceneTyped`). */
 const typedWaiters = new Map<string, (() => void)[]>();
-/** Times the last line on the panel typing out. */
+/**
+ * Times the last line typing out where no comms panel is drawn to say so (headless, the tests), or
+ * under fast text and reduced motion (the line shows whole).
+ */
 let typedTimer: ReturnType<typeof setTimeout> | null = null;
+/**
+ * The last line on the panel, waiting for the panel's typewriter to finish it (`commsLineTyped`):
+ * its LineView id and its scene. Null once typed, or with none on screen.
+ */
+let typedLine: { readonly lineId: number; readonly sceneId: string } | null = null;
+/** How many comms panels are drawn (`commsPanelMounted`): with one, its typewriter says "typed". */
+let commsPanels = 0;
+
+/**
+ * The comms panel's typewriter has finished line `lineId` (S2-8): when it's a scene's last line,
+ * the scene counts as typed now (`whenSceneTyped`), from what the player saw, not a wall clock
+ * (the typewriter starts as the line first renders, and paces by frames).
+ */
+export function commsLineTyped(lineId: number): void {
+  const t = typedLine;
+  if (t === null || t.lineId !== lineId) return;
+  typedLine = null;
+  if (typedTimer !== null) clearTimeout(typedTimer);
+  typedTimer = null;
+  markTyped(t.sceneId);
+}
+
+/**
+ * A comms panel is drawn (CommsPanel's mount): last lines wait for its typewriter. Returns the
+ * unmount, which lets a line still typing count as typed (nothing on screen to wait for).
+ */
+export function commsPanelMounted(): () => void {
+  commsPanels++;
+  let gone = false;
+  return () => {
+    if (gone) return;
+    gone = true;
+    commsPanels--;
+    if (commsPanels === 0 && typedLine !== null) commsLineTyped(typedLine.lineId);
+  };
+}
+
+/** The last line on screen leaves before its typewriter said so: its scene counts as typed. */
+function flushTypedLine(): void {
+  if (typedLine !== null) commsLineTyped(typedLine.lineId);
+}
 
 /**
  * The comms scenes whose first line has shown on the panel this battle (or that were dropped), and
@@ -1289,7 +1333,11 @@ function showCommsLine(): void {
   const map = session?.map ?? mapOfScene(c.scene.id);
   const ctx = storyContext(map);
   if (step.kind !== 'line') {
-    // Played out (a choice can't wait on the panel: sceneMode sends those to a panel scene).
+    // Played out (a choice can't wait on the panel: sceneMode sends those to a panel scene). Its
+    // last line is gone, so it counts as typed if the typewriter never said so; a scene whose
+    // `when` cut every line counts too (nothing waits on a line that won't come).
+    flushTypedLine();
+    if (!barkScenes.has(c.scene)) markTyped(c.scene.id);
     commsNow = null;
     commit(c.scene.id, c.cursor.effects);
     pumpComms();
@@ -1323,14 +1371,20 @@ function showCommsLine(): void {
   c.moveOn = moveOn;
   clearCommsTimer();
   if (!barkScenes.has(c.scene)) markStarted(c.scene.id);
-  // The scene's last line: once it has typed, its waiters go on (`whenSceneTyped`).
+  // The scene's last line: once it has typed, its waiters go on (`whenSceneTyped`). The comms
+  // panel's typewriter says when (`commsLineTyped`; S2-8); with no panel drawn, or a line that
+  // shows whole, a timer does.
   if (next.step.kind !== 'line' && !barkScenes.has(c.scene)) {
     const id = c.scene.id;
     const typing = fastText() || reducedMotion() ? 0 : typeMs(view.text);
-    typedTimer = setTimeout(() => {
-      typedTimer = null;
-      markTyped(id);
-    }, typing);
+    typedLine = { lineId: view.id, sceneId: id };
+    if (commsPanels === 0 || typing === 0) {
+      typedTimer = setTimeout(() => {
+        typedTimer = null;
+        typedLine = null;
+        markTyped(id);
+      }, typing);
+    }
   }
   commsTimer = setTimeout(
     moveOn,

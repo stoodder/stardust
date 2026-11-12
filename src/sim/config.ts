@@ -26,7 +26,7 @@ export type EnemyStat = 'hp' | 'shield' | 'speed';
 /**
  * Map-economy numbers a modifier can change (design/progression.md §4.3, §5, §9):
  * - `startCredits`: Seed Money, Head Start, Story difficulty.
- * - `coreIntegrity`: Reinforced Core (flat), Story difficulty (`set: 30`).
+ * - `coreIntegrity`: Reinforced Core (flat), Story difficulty (`atLeast: 30`), Glass Core (`set: 5`).
  * - `bounty`: every kill bounty (Bounty Hunter, Bounty Board).
  * - `earlyCallBonus`: Early Bird.
  * - `salvage`: wreckage salvage (Salvage Rights; wreckage is M3+).
@@ -102,13 +102,16 @@ export type Modifier<K extends IdSpace = LiveIds> =
       readonly source: ModifierSource;
     }
   /**
-   * `set` replaces the map's value before `flat` and `pct` apply (Story's integrity 30, veteran
-   * Glass Core's 5); if several modifiers set it, the lowest wins.
+   * `set` replaces the map's value before `flat` and `pct` apply (veteran Glass Core's 5); if
+   * several modifiers set it, the lowest wins. `atLeast` raises the map's value to at least it
+   * before `flat` and `pct` (Story's core integrity 30, a floor so Story never gives less than
+   * Standard; D157); a `set` overrides it, and if several give one, the highest wins.
    */
   | {
       readonly kind: 'economy';
       readonly stat: EconomyStat;
       readonly set?: number;
+      readonly atLeast?: number;
       readonly flat?: number;
       readonly pct?: number;
       readonly source: ModifierSource;

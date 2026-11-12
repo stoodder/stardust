@@ -238,6 +238,34 @@ describe('economy modifiers (progression.md § 4.3, § 5, § 9; T202a)', () => {
     expect(sim([]).state.maxIntegrity).toBe(sim([]).state.integrity);
   });
 
+  it('atLeast is a floor (D157): raises a lower map value, keeps a higher one; set still wins', () => {
+    const base = sim([]).state.integrity;
+    const floor = (atLeast: number, more: Mod[] = []): number =>
+      sim([
+        { kind: 'economy', stat: 'coreIntegrity', atLeast, source: 'difficulty:story' },
+        ...more,
+      ]).state.maxIntegrity;
+    expect(floor(base + 10)).toBe(base + 10); // raised to the floor
+    expect(floor(base - 1)).toBe(base); // Story never gives less than Standard
+    // The highest floor wins; flat and pct apply after it.
+    expect(
+      floor(base + 4, [
+        { kind: 'economy', stat: 'coreIntegrity', atLeast: base + 8, source: 'test' },
+        { kind: 'economy', stat: 'coreIntegrity', flat: 2, source: 'shop:core2' },
+      ]),
+    ).toBe(base + 10);
+    // A `set` overrides the floor (veteran Glass Core's 5 under Story), and Reinforced Core adds.
+    expect(
+      floor(30, [
+        { kind: 'economy', stat: 'coreIntegrity', set: 5, source: 'veteran:glass' },
+        { kind: 'economy', stat: 'coreIntegrity', flat: 2, source: 'shop:core2' },
+      ]),
+    ).toBe(7);
+    expect(() =>
+      sim([{ kind: 'economy', stat: 'bounty', atLeast: 1, source: 'test' }]),
+    ).toThrow(/economy 'bounty' takes pct only/);
+  });
+
   it('refuses a flat or set on bounty or the early-call bonus (pct only)', () => {
     expect(() => sim([{ kind: 'economy', stat: 'bounty', flat: 1, source: 'test' }])).toThrow(
       /economy 'bounty' takes pct only/,

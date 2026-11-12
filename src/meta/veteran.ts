@@ -11,7 +11,8 @@
 // - **Only what bites:** a modifier that would change nothing on this map for this save is offered
 //   dimmed and never applied, so no bonus is free (`veteranOffers`): Glass Core on a map with no
 //   core (an Escort, a Holdout), Short-Handed with 3 tower types or fewer to bring, Radio Silence
-//   with no ability in either slot, No Protocols with no protocol owned.
+//   with no ability in either slot, No Protocols with no protocol owned, Rush Hour on a choir map
+//   (the finale: the walk sets its own pace, so its countdowns stay as they are).
 // - **The Veteran medal:** a replay victory carrying +100% or more, from wave 1 (a checkpoint retry
 //   forfeits it as it does Perfect Core and the Challenge), +1 Intel the first time.
 import type { CompanionId, MapId, ObjectiveKind } from '../content/types.ts';
@@ -160,6 +161,7 @@ export const VETERAN_DIM_TEXT = {
   few_towers: 'Only 3 tower types to bring',
   no_abilities: 'No abilities to silence',
   no_protocols: 'No Field Protocols owned',
+  own_pace: 'The walk sets its own pace.',
 } as const;
 
 /** One modifier as a map offers it to a save. */
@@ -179,6 +181,8 @@ export interface VeteranMap {
     | { readonly id: CompanionId; readonly state: 'present' | 'absent' }
     | { readonly pick: readonly CompanionId[] }
     | null;
+  /** A choir map's walk (the finale): set (any value but null/undefined) when the map has one. */
+  readonly choir?: unknown;
 }
 
 /** Objectives with no core to protect (D143 R9; app/loadout.ts's CORELESS). */
@@ -198,10 +202,12 @@ function dimmed(id: VeteranModifierId, save: SaveData, map: VeteranMap): string 
     }
     case 'no_protocols':
       return save.unlocks.protocols.length > 0 ? null : VETERAN_DIM_TEXT.no_protocols;
+    case 'rush_hour':
+      // A choir map's walk sets its own pace (N6): shorter countdowns would only bring a wall back.
+      return map.choir === undefined || map.choir === null ? null : VETERAN_DIM_TEXT.own_pace;
     case 'hardened_hides':
     case 'double_time':
     case 'lean_budget':
-    case 'rush_hour':
       return null; // they bite on every map
     default:
       return assertNever(id);

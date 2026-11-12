@@ -267,37 +267,47 @@ export function earn(state: SimState, amount: number): void {
   state.stats.creditsEarned += amount;
 }
 
-/** One economy stat's modifiers: the lowest `set` (or null), Σ flat, and Σ pct. */
+/**
+ * One economy stat's modifiers: the lowest `set` (or null), the highest `atLeast` (or null),
+ * Σ flat, and Σ pct.
+ */
 interface EconomyTerms {
   readonly set: number | null;
+  readonly atLeast: number | null;
   readonly flat: number;
   readonly pct: number;
 }
 
 function economyTerms(modifiers: readonly Modifier<IdSpace>[], stat: EconomyStat): EconomyTerms {
   let set: number | null = null;
+  let atLeast: number | null = null;
   let flat = 0;
   let pct = 0;
   for (const m of modifiers) {
     if (m.kind !== 'economy' || m.stat !== stat) continue;
     if (m.set !== undefined) set = set === null ? m.set : Math.min(set, m.set);
+    if (m.atLeast !== undefined) atLeast = atLeast === null ? m.atLeast : Math.max(atLeast, m.atLeast);
     flat += m.flat ?? 0;
     pct += m.pct ?? 0;
   }
-  return { set, flat, pct };
+  return { set, atLeast, flat, pct };
 }
 
-/** `(set ?? base + Σ flat) × (1 + Σ pct)`, rounded to a whole number (the stacking formula). */
+/**
+ * `((set ?? max(base, atLeast)) + Σ flat) × (1 + Σ pct)`, rounded to a whole number (the stacking
+ * formula; D157: Story's `atLeast` is a floor, and a `set` such as Glass Core's still wins).
+ */
 function economyValue(base: number, t: EconomyTerms): number {
-  return Math.round(((t.set ?? base) + t.flat) * (1 + t.pct));
+  const floored = t.atLeast !== null && t.atLeast > base ? t.atLeast : base;
+  return Math.round(((t.set ?? floored) + t.flat) * (1 + t.pct));
 }
 
 /**
  * Applies the run's economy modifiers to a fresh state (createSim): starting credits (Seed
- * Money, Head Start, Story +50%), core integrity (Reinforced Core, Story's `set: 30`; at least
- * 1), a Protect map's asset integrity (Story ×1.5; at least 1), Emergency Bulkhead's leak absorption, and the per-kill, early-call, and sell percentages in
+ * Money, Head Start, Story +50%), core integrity (Reinforced Core, Story's `atLeast: 30`,
+ * Glass Core's `set: 5`; at least 1), a Protect map's asset integrity (Story ×1.5; at least 1), Emergency Bulkhead's leak absorption, and the per-kill, early-call, and sell percentages in
  * `state.economy`. Throws a RangeError for a shape the sim doesn't run (refuse, don't ignore):
- * `set` or `flat` on `bounty` or `earlyCallBonus`, which progression only ever raises by percent.
+ * `set`, `atLeast` or `flat` on `bounty` or `earlyCallBonus`, which progression only ever raises by percent.
  * `salvage` and `clearSpeed` are refused by their gates (M3).
  */
 export function applyRunModifiers(
@@ -319,7 +329,9 @@ export function applyRunModifiers(
   const errors: string[] = [];
   for (const stat of ['bounty', 'earlyCallBonus'] as const) {
     const t = economyTerms(modifiers, stat);
-    if (t.set !== null || t.flat !== 0) errors.push(`economy '${stat}' takes pct only`);
+    if (t.set !== null || t.atLeast !== null || t.flat !== 0) {
+      errors.push(`economy '${stat}' takes pct only`);
+    }
   }
   if (errors.length > 0) throw new RangeError(`invalid SimConfig:\n- ${errors.join('\n- ')}`);
   state.economy.bountyPct = economyTerms(modifiers, 'bounty').pct;

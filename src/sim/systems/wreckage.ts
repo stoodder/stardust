@@ -110,15 +110,17 @@ function economyStat(
   extraPct = 0,
 ): number {
   let set: number | null = null;
+  let floor = base;
   let flat = 0;
   let pct = 0;
   for (const m of modifiers) {
     if (m.kind !== 'economy' || m.stat !== stat) continue;
     if (m.set !== undefined) set = set === null ? m.set : Math.min(set, m.set);
+    if (m.atLeast !== undefined && m.atLeast > floor) floor = m.atLeast; // D157: a floor
     flat += m.flat ?? 0;
     pct += m.pct ?? 0;
   }
-  return ((set ?? base) + flat) * (1 + pct + extraPct);
+  return ((set ?? floor) + flat) * (1 + pct + extraPct);
 }
 
 /**

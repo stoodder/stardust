@@ -52,6 +52,17 @@ describe('veteran offers (unlock on Victory; only what bites)', () => {
     expect(a1.find((o) => o.id === 'radio_silence')?.available).toBe(true);
   });
 
+  it("dims Rush Hour on a choir map: the walk sets its own pace (N6), and it's never applied", () => {
+    const won = withVeteranPick(DEV_SAVES.after_fin_stay.build(), 'fin_m01', ['rush_hour']);
+    const rush = veteranOffers(won, MAPS.fin_m01).find((o) => o.id === 'rush_hour');
+    expect(rush).toEqual({ id: 'rush_hour', available: false, why: 'The walk sets its own pace.' });
+    expect(activeVeteranMods(won, MAPS.fin_m01)).toEqual([]);
+    // Every other map keeps it.
+    expect(veteranOffers(actTwo(), MAPS[RIG]).find((o) => o.id === 'rush_hour')?.available).toBe(
+      true,
+    );
+  });
+
   it('applies only the picks that bite (a dimmed pick stays on file, unapplied)', () => {
     const early = withVeteranPick(DEV_SAVES.after_a1m1.build(), 'a1_m01', [
       'short_handed',
