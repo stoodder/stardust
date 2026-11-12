@@ -89,7 +89,7 @@ function firstLiveBoss(state: SimState): { readonly x: number; readonly y: numbe
   const pool = state.enemies;
   for (let i = 0; i < pool.used; i++) {
     const e = pool.items[i]!; // i < used ≤ items.length
-    if (e.alive && e.def !== null && e.def.boss !== null && e.def.neutral !== true) return e;
+    if (e.alive && e.def !== null && e.def.boss !== null && !e.def.neutral) return e;
   }
   return null;
 }

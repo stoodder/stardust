@@ -38,9 +38,10 @@ describe("[locked-abilities]: slot 1 never holds the companion's own ability", (
   });
 
   it("rejects every build beside the map's present companion who brings it", () => {
-    expect(
-      errors({ referenceProfile: TD, companion: { id: 'quill', state: 'present' } }),
-    ).toEqual([clash('parBuild', 'quill'), clash('noCounterBuilds.splash', 'quill')]);
+    expect(errors({ referenceProfile: TD, companion: { id: 'quill', state: 'present' } })).toEqual([
+      clash('parBuild', 'quill'),
+      clash('noCounterBuilds.splash', 'quill'),
+    ]);
   });
 
   it('on a pick list, checks par beside every pick (#15) and the others beside their own', () => {

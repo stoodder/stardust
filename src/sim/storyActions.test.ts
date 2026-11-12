@@ -32,7 +32,7 @@ import { createScratch, type TickContext } from './tick.ts';
 import { FIXTURE_CONTENT, fixtureConfig, type FixtureIds } from './__fixtures__/sim.ts';
 
 const FX_MAP = FIXTURE_CONTENT.maps.fx_map;
-type Ev = SimEvent<IdSpace>;
+type Ev = SimEvent<FixtureIds>;
 type Action = CompiledScriptAction<IdSpace>;
 
 /** fx_map whose script is `events` (each `[trigger, actions]`), and a sim on it. */
@@ -65,7 +65,7 @@ const mut = (sim: Sim<FixtureIds>): SimState => sim.state as unknown as SimState
 function stepTo(sim: Sim<FixtureIds>, tick: number, out: Ev[] = []): Ev[] {
   while (sim.state.tick <= tick) {
     sim.step();
-    sim.drainEvents(out as SimEvent<FixtureIds>[]);
+    sim.drainEvents(out);
   }
   return out;
 }
@@ -75,7 +75,7 @@ function apply(sim: Sim<FixtureIds>, cmd: Parameters<Sim<FixtureIds>['enqueue']>
   const out: Ev[] = [];
   sim.enqueue(cmd);
   sim.applyPending();
-  sim.drainEvents(out as SimEvent<FixtureIds>[]);
+  sim.drainEvents(out);
   return out;
 }
 
@@ -103,9 +103,9 @@ describe("restoreTowerClass 'lastRevoked' (the finale's \"Not Everglow.\")", () 
     expect(refund).toBe(100); // M6's 100% of what was paid
     expect(sim.state.revoked.towers).toEqual(['fx_gun']);
     // Revoked: a build of it is refused.
-    expect(of(apply(sim, { type: 'build', tower: 'fx_gun', tile: [3, 1] }), 'CommandRejected')).toEqual([
-      expect.objectContaining({ reason: 'revoked' }),
-    ]);
+    expect(
+      of(apply(sim, { type: 'build', tower: 'fx_gun', tile: [3, 1] }), 'CommandRejected'),
+    ).toEqual([expect.objectContaining({ reason: 'revoked' })]);
     const credits = sim.state.credits;
     const after = stepTo(sim, 10);
     expect(of(after, 'ClassRestored')).toEqual([{ type: 'ClassRestored', tower: 'fx_gun' }]);
@@ -119,9 +119,9 @@ describe("restoreTowerClass 'lastRevoked' (the finale's \"Not Everglow.\")", () 
       expect.objectContaining({ reason: 'revoked' }),
     ]);
     // Buildable again, on its old tile too.
-    expect(of(apply(sim, { type: 'build', tower: 'fx_gun', tile: [1, 1] }), 'TowerBuilt')).toHaveLength(
-      1,
-    );
+    expect(
+      of(apply(sim, { type: 'build', tower: 'fx_gun', tile: [1, 1] }), 'TowerBuilt'),
+    ).toHaveLength(1);
   });
 
   it('restores only the last class revoked, and does nothing with none revoked', () => {
@@ -139,6 +139,23 @@ describe("restoreTowerClass 'lastRevoked' (the finale's \"Not Everglow.\")", () 
     expect(sim.state.revoked.towers).toEqual(['fx_gun']);
   });
 });
+
+/** fx_map with one objective whose `onComplete` runs `onComplete`. */
+function withObjective(onComplete: readonly Action[]): CompiledMapDef<IdSpace> {
+  return {
+    ...FX_MAP,
+    objectives: [
+      {
+        id: 'x',
+        name: 'x',
+        description: 'x',
+        condition: { stat: 'lateSells', lte: 0 },
+        intel: 0,
+        onComplete,
+      },
+    ],
+  };
+}
 
 const LOCK: Action = { lockAbility: 'fx_strike', on: true };
 const strike = { type: 'ability', slot: 1, target: [2, 2] } as const;
@@ -176,7 +193,13 @@ describe('lockAbility (Directive 0: a phase lock, never a revocation; T501)', ()
   it('`on: false` unlocks it; a repeat changes nothing; a setPhase before it in the event does not end it', () => {
     const sim = simWith([
       [{ tick: 3 }, [{ setPhase: 2 }, LOCK, LOCK]],
-      [{ tick: 6 }, [{ lockAbility: 'fx_strike', on: false }, { lockAbility: 'fx_strike', on: false }]],
+      [
+        { tick: 6 },
+        [
+          { lockAbility: 'fx_strike', on: false },
+          { lockAbility: 'fx_strike', on: false },
+        ],
+      ],
     ]);
     const out = stepTo(sim, 6);
     expect(of(out, 'AbilityLocked').map((e) => e.on)).toEqual([true, false]);
@@ -194,19 +217,6 @@ describe('lockAbility (Directive 0: a phase lock, never a revocation; T501)', ()
   });
 
   it('runs from an objective too; the restore and the echo run from map events only', () => {
-    const withObjective = (onComplete: readonly Action[]): CompiledMapDef<IdSpace> => ({
-      ...FX_MAP,
-      objectives: [
-        {
-          id: 'x',
-          name: 'x',
-          description: 'x',
-          condition: { stat: 'lateSells', lte: 0 },
-          intel: 0,
-          onComplete,
-        },
-      ],
-    });
     expect(unsupportedScript(withObjective([LOCK]))).toEqual([]);
     expect(unsupportedScript(withObjective([RESTORE, { spawnEcho: 'thrum' }]))).toEqual([
       "objective 'x': action restoreTowerClass runs from map events only",
@@ -259,6 +269,24 @@ function setup(): { state: SimState; ctx: TickContext } {
 
 const echoes = (state: SimState): Ally[] =>
   state.allies.items.filter((a) => a.alive && a.kind === 'echo');
+
+/** 30 ticks of the echo and the song with the leader by the road's far end (and the echo, or not). */
+function restRun(withEcho: boolean): { points: number; rested: number; resting: boolean } {
+  const { state, ctx } = setup();
+  state.choir.x = ROAD.xs[0]! + 1; // it starts inside the song
+  state.choir.y = ROAD.ys[0]!;
+  if (withEcho) spawnEcho(state, ctx, 'thrum');
+  for (let i = 0; i < 30; i++) {
+    echo(state, ctx);
+    song(state, ctx);
+  }
+  const a = echoes(state)[0];
+  return {
+    points: state.restPoints,
+    rested: state.stats.restedKills,
+    resting: a !== undefined && a.restTicks > 0,
+  };
+}
 
 describe("spawnEcho (Thrum's echo, the cleared path)", () => {
   it('walks in from the Halls (the road’s far end, else the boss), untargetable', () => {
@@ -326,48 +354,34 @@ describe("spawnEcho (Thrum's echo, the cleared path)", () => {
   });
 
   it('earns no rest points and costs none, inside the song or out (the trickle alone)', () => {
-    const run = (withEcho: boolean): { points: number; rested: number; resting: boolean } => {
-      const { state, ctx } = setup();
-      state.choir.x = ROAD.xs[0]! + 1; // it starts inside the song
-      state.choir.y = ROAD.ys[0]!;
-      if (withEcho) spawnEcho(state, ctx, 'thrum');
-      for (let i = 0; i < 30; i++) {
-        echo(state, ctx);
-        song(state, ctx);
-      }
-      const a = echoes(state)[0];
-      return {
-        points: state.restPoints,
-        rested: state.stats.restedKills,
-        resting: a !== undefined && a.restTicks > 0,
-      };
-    };
-    expect(run(true)).toEqual({ ...run(false), resting: true });
+    expect(restRun(true)).toEqual({ ...restRun(false), resting: true });
   });
 });
 
+/** A run with the restore, the lock, and the echo: its hash and event types. */
+function storyRun(): { hash: string; types: string[] } {
+  const sim = simWith(
+    [
+      [{ tick: 30 }, [REVOKE_ANY, LOCK, { setPhase: 2 }]],
+      [{ tick: 60 }, [RESTORE, { spawnEcho: 'thrum' }]],
+      [{ tick: 600 }, [{ setPhase: 3 }]],
+    ],
+    {},
+    { choir: CHOIR, song: SONG },
+  );
+  mut(sim).credits = 1000;
+  apply(sim, { type: 'build', tower: 'fx_gun', tile: [1, 1] });
+  sim.enqueue({ type: 'callWave' });
+  const out = stepTo(sim, 900);
+  return { hash: sim.hash(), types: out.map((e) => e.type) };
+}
+
 describe('determinism', () => {
   it('a run with the restore, the lock, and the echo replays to the same hash and events', () => {
-    const run = (): { hash: string; types: string[] } => {
-      const sim = simWith(
-        [
-          [{ tick: 30 }, [REVOKE_ANY, LOCK, { setPhase: 2 }]],
-          [{ tick: 60 }, [RESTORE, { spawnEcho: 'thrum' }]],
-          [{ tick: 600 }, [{ setPhase: 3 }]],
-        ],
-        {},
-        { choir: CHOIR, song: SONG },
-      );
-      mut(sim).credits = 1000;
-      apply(sim, { type: 'build', tower: 'fx_gun', tile: [1, 1] });
-      sim.enqueue({ type: 'callWave' });
-      const out = stepTo(sim, 900);
-      return { hash: sim.hash(), types: out.map((e) => e.type) };
-    };
-    const a = run();
+    const a = storyRun();
     expect(a.types).toEqual(
       expect.arrayContaining(['ClassRevoked', 'AbilityLocked', 'ClassRestored', 'AllySpawned']),
     );
-    expect(run()).toEqual(a);
+    expect(storyRun()).toEqual(a);
   });
 });
