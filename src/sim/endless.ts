@@ -61,6 +61,8 @@ const SPICE_SHARE = 0.12;
 const FILLER_WEIGHT = 0.6;
 /** The most blocks a category's staleness counts for (unmet categories count this much). */
 const MAX_AGE = 4;
+/** A top-up whose unit is over this share of the budget fills with plain units instead. */
+const TOP_UP_GRAIN = 0.04;
 /** A group aims at no fewer units than this when a unit fits (fewer reads as a stray). */
 const MIN_GROUP_COUNT = 3;
 
@@ -136,6 +138,23 @@ export function unitThreat(def: CompiledEnemyDef): number {
     Math.sqrt(def.speedTilesPerTick * TICK_HZ) *
     factor
   );
+}
+
+/**
+ * A unit's threat with what its death releases (maps.md § 6.2: "splitting: add the children's
+ * threat"), the generator's budget unit: a Fracture is its 190 and its two Shards' and their four
+ * Motes'. (The content validator's soft-trait share counts the parent alone: `unitThreat`.)
+ */
+export function threatWithBrood(
+  def: CompiledEnemyDef,
+  enemies: Readonly<Record<string, CompiledEnemyDef>>,
+): number {
+  let out = unitThreat(def);
+  const child = def.split === null ? undefined : enemies[def.split.enemy];
+  if (def.split !== null && child !== undefined && child !== def) {
+    out += def.split.count * threatWithBrood(child, enemies);
+  }
+  return out;
 }
 
 /** What a boss and its brood demand: its traits', and those of every unit its phases bring. */
@@ -223,6 +242,7 @@ export function endlessDefErrors(
     const e = Object.hasOwn(content.enemies, id) ? content.enemies[id] : undefined;
     if (e === undefined) out.push(`bosses: unknown enemy '${id}'`);
     else if (e.boss === null) out.push(`bosses: '${id}' is not a boss`);
+    else if (e.layer !== 'ground') out.push(`bosses: '${id}' doesn't walk the road`);
     else if (bossCategories(e, content.enemies).size > MAX_REQUIRED_COUNTERS) {
       out.push(`bosses: '${id}' demands more than ${MAX_REQUIRED_COUNTERS} counters`);
     }
@@ -447,7 +467,9 @@ function planWave(
   let coreBudget = budget;
   if (bossId !== null) {
     const boss = ctx.enemies[bossId];
-    drafts.push({ enemy: boss, count: 1, route: route(boss), role: 'boss' });
+    // A boss walks the road, the way it walked in the campaign (never a rift or the sky).
+    const road = routesFor(ctx.map, boss, w).filter((r) => r.kind === 'path');
+    drafts.push({ enemy: boss, count: 1, route: road[nextInt(rng, road.length)]!, role: 'boss' });
     coreBudget = Math.max(BOSS_ESCORT_MIN_SHARE * budget, budget - ctx.threat.get(boss.id)!);
   }
   // Spice: the next block's new category, in this block's last two waves.
@@ -521,9 +543,22 @@ function planWave(
   }
   let lightest = adjustable[0]!; // a wave has a core slot
   for (const d of adjustable) if (t(d) < t(lightest)) lightest = d;
+  // Coarse units overshoot a top-up: the block's plain units (no category) fill finer.
+  if (t(lightest) > TOP_UP_GRAIN * budget) {
+    let plain: CompiledEnemyDef<EnemyId> | null = null;
+    for (const e of core) {
+      if (ctx.cats.get(e.id)!.size > 0) continue;
+      if (plain === null || ctx.threat.get(e.id)! < ctx.threat.get(plain.id)!) plain = e;
+    }
+    if (plain !== null && ctx.threat.get(plain.id)! < t(lightest)) {
+      lightest = { enemy: plain, count: 0, route: route(plain), role: 'filler' };
+      drafts.push(lightest);
+    }
+  }
   // Strictly above the last wave without a boss (a boss wave is a spike, so it needn't be).
   const above = isBossWave ? -Infinity : floor;
   for (let now = sum(); now < lo || now <= above; now += t(lightest)) lightest.count++;
+  if (lightest.count === 0) drafts.splice(drafts.indexOf(lightest), 1);
   if (spice !== null) {
     while (spice.count > 0 && spice.count * t(spice) > SOFT_THREAT_MAX_SHARE * sum()) spice.count--;
     if (spice.count === 0) drafts.splice(drafts.indexOf(spice), 1);
@@ -566,7 +601,7 @@ export function endlessPlan(
   const threat = new Map<string, number>();
   const cats = new Map<string, ReadonlySet<CounterId>>();
   for (const e of Object.values(enemies)) {
-    threat.set(e.id, unitThreat(e));
+    threat.set(e.id, threatWithBrood(e, enemies));
     cats.set(e.id, categoriesOf(e));
   }
   const ctx: Ctx = {

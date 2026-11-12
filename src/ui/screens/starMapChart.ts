@@ -12,11 +12,7 @@ import {
   type StarMapPhase,
 } from '../../content/starMap.ts';
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
-import {
-  DAWN_ENDING_COLONY,
-  paintDawn,
-  type StarMapEnding,
-} from '../../content/sprites/starmap/dawn.ts';
+import type { DawnChartLook } from '../../content/sprites/starmap/dawn.ts';
 import type { RgbaImage } from '../../render/sprites/rasterize.ts';
 import { createRng, nextFloat, nextInt, type Rng } from '../../shared/rng.ts';
 
@@ -885,20 +881,22 @@ function paintLegs(c: Canvas, legs: readonly ChartLeg[], accent: ColorName): voi
  * The chart for a phase, its legs, and what the won maps changed on it (`STAR_MAP_CHANGES`): a
  * 640×360 opaque image.
  *
- * `ending` (T843; the post-game chart, T863 passes it): C5's answer, read only in the `dawn` phase.
- * It paints the first morning's light and the ending's landmarks (content/sprites/starmap/dawn.ts):
- * `stay`, the Long Walk open and gold through Wayside with Skitterkin walking it; `go`, the colony
- * unlit and one freighter's trail leaving east. Omitted or null (the finale won before C5 was
- * asked), the light alone.
+ * `dawn` (T843; the post-game chart, T863 passes it): `dawnChartLook(C5's answer)` from
+ * content/sprites/starmap/dawn.ts, built in the finale's lazy chunk (only its type is imported
+ * here), read only in the `dawn` phase. It paints the first morning's light and the ending's
+ * landmarks: `stay`, the Long Walk open and gold through Wayside with Skitterkin walking it; `go`,
+ * the colony unlit and one freighter's trail leaving east; no answer yet, the light alone.
+ * Omitted, the `dawn` phase's own look.
  */
 export function starMapChart(
   phase: StarMapPhase,
   legs: readonly ChartLeg[] = [],
   changes: readonly StarMapChange[] = [],
-  ending: StarMapEnding | null = null,
+  dawn: DawnChartLook | null = null,
 ): RgbaImage {
   const base = PHASE_LOOKS[phase];
-  const colony = phase === 'dawn' && ending !== null ? DAWN_ENDING_COLONY[ending] : null;
+  const ending = phase === 'dawn' ? dawn : null;
+  const colony = ending?.colony ?? null;
   const look: PhaseLook =
     colony === null ? base : { ...base, windows: colony.windows, domes: colony.domes };
   const night = phase === 'act3' || phase === 'dawn';
@@ -915,7 +913,7 @@ export function starMapChart(
   paintRigs(c, look);
   paintPlant(c, changes.includes('plant_dark') ? 'dark' : night ? 'blaze' : 'day');
   if (night) paintAct3Landmarks(c, look);
-  if (phase === 'dawn') paintDawn(c, ending);
+  ending?.paint(c);
   if (look.tint > 0) {
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) blend(c, x, y, look.shade, look.tint);
   }

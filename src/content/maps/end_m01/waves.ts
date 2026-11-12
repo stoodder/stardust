@@ -40,11 +40,11 @@ export const waves = defineWaves([
       { enemy: 'zoomer', count: 6, delaySec: 10, route: ROUTE },
     ],
   },
-  // W5 · 818: and two Bunchlings in the knot (the splash block's tell).
+  // W5 · 821: and a Bunchling in the knot (the splash to come).
   {
     groups: [
-      { enemy: 'nibbler', count: 16, intervalSec: 0.5, route: ROUTE },
-      { enemy: 'bunchling', count: 2, intervalSec: 2, delaySec: 3, route: ROUTE },
+      { enemy: 'nibbler', count: 15, intervalSec: 0.5, route: ROUTE },
+      { enemy: 'bunchling', count: 1, delaySec: 3, route: ROUTE },
       { enemy: 'zoomer', count: 8, delaySec: 9, route: ROUTE },
     ],
   },

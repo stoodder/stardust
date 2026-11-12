@@ -1,6 +1,7 @@
 // The Sector map at dawn (T843; art-direction § 10, the `dawn` row; design/core-loop.md § 1.1):
-// what the post-game chart paints over its `dawn` phase. The chart's generator
-// (ui/screens/starMapChart.ts) calls `paintDawn` once the finale is won, with C5's answer:
+// what the post-game chart paints over its `dawn` phase. The post-game screen (from the finale's
+// lazy chunk, so this stays out of the initial JS) passes `dawnChartLook(C5's answer)` to the
+// chart's generator (ui/screens/starMapChart.ts), which paints:
 // - Both endings: the first morning's light washes in from the east edge (a warm dither fading
 //   west across the valley); the Halls' mouth's sung glow is the `dawn` look's own.
 // - **Stay** (Wayside): the Long Walk runs open through the colony, gold, the domes that stood on it
@@ -178,4 +179,23 @@ export function paintDawn(c: ChartPixels, ending: StarMapEnding | null): void {
   paintMorning(c);
   if (ending === 'stay') paintStay(c);
   else if (ending === 'go') paintGo(c);
+}
+
+/** What the chart's generator takes for the `dawn` phase: the colony's look and the painter. */
+export interface DawnChartLook {
+  /** How the ending leaves the domes, or null (no answer yet: the phase's own look). */
+  readonly colony: (typeof DAWN_ENDING_COLONY)[StarMapEnding] | null;
+  /** Paints the light and the ending's landmarks (`paintDawn`). */
+  readonly paint: (c: ChartPixels) => void;
+}
+
+/**
+ * The `dawn` chart's look for C5's answer. The post-game screen builds it from the finale's lazy
+ * chunk and hands it to `starMapChart`, so none of this module reaches the initial JS.
+ */
+export function dawnChartLook(ending: StarMapEnding | null): DawnChartLook {
+  return {
+    colony: ending === null ? null : DAWN_ENDING_COLONY[ending],
+    paint: (c) => paintDawn(c, ending),
+  };
 }

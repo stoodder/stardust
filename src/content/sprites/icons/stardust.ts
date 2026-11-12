@@ -5,13 +5,12 @@
 // scratched into it at 1 px, glowing `stardust.sung`, and in the finale the same stone in its
 // warmer gold cycle: remembered, not undone.
 //
-// `icon.stardust` (8×8 with the outline, the currency icons' size): frame `icon` is Act I's gem
-// (the default a bare <Icon> shows), then a still per phase (`act1`, `act2`, `act3`, `finale`),
-// and per phase three shimmer frames `<phase>_0`–`_2` with an anim `shimmer_<phase>` (the palette
-// cycle: three colours rotating every 150 ms). `prop.gift_stone` is a stone set down in the world
-// (8×6 authored, 10×8 outlined): `sung_0`–`sung_2`, anim `shimmer`.
+// One 8×8 icon per phase (6×6 authored plus the outline, the currency icons' size), each with the
+// icons' single `icon` frame: `icon.stardust` (Act I), `icon.stardust_act2`, `icon.stardust_act3`,
+// `icon.stardust_finale` (`STARDUST_ICON` by phase). An icon is a still (its cycle at its first
+// step); the stone set down in the world, `prop.gift_stone` (props/gift_stone.ts), shimmers
+// (`painted` at each step of its cycle).
 import { defineSprite } from '../defineSprite.ts';
-import type { AnimDef, FrameDef } from '../types.ts';
 import { GLYPH } from './iconGen.ts';
 
 /** The cycle's step: three colours rotating every 150 ms (art-direction § 2, *Stardust shimmer*). */
@@ -109,33 +108,40 @@ export function painted(
   );
 }
 
-function iconFrames(): { frames: Record<string, FrameDef>; anims: Record<string, AnimDef> } {
-  const frames: Record<string, FrameDef> = {};
-  const anims: Record<string, AnimDef> = {};
-  for (const phase of STARDUST_PHASES) {
-    const template = phase === 'act1' || phase === 'act2' ? GEM : STONE;
-    for (let step = 0; step < 3; step++) {
-      frames[`${phase}_${step}`] = painted(template, CYCLES[phase], step);
-    }
-    frames[phase] = painted(template, CYCLES[phase], 0);
-    anims[`shimmer_${phase}`] = {
-      frames: [`${phase}_0`, `${phase}_1`, `${phase}_2`],
-      fps: SHIMMER_FPS,
-    };
-  }
-  frames['icon'] = painted(GEM, CYCLES.act1, 0);
-  return { frames, anims };
+/** A phase's icon: one `icon` frame (the icon contract), its cycle at its first step. */
+function stardustIcon<const Id extends string>(id: Id, phase: StardustPhase) {
+  const template = phase === 'act1' || phase === 'act2' ? GEM : STONE;
+  return defineSprite({
+    id,
+    size: { w: GLYPH, h: GLYPH },
+    anchor: { x: 0, y: 0 },
+    palette: 'everglow',
+    outline: 'auto',
+    legend: STARDUST_LEGEND,
+    frames: { icon: painted(template, CYCLES[phase], 0) },
+  });
 }
 
-const ICON = iconFrames();
+/** Acts I–II: Everglow's candy-cut gem, its cycle cooling in Act II. */
+export const iconStardust = stardustIcon('icon.stardust', 'act1');
+export const iconStardustAct2 = stardustIcon('icon.stardust_act2', 'act2');
+/** From Act III: the warrens' gift stone, `stardust.sung`; in the finale, its warmer gold. */
+export const iconStardustAct3 = stardustIcon('icon.stardust_act3', 'act3');
+export const iconStardustFinale = stardustIcon('icon.stardust_finale', 'finale');
 
-export const iconStardust = defineSprite({
-  id: 'icon.stardust',
-  size: { w: GLYPH, h: GLYPH },
-  anchor: { x: 0, y: 0 },
-  palette: 'everglow',
-  outline: 'auto',
-  legend: STARDUST_LEGEND,
-  frames: ICON.frames,
-  anims: ICON.anims,
-});
+/** Every phase's icon, in story order (the registry takes them all). */
+export const STARDUST_ICONS = [
+  iconStardust,
+  iconStardustAct2,
+  iconStardustAct3,
+  iconStardustFinale,
+] as const;
+
+/** The icon a screen shows for the phase the story is in (art-direction § 2's table). */
+export const STARDUST_ICON: Readonly<Record<StardustPhase, (typeof STARDUST_ICONS)[number]['id']>> =
+  {
+    act1: 'icon.stardust',
+    act2: 'icon.stardust_act2',
+    act3: 'icon.stardust_act3',
+    finale: 'icon.stardust_finale',
+  };

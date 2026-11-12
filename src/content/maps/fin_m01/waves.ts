@@ -212,7 +212,7 @@ export const PHASE_1: readonly WaveDef[] = [
     groups: [
       motes(10, 'halls', 0),
       maws(2, 'halls', 4, 4),
-      fractures(2, 'rift_nw', 2, 3),
+      fractures(4, 'rift_nw', 2, 2),
       silencers(2, 'rift_ne', 6, 4),
       maws(1, 'rift_ne', 12),
       moths(4, 'sky_n', 4),
@@ -266,10 +266,10 @@ export const PHASE_2_WAVES: readonly WaveDef[] = [
     countdownSec: DIRECTIVE_LULL,
     groups: [motes(10, 'halls', 0, 0.5), fractures(2, 'rift_nw', 3, 2)],
   },
-  // W21 · a Maw, and Rift Moths over the song
+  // W21 · a Maw, and Motes from the west rift
   {
     ...P2,
-    groups: [maws(1, 'halls', 0), motes(8, 'rift_nw', 2, 0.5), moths(3, 'sky_n', 4)],
+    groups: [maws(1, 'halls', 0), motes(8, 'rift_nw', 2, 0.5)],
   },
   // W22 · Fractures, and a Silencer up the Bore road
   {
@@ -285,10 +285,14 @@ export const PHASE_2_WAVES: readonly WaveDef[] = [
     ...P2,
     groups: [motes(8, 'rift_ne', 0, 0.4), motes(8, 'rift_nw', 2, 0.4), maws(1, 'halls', 4)],
   },
-  // W24 · Fractures, and Rift Moths from the east
+  // W24 · Fractures, and Rift Moths over the song (they scatter past it)
   {
     ...P2,
-    groups: [fractures(3, 'halls', 0, 2), moths(3, 'sky_e', 2), motes(10, 'bore_road', 4, 0.4)],
+    groups: [
+      fractures(3, 'halls', 0, 2),
+      moths(3, 'sky_n', 2),
+      motes(10, 'bore_road', 4, 0.4),
+    ],
   },
   // W25 · Maws and a Silencer
   {
@@ -299,10 +303,9 @@ export const PHASE_2_WAVES: readonly WaveDef[] = [
   {
     ...P2,
     groups: [
-      motes(14, 'halls', 0, 0.4),
-      fractures(3, 'rift_nw', 2, 2),
+      motes(10, 'halls', 0, 0.5),
+      fractures(2, 'halls', 6, 2),
       maws(1, 'rift_ne', 5),
-      moths(3, 'sky_w', 4),
     ],
   },
 ];

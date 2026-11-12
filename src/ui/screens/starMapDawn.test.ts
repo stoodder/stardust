@@ -1,17 +1,17 @@
 // The post-game Sector map's dawn by ending (T843; art-direction § 10, the `dawn` row): the morning's
 // light from the east, Wayside's open walk under Stay, the unlit colony and a freighter's trail
-// under Go. T863 passes C5's answer to `starMapChart`.
+// under Go. T863 passes `dawnChartLook(C5's answer)` to `starMapChart`.
 import { describe, expect, it } from 'vitest';
 import { luminance } from '../../content/palettes/color.ts';
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
-import { walkX } from '../../content/sprites/starmap/dawn.ts';
+import { dawnChartLook, walkX } from '../../content/sprites/starmap/dawn.ts';
 import { STAR_MAP_RESERVED } from '../../content/starMap.ts';
 import { starMapChart } from './starMapChart.ts';
 
 const CHANGES = ['plant_dark', 'domes_open'] as const;
-const none = starMapChart('dawn', [], CHANGES);
-const stay = starMapChart('dawn', [], CHANGES, 'stay');
-const go = starMapChart('dawn', [], CHANGES, 'go');
+const none = starMapChart('dawn', [], CHANGES, dawnChartLook(null));
+const stay = starMapChart('dawn', [], CHANGES, dawnChartLook('stay'));
+const go = starMapChart('dawn', [], CHANGES, dawnChartLook('go'));
 
 function is(img: ReturnType<typeof starMapChart>, x: number, y: number, c: ColorName): boolean {
   const i = (y * 640 + x) * 4;
@@ -44,7 +44,7 @@ function meanLum(img: ReturnType<typeof starMapChart>, x0: number, x1: number): 
 
 describe('the dawn chart by ending (T843)', () => {
   it('is the same picture every time', () => {
-    expect(starMapChart('dawn', [], CHANGES, 'stay').data).toEqual(stay.data);
+    expect(starMapChart('dawn', [], CHANGES, dawnChartLook('stay')).data).toEqual(stay.data);
   });
 
   it('warms the east with the first morning, and leaves the other phases alone', () => {
@@ -52,7 +52,9 @@ describe('the dawn chart by ending (T843)', () => {
     expect(meanLum(none, 560, 630) / meanLum(none, 20, 90)).toBeGreaterThan(
       meanLum(night, 560, 630) / meanLum(night, 20, 90),
     );
-    expect(starMapChart('act3', [], CHANGES, 'stay').data).toEqual(night.data);
+    expect(starMapChart('act3', [], CHANGES, dawnChartLook('stay')).data).toEqual(night.data);
+    // Without the post-game's look, the `dawn` phase is its own (no light, no landmarks).
+    expect(starMapChart('dawn', [], CHANGES).data).not.toEqual(none.data);
   });
 
   it('opens the Long Walk through Wayside under Stay: gold trail, Skitterkin walking it', () => {

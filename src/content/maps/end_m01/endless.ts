@@ -59,7 +59,7 @@ export const ENDLESS: EndlessDef = {
   waves: 100,
   blockWaves: 5,
   firstWaveThreat: 600,
-  growth: 1.08,
+  growth: 1.07,
   // The warm-up, then one counter, two, and three from the fourth block (W16–W20) on. A boss's
   // own categories can raise its block's count (Chitterbloom's first block is armor and splash).
   countersPerBlock: [0, 1, 2, 3],
