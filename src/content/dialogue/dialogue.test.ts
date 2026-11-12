@@ -25,6 +25,7 @@ import {
 import { SHARED_BARKS } from './barks/index.ts';
 import { FLAGS } from './flags.ts';
 import { ACT1_SPEAKERS } from './speakers.ts';
+import { POST_GAME_DIALOGUE_MAPS } from './types.ts';
 import { EXPRESSION_EXTRAS, SPEAKER_IDS } from './types.ts';
 
 describe('speakers (style-guide § 5.1)', () => {
@@ -66,7 +67,11 @@ describe('Old Thrum sings (T600b)', () => {
 
 describe('the dialogue registries', () => {
   it('has one entry per planned map, the finale included (T800b), in campaign order', () => {
-    expect(MAP_DIALOGUE.map((m) => m.map)).toEqual(CAMPAIGN_PLAN_IDS);
+    // Then the post-game's challenge briefings (T862), after the finale.
+    expect(MAP_DIALOGUE.map((m) => m.map)).toEqual([
+      ...CAMPAIGN_PLAN_IDS,
+      ...POST_GAME_DIALOGUE_MAPS,
+    ]);
   });
 
   it('files every scene under its own map, with a well-formed, unique id', () => {

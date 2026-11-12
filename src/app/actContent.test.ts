@@ -6,6 +6,7 @@ import { SFX_GROUPS, SFX_IDS, SFX, loadedSfx } from '../audio/sfx/index.ts';
 import { SPEECH_SFX } from '../audio/sfx/blips.ts';
 import { actOfMapId, actRank, LAZY_ACTS, STORY_ACTS } from '../content/acts/index.ts';
 import { CAMPAIGN_PLAN_IDS } from '../content/campaign.ts';
+import { POST_GAME_DIALOGUE_MAPS } from '../content/dialogue/types.ts';
 import { CODEX_ENTRIES, CODEX_IDS } from '../content/codex/index.ts';
 import { epilogueCards, epilogueFor, registerEpilogueCards } from '../content/dialogue/epilogue.ts';
 import { EPILOGUE_CARDS } from '../content/dialogue/fin/epilogue.ts';
@@ -35,14 +36,21 @@ describe('the lazy acts', () => {
       }
     }
     const lazyMaps = ALL_ACT_CHUNKS.flatMap((c) => c.story.dialogue.map((d) => d.map));
-    expect(lazyMaps).toEqual(CAMPAIGN_PLAN_IDS.filter((m) => mapAct(m) !== 1));
+    // The post-game's challenge briefings come with the finale's (T862).
+    expect(lazyMaps).toEqual([
+      ...CAMPAIGN_PLAN_IDS.filter((m) => mapAct(m) !== 1),
+      ...POST_GAME_DIALOGUE_MAPS,
+    ]);
   });
 
   it('the tests see every act registered (tools/vitestSetup.ts)', () => {
     expect(loadedActs()).toEqual([...STORY_ACTS]);
     expect(STORY_ACTS.every(actLoaded)).toBe(true);
     expect(actsLoaded('finale')).toBe(true);
-    expect(MAP_DIALOGUE.map((d) => d.map)).toEqual([...CAMPAIGN_PLAN_IDS]);
+    expect(MAP_DIALOGUE.map((d) => d.map)).toEqual([
+      ...CAMPAIGN_PLAN_IDS,
+      ...POST_GAME_DIALOGUE_MAPS,
+    ]);
   });
 
   it('lists the registries in campaign order, whatever order the acts register in', () => {

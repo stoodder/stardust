@@ -305,11 +305,12 @@ describe('the darkness system in a run', () => {
     state.schedule.startTick[1] = 10;
     darkness(state, ctx);
     expect([state.dark, t.lit, t.darkRangePct, state.events.length]).toEqual([0, true, 0, 0]);
-    // Every live map but Sundown itself (A2M6, once T522 registers it) is without darkness.
-    const sundown: string = 'a2_m06';
+    // Every live map but Sundown itself (A2M6) and its challenge, Lights Out (ch_m02, which
+    // reads A2M6's lighting; T862), is without darkness.
+    const dark: readonly string[] = ['a2_m06', 'ch_m02'];
     for (const map of Object.values(LIVE.maps)) {
       const id: string = map.id;
-      if (id === sundown) continue;
+      if (dark.includes(id)) continue;
       expect(hasDarkness(map), id).toBe(false);
     }
   });

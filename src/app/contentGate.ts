@@ -53,17 +53,22 @@ function preloadRenderer(): void {
 
 /**
  * Runs `go` once the acts through `acts` (and, for a battle, the renderer; with the finale, its
- * screens, T810; always, the portraits, T871) have loaded: at once, synchronously, when they already have. Then preloads the
- * next act and the renderer.
+ * screens, T810; but for the Title, the portraits, T871: it draws no face) have loaded: at once,
+ * synchronously, when they already have. Then preloads the next act and the renderer.
  */
-function gated<T>(acts: StoryAct, battle: boolean, go: () => Promise<T>): Promise<T> {
+function gated<T>(
+  acts: StoryAct,
+  battle: boolean,
+  go: () => Promise<T>,
+  faces = true,
+): Promise<T> {
   const screens = actRank(acts) >= actRank('finale');
   const after = (): void => {
     preloadActs(actAtRank(actRank(acts) + 1), reportLoadError);
     preloadRenderer();
   };
   if (
-    portraitsLoaded() &&
+    (!faces || portraitsLoaded()) &&
     actsLoaded(acts) &&
     (!battle || battleRendererLoaded()) &&
     (!screens || finaleScreensLoaded())
@@ -73,7 +78,7 @@ function gated<T>(acts: StoryAct, battle: boolean, go: () => Promise<T>): Promis
     return out;
   }
   return Promise.all([
-    loadPortraits(),
+    faces ? loadPortraits() : null,
     ensureActs(acts),
     battle ? loadBattleRenderer() : null,
     screens ? loadFinaleScreens() : null,
@@ -113,6 +118,7 @@ export function gateRouter(router: Router, defaults: BattleRequest = {}): Router
         case 'results':
           return gated(battleOrMenu(), false, () => router.goto(id, request));
         case 'title':
+          return gated(menuActs(), false, () => router.goto(id, request), false);
         case 'intake':
         case 'campaign':
         case 'base':

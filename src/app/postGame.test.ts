@@ -7,6 +7,7 @@ import type { IdSpace } from '../content/types.ts';
 import { DEV_SAVES } from '../meta/__fixtures__/devSaves.ts';
 import { endlessBest } from '../meta/endless.ts';
 import type { SaveData } from '../meta/saveData.ts';
+import { mapName } from '../meta/progress.ts';
 import { createSim, type SimConfig } from '../sim/index.ts';
 import { campaign } from '../ui/screens/state.ts';
 import { speed } from '../ui/state.ts';
@@ -104,6 +105,8 @@ describe('the post-game plate', () => {
     expect(parseSeed('-1')).toBeNull();
     expect(parseSeed('1.5')).toBeNull();
     expect(parseSeed('')).toBeNull();
+    expect(mapName('end_m01')).toBe('The Open Perimeter');
+    expect(mapName('ch_m01')).toBe('Skitterkin Only');
     expect(wavesText(1)).toBe('1 wave');
     expect(wavesText(23)).toBe('23 waves');
   });
