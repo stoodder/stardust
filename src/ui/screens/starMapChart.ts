@@ -899,7 +899,8 @@ export function starMapChart(
 ): RgbaImage {
   const base = PHASE_LOOKS[phase];
   const colony = phase === 'dawn' && ending !== null ? DAWN_ENDING_COLONY[ending] : null;
-  const look: PhaseLook = colony === null ? base : { ...base, windows: colony.windows };
+  const look: PhaseLook =
+    colony === null ? base : { ...base, windows: colony.windows, domes: colony.domes };
   const night = phase === 'act3' || phase === 'dawn';
   const c: Canvas = { data: new Uint8ClampedArray(W * H * 4) };
   paintRelief(c, look, stream(1));

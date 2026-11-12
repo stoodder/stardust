@@ -33,10 +33,18 @@ const SOUTH_GATE = { x: 304, y: 304 } as const;
  * Go leaves them dark. The generator paints the colony with it.
  */
 export const DAWN_ENDING_COLONY: Readonly<
-  Record<StarMapEnding, { readonly windows: 'lit' | 'none'; readonly domesOpen: boolean }>
+  Record<
+    StarMapEnding,
+    {
+      readonly windows: 'lit' | 'none';
+      readonly domes: 'day' | 'night';
+      readonly domesOpen: boolean;
+    }
+  >
 > = {
-  stay: { windows: 'lit', domesOpen: true },
-  go: { windows: 'none', domesOpen: false },
+  stay: { windows: 'lit', domes: 'day', domesOpen: true },
+  // Left behind: the shells gone dull (the night's steel), nothing burning in them.
+  go: { windows: 'none', domes: 'night', domesOpen: false },
 };
 
 /** 4×4 ordered dither (0–15), the chart's own. */
@@ -74,14 +82,17 @@ export function walkX(y: number): number {
 
 /**
  * The first morning's light: a warm wash from the east edge fading west (`finale.ground.3`, up to
- * 22%, its edge broken by the chart's dither so it never bands), stronger toward the north where
+ * 36%, its edge broken by the chart's dither so it never bands), stronger toward the north where
  * the faces turn to it.
  */
+/** Where the morning's wash starts (it fades in from here to the east edge). */
+const MORNING_FROM = 180;
+
 function paintMorning(c: ChartPixels): void {
   for (let y = 0; y < H; y++) {
-    for (let x = 300; x < W; x++) {
-      const t = (x - 300) / (W - 300);
-      const a = t * t * (0.22 - (y / H) * 0.08);
+    for (let x = MORNING_FROM; x < W; x++) {
+      const t = (x - MORNING_FROM) / (W - MORNING_FROM);
+      const a = t ** 1.5 * (0.36 - (y / H) * 0.12);
       if (a <= 0) continue;
       blend(c, x, y, bayer(x, y) < 8 ? 'finale.ground.3' : 'orange.1', a);
     }

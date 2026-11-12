@@ -14,6 +14,12 @@
   display: none;
 }
 
+/* The lead-in: the stage alone, the empty line panel held back until its first line (its Next
+   still takes a press, which cuts the lead-in short). */
+.dlg-stage[data-staging='dawn'] .dlg-fullscreen:not(:has(.dlg-line, .dlg-caption, .dlg-choices)) {
+  opacity: 0;
+}
+
 .dlg-stage[data-staging='dawn'] .dlg-fullscreen {
   position: relative;
   background: var(--panel-fill);
