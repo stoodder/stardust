@@ -285,9 +285,11 @@ export type Outcome = 'playing' | 'won' | 'lost';
  * - `setup`: before wave 1; no countdown runs until the player starts it (callWave).
  * - `spawning`: wave `wave` is spawning its groups.
  * - `held`: wave `wave` has finished spawning, and the next wave (`countdownAfter: 'bossEnded'`)
- *   waits for every boss fight to end before its countdown begins (A1M5's Quiet Wave; D097).
+ *   waits for every boss fight to end before its countdown begins (A1M5's Quiet Wave; D097), or
+ *   (`inPhase`) for the map's script phase to reach its own (the finale's Phase 2; T821).
  * - `countdown`: wave `wave` has finished spawning; the next wave's countdown is running.
- * - `done`: the last wave has finished spawning (the map ends when every wave resolves).
+ * - `done`: the last wave has finished spawning (the map ends when every wave resolves), or the
+ *   script phase has passed the phase of the wave in play (`inPhase`): nothing more walks in.
  */
 export type SchedulePhase = 'setup' | 'spawning' | 'held' | 'countdown' | 'done';
 
@@ -473,6 +475,8 @@ export interface SimState<K extends IdSpace = IdSpace> {
    */
   tilesOpened: string[];
   tilesOpenedTo: TileChar[];
+  /** Echo ids that have reached the song this run (`EchoArrived`; the `echoArrived` trigger, T821). */
+  echoesArrived: string[];
   /** Script groups spawned this run (`spawnWave`: A3M5's W10 surge; T706), in order. */
   scriptGroupsSpawned: string[];
   /**
@@ -633,6 +637,7 @@ export function createState(map: CompiledMapDef<IdSpace>, seed: number): SimStat
     trapSprung: [],
     tilesOpened: [],
     tilesOpenedTo: [],
+    echoesArrived: [],
     scriptGroupsSpawned: [],
     scriptGroupStart: [],
     scriptGroupWave: [],

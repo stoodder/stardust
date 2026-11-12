@@ -62,7 +62,10 @@ export interface CheckSpec {
  * either loses), so a loss is 0. A run that ends as an Escort (from the start, or by a pivot;
  * T305c) measures Evacuated instead: refugees evacuated ÷ the map's refugees × 100, 0 on a loss;
  * a Holdout measures it on every run (balance/holdout.ts; T605). A Choir (the finale; T804)
- * measures Voices: singers still singing ÷ the run's choir × 100, 0 on a loss.
+ * measures Voices at their lowest (`stats.voicesMin`: Dawn wakes the hushed): singers singing ÷
+ * the run's choir × 100, or, with a hush allowance (`ChoirDef.maxHushed`; T821), (base choir −
+ * singers hushed) ÷ base choir × 100, so every flag cell reads the same margin for the same
+ * hushes; 0 on a loss.
  */
 export function marginOf(
   r: Pick<
@@ -75,13 +78,18 @@ export function marginOf(
     | 'escortTotal'
     | 'voices'
     | 'choirSize'
+    | 'choirBase'
     | 'stats'
     | 'outcome'
   >,
 ): number {
   if (r.objective === 'choir') {
     if (r.outcome === 'lost' || r.choirSize <= 0) return 0;
-    return (100 * r.voices) / r.choirSize;
+    // The fewest singing (Dawn wakes the hushed: the score is the low point; T821). With a hush
+    // allowance, Voices % of the base choir: the same hushes read the same margin in every cell.
+    const voices = r.stats.voicesMin;
+    if (r.choirBase > 0) return (100 * (r.choirBase - (r.choirSize - voices))) / r.choirBase;
+    return (100 * voices) / r.choirSize;
   }
   if (r.objective === 'escort') {
     if (r.outcome === 'lost' || r.escortTotal <= 0) return 0;

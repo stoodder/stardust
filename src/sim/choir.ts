@@ -35,10 +35,11 @@
 //   (`hushSinger`): it stops singing (`vulnerability: 'never'`, so it can't be hushed again),
 //   trails at the back, and Voices falls by 1 (SingerHushed; `stats.voicesMin`). The Hollow unit
 //   turns Heavy as for any hush. A hushed singer forfeits Perfect ("no singer hushed"; a leak on
-//   a choir map forfeits nothing by itself: sim/medals.ts). `recoverSingers` (Dawn; T806/T821
-//   call it) has every hushed singer sing again.
+//   a choir map forfeits nothing by itself: sim/medals.ts). `recoverSingers` (Dawn: song.ts
+//   `restAll` calls it) has every hushed singer sing again; `stats.voicesMin` keeps the score.
 // - **Defeat** (cleanup): fewer than the run's floor still singing (`choirLost`): the map's
-//   `minVoices`, or ⌈`minVoicesPct` × the run's choir⌉ (at least 1; `minVoicesOf`). **Victory**
+//   choir's `maxHushed` allowance (the run's choir − it; T821), else the map's `minVoices`, or
+//   ⌈`minVoicesPct` × the run's choir⌉ (at least 1; `minVoicesOf`). **Victory**
 //   also waits for the leader to arrive (`choirWalking`).
 // - **The song's circles** (`songCircles`, `inSong`; T805 lays to rest inside them, render draws
 //   them): with a `song`, a circle round the leader of radius `baseRadius` × (`silentPct` +
@@ -320,7 +321,7 @@ export function hushSinger(state: SimState, a: Ally): boolean {
   return true;
 }
 
-/** Dawn (T806/T821 call it): every hushed singer sings again, and Voices is the whole choir. */
+/** Dawn (song.ts `restAll`, T821): every hushed singer sings again, and Voices is the whole choir. */
 export function recoverSingers(state: SimState): void {
   const pool = state.allies;
   for (let i = 0; i < pool.used; i++) {
@@ -335,14 +336,21 @@ export function recoverSingers(state: SimState): void {
 const PCT_EPS = 1e-9;
 
 /**
- * The run's Voices floor: the map's `minVoices`, else ⌈`minVoicesPct` × the run's choir⌉ (at
- * least 1), else null (no floor; a map without a choir).
+ * The run's Voices floor: with the choir's `maxHushed` the run's choir − `maxHushed` (at least 1),
+ * else the map's `minVoices`, else ⌈`minVoicesPct` × the run's choir⌉ (at least 1), else null (no
+ * floor; a map without a choir).
  */
 export function minVoicesOf(
   state: DeepReadonly<Pick<SimState, 'choir'>>,
   map: Pick<CompiledMapDef<IdSpace>, 'choir' | 'minVoices' | 'minVoicesPct'>,
 ): number | null {
   if (map.choir === null) return null;
+  const k = map.choir.maxHushed;
+  if (k !== null) {
+    // A hush allowance (T821): the run's choir − maxHushed, so every flag cell has the same room.
+    const n = state.choir.singers - k;
+    return n > 1 ? n : 1;
+  }
   if (map.minVoices !== null) return map.minVoices;
   if (map.minVoicesPct === null) return null;
   const n = Math.ceil(map.minVoicesPct * state.choir.singers - PCT_EPS);

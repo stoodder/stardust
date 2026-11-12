@@ -32,10 +32,11 @@ test('lazy content: the Title loads no later act; idle time preloads Act II and 
   const chunks = trackChunks(page);
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Stardust' })).toBeVisible();
+  // Ahead of need, in idle time: the next act a new game reaches, and the battle renderer.
+  await expect
+    .poll(() => [...chunks].toSorted(), { timeout: 10_000 })
+    .toEqual(['BattleScene', 'a2']);
   await settle(page);
-  expect(chunks.has('a3')).toBe(false);
-  expect(chunks.has('fin')).toBe(false);
-  // Ahead of need: the next act a new game reaches, and the battle renderer.
   expect([...chunks].toSorted()).toEqual(['BattleScene', 'a2']);
 });
 

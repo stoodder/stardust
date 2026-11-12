@@ -140,7 +140,7 @@ describe('validation of the finale seams', () => {
       "[choir] maps.dev_voices.choir: a 'choir' map needs a choir",
     ]);
     expect(errors(voices({ minVoices: 4 }), 'choir')).toEqual([
-      '[choir] maps.dev_voices.minVoices: a choir map gives one of minVoices or minVoicesPct',
+      '[choir] maps.dev_voices.minVoices: a choir map gives one of minVoices, minVoicesPct, or choir.maxHushed',
     ]);
     expect(errors(voices({ minVoicesPct: 1.5, meterLabel: 'evacuated' }), 'choir')).toEqual([
       '[choir] maps.dev_voices.minVoicesPct: 1.5 must be in (0, 1]',
@@ -262,6 +262,7 @@ describe('validation of the finale seams', () => {
       { id: 'f', on: { tick: 2 }, when: { phaseAtLeast: 5 }, actions: [] },
     ] as const;
     expect(errors(phases({ events }), 'script')).toEqual([
+      "[script] maps.dev_phases.winBy: winBy 'script' needs an endMap: 'won' action",
       '[script] maps.dev_phases.events[0].actions[0]: setPhase 1 must be a whole phase ≥ 2',
       "[script] maps.dev_phases.events[1].actions[0]: checkpoint label 'Halls' must be snake_case",
       "[script] maps.dev_phases.events[2].actions[0]: echo id 'Thrum' must be snake_case",

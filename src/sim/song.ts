@@ -26,13 +26,15 @@
 // - `restAll` (Dawn's action; map events only) lays every live Hollow unit to rest, a scattered
 //   one too, for no points and no kill: `LaidToRest` with 0 points, gone (marked leaving, so
 //   cleanup books it to its wave and nothing else). A whole boss is left to its `layToRest`
-//   ending (T808).
+//   ending (T808). It is Dawn's action, so it also wakes every hushed singer (`recoverSingers`:
+//   Voices is the whole choir again, while `stats.voicesMin` keeps the run's score) and emits
+//   DawnBroke (T821).
 // Runs after the projectiles, before cleanup (tick.ts): every kill of the tick is dead and not yet
 // released, so this pass sees them all. Allocation-free except its events.
 import type { CompiledEnemyDef, CompiledSong } from '../content/compiled.ts';
 import { SCATTER_DRIFT_TILES } from '../content/rules.ts';
 import type { ScriptFlags } from './config.ts';
-import { inSong } from './choir.ts';
+import { inSong, recoverSingers } from './choir.ts';
 import { isSplitBorn } from './enemyAbilities/bossSplit.ts';
 import { wasKilled } from './enemyAbilities/split.ts';
 import type { Enemy } from './entities.ts';
@@ -113,8 +115,13 @@ export function songBossHit(state: SimState, boss: Enemy, damage: number): void 
   if (state.restTarget > 0 && damage > 0) boss.songDamage += damage;
 }
 
-/** Lays every live Hollow unit to rest (the `restAll` action: Dawn); a whole boss is T808's. */
+/**
+ * Dawn (the `restAll` action): lays every live Hollow unit to rest (a whole boss is T808's), wakes
+ * every hushed singer (choir.ts `recoverSingers`), and emits DawnBroke (T821).
+ */
 export function restAll(state: SimState, _ctx: TickContext): void {
+  recoverSingers(state);
+  emit(state, { type: 'DawnBroke' });
   const pool = state.enemies;
   for (let i = 0; i < pool.used; i++) {
     const e = pool.items[i]!; // i < used ≤ items.length

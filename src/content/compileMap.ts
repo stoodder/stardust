@@ -192,6 +192,7 @@ export function compileMap<K extends IdSpace>(
     choir,
     song,
     timers,
+    winBy: def.winBy ?? 'waves',
     builds,
   };
 }
@@ -566,6 +567,7 @@ function compileWave<K extends IdSpace>(
     countdownAfter: wave.countdownAfter ?? null,
     teach: wave.teach ?? false,
     noCall: wave.noCall === true,
+    inPhase: wave.inPhase ?? 0,
     groups,
     lastSpawnTicks,
   };

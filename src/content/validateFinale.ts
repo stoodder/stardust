@@ -1,7 +1,8 @@
 // The finale's validation (T800a seams; design/maps.md § 5.5; the rule list is validateMap.ts's
 // header, and the boss phase kinds are validate.ts's [enemy-ability]):
 // - [choir]: a `choir` map has a `choir` (and only it does), and exactly one of `minVoices` (a
-//   whole number ≥ 1) or `minVoicesPct` (in (0, 1]); its meter reads `voices`. The choir walks a
+//   whole number ≥ 1), `minVoicesPct` (in (0, 1]), or the choir's `maxHushed` (a whole number ≥ 1;
+//   T821); its meter reads `voices`. The choir walks a
 //   ground path of the map and stops at a marker within 1 tile of it; its base singers are a whole
 //   number ≥ 1, its pace and halt distance > 0, its `walkWaves` (T820) a whole 1..waves; each flag group adds a whole, non-zero number of
 //   singers, and the smallest choir any flags allow still has one; Thrum's radius bonus is ≥ 0;
@@ -21,7 +22,9 @@
 //   (phase 1 from the start, a later one by some `setPhase`), with `afterSec` ≥ 0; `setPhase`
 //   names a whole phase ≥ 2; a `checkpoint` label and an echo id are snake_case; `setLighting`
 //   names a lighting set (content/lightingSets.ts: `dawn`); `restoreTowerClass` needs a
-//   `revokeTowerClass` on the map.
+//   `revokeTowerClass` on the map. T821: `echoArrived` names an echo some `spawnEcho` sends; a
+//   `winBy: 'script'` map has an `endMap: 'won'` action; a wave's `inPhase` is a phase some
+//   `setPhase` reaches.
 import { LIGHTING_SETS, lightingSet } from './lightingSets.ts';
 import { BOSS_ABILITY_TELL_SEC, BOSS_MIN_TELL_SEC } from './rules.ts';
 import { checkFlagGate } from './validateM7.ts';
@@ -65,12 +68,17 @@ function validateChoir(
   const isChoir = def.objective === 'choir';
   if (isChoir && c === undefined) issues.add('choir', w, "a 'choir' map needs a choir");
   if (!isChoir && c !== undefined) issues.add('choir', w, "only a 'choir' map has a choir");
-  const floors = (def.minVoices !== undefined ? 1 : 0) + (def.minVoicesPct !== undefined ? 1 : 0);
+  const floors =
+    (def.minVoices !== undefined ? 1 : 0) +
+    (def.minVoicesPct !== undefined ? 1 : 0) +
+    (c?.maxHushed !== undefined ? 1 : 0);
   if (isChoir ? floors !== 1 : floors > 0) {
     issues.add(
       'choir',
       `${where}.minVoices`,
-      isChoir ? 'a choir map gives one of minVoices or minVoicesPct' : "only a 'choir' map has one",
+      isChoir
+        ? 'a choir map gives one of minVoices, minVoicesPct, or choir.maxHushed'
+        : "only a 'choir' map has one",
     );
   }
   if (def.minVoices !== undefined && !isPositiveInt(def.minVoices)) {
@@ -108,6 +116,9 @@ function validateChoir(
     checkFlagGate(issues, g, at);
     flagsRead.push([g.flag, at]);
   };
+  if (c.maxHushed !== undefined && !isPositiveInt(c.maxHushed)) {
+    issues.add('choir', `${w}.maxHushed`, 'must be a whole number ≥ 1');
+  }
   let fewest = c.singers;
   for (const [i, g] of (c.groups ?? []).entries()) {
     const at = `${w}.groups[${i}]`;
@@ -218,6 +229,21 @@ function validateFinaleScripts(issues: Issues, def: MapDef<IdSpace>, where: stri
     if (def.song === undefined) issues.add('script', w, `${what} needs a song (MapDef.song)`);
   };
   const revokes = actions.some(([a]) => 'revokeTowerClass' in a);
+  const echoes = new Set(actions.flatMap(([a]) => ('spawnEcho' in a ? [a.spawnEcho] : [])));
+  // A scripted win (T821) needs the action that wins it.
+  if (def.winBy === 'script' && !actions.some(([a]) => 'endMap' in a && a.endMap === 'won')) {
+    issues.add('script', `${where}.winBy`, "winBy 'script' needs an endMap: 'won' action");
+  }
+  if (def.winBy !== undefined && def.winBy !== 'script') {
+    issues.add('script', `${where}.winBy`, `unknown '${String(def.winBy)}'`);
+  }
+  // A wave of a script phase (`inPhase`; T821) waits for a phase some setPhase reaches.
+  for (const [i, wave] of def.waves.entries()) {
+    const n = wave.inPhase;
+    if (n !== undefined && Number.isInteger(n) && n >= 2 && !actions.some(([a]) => 'setPhase' in a && a.setPhase === n)) {
+      issues.add('script', `${where}.waves[${i}].inPhase`, `no setPhase action reaches phase ${n}`);
+    }
+  }
   for (const [a, w] of actions) {
     if ('startTimer' in a) {
       started.add(a.startTimer);
@@ -270,6 +296,9 @@ function validateFinaleScripts(issues: Issues, def: MapDef<IdSpace>, where: stri
       }
     }
     if ('timerFull' in t) timer(t.timerFull, w);
+    if ('echoArrived' in t && !echoes.has(t.echoArrived)) {
+      issues.add('script', w, `echoArrived '${t.echoArrived}': no spawnEcho sends that echo`);
+    }
     if ('restProgressPct' in t) {
       needsSong(w, 'restProgressPct');
       const p = t.restProgressPct;

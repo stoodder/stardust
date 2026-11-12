@@ -17,7 +17,8 @@
 //   overlap, so they can resolve out of order; one tick resolves in wave order.
 // - Victory when every wave has resolved (the last wave's enemies are all gone, and so is
 //   everything before it) with integrity above 0, no refugee is still on the road (T305c), and
-//   the choir has reached its stop (T804).
+//   the choir has reached its stop (T804). A map with `winBy: 'script'` (the finale, T821) never
+//   wins this way: only its `endMap: 'won'` action wins it (systems/triggers.ts).
 // It also keeps the medals (sim/medals.ts): leaks book against Perfect Core, `passedMarker`
 // conditions latch (sim/conditions.ts) while this tick's dead are still in their pools, a
 // Challenge that can no longer hold is forfeited, and a loss or win settles every medal just
@@ -106,8 +107,14 @@ export function cleanup(state: SimState, ctx: TickContext): void {
     emit(state, { type: 'WaveCleared', wave: w + 1, bonus });
     payWaveIncome(state, ctx.config.modifiers, w + 1); // the Crane's, then interest (T408)
   }
-  // Victory waits for the road to empty and the choir to arrive (T804).
-  if (allResolved && refugeesOnRoad(state) === 0 && !choirWalking(state, ctx.map)) {
+  // Victory waits for the road to empty and the choir to arrive (T804); a scripted win (`winBy:
+  // 'script'`, the finale's Dawn; T821) comes only from an `endMap: 'won'` action.
+  if (
+    ctx.map.winBy === 'waves' &&
+    allResolved &&
+    refugeesOnRoad(state) === 0 &&
+    !choirWalking(state, ctx.map)
+  ) {
     state.outcome = 'won';
     settleWin(state, ctx.map, ctx);
     settleObjectivesWin(state, ctx.map, ctx);

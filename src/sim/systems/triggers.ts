@@ -173,6 +173,7 @@ function reached(state: SimState, ctx: TickContext, on: CompiledScriptTrigger<Id
   }
   if ('timerFull' in on) return timerFull(state, ctx.map, on.timerFull);
   if ('phase' in on) return phaseReached(state, on.phase, on.afterTicks);
+  if ('echoArrived' in on) return state.echoesArrived.includes(on.echoArrived); // T821
   return false; // refused by createSim (unsupportedScript)
 }
 
@@ -267,7 +268,8 @@ export function runScriptAction(
 export const SCRIPT_GATES: Readonly<Record<string, string>> = Object.freeze({
   // Triggers (D141, D146, D154). A3M5's `objectiveCompleted` runs since T706; the finale's choir
   // at a marker (`choirAt`, sim/choir.ts), a full timer (`timerFull`), and a script phase
-  // (`phase`) since T806, and the song's rest progress (`restProgressPct`, sim/song.ts) since T805.
+  // (`phase`) since T806, the song's rest progress (`restProgressPct`, sim/song.ts) since T805, and
+  // Thrum's echo at the song (`echoArrived`, sim/echo.ts) since T821.
   // Actions (D141, D146, D154). M6's Clean Exit (revocations, QUILL's lockout) runs since T606,
   // M7's script groups (`spawnWave`) since T706, opened tiles (`openTile`) since T707. The
   // finale's phases, timers, a lighting set at a script moment (Dawn; wave-paced light is map
@@ -338,7 +340,8 @@ function unsupportedTrigger(
     !('choirAt' in on) && // T806
     !('timerFull' in on) && // T806
     !('phase' in on) && // T806
-    !('restProgressPct' in on) // T805 (sim/song.ts)
+    !('restProgressPct' in on) && // T805 (sim/song.ts)
+    !('echoArrived' in on) // T821 (sim/echo.ts)
   ) {
     const key = Object.keys(on).join('/');
     out.push(`${where} ${key} ${notYet(key)}`);

@@ -75,6 +75,11 @@ export interface RunSummary {
   /** A Choir map's Voices at the end and the run's choir (both 0 without one; T804). */
   readonly voices: number;
   readonly choirSize: number;
+  /**
+   * A choir with a hush allowance (`ChoirDef.maxHushed`; T821): its base choir (`singers`), which
+   * the margin reads Voices against (balance/checks.ts `marginOf`); 0 otherwise.
+   */
+  readonly choirBase: number;
   /** Credits left at the end (unspent). */
   readonly credits: number;
   /** The last wave started when the map was lost, or null. */
@@ -514,6 +519,7 @@ export function createRunTracker<K extends IdSpace>(
         maxLost: escortMaxLost(state, map),
         voices: state.choir.voices,
         choirSize: state.choir.singers,
+        choirBase: map.choir !== null && map.choir.maxHushed !== null ? map.choir.singers : 0,
         credits: state.credits,
         lostAtWave,
         stats: {

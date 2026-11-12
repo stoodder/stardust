@@ -161,6 +161,8 @@ export const songMap = dev.defineMap({
 export const phasesMap = dev.defineMap({
   ...LONG_WALK,
   id: 'dev_phases',
+  // Won by Dawn's hold, not by the Unsung's wave resolving as it is laid to rest (T821).
+  winBy: 'script',
   threatIntel: ['clustered', 'boss'],
   choir: CHOIR,
   song: SONG,

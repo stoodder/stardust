@@ -82,11 +82,16 @@ export async function boot(): Promise<void> {
   const lazy = new URLSearchParams(window.location.search).get('lazy') === '1';
   // A test boot also loads the battle renderer up front, so no idle fetch is left in flight when a
   // flow navigates away (a failed request fails a smoke flow).
-  if (devServer || (params.test && !lazy))
-    await Promise.all([ensureAllActs(), loadBattleRenderer()]);
+  const upFront = devServer || (params.test && !lazy);
   // The dev fixtures (the dev battles and saves) stay out of the initial JS: a dev URL (`?test=1`,
   // or `?map=` naming no live map) loads their chunk first (devRegistry.ts; D150).
-  if (params.test || (params.map !== null && !hasBattleMap(params.map))) await loadDevFixtures();
+  const devFixtures = params.test || (params.map !== null && !hasBattleMap(params.map));
+  // The three chunks load side by side.
+  await Promise.all([
+    upFront ? ensureAllActs() : null,
+    upFront ? loadBattleRenderer() : null,
+    devFixtures ? loadDevFixtures() : null,
+  ]);
   const devSave = params.save !== null && loadDevSave(params.save);
   if (params.save !== null && !devSave) logError(`boot: unknown dev save '${params.save}'`);
   const gameRoot = requireElement('game');

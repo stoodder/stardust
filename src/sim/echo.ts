@@ -12,7 +12,8 @@
 // - **At rest:** on the tick it stands inside a song circle (choir.ts `inSong`, inclusive; it
 //   reaches the leader at worst, inside her circle) it stops, `EchoArrived { id }` fires, and
 //   `restTicks` counts up: render turns it warm gold where it stands and rises. After
-//   ECHO_RISE_SEC it is gone (`AllyRemoved`).
+//   ECHO_RISE_SEC it is gone (`AllyRemoved`). Its id is latched in `state.echoesArrived`, which the
+//   `{ echoArrived: id }` trigger reads (Pebble's "She heard": T821).
 // - **No rest points:** it isn't a Hollow unit, so the song (sim/song.ts) never counts it, either
 //   way; nor does it touch Voices, the medals, or the run's stats.
 // Allocation-free per tick.
@@ -59,7 +60,9 @@ export function echo(state: SimState, ctx: TickContext): void {
       if (!inSong(state, ctx.map, a.x, a.y)) continue;
     }
     a.restTicks = 1;
-    emit(state, { type: 'EchoArrived', id: a.enemyId ?? '' });
+    const id = a.enemyId ?? '';
+    if (!state.echoesArrived.includes(id)) state.echoesArrived.push(id); // the `echoArrived` trigger
+    emit(state, { type: 'EchoArrived', id });
   }
 }
 

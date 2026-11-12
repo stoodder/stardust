@@ -1329,6 +1329,13 @@ export interface MapLayoutDef<K extends IdSpace = LiveIds, Id extends string = s
    * `setTimerRate` sets, and fires `{ timerFull: id }` when full. It never ends the map.
    */
   readonly timers?: Readonly<Record<string, TimerDef>>;
+  /**
+   * How the map is won (T821). Default: every wave resolved (design/core-loop.md § 2.1).
+   * `'script'`: only by an `endMap: 'won'` action, never by the waves resolving, so a scripted
+   * ending can hold the field after its last enemy is gone (the finale's Dawn: won 8 s after
+   * `setPhase 3`). Such a map needs an `endMap: 'won'` event.
+   */
+  readonly winBy?: 'script';
 }
 
 /**
@@ -1359,6 +1366,14 @@ export interface ChoirDef {
    * waves (fin_m01: 18, Phase 1's waves). Without it she walks on sim time alone.
    */
   readonly walkWaves?: number;
+  /**
+   * The choir's defeat as a hush allowance (T821; fin_m01: 14): the map is lost once more than
+   * this many singers are hushed, whatever the choir's size by flag (the floor is the run's choir
+   * − `maxHushed`, at least 1), so every flag cell has the same room in singers. Instead of the
+   * map's `minVoices`/`minVoicesPct`; the harness then reads the margin as Voices % of the base
+   * choir (`singers`), so the same hushes read the same margin in every cell.
+   */
+  readonly maxHushed?: number;
   /** Singers added (or, negative, kept home) by story flag: warren +4, convoy −2 (D154). */
   readonly groups?: readonly { readonly when: FlagGateDef; readonly singers: number }[];
   /**
@@ -1534,6 +1549,13 @@ export interface WaveDef<K extends IdSpace = LiveIds> {
    * (the Quiet Wave, D097). Not on wave 1 (the player starts it).
    */
   readonly noCall?: true;
+  /**
+   * The script phase this wave belongs to (the finale's Phase 2 add waves; T821): its countdown
+   * waits (`held`, never called) until `state.phase` is at least this, and once the phase has
+   * passed it the wave never starts, nor does any later one (the schedule ends; one still spawning
+   * stops). Default: none (the wave runs whatever the phase).
+   */
+  readonly inPhase?: number;
   readonly groups: readonly WaveGroup<K>[];
 }
 export interface WaveGroup<K extends IdSpace = LiveIds> {
@@ -1957,7 +1979,9 @@ export type ScriptTrigger<K extends IdSpace = LiveIds> =
   /** That timer (MapDef.timers) has filled (the Deep Bore's breakthrough; T806). */
   | { readonly timerFull: string }
   /** The map's script phase is `phase` or later, `afterSec` (default 0) after it began (T806). */
-  | { readonly phase: number; readonly afterSec?: number };
+  | { readonly phase: number; readonly afterSec?: number }
+  /** The echo `spawnEcho` sent under this id has reached the song (`EchoArrived`; T821). */
+  | { readonly echoArrived: string };
 
 export type ScriptAction<K extends IdSpace = LiveIds> =
   | { readonly cue: string } // story binds it to a scene or bark

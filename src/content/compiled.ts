@@ -698,6 +698,8 @@ export interface CompiledWave<K extends IdSpace = LiveIds> {
   readonly teach: boolean;
   /** WaveDef.noCall: never called early (the Quiet Wave is refused by its tag; nextWaveNoCall). */
   readonly noCall: boolean;
+  /** WaveDef.inPhase: the script phase it belongs to (held before it, never started after); 0: none. */
+  readonly inPhase: number;
   readonly groups: readonly CompiledWaveGroup<K>[];
   /** Ticks from the wave's start to its last spawn: spawning has finished after this. */
   readonly lastSpawnTicks: number;
@@ -962,6 +964,8 @@ export interface CompiledMapDef<K extends IdSpace = LiveIds> {
   readonly song: CompiledSong | null;
   /** Secondary timers (MapDef.timers; T800a seam, T806), in authored order; empty for none. */
   readonly timers: readonly CompiledTimer[];
+  /** MapDef.winBy: 'waves' (every wave resolved, the default) or 'script' (an endMap 'won' only). */
+  readonly winBy: 'waves' | 'script';
   readonly builds: CompiledBuilds<K>;
 }
 
@@ -976,6 +980,8 @@ export interface CompiledChoir {
   readonly haltTiles: number;
   /** ChoirDef.walkWaves (T820): the waves the walk spans; absent or 0, it walks on time alone. */
   readonly walkWaves?: number;
+  /** ChoirDef.maxHushed (T821): the hush allowance, or null (the map's minVoices/minVoicesPct). */
+  readonly maxHushed: number | null;
   readonly groups: readonly {
     readonly when: { readonly flag: ScriptFlagId; readonly eq: FlagValue };
     readonly singers: number;

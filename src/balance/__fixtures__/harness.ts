@@ -73,6 +73,7 @@ export function fakeResult(
     escortTotal: 0,
     voices: 0,
     choirSize: 0,
+    choirBase: 0,
     maxLost: null,
     credits: 0,
     lostAtWave,

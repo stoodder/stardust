@@ -30,6 +30,8 @@ import { reduceAbilityCooldowns } from './abilities.ts';
 
 export function waves(state: SimState, ctx: TickContext): void {
   const s = state.schedule;
+  // A phase's waves end with it (`inPhase`; T821): past it, no wave starts and one spawning stops.
+  if (s.phase !== 'done' && s.phase !== 'setup' && phasePassed(state, ctx)) s.phase = 'done';
   if (s.phase === 'countdown') {
     s.countdownTicks--;
     if (s.countdownTicks <= 0) startWave(state, false, 0);
@@ -39,9 +41,27 @@ export function waves(state: SimState, ctx: TickContext): void {
     spawnDue(state, wave, s.waveTicks, runWaveModifiers(ctx.config).enemies);
     if (s.waveTicks >= wave.lastSpawnTicks) finishSpawning(state, ctx);
     else s.waveTicks++;
-  } else if (s.phase === 'held' && !bossFightOn(state)) {
-    beginCountdown(state, ctx, ctx.map.waves[state.wave]!); // held ⇒ a next wave exists
+  } else if (s.phase === 'held') {
+    const next = ctx.map.waves[state.wave]!; // held ⇒ a next wave exists
+    if (!stillHeld(state, next)) beginCountdown(state, ctx, next);
   }
+}
+
+/**
+ * Whether the schedule's wave in play (spawning: the current one; held or counting down: the next)
+ * belongs to a script phase the map has passed (`inPhase`): then the schedule ends.
+ */
+function phasePassed(state: SimState, ctx: TickContext): boolean {
+  const s = state.schedule;
+  const w = s.phase === 'spawning' ? state.wave - 1 : state.wave;
+  const wave = ctx.map.waves[w];
+  return wave !== undefined && wave.inPhase > 0 && state.phase > wave.inPhase;
+}
+
+/** Whether wave `next`'s countdown still waits: for the boss fight to end, or for its phase. */
+function stillHeld(state: SimState, next: CompiledWave<IdSpace>): boolean {
+  if (next.inPhase > 0) return state.phase < next.inPhase;
+  return next.countdownAfter === 'bossEnded' && bossFightOn(state);
 }
 
 /**
@@ -66,6 +86,7 @@ function bossFightOn(state: SimState): boolean {
  */
 export function callWave(state: SimState, ctx: TickContext): RejectReason | null {
   const s = state.schedule;
+  if (s.phase !== 'setup' && s.phase !== 'done' && phasePassed(state, ctx)) s.phase = 'done';
   if (s.phase !== 'setup' && nextWaveNoCall(state, ctx.map)) return 'noCall';
   switch (s.phase) {
     case 'setup':
@@ -104,7 +125,8 @@ function startWave(state: SimState, early: boolean, bonus: number): void {
 
 /**
  * Spawning is done: the next wave's countdown begins, or it waits for the boss fight to end
- * (`countdownAfter: 'bossEnded'`; `held`), or the schedule is done.
+ * (`countdownAfter: 'bossEnded'`) or for its script phase (`inPhase`) (`held`), or the schedule
+ * is done (the last wave, or the next one's phase is over).
  */
 function finishSpawning(state: SimState, ctx: TickContext): void {
   const s = state.schedule;
@@ -113,7 +135,11 @@ function finishSpawning(state: SimState, ctx: TickContext): void {
     s.phase = 'done';
     return;
   }
-  if (next.countdownAfter === 'bossEnded' && bossFightOn(state)) {
+  if (next.inPhase > 0 && state.phase > next.inPhase) {
+    s.phase = 'done'; // its phase is over (`inPhase`): nothing more walks in
+    return;
+  }
+  if (stillHeld(state, next)) {
     s.phase = 'held';
     return;
   }

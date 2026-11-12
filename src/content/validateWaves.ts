@@ -91,6 +91,14 @@ export function validateWaves(
     if (wave.noCall !== undefined && w === 0) {
       issues.add('wave', `${where}.noCall`, 'wave 1 is started by the player, never called');
     }
+    if (wave.inPhase !== undefined) {
+      if (w === 0) issues.add('wave', `${where}.inPhase`, 'wave 1 is started by the player');
+      else if (!isPositiveInt(wave.inPhase) || wave.inPhase < 2) {
+        issues.add('wave', `${where}.inPhase`, 'must be a whole script phase ≥ 2');
+      } else if (wave.countdownAfter !== undefined) {
+        issues.add('wave', `${where}.inPhase`, "can't wait for a phase and a boss at once");
+      }
+    }
     if (wave.countdownAfter !== undefined) {
       const bossBefore = def.waves
         .slice(0, w)

@@ -186,8 +186,11 @@ export const map = defineMapLayout({
     militia_bend: [4, 5],
     militia_run: [7, 3],
     militia_halls: [13, 4],
+    // HE HELD THE DOOR (maps.md § 7, state-dependent dressing): the blast-door leaf the convoy
+    // carried out of the Gap, propped by the colony lane near the gate, under `convoy` only.
+    held_door: [6, 12],
   },
-  markerWhen: Object.fromEntries(MILITIA.map((m) => [m, CONVOY])),
+  markerWhen: { ...Object.fromEntries(MILITIA.map((m) => [m, CONVOY])), held_door: CONVOY },
   startCredits: 900,
   // The colony gate behind the walk: what the flyers and Everglow's units cost when they get through
   // (the air exam's meter: no-air loses on it).

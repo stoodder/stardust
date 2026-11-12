@@ -77,12 +77,18 @@ export function ensureAllActs(): Promise<void> {
   return ensureActs('finale');
 }
 
-/** Runs `fn` when the browser is idle (or soon, where there's no requestIdleCallback). */
+/** The longest an idle-time preload waits for the browser to go idle (ms). */
+const IDLE_TIMEOUT_MS = 2000;
+
+/** Runs `fn` when the browser is idle, or after IDLE_TIMEOUT_MS (200 ms without requestIdleCallback). */
 export function whenIdle(fn: () => void): void {
-  const ric = (globalThis as { requestIdleCallback?: (cb: () => void) => number })
-    .requestIdleCallback;
+  const ric = (
+    globalThis as {
+      requestIdleCallback?: (cb: () => void, opts: { timeout: number }) => number;
+    }
+  ).requestIdleCallback;
   if (ric === undefined) setTimeout(fn, 200);
-  else ric(fn);
+  else ric(fn, { timeout: IDLE_TIMEOUT_MS });
 }
 
 /** Loads every act up to `act` in idle time (the next act, ahead of need). Errors are dropped. */
