@@ -1979,3 +1979,14 @@ Gate-time and architecture follow-ups that change no behaviour are logged in tas
 ### D158 — 2026-11-12 — The credits name the game's makers
 
 The owner asked to be credited by name, and for Claude to be credited beside them. The roll now opens, under the title, with **A game by: Rick Allen, and Claude, by Anthropic** (`src/ui/screens/credits.ts`), ahead of the cast; the separate "Built with" block is gone. The rest of the roll is unchanged and still ends on "And you" over "Thank you for playing.". Also logged in this session: round 2's art fixer added the song's light reaching one tile past its circle, a full outline on held split parts, the rifts going out at Dawn's start (replacing T871's healing behind the sun's front), and a laid-to-rest boss's bar stepping out at once (D157's art items as built; art-direction.md).
+
+### D159 — 2026-11-12 — M8 review round 3: rulings
+
+Round 3, the last, found no highs. Fixed:
+- **Go pays off Bricks's jar.** A catch-all `you` card for `ending_choice: 'go'` (after both family cards): "You kept Bricks's jar. It held a stone from every world but Tumble IV. Before the last freighter lifted, you added one. Plain, grey. Just a stone." Every Go playthrough but `family`'s now shows a `you` card; a playthrough shows 11 to 13 cards, the counter included (bible.md §10).
+- **The Song is a long walk's form.** The Unsung's form 4 comes at 25% HP (its 150 s floor rarely binds), so it shows on Purge and on par's Keep, and its Silencers only under Purge for the alts (Dread cancels them for par). The ending never depends on the form. The docs now say so; enemies.md holds the floors. No balance change.
+- **The finale's loadout shows links by name only** while "Walking with you" is up (details behind "Every link ▸"), so nothing runs under the footer.
+- **The epilogue ignores presses for `STORY_CHOICE_LOCK_MS` after it opens**, the memo's rule, so a double press after C5 can't skip the first card.
+- **Accessibility:** a locked choice's key hint is the group's description, and each C5 option's accessible name carries who backs it. The credits' screen-reader text joins a block's lines with commas.
+- The epilogue plays its cards one at a time, before the counter and the credits (every doc and comment now says so, not "over the credits").
+Backlogged (T877/T878): the post-game header's Everglow kicker, the Song's 1× silhouette, the Song on Keep, the economy fold duplicated in wreckage.ts, `reuseSeed` guarding seeded content.
