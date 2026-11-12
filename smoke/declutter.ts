@@ -7,10 +7,11 @@
 //     boxes (clipped to the viewport and to any clipping ancestor) and their area, summed per name;
 //   - the screen's density: visible elements, controls, words, numbers, numbers shown twice or
 //     more, and text blocks over two lines (the audit's checklist, counted the same way each time).
-// The guard: every `data-critical` readout on a screen is visible with no interaction, and against
-// the baseline (`smoke/declutter-before/<id>.json`, the T803a "before" set; DECLUTTER_BASELINE=<dir>
-// reads another) every voice name keeps at least its area (AREA_TOLERANCE) and every critical name
-// is still there and visible. A screen with no baseline file is measured but not compared.
+// The guard: no `data-critical` readout sits inside a "more" (a Disclosure's region or a <details>:
+// it's one glance away, never a click), and against the baseline (`smoke/declutter-before/<id>.json`,
+// the T803a "before" set; DECLUTTER_BASELINE=<dir> reads another) every voice name keeps at least
+// its area on top (AREA_TOLERANCE), and every critical name that was on top still is. A screen with
+// no baseline file is measured but not compared.
 // DECLUTTER_RECORD=<dir> writes each screen's measure to <dir>/<id>.json instead of comparing: to
 // re-record a screen after a deliberate change, run its flow (`-g`) with
 // DECLUTTER_RECORD=smoke/declutter-before and commit only that screen's file.
@@ -120,6 +121,8 @@ interface MarkRecord {
   readonly area: number;
   /** The rendered area, covered or not (behind a modal, say): 0 means hidden or clipped away. */
   readonly shown: number;
+  /** How many of its elements sit inside a "more" (a Disclosure's region, or a <details>). */
+  readonly inMore: number;
   readonly boxes: readonly Box[];
 }
 interface Density {
@@ -147,6 +150,8 @@ interface RawMark {
   readonly box: Box | null;
   /** The share of the box on top (0–1). */
   readonly onTop: number;
+  /** Inside a "more": a Disclosure's region (open or closed) or a <details>. */
+  readonly inMore: boolean;
 }
 interface Raw {
   readonly marks: readonly RawMark[];
@@ -219,10 +224,11 @@ function measurePage(): Raw {
   for (const el of document.querySelectorAll('[data-voice], [data-critical]')) {
     const box = visibleBox(el);
     const onTop = box === null ? 0 : shareOnTop(el, box);
+    const inMore = (el.parentElement?.closest('.sd-disclosure-region, details') ?? null) !== null;
     const voice = el.getAttribute('data-voice');
     const critical = el.getAttribute('data-critical');
-    if (voice !== null) marks.push({ kind: 'voice', name: voice, box, onTop });
-    if (critical !== null) marks.push({ kind: 'critical', name: critical, box, onTop });
+    if (voice !== null) marks.push({ kind: 'voice', name: voice, box, onTop, inMore });
+    if (critical !== null) marks.push({ kind: 'critical', name: critical, box, onTop, inMore });
   }
 
   // Density: the checklist's counts over what #ui shows on top.
@@ -336,11 +342,15 @@ function measurePage(): Raw {
 
 /** Folds the raw marks into one record per name (a name may mark several elements). */
 function fold(raw: readonly RawMark[], kind: RawMark['kind']): Record<string, MarkRecord> {
-  const out: Record<string, { count: number; area: number; shown: number; boxes: Box[] }> = {};
+  const out: Record<
+    string,
+    { count: number; area: number; shown: number; inMore: number; boxes: Box[] }
+  > = {};
   for (const m of raw) {
     if (m.kind !== kind) continue;
-    const rec = (out[m.name] ??= { count: 0, area: 0, shown: 0, boxes: [] });
+    const rec = (out[m.name] ??= { count: 0, area: 0, shown: 0, inMore: 0, boxes: [] });
     rec.count++;
+    if (m.inMore) rec.inMore++;
     if (m.box !== null) {
       const area = m.box.w * m.box.h;
       rec.shown += Math.round(area);
@@ -377,7 +387,7 @@ function baselineOf(id: ScreenId): ScreenRecord | null {
 /**
  * Captures screen `id` as it stands: settles two frames, screenshots, measures, writes the
  * measure, and runs the guard (soft assertions, so one capture reports every problem): every
- * critical readout marked here is rendered (not hidden behind a "more" or clipped away); against
+ * critical readout marked here is outside any "more" (Disclosure.tsx, <details>); against
  * the baseline, every voice name keeps its area on top and every critical name that was on top
  * still is.
  */
@@ -389,17 +399,17 @@ export async function capture(page: Page, id: ScreenId): Promise<void> {
   const voice = fold(raw.marks, 'voice');
   if (raw.playfield !== null) {
     const { box, area } = raw.playfield;
-    voice['playfield'] = { count: 1, area, shown: Math.round(box.w * box.h), boxes: [box] };
+    const shown = Math.round(box.w * box.h);
+    voice['playfield'] = { count: 1, area, shown, inMore: 0, boxes: [box] };
   }
   const critical = fold(raw.marks, 'critical');
   const record: ScreenRecord = { id, group: SCREENS[id], voice, critical, density: raw.density };
   writeJson(outPath(`declutter/${id}.json`), record);
   if (RECORD !== undefined) writeJson(join(RECORD, `${id}.json`), record);
 
+  // A critical readout is never behind a "more" (a state may hide it: Dawn's HUD steps back).
   for (const [name, rec] of Object.entries(critical)) {
-    expect
-      .soft(rec.shown, `${id}: critical "${name}" is shown, no click needed`)
-      .toBeGreaterThan(0);
+    expect.soft(rec.inMore, `${id}: critical "${name}" is never behind a "more"`).toBe(0);
   }
   if (RECORD !== undefined) return;
   const before = baselineOf(id);

@@ -128,7 +128,11 @@ export const waves = defineWaves([
   // W14 · the rifts open: Silencers up both, and Rift Moths
   {
     ...NO_CALL,
-    groups: [silencers(2, 'rift_w', 0, SIL_GAP), silencers(2, 'rift_e', 1.2, SIL_GAP), moths(10, 8)],
+    groups: [
+      silencers(2, 'rift_w', 0, SIL_GAP),
+      silencers(2, 'rift_e', 1.2, SIL_GAP),
+      moths(10, 8),
+    ],
   },
   // W15 · Liability + Silencers
   {
