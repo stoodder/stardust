@@ -1,11 +1,12 @@
 // The epilogue cards' shape, slots, and resolution (story/bible.md § 10 *Epilogue cards*;
 // design/core-loop.md § 6.8; story-runtime.md § Epilogue cards). After C5, the epilogue shows one
-// card per slot, in slot order, over the credits: each slot's first card whose `when` matches the
-// save's flags. The cards' words are T811's, in `fin/epilogue.ts` (`EPILOGUE_CARDS`); the slots and
-// the flags each may read are here, so content validation (content/validateEpilogue.ts) can prove
-// every flag combination resolves every slot that must show a card. The cards are the finale's, so
-// they load with its chunk (content/acts/fin.ts, which registers them here; T802): nothing here
-// imports them, and `epilogueFor` throws until they're registered rather than show no cards.
+// card per slot, in slot order, one at a time, before the counter and the credits (core-loop
+// § 6.8): each slot's first card whose `when` matches the save's flags. The cards' words are
+// T811's, in `fin/epilogue.ts` (`EPILOGUE_CARDS`); the slots and the flags each may read are here,
+// so content validation (content/validateEpilogue.ts) can prove every flag combination resolves
+// every slot that must show a card. The cards are the finale's, so they load with its chunk
+// (content/acts/fin.ts, which registers them here; T802): nothing here imports them, and
+// `epilogueFor` throws until they're registered rather than show no cards.
 import { FLAGS, type FlagValueOf } from './flags.ts';
 
 /** The flags an epilogue card may read (bible.md § 10's conditions), in the ledger's order. */
@@ -87,7 +88,8 @@ export const EPILOGUE_SLOTS: readonly EpilogueSlotDef[] = [
   {
     id: 'you',
     flags: ['arrival_reason', 'ending_choice'],
-    optional: "only `family` has a card: the residency points C5's form names",
+    optional:
+      "`stay` without `family`: Stay's one card is the residency C5's form names (Go's catch-all is Bricks's jar)",
   },
   { id: 'final', flags: [], counter: true },
 ];

@@ -114,6 +114,18 @@ export async function watchEpilogueThrough(
   const epi = page.getByTestId('epilogue');
   await expect(epi).toBeVisible();
   await expect(epi).toHaveAttribute('data-beat', 'card');
+  // Presses wait the story choice's beat after it opens (r3 U3-2): one landing before then, as a
+  // double-click on C5 would, leaves the first card up.
+  // (Read and pressed in one task, so the stage can't arm between the read and the press.)
+  const early = await page.evaluate(() => {
+    const el = document.querySelector<HTMLElement>('[data-testid="epilogue"]');
+    if (el === null || el.dataset['armed'] === 'true') return false;
+    el.click();
+    el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', bubbles: true }));
+    return true;
+  });
+  if (early) await expect(epi).toHaveAttribute('data-index', '0');
+  await expect(epi).toHaveAttribute('data-armed', 'true');
   await page.waitForTimeout(700);
   await shot(page, flow, first, 'epilogue-card');
   await page.keyboard.press('Escape');

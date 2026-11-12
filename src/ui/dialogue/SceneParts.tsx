@@ -13,6 +13,7 @@ import {
 import {
   choiceKeysHint,
   choicePressAccepted,
+  choiceVoicesSuffix,
   isPressKey,
   optionKey,
   nextRevealTap,
@@ -277,6 +278,7 @@ export function ChoiceList({ choices }: { choices: readonly ChoiceView[] }) {
       class="dlg-choices"
       role="group"
       aria-label="Your answer"
+      aria-describedby={lockedChoice ? CHOICE_HINT_ID : undefined}
       tabIndex={lockedChoice ? -1 : undefined}
       data-testid="choice-group"
       onKeyDown={onKeyDown}
@@ -311,22 +313,29 @@ export function ChoiceList({ choices }: { choices: readonly ChoiceView[] }) {
           </span>
           <span class="grow">{c.text}</span>
           {c.voices !== undefined && (
-            <span class="dlg-choice-voices" aria-hidden="true">
-              {c.voices.map((v) => (
-                <Portrait key={v.speaker} line={v} talking={false} still />
-              ))}
-            </span>
+            <>
+              <span class="dlg-choice-voices" aria-hidden="true">
+                {c.voices.map((v) => (
+                  <Portrait key={v.speaker} line={v} talking={false} still />
+                ))}
+              </span>
+              {/* Who stands behind it, for a screen reader (the faces are pictures). */}
+              <span class="dlg-sr">{choiceVoicesSuffix(c.voices.map((v) => v.name))}</span>
+            </>
           )}
         </button>
       ))}
       {lockedChoice && (
-        <p class="dlg-choice-hint" aria-hidden="true" data-testid="choice-hint">
+        <p class="dlg-choice-hint" id={CHOICE_HINT_ID} data-testid="choice-hint">
           {choiceKeysHint(choices.length)}
         </p>
       )}
     </div>
   );
 }
+
+/** The locked choice's keys hint, which its focused group is described by (one choice at a time). */
+const CHOICE_HINT_ID = 'dlg-choice-hint';
 
 /** What a screen reader hears as a line arrives: "QUILL: Hello!" (a caption reads alone). */
 export function lineAnnouncement(line: LineView | null): string {

@@ -481,14 +481,24 @@ const FORMED_TOLD_MAX = 3;
  * pick does: up to three with their bonus, right under the Technician list, D156; more by
  * name), and the whole list, bonuses and what each still needs, one press away in a
  * floating Disclosure that opens upward over the column, so it never pushes the heads-up or the
- * footer.
+ * footer. Under the finale's "Walking with you" block the column has no room for the bonuses, so
+ * the formed links read as names there (D159), and the bonuses stay behind "Every link".
  */
-function LinksSection({ view, pick }: { view: LoadoutView; pick: LoadoutPickView }) {
+function LinksSection({
+  view,
+  pick,
+  roomy,
+}: {
+  view: LoadoutView;
+  pick: LoadoutPickView;
+  /** The column has room for the bonuses (no companion block above). */
+  roomy: boolean;
+}) {
   const formed = formedLinks(pick);
   const on = view.links.filter((l) => formed.includes(l.id));
   const names = on.map((l) => l.name);
   // A few formed links say what they do under the Technician list (D156); more read as names.
-  const told = on.length <= FORMED_TOLD_MAX ? on : [];
+  const told = roomy && on.length <= FORMED_TOLD_MAX ? on : [];
   return (
     <section class="sd-lo-links-section" aria-labelledby="sd-lo-links-label">
       <h2 id="sd-lo-links-label" class="sd-panel-heading sd-lo-heading">
@@ -823,7 +833,11 @@ export function Loadout() {
                 </p>
               )
             )}
-            <LinksSection view={view} pick={pick} />
+            <LinksSection
+              view={view}
+              pick={pick}
+              roomy={view.companions === undefined || view.companions.length === 0}
+            />
           </aside>
         </div>
         <footer class="sd-row sd-menu-footer">

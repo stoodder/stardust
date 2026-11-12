@@ -13,9 +13,9 @@
 //   `thisRun`), so a replay shows what that run did, not what the save's flag remembers. Stamps
 //   never change rewards;
 // - `ending`: the campaign's close once a **win**'s card is dismissed (the finale only, D154):
-//   Sterling's memo as a card, C5, the epilogue over the credits, then the post-game star map; a
-//   later win, C5 answered, goes straight to the post-game star map (app/finaleFlow.ts, played by
-//   app/ending.ts);
+//   Sterling's memo as a card, C5, the epilogue (its cards one at a time, then the counter and the
+//   credits), then the post-game star map; a later win, C5 answered, goes straight to the post-game
+//   star map (app/finaleFlow.ts, played by app/ending.ts);
 // - `unskippableFirst`: flow scenes Esc can't skip until the save has seen them (the Dawn scene, as
 //   Night Shift: `PlayOptions.noSkip`; every line still moves on with Next).
 // A scene listed here plays only once it is registered (content/dialogue/index.ts), so a map's
@@ -50,7 +50,7 @@ export interface FlowJingle {
 
 /**
  * The screens the campaign's close plays that are neither a scene nor a memo: `epilogue`, the
- * epilogue cards over the credits roll, the counter card, and the final image by ending
+ * epilogue cards one at a time, the counter card, the credits roll, and the final image by ending
  * (core-loop.md § 6.8; T810); `post_game`, the post-game star map at dawn (T863).
  */
 export const ENDING_SCREENS = ['epilogue', 'post_game'] as const;
@@ -134,7 +134,8 @@ export const RESULTS_FLOW: Readonly<Partial<Record<CampaignMapId, ResultsFlow>>>
   a3_m06: { debriefAsScene: true },
   // FIN · Clearing the Way (finale.md § FIN; D154): Dawn full-screen as the light lands (the map is
   // won 8 s after it breaks), then the card (REMEMBERED: {n}), then the campaign's close: Sterling's
-  // farewell memo as a card, C5, the epilogue over the credits, and the post-game star map.
+  // farewell memo as a card, C5, the epilogue (its cards, then the counter and the credits), and
+  // the post-game star map.
   fin_m01: {
     beforeResults: ['fin_m01_scene_dawn'],
     // Dawn's beats land whole the first time (D154 tone rule); a replay may skip them.

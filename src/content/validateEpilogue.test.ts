@@ -54,6 +54,7 @@ const CARDS: readonly EpilogueCardDef[] = [
     when: { arrival_reason: 'family', ending_choice: 'stay' },
     text: 'You sent the road.',
   },
+  { slot: 'you', when: { ending_choice: 'go' }, text: 'Just a stone.' },
   { slot: 'final', when: {}, text: 'REMEMBERED: {pests_processed}' },
 ];
 
@@ -94,11 +95,20 @@ describe('the epilogue (bible.md § 10)', () => {
     expect(epilogueFor(flags, CARDS).find((c) => c.slot === 'bricks')?.text).toMatch(/clean/);
     const stay = { door_choice: 'convoy', ending_choice: 'stay' } as const;
     expect(epilogueFor(stay, CARDS).find((c) => c.slot === 'bricks')?.text).toMatch(/second coat/);
-    // An optional slot shows nothing where it has no card (C2's `none`, a non-family arrival).
-    const none = { stardust_choice: 'none', arrival_reason: 'lettuce' } as const;
+    // An optional slot shows nothing where it has no card (C2's `none`, Stay without `family`);
+    // Go's catch-all shows the jar where `family`'s card doesn't match.
+    const none = {
+      stardust_choice: 'none',
+      arrival_reason: 'lettuce',
+      ending_choice: 'stay',
+    } as const;
     const slots = epilogueFor(none, CARDS).map((c) => c.slot);
     expect(slots).not.toContain('the_dead');
     expect(slots).not.toContain('you');
+    const go = { arrival_reason: 'lettuce', ending_choice: 'go' } as const;
+    expect(epilogueFor(go, CARDS).find((c) => c.slot === 'you')?.text).toBe('Just a stone.');
+    const family = { arrival_reason: 'family', ending_choice: 'go' } as const;
+    expect(epilogueFor(family, CARDS).find((c) => c.slot === 'you')?.text).toBe('By a lake.');
   });
 
   it('rejects an unresolved slot', () => {

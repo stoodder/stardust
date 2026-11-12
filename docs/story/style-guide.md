@@ -138,7 +138,7 @@ Story rides on channels that respect play. **Build-phase barks never pause the g
 | **Xenotech copy** | Ves'thara's shelf (after A2M5) | Item description ≤ 100 chars | — | Ves'thara | One line per item, no price, no contractions (§6.5) |
 | **Environmental** | On the map | — | — | Art and maps | Evie billboards, mining scars, the Peeker, Tidybots, memorial wreckage, path direction ([../design/maps.md §7](../design/maps.md#7-storytelling-with-the-map)) |
 | **Enemy design** | Behavior, motion, and death effects | — | — | Design and art | Frightened versus hungry movement; Haulers' sacks; the death-tone ramp ([../design/enemies.md](../design/enemies.md)) |
-| **Epilogue cards** | Over the credits | ≤ 240 chars each | Yes | Narrator | Modular, chosen by flags ([bible.md §10](bible.md#10-endings)) |
+| **Epilogue cards** | One at a time, before the counter and the credits ([core-loop §6.8](../design/core-loop.md#68-ending-choice-and-epilogue-cards)) | ≤ 240 chars each | Yes | Narrator | Modular, chosen by flags ([bible.md §10](bible.md#10-endings)) |
 
 **Narrative budget targets:** about 200–400 barks across the campaign, 1–3 radio lines between most waves, one full-screen scene per act plus the climaxes, and one memo per map.
 

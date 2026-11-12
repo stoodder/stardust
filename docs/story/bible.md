@@ -244,7 +244,7 @@ Then **C5** and the epilogue (§10).
 - **Hold Fire and the one button.** Taught as a joke (don't shoot Gerald), rehearsed as a joke (the knock-knock's optional "Who's there?" in A1M3), used in the Quiet Wave, and noticed by everyone. The SEAL and the finale's forced "Who's there?" reuse the same single-button grammar: one input, no alternatives.
 - **The path's direction.** North to south: fleeing, *past* the colony (Acts I–II). North to south again in A3M6, on the same road, but the destination flips: the gate opens *into* the domes. South to north: going home (Finale), the only true reversal.
 - **Two suns.** Evie, the smiling corporate sun, on billboards: beaming (I), peeling (II), dark with a hum-glyph painted over its smile (III). The real sun sets at A2M6 and rises at the end. Ves'thara's light at Sundown (the Prism) and in the finale ("I will hold the light") is the third.
-- **Stones.** Bricks keeps a stone from every world in a jar. The Tumble IV stone is a chunk of stardust, which means it's someone. He names the youngling Pebble. He sends the stone home with her. In Act III the warrens give the player sung stones: Stardust that is given, not taken. In Ending B the player puts a plain grey stone in Bricks's jar: *"Just a stone."*
+- **Stones.** Bricks keeps a stone from every world in a jar. The Tumble IV stone is a chunk of stardust, which means it's someone. He names the youngling Pebble. He sends the stone home with her. In Act III the warrens give the player sung stones: Stardust that is given, not taken. In Ending B the player keeps Bricks's jar, which has a stone from every world but Tumble IV, and adds a plain grey one: *"Just a stone."* (epilogue card 12, on every Go save but `family`'s, §10).
 - **The door.** Blast doors at the Gap (A3M3), the domes Goldie opens (A3M6: "Lettuce in. It's cold out here."), the Halls (Finale). Doors that keep out, then doors that let in.
 - **Gerald.** A mail drone on a route older than the perimeter. He brings Bricks's rejected form (I), his posthumous re-filed form (III), and the Amended Survey to the KFA relay (epilogue: "Signature: received").
 - **Tidybots.** Cute cleanup drones that vacuum up remains with a cheerful chime (I). Seen unloading at Second Harvest (A2M4). Gone in Act III, when bodies stay on the path for a moment.
@@ -354,11 +354,11 @@ The colony takes down the domes that sit on the Long Walk, pane by pane, and reb
 
 ### Ending B (variation): The Long Walk Home (Go)
 
-The colonists leave on Zibzab's freighters for everything they own, and he writes them a receipt. Tumble IV enters the Register of Protected Worlds; the player signs Form PW-1. The tribunal hears everything. The Ascendant's stolen cargo is impounded and returned under seal (Gerald signs for it). Sterling testifies, smiling. The player puts a plain grey stone in Bricks's jar. Final image: from orbit, QUILL's relay plays a recording every dusk, six notes hummed off-key by someone very small.
+The colonists leave on Zibzab's freighters for everything they own, and he writes them a receipt. Tumble IV enters the Register of Protected Worlds; the player signs Form PW-1. The tribunal hears everything. The Ascendant's stolen cargo is impounded and returned under seal (Gerald signs for it). Sterling testifies, smiling. The player puts a plain grey stone in Bricks's jar (card 12, unless the family's residency card takes the slot). Final image: from orbit, QUILL's relay plays a recording every dusk, six notes hummed off-key by someone very small.
 
 ### Epilogue cards
 
-Modular cards of 240 characters or fewer, shown in this order over the credits, each the first card whose condition matches ([../design/core-loop.md §6.8](../design/core-loop.md#68-ending-choice-and-epilogue-cards)). Final text belongs to the dialogue data; these are the canon drafts.
+Modular cards of 240 characters or fewer, shown in this order, one at a time, before the counter and the credits ([../design/core-loop.md §6.8](../design/core-loop.md#68-ending-choice-and-epilogue-cards)). Each slot shows its first card whose condition matches, or nothing where none does (card 5 under `none`, card 12 under `stay` without `family`), so a playthrough sees 11 to 13 cards, the counter included. Final text belongs to the dialogue data; these are the canon drafts.
 
 | # | Card | Condition | Draft |
 |---|---|---|---|
@@ -387,6 +387,7 @@ Modular cards of 240 characters or fewer, shown in this order over the credits, 
 | 11 | Gerald | any | "Gerald delivered the Amended Survey to the KFA relay. Signature: received. It was the first form Gerald had ever seen signed for." |
 | 12 | You | `family` + `go` | "Your family's residency came through. They live somewhere safe now, by a lake. You send them pictures of something nice." |
 | 12 | You | `family` + `stay` | "The residency points lapsed with the charter. You wrote home to explain. They wrote back: 'Send us a picture of something nice.' You sent the road." |
+| 12 | You | `go` (any other arrival) | "You kept Bricks's jar. It held a stone from every world but Tumble IV. Before the last freighter lifted, you added one. Plain, grey. Just a stone." |
 | 13 | Final | any | Counter: **PESTS PROCESSED: 0**, then it flips to **REMEMBERED: {n}**. The jingle plays in a major key, hummed by many voices. |
 
 ---

@@ -63,6 +63,15 @@ export function choiceKeysHint(n: number): string {
   return `Keys: ${nums}, or arrows and Enter`;
 }
 
+/**
+ * What a screen reader hears after an option for the voices behind it (C5's faces; D156):
+ * " (Pebble, Ves'thara)", with a leading space so it reads apart from the answer; '' for none.
+ */
+export function choiceVoicesSuffix(names: readonly string[]): string {
+  const said = names.filter((n) => n !== '');
+  return said.length === 0 ? '' : ` (${said.join(', ')})`;
+}
+
 /** A pointer's position in client px. */
 export interface PointerAt {
   readonly x: number;

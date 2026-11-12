@@ -4,7 +4,8 @@
 // centered, in the narrator's plain voice; the counter (PESTS PROCESSED: 0, then REMEMBERED: {n} in
 // gold); the credits rolling up; and the final image by ending (Stay: the old status line reads
 // PERIMETER STATUS: OPEN; Go: Tumble IV from orbit). A click or Enter, Space, or → moves on one
-// beat; Esc skips nothing the first time and closes "Watch the epilogue". The stage is a modal:
+// beat (none for the story choice's 700 ms after it opens, so the press that answered C5 doesn't
+// also skip the first card); Esc skips nothing the first time and closes "Watch the epilogue". The stage is a modal:
 // Tab stays on it, and keys stop here. Part of the finale's lazy chunk (app/acts/fin.ts).
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { endingCue } from '../../app/ending.ts';
@@ -117,6 +118,9 @@ function Epilogue({ view }: { view: EpilogueView }) {
   const still = prefersReducedMotion();
   const beats = epilogueBeats(view);
   const [at, setAt] = useState({ i: 0, from: performance.now() });
+  // Presses wait a beat after it opens (the story choice's 700 ms, as the memo's Continue does):
+  // a double-click or a mashed key on C5 never skips the ending's first line.
+  const [armed, setArmed] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const flipped = useRef(false);
   const closed = useRef(false);
@@ -149,7 +153,13 @@ function Epilogue({ view }: { view: EpilogueView }) {
   }, [at]);
   useEffect(() => {
     root.current?.focus();
+    const id = setTimeout(() => setArmed(true), STORY_CHOICE_LOCK_MS);
+    return () => clearTimeout(id);
   }, []);
+  /** A press (a click or a key) moves on once the stage is armed. */
+  const press = (): void => {
+    if (armed) advance();
+  };
   // The counter and the roll move on a clock; so does the orbit's relay blink.
   const moving =
     beat?.kind === 'counter' ||
@@ -164,11 +174,11 @@ function Epilogue({ view }: { view: EpilogueView }) {
   const onKey = (e: KeyboardEvent): void => {
     if (NEXT_KEYS.has(e.code) && !e.repeat) {
       e.preventDefault();
-      advance();
+      press();
     } else if (e.code === 'Escape' && !e.repeat) {
       e.preventDefault();
       // The first time through, nothing skips; "Watch the epilogue" closes.
-      if (!view.first) close();
+      if (!view.first && armed) close();
     }
     holdKeys(e);
   };
@@ -183,7 +193,8 @@ function Epilogue({ view }: { view: EpilogueView }) {
       data-testid="epilogue"
       data-beat={beat?.kind}
       data-index={at.i}
-      onClick={advance}
+      data-armed={armed ? 'true' : 'false'}
+      onClick={press}
       onKeyDown={onKey}
     >
       {beat !== undefined && <Beat key={at.i} beat={beat} view={view} ms={ms} still={still} />}

@@ -145,7 +145,8 @@ export const EPILOGUE_CARDS: readonly EpilogueCardDef[] = [
     when: {},
     text: 'Gerald delivered the Amended Survey to the KFA relay. Signature: received. It was the first form Gerald had ever seen signed for.',
   },
-  // 12 · You (only `family` has a card: the residency points C5's form names)
+  // 12 · You (`family` has its residency card, the points C5's form names; any other Go save gets
+  // Bricks's jar, bible.md § 8 *Stones*; Stay with another arrival shows nothing)
   {
     slot: 'you',
     when: { arrival_reason: 'family', ending_choice: 'go' },
@@ -155,6 +156,11 @@ export const EPILOGUE_CARDS: readonly EpilogueCardDef[] = [
     slot: 'you',
     when: { arrival_reason: 'family', ending_choice: 'stay' },
     text: "The residency points lapsed with the charter. You wrote home to explain. They wrote back: 'Send us a picture of something nice.' You sent the road.",
+  },
+  {
+    slot: 'you',
+    when: { ending_choice: 'go' },
+    text: "You kept Bricks's jar. It held a stone from every world but Tumble IV. Before the last freighter lifted, you added one. Plain, grey. Just a stone.",
   },
   // 13 · The counter (PESTS PROCESSED: 0 flips to this; the jingle in a major key, hummed by many)
   { slot: 'final', when: {}, text: 'REMEMBERED: {pests_processed}' },

@@ -5,7 +5,7 @@
 import type { Page } from '@playwright/test';
 import type { ResultsFixture } from '../src/app/testHookTypes.ts';
 import { expect, test } from './fixtures.ts';
-import { shot } from './hooks.ts';
+import { nextFrames, shot } from './hooks.ts';
 import {
   attr,
   baseTab,
@@ -311,6 +311,21 @@ test('declutter d: the loadout screen', async ({ page }) => {
   await page.evaluate(() => globalThis.__sd!.goto('loadout'));
   await expect(page.getByTestId('loadout-companions')).toBeVisible();
   await capture(page, 'loadout-fin');
+  // Under "Walking with you", the formed links read as names and end above the footer's buttons
+  // (r3 U3-1), at 1280×720 and at 960×540.
+  const linksEndAboveButtons = async (): Promise<void> => {
+    await nextFrames(page);
+    const links = await page.locator('.sd-lo-links-section').boundingBox();
+    const lockIn = await page.getByRole('button', { name: /lock in/i }).boundingBox();
+    const back = await page.getByRole('button', { name: 'Sector map' }).boundingBox();
+    const companions = await page.getByTestId('loadout-companions').boundingBox();
+    expect(links!.y + links!.height).toBeLessThanOrEqual(Math.min(lockIn!.y, back!.y));
+    expect(companions!.y + companions!.height).toBeLessThanOrEqual(links!.y);
+  };
+  await expect(page.locator('.sd-lo-linked-bonus')).toHaveCount(0);
+  await linksEndAboveButtons();
+  await page.setViewportSize({ width: 960, height: 540 });
+  await linksEndAboveButtons();
 });
 
 test('declutter d: Research, Shop, Engineering, Xenotech, the Bounty Board', async ({ page }) => {
@@ -504,6 +519,7 @@ test('declutter e: the epilogue (card, counter, credits, final image)', async ({
   const epi = page.getByTestId('epilogue');
   await expect(epi).toHaveAttribute('data-beat', 'card');
   await capture(page, 'epilogue-card');
+  await expect(epi).toHaveAttribute('data-armed', 'true'); // presses wait a beat after it opens
   for (let i = 0; i < 20; i++) {
     // oxlint-disable-next-line no-await-in-loop -- one card after another
     if ((await epi.getAttribute('data-beat')) !== 'card') break;
