@@ -30,7 +30,11 @@ describe('the boss-damage check (D157)', () => {
   });
 
   it('the variant: the Unsung and its parts at HP ÷ k everywhere, the song’s boss rest × k', () => {
-    expect(songBosses(FIN, LIVE).map((d) => d.id).toSorted()).toEqual(['unsung', 'unsung_part']);
+    expect(
+      songBosses(FIN, LIVE)
+        .map((d) => d.id)
+        .toSorted(),
+    ).toEqual(['unsung', 'unsung_part']);
     const hard = withBossDamage(LIVE, 'fin_m01', 2);
     expect(hard.enemies.unsung.hp).toBe(LIVE.enemies.unsung.hp / 2);
     expect(hard.enemies.unsung_part.hp).toBe(LIVE.enemies.unsung_part.hp / 2);
