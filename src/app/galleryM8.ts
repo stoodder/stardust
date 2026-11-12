@@ -75,13 +75,13 @@ const GRID: GroundGrid = {
 
 /** The choir at the mouth, singing, and the Unsung laid to rest before the arch. */
 const UNITS: readonly Placed[] = [
-  ['enemy.unsung_rest', 'walk_se_0', 4.5, 1.2],
-  ['ally.pebble_lead', 'sing_se_0', 4.6, 2.4],
-  ['ally.thrum', 'sing_se_1', 3.3, 2.9],
-  ['ally.singer', 'sing_se_0', 5.6, 2.9],
-  ['ally.singer', 'sing_se_1', 4.2, 3.5],
-  ['ally.singer', 'sing_ne_0', 5.4, 3.8],
-  ['ally.singer', 'sing_se_1', 2.6, 3.7],
+  ['enemy.unsung_rest', 'walk_se_1', 6.9, 2.2],
+  ['ally.pebble_lead', 'sing_ne_0', 4.5, 1.6],
+  ['ally.thrum', 'sing_ne_1', 3.6, 2.4],
+  ['ally.singer', 'sing_ne_0', 4.6, 2.6],
+  ['ally.singer', 'sing_ne_1', 2.7, 3.1],
+  ['ally.singer', 'sing_se_0', 4.3, 3.5],
+  ['ally.singer', 'sing_ne_1', 5.5, 3.4],
 ];
 
 /** A placed sprite's depth: its ground point, scenery a hair behind a unit on the same spot. */

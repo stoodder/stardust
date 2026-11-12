@@ -396,6 +396,15 @@ test('declutter e: briefings and the crate', async ({ page }) => {
   await expect(page.getByRole('dialog', { name: 'Shift briefing' })).toBeVisible();
   await capture(page, 'briefing-a1');
 
+  // One voice (A1M3: QUILL alone): the whole portrait in its 50 px frame, not a 44 px chip (T900).
+  await boot(page, '&map=a1_m03');
+  const lone = page.getByRole('dialog', { name: 'Shift briefing' });
+  await expect(lone).toBeVisible();
+  await expect(lone.locator('.hud-briefing-chip')).toHaveCount(0);
+  const face = await lone.locator('[data-voice="portrait"]').boundingBox();
+  expect(face?.width).toBe(100); // 50 game px at 2x
+  await capture(page, 'briefing-lone');
+
   await boot(page, '&save=after_a3m5_keep&map=a3_m06');
   await expect(page.getByRole('dialog', { name: 'Shift briefing' })).toBeVisible();
   await capture(page, 'briefing-a3');

@@ -76,6 +76,7 @@ export const SCREENS = {
   bounty: 'd',
   // T803e: Briefing, Results, Inbox, Journal, the full-screen stages, C5, the epilogue.
   'briefing-a1': 'e',
+  'briefing-lone': 'e',
   'briefing-a3': 'e',
   'briefing-fin': 'e',
   'briefing-challenge': 'e',

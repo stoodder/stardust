@@ -36,12 +36,13 @@ async function box(el: Locator): Promise<Box> {
 }
 
 /**
- * The post-game column (T900): none of its boxes touches The Long Walk's node, and the column ends
- * inside the 1280×720 screen; a menu notice, when one shows, overlaps neither the column nor the
- * footer.
+ * The post-game column (T900): the column ends inside the 1280×720 screen, and with Endless open
+ * (`walk`) none of its boxes touches The Long Walk's node (a challenge's taller panel stands under
+ * the node, which stays on top and takes its click); a menu notice, when one shows, overlaps
+ * neither the column nor the footer.
  */
-async function columnClear(page: Page): Promise<void> {
-  const walk = await box(
+async function columnClear(page: Page, walk: boolean): Promise<void> {
+  const node = await box(
     page
       .getByRole('list', { name: 'Shifts' })
       .getByRole('button', { name: /^Shift \d+, The Long Walk, / }),
@@ -52,7 +53,7 @@ async function columnClear(page: Page): Promise<void> {
   for (const el of boxes) {
     // oxlint-disable-next-line no-await-in-loop -- one box at a time
     const b = await box(el);
-    expect(apart(b, walk), "the column clears The Long Walk's node").toBe(true);
+    if (walk) expect(apart(b, node), "the column clears The Long Walk's node").toBe(true);
     expect(b.y + b.height, 'the column ends inside the screen').toBeLessThanOrEqual(720);
     if (shown !== null) expect(apart(b, shown), 'the notice clears the column').toBe(true);
   }
@@ -146,13 +147,13 @@ test('post-game: the Title at dawn, the Sector map at dawn under Stay, the plate
     });
     expect(hit, `${west}'s node is clear of the post-game column`).toBe(true);
   }
-  await columnClear(page);
+  await columnClear(page, true);
 
   // T900: a menu notice (a shift that couldn't start) stands over the footer, so the column never
   // moves down onto The Long Walk's node.
   await page.evaluate((t) => globalThis.__sd!.notice(t), NOTICE);
   await expect(page.getByRole('alert')).toHaveText(NOTICE, { ignoreCase: true });
-  await columnClear(page);
+  await columnClear(page, true);
   await nextFrames(page);
   await shot(page, FLOW, 10, 'notice');
 
@@ -172,11 +173,11 @@ test('post-game: the Title at dawn, the Sector map at dawn under Stay, the plate
   await expect(panel).toContainText('Medals here pay Intel.');
   // With its medals open (and the notice up) the column still ends inside the screen (T803c): the
   // plate under the panel gives way and scrolls its rows.
-  await columnClear(page);
+  await columnClear(page, false);
   await shot(page, FLOW, 11, 'challenge-medals-notice');
   await page.evaluate(() => globalThis.__sd!.notice(null));
   await expect(page.getByRole('alert')).toBeHidden();
-  await columnClear(page);
+  await columnClear(page, false);
   await shot(page, FLOW, 12, 'challenge-medals');
   await page.keyboard.press('Escape');
   await expect(panel.getByRole('list', { name: 'Medals' })).toBeHidden();
