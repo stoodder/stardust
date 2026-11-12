@@ -80,8 +80,10 @@ export interface StarNodeView {
   /** Glyph centre in chart px. */
   readonly x: number;
   readonly y: number;
-  /** Medals on file, of 3. */
+  /** Medals on file, of 3 (the Veteran medal not among them). */
   readonly medals: number;
+  /** The Veteran medal is on file (T860): the node's veteran pip. */
+  readonly veteran: boolean;
   /** The briefing's facts for a built map; null for a teaser. */
   readonly brief: StarBriefView | null;
   /** The node's accessible name: "Shift 6, Rig Nine, The Diggings. Next up. 0 of 3 medals." */
@@ -195,7 +197,8 @@ export function starMapView(save: SaveData): StarMapView {
     const name = silkText(e.name);
     const place = silkText(n.place);
     const tagline = silkText(n.tagline);
-    const medals = e.medals.length;
+    const medals = campaignMedalCount(e.medals);
+    const veteran = hasVeteranMedal(e.medals);
     const head = `Shift ${e.index}, ${name}, ${place}. ${STATE_WORDS[e.state]}.`;
     return {
       id: e.id,
@@ -207,8 +210,12 @@ export function starMapView(save: SaveData): StarMapView {
       x: n.x,
       y: n.y,
       medals,
+      veteran,
       brief: e.state === 'coming_soon' || map === undefined ? null : briefOf(map, save),
-      label: e.state === 'coming_soon' ? `${head} ${tagline}` : `${head} ${medals} of 3 medals.`,
+      label:
+        e.state === 'coming_soon'
+          ? `${head} ${tagline}`
+          : `${head} ${medals} of 3 medals.${veteran ? ' Veteran medal.' : ''}`,
     };
   });
   const marker = entries.findLast((e) => e.state === 'won')?.id ?? null;

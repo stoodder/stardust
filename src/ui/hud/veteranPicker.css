@@ -1,0 +1,160 @@
+/* The briefing's veteran picker (T860; VeteranPicker.tsx): compact, under the medals. Two columns of
+   one-line toggles; the total and the Veteran medal on the header line; the detail line under the
+   grid shows the focused or hovered toggle's whole effect. Gold is the medal's and the bonus's
+   colour; a picked toggle wears the act accent. Also the star map's veteran pip. */
+
+.hud-veteran {
+  display: grid;
+  gap: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--sd-ink-4);
+}
+
+.hud-veteran-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hud-veteran-title {
+  margin: 0;
+  font-size: 8px;
+  font-weight: normal;
+  color: var(--sd-steel-3);
+}
+
+.hud-veteran-total {
+  color: var(--sd-gold-3);
+}
+
+.hud-veteran-medal {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: auto;
+  color: var(--sd-steel-3);
+}
+
+.hud-veteran-medal.reached,
+.hud-veteran-medal.held {
+  color: var(--sd-gold-3);
+}
+
+/* The medal's diamond with a chevron's notch: outlined, gold when in reach, filled once held. */
+.hud-veteran-diamond,
+.sd-star-veteran {
+  box-sizing: border-box;
+  width: 6px;
+  height: 6px;
+  margin: 1px;
+  border: 1px solid var(--sd-steel-2);
+  transform: rotate(45deg);
+}
+
+.hud-veteran-medal.reached .hud-veteran-diamond {
+  border-color: var(--sd-gold-3);
+}
+
+.hud-veteran-medal.held .hud-veteran-diamond {
+  border-color: var(--sd-gold-4);
+  background: var(--sd-gold-3);
+}
+
+.hud-veteran-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hud-veteran-toggle {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 6px auto 1fr auto;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  min-height: 12px;
+  margin: 0;
+  padding: 1px 3px;
+  border: 1px solid var(--sd-ink-3);
+  font: inherit;
+  line-height: 8px;
+  color: var(--sd-white-0);
+  text-align: left;
+  text-transform: uppercase;
+  background: var(--sd-ink-1);
+  cursor: pointer;
+}
+
+.hud-veteran-toggle:hover {
+  border-color: var(--sd-steel-1);
+  background: var(--sd-ink-2);
+}
+
+.hud-veteran-toggle:focus-visible {
+  outline: none;
+  border-color: var(--sd-white-1);
+}
+
+.hud-veteran-box {
+  box-sizing: border-box;
+  width: 6px;
+  height: 6px;
+  border: 1px solid var(--sd-steel-2);
+}
+
+.hud-veteran-toggle.on {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.hud-veteran-toggle.on .hud-veteran-box {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.hud-veteran-short {
+  overflow: hidden;
+  font-family: var(--font-dialogue);
+  color: var(--sd-steel-3);
+  text-transform: none;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.hud-veteran-bonus {
+  color: var(--sd-gold-3);
+}
+
+.hud-veteran-toggle.dim {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.hud-veteran-toggle.dim .hud-veteran-bonus {
+  color: var(--sd-steel-2);
+}
+
+.hud-veteran-detail {
+  min-height: 8px;
+  margin: 0;
+  font-family: var(--font-dialogue);
+  color: var(--sd-steel-4);
+  text-transform: none;
+}
+
+/* The star map's veteran pip (StarMap.tsx): a small gold diamond just right of the medal pips. */
+.sd-star-veteran {
+  position: absolute;
+  left: 8px;
+  top: 7px;
+  width: 4px;
+  height: 4px;
+  margin: 0;
+  border-color: var(--sd-gold-4);
+  background: var(--sd-gold-3);
+  pointer-events: none;
+}

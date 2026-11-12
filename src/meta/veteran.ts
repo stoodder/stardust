@@ -82,50 +82,67 @@ export function inTableOrder(mods: readonly string[]): VeteranModifierId[] {
   return VETERAN_MODIFIER_IDS.filter((m) => mods.includes(m));
 }
 
+/** One modifier's copy in the briefing's picker. */
+export interface VeteranCopy {
+  readonly name: string;
+  /** The toggle's one short line. */
+  readonly short: string;
+  /** The whole effect in plain words (shown on focus or hover, and to screen readers). */
+  readonly effect: string;
+  /** A quip beside it on focus or hover. */
+  readonly quip: string;
+}
+
 /**
- * The picker's copy (style-guide § 6's UI voice: playful, never scolding): the name, the effect in
- * plain words (the row's one line), and a quip shown on focus or hover.
+ * The picker's copy (style-guide § 6's UI voice: playful, never scolding): each toggle's name and
+ * short line, and on focus or hover the whole effect and a quip.
  */
-export const VETERAN_COPY: Readonly<
-  Record<VeteranModifierId, { readonly name: string; readonly effect: string; readonly quip: string }>
-> = {
+export const VETERAN_COPY: Readonly<Record<VeteranModifierId, VeteranCopy>> = {
   hardened_hides: {
     name: 'Hardened Hides',
+    short: 'Tougher enemies',
     effect: 'Enemies +40% HP and shields',
     quip: 'They have been eating their vegetables.',
   },
   double_time: {
     name: 'Double Time',
+    short: 'Faster enemies',
     effect: 'Enemies +20% speed',
     quip: 'Somebody told them about the snacks.',
   },
   lean_budget: {
     name: 'Lean Budget',
+    short: 'Fewer credits',
     effect: '−30% starting credits, −20% bounties',
     quip: 'Accounting found the coffee fund.',
   },
   glass_core: {
     name: 'Glass Core',
+    short: 'Core integrity 5',
     effect: 'Core integrity 5',
     quip: 'Handle with care. Then with more care.',
   },
   radio_silence: {
     name: 'Radio Silence',
+    short: 'No abilities',
     effect: 'No commander abilities',
     quip: 'Comms are down. You are the cavalry now.',
   },
   short_handed: {
     name: 'Short-Handed',
+    short: '3 tower types',
     effect: '3 tower types, not 4',
     quip: 'Your first three picks deploy. The fourth is on break.',
   },
   no_protocols: {
     name: 'No Protocols',
+    short: 'Protocols off',
     effect: 'Field Protocols off',
     quip: 'Strictly by the book. A very short book.',
   },
   rush_hour: {
     name: 'Rush Hour',
+    short: 'Short countdowns',
     effect: 'Wave countdowns −50%',
     quip: 'Everyone is late for something.',
   },

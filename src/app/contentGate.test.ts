@@ -5,20 +5,22 @@ import type { Router } from './router.ts';
 
 const renderer = vi.hoisted(() => ({
   loaded: false,
+  pending: null as Promise<void> | null,
   resolve: null as (() => void) | null,
 }));
 
 vi.mock('./battleRenderer.ts', () => ({
   battleRendererLoaded: () => renderer.loaded,
-  loadBattleRenderer: () =>
-    renderer.loaded
-      ? Promise.resolve()
-      : new Promise<void>((resolve) => {
-          renderer.resolve = () => {
-            renderer.loaded = true;
-            resolve();
-          };
-        }),
+  loadBattleRenderer: () => {
+    if (renderer.loaded) return Promise.resolve();
+    renderer.pending ??= new Promise<void>((resolve) => {
+      renderer.resolve = () => {
+        renderer.loaded = true;
+        resolve();
+      };
+    });
+    return renderer.pending;
+  },
 }));
 
 const { gateRouter } = await import('./contentGate.ts');
@@ -49,6 +51,7 @@ function fakeRouter(calls: string[]): Router {
 describe('the content gate', () => {
   beforeEach(() => {
     renderer.loaded = false;
+    renderer.pending = null;
     renderer.resolve = null;
   });
 

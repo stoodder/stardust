@@ -70,6 +70,7 @@ import {
 import { assertNever } from '../shared/types.ts';
 import { bountyBoardState } from '../ui/screens/bountyBoard.ts';
 import { logError } from './log.ts';
+import { campaignMedalCount } from '../meta/veteran.ts'; // T860
 
 function storage(): Storage | null {
   try {
@@ -558,7 +559,7 @@ function campaignView(s: Session): CampaignView {
         name: e.name,
         index: e.index,
         state: e.state,
-        medals: e.medals.length,
+        medals: campaignMedalCount(e.medals), // T860: the Veteran medal isn't one of the 3
         teaser: false,
       })),
       ...teaserRow(),

@@ -7,14 +7,16 @@ import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 import { shot, waitForReady } from './hooks.ts';
 
-type Chunk = 'a2' | 'a3' | 'fin' | 'BattleScene';
+const CHUNKS = ['a2', 'a3', 'fin', 'BattleScene'] as const;
+type Chunk = (typeof CHUNKS)[number];
 
 /** Records which lazy chunks the page fetches (by Vite's chunk file names: `assets/a2-<hash>.js`). */
 function trackChunks(page: Page): Set<Chunk> {
   const seen = new Set<Chunk>();
   page.on('request', (r) => {
-    const m = /\/assets\/(a2|a3|fin|BattleScene)-[\w-]+\.js$/.exec(r.url());
-    if (m !== null) seen.add(m[1] as Chunk);
+    const name = /\/assets\/([\w]+)-[\w-]+\.js$/.exec(r.url())?.[1];
+    const chunk = CHUNKS.find((c) => c === name);
+    if (chunk !== undefined) seen.add(chunk);
   });
   return seen;
 }

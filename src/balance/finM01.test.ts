@@ -1,6 +1,6 @@
 // FIN Phase 1, the Descent (T820; story/campaign/finale.md § FIN, design/maps.md § 5.5). As tuned,
 // par (Mindspike with Echo Spike and Dread, Hum Choir, Sproing Pad, Scuttle Den; Ves'thara;
-// Suppressing Fire) walks the convoy's 16 singers to the Halls mouth with 8 still singing (50%,
+// Suppressing Fire) walks the convoy's 16 singers to the Halls mouth with 9 still singing (56%,
 // the reference cell: inside 40–60 and ≤ A3M6's 59.3 + 5), its halts a sliver of the walk and its
 // waits at each leg's end under ~40% of it, the four waymark lanterns relit, and the Bore short of
 // full. Without air (the gate falls to the flyers), jam, or splash, the choir is lost by W17;
@@ -28,9 +28,9 @@ const pct = (b: { voices: number; singers: number }): number => (100 * b.voices)
 describe('FIN Phase 1 balance', { timeout: HARNESS_TEST_TIMEOUT_MS * 2 }, () => {
   const par = finM01Beats(content, 'par');
 
-  it('walks par to the Halls mouth with 8 of 16 singing, in the reference band', () => {
+  it('walks par to the Halls mouth with 9 of 16 singing, in the reference band', () => {
     expect(par.outcome).toBe('won');
-    expect([par.voices, par.singers]).toEqual([8, 16]);
+    expect([par.voices, par.singers]).toEqual([9, 16]);
     expect(pct(par)).toBeGreaterThanOrEqual(40);
     expect(pct(par)).toBeLessThanOrEqual(60);
     expect(pct(par)).toBeLessThanOrEqual(A3M6_PAR_PCT + 5);

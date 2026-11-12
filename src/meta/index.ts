@@ -155,7 +155,7 @@ export {
   veteranRecord,
   withVeteranPick,
 } from './veteran.ts';
-export type { VeteranMap, VeteranModifierId, VeteranOffer } from './veteran.ts';
+export type { VeteranCopy, VeteranMap, VeteranModifierId, VeteranOffer } from './veteran.ts';
 export { DIFFICULTIES, LIVE_KNOWN_IDS, SAVE_VERSION, createNewSave } from './saveData.ts';
 export type { KeyValueStore, SlotId } from './store.ts';
 export type { StoryUnlocks } from './story.ts';
