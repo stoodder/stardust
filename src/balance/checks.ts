@@ -327,8 +327,10 @@ export function notGradual(r: HeadlessResult): string | null {
   const refugeeCap = (budget * MAX_WAVE_LOSS_PCT) / 100;
   const refugeeWall = budget > 0 ? r.waves.find((w) => lostIn(w) > refugeeCap) : undefined;
   if (refugeeWall !== undefined) {
-    const what = choir ? 'singers hushed' : 'refugees';
-    return `W${refugeeWall.wave} loses ${lostIn(refugeeWall)} ${what} of the ${budget} the map allows, over ${MAX_WAVE_LOSS_PCT}%`;
+    const what = choir
+      ? `singers hushed of the ${budget} the choir can lose`
+      : `refugees of the ${budget} that lose the map`;
+    return `W${refugeeWall.wave} loses ${lostIn(refugeeWall)} ${what}, over ${MAX_WAVE_LOSS_PCT}%`;
   }
   if (r.outcome === 'lost') {
     const lost = r.lostAtWave ?? r.waves.length;

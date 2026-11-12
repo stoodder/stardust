@@ -1,7 +1,7 @@
 // FIN Phase 1, the Descent (T820, retuned with the whole map by T821; story/campaign/finale.md
 // § FIN, design/maps.md § 5.5). As tuned, par (Mindspike with Echo Spike and Dread, Hum Choir,
 // Sproing Pad, Scuttle Den; Ves'thara; Suppressing Fire) walks the convoy's 16 singers to the Halls
-// mouth with 7 still singing (9 hushed), its halts a sliver of the walk and its waits at each leg's
+// mouth with 10 still singing (6 hushed, the first in W13, none of W13–W18 more than 4; D156), its halts a sliver of the walk and its waits at each leg's
 // end under ~40% of it, the four waymark lanterns relit, and the Bore short of full. Without air
 // (the gate falls to the flyers), jam, or splash, the choir is lost in Phase 1 (by W18); Story
 // arrives with more Voices. The whole map's margins, Phase 2, and Dawn are finM01Phase2.test.ts's
@@ -10,9 +10,9 @@
 // The beats keep time with the waves (the choir's `walkWaves`): the memorial cue plays in W9 on
 // Standard, Story, and veteran Rush Hour; under alwaysCallEarly the choir lags its allowance and
 // passes it later. Phase 2 starts at the later of W18 cleared and the choir at the Halls mouth
-// (`{ choirAt, afterWave: 18 }`): on Standard and Story the choir is there first and Phase 2 starts
-// the tick after W18 clears; under veteran Rush Hour and alwaysCallEarly W18 clears first and Phase
-// 2 starts the tick after she arrives.
+// (`{ choirAt, afterWave: 18 }`): on Standard the choir is there first and Phase 2 starts the tick
+// after W18 clears; on Story, under veteran Rush Hour, and under alwaysCallEarly W18 clears first
+// and Phase 2 starts the tick after she arrives.
 import { describe, expect, it } from 'vitest';
 import { compileContent } from '../content/compile.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
@@ -24,9 +24,9 @@ const content = compileContent(RAW_CONTENT);
 describe('FIN Phase 1 balance', { timeout: HARNESS_TEST_TIMEOUT_MS * 2 }, () => {
   const par = finM01Beats(content, 'par', { untilPhase2: true });
 
-  it('walks par to the Halls mouth with 7 of 16 singing, the lanterns relit, the Bore short', () => {
+  it('walks par to the Halls mouth with 10 of 16 singing, the lanterns relit, the Bore short', () => {
     expect(par.outcome).toBe('playing');
-    expect([par.voices, par.singers]).toEqual([7, 16]);
+    expect([par.voices, par.singers]).toEqual([10, 16]);
     expect(par.waymarks).toBe('done');
     expect(par.borePct).toBeLessThan(100); // no breakthrough for par
     expect(RAW_CONTENT.maps.fin_m01.marginBand).toBeUndefined(); // the finale's own 40–60
@@ -71,19 +71,17 @@ describe('FIN Phase 1 balance', { timeout: HARNESS_TEST_TIMEOUT_MS * 2 }, () => 
 describe('FIN Phase 2 start: the later of W18 cleared and the choir at the Halls', () => {
   const opts = { untilPhase2: true } as const;
 
-  it.each(['par', 'par@story'])(
-    '%s: the choir first, Phase 2 the tick after W18 clears',
-    (label) => {
-      const b = finM01Beats(content, label, opts);
-      expect(b.arrivedTick).toBeGreaterThan(0);
-      expect(b.arrivedTick).toBeLessThan(b.w18ClearedTick);
-      expect(b.phase2Tick).toBe(b.w18ClearedTick + 1);
-      expect(b.checkpoint).toEqual({ label: 'halls', wave: 18 });
-      expect(b.boreRateAtPhase2).toBe(0); // the Bore stops, fixing the Unsung's bonus
-    },
-  );
+  it.each(['par'])('%s: the choir first, Phase 2 the tick after W18 clears', (label) => {
+    const b = finM01Beats(content, label, opts);
+    expect(b.arrivedTick).toBeGreaterThan(0);
+    expect(b.arrivedTick).toBeLessThan(b.w18ClearedTick);
+    expect(b.phase2Tick).toBe(b.w18ClearedTick + 1);
+    expect(b.checkpoint).toEqual({ label: 'halls', wave: 18 });
+    expect(b.boreRateAtPhase2).toBe(0); // the Bore stops, fixing the Unsung's bonus
+  });
 
   it.each([
+    ['par@story', {}],
     ['par', { rushHour: true }],
     ['alwaysCallEarly', {}],
   ] as const)('%s %o: W18 clears first, Phase 2 the tick after she arrives', (label, extra) => {

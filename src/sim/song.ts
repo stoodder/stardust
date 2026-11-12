@@ -22,7 +22,8 @@
 //   kills still ends (the countdown can't stall).
 // - **The multiplier** (C4): the first of `song.multipliers` whose flag has its value, else ×1. It
 //   scales every source (kills, the boss's damage, the trickle), so the phase's length moves by
-//   exactly the ratio (Keep ×1.25 the anchor; Purge 1.25× as long, Rewrite 0.83×).
+//   about the ratio (Keep ×1.25 the anchor; Purge 1.25× as long, Rewrite 0.83×): a fixed share of
+//   points from kills and the boss pulls Purge a little past it, so the trickle stays dominant.
 // - The rest points stop at `restTarget` (p = 1). `restProgressPct` triggers read
 //   `restProgress` on the next tick's triggers.
 // - `restAll` (Dawn's action; map events only) lays every live Hollow unit to rest, a scattered

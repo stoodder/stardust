@@ -20,6 +20,7 @@ import {
   choir,
   choirAt,
   choirLost,
+  choirSpacing,
   choirSize,
   hushSinger,
   initChoir,
@@ -219,6 +220,22 @@ describe('the walk', () => {
     for (let i = 2; i < m.length; i++) {
       expect(m[i]!.dist, `rank ${i - 1}`).toBeCloseTo(lead + (i - 1) * CHOIR_SPACING_TILES, 9);
     }
+  });
+
+  it('closes up a choir bigger than the base, so its column is never longer (D156)', () => {
+    const { state, ctx } = setup(WARREN);
+    state.wave = 1;
+    tick(state, ctx, 900);
+    const lead = leadPos(state);
+    const m = members(state);
+    const n = state.choir.singers; // 14: the base 10 and the warren's 4
+    const gap = (CHOIR_SPACING_TILES * 10) / n;
+    expect(choirSpacing({ singers: 10 }, n)).toBeCloseTo(gap, 12);
+    for (let i = 1; i < m.length; i++) {
+      expect(m[i]!.dist, `rank ${i}`).toBeCloseTo(lead + i * gap, 9);
+    }
+    expect(m.at(-1)!.dist - lead).toBeCloseTo(10 * CHOIR_SPACING_TILES, 9);
+    expect(choirSpacing({ singers: 10 }, 8)).toBe(CHOIR_SPACING_TILES); // a smaller one keeps it
   });
 
   it('reaches a marker beside the road once the leader walks past its nearest point', () => {
@@ -512,8 +529,10 @@ describe('the Choir margin (#2)', () => {
     const pct = (build: string): number | undefined =>
       report.runs.find((r) => r.build === build && !r.repeat)?.marginPct;
     expect(pct('par')).toBe(100);
+    // The warren's 14 file closer (D156: no longer a column than the base's), so the dev road's
+    // Motes reach two of them.
+    expect(pct('flag:door_choice=warren')).toBeCloseTo((100 * 12) / 14, 9);
     for (const b of [
-      'flag:door_choice=warren',
       'flag:door_choice=convoy',
       'flag:spared_quiet_wave=true',
       'flag:stardust_choice=returned',

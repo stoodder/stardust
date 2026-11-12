@@ -158,7 +158,8 @@ describe('the finale content (the Unsung, a stub under its final id)', () => {
     ]);
     expect(boss.phases[0]?.gather).not.toBeNull();
     expect(boss.phases[2]?.burrow).toMatchObject({ times: 2, durationTicks: 240 }); // T808: 4 s
-    expect(boss.phases[3]?.adds).toEqual({ enemy: 'silencer', count: 1, everyTicks: 1200 });
+    // D156: a Silencer every 30 s (20 s overran the Mindspike-free answer in Purge's long song).
+    expect(boss.phases[3]?.adds).toEqual({ enemy: 'silencer', count: 1, everyTicks: 1800 });
     expect(u.sprites).toEqual({ body: 'enemy.unsung', icon: 'icon.enemy.unsung' });
   });
 });

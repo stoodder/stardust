@@ -1,6 +1,7 @@
 // FIN balance-harness builds: docs/story/campaign/finale.md § FIN, Par build. The map is judged on
-// Voices % of the 20-strong choir (the Escort chain's end; maps.md § 6.1 and § 5.5). Phase 1 is
-// T820's, Phase 2 and the whole map's tune T821's (par 55: 9 singers hushed).
+// the lower of Voices % of the 20-strong choir and the gate's % (the Escort chain's end; maps.md
+// § 6.1 and § 5.5). Phase 1 is T820's, Phase 2 and the whole map's tune T821's, retuned by D156
+// (par 53.8: the gate's 28 of 52; 6 singers hushed, gradually from W13).
 //
 // The flags: the convoy first (a run with no door set mans the militia's posts and walks the
 // smaller choir), then the warren; C1, C2, and C4 each change the choir, the song, or the Bore, so
@@ -102,13 +103,15 @@ const SEAM_SPIKE: readonly BuildStep[] = [
 ];
 
 /**
- * The Mindspike-free answer (T874; finale.md § FIN, Alt builds): Thumpers, Harpoons, the Hum
- * Choir and a Sproing Pad, no Psionic at all. Thumpers on par's road and ledge pads for the Mote
- * and Fracture swarms; Harpoons through the Gap and at the Halls for the plated Silencers and
- * Maws, and either side of the gate for Everglow's units walking in from the Bore road; the
- * Choirs come at W15, above the row-4 run and on the ridge; the air is left to the gate until
- * W18 (the Moths and gunships cost it ~18 of its 30), then two Sproing Pads, and every tower to
- * tier 3 as Phase 2 pays. It casts nothing, so it plays the same with any companion.
+ * The Mindspike-free answer (T874; finale.md § FIN, Alt builds): Thumpers, Harpoons and a Sproing
+ * Pad, and a Hum Choir last, no Psionic at all. Thumpers on par's road and
+ * ledge pads for the Mote and Fracture swarms; Harpoons through the Gap and at the Halls for the
+ * plated Silencers and Maws, and either side of the gate for Everglow's units walking in from the
+ * Bore road; the air is left to the gate until W18 (the Moths and gunships cost it ~12 of its
+ * 50), then a Sproing Pad on the ridge. What Phase 2 pays goes to the Halls mouth (D156): the
+ * east ledge's Thumper to tier 3 and Cluster Thumper, the Halls Harpoon to tier 3, then a Hum Choir
+ * on the east seam beside the Halls as the last credits come in. Its only casts
+ * are Suppressing Fire's, so it plays the same with any companion.
  */
 function noMindspikeSteps(): BuildStep[] {
   return [
@@ -158,6 +161,7 @@ function noMindspikeSteps(): BuildStep[] {
     { wave: 19, upgrade: HALLS_E },
     { wave: 20, upgrade: HALLS_E },
     { wave: 20, specialize: LEDGE_E, spec: 'a' },
+    { wave: 21, build: 'choir', tile: SEAM_E },
     WHOS_THERE,
   ];
 }
@@ -187,14 +191,15 @@ function parSteps(): BuildStep[] {
     { wave: 12, build: 'choir', tile: HALLS_E },
     { wave: 13, upgrade: LEDGE_E },
     { wave: 14, specialize: SEAM_W, spec: 'a' },
-    { wave: 15, specialize: LEDGE_E, spec: 'b' },
+    { wave: 15, specialize: LEDGE_E, spec: 'a' },
     { wave: 16, build: 'burrow', tile: CORNER },
     { wave: 16, build: 'mindspike', tile: LEDGE_W },
     { wave: 17, upgrade: LEDGE_W },
-    // Phase 2: the Halls ring
+    // Phase 2: the Halls ring, the west ledge to Dread (its Unnerve cancels the Unsung's dig
+    // tells, D154 Fork 2; D156)
     { wave: 19, upgrade: LEDGE_W },
     { wave: 19, upgrade: CORNER },
-    { wave: 20, specialize: LEDGE_W, spec: 'a' },
+    { wave: 20, specialize: LEDGE_W, spec: 'b' },
     { wave: 21, upgrade: HALLS_E },
     { wave: 22, upgrade: HALLS_E },
     WHOS_THERE,

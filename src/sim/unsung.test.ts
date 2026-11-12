@@ -506,7 +506,10 @@ describe("the forms' time floors (D156): damage never brings a form on sooner", 
   it('no other boss has one: their phases begin as soon as their HP share comes', () => {
     for (const [id, e] of Object.entries(LIVE.enemies)) {
       if (e.boss === null || id === 'unsung') continue;
-      expect(e.boss.phases.map((p) => p.notBeforeTicks), id).toEqual(e.boss.phases.map(() => 0));
+      expect(
+        e.boss.phases.map((p) => p.notBeforeTicks),
+        id,
+      ).toEqual(e.boss.phases.map(() => 0));
     }
   });
 });

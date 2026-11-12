@@ -8,6 +8,8 @@ import {
   flagCombinationLabel,
   flagVariantLabel,
   flagsFor,
+  lossPerWave,
+  marginOf,
   median,
   notGradual,
   runKey,
@@ -479,5 +481,45 @@ describe('balance checks', () => {
   it('median', () => {
     expect(median([3, 1, 2])).toBe(2);
     expect(median([4, 1, 2, 3])).toBe(2.5);
+  });
+});
+
+/** A won choir run: base 20, `hushed` hushed at the low point, `gate` of 20 integrity left. */
+function choirRun(hushed: number, gate: number): HeadlessResult {
+  const r = fakeResult('won', gate);
+  return {
+    ...r,
+    objective: 'choir',
+    choirSize: 20,
+    choirBase: 20,
+    voices: 20,
+    maxLost: 14,
+    stats: { ...r.stats, voicesMin: 20 - hushed },
+  };
+}
+
+/** Waves that hush `hushes` singers each, at no cost to the gate. */
+function hushWaves(hushes: readonly number[]): HeadlessResult['waves'] {
+  return hushes.map((singersHushed, i) => ({
+    ...lossy('won', [0]).waves[0]!,
+    wave: i + 1,
+    integrityLost: 0,
+    singersHushed,
+  }));
+}
+
+describe('the choir with a gate (D156)', () => {
+  it('scores the lower of Voices % and the gate %', () => {
+    expect(marginOf(choirRun(9, 18))).toBe(55); // Voices 55, gate 90
+    expect(marginOf(choirRun(2, 5))).toBe(25); // Voices 90, gate 25
+    expect(marginOf({ ...choirRun(2, 5), maxIntegrity: 0 })).toBe(90); // no core: Voices alone
+  });
+
+  it('walls on singers hushed in one wave against the hush allowance', () => {
+    expect(notGradual({ ...choirRun(9, 20), waves: hushWaves([1, 2, 7, 0]) })).toBeNull();
+    expect(notGradual({ ...choirRun(9, 20), waves: hushWaves([1, 8, 0]) })).toBe(
+      'W2 loses 8 singers hushed of the 14 the choir can lose, over 50%',
+    );
+    expect(lossPerWave({ ...choirRun(3, 20), waves: hushWaves([0, 3]) })).toBe('0,0+3h');
   });
 });

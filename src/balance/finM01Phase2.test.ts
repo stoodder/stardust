@@ -5,8 +5,8 @@
 // Pebble's "She heard" as it reaches the song, Directive 0 under Keep (revoke, lock, "Who's
 // there?", restore, and par rebuilding the class; a human's slower rebuild still survivable), the
 // trickle alone ending the phase inside twice its target, D154 Fork 2's pinned cost (no burrow
-// answer ends ≥ 10 Voices under par), Laid to Rest (a deliberate Halls-ring Phase 2 earns it in
-// both Thrum cells, par doesn't; D156), and par's whole run under 25 minutes at 1×.
+// answer ends ≥ 10 Voices under par), Laid to Rest (holding the east Halls ledge to Dread earns it
+// in both Thrum cells, par's Echo Spikes don't; D156), and par's whole run under 25 minutes at 1×.
 import { describe, expect, it } from 'vitest';
 import { compileContent } from '../content/compile.ts';
 import type { CompiledBuild } from '../content/compiled.ts';
@@ -14,7 +14,7 @@ import { RAW_CONTENT } from '../content/registry.ts';
 import { PADS } from '../content/maps/fin_m01/builds.ts';
 import { DAWN_SEC, DIRECTIVE_0_SEC, THRUM_ECHO } from '../content/maps/fin_m01/map.ts';
 import { createBuildExecutor, createSim, runHeadless, type SimEvent } from '../sim/index.ts';
-import { flagsFor, marginOf } from './checks.ts';
+import { flagsFor, marginOf, splitMeta } from './checks.ts';
 import { buildFor } from './harness.ts';
 import { referenceRunProfile, runConfig } from './profile.ts';
 import { HARNESS_TEST_TIMEOUT_MS } from './rules.ts';
@@ -26,11 +26,6 @@ const map = content.maps.fin_m01;
 /** Whether two tiles are the same. */
 const sameTile = (t: readonly [number, number], u: readonly [number, number]): boolean =>
   t[0] === u[0] && t[1] === u[1];
-/** Par's Phase 2 tier and spec on the west ledge, and its Halls Choir's upgrades (the ring moves them). */
-const ledgeOrChoirLate = (s: CompiledBuild['steps'][number]): boolean =>
-  s.wave >= 19 &&
-  (s.kind === 'upgrade' || s.kind === 'specialize') &&
-  (sameTile(s.tile, PADS.LEDGE_W) || sameTile(s.tile, PADS.HALLS_E));
 /** A run's Voices % at their lowest (the margin's choir half; balance/checks.ts `marginOf`). */
 const voicesPct = (r: { choirBase: number; choirSize: number; stats: { voicesMin: number } }) =>
   (100 * (r.choirBase - (r.choirSize - r.stats.voicesMin))) / r.choirBase;
@@ -40,7 +35,8 @@ const A3M6_PAR_PCT = (32 / 54) * 100;
 function config(label: string, build?: CompiledBuild) {
   const b = build ?? buildFor(label, map, content)!;
   const flags = flagsFor(label, map) ?? {};
-  const profile = referenceRunProfile(map, content, 'standard', undefined, flags);
+  const difficulty = splitMeta(label).meta === 'story' ? 'story' : 'standard';
+  const profile = referenceRunProfile(map, content, difficulty, undefined, flags);
   return { b, cfg: runConfig(content, map, b, profile, 1, flags) };
 }
 
@@ -109,7 +105,7 @@ describe('FIN Phase 2 and Dawn', { timeout: HARNESS_TEST_TIMEOUT_MS * 2 }, () =>
     expect(trickleSec).toBeGreaterThan(SONG_TARGET_SEC); // the kills and the Unsung still count
   });
 
-  it("hitting the Unsung shortens the song, and its forms keep their time floors (D156)", () => {
+  it('hitting the Unsung shortens the song, and its forms keep their time floors (D156)', () => {
     // The same par with the boss's damage worth nothing to the song: a longer Phase 2.
     const raw = RAW_CONTENT.maps.fin_m01;
     const deaf = compileContent({
@@ -122,14 +118,14 @@ describe('FIN Phase 2 and Dawn', { timeout: HARNESS_TEST_TIMEOUT_MS * 2 }, () =>
     const profile = referenceRunProfile(m, deaf, 'standard', undefined, flags);
     const unheard = runHeadless(runConfig(deaf, m, b, profile, 1, flags), b);
     expect(songSeconds(unheard)! - songSeconds(c4.keep)!).toBeGreaterThanOrEqual(5);
-    // Forms 3 and 4 never begin before 60 s and 120 s into Phase 2, on Story either (the most
-    // damage par deals).
+    // On Story (the most damage par deals) form 3's digs never come before 60 s into Phase 2 (a
+    // rise sooner holds in its telegraph), and form 4 never begins before 120 s.
     const story = played('par@story');
     const p2 = story.at('PhaseChanged', (e) => 'phase' in e && e.phase === 2);
-    const form = (n: number) =>
-      story.at('BossPhase', (e) => 'phase' in e && e.phase === n && e.enemy === 'unsung');
-    expect(form(3) - p2).toBeGreaterThanOrEqual(60 * TICK_HZ);
-    expect(form(4) - p2).toBeGreaterThanOrEqual(120 * TICK_HZ);
+    const form4 = story.at('BossPhase', (e) => 'phase' in e && e.phase === 4);
+    const dig = story.at('BossSurfaced');
+    expect(dig - p2).toBeGreaterThanOrEqual(60 * TICK_HZ);
+    expect(form4 - p2).toBeGreaterThanOrEqual(120 * TICK_HZ);
   });
 
   it("Thrum's echo at rest progress 50% when she was cleared; Pebble's line as it arrives", () => {
@@ -196,32 +192,26 @@ describe('FIN Phase 2 and Dawn', { timeout: HARNESS_TEST_TIMEOUT_MS * 2 }, () =>
   });
 
   it.each(['true', 'false'])(
-    'Laid to Rest with Thrum spared=%s: the Halls ring earns it, par (its ledges firing up the descent) does not',
+    'Laid to Rest with Thrum spared=%s: the Dread ledge earns it, par (its Echo Spikes) does not',
     (spared) => {
-      // Par's Phase 2 spent on the Hum Choir at the Halls (tier 3 by W20) instead of the west
-      // ledge's tier 3 and Echo Spike, and the east ledge's Dread holding its fire, so the Hollow
-      // come down the descent into the song before they break. In both Thrum cells (D156): his
-      // +0.5 tiles of song must not decide it. Letting them come close costs singers: a trade-off.
+      // Par's east Halls ledge specialized to Dread instead of Echo Spike (W15): one heavy shot
+      // that Unnerves, so the Hollow walk on down the descent and break inside the song, where
+      // the echoes broke them up the descent, outside it. In both Thrum cells (D156): his +0.5
+      // tiles of song must not decide it.
       const label = `flag:spared_quiet_wave=${spared}`;
       const par = map.builds.parBuild;
-      const ring: CompiledBuild = {
+      const dread: CompiledBuild = {
         ...par,
-        steps: par.steps.flatMap((s): CompiledBuild['steps'][number][] =>
-          ledgeOrChoirLate(s)
-            ? []
-            : s.wave === 19 && s.kind === 'upgrade' && sameTile(s.tile, PADS.CORNER)
-              ? [s, { ...s, tile: PADS.HALLS_E }, { ...s, wave: 20, tile: PADS.HALLS_E }]
-              : s.kind === 'scriptInput'
-                ? [{ wave: 19, kind: 'holdFire', target: PADS.LEDGE_E, on: true }, s]
-                : [s],
+        steps: par.steps.map((s) =>
+          s.kind === 'specialize' && sameTile(s.tile, PADS.LEDGE_E) ? { ...s, spec: 'b' } : s,
         ),
       };
       const plain = headless(label);
-      const ringed = headless(label, ring);
+      const held = headless(label, dread);
       expect(plain.medals.challenge).toBe('forfeited');
-      expect(ringed.outcome).toBe('won');
-      expect(ringed.medals.challenge).toBe('earned');
-      expect(marginOf(ringed)).toBeGreaterThanOrEqual(20); // the forgiving floor
+      expect(held.outcome).toBe('won');
+      expect(held.medals.challenge).toBe('earned');
+      expect(marginOf(held)).toBeGreaterThanOrEqual(40); // still in par's band
     },
   );
 

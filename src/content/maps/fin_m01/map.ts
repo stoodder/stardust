@@ -31,7 +31,8 @@
 //   draws the wrecked variant of `memorialTower` with the `{name}` plate. The choir passing it
 //   cues Pebble's hum and Bricks's silence (W9, whose waves hold off 10 s).
 // - **The colony gate** is the core: Everglow units, flyers, and the Heavy Hollow walk on to it and
-//   leak there (core integrity 30: the air exam's meter, so no-air loses on it).
+//   leak there (core integrity 50: the air exam's meter, so no-air loses on it; the margin is the
+//   lower of Voices % and the gate's %, D156).
 import { defineMapLayout } from '../../define.ts';
 import { WHOS_THERE_INPUT } from '../../forcedInputs.ts';
 import { FIN_SKY } from './lighting.ts';
@@ -260,7 +261,7 @@ export const map = defineMapLayout({
   markerWhen: { ...Object.fromEntries(MILITIA.map((m) => [m, CONVOY])), held_door: CONVOY },
   startCredits: 900,
   // The colony gate behind the walk: what the flyers and Everglow's units cost when they get through
-  // (the air exam's meter: no-air loses on it).
+  // (the air exam's meter: no-air loses on it). 50, so par's ~24 lost leaves it at 53.8% (D156).
   coreIntegrity: 50,
   stardust: 500,
   // Air (Rift Moths, gunships), jam (Silencers, the Auditor), and splash (Motes, Fractures, the
@@ -281,19 +282,19 @@ export const map = defineMapLayout({
     'boss',
   ],
   requiredCounters: ['air', 'jam', 'splash'],
-  // Laid to Rest (finale.md § FIN, Medals): in Phase 2, at least 84% of the Hollow destroyed are
+  // Laid to Rest (finale.md § FIN, Medals): in Phase 2, at least 60% of the Hollow destroyed are
   // destroyed inside the song (T805's atom; each unit counted once, by its first death: D156).
-  // The song reaches ~2 tiles round Pebble at the Halls mouth, and par's ledge Mindspikes break
-  // Motes up the descent outside it (75% with Thrum cleared, 82% spared); par's Phase 2 spent on
-  // the Halls Choir with the Dread ledge holding fire earns it in both cells (86%, 85%), at a cost
-  // in singers (balance/finM01Phase2.test.ts). Rift Moths fly past the song, so none reaches 100%.
+  // The song reaches ~2 tiles round Pebble at the Halls mouth, so towers that break the Hollow up
+  // the descent scatter them: par's Echo Spikes on both Halls ledges lay ~40% to rest. Holding the
+  // east ledge to Dread instead (one heavy shot that Unnerves, so the Hollow walk on into the song)
+  // earns it, ~75–80% in both Thrum cells (balance/finM01Phase2.test.ts).
   medals: {
     challenge: {
       id: 'laid_to_rest',
       name: 'Laid to Rest',
       description:
-        'In Phase 2, lay 84% of the Hollow you destroy to rest inside the song: let them come close.',
-      condition: { restedPct: 0.84 },
+        'In Phase 2, lay most of the Hollow you destroy (60%) to rest inside the song: let them come close.',
+      condition: { restedPct: 0.6 },
     },
   },
   // Waymarks (finale.md § FIN, Medals): relight all four waymark lanterns in Phase 1.
@@ -332,9 +333,10 @@ export const map = defineMapLayout({
     returned: { when: { flag: 'stardust_choice', eq: 'returned' }, count: 2, auraRadius: 1 },
   },
   // The Leaving Song (maps.md § 5.5): its circle round Pebble from the start (a light in the dark;
-  // render's), rest and scatter in Phase 2 only. Tuned to ~3 min at Keep (#18; T821): the trickle
-  // is most of it, so the kills (all in by ~150 s) can't skew each C4 answer's length past ±30% of
-  // Keep's, and alone it still ends the phase in 200 s under Keep.
+  // render's), rest and scatter in Phase 2 only. Tuned to ~3 min at Keep (#18; T821, D156): the
+  // trickle is most of it, so the kills (all in by ~110 s) and the Unsung's damage (~10 s off the
+  // phase for par) can't skew each C4 answer's length past ±30% of Keep's, and alone it still ends
+  // the phase in 215 s under Keep.
   song: {
     baseRadius: 2.5,
     restTarget: 1400,
