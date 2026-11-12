@@ -5,6 +5,7 @@ import type { ComponentChildren } from 'preact';
 import { assertNever } from '../../shared/types.ts';
 import { dialogue, type SceneMode } from '../dialogue/state.ts';
 import { hud, speed } from '../state.ts';
+import { finalePhase, phaseBanner } from './finaleState.ts';
 import { Key } from './parts.tsx';
 
 /** A short message (a rejected command), top center; a banner (HudNotice.banner) below the top row. */
@@ -180,10 +181,23 @@ export function BottomHint() {
   }
 }
 
-/** The "WAVE n" banner as a wave starts (D026). */
+/**
+ * The "WAVE n" banner as a wave starts (D026). On the finale (T832; app/hudFinale.ts) a phase banner
+ * takes its place, a small kicker over the phase ("The Descent" over "Wave 1"; "The Halls" over
+ * "The Unsung"), and from Phase 2 the add waves walk in without one (the song is doing the talking).
+ */
 export function WaveBannerView() {
+  const p = phaseBanner.value;
+  if (p !== null) {
+    return (
+      <div key={`p${p.id}`} class="hud-wave-banner phase" data-testid="phase-banner" aria-hidden="true">
+        <span class="hud-phase-kicker">{p.kicker}</span>
+        {p.title}
+      </div>
+    );
+  }
   const b = hud.waveBanner.value;
-  if (b === null) return null;
+  if (b === null || finalePhase.value >= 2) return null;
   return (
     <div key={b.id} class="hud-wave-banner" aria-hidden="true">
       Wave {b.wave}
