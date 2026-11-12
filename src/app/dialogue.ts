@@ -1878,6 +1878,10 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
         }
       }
       if (scene !== undefined) {
+        // A cue scene plays only when its `when` holds (D156): one trigger can name every C4
+        // answer's line (FIN's `c4_line`) and only the right one plays. Not held, it isn't spent:
+        // a later cue may find it holding.
+        if (!scenePlays(scene, storyContext(map))) return;
         // A cue scene plays once a battle, however many events cue it (A2M1's crew-log line is
         // cued by either log or by W6's countdown, whichever comes first).
         if (cuedScenes.has(scene.id)) return;
