@@ -425,8 +425,7 @@ export function openLoadout(mapId: string): boolean {
     content.towers;
   const deploys = (tower: string): boolean =>
     faction === null || factionOf[tower]?.faction === faction;
-  const staysText =
-    faction === null ? null : silkText(ruleNamed(cfg, 'towerFaction', 'Run rules'));
+  const staysText = faction === null ? null : silkText(ruleNamed(cfg, 'towerFaction', 'Run rules'));
   // A map's one companion, present in slot 2, brings its ability too (A1M5's Bricks beside an
   // inherited Suppressing Fire); an absent one brings nothing.
   const fixed =

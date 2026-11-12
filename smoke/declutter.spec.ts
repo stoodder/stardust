@@ -487,10 +487,8 @@ test("declutter e: the Waykeeper's naming", async ({ page }) => {
 test('declutter e: Dawn and C5', async ({ page }) => {
   await playScene(page, 'after_a3m6_keep', 'fin_m01_scene_dawn', false);
   await expect(page.getByTestId('stage-dawn')).toBeVisible();
-  // Its first line up (T803e): the stage is measured with its words, never mid-lead-in.
-  await expect(
-    page.getByTestId('scene').getByRole('button', { name: /^(Next|Skip)/ }),
-  ).toBeVisible();
+  // Its first line typed out (T803e): the stage is measured with its words, never mid-lead-in.
+  await expect(page.getByTestId('scene').getByRole('button', { name: 'Next' })).toBeVisible();
   await capture(page, 'stage-dawn');
   await playScene(page, 'after_a3m6_keep', 'fin_m01_scene_c5', false);
   await expect(page.getByTestId('stage-c5')).toBeVisible();

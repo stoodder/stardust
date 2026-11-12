@@ -53,6 +53,7 @@ test('loadout declutter: threats row, protocol peek, Every link, heads-ups besid
 
   // Down to the Thumper alone: two heads-ups (Shields, Air), whole, beside the footer's buttons.
   const picked = page.locator('.sd-lo-tower[aria-pressed="true"]');
+  // oxlint-disable-next-line no-await-in-loop -- one card after another
   while ((await picked.count()) > 0) {
     // oxlint-disable-next-line no-await-in-loop -- one card after another
     await picked.first().click();
@@ -152,7 +153,8 @@ test('loadout declutter: Skitterkin Only greys the other towers; Endless gets a 
   const chosen = await picked.evaluateAll((cards) =>
     cards.map((c) => c.querySelector('.sd-lo-name')?.textContent ?? ''),
   );
-  for (const name of chosen) expect(name).toMatch(/Scuttle Den|Hum Choir|Gloop Spitter|Sproing Pad/);
+  for (const name of chosen)
+    expect(name).toMatch(/Scuttle Den|Hum Choir|Gloop Spitter|Sproing Pad/);
   await page.getByRole('button', { name: 'Lock in' }).click();
   await expect(page.getByRole('dialog', { name: 'Shift briefing' })).toBeVisible();
   const preset = await page.evaluate(
@@ -163,7 +165,10 @@ test('loadout declutter: Skitterkin Only greys the other towers; Endless gets a 
   // Endless: Start from the plate goes through its own loadout screen.
   await page.evaluate(() => globalThis.__sd!.goto('campaign'));
   await expect(page.getByTestId('star-map')).toBeVisible();
-  await page.getByTestId('post-game').getByRole('button', { name: /^Endless: / }).click();
+  await page
+    .getByTestId('post-game')
+    .getByRole('button', { name: /^Endless: / })
+    .click();
   await page.getByRole('button', { name: 'Start The Open Perimeter' }).click();
   await expect(page.getByRole('heading', { name: 'Loadout' })).toBeVisible();
   await expect(page.locator('.sd-lo-header .sd-kicker')).toHaveText('The Open Perimeter');

@@ -262,7 +262,10 @@ export const LIVE_KNOWN_IDS: KnownIds = {
   abilities: Object.values(ABILITIES).map((a) => a.id),
   // The post-game maps too (Endless, the challenges; T803d): their loadout presets are kept per map,
   // though their content registers later, with the finale's chunk.
-  maps: [...Object.values(MAPS).map((m) => m.id), ...POST_GAME_MAPS.map((m) => m.id).filter(isPostGameMapId)],
+  maps: [
+    ...Object.values(MAPS).map((m) => m.id),
+    ...POST_GAME_MAPS.map((m) => m.id).filter(isPostGameMapId),
+  ],
   upgradeRanks: Object.fromEntries(Object.values(UPGRADES).map((u) => [u.id, u.ranks.length])),
   protocols: Object.values(PROTOCOLS).map((p) => p.id),
   protocolsWithPick: Object.values(PROTOCOLS)
