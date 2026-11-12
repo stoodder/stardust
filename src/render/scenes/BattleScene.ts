@@ -62,7 +62,7 @@
 // previews, range rings) BattleHover's (T225). The scene only reads sim state; every change goes
 // through a command.
 import * as Phaser from 'phaser';
-import type { IdSpace } from '../../content/types.ts';
+import type { IdSpace, TowerId } from '../../content/types.ts';
 import type { Bus } from '../../shared/bus.ts';
 import {
   abilityStats,
@@ -224,6 +224,10 @@ export interface BattleSceneDeps {
   nameTag?(): { readonly uid: number; readonly text: string } | null;
   /** The classes the save holds jailbroken (`unlocks.jailbroken`; T740b): drawn jailbroken. */
   readonly jailbroken?: readonly string[];
+  /** T831: the save's `memorialTower` (the finale's memorial wreck; null/absent: the fallback). */
+  readonly memorialTower?: TowerId | null;
+  /** T831: the memorial plate's name, resolved (its hover tooltip; '' or absent: none). */
+  readonly memorialName?: string;
 }
 
 /** The Denise pointer's ring (D059), and the arrow's spot over the turret head (scratch). */
@@ -438,7 +442,10 @@ export class BattleScene extends Phaser.Scene {
 
     const wreckProps = new Map<number, Phaser.GameObjects.Sprite>();
     // T706: a dressing layer or decor marker shows only under its story-flag gate.
-    const ground = flagGatedGround(map, sim.config.scriptFlags);
+    const ground = {
+      ...flagGatedGround(map, sim.config.scriptFlags),
+      memorialTower: this.#deps.memorialTower ?? null, // T831: the save's tagged class (T842)
+    };
     const coreProps = drawGround(ctx, ground, map.env, wreckProps);
     // T630b: before the world's glow, so it sees doors and the cracks lie first in `decal`.
     const flags = sim.config.scriptFlags;

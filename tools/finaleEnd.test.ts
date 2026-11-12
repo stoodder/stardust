@@ -163,6 +163,7 @@ describe('waves of a script phase (inPhase)', () => {
   // W3 (the Unsung) belongs to Phase 2, and a W4 of Motes after it.
   const w4: WaveDef<IdSpace> = {
     countdownSec: 600,
+    noCall: true, // as the finale's: its clock runs on, so Dawn comes first
     inPhase: 2,
     groups: [{ enemy: 'mote', count: 2, route: 'a' }],
   };
