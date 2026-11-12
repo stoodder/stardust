@@ -1,5 +1,5 @@
 // FIN waves: docs/story/campaign/finale.md § FIN, Waves. This file holds Phase 1, the Descent
-// (W1–18, T820, retuned by T821), then Phase 2's add waves (W19–26) with the Unsung (T821;
+// (W1–18, T820, retuned by T821 and T874), then Phase 2's add waves (W19–26) with the Unsung (T821;
 // `PHASE_2_WAVES`). Routes: `halls` (the Halls mouth (11,0) down the choir's
 // road to the gate: the Hollow meet the choir head on), `rift_field` (the west rift field, onto
 // the road's west bend: ahead of the choir until she passes its mouth in W14, behind her after),
@@ -9,8 +9,16 @@
 // opens once the wave before it finishes spawning. The choir walks a leg as each wave starts.
 //
 // Air, jam, and splash are required; armored, cloaked, and burrowing units are soft (≤ 15% of a
-// wave's threat): the drones, the Associate, the Operative, and the Undertows ride
-// inside big Hollow waves. Every Hollow ground unit that reaches the choir hushes one singer.
+// wave's threat, a splitter's brood counted): the drones, the Associate, the Operative, and the
+// Undertows ride inside big Hollow waves. Every Hollow ground unit that reaches the choir hushes
+// one singer; Everglow's walk past her to the gate.
+//
+// W14–W18 (T874: the finale has no single required tower, pillar 2): a third of the Descent's
+// last void threat is Everglow's Bore security instead, Auditors with drones and an Associate up
+// the Bore road. They jam and cost the gate, not singers, and Psionic does ×0.35 to them; the
+// Maws are one fewer a wave, and the Silencers (the plated jammers that walk through a Thumper
+// road into the choir) mostly Auditors. The splash exams stay sharp: W15's rift-field Motes come
+// packed (0.12 s apart) and W18 sends a dense Mote cluster down the Halls.
 import { defineWaves } from '../../define.ts';
 import type { EnemyId, RouteId, WaveDef, WaveGroup } from '../../types.ts';
 
@@ -43,6 +51,12 @@ const silencers = (count: number, route: RouteId, delaySec: number, intervalSec 
   g('silencer', count, route, delaySec, intervalSec);
 const gunships = (count: number, route: RouteId, delaySec: number, intervalSec = 3): WaveGroup =>
   g('gunship', count, route, delaySec, intervalSec);
+/** Everglow's Compliance drones up the Bore road (Bore security). */
+const drones = (count: number, delaySec: number, intervalSec = 1.2): WaveGroup =>
+  g('compliance', count, 'bore_road', delaySec, intervalSec);
+/** Everglow's Auditors up the Bore road (Bore security). */
+const auditors = (count: number, delaySec: number, intervalSec = 5): WaveGroup =>
+  g('auditor', count, 'bore_road', delaySec, intervalSec);
 
 /** The build phase before most waves. */
 export const COUNTDOWN = 30;
@@ -158,7 +172,7 @@ export const PHASE_1: readonly WaveDef[] = [
     ...CALL,
     groups: [
       motes(10, 'halls', 0),
-      maws(2, 'halls', 4, 4),
+      maws(1, 'halls', 4),
       fractures(2, 'halls', 14, 3),
       silencers(2, 'halls', 20, 4),
       g('associate', 1, 'bore_road', 8),
@@ -166,63 +180,71 @@ export const PHASE_1: readonly WaveDef[] = [
       gunships(2, 'sky_e', 12, 4),
     ],
   },
-  // W15 · rifts everywhere
+  // W15 · rifts everywhere, a packed Mote column out of the rift field, two Auditors on the Bore road
   {
     ...CALL,
     groups: [
-      motes(6, 'rift_ne', 0),
+      motes(4, 'rift_ne', 0),
       fractures(1, 'rift_nw', 2),
       maws(1, 'rift_nw', 8),
-      motes(10, 'rift_field', 6),
-      motes(6, 'rift_nw', 10),
+      motes(10, 'rift_field', 6, 0.12),
+      motes(4, 'rift_nw', 10),
       maws(1, 'rift_ne', 12),
       moths(4, 'sky_n', 8),
       gunships(2, 'sky_w', 10, 4),
+      auditors(2, 4),
     ],
   },
-  // W16 · Fractures with an Undertow
+  // W16 · Fractures with an Undertow, two Auditors on the Bore road
   {
     ...CALL,
     groups: [
-      fractures(5, 'halls', 0, 2),
-      fractures(2, 'rift_nw', 6, 2),
+      fractures(2, 'halls', 0, 2),
+      fractures(1, 'rift_nw', 6, 2),
       silencers(2, 'halls', 8, 4),
-      motes(8, 'rift_ne', 8),
-      maws(3, 'halls', 12, 4),
+      motes(6, 'rift_ne', 8),
+      maws(1, 'halls', 12),
       g('undertow', 1, 'halls', 16),
+      auditors(2, 2),
     ],
   },
-  // W17 · the largest surge
+  // W17 · the largest surge, Bore security (four Auditors, drones) and a Black Budget Operative
   {
     ...CALL,
     groups: [
       motes(16, 'halls', 0, 0.4),
-      fractures(5, 'rift_ne', 4, 2),
-      maws(3, 'halls', 10, 4),
-      silencers(3, 'halls', 16, 4),
+      fractures(2, 'rift_ne', 4, 2),
+      maws(2, 'halls', 10, 4),
+      silencers(1, 'halls', 16),
       motes(12, 'rift_nw', 8),
       motes(14, 'rift_ne', 12, 0.2),
       moths(4, 'sky_e', 6),
       gunships(2, 'sky_n', 10, 4),
       g('blackbudget', 1, 'bore_road', 14),
+      auditors(4, 4, 4),
+      drones(2, 8),
     ],
   },
-  // W18 · the Halls mouth: everything converges (the second Undertow among it)
+  // W18 · the Halls mouth: everything converges (the second Undertow among it, and a packed Mote
+  // cluster down the Halls)
   {
     ...CALL,
     groups: [
-      motes(10, 'halls', 0),
-      maws(2, 'halls', 4, 4),
-      fractures(2, 'rift_nw', 2, 3),
-      silencers(2, 'rift_ne', 6, 4),
+      motes(7, 'halls', 0),
+      maws(1, 'halls', 4),
+      fractures(1, 'rift_nw', 2, 3),
+      silencers(1, 'rift_ne', 6),
       fractures(1, 'rift_ne', 14),
       maws(1, 'rift_ne', 12),
       moths(4, 'sky_n', 4),
       moths(4, 'sky_w', 8),
       gunships(2, 'sky_e', 10, 4),
-      g('auditor', 1, 'bore_road', 6),
-      fractures(3, 'rift_field', 8, 2),
+      auditors(1, 6),
+      fractures(2, 'rift_field', 8, 2),
       g('undertow', 1, 'halls', 16),
+      g('associate', 1, 'bore_road', 9),
+      motes(12, 'halls', 10, 0.2),
+      auditors(1, 6),
     ],
   },
 ];
@@ -287,7 +309,7 @@ export const PHASE_2_WAVES: readonly WaveDef[] = [
   // W24 · Fractures, and Rift Moths over the song (they scatter past it)
   {
     ...P2,
-    groups: [fractures(2, 'halls', 0, 3), moths(3, 'sky_n', 2), motes(10, 'halls', 4, 0.25)],
+    groups: [fractures(1, 'halls', 0), moths(3, 'sky_n', 2), motes(10, 'halls', 4, 0.25)],
   },
   // W25 · a Maw and a Silencer
   {

@@ -46,15 +46,15 @@
     },
     "line": {
       "count": 1,
-      "area": 27360,
-      "shown": 27360,
+      "area": 2760,
+      "shown": 2760,
       "inMore": 0,
       "boxes": [
         {
           "x": 126,
           "y": 190,
-          "w": 342,
-          "h": 80
+          "w": 138,
+          "h": 20
         }
       ]
     },
@@ -74,7 +74,7 @@
     },
     "playfield": {
       "count": 1,
-      "area": 722480,
+      "area": 754432,
       "shown": 921600,
       "inMore": 0,
       "boxes": [
@@ -123,7 +123,7 @@
       "inMore": 0,
       "boxes": [
         {
-          "x": 1035.9,
+          "x": 1086,
           "y": 56,
           "w": 72,
           "h": 38
@@ -132,15 +132,15 @@
     },
     "preview": {
       "count": 1,
-      "area": 21504,
-      "shown": 21504,
+      "area": 17024,
+      "shown": 17024,
       "inMore": 0,
       "boxes": [
         {
-          "x": 977.9,
+          "x": 1028,
           "y": 102,
           "w": 224,
-          "h": 96
+          "h": 76
         }
       ]
     },
@@ -174,11 +174,11 @@
     }
   },
   "density": {
-    "elements": 37,
+    "elements": 34,
     "controls": 14,
-    "words": 65,
-    "numbers": 20,
+    "words": 42,
+    "numbers": 16,
     "repeated": [],
-    "longCopy": ["4 lines: Joke of the Shift! It's a knock-knock. Your line is 'Who's there?' The"]
+    "longCopy": []
   }
 }

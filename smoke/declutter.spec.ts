@@ -6,6 +6,7 @@ import type { Page } from '@playwright/test';
 import type { ResultsFixture } from '../src/app/testHookTypes.ts';
 import { expect, test } from './fixtures.ts';
 import {
+  attr,
   baseTab,
   boot,
   capture,
@@ -21,9 +22,8 @@ test.describe.configure({ timeout: 90_000 });
 
 // ---- T803b: the battle ----
 
-test('declutter b: Act I HUD, armed slot, tower panel, comms, bark, pause', async ({ page }) => {
-  // Full-length holds (no fasttext): the comms line stays up while it's measured, even under load.
-  await boot(page, '&dialogue=1&map=a1_m03');
+test('declutter b: Act I HUD, armed slot, tower panel', async ({ page }) => {
+  await boot(page, '&map=a1_m03');
   await clockIn(page);
   await page.evaluate(() => globalThis.__sd!.setSpeed(0));
   await capture(page, 'hud-a1-build');
@@ -43,15 +43,21 @@ test('declutter b: Act I HUD, armed slot, tower panel, comms, bark, pause', asyn
   await expect(page.getByRole('region', { name: / tower$/ })).toBeVisible();
   await page.mouse.move(0, 0);
   await capture(page, 'hud-tower-panel');
-  await page.keyboard.press('Escape');
+});
 
+test('declutter b: a comms line, a bark, pause', async ({ page }) => {
+  // Full-length holds (no fasttext), and each capture waits for its own line: the radio runs on
+  // real time, so a fixed wait would measure whichever line happened to be up.
+  await boot(page, '&dialogue=1&map=a1_m03');
+  await clockIn(page);
+  await page.evaluate(() => globalThis.__sd!.setSpeed(0));
+  const comms = () => page.evaluate(() => globalThis.__sd!.dialogue.shown().comms ?? '');
   await page.evaluate(() => globalThis.__sd!.dialogue.play('a1_m03_w05'));
-  await expect
-    .poll(() => page.evaluate(() => globalThis.__sd!.dialogue.shown().comms))
-    .not.toBe(null);
+  await expect.poll(comms, { timeout: 45_000 }).toContain('ten Puffwings');
   await capture(page, 'hud-comms');
 
   await page.evaluate(() => globalThis.__sd!.dialogue.bark('quill_map_start_a1_99'));
+  await expect.poll(comms, { timeout: 45_000 }).toBe('Knock knock!');
   await expect(page.getByRole('button', { name: "Who's there?" })).toBeVisible({ timeout: 15_000 });
   await capture(page, 'hud-bark');
 
@@ -410,7 +416,7 @@ test("declutter e: Gerald's mail, C4's card, Night Shift", async ({ page }) => {
   await page.evaluate(() => globalThis.__sd!.goto('base'));
   const room = page.getByTestId('stage-night-shift');
   await expect(room).toBeVisible();
-  await readUntil(page, async () => (await room.getAttribute('data-light')) === 'laugh');
+  await readUntil(page, async () => (await attr(room, 'data-light')) === 'laugh');
   await capture(page, 'stage-night-shift');
 });
 
@@ -422,7 +428,7 @@ test("declutter e: the Waykeeper's naming", async ({ page }) => {
     .catch(() => undefined); // still waiting on the flow as the test ends
   const stage = page.getByTestId('stage-waykeeper');
   await expect(stage).toBeVisible();
-  await readUntil(page, async () => (await stage.getAttribute('data-turned')) === 'true');
+  await readUntil(page, async () => (await attr(stage, 'data-turned')) === 'true');
   await capture(page, 'stage-waykeeper');
 });
 

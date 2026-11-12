@@ -2,6 +2,13 @@
   "id": "hud-fin-dawn",
   "group": "b",
   "voice": {
+    "banner": {
+      "count": 1,
+      "area": 0,
+      "shown": 0,
+      "inMore": 0,
+      "boxes": []
+    },
     "callsign": {
       "count": 1,
       "area": 3200,

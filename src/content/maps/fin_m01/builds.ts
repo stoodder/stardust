@@ -101,6 +101,71 @@ const SEAM_SPIKE: readonly BuildStep[] = [
   { wave: 17, upgrade: SEAM_E },
 ];
 
+/**
+ * The Mindspike-free answer (T874; finale.md § FIN, Alt builds): Thumpers, Harpoons, the Hum
+ * Choir and a Sproing Pad, no Psionic at all. Thumpers on par's road and ledge pads for the Mote
+ * and Fracture swarms; Harpoons through the Gap and at the Halls for the plated Silencers and
+ * Maws, and either side of the gate for Everglow's units walking in from the Bore road; the
+ * Choirs come at W15, above the row-4 run and on the ridge; the air is left to the gate until
+ * W18 (the Moths and gunships cost it ~18 of its 30), then two Sproing Pads, and every tower to
+ * tier 3 as Phase 2 pays. It casts nothing, so it plays the same with any companion.
+ */
+function noMindspikeSteps(): BuildStep[] {
+  return [
+    ...RELIGHT,
+    { wave: 1, build: 'thumper', tile: SEAM_W },
+    { wave: 1, build: 'thumper', tile: LEDGE_E },
+    { wave: 1, upgrade: SEAM_W },
+    { wave: 1, build: 'harpoon', tile: MID_S },
+    { wave: 1, build: 'harpoon', tile: GATE_W },
+    { wave: 1, build: 'harpoon', tile: LOW_MID },
+    { wave: 1, upgrade: LOW_MID },
+    { wave: 1, build: 'thumper', tile: BORE_N },
+    { wave: 1, upgrade: SEAM_W },
+    { wave: 1, build: 'thumper', tile: BEND },
+    { wave: 1, build: 'harpoon', tile: BEND_E },
+    { wave: 1, upgrade: LEDGE_E },
+    { wave: 1, build: 'harpoon', tile: WEST_IN },
+    { wave: 1, build: 'thumper', tile: MID_N },
+    { wave: 1, build: 'thumper', tile: LEDGE_W },
+    { wave: 1, upgrade: BEND },
+    { wave: 1, upgrade: LOW_MID },
+    { wave: 1, build: 'harpoon', tile: GATE_E },
+    { wave: 1, upgrade: BEND },
+    fire(8, 14, [11, 2]),
+    fire(13, 28, [9, 4]),
+    { wave: 13, upgrade: MID_N },
+    fire(15, 7, [3, 5]),
+    fire(15, 5, [11, 4]),
+    { wave: 15, upgrade: LEDGE_W },
+    { wave: 15, upgrade: GATE_W },
+    { wave: 15, build: 'thumper', tile: GAP_E },
+    { wave: 15, build: 'harpoon', tile: HALLS_E },
+    { wave: 15, upgrade: MID_S },
+    { wave: 15, build: 'thumper', tile: CORNER },
+    { wave: 15, upgrade: GATE_W },
+    { wave: 15, upgrade: CORNER },
+    { wave: 15, upgrade: BEND_E },
+    { wave: 15, upgrade: CORNER },
+    { wave: 15, upgrade: MID_S },
+    fire(15, 18, [6, 7]),
+    { wave: 15, build: 'thumper', tile: RIDGE },
+    { wave: 15, build: 'sproing', tile: RIDGE_W },
+    { wave: 15, upgrade: LEDGE_W },
+    { wave: 15, upgrade: BEND_E },
+    { wave: 15, upgrade: GATE_E },
+    { wave: 15, build: 'harpoon', tile: SEAM_E },
+    { wave: 15, build: 'choir', tile: EAST_BEND },
+    { wave: 15, upgrade: MID_N },
+    { wave: 15, upgrade: RIDGE_W },
+    { wave: 15, build: 'harpoon', tile: INNER },
+    { wave: 15, specialize: BEND, spec: 'b' },
+    { wave: 15, upgrade: WEST_IN },
+    fire(18, 18, [9, 4]),
+    WHOS_THERE,
+  ];
+}
+
 /** Par's Phase 1 (finale.md § FIN, Par build). */
 function parSteps(): BuildStep[] {
   return [
@@ -141,7 +206,7 @@ function parSteps(): BuildStep[] {
 }
 
 /** Par's Phase 1 (its Halls ring's last upgrades in Phase 2 are par's alone). */
-const parPhase1 = (): BuildStep[] => parSteps().filter((st) => st.wave < 21 || 'scriptInput' in st);
+const parPhase1 = (): BuildStep[] => parSteps().filter((st) => st.wave < 20 || 'scriptInput' in st);
 
 /** Par's placements and spending with each tower swapped by `swap` (a no-counter build). */
 function swapped(
@@ -204,6 +269,12 @@ export const builds = defineBuilds({
         ...GATE_SKYHOOKS,
         ...SEAM_SPIKE,
       ]),
+    },
+    // Thumper, Hum Choir, Sproing Pad, Harpoon: no Mindspike (T874; pillar 2: the finale has no
+    // single required tower). Pinned in balance/finM01.test.ts.
+    no_mindspike: {
+      loadout: ['thumper', 'choir', 'sproing', 'harpoon'],
+      steps: noMindspikeSteps(),
     },
     // Mindspike, Hum Choir, Skyhook, Stasis Bloom: the same road, with Blooms holding the Silencers'
     // and the Unsung's tells where par digs its Dens.

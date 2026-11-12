@@ -499,7 +499,16 @@ export async function baseTab(page: Page, name: string | RegExp): Promise<Locato
   return page.getByRole('tabpanel');
 }
 
-/** Presses Next (or Skip) until `done` holds, a line at a time (at most `max` presses). */
+/** An attribute of `locator`, or null when it's gone (a stage that ended): never waits long. */
+export async function attr(locator: Locator, name: string): Promise<string | null> {
+  return locator.getAttribute(name, { timeout: 1000 }).catch(() => null);
+}
+
+/**
+ * Presses Next (or Skip) until `done` holds, a line at a time (at most `max` presses). After each
+ * press it gives `done` up to 1.5 s to come true before the next, so a loaded machine doesn't
+ * read past the line it waits for.
+ */
 export async function readUntil(page: Page, done: () => Promise<boolean>, max = 30): Promise<void> {
   const next = page.getByRole('button', { name: /^(Skip|Next)$/ });
   for (let i = 0; i < max; i++) {
@@ -507,8 +516,12 @@ export async function readUntil(page: Page, done: () => Promise<boolean>, max = 
     if (await done()) return;
     // oxlint-disable-next-line no-await-in-loop -- one line at a time
     if (await next.isVisible()) await next.click();
-    // oxlint-disable-next-line no-await-in-loop -- let the scene move on (a silence by itself)
-    await page.waitForTimeout(250);
+    for (let t = 0; t < 15; t++) {
+      // oxlint-disable-next-line no-await-in-loop -- waiting on the line just pressed
+      if (await done()) return;
+      // oxlint-disable-next-line no-await-in-loop -- a short beat between checks
+      await page.waitForTimeout(100);
+    }
   }
   expect(await done()).toBe(true);
 }

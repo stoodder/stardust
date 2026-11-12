@@ -10,8 +10,8 @@
 // The beats keep time with the waves (the choir's `walkWaves`): the memorial cue plays in W9 on
 // Standard, Story, and veteran Rush Hour; under alwaysCallEarly the choir lags its allowance and
 // passes it later. Phase 2 starts at the later of W18 cleared and the choir at the Halls mouth
-// (`{ choirAt, afterWave: 18 }`): on Standard the choir is there first and Phase 2 starts the tick
-// after W18 clears; under Story, veteran Rush Hour, and alwaysCallEarly W18 clears first and Phase
+// (`{ choirAt, afterWave: 18 }`): on Standard and Story the choir is there first and Phase 2 starts
+// the tick after W18 clears; under veteran Rush Hour and alwaysCallEarly W18 clears first and Phase
 // 2 starts the tick after she arrives.
 import { describe, expect, it } from 'vitest';
 import { compileContent } from '../content/compile.ts';
@@ -71,17 +71,19 @@ describe('FIN Phase 1 balance', { timeout: HARNESS_TEST_TIMEOUT_MS * 2 }, () => 
 describe('FIN Phase 2 start: the later of W18 cleared and the choir at the Halls', () => {
   const opts = { untilPhase2: true } as const;
 
-  it('par: the choir first, Phase 2 the tick after W18 clears', () => {
-    const b = finM01Beats(content, 'par', opts);
-    expect(b.arrivedTick).toBeGreaterThan(0);
-    expect(b.arrivedTick).toBeLessThan(b.w18ClearedTick);
-    expect(b.phase2Tick).toBe(b.w18ClearedTick + 1);
-    expect(b.checkpoint).toEqual({ label: 'halls', wave: 18 });
-    expect(b.boreRateAtPhase2).toBe(0); // the Bore stops, fixing the Unsung's bonus
-  });
+  it.each(['par', 'par@story'])(
+    '%s: the choir first, Phase 2 the tick after W18 clears',
+    (label) => {
+      const b = finM01Beats(content, label, opts);
+      expect(b.arrivedTick).toBeGreaterThan(0);
+      expect(b.arrivedTick).toBeLessThan(b.w18ClearedTick);
+      expect(b.phase2Tick).toBe(b.w18ClearedTick + 1);
+      expect(b.checkpoint).toEqual({ label: 'halls', wave: 18 });
+      expect(b.boreRateAtPhase2).toBe(0); // the Bore stops, fixing the Unsung's bonus
+    },
+  );
 
   it.each([
-    ['par@story', {}],
     ['par', { rushHour: true }],
     ['alwaysCallEarly', {}],
   ] as const)('%s %o: W18 clears first, Phase 2 the tick after she arrives', (label, extra) => {

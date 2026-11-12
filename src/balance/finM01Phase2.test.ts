@@ -5,11 +5,13 @@
 // Pebble's "She heard" as it reaches the song, Directive 0 under Keep (revoke, lock, "Who's
 // there?", restore, and par rebuilding the class; a human's slower rebuild still survivable), the
 // trickle alone ending the phase inside twice its target, D154 Fork 2's pinned cost (no burrow
-// answer ends ≥ 10 Voices under par), and par's whole run under 25 minutes at 1×.
+// answer ends ≥ 10 Voices under par), Laid to Rest (a deliberate Halls-ring Phase 2 earns it, par
+// doesn't; T874), and par's whole run under 25 minutes at 1×.
 import { describe, expect, it } from 'vitest';
 import { compileContent } from '../content/compile.ts';
 import type { CompiledBuild } from '../content/compiled.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
+import { PADS } from '../content/maps/fin_m01/builds.ts';
 import { DAWN_SEC, DIRECTIVE_0_SEC, THRUM_ECHO } from '../content/maps/fin_m01/map.ts';
 import { createBuildExecutor, createSim, runHeadless, type SimEvent } from '../sim/index.ts';
 import { flagsFor, marginOf } from './checks.ts';
@@ -155,6 +157,34 @@ describe('FIN Phase 2 and Dawn', { timeout: HARNESS_TEST_TIMEOUT_MS * 2 }, () =>
     const cost = headless('par', noBurrow);
     expect(cost.outcome).toBe('won');
     expect(marginOf(base) - marginOf(cost)).toBeGreaterThanOrEqual(10);
+  });
+
+  it("Laid to Rest: the Halls ring earns it, par (the west ledge's Echo Spike) does not", () => {
+    // Par's Phase 2 spent on the Hum Choir at the Halls (tier 3 by W20) instead of the west
+    // ledge's tier 3 and Echo Spike, whose echoes break the Hollow up the descent, outside the song.
+    const par = map.builds.parBuild;
+    const at = (t: readonly [number, number], u: readonly [number, number]) =>
+      t[0] === u[0] && t[1] === u[1];
+    const late = (s: CompiledBuild['steps'][number]) =>
+      s.wave >= 19 &&
+      (s.kind === 'upgrade' || s.kind === 'specialize') &&
+      (at(s.tile, PADS.LEDGE_W) || at(s.tile, PADS.HALLS_E));
+    const ring: CompiledBuild = {
+      ...par,
+      steps: par.steps.flatMap((s) =>
+        late(s)
+          ? []
+          : s.wave === 19 && s.kind === 'upgrade' && at(s.tile, PADS.CORNER)
+            ? [s, { ...s, tile: PADS.HALLS_E }, { ...s, wave: 20, tile: PADS.HALLS_E }]
+            : [s],
+      ),
+    };
+    const plain = headless('par');
+    const ringed = headless('par', ring);
+    expect(plain.medals.challenge).toBe('forfeited');
+    expect(ringed.outcome).toBe('won');
+    expect(ringed.medals.challenge).toBe('earned');
+    expect(marginOf(ringed)).toBe(marginOf(plain)); // the choice costs no singer
   });
 
   it('par closes the escort chain (≤ A3M6 + 5) and plays under 25 minutes at 1×', () => {

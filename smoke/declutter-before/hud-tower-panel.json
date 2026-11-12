@@ -16,48 +16,6 @@
         }
       ]
     },
-    "portrait": {
-      "count": 1,
-      "area": 10000,
-      "shown": 10000,
-      "inMore": 0,
-      "boxes": [
-        {
-          "x": 16,
-          "y": 168,
-          "w": 100,
-          "h": 100
-        }
-      ]
-    },
-    "speaker": {
-      "count": 1,
-      "area": 800,
-      "shown": 800,
-      "inMore": 0,
-      "boxes": [
-        {
-          "x": 126,
-          "y": 168,
-          "w": 50,
-          "h": 16
-        }
-      ]
-    },
-    "line": {
-      "count": 1,
-      "area": 11448,
-      "shown": 13680,
-      "inMore": 0,
-      "boxes": [
-        {
-          "x": 126,
-          "y": 190,
-          "w": 342,
-          "h": 40
-        }
-      ]
-    },
     "companion": {
       "count": 1,
       "area": 1024,
@@ -74,7 +32,7 @@
     },
     "playfield": {
       "count": 1,
-      "area": 683776,
+      "area": 724368,
       "shown": 921600,
       "inMore": 0,
       "boxes": [
@@ -202,9 +160,9 @@
     }
   },
   "density": {
-    "elements": 46,
+    "elements": 43,
     "controls": 17,
-    "words": 83,
+    "words": 74,
     "numbers": 29,
     "repeated": [],
     "longCopy": []
