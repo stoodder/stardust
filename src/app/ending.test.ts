@@ -196,7 +196,11 @@ describe('the epilogue (bible.md § 10)', () => {
     expect(you?.lines).toEqual([base.profile!.name, 'Waykeeper']);
     expect(view.credits.find((b) => b.heading === 'And')?.lines).toContain('Ishael');
     for (const b of view.credits) for (const l of b.lines) expect(l).not.toMatch(/[{}]/);
-    expect(creditsText(view.credits)).toContain(`And you. ${base.profile!.name}. Waykeeper`);
+    expect(creditsText(view.credits)).toContain(`And you. ${base.profile!.name}, Waykeeper`);
+    // A block's lines run on with commas (r3 S3-4): the makers read as one sentence.
+    expect(creditsText(view.credits)).toContain(
+      'Stardust. A game by. Rick Allen, and Claude, by Anthropic. With. ',
+    );
     // With no save in play, the no-profile address, still never a token.
     expect(creditsText(resolvedCredits(null))).not.toMatch(/[{}]/);
   });

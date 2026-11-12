@@ -4,6 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   choicePressAccepted,
+  choiceVoicesSuffix,
   nextRevealTap,
   pointerMoved,
   restartChoiceLock,
@@ -144,5 +145,14 @@ describe('a tap on the spot of the tap that brought the choice on (R3 F2)', () =
   it('a tap still needs the lock to have passed, as any press', () => {
     expect(choicePressAccepted({ until: LOCK, downAt: LOCK - 1, now: LOCK + 50 })).toBe(false);
     expect(choicePressAccepted({ until: LOCK, downAt: LOCK, now: LOCK + 50 })).toBe(true);
+  });
+});
+
+describe("a choice's voices for a screen reader (r3 U3-3)", () => {
+  it('names the voices behind an option after it, and nothing for none', () => {
+    expect(choiceVoicesSuffix(['Pebble', "Ves'thara"])).toBe(" (Pebble, Ves'thara)");
+    expect(choiceVoicesSuffix(['Bramble'])).toBe(' (Bramble)');
+    expect(choiceVoicesSuffix([])).toBe('');
+    expect(choiceVoicesSuffix([''])).toBe('');
   });
 });

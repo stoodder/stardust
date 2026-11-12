@@ -1,6 +1,6 @@
 // The campaign's close after the finale's results card (D154; content/dialogue/resultsFlow.ts
-// `ending`): Sterling's farewell memo as a card, C5, the epilogue over the credits, then the
-// post-game star map. Pure: what a won run of a map plays once its card is dismissed, in order, and
+// `ending`): Sterling's farewell memo as a card, C5, the epilogue (its cards one at a time, before
+// the counter and the credits), then the post-game star map. Pure: what a won run of a map plays once its card is dismissed, in order, and
 // which steps are still placeholders. app/ending.ts plays them (T810: the memo, C5, the epilogue;
 // the post-game step routes to the star map until T863 builds its screen); a step whose content
 // or screen hasn't landed is a placeholder, passed over, so the flow can be wired before its pieces

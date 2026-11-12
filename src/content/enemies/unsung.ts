@@ -14,7 +14,8 @@
 //    to it inside the song feeds rest points (song.ts), and when the countdown completes it is laid
 //    to rest (`layToRest`; design/maps.md § 5.5).
 // Forms 2–4 have time floors (D156, D157): never sooner than 90 s, 120 s and 150 s into Phase 2
-// (unfrozen time: a forced input's freeze doesn't count).
+// (unfrozen time: a forced input's freeze doesn't count). Form 4's floor hardly ever binds: the
+// Song comes by HP, so only on a long walk (enemies.md § 6, *When the Song comes*; D159).
 // As built (T808): enemyAbilities/unsung.ts (the dig, the phasing, the adds, the ending),
 // bossSplit.ts/bossMerge.ts (the split with no merge and the rise), bossPhases.ts (the floor).
 // T808's numbers where the docs give none (D154's addenda): the parts' share, the phasing cycle,

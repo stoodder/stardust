@@ -75,6 +75,17 @@ export async function answerC5(
   await expect(voices(/^We go\./)).toHaveCount(1);
   // The keys it answers, one quiet line (D156).
   await expect(page.getByTestId('choice-hint')).toHaveText('Keys: 1 or 2, or arrows and Enter');
+  // A screen reader hears both too (r3 U3-3): the hint describes the focused group, and each
+  // answer names its voices after it.
+  await expect(page.getByTestId('choice-group')).toHaveAccessibleDescription(
+    'Keys: 1 or 2, or arrows and Enter',
+  );
+  await expect(page.getByRole('button', { name: /^We stay\./ })).toHaveAccessibleName(
+    "We stay. We keep the way open. (Pebble, Ves'thara)",
+  );
+  await expect(page.getByRole('button', { name: /^We go\./ })).toHaveAccessibleName(
+    'We go. We give it back. (Bramble)',
+  );
   await page.waitForTimeout(800); // the story choice's lock
   await nextFrames(page);
   await shot(page, flow, first + 2, 'c5-choice');

@@ -75,9 +75,18 @@ export const CREDITS: readonly CreditBlock[] = [
 /** The index of "And you" in the roll: where it comes to rest, over the closing thanks. */
 export const CREDITS_YOU = CREDITS.findIndex((b) => b.style === 'you');
 
-/** Every line of the roll, headings included, in order (its screen reader text). */
+/**
+ * Every line of the roll, headings included, in order (its screen reader text): each block its
+ * heading, a full stop, then its lines joined with commas ("A game by. Rick Allen, and Claude, by
+ * Anthropic."), the blocks apart by full stops. The roll on screen sets each line on its own.
+ */
 export function creditsText(blocks: readonly CreditBlock[] = CREDITS): string {
-  return blocks.map((b) => [b.heading, ...b.lines].filter((l) => l !== null).join('. ')).join('. ');
+  return blocks
+    .map((b) => {
+      const lines = b.lines.join(', ');
+      return b.heading === null ? lines : `${b.heading}. ${lines}`;
+    })
+    .join('. ');
 }
 
 /** What the roll's tokens read with no save in play (`{name}`: the no-profile address). */
