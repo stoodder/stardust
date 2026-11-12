@@ -21,12 +21,12 @@ describe('the initial-JS budget', () => {
     ]);
   });
 
-  it('warns over 900 kB gzipped and fails over 1 MB', () => {
-    expect([bundleVerdict(848), bundleVerdict(900), bundleVerdict(900.1)]).toEqual([
+  it('warns over 800 kB gzipped and fails over 900 kB', () => {
+    expect([bundleVerdict(785), bundleVerdict(800), bundleVerdict(800.1)]).toEqual([
       'ok',
       'ok',
       'warn',
     ]);
-    expect([bundleVerdict(1000), bundleVerdict(1000.1)]).toEqual(['warn', 'fail']);
+    expect([bundleVerdict(900), bundleVerdict(900.1)]).toEqual(['warn', 'fail']);
   });
 });

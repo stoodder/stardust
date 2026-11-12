@@ -386,8 +386,20 @@ export function judgeMap<K extends IdSpace>(
   for (const spec of plan.specs) for (const req of spec.needs) get(req);
 
   const checks: CheckResult[] = [];
+  const pending = map.builds.pendingChecks;
   for (const s of plan.specs) {
     const { ok, summary, failures } = s.evaluate(get);
+    if (!ok && pending !== null && pending.subjects.includes(s.subject)) {
+      checks.push({
+        id: s.id,
+        title: s.title,
+        subject: s.subject,
+        ok: true,
+        summary: `pending ${pending.task} (${failures.join('; ')}): ${summary}`,
+        failures: [],
+      });
+      continue;
+    }
     checks.push({ id: s.id, title: s.title, subject: s.subject, ok, summary, failures });
   }
   const all = [...runs.values()];
@@ -433,6 +445,7 @@ export function mustIssueEveryStep<K extends IdSpace>(
   const { build, meta } = splitMeta(label);
   if (build === 'par') return meta !== 'story';
   if (!build.startsWith('alt:')) return false;
+  if (map.builds.pendingChecks?.subjects.includes(build) === true) return false; // a pending alt may lose before its plan ends
   const name = build.slice(4);
   const expect = Object.hasOwn(map.builds.altExpectations, name)
     ? map.builds.altExpectations[name]
