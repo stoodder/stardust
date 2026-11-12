@@ -17,6 +17,7 @@ import {
 } from './profile.ts';
 import { pauseMenu } from '../ui/pause/state.ts';
 import type { Router } from './router.ts';
+import { setPostGameRoute } from './ending.ts';
 import { leaveResults } from './runFlow.ts';
 import {
   activeSave,
@@ -186,6 +187,15 @@ export function toCampaign(): void {
   run('campaign', (r) => r.goto('campaign'));
 }
 
+/**
+ * The post-game step of the campaign's close (T810; app/ending.ts): the post-game star map. Today
+ * the campaign screen, which after the finale is the star map at dawn; T863 replaces this route.
+ */
+export function toPostGame(): void {
+  toCampaign();
+}
+setPostGameRoute(toPostGame);
+
 /** The base (R&D, Shop, Engineering), once it's open. */
 export function toBase(): void {
   run('base', (r) => r.goto('base'));
@@ -193,10 +203,11 @@ export function toBase(): void {
 
 /** Results → Continue after a win: the base if it's open, else the Shift board. */
 export function afterWin(): void {
+  // The way on (T810): a won finale's replay goes on to the post-game star map instead.
   leaveResults(() => {
     if (systemOpen('base')) toBase();
     else toCampaign();
-  });
+  }, true);
 }
 
 /** Results → the Shift board (after a loss), or the Title outside a campaign. */

@@ -57,7 +57,7 @@ const LANTERNS: readonly GridPos[] = [
  * presses it the tick it is asked (the map forces an input, so validation wants the press last;
  * under the other answers it is never asked and never issued).
  */
-const WHOS_THERE: BuildStep = { wave: 19, scriptInput: WHOS_THERE_INPUT };
+const WHOS_THERE: BuildStep = { wave: 26, scriptInput: WHOS_THERE_INPUT };
 
 /** Relight all four in the opening build phase (Waymarks; the drone takes 6 s each). */
 const RELIGHT: readonly BuildStep[] = LANTERNS.map((tile) => ({ wave: 1, clear: tile }));
@@ -117,6 +117,12 @@ function parSteps(): BuildStep[] {
     { wave: 16, build: 'burrow', tile: CORNER },
     { wave: 16, build: 'mindspike', tile: LEDGE_W },
     { wave: 17, upgrade: LEDGE_W },
+    // Phase 2: the Halls ring
+    { wave: 19, upgrade: LEDGE_W },
+    { wave: 19, upgrade: CORNER },
+    { wave: 20, specialize: LEDGE_W, spec: 'a' },
+    { wave: 21, upgrade: HALLS_E },
+    { wave: 22, upgrade: HALLS_E },
     WHOS_THERE,
   ];
 }
