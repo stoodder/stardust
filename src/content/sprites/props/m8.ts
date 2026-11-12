@@ -7,7 +7,11 @@
 import { propBoreRig } from './bore_rig.ts';
 import { propHallsMouth } from './halls_mouth.ts';
 import { propMemorialWreck } from './memorial_wreck.ts';
+import { propTunnelMouth } from './tunnel_mouth.ts';
 import { propWaymark } from './waymark.ts';
 
 /** The finale's props (the finale's chunk registers them: sprites/finale.ts). */
 export const FINALE_PROPS = [propHallsMouth, propWaymark, propMemorialWreck, propBoreRig] as const;
+
+/** M8's props in registry order (the finale's, then A3M3's tunnel mouths). */
+export const M8_PROPS = [...FINALE_PROPS, propTunnelMouth] as const;

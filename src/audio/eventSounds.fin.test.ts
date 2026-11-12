@@ -20,7 +20,7 @@ import { createEventSounds, SOUND_EVENT_TYPES, type SoundCall } from './eventSou
 import { createFieldSounds, type FieldEnemy, type FieldState } from './fieldSounds.ts';
 import { FIN_CUES, FIN_THEMES } from './music/fin.ts';
 import { CUES, isCueId, isThemeId, loadedCue, THEMES } from './music/index.ts';
-import { isSfxId, loadedSfx, SFX, type SfxId } from './sfx/index.ts';
+import { isSfxId, loadedSfx, SFX } from './sfx/index.ts';
 import { FIN_SFX } from './sfx/fin.ts';
 
 type E = SimEvent<IdSpace>;
@@ -68,13 +68,20 @@ const died = (uid: number, enemy: string): E => ({
   x: 3,
   y: 4,
   bounty: 0,
-  killer: 0,
+  killer: { kind: 'tower', uid: 1 },
 });
 const phase = (p: number): E => ({ type: 'PhaseChanged', phase: p });
+const cleared = (tile: readonly [number, number]): E => ({
+  type: 'WreckageCleared',
+  tile,
+  to: '.',
+  salvage: 10,
+});
+const bossPhase = (p: number): E => ({ type: 'BossPhase', uid: 50, enemy: 'unsung', phase: p });
 
 describe('the Leaving Song (T850)', () => {
   it('rings a unit laid to rest in gold, hisses one scattered, and lets one fallen for good die', () => {
-    const [, frame] = play([
+    const [, heard] = play([
       [phase(2)],
       [
         died(1, 'mote'),
@@ -85,7 +92,7 @@ describe('the Leaving Song (T850)', () => {
       ],
     ]);
     // Unit 3 had no verdict: a second death outside the song, for good (the unravel, at the end).
-    expect(ids(frame!)).toEqual(['sfx:rest_chime', 'sfx:scatter_hiss', 'sfx:hollow_unravel']);
+    expect(ids(heard!)).toEqual(['sfx:rest_chime', 'sfx:scatter_hiss', 'sfx:hollow_unravel']);
   });
 
   it("sings the jingle's six notes in chimes, one after another within a frame (Dawn's rest)", () => {
@@ -95,12 +102,12 @@ describe('the Leaving Song (T850)', () => {
       at: [0, 0],
       points: 0,
     }));
-    const [frame] = play([rests]);
+    const [heard] = play([rests]);
     const steps = SONG_SOUNDS.restSteps;
-    expect(frame!.map((c) => (c.kind === 'sfx' ? c.pitch : null))).toEqual(
+    expect(heard!.map((c) => (c.kind === 'sfx' ? c.pitch : null))).toEqual(
       Array.from({ length: 8 }, (_, i) => steps[i % steps.length]),
     );
-    expect(frame!.map((c) => (c.kind === 'sfx' ? c.delay : null))).toEqual(
+    expect(heard!.map((c) => (c.kind === 'sfx' ? c.delay : null))).toEqual(
       Array.from(
         { length: 8 },
         (_, i) => Math.min(i, SONG_SOUNDS.restMaxStagger) * SONG_SOUNDS.restStaggerSec,
@@ -123,7 +130,7 @@ describe('the Leaving Song (T850)', () => {
 
 describe('the choir, the Bore, and QUILL (T850)', () => {
   it("hushes a singer in the choir's voice, once, and halts and walks on", () => {
-    const [frame] = play([
+    const [heard] = play([
       [
         {
           type: 'Hushed',
@@ -141,7 +148,7 @@ describe('the choir, the Bore, and QUILL (T850)', () => {
         { type: 'EchoArrived', id: 'thrum' },
       ],
     ]);
-    expect(ids(frame!)).toEqual([
+    expect(ids(heard!)).toEqual([
       `sfx:${CHOIR_SOUNDS.hushed}`,
       'sfx:choir_halt',
       'sfx:choir_walk',
@@ -150,7 +157,7 @@ describe('the choir, the Bore, and QUILL (T850)', () => {
   });
 
   it("breaks through as the Bore fills, and Directive 0 glitches; the class's return is warm", () => {
-    const [frame] = play([
+    const [heard] = play([
       [
         { type: 'TimerFull', id: 'deep_bore' },
         { type: 'TimerFull', id: 'some_other_timer' },
@@ -161,7 +168,7 @@ describe('the choir, the Bore, and QUILL (T850)', () => {
         { type: 'LightingSet', key: 'dawn' },
       ],
     ]);
-    expect(ids(frame!)).toEqual([
+    expect(ids(heard!)).toEqual([
       'sfx:bore_breach',
       'sfx:directive_glitch',
       'sfx:class_restored',
@@ -170,14 +177,8 @@ describe('the choir, the Bore, and QUILL (T850)', () => {
   });
 
   it('lights each waymark lantern a note further up "Ev-er-glow", after the drone', () => {
-    const cleared = (tile: readonly [number, number]): E => ({
-      type: 'WreckageCleared',
-      tile,
-      to: '.',
-      salvage: 10,
-    });
-    const [frame] = play([[cleared([10, 11]), cleared([1, 1]), cleared([14, 9]), cleared([4, 6])]]);
-    expect(frame).toEqual([
+    const [heard] = play([[cleared([10, 11]), cleared([1, 1]), cleared([14, 9]), cleared([4, 6])]]);
+    expect(heard).toEqual([
       { kind: 'sfx', id: 'drone_cleared', pitch: 0, delay: 0 },
       { kind: 'sfx', id: 'lantern_lit', pitch: 0, delay: WAYMARK_SOUNDS.afterSec },
       { kind: 'sfx', id: 'drone_cleared', pitch: 0, delay: 0 },
@@ -190,8 +191,6 @@ describe('the choir, the Bore, and QUILL (T850)', () => {
 });
 
 describe('the Unsung (T850)', () => {
-  const bossPhase = (p: number): E => ({ type: 'BossPhase', uid: 50, enemy: 'unsung', phase: p });
-
   it('rises, tears into three, rises again, digs, surfaces or is dug out, calls, sings, and rests', () => {
     const frames = play([
       [bossPhase(1)],
@@ -216,13 +215,13 @@ describe('the Unsung (T850)', () => {
   });
 
   it("keeps the Gathering Maw's split for a boss without its own, and the hum for the Unsung", () => {
-    const [frame] = play([
+    const [heard] = play([
       [
         { type: 'BossPhase', uid: 60, enemy: 'gathering_maw', phase: 1 },
         { type: 'BossSplit', uid: 60, parts: [61] },
       ],
     ]);
-    expect(ids(frame!)).toEqual(['sfx:gmaw_arrive', 'sfx:gmaw_split']);
+    expect(ids(heard!)).toEqual(['sfx:gmaw_arrive', 'sfx:gmaw_split']);
     expect(ENEMY_LOOPS.unsung?.id).toBe('hollow_hum');
     expect(ENEMY_LOOPS.unsung_part?.id).toBe('hollow_hum');
     expect(Object.keys(BOSS_MOMENT_SOUNDS)).toEqual(['unsung']);
@@ -262,7 +261,7 @@ describe("the finale's sounds are wired and lazy (T850)", () => {
   it("names only registered sounds (the finale's chunk is in under test)", () => {
     for (const id of Object.keys(FIN_SFX)) {
       expect(isSfxId(id), id).toBe(true);
-      expect(loadedSfx(id as SfxId), id).toBe(SFX[id as SfxId]);
+      if (isSfxId(id)) expect(loadedSfx(id), id).toBe(SFX[id]);
     }
     for (const id of Object.keys(FIN_THEMES)) expect(isThemeId(id), id).toBe(true);
     for (const id of Object.keys(FIN_CUES)) expect(isCueId(id), id).toBe(true);

@@ -35,31 +35,27 @@ const raise = (wave: number, tower: TowerId, tile: GridPos): BuildStep[] => [
 
 function parSteps(): BuildStep[] {
   return [
-    // Eyes first: a Lookout in the crook of the merge, then the guns round it.
-    { wave: 1, build: 'lookout', tile: MERGE_E },
+    // Eyes first: two Lookouts either side of the watchtower, where both roads meet the yard
+    // road, then the guns between them.
+    ...raise(1, 'lookout', MERGE_E),
+    { wave: 1, build: 'zapcoil', tile: TOWER },
+    { wave: 1, build: 'lookout', tile: YARD_IN },
+    { wave: 1, upgrade: TOWER },
     { wave: 1, build: 'thumper', tile: MERGE_W },
-    { wave: 1, build: 'prism', tile: TOWER },
-    { wave: 1, upgrade: MERGE_E },
-    { wave: 2, build: 'lookout', tile: YARD_IN },
-    { wave: 2, build: 'thumper', tile: YARD_MID },
+    { wave: 2, upgrade: YARD_IN },
+    { wave: 2, upgrade: YARD_IN },
+    { wave: 3, upgrade: TOWER },
     { wave: 3, upgrade: MERGE_W },
-    { wave: 3, upgrade: YARD_IN },
-    { wave: 4, build: 'skyhook', tile: YARD_E },
-    { wave: 4, upgrade: TOWER },
-    { wave: 5, upgrade: MERGE_E },
-    { wave: 5, upgrade: YARD_MID },
-    { wave: 6, upgrade: YARD_E },
-    { wave: 6, upgrade: YARD_IN },
-    { wave: 7, build: 'thumper', tile: SOUTH_MID },
-    { wave: 7, upgrade: MERGE_W },
-    { wave: 8, upgrade: TOWER },
-    { wave: 8, upgrade: SOUTH_MID },
-    ...raise(9, 'skyhook', POCKET_W),
-    { wave: 10, upgrade: YARD_E },
-    { wave: 10, upgrade: YARD_MID },
-    { wave: 11, specialize: MERGE_W, spec: 'a' },
-    ...raise(12, 'thumper', WALK_W),
-    { wave: 13, upgrade: SOUTH_MID },
+    { wave: 4, build: 'prism', tile: YARD_E },
+    { wave: 5, upgrade: YARD_E },
+    { wave: 5, upgrade: MERGE_W },
+    ...raise(6, 'zapcoil', SOUTH_MID),
+    { wave: 7, specialize: TOWER, spec: 'a' },
+    { wave: 8, upgrade: YARD_E },
+    ...raise(9, 'thumper', YARD_MID),
+    { wave: 10, specialize: MERGE_W, spec: 'a' },
+    ...raise(11, 'lookout', POCKET_W),
+    ...raise(12, 'zapcoil', WALK_W),
     { wave: 13, build: 'lookout', tile: WALL_E },
   ];
 }
@@ -77,22 +73,22 @@ export const builds = defineBuilds({
   referenceProfile: REFERENCE_PROFILES.fin_m01,
   // The challenge maps' band (T862): post-game, judged in 50–70, outside the campaign's curve.
   marginBand: { minPct: 50, maxPct: 70 },
-  parBuild: { loadout: ['lookout', 'thumper', 'prism', 'skyhook'], steps: parSteps() },
+  parBuild: { loadout: ['lookout', 'zapcoil', 'thumper', 'prism'], steps: parSteps() },
   noCounterBuilds: {
     // No Lookout: Rivets in its place (they shoot what they can see, which is nothing).
     detection: {
-      loadout: ['rivet', 'thumper', 'prism', 'skyhook'],
+      loadout: ['rivet', 'zapcoil', 'thumper', 'prism'],
       steps: swapped({ lookout: 'rivet' }),
     },
-    // No Thumper: Rivets in its place.
+    // No Zapcoil chain, no Thumper: Rivets and Harpoons in their place.
     splash: {
-      loadout: ['lookout', 'rivet', 'prism', 'skyhook'],
-      steps: swapped({ thumper: 'rivet' }),
+      loadout: ['lookout', 'rivet', 'harpoon', 'prism'],
+      steps: swapped({ zapcoil: 'rivet', thumper: 'harpoon' }),
     },
-    // Nothing that hits the sky: Sprinklers for the Skyhooks, Thumpers for the Prism.
+    // Nothing that hits the sky: Thumpers for the Zapcoils, a Sprinkler for the Prism.
     air: {
       loadout: ['lookout', 'thumper', 'sprinkler'],
-      steps: swapped({ skyhook: 'sprinkler', prism: 'thumper' }),
+      steps: swapped({ zapcoil: 'thumper', prism: 'sprinkler' }),
     },
   },
 });

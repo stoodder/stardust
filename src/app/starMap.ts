@@ -17,6 +17,7 @@ import {
   type StarMapChange,
   type StarMapPhase,
 } from '../content/starMap.ts';
+import type { StarMapEnding } from '../content/sprites/starmap/dawn.ts';
 import type { IdSpace } from '../content/types.ts';
 import type { CompiledMapDef } from '../content/compiled.ts';
 import {
@@ -122,7 +123,21 @@ export interface StarMapView {
   readonly changes: readonly StarMapChange[];
   /** Until the save's `story.seen` holds STAR_MAP_SEEN_ID: the sweep and the notice. */
   readonly firstVisit: boolean;
+  /**
+   * The post-game (T863): the finale is won, every node is cleared, and there is no frontier. The
+   * chart is `dawn`, the post-game plate lists Endless and the challenge maps, and "Watch the
+   * epilogue" is offered.
+   */
+  readonly postGame: boolean;
+  /** C5's answer once the finale is won (`ending_choice`): the dawn chart's ending, else null. */
+  readonly ending: StarMapEnding | null;
 }
+
+/**
+ * The colony's name under Stay (story/bible.md § 10: "Everglow Gardens becomes Wayside"): the
+ * post-game chart corrects its label, Everglow's old words struck through above.
+ */
+export const WAYSIDE_LABEL = 'Wayside';
 
 /** The chart's phase for a frontier (null: the finale is won, `dawn`). */
 export function phaseFor(frontier: CampaignMapId | null): StarMapPhase {
@@ -149,7 +164,7 @@ export function starStateText(state: StarMapState): string {
 type MapDef = CompiledMapDef<IdSpace>;
 
 /** The compiled maps, keyed by id (one compile serves every node), or null if none can be built. */
-function compiledMaps(
+export function compiledMaps(
   ids: readonly string[],
   save: SaveData,
 ): Readonly<Record<string, MapDef>> | null {
@@ -163,7 +178,8 @@ function compiledMaps(
   }
 }
 
-function briefOf(map: MapDef, save: SaveData): StarBriefView {
+/** A built map's briefing facts for its panel (the post-game's challenge panels read it too). */
+export function briefOf(map: MapDef, save: SaveData): StarBriefView {
   const owned = save.unlocks.towers.filter((t) => !save.unlocks.revokedTowers.includes(t));
   const intel = threatIntel(map, owned, specsOwned(save));
   const records: Readonly<
@@ -233,7 +249,12 @@ export function starMapView(save: SaveData): StarMapView {
   const named = STAR_MAP_REGIONS.filter(
     (r) => r.shownAfter === undefined || isMapWon(save, r.shownAfter),
   );
+  const ending = frontier === null ? endingOf(save) : null;
   const regions = named.map((r): StarRegionView => {
+    // Under Stay the colony's label reads Wayside after the finale (T863; the chart's own words).
+    if (r.id === 'gardens' && ending === 'stay') {
+      return { id: r.id, text: WAYSIDE_LABEL, struck: r.text, x: r.x, y: r.y };
+    }
     const fixed =
       r.corrected !== undefined && isMapWon(save, r.corrected.after) ? r.corrected : null;
     return {
@@ -254,7 +275,15 @@ export function starMapView(save: SaveData): StarMapView {
     regions,
     changes: STAR_MAP_CHANGES.filter((c) => isMapWon(save, c.after)).map((c) => c.change),
     firstVisit: !save.story.seen.includes(STAR_MAP_SEEN_ID),
+    postGame: frontier === null,
+    ending,
   };
+}
+
+/** C5's answer in `save` (`ending_choice`), or null before it is made. */
+function endingOf(save: SaveData): StarMapEnding | null {
+  const v = save.story.flags.ending_choice;
+  return v === 'stay' || v === 'go' ? v : null;
 }
 
 /**

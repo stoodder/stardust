@@ -3,7 +3,7 @@
 // from its map.ts, never copied): the two roads down from the Spires through the two gates, the
 // merge under the old watchtower, the yard road to the domes, the Rift Moths' lane across the wall,
 // its markers, and its four wall lamps. The dark comes down as it did at Sundown (dusk through W3,
-// full dark from W11), so the lamps and a beaming Prism still keep a tower's range; but nothing can
+// full dark from W11, as A2M6's own schedule runs), so the lamps and a beaming Prism still keep a tower's range; but nothing can
 // be shot until something sees it.
 //
 // The rule (sim/rules.ts `challengeConfig`): `allCloaked`, so every hostile unit spawns cloaked
@@ -30,7 +30,7 @@ export const map = defineMapLayout({
     tagline: 'Every unit comes in cloaked.',
     rules: [{ kind: 'allCloaked' }],
   },
-  startCredits: 700,
+  startCredits: 1400,
   coreIntegrity: 20,
   // A challenge pays Intel for its medals, never Stardust.
   stardust: 0,

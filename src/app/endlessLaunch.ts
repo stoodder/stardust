@@ -4,6 +4,7 @@
 // run's blocks go to the HUD's Next line (app/postGameHooks.ts `endlessRun`). In the finale's lazy
 // chunk (app/acts/postGame.ts registers it), so the generator never reaches the initial JS.
 import { ENDLESS } from '../content/maps/end_m01/endless.ts';
+import type { CompiledContent } from '../content/compiled.ts';
 import type { IdSpace } from '../content/types.ts';
 import { endlessContent, type EndlessPlan } from '../sim/endless.ts';
 import type { SimConfig } from '../sim/index.ts';
@@ -28,9 +29,13 @@ export function endlessRunContent(
   cfg: SimConfig<IdSpace>,
 ): { readonly cfg: SimConfig<IdSpace>; readonly run: EndlessRunView } | null {
   if (cfg.mapId !== ENDLESS.map || !Object.hasOwn(cfg.content.maps, ENDLESS.map)) return null;
-  const { content, plan } = endlessContent(ENDLESS, cfg.content, cfg.seed);
+  // The live content set (the only one holding END_M01), typed as the config's id space.
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- hasOwn above: the live set
+  const live = cfg.content as unknown as CompiledContent;
+  const { content, plan } = endlessContent(ENDLESS, live, cfg.seed);
   return {
-    cfg: { ...cfg, content },
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the same set, waves swapped
+    cfg: { ...cfg, content: content as unknown as CompiledContent<IdSpace> },
     run: { map: cfg.mapId, seed: cfg.seed, blocks: endlessBlocks(plan) },
   };
 }

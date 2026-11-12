@@ -1,7 +1,105 @@
-// CH_M02 waves (Lights Out; T862): A2M6's own waves by reference (Sundown's Motes, Fractures, and
-// Rift Moths down the two roads and over the wall), every unit cloaked by the map's rule. An edit
-// to A2M6's waves flows here. A2M6's teach marks are dropped: nothing here is new to the campaign.
+// CH_M02 waves (Lights Out; T862). Routes are A2M6's: `west` and `east` (down from the Spires,
+// through the two gates, merging under the watchtower, and down the yard road to the domes) and
+// `sky` (the Rift Moths, across the wall diagonally). Sundown's Hollow (Motes, Fractures, Rift
+// Moths), every unit cloaked by the map's rule, in smaller crowds than Sundown sent: a crowd you
+// can't see is crowd enough. Groups without an `intervalSec` use the enemy's default spacing.
 import { defineWaves } from '../../define.ts';
-import { waves as a2m06 } from '../a2_m06/waves.ts';
+import type { EnemyId, RouteId, WaveGroup } from '../../types.ts';
 
-export const waves = defineWaves(a2m06.map(({ teach: _teach, ...w }) => w));
+/** `count` of `enemy` on `route`, starting `delaySec` into the wave, `intervalSec` apart. */
+function g(
+  enemy: EnemyId,
+  count: number,
+  route: RouteId,
+  delaySec = 0,
+  intervalSec?: number,
+): WaveGroup {
+  return {
+    enemy,
+    count,
+    route,
+    delaySec,
+    ...(intervalSec === undefined ? {} : { intervalSec }),
+  };
+}
+
+const motes = (route: RouteId, count: number, delaySec: number, intervalSec = 0.3): WaveGroup =>
+  g('mote', count, route, delaySec, intervalSec);
+const fractures = (route: RouteId, count: number, delaySec: number, intervalSec = 3): WaveGroup =>
+  g('fracture', count, route, delaySec, intervalSec);
+const moths = (count: number, delaySec: number, intervalSec = 1.5): WaveGroup =>
+  g('riftmoth', count, 'sky', delaySec, intervalSec);
+
+/** The build phase before most waves. */
+export const COUNTDOWN = 20;
+/** Most waves open this long after they start. */
+export const OPEN = 5;
+
+export const waves = defineWaves([
+  // W1 · Motes down the west road
+  { groups: [motes('west', 10, OPEN)] },
+  // W2 · Motes, both roads
+  { countdownSec: COUNTDOWN, groups: [motes('west', 10, OPEN), motes('east', 10, OPEN + 6)] },
+  // W3 · a Fracture down each road
+  { countdownSec: COUNTDOWN, groups: [fractures('west', 1, OPEN), fractures('east', 1, OPEN + 4)] },
+  // W4 · Rift Moths over the wall; Motes behind them
+  { countdownSec: COUNTDOWN, groups: [moths(3, OPEN, 2), motes('east', 14, OPEN + 8)] },
+  // W5 · a Mote crowd down each road
+  {
+    countdownSec: COUNTDOWN,
+    groups: [motes('west', 16, OPEN, 0.25), motes('east', 16, OPEN + 8, 0.25)],
+  },
+  // W6 · Fractures and Rift Moths
+  {
+    countdownSec: COUNTDOWN,
+    groups: [fractures('west', 1, OPEN), fractures('east', 1, OPEN + 3), moths(4, OPEN + 8, 2)],
+  },
+  // W7 · both roads at once
+  {
+    countdownSec: COUNTDOWN,
+    groups: [
+      fractures('east', 2, OPEN),
+      motes('west', 16, OPEN + 6, 0.25),
+      motes('east', 12, OPEN + 12, 0.25),
+    ],
+  },
+  // W8 · a Rift Moth flock, a crowd under it
+  {
+    countdownSec: COUNTDOWN,
+    groups: [moths(6, OPEN, 1.2), motes('west', 18, OPEN + 6, 0.25)],
+  },
+  // W9 · Fractures down both roads
+  {
+    countdownSec: COUNTDOWN,
+    groups: [fractures('west', 2, OPEN), fractures('east', 2, OPEN + 2), moths(3, OPEN + 10, 2)],
+  },
+  // W10 · the west road's surge (full dark next wave)
+  {
+    countdownSec: COUNTDOWN,
+    groups: [
+      motes('west', 22, OPEN, 0.22),
+      fractures('west', 1, OPEN + 6),
+      moths(4, OPEN + 10, 1.5),
+    ],
+  },
+  // W11 · the east road's surge, in full dark
+  {
+    countdownSec: COUNTDOWN,
+    groups: [
+      motes('east', 22, OPEN, 0.22),
+      fractures('east', 2, OPEN + 6),
+      moths(5, OPEN + 12, 1.2),
+    ],
+  },
+  // W12 · everything, both roads and the sky, in the dark
+  {
+    countdownSec: COUNTDOWN,
+    groups: [
+      fractures('west', 2, OPEN),
+      fractures('east', 2, OPEN + 1.5),
+      moths(6, OPEN + 6, 1),
+      motes('west', 16, OPEN + 12, 0.25),
+      motes('east', 16, OPEN + 14, 0.25),
+    ],
+  },
+]);

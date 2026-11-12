@@ -18,6 +18,7 @@ import {
 import { pauseMenu } from '../ui/pause/state.ts';
 import type { Router } from './router.ts';
 import { setPostGameRoute } from './ending.ts';
+import { ENDLESS_MAP_ID } from './postGameHooks.ts';
 import { leaveResults } from './runFlow.ts';
 import {
   activeSave,
@@ -49,11 +50,30 @@ function run(what: string, go: (r: Router) => Promise<void>): void {
 }
 
 /**
+ * The seed an Endless launch asked for (T863): it rides through the loadout screen to the battle,
+ * so Lock in plays the seed the panel showed.
+ */
+let seeded: { readonly mapId: string; readonly seed: number } | null = null;
+
+/**
  * The Shift board's Start: a map's loadout screen when the save has a choice to make (T201),
  * else its battle (with its briefing).
  */
 export function playMap(mapId: string): void {
+  seeded = null;
   run('play', (r) => r.play({ mapId }));
+}
+
+/** The post-game plate's Endless Start: Endless on `seed` (its loadout screen first, if offered). */
+export function playEndless(seed: number): void {
+  seeded = { mapId: ENDLESS_MAP_ID, seed };
+  run('endless', (r) => r.play({ mapId: ENDLESS_MAP_ID, seed }));
+}
+
+/** The Endless score screen's "New seed" / a record's seed: Endless again on `seed`. */
+export function endlessAgain(seed: number): void {
+  seeded = { mapId: ENDLESS_MAP_ID, seed };
+  leaveResults(() => run('endless', (r) => r.goto('battle', { mapId: ENDLESS_MAP_ID, seed })));
 }
 
 /** Loadout → Lock in: remembers the pick as the map's preset, then its battle and briefing. */
@@ -62,7 +82,8 @@ export function lockInLoadout(pick: LoadoutPickView): void {
   if (mapId === null) return;
   // A failed write is logged; the save in play holds the pick, so the battle still uses it.
   savePick(pick);
-  run('lock in', (r) => r.goto('battle', { mapId }));
+  const seed = seeded?.mapId === mapId ? seeded.seed : null;
+  run('lock in', (r) => r.goto('battle', seed === null ? { mapId } : { mapId, seed }));
 }
 
 /** The briefing's Change loadout: back to the running map's loadout screen. */
@@ -188,10 +209,12 @@ export function toCampaign(): void {
 }
 
 /**
- * The post-game step of the campaign's close (T810; app/ending.ts): the post-game star map. Today
- * the campaign screen, which after the finale is the star map at dawn; T863 replaces this route.
+ * The post-game step of the campaign's close (T810; app/ending.ts): the post-game star map (T863).
+ * Once the finale is won the campaign screen is it: the Sector map at dawn, every node cleared,
+ * with the post-game plate (Endless, the challenges, "Watch the epilogue") leading.
  */
 export function toPostGame(): void {
+  seeded = null;
   toCampaign();
 }
 setPostGameRoute(toPostGame);
