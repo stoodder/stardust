@@ -69,6 +69,9 @@ const sold = (uid: number): Ev => ({ type: 'TowerSold', uid, refund: 0 });
 /** How long a lone comms line holds. */
 const hold = (text: string): number => commsHoldMs(text, undefined, false);
 
+/** A registered scene by id. */
+const byId = (id: string): Scene => SCENES[id]!;
+
 describe('dialogue helpers', () => {
   it('holds a comms line for its reading time, and a typed beat before an answer', () => {
     expect(readMs('short')).toBe(4000);
@@ -97,7 +100,6 @@ describe('dialogue helpers', () => {
   });
 
   it("counts a scene's speakers, the narrator aside (a lone briefing voice's whole portrait; T900)", () => {
-    const byId = (id: string): Scene => SCENES[id]!;
     expect(sceneSpeakers(byId('a1_m03_brief'))).toBe(1); // QUILL alone
     expect(sceneSpeakers(byId('a2_m03_brief'))).toBe(1); // Bricks alone
     expect(sceneSpeakers(byId('a1_m01_brief'))).toBe(2); // QUILL and Bricks
