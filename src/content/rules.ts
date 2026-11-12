@@ -627,7 +627,7 @@ export const REFUGEE_SPEED_TILES_PER_SEC = 0.7;
  * The finale's choir (maps.md § 5.5; T804): its column files behind the leader this many tiles
  * apart, and a member behind its place closes up at up to CHOIR_CATCHUP_MUL × the choir's pace.
  */
-export const CHOIR_SPACING_TILES = 0.4;
+export const CHOIR_SPACING_TILES = 0.3;
 export const CHOIR_CATCHUP_MUL = 2;
 /**
  * Thrum's echo (maps.md § 5.5; T807, sim/echo.ts): it drifts toward Pebble at
