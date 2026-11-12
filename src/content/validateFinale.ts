@@ -22,6 +22,7 @@
 //   names a lighting set (content/lightingSets.ts: `dawn`); `restoreTowerClass` needs a
 //   `revokeTowerClass` on the map.
 import { LIGHTING_SETS, lightingSet } from './lightingSets.ts';
+import { BOSS_ABILITY_TELL_SEC, BOSS_MIN_TELL_SEC } from './rules.ts';
 import { checkFlagGate } from './validateM7.ts';
 import type {
   BossPhaseDef,
@@ -289,7 +290,10 @@ function atomsOf(c: ConditionDef<IdSpace>): ConditionDef<IdSpace>[] {
  * [enemy-ability], the finale's boss phase kinds (T800a; the Unsung, T808): a floor is a share of
  * HP above 0 and below its phase's start, and only on a `layToRest` boss, whose last phase has one
  * (the song ends it, never its HP) and which is Hollow; `burrowTo` goes with a `burrow` in its
- * phase; adds name an enemy (never itself), a whole count ≥ 1, and a period > 0.
+ * phase, longer than its surfacing tell; adds name an enemy (never itself), a whole count ≥ 1, and
+ * a period longer than their tell; a phase-scoped Phased cycle tells for at least
+ * BOSS_MIN_TELL_SEC and fits in its period; a split with no merge has a later phase to rise into
+ * (T808).
  */
 export function validateFinalePhases(
   bad: (field: string, msg: string) => void,
@@ -315,6 +319,34 @@ export function validateFinalePhases(
     if (p.adds !== undefined) {
       child(`${w}.adds`, p.adds.enemy, p.adds.count ?? 1);
       if (!isPositive(p.adds.everySec)) bad(`${w}.adds.everySec`, 'must be > 0');
+      // T808: the call's tell is the wait's last BOSS_ABILITY_TELL_SEC.
+      else if (!(p.adds.everySec > BOSS_ABILITY_TELL_SEC)) {
+        bad(`${w}.adds.everySec`, `must be longer than its ${BOSS_ABILITY_TELL_SEC} s tell`);
+      }
+    }
+    // T808: a burrow toward the choir surfaces after a tell (its last BOSS_ABILITY_TELL_SEC).
+    if (p.burrowTo !== undefined && p.burrow !== undefined) {
+      if (!(p.burrow.durationSec > BOSS_ABILITY_TELL_SEC)) {
+        bad(`${w}.burrow.durationSec`, `must be longer than its ${BOSS_ABILITY_TELL_SEC} s tell`);
+      }
+    }
+    // T808: a phase-scoped Phased cycle (the Unsung's phase 3), a boss ability's tell.
+    if (p.phase !== undefined) {
+      const ph = p.phase;
+      if (!isPositive(ph.everySec)) bad(`${w}.phase.everySec`, 'must be > 0');
+      if (!isPositive(ph.durationSec)) bad(`${w}.phase.durationSec`, 'must be > 0');
+      if (!(ph.tellSec >= BOSS_MIN_TELL_SEC)) {
+        bad(`${w}.phase.tellSec`, `a boss ability tells for at least ${BOSS_MIN_TELL_SEC} s`);
+      }
+      if (!(ph.tellSec + ph.durationSec < ph.everySec)) {
+        bad(`${w}.phase.durationSec`, 'the tell and the Phased stretch must fit in everySec');
+      }
+    }
+    // T808: a split without a merge rises again in the boss's next phase, so it needs one.
+    const s = p.split;
+    if (s !== undefined && s.mergeAfterSec === undefined && s.mergeHastePct === undefined) {
+      const later = phases.slice(i + 1).some((q) => q.fromPct !== 'shieldBroken');
+      if (!later) bad(`${w}.split`, 'a split with no merge needs a later phase to rise into');
     }
   }
   if (layToRest) {

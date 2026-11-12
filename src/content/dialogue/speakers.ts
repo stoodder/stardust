@@ -5,6 +5,7 @@
 // in it (`<variant>.<expression>[_talk]`, art-direction.md § Portrait roster), and every variant
 // has all of the speaker's expressions. The derived `dark` bake is the absent speaker's frame.
 import type { ColorName } from '../palettes/master.ts';
+import { WHOS_THERE_INPUT } from '../forcedInputs.ts';
 import type { Condition, SpeakerId } from './types.ts';
 
 /** A portrait's sprite id (registered by the portrait tasks; `portrait.<speaker>`). */
@@ -61,6 +62,38 @@ export interface SpeakerDef {
   readonly blip: BlipId | null;
 }
 
+/** A1M5's party (act1.md § A1M5): every portrait in a hat, the whole map (D154 addendum, T809). */
+const PARTY: Condition = { mapIs: 'a1_m05' };
+
+/** The scene the finale's Dawn plays before Results (finale.md § FIN; RESULTS_FLOW.fin_m01). */
+export const DAWN_SCENE = 'fin_m01_scene_dawn';
+
+/**
+ * After Dawn (finale.md § FIN): the run's script phase is 3 (the battle's, or the ended run's
+ * through Results, C5, and the epilogue), or, off the finale map, the Dawn scene was seen (the
+ * post-game). A replay of the finale starts before Dawn again.
+ */
+const AFTER_DAWN: Condition = {
+  any: [{ phaseAtLeast: 3 }, { all: [{ seen: DAWN_SCENE }, { not: { mapIs: 'fin_m01' } }] }],
+};
+
+/**
+ * QUILL `damaged` (C4 Keep): once this run answered Directive 0's "Who's there?" (the forced
+ * input, content/forcedInputs.ts), through its end and the epilogue; off the finale map after
+ * Dawn.
+ */
+const QUILL_DAMAGED: Condition = {
+  all: [
+    { flag: 'quill_choice', eq: 'keep' },
+    {
+      any: [
+        { inputResolved: WHOS_THERE_INPUT },
+        { all: [{ seen: DAWN_SCENE }, { not: { mapIs: 'fin_m01' } }] },
+      ],
+    },
+  ],
+};
+
 /**
  * Every speaker. Colors follow each character's look (story/characters.md): QUILL's teal screen,
  * Bricks's Everglow-orange kit, Goldie's green overalls, Kip's gold trophy pin, Sterling's
@@ -87,6 +120,8 @@ export const SPEAKERS = {
     // whistle scene after (QUILL's loophole plays first, on the same visit; D138). Empty again at
     // the Gap (A3M3), where she goes with Goldie's convoy (T622's review).
     variants: [
+      // A1M5's party: "Hats on" from Sterling's memo, so all map ("Clear it, Sprout" in a hat).
+      { variant: 'party_hat', when: PARTY },
       {
         variant: 'pebble',
         when: {
@@ -122,13 +157,15 @@ export const SPEAKERS = {
     // Purge's status bar (C4, from A3M4's debrief on): no smile, no directives, so no `policy`
     // flash; its silences blink the bar (Night Shift's "no line; its status bar blinks").
     variants: [
+      // Keep: cracked after Directive 0's knock-knock ("Not Everglow."), through the epilogue.
+      { variant: 'damaged', when: QUILL_DAMAGED },
       {
         variant: 'purge',
         when: { flag: 'quill_choice', eq: 'purge' },
         silence: 'blink',
         noPolicy: true,
       },
-      { variant: 'party_hat', when: { mapIs: 'a1_m05' } },
+      { variant: 'party_hat', when: PARTY },
     ],
     blip: 'blip.quill',
   },
@@ -139,7 +176,10 @@ export const SPEAKERS = {
     portrait: 'portrait.sterling',
     // A3M5's boss cues: she flies "Shareholder Value" from her office, on a live feed (REC lamp,
     // viewfinder brackets). Every line of hers on that map is by remote.
-    variants: [{ variant: 'remote', when: { mapIs: 'a3_m05' } }],
+    variants: [
+      { variant: 'remote', when: { mapIs: 'a3_m05' } },
+      { variant: 'party_hat', when: PARTY },
+    ],
     blip: 'blip.sterling',
   },
   zibzab: {
@@ -147,7 +187,7 @@ export const SPEAKERS = {
     color: 'brass.4',
     frame: 'portrait',
     portrait: 'portrait.zibzab',
-    variants: [],
+    variants: [{ variant: 'party_hat', when: PARTY }],
     blip: 'blip.zibzab',
   },
   vesthara: {
@@ -157,6 +197,8 @@ export const SPEAKERS = {
     portrait: 'portrait.vesthara',
     // The finale's Phase 3 `dawn` variant needs a phase condition; it joins with the finale.
     variants: [
+      // The finale's Dawn: her threads re-lit (the gold mote at her shoulder), from Phase 3 on.
+      { variant: 'dawn', when: AFTER_DAWN },
       { variant: 'touched_deep', when: { act: 3 } },
       // Touched from A2M5's pivot on (she kneels and becomes the wall; D138), and every map after.
       // On A2M5 it is this run's pivot (T569: `pivotWave` is set as it runs, live in the battle and
@@ -198,7 +240,10 @@ export const SPEAKERS = {
     color: 'green.4',
     frame: 'portrait',
     portrait: 'portrait.goldie',
-    variants: [{ variant: 'act3', when: { act: 3 } }],
+    variants: [
+      { variant: 'act3', when: { act: 3 } },
+      { variant: 'party_hat', when: PARTY },
+    ],
     blip: 'blip.goldie',
   },
   kip: {
@@ -219,6 +264,7 @@ export const SPEAKERS = {
       },
       { variant: 'act3', when: { mapIs: 'a3_m05' }, silenceOnly: true },
       { variant: 'act2', when: { any: [{ act: 2 }, { act: 3 }] } },
+      { variant: 'party_hat', when: PARTY },
     ],
     blip: 'blip.kip',
   },

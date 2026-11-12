@@ -186,8 +186,14 @@ export interface PendingRun {
   log: CommandLogEntry[];
   /** Skitterkin of this run already filed in the save's Pests Processed (app/checkpoints.ts). */
   killsBefore: number;
-  /** 8 lowercase hex digits: the config's fingerprint (T809). */
+  /** 8 lowercase hex digits: the config's fingerprint (app/resume.ts `configHash`). */
   configHash: string;
+  /**
+   * The checkpoint a lost run's retry resumed from before this one was taken (the run forfeits
+   * Perfect and the Challenge, core-loop.md § 2.12); absent for a run from wave 1, which a reload
+   * continues as the same run.
+   */
+  retriedFrom?: PendingCheckpoint;
 }
 
 /** A persisted checkpoint (app/checkpoints.ts `Checkpoint`, with the sim's label). */

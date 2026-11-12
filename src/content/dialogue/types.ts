@@ -143,6 +143,18 @@ export type Condition =
    * lines after the Clean Exit test `revocations` ≥ 1.
    */
   | { readonly runStat: RunStoryStat; readonly gte?: number; readonly lte?: number }
+  /**
+   * The run's script phase (`state.phase`: the finale's 1 Descent, 2 the Unsung, 3 Dawn; T806) is
+   * at least `n`: the bound battle's, else the ended run's while its end is on screen; false
+   * outside a run (T809: Ves'thara's `dawn` portrait).
+   */
+  | { readonly phaseAtLeast: number }
+  /**
+   * The run resolved that forced input (`state.forcedResolved`; content/forcedInputs.ts): the bound
+   * battle's, else the ended run's; false outside a run (T809: QUILL `damaged` once "Who's
+   * there?" is answered).
+   */
+  | { readonly inputResolved: string }
   /** The value `flag`'s run-end rule gives over the run that just ended (FLAG_RULES). */
   | { readonly thisRun: BooleanFlagId; readonly eq: boolean }
   /**

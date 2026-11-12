@@ -366,6 +366,18 @@
   text-transform: uppercase;
 }
 
+/* A Technician ability its companion brings in slot 2 (T501): dim, not a pick, with why. */
+.sd-lo-ability.sd-lo-off {
+  border-left-color: var(--sd-ink-3);
+  background: var(--sd-ink-1);
+  color: var(--sd-steel-3);
+  cursor: default;
+}
+
+.sd-lo-ability.sd-lo-off .sd-lo-icon {
+  opacity: 0.45;
+}
+
 .sd-lo-dim {
   color: var(--sd-steel-3);
   text-transform: uppercase;

@@ -283,7 +283,7 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   'enemy.boss.pivot': null,
   'enemy.boss.shieldBroken': null,
   // The finale's ending (D154: T808, the Unsung).
-  'enemy.boss.layToRest': 'T808',
+  'enemy.boss.layToRest': null, // T808 lifted: enemyAbilities/unsung.ts (laid to rest at p = 1)
   'enemy.hush': null,
   'enemy.skittish': null,
   'enemy.pulse': null,
@@ -316,9 +316,9 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   'map.choir': null, // T804 lifted: sim/choir.ts (the walk, the halt rule, Voices)
   'map.song': null, // T805 lifted: sim/song.ts (rest, scatter and re-form, the countdown)
   'map.timers': null, // T806 lifted: sim/timers.ts (the Deep Bore)
-  'enemy.boss.floor': 'T808',
-  'enemy.boss.burrowTo': 'T808',
-  'enemy.boss.adds': 'T808',
+  'enemy.boss.floor': null, // T808 lifted: enemyAbilities/bossPhases.ts (the HP floor)
+  'enemy.boss.burrowTo': null, // T808 lifted: enemyAbilities/unsung.ts (the dig toward the choir)
+  'enemy.boss.adds': null, // T808 lifted: enemyAbilities/unsung.ts (the Song's Silencers)
   'map.rift': null,
   'map.holdout': null,
   'ally.blocker': null,
@@ -488,6 +488,7 @@ function useEnemy(def: CompiledEnemyDef, flyingRoute: boolean, use: Use): void {
     use('enemy.boss.burrowTo', `a burrow toward the choir (${id})`);
   }
   if (phases.some((p) => p.adds !== null)) use('enemy.boss.adds', `a phase's adds (${id})`);
+  if (phases.some((p) => p.phase !== null)) use('enemy.phase', `a boss phase's phasing (${id})`);
 }
 
 /** The features a map needs from its waves and layout (T300a; T400a). */

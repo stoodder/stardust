@@ -237,6 +237,9 @@ const MAKES_SOUND: Readonly<Record<SimEventType, boolean>> = {
   AbilityLocked: false,
   EchoArrived: false,
   DawnBroke: false,
+  BossRisen: false, // T808: silent until T850
+  BossSurfaced: false,
+  BossAdds: false,
 };
 
 /** The sim event types the binder hands to `EventSounds.sounds` (the rest are always silent). */
@@ -786,6 +789,10 @@ export function createEventSounds(
         case 'AbilityLocked':
         case 'EchoArrived':
         case 'DawnBroke':
+        // The Unsung's (T808): silent until T850 gives them sounds.
+        case 'BossRisen':
+        case 'BossSurfaced':
+        case 'BossAdds':
           return;
         default:
           assertNever(e);

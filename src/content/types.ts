@@ -928,6 +928,12 @@ export interface BossPhaseDef {
    * (an EnemyId) every `everySec`, walking in from the map's spawns (T808 places them).
    */
   readonly adds?: BossAddsDef;
+  /**
+   * Phases while in this boss phase (the Unsung's phase 3; T808): the Phased cycle (EnemyDef.phase's
+   * rule) at these numbers, held while it is dug in or telling a dig, and a dig waits while it is
+   * Phased or telling a phase. A boss's tell is at least BOSS_MIN_TELL_SEC.
+   */
+  readonly phase?: PhaseDef;
 }
 
 /** A boss phase's adds (BossPhaseDef.adds; the finale's Unsung). */
@@ -960,13 +966,17 @@ export interface JettisonDef {
   readonly plates: readonly MarkerId[];
 }
 
-/** A boss split and its merge (BossPhaseDef.split): D146's 3 parts at 20%, merge at 12 s, Haste 30%. */
+/**
+ * A boss split and its merge (BossPhaseDef.split): D146's 3 parts at 20%, merge at 12 s, Haste 30%.
+ * The merge is optional (T808): with neither `mergeAfterSec` nor `mergeHastePct`, the parts never
+ * merge, and once the last of them falls the boss rises again in its next phase (the Unsung).
+ */
 export interface BossSplitDef {
   readonly part: string;
   readonly count: number;
   readonly hpPct: number;
-  readonly mergeAfterSec: number;
-  readonly mergeHastePct: number;
+  readonly mergeAfterSec?: number;
+  readonly mergeHastePct?: number;
 }
 
 // ── Commander abilities ──────────────────────────────────────────────────────────────────────

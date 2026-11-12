@@ -454,6 +454,13 @@ export interface Enemy extends PoolEntity {
    * read and cleared by song(); T805). 0 elsewhere.
    */
   songDamage: number;
+  /**
+   * The Unsung's dig toward the choir (T808; enemyAbilities/unsung.ts): the route distance it
+   * travels to underground (−1: not digging toward one), and its HP as it dug in (a burrow answer's
+   * hit underground takes it below that: dug out).
+   */
+  digToDist: number;
+  digHp: number;
 }
 
 export const ENEMY_BLANK: Readonly<Enemy> = Object.freeze({
@@ -533,6 +540,8 @@ export const ENEMY_BLANK: Readonly<Enemy> = Object.freeze({
   scatterTicks: 0,
   scatteredOnce: false,
   songDamage: 0,
+  digToDist: -1,
+  digHp: 0,
 });
 
 /**

@@ -761,6 +761,24 @@ export type SimEvent<K extends IdSpace = LiveIds> =
   | { readonly type: 'BossSplit'; readonly uid: number; readonly parts: readonly number[] }
   /** A split boss's survivors merged into `uid` (T708), enraged. */
   | { readonly type: 'BossMerged'; readonly uid: number }
+  /**
+   * A split with no merge (T808, the Unsung): its last part fell and the boss rose again as `uid`,
+   * in its next phase (BossPhase came just before), where that part fell.
+   */
+  | { readonly type: 'BossRisen'; readonly uid: number }
+  /**
+   * A boss came up from a dig toward the choir (T808) at `at`: among the singers, hushing `hushed`
+   * (a singer's uid; 0: none in reach), or `dugOut` short of them by a burrow answer's hit.
+   */
+  | {
+      readonly type: 'BossSurfaced';
+      readonly uid: number;
+      readonly at: readonly [x: number, y: number];
+      readonly dugOut: boolean;
+      readonly hushed: number;
+    }
+  /** A boss phase's adds walked in at its route's spawn (T808, the Song's Silencers). */
+  | { readonly type: 'BossAdds'; readonly uid: number; readonly enemy: string; readonly count: number }
   /** A Sproing Pad's leaper bonked an enemy (T704): render's arc, audio's boing. */
   | { readonly type: 'LeaperBonk'; readonly tower: number; readonly target: number }
   /** A leaper's bonk Pinned a flyer for `ticks` (T704): grounded, so ground towers hit it. */

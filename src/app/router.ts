@@ -19,7 +19,22 @@ import { campaign, menuNotice, runResult, type RunResult } from '../ui/screens/s
 import { screen } from '../ui/state.ts';
 import { startBattle, type Battle } from './battle.ts';
 import { battleConfig, DEFAULT_MAP_ID, randomSeed } from './battleSetup.ts';
-import { attemptKills, resumeOf, usableCheckpoint, type Resume } from './checkpoints.ts';
+import {
+  attemptKills,
+  checkpointPlace,
+  resumeOf,
+  usableCheckpoint,
+  type Resume,
+} from './checkpoints.ts';
+import { trackCountdown, type CountdownTracker } from './countdown.ts';
+import {
+  pendingResume,
+  pendingRunOf,
+  persistsCheckpoints,
+  reloadedNotice,
+  RESUME_REFUSED,
+  withPendingRun,
+} from './resume.ts';
 import { cancel, setSpeed } from './commands.ts';
 import { showNotice } from './hud.ts';
 import { logError } from './log.ts';
@@ -119,6 +134,12 @@ export interface Router {
    */
   retryFromCheckpoint(): Promise<void>;
   /**
+   * Title → "Resume the Long Walk" (D154; app/resume.ts): replays the save in play's pending
+   * finale run to its checkpoint, paused there, as the same run. A save that now builds another
+   * config drops it and shows the Shift board with RESUME_REFUSED. Rejects without a pending run.
+   */
+  resumePending(): Promise<void>;
+  /**
    * Ends the running battle with `outcome` and shows Results now. The sim's MapWon / MapLost call
    * it after RESULTS_DELAY_MS. Rejects outside a battle; a second call is a no-op.
    */
@@ -156,14 +177,23 @@ function markFirstPaydayShown(): void {
   }));
 }
 
-/** The notice a checkpoint retry opens with, paused in wave `wave`'s countdown. */
-export function resumedNotice(wave: number): string {
+/**
+ * The notice a checkpoint retry opens with, paused in wave `wave`'s countdown, or at a labelled
+ * checkpoint's `place` ("the Halls").
+ */
+export function resumedNotice(wave: number, place?: string): string {
   // "Before": the wave panel still counts the waves behind it (D134 U3), and the tracker's dimmed
   // medals get their reason.
+  const where = place === undefined ? `before wave ${wave}` : `at ${place}`;
   return (
-    `Resumed before wave ${wave}. Unpause when ready. ` +
+    `Resumed ${where}. Unpause when ready. ` +
     'Perfect Core and the Challenge need a shift from wave 1.'
   );
+}
+
+/** A checkpoint's place for the resumed notice: a labelled one's ("the Halls"), else none. */
+function labelPlace(c: { readonly label?: string; readonly wave: number }): string | undefined {
+  return c.label === undefined ? undefined : checkpointPlace(c);
 }
 
 /** How long the resumed notice stays up: long enough to read its two sentences (ms). */
@@ -186,6 +216,9 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
   let pending: { outcome: RunOutcome; timer: ReturnType<typeof setTimeout> } | null = null;
   let lastRequest: BattleRequest = defaults;
   let settingsFrom: MenuId = 'title';
+  /** The finale's Phase 2 countdown for the battle (app/countdown.ts), and the lifetime it read. */
+  let countdown: CountdownTracker | null = null;
+  let lifetimeAtStart = 0;
 
   const showBackdrop = (on: boolean): void => {
     const running = game.scene.isActive(BACKDROP_SCENE_KEY);
@@ -198,6 +231,8 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
   };
   const stopBattle = (): void => {
     clearPending();
+    countdown?.off();
+    countdown = null;
     pauseMenu.value = false;
     setAfterResults([]);
     battle?.stop();
@@ -245,6 +280,12 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
   ): Promise<void> => {
     const mapId = cfg.mapId;
     stopBattle();
+    lifetimeAtStart = activeSave()?.stats.pestsProcessed ?? 0;
+    // A fresh start of the finale drops a run left pending (D154): this one is the walk now.
+    const finale = persistsCheckpoints(cfg.content.maps[mapId] ?? { id: mapId, act: null });
+    if (finale && resume === null && activeSave()?.pendingRun !== undefined) {
+      updateActiveSave((s) => withPendingRun(s, null));
+    }
     showBackdrop(false);
     closeLoadout();
     lastRequest = request;
@@ -258,6 +299,25 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
     let next: Battle | null = null;
     const listen = (host: Battle['host']): void => {
       const { bus } = host;
+      // The finale's countdown (bound before a resume's replay, so its N comes back the same).
+      countdown = trackCountdown(host);
+      // The finale persists its latest checkpoint to the save (D154; app/resume.ts). A replay
+      // re-reaches the ones already persisted, so only fresh ones write.
+      if (finale && activeSave() !== null) {
+        bus.on('CheckpointReached', () => {
+          const latest = host.checkpoints[host.checkpoints.length - 1];
+          if (host.replaying || latest === undefined || next !== battle || ended) return;
+          const run = pendingRunOf(
+            host.sim.config,
+            latest,
+            host.sim.state.commandLog,
+            host.killsBefore,
+            host.resumedFrom,
+          );
+          const w = updateActiveSave((s) => withPendingRun(s, run));
+          if (!w.ok) logError(`resume: ${w.message}`);
+        });
+      }
       bus.on('WaveCleared', () => {
         wavesCleared++;
       });
@@ -324,9 +384,18 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
     screen.value = 'battle';
     if (resume !== null) {
       // A checkpoint retry waits, paused, in the wave's countdown: the player looks, rebuilds,
-      // and unpauses when ready (core-loop.md § 2.12).
+      // and unpauses when ready (core-loop.md § 2.12). A reload of the finale's pending run says
+      // where the walk picks up (and, if it was a retry, why the medals stay dim).
       setSpeed(0);
-      showNotice(resumedNotice(resume.checkpoint.wave), RESUMED_NOTICE_MS, true);
+      const c = resume.checkpoint;
+      const retried = next.host.resumedFrom;
+      showNotice(
+        resume.retriedFrom === undefined
+          ? resumedNotice(c.wave, labelPlace(c))
+          : reloadedNotice(checkpointPlace(c), retried !== null),
+        RESUMED_NOTICE_MS,
+        true,
+      );
     }
     return next.firstFrame;
   };
@@ -405,6 +474,8 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
     const s = sim.state;
     const end = endedAt ?? { ms: performance.now(), tick: s.tick };
     const resumed = b.host.resumedFrom;
+    const usable = usableCheckpoint(b.host.checkpoints, s.tick);
+    const remembered = countdown?.start(lifetimeAtStart);
     const input: RunEndInput = {
       mapId: sim.map.id,
       act: sim.map.act,
@@ -435,12 +506,22 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
       stats: s.stats,
       met,
       resumedFromWave: resumed?.wave ?? null,
-      checkpointWave: usableCheckpoint(b.host.checkpoints, s.tick)?.wave ?? null,
+      resumedFromLabel: resumed?.label ?? null,
+      checkpointWave: usable?.wave ?? null,
+      checkpointLabel: usable?.label ?? null,
+      // The story's script state as the run ended (T809: the finale's speakers through C5).
+      script: { phase: s.phase, resolved: [...s.forcedResolved] },
+      // The finale's REMEMBERED: {n}, the count its countdown started from (app/countdown.ts).
+      ...(remembered === null || remembered === undefined ? {} : { remembered }),
       // Act III part one (T610): what the script revoked, and the turret under the {name} plate.
       revoked: revokedAtEnd(s.revoked, sim.map.events, s.scriptFired),
       memorialTower: memorialAtEnd(sim, hud.nameTag.value),
     };
     const summary = recordRun(metaRunEndOf(input, outcome));
+    // The finale's run ended (won, lost, or abandoned): nothing is pending any more (D154).
+    if (persistsCheckpoints(sim.map) && activeSave()?.pendingRun !== undefined) {
+      updateActiveSave((save) => withPendingRun(save, null));
+    }
     // The battle freezes where it ended and stays drawn behind the results.
     setSpeed(0);
     cancel();
@@ -527,6 +608,22 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
       // The lost run's own config (same seed, loadout, and modifiers), so the replay reproduces it.
       const { sim } = b.host;
       return launch(lastRequest, sim.config, false, resumeOf(sim.state.commandLog, checkpoint));
+    },
+    resumePending() {
+      const save = activeSave();
+      const pending = save === null ? null : pendingResume(save);
+      if (save === null || pending === null) {
+        return Promise.reject(new Error('router: no pending run to resume'));
+      }
+      if (pending === 'changed') {
+        // The save builds another run now: drop it, and say so on the Shift board.
+        updateActiveSave((s) => withPendingRun(s, null));
+        return showMenu('campaign').then(() => {
+          menuNotice.value = RESUME_REFUSED;
+        });
+      }
+      const { cfg, resume } = pending;
+      return launch({ mapId: cfg.mapId, seed: cfg.seed }, cfg, false, resume);
     },
     flushResults() {
       if (pending === null) return Promise.resolve();

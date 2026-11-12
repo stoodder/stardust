@@ -386,6 +386,9 @@ export function createRunTracker<K extends IdSpace>(
           case 'AbilityLocked':
           case 'EchoArrived':
           case 'DawnBroke':
+          case 'BossRisen': // T808
+          case 'BossSurfaced':
+          case 'BossAdds':
             break;
           default:
             e satisfies never;

@@ -648,8 +648,16 @@ function validateM7Phase(
       bad(`${w}.split.count`, 'must be a whole number ≥ 2');
     }
     if (!(s.hpPct > 0 && s.hpPct <= 1)) bad(`${w}.split.hpPct`, 'must be in (0, 1]');
-    if (!isPositive(s.mergeAfterSec)) bad(`${w}.split.mergeAfterSec`, 'must be > 0');
-    if (!(s.mergeHastePct >= 0 && s.mergeHastePct <= HASTE_CAP)) {
+    // The merge is optional (T808): both its numbers or neither (no merge: the boss rises again
+    // in its next phase once its last part falls, validateFinale.ts).
+    if ((s.mergeAfterSec === undefined) !== (s.mergeHastePct === undefined)) {
+      bad(`${w}.split`, 'a merge has both mergeAfterSec and mergeHastePct (or neither: no merge)');
+    }
+    if (s.mergeAfterSec !== undefined && !isPositive(s.mergeAfterSec)) {
+      bad(`${w}.split.mergeAfterSec`, 'must be > 0');
+    }
+    const haste = s.mergeHastePct;
+    if (haste !== undefined && !(haste >= 0 && haste <= HASTE_CAP)) {
       bad(`${w}.split.mergeHastePct`, `must be in [0, ${HASTE_CAP}]`);
     }
   }

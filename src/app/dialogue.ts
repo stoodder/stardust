@@ -68,6 +68,7 @@ import {
   evaluateCondition,
   runStoryStats,
   type RunContext,
+  type RunScript,
   type RunStoryStats,
   type StoryContext,
 } from '../story/conditions.ts';
@@ -332,6 +333,8 @@ interface Session {
   evacuated(): number;
   /** This run's stats so far, for the `runStat` story condition (T569). */
   live(): RunStoryStats;
+  /** This run's script state now, for `phaseAtLeast` / `inputResolved` (T809). */
+  script(): RunScript;
   /**
    * A resumed run's replay (`Host.replaying`; app/checkpoints.ts): barks are still picked, so
    * their spacing and once-limits count what the replayed attempt heard, but nothing plays.
@@ -379,7 +382,7 @@ export function setStoryRun(run: RunContext | null): void {
 function storyContext(map: CampaignMapId | null): StoryContext {
   const save = activeSave();
   const kills = session?.runKills() ?? 0;
-  const live = session === null ? {} : { live: session.live() };
+  const live = session === null ? {} : { live: session.live(), liveScript: session.script() };
   if (save === null) {
     return { flags: NO_FLAGS, map, pestsProcessed: kills, seen: [], run: storyRun, ...live };
   }
@@ -1540,6 +1543,7 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
     runKills: () => attemptKills(host),
     evacuated: () => sim.state.stats.evacuated,
     live: () => runStoryStats(sim.state.stats),
+    script: () => ({ phase: sim.state.phase, resolved: sim.state.forcedResolved }),
     replaying: () => host.replaying,
     pool: map === null ? [] : barksFor(map).filter((b) => !offline.includes(b.speaker)),
     barks: newBarkState(sim.config.seed),

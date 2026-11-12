@@ -488,6 +488,12 @@ export const BOSS_ABILITY_TELL_SEC = BOSS_MIN_TELL_SEC;
  */
 export const BOSS_BURROW_GAP_SEC = 4;
 /**
+ * A boss's dig toward the choir (the Unsung's phase 3; D154 Fork 2; T808): coming up among the
+ * singers it hushes the nearest singing singer within this many tiles (one per surfacing), unless
+ * a burrow answer's hit dug it out on the way.
+ */
+export const BOSS_SURFACE_HUSH_TILES = 1;
+/**
  * Units born on the route (a splitter's children, a boss's sneezed or surfacing young) trail
  * their parent by this much each: the first at the parent's distance, the next this far behind.
  */

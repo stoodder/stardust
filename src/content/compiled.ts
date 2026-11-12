@@ -567,6 +567,7 @@ export interface CompiledBossPhase {
     readonly part: string;
     readonly count: number;
     readonly hpPct: number;
+    /** 0: no merge (T808): the boss rises in its next phase once its last part falls. */
     readonly mergeAfterTicks: number;
     readonly mergeHastePct: number;
   } | null;
@@ -578,6 +579,8 @@ export interface CompiledBossPhase {
     readonly count: number;
     readonly everyTicks: number;
   } | null;
+  /** The phase-scoped Phased cycle (BossPhaseDef.phase; T808), or null. */
+  readonly phase: CompiledPhase | null;
 }
 
 export interface CompiledAbilityDef<Id extends string = string> {

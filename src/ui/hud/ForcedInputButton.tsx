@@ -9,6 +9,7 @@
 // is there at once and the armed button holds still (no breathing fill). The focus comes back to it as the pause menu or a scene closes.
 import { useEffect, useRef } from 'preact/hooks';
 import { currentSeal } from '../../app/forcedInput.ts';
+import { forcedInputDef } from '../../content/forcedInputs.ts';
 import { sceneBlocks } from '../dialogue/state.ts';
 import { pauseMenu } from '../pause/state.ts';
 import { forcedInput, forcedInputArmed, forcedInputAvoid } from './forcedInputState.ts';
@@ -31,7 +32,8 @@ export function ForcedInputButton() {
     if (id !== null && !covered) ref.current?.focus();
   }, [id, covered]);
   if (id === null) return null;
-  const label = id.toUpperCase();
+  // Its def's words ("SEAL", the finale's "Who's there?"; content/forcedInputs.ts).
+  const label = forcedInputDef(id).label;
   // Lifted above the doors when it would cover one (D143 R3, D144 S8).
   const bottom = sealButtonBottom(forcedInputAvoid.value);
   return (

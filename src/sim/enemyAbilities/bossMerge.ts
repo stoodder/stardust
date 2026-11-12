@@ -21,12 +21,20 @@
 // - **The merged boss** keeps the split's `ownerUid` and `splitMaxHp` (the one bar goes on), is
 //   hasted `mergeHastePct` (under HASTE_CAP) from the tick it forms, its invulnerability included,
 //   gathers no more (its phase has no gather), and dies at 0 HP like a part.
+// - **No merge** (T808, the Unsung: a split with no `mergeAfterSec`): the parts keep no clock and
+//   never merge, not even the last one alone. Once the last of them falls (killed, inside the song
+//   or out: cleanup calls `riseAfterSplit` over the tick's dead), the boss rises again where it
+//   fell: a fresh whole boss of its def (a new uid; not split-born, so its own phases, floor, and
+//   ending run), at its next phase's share of its max HP, in that phase with its 1.5 s of
+//   invulnerability (BossPhase, then BossRisen; a map's `bossPhase` trigger cues it). A part that
+//   leaks or is laid to rest by `restAll` raises nothing.
 import { BOSS_ABILITY_TELL_SEC, HASTE_CAP } from '../../content/rules.ts';
 import { secToTicks } from '../../shared/time.ts';
 import type { Enemy } from '../entities.ts';
 import { emit, type SimState } from '../state.ts';
-import { BOSS_PHASE_INVULNERABLE_TICKS } from './bossPhases.ts';
+import { BOSS_PHASE_INVULNERABLE_TICKS, enterBossPhase, nextHpPhase } from './bossPhases.ts';
 import { removeGone, spawnSplitBorn, splitOf } from './bossSplit.ts';
+import { wasKilled } from './split.ts';
 
 /** The merge's tell, the walk together: the boss tell's length (BOSS_MIN_TELL_SEC). */
 export const MERGE_TELL_TICKS = secToTicks(BOSS_ABILITY_TELL_SEC);
@@ -91,6 +99,7 @@ export function splitBornStep(state: SimState, e: Enemy): void {
     return;
   }
   if (e.leaving || leadIsBefore(state, e)) return; // only the group's lead gathers it
+  if ((splitOf(e.splitFrom)?.mergeAfterTicks ?? 0) <= 0) return; // T808: no merge, no clock
   fillGroup(state, e.ownerUid);
   if (group[0] !== e) return; // the group ran with its lowest-slot part (or runs when it's met)
   if (e.spawnTick === state.tick) return; // born this tick: the clock starts on the next
@@ -144,4 +153,28 @@ function merge(state: SimState, first: Enemy): void {
   group.length = 0;
   emit(state, { type: 'BossPhase', uid: m.uid, enemy: root.id, phase: m.bossPhase });
   emit(state, { type: 'BossMerged', uid: m.uid });
+}
+
+/**
+ * A split with no merge (T808; see the header): when `dead`, a part killed this tick, was the last
+ * of its split (no part of it still stands, and none in a later slot fell this tick: that one
+ * raises it), the boss rises again in its next phase where `dead` fell. Cleanup calls it for each
+ * of the tick's dead parts.
+ */
+export function riseAfterSplit(state: SimState, dead: Enemy): void {
+  const root = dead.splitFrom;
+  if (root === null || root.boss === null || !wasKilled(dead)) return;
+  if ((splitOf(root)?.mergeAfterTicks ?? 1) > 0) return; // a merge's split: bossMerge's clock
+  const pool = state.enemies;
+  for (let i = 0; i < pool.used; i++) {
+    const p = pool.items[i]!; // i < used ≤ items.length
+    if (p === dead || p.uid === 0 || p.splitFrom === null || p.ownerUid !== dead.ownerUid) continue;
+    if (p.alive ? !p.leaving : p.slot > dead.slot) return;
+  }
+  const next = nextHpPhase(root.boss, dead.bossPhase);
+  if (next === 0) return; // validated: a split with no merge has a later phase
+  const m = spawnSplitBorn(state, root, dead, dead.dist, 0, 0); // a whole boss: not split-born
+  m.hp = root.boss.phases[next - 1]!.fromPct * root.hp; // next ≤ phases.length
+  enterBossPhase(state, m, root.boss, next, true);
+  emit(state, { type: 'BossRisen', uid: m.uid });
 }

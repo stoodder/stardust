@@ -28,6 +28,7 @@
 // the sim rejects every other command while it waits (sim/forcedInput.ts), with no notice.
 import { effect } from '@preact/signals';
 import { SCENES } from '../content/dialogue/index.ts';
+import { forcedInputDef } from '../content/forcedInputs.ts';
 import type { IdSpace } from '../content/types.ts';
 import { isSfxId } from '../audio/index.ts';
 import { sceneBlocks } from '../ui/dialogue/state.ts';
@@ -67,13 +68,17 @@ export const PERMISSION_FALLBACK_MS = 15_000;
 export const PERMISSION_BACKSTOP_MS = 30_000;
 /** Real time before the waiting line plays (ms; act3.md § A3M3: "After 20 s, once"), from permission. */
 export const WAIT_LINE_MS = 20_000;
-/** The hum's sound and how often it is struck again while the input waits (ms). */
+/** A3M3's hum (its def's `hum`; content/forcedInputs.ts) and how often a hum is struck again (ms). */
 export const HUM_SFX = 'door_hum';
 export const HUM_EVERY_MS = 3000;
 
-/** The scene whose last line permits the press: `<map>_cue_<input>` (A3M3: `a3_m03_cue_seal`). */
+/**
+ * The scene whose last line permits the press: `<map>_cue_<slot>`, the slot the input's def names
+ * (content/forcedInputs.ts), else its id (A3M3: `a3_m03_cue_seal`; the finale's "Who's there?":
+ * `fin_m01_cue_directive0`, ending on "...Knock knock.").
+ */
 export function permissionSceneId(map: string, input: string): string {
-  return `${map}_cue_${input}`;
+  return `${map}_cue_${forcedInputDef(input).permission ?? input}`;
 }
 
 /** The scene the waiting line plays: `<map>_cue_<input>_wait` (A3M3: `a3_m03_cue_seal_wait`). */
@@ -140,8 +145,8 @@ export interface SealDeps {
    * cancel, which also lets the permission line leave the panel (the press).
    */
   awaitPermission(map: string, input: string, then: () => void, started: () => void): () => void;
-  /** Strikes the hum once. */
-  hum(): void;
+  /** Strikes `input`'s hum once (content/forcedInputs.ts; none for an input with none). */
+  hum(input: string): void;
   /** Issues the press. */
   press(input: string): void;
   /** Whether the waiting line's clock runs now (no pause menu up, the tab shown). */
@@ -175,8 +180,10 @@ const defaultDeps: SealDeps = {
       offLinger();
     };
   },
-  hum() {
-    if (isSfxId(HUM_SFX)) playSfx(HUM_SFX);
+  hum(input) {
+    // Each input's own (A3M3's door hum); the finale's knock-knock waits in silence.
+    const sfx = forcedInputDef(input).hum;
+    if (sfx !== null && isSfxId(sfx)) playSfx(sfx);
   },
   press(input) {
     issue({ type: 'scriptInput', id: input });
@@ -219,8 +226,8 @@ export function startSeal(map: string, input: string, deps: SealDeps = defaultDe
   let waitTimer: TimerId | null = null;
   let armTimer: TimerId | null = null;
   forcedInputArmed.value = false;
-  deps.hum();
-  const humTimer = deps.setInterval(() => deps.hum(), HUM_EVERY_MS);
+  deps.hum(input);
+  const humTimer = deps.setInterval(() => deps.hum(input), HUM_EVERY_MS);
 
   const pauseClock = (): void => {
     if (runningSince !== null) ranMs += deps.now() - runningSince;

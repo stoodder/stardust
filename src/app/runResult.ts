@@ -19,6 +19,7 @@ import { TICK_HZ } from '../shared/time.ts';
 import {
   evaluateCondition,
   runContextOf,
+  type RunScript,
   type RunContext,
   type StoryContext,
 } from '../story/conditions.ts';
@@ -125,6 +126,11 @@ export interface RunEndInput {
   readonly resumedFromWave?: number | null;
   /** The latest checkpoint's wave, which a loss offers to retry from ("Retry from wave N"). */
   readonly checkpointWave?: number | null;
+  /**
+   * The run's script state at its end (`state.phase`, `state.forcedResolved`), for the story's
+   * `phaseAtLeast` / `inputResolved` (T809: the finale's speakers). Absent: neither holds.
+   */
+  readonly script?: RunScript;
   /**
    * That checkpoint's label (the finale's `'halls'`: "Retry from the Halls"), or null/absent for
    * a wave checkpoint.
@@ -348,19 +354,28 @@ export function spoken(
  */
 export function runStoryContext(
   map: CampaignMapId,
-  input: Pick<RunEndInput, 'stats' | 'story'>,
+  input: Pick<RunEndInput, 'stats' | 'story' | 'script'>,
   outcome: RunOutcome,
 ): StoryContext {
-  return { ...(input.story ?? NO_STORY).story, map, run: runOf(map, input.stats, outcome) };
+  return {
+    ...(input.story ?? NO_STORY).story,
+    map,
+    run: runOf(map, input.stats, outcome, input.script),
+  };
 }
 
-/** The run that ended (`outcome`, and `thisRun` over its stats when it has them). */
+/**
+ * The run that ended (`outcome`, and `thisRun` over its stats when it has them), with its script
+ * state at the end for `phaseAtLeast` / `inputResolved` (T809) when given.
+ */
 function runOf(
   map: CampaignMapId,
   stats: FlagRuleStats | undefined,
   outcome: RunOutcome,
+  script?: RunScript,
 ): RunContext {
-  return stats === undefined ? { outcome, ruleFlags: {} } : runContextOf(map, outcome, stats);
+  const run = stats === undefined ? { outcome, ruleFlags: {} } : runContextOf(map, outcome, stats);
+  return script === undefined ? run : { ...run, script };
 }
 
 /**
@@ -599,7 +614,7 @@ export function counterRepeatsStat(
  */
 export function withDebriefEffects(
   save: SaveData,
-  input: Pick<RunEndInput, 'mapId' | 'stats'>,
+  input: Pick<RunEndInput, 'mapId' | 'stats' | 'script'>,
   outcome: RunOutcome,
 ): SaveData {
   const map = input.mapId;
@@ -608,7 +623,11 @@ export function withDebriefEffects(
   const debrief = SCENES[id];
   if (debrief === undefined || save.story.seen.includes(id)) return save;
   const story = debriefStoryOf(save).story ?? NO_STORY;
-  const ctx: StoryContext = { ...story.story, map, run: runOf(map, input.stats, outcome) };
+  const ctx: StoryContext = {
+    ...story.story,
+    map,
+    run: runOf(map, input.stats, outcome, input.script),
+  };
   return withSceneEffects(save, id, readThrough(debrief, ctx).cursor.effects);
 }
 
@@ -618,11 +637,11 @@ export function withDebriefEffects(
  * Results read this run (`outcome`, `thisRun`; T329) until the next battle starts.
  */
 export function endRunStory(
-  input: Pick<RunEndInput, 'mapId' | 'stats'>,
+  input: Pick<RunEndInput, 'mapId' | 'stats' | 'script'>,
   outcome: RunOutcome,
 ): void {
   const map = input.mapId;
-  setStoryRun(isCampaignMapId(map) ? runOf(map, input.stats, outcome) : null);
+  setStoryRun(isCampaignMapId(map) ? runOf(map, input.stats, outcome, input.script) : null);
   const save = activeSave();
   if (save === null) return;
   const next = withDebriefEffects(save, input, outcome);

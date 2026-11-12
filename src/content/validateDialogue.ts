@@ -58,6 +58,7 @@ import {
   worstCaseLength,
 } from './dialogue/rules.ts';
 import { SPEAKER_DEFS } from './dialogue/speakers.ts';
+import { FORCED_INPUTS } from './forcedInputs.ts';
 import { NAME_TAGS, type NameTagDef } from './dialogue/tags.ts';
 import {
   BARK_ID,
@@ -564,6 +565,16 @@ function validateCondition(
     if (slot?.kind === 'base') {
       issues.add('dialogue-cond', where, 'runStat reads a run; a base topic has none');
     }
+  }
+  // The run's script state (T809): a phase is a whole number from 1; an input one the content names.
+  if ('phaseAtLeast' in cond && !(Number.isInteger(cond.phaseAtLeast) && cond.phaseAtLeast >= 1)) {
+    issues.add('dialogue-cond', where, `phaseAtLeast ${cond.phaseAtLeast} is not a phase (1 on)`);
+  }
+  if ('inputResolved' in cond && !Object.hasOwn(FORCED_INPUTS, cond.inputResolved)) {
+    issues.add('dialogue-cond', where, `inputResolved '${cond.inputResolved}' is not a forced input`);
+  }
+  if (('phaseAtLeast' in cond || 'inputResolved' in cond) && slot?.kind === 'base') {
+    issues.add('dialogue-cond', where, 'a script test reads a run; a base topic has none');
   }
   if ('revokedTower' in cond && !Object.hasOwn(TOWERS, cond.revokedTower)) {
     issues.add('dialogue-cond', where, `revokedTower '${cond.revokedTower}' is not a tower`);

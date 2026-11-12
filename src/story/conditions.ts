@@ -29,6 +29,16 @@ export interface RunContext {
   readonly ruleFlags: Readonly<Partial<Record<BooleanFlagId, boolean>>>;
   /** Its final stats, for `runStat` (absent when the run's stats weren't given). */
   readonly stats?: RunStoryStats;
+  /** Its script phase and forced inputs at the end, for `phaseAtLeast` / `inputResolved`. */
+  readonly script?: RunScript;
+}
+
+/** A run's script state as story conditions read it (`phaseAtLeast`, `inputResolved`; T809). */
+export interface RunScript {
+  /** `state.phase` (1 from the start). */
+  readonly phase: number;
+  /** `state.forcedResolved`: the forced inputs resolved, in order. */
+  readonly resolved: readonly string[];
 }
 
 /** What story conditions read. Built from the save by the caller (app/, meta/). */
@@ -58,6 +68,8 @@ export interface StoryContext {
    * a battle is bound); none between maps.
    */
   readonly live?: RunStoryStats;
+  /** The battle in play's script state (app/dialogue.ts), for `phaseAtLeast` / `inputResolved`. */
+  readonly liveScript?: RunScript;
   /** The save's revoked tower classes (`unlocks.revokedTowers`), for `revokedTower`. */
   readonly revokedTowers?: readonly TowerId[];
 }
@@ -80,6 +92,11 @@ export function runStoryStats(
 /** This run's stats a `runStat` reads: the battle's live ones, else the ended run's; none outside. */
 function runStatsOf(ctx: StoryContext): RunStoryStats | undefined {
   return ctx.live ?? ctx.run?.stats;
+}
+
+/** This run's script state: the battle's live one, else the ended run's; none outside. */
+function runScriptOf(ctx: StoryContext): RunScript | undefined {
+  return ctx.liveScript ?? ctx.run?.script;
 }
 
 /**
@@ -112,6 +129,8 @@ export function runContextOf(
  * - `runStat`: this run's stat (the battle's live one, else the ended run's) is within
  *   `gte`/`lte`; false outside a run.
  * - `revokedTower`: the save has that class revoked; false without the context's list.
+ * - `phaseAtLeast` / `inputResolved`: this run's script phase is at least `n` / it resolved that
+ *   forced input (the battle's live script state, else the ended run's); false outside a run.
  */
 export function evaluateCondition(cond: Condition, ctx: StoryContext): boolean {
   if ('all' in cond) return cond.all.every((c) => evaluateCondition(c, ctx));
@@ -141,6 +160,11 @@ export function evaluateCondition(cond: Condition, ctx: StoryContext): boolean {
     return done.includes(cond.objectiveDone.objective);
   }
   if ('revokedTower' in cond) return ctx.revokedTowers?.includes(cond.revokedTower) ?? false;
+  if ('phaseAtLeast' in cond) {
+    const script = runScriptOf(ctx);
+    return script !== undefined && script.phase >= cond.phaseAtLeast;
+  }
+  if ('inputResolved' in cond) return runScriptOf(ctx)?.resolved.includes(cond.inputResolved) ?? false;
   const v = ctx.run?.ruleFlags[cond.thisRun];
   return v !== undefined && v === cond.eq;
 }

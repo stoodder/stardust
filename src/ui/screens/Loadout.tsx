@@ -15,7 +15,10 @@ import { MenuNotice } from './MenuNotice.tsx';
 import { Fragment, type RefObject } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import {
+  abilityGreyed,
   formedLinks,
+  pickAbility,
+  pickCompanion,
   pickWarnings,
   setProtocolTower,
   togglePickProtocol,
@@ -32,6 +35,7 @@ import { prefersReducedMotion } from '../motion.ts';
 import {
   loadout,
   type LoadoutAbilityView,
+  type LoadoutCompanionView,
   type LoadoutLockedAbilityView,
   type LoadoutPickView,
   type LoadoutProtocolView,
@@ -177,26 +181,109 @@ function LockedAbilityCard({ l }: { l: LoadoutLockedAbilityView }) {
 function AbilityPicker(props: {
   abilities: readonly LoadoutAbilityView[];
   picked: string | null;
+  /** Whether a card greys beside the picked companion (T501: they bring it in slot 2). */
+  greyed: (id: string) => boolean;
   onPick: (id: string) => void;
 }) {
-  const { abilities, picked } = props;
-  const move = (i: number): void => {
-    const next = abilities[(i + abilities.length) % abilities.length];
-    if (next === undefined) return;
-    props.onPick(next.id);
-    focusAt('.sd-lo-ability', (i + abilities.length) % abilities.length);
+  const { abilities, picked, greyed } = props;
+  // The arrows skip a greyed card (it can't be the pick); it still reads, and says why.
+  const move = (i: number, step: number): void => {
+    for (let n = 1; n <= abilities.length; n++) {
+      const at = (i + step * n + abilities.length * n) % abilities.length;
+      const next = abilities[at];
+      if (next === undefined || greyed(next.id)) continue;
+      props.onPick(next.id);
+      focusAt('.sd-lo-ability', at);
+      return;
+    }
   };
   return (
     <div class="sd-lo-abilities" role="radiogroup" aria-labelledby="sd-lo-ability-label">
-      {abilities.map((a, i) => (
+      {abilities.map((a, i) => {
+        const off = greyed(a.id);
+        return (
+          <button
+            key={a.id}
+            type="button"
+            role="radio"
+            class={`sd-lo-ability${a.id === picked ? ' sd-lo-on' : ''}${off ? ' sd-lo-off' : ''}`}
+            aria-checked={a.id === picked}
+            aria-disabled={off ? 'true' : undefined}
+            data-testid="loadout-ability"
+            data-ability={a.id}
+            tabIndex={a.id === picked || (picked === null && i === 0) ? 0 : -1}
+            onClick={() => {
+              if (!off) props.onPick(a.id);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowRight' || e.key === 'ArrowDown') move(i, 1);
+              else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') move(i, -1);
+              else return;
+              e.preventDefault();
+            }}
+          >
+            <Icon id={a.icon} class="sd-lo-icon" />
+            <span class="sd-lo-ability-name">
+              {a.name}
+              {/* Inherited from a companion (T731: QUILL's Time Dilation under C4 Keep). */}
+              {a.inheritedFrom !== undefined && (
+                <span class="sd-lo-from" data-testid="loadout-inherited">
+                  {' '}
+                  · {a.inheritedFrom}
+                </span>
+              )}
+              {/* Its companion walks with you and brings it in slot 2 (T501). */}
+              {off && a.brings !== undefined && (
+                <span class="sd-lo-locked-why sd-lo-brings" data-testid="loadout-brings">
+                  {' '}
+                  · {a.brings.reason}
+                </span>
+              )}
+            </span>
+            {a.answers.length > 0 && <span class="sd-lo-chip">{a.answers.join(' · ')}</span>}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * The finale's companion pick (core-loop.md § 3.1): who walks with you, each with the ability they
+ * bring to slot 2, as a radio group in slot 2's place. The first (Ves'thara) is the default; QUILL
+ * isn't on it under C4 Purge.
+ */
+function CompanionPicker(props: {
+  companions: readonly LoadoutCompanionView[];
+  picked: string | null;
+  onPick: (id: string) => void;
+}) {
+  const { companions, picked } = props;
+  const move = (i: number): void => {
+    const at = (i + companions.length) % companions.length;
+    const next = companions[at];
+    if (next === undefined) return;
+    props.onPick(next.id);
+    focusAt('.sd-lo-companion-card', at);
+  };
+  return (
+    <div
+      class="sd-lo-abilities sd-lo-companions"
+      role="radiogroup"
+      aria-labelledby="sd-lo-companion-label"
+      data-testid="loadout-companions"
+    >
+      {companions.map((k, i) => (
         <button
-          key={a.id}
+          key={k.id}
           type="button"
           role="radio"
-          class={`sd-lo-ability${a.id === picked ? ' sd-lo-on' : ''}`}
-          aria-checked={a.id === picked}
-          tabIndex={a.id === picked || (picked === null && i === 0) ? 0 : -1}
-          onClick={() => props.onPick(a.id)}
+          class={`sd-lo-ability sd-lo-companion-card${k.id === picked ? ' sd-lo-on' : ''}`}
+          aria-checked={k.id === picked}
+          data-testid="loadout-companion"
+          data-companion={k.id}
+          tabIndex={k.id === picked || (picked === null && i === 0) ? 0 : -1}
+          onClick={() => props.onPick(k.id)}
           onKeyDown={(e) => {
             if (e.key === 'ArrowRight' || e.key === 'ArrowDown') move(i + 1);
             else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') move(i - 1);
@@ -204,18 +291,11 @@ function AbilityPicker(props: {
             e.preventDefault();
           }}
         >
-          <Icon id={a.icon} class="sd-lo-icon" />
+          {k.icon !== '' && <Icon id={k.icon} class="sd-lo-icon" />}
           <span class="sd-lo-ability-name">
-            {a.name}
-            {/* Inherited from a companion (T731: QUILL's Time Dilation under C4 Keep). */}
-            {a.inheritedFrom !== undefined && (
-              <span class="sd-lo-from" data-testid="loadout-inherited">
-                {' '}
-                · {a.inheritedFrom}
-              </span>
-            )}
+            {k.name}
+            <span class="sd-lo-from"> · {k.ability}</span>
           </span>
-          {a.answers.length > 0 && <span class="sd-lo-chip">{a.answers.join(' · ')}</span>}
         </button>
       ))}
     </div>
@@ -417,6 +497,7 @@ export function Loadout() {
   const full = pick.towers.length >= view.max;
   const warnings = pickWarnings(pick);
   const canLock = pick.towers.length > 0 && (pick.ability !== null || view.abilities.length === 0);
+  const greyed = (id: string): boolean => abilityGreyed(pick, id);
   const toggle = (id: string): void => {
     const next = togglePickTower(pick, id);
     if (next === pick) {
@@ -567,7 +648,8 @@ export function Loadout() {
               <AbilityPicker
                 abilities={view.abilities}
                 picked={pick.ability}
-                onPick={(id) => setPick({ ...pick, ability: id })}
+                greyed={greyed}
+                onPick={(id) => setPick(pickAbility(pick, id))}
               />
             )}
             {view.revokedAbilities.map((r) => (
@@ -576,11 +658,24 @@ export function Loadout() {
             {(view.lockedAbilities ?? []).map((l) => (
               <LockedAbilityCard key={l.id} l={l} />
             ))}
-            {view.companion !== null && (
-              <p class="sd-lo-companion">
-                <span class="sd-lo-dim">Slot 2 </span>
-                {view.companion}
-              </p>
+            {view.companions !== undefined && view.companions.length > 0 ? (
+              <>
+                <h2 id="sd-lo-companion-label" class="sd-panel-heading sd-lo-heading">
+                  Walking with you
+                </h2>
+                <CompanionPicker
+                  companions={view.companions}
+                  picked={pick.companion ?? null}
+                  onPick={(id) => setPick(pickCompanion(pick, id))}
+                />
+              </>
+            ) : (
+              view.companion !== null && (
+                <p class="sd-lo-companion">
+                  <span class="sd-lo-dim">Slot 2 </span>
+                  {view.companion}
+                </p>
+              )
             )}
             <h2 class="sd-panel-heading sd-lo-heading">
               Links{' '}

@@ -252,8 +252,11 @@ function compileBoss(ctx: Ctx, b: BossDef, where: string): CompiledBoss {
               part: p.split.part,
               count: p.split.count,
               hpPct: p.split.hpPct,
-              mergeAfterTicks: ticks(ctx, p.split.mergeAfterSec, `${w}.split.mergeAfterSec`),
-              mergeHastePct: p.split.mergeHastePct,
+              mergeAfterTicks:
+                p.split.mergeAfterSec === undefined
+                  ? 0 // T808: no merge
+                  : ticks(ctx, p.split.mergeAfterSec, `${w}.split.mergeAfterSec`),
+              mergeHastePct: p.split.mergeHastePct ?? 0,
             },
       // The finale's phase kinds (T800a seams; T808 runs them).
       floorPct: p.floorPct ?? 0,
@@ -266,6 +269,7 @@ function compileBoss(ctx: Ctx, b: BossDef, where: string): CompiledBoss {
               count: p.adds.count ?? 1,
               everyTicks: ticks(ctx, p.adds.everySec, `${w}.adds.everySec`),
             },
+      phase: p.phase === undefined ? null : compilePhase(ctx, p.phase, `${w}.phase`), // T808
     };
   });
   const ward =

@@ -26,6 +26,9 @@
 // - M7 (T708): a `split` phase splits the boss into its parts as the phase's invulnerability ends
 //   (bossSplit.ts); a split-born unit (a part, or the boss merged again) runs bossMerge.ts instead
 //   of these steps. A phase's `gather` runs in the gathering pass (gather.ts).
+// - The finale (T808; unsung.ts): a `layToRest` boss is laid to rest once the song's countdown
+//   completes, whatever its phase; a phase with `burrowTo`, `adds`, or a phase-scoped `phase`
+//   runs there instead of the dig and sneeze steps here.
 // Young are born in the boss's wave with its tags (brood.ts). A leaving boss is moved by leave.ts.
 // Chitterbloom: (1) 100–60% sneezes 2 Nibblers every 5 s; (2) 60–25% burrows twice for 3 s and
 // surfaces with a Bunchling each time; (3) 25–0% Haste 50% and a huddle on her young; `driveOff`
@@ -44,6 +47,7 @@ import { jettisonStep } from './jettison.ts'; // T707
 import { splitBornStep } from './bossMerge.ts'; // T708
 import { bossSplitStep, isSplitBorn } from './bossSplit.ts'; // T708
 import { shieldBrokenStep } from './shieldBroken.ts';
+import { isUnsungPhase, layToRestStep, unsungStep } from './unsung.ts'; // T808
 
 export const BOSS_ABILITY_TELL_TICKS = secToTicks(BOSS_ABILITY_TELL_SEC);
 
@@ -98,6 +102,7 @@ export function bossStep(state: SimState, ctx: TickContext, boss: Enemy, def: Co
     return;
   }
   if (boss.bossPhase === 0) enterBossPhase(state, boss, def, 1, false);
+  if (def.ending === 'layToRest' && layToRestStep(state, boss)) return; // T808: the song ends it
   shieldBrokenStep(state, ctx, boss, def);
   const p = def.phases[boss.bossPhase - 1]!; // 1 ≤ bossPhase ≤ phases.length
   if (p.hastePct > 0) boss.paceMul *= 1 + (p.hastePct < HASTE_CAP ? p.hastePct : HASTE_CAP);
@@ -112,6 +117,10 @@ export function bossStep(state: SimState, ctx: TickContext, boss: Enemy, def: Co
   }
   if (p.split !== null) {
     bossSplitStep(state, ctx, boss, p.split); // T708: it splits as its telegraph ends
+    return;
+  }
+  if (isUnsungPhase(p)) {
+    unsungStep(state, ctx, boss, p); // T808: phasing, the dig toward the choir, adds (unsung.ts)
     return;
   }
   if (boss.abilityTicks <= 0) return;

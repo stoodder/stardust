@@ -108,16 +108,12 @@ function checkPendingRun(
   known: KnownIds,
   checkPreset: PresetCheck,
 ): PendingRun | null {
-  const r = c.object(x, path, [
-    'map',
-    'seed',
-    'loadout',
-    'companion',
-    'checkpoint',
-    'log',
-    'killsBefore',
-    'configHash',
-  ]);
+  const r = c.object(
+    x,
+    path,
+    ['map', 'seed', 'loadout', 'companion', 'checkpoint', 'log', 'killsBefore', 'configHash'],
+    ['retriedFrom'],
+  );
   if (r === null) return null;
   const map = c.id(r['map'], `${path}.map`, known.maps);
   const seed = c.int(r['seed'], `${path}.seed`, 0, 2 ** 32 - 1);
@@ -151,7 +147,14 @@ function checkPendingRun(
   ) {
     return null;
   }
-  return { map, seed, loadout, companion, checkpoint, log, killsBefore, configHash: hash };
+  const run: PendingRun = { map, seed, loadout, companion, checkpoint, log, killsBefore, configHash: hash };
+  if (r['retriedFrom'] === undefined) return run;
+  // A retry before it resumed from an earlier (or the same) checkpoint of the run.
+  const retried = checkCheckpoint(c, r['retriedFrom'], `${path}.retriedFrom`);
+  if (retried !== null && retried.tick > checkpoint.tick) {
+    c.fail(`${path}.retriedFrom.tick`, 'after the checkpoint it leads to');
+  }
+  return retried === null ? null : { ...run, retriedFrom: retried };
 }
 
 function checkCheckpoint(c: Checker, x: unknown, path: string): PendingCheckpoint | null {

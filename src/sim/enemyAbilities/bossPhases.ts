@@ -13,7 +13,10 @@
 //   map edge, never a leak or a kill; BossEnded). `driveOff` takes its brood along: every other
 //   live unit of its wave leaves too. `retreat` leaves alone (its remaining wave groups still
 //   spawn). `pivot` (T506; pivot.ts) stands its faction down and leaves its ward in its place.
-//   `layToRest` is refused at createSim until the finale (FEATURE_GATES `enemy.boss.layToRest`).
+//   `layToRest` (the Unsung, T808) is never reached by HP: its last phase's floor holds it, and
+//   unsung.ts lays it to rest when the song's countdown completes.
+// - A phase's HP floor (`floorPct`, the Unsung's Song; T808): a hit stops at the floor, so the HP
+//   never falls below it while the phase lasts (the damage past it still feeds the song: song.ts).
 import {
   BOSS_BURROW_GAP_SEC,
   BOSS_LEAVE_MAX_SEC,
@@ -49,7 +52,18 @@ export function enterBossPhase(
   boss.burrowed = false;
   boss.abilityCount = p.burrow === null ? 0 : p.burrow.times;
   boss.abilityTicks =
-    p.burrow !== null ? BOSS_BURROW_GAP_TICKS : p.spawn !== null ? p.spawn.everyTicks : 0;
+    p.burrow !== null
+      ? BOSS_BURROW_GAP_TICKS
+      : p.spawn !== null
+        ? p.spawn.everyTicks
+        : p.adds !== null
+          ? p.adds.everyTicks // T808: the Song's first adds one period in
+          : 0;
+  boss.digToDist = -1; // T808
+  if (boss.def!.phase === null) {
+    boss.phased = false; // T808: a phase-scoped Phased cycle starts afresh (unsung.ts)
+    boss.phaseTicks = 0;
+  }
   emit(state, { type: 'BossPhase', uid: boss.uid, enemy: boss.def!.id, phase });
 }
 
@@ -69,10 +83,16 @@ export function bossDamage(state: SimState, boss: Enemy, damage: number): number
     enterBossPhase(state, boss, def, next, true);
     return before - boss.hp;
   }
+  const floor = def.phases[boss.bossPhase - 1]!.floorPct * max; // 1 ≤ bossPhase ≤ phases.length
+  if (floor > 0 && before - damage <= floor + HP_EPS) {
+    // T808: the HP floor holds (the Unsung's Song).
+    boss.hp = before > floor ? floor : before;
+    return before - boss.hp;
+  }
   const end = def.endAtPct * max;
   if (before - damage <= end + HP_EPS) {
     boss.hp = end;
-    startBossEnding(state, boss);
+    if (def.ending !== 'layToRest') startBossEnding(state, boss); // the song ends it (unsung.ts)
     return before - end;
   }
   boss.hp = before - damage;
@@ -129,7 +149,7 @@ export function startBossEnding(
   }
 }
 
-/** A boss's own ending as startBossEnding runs it (`layToRest` is refused at createSim). */
+/** A boss's own ending as startBossEnding runs it (`layToRest` is unsung.ts's, never this). */
 function defaultEnding(boss: Enemy): 'driveOff' | 'retreat' | 'pivot' {
   const ending = boss.def!.boss!.ending; // startBossEnding's callers pass a boss
   return ending === 'retreat' || ending === 'pivot' ? ending : 'driveOff';
