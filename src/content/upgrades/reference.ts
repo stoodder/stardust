@@ -217,26 +217,29 @@ export const REFERENCE_VARIANTS = {
 } as const satisfies Partial<Record<CampaignMapId, readonly FlagProfileDef[]>>;
 
 /**
- * The finale's story-variant cells the harness runs par in (finale.md § FIN, *Story variants*;
- * campaign.md § 4.9): the **weakest** choir (C1 cleared: no Thrum; C2 Sell: no Returned; the
- * convoy: the smaller choir, militia instead; Purge: the Bore slowed, Phase 2 longest) and the
- * **strongest** (spared, returned, warren, Rewrite). Every flag a cell names is a script flag, so
- * each is a `referenceProfileByFlag` `when` as is; both resolve to the FIN row (no cell differs).
+ * The finale's story-variant cells at the choir's extremes (finale.md § FIN, *Story variants*;
+ * campaign.md § 4.9): the **smallest** choir (C1 cleared: no Thrum; C2 Sell: no Returned; the
+ * convoy: 16 singers, militia instead; Purge: the Bore slowed, Phase 2 longest) and the
+ * **largest** (spared, returned, the warren's 28, Rewrite). Size isn't difficulty: the hush
+ * allowance is the same 14 singers in every cell, and the warren's denser column is the hardest
+ * for par (D156); the harness runs all 24 cells (balance/finM01Combos*.test.ts). Every flag a
+ * cell names is a script flag, so each is a `referenceProfileByFlag` `when` as is; both resolve
+ * to the FIN row (no cell differs).
  */
 export const FIN_CHOIR_CELLS = {
-  weakest: {
+  smallest: {
     spared_quiet_wave: false,
     stardust_choice: 'sold',
     door_choice: 'convoy',
     quill_choice: 'purge',
   },
-  strongest: {
+  largest: {
     spared_quiet_wave: true,
     stardust_choice: 'returned',
     door_choice: 'warren',
     quill_choice: 'rewrite',
   },
-} as const satisfies Readonly<Record<'weakest' | 'strongest', FlagProfileDef['when']>>;
+} as const satisfies Readonly<Record<'smallest' | 'largest', FlagProfileDef['when']>>;
 
 /**
  * What a reference row's bank paid, or didn't, outside the catalog the [purchasable] check prices

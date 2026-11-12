@@ -5,8 +5,8 @@
 // The flags: the convoy first (a run with no door set mans the militia's posts and walks the
 // smaller choir), then the warren; C1, C2, and C4 each change the choir, the song, or the Bore, so
 // each has its harness runs (#14). The reference profile is the same in every cell
-// (reference.ts: `REFERENCE_VARIANTS.fin_m01` is empty; FIN_CHOIR_CELLS names the weakest and
-// strongest choir).
+// (reference.ts: `REFERENCE_VARIANTS.fin_m01` is empty; FIN_CHOIR_CELLS names the smallest and
+// largest choir; every cell is run, D156).
 import { defineBuilds } from '../../define.ts';
 import { REFERENCE_PROFILES, REFERENCE_VARIANTS } from '../../upgrades/reference.ts';
 import type { BuildStep, GridPos, TowerId } from '../../types.ts';
@@ -155,13 +155,15 @@ function noMindspikeSteps(): BuildStep[] {
     { wave: 15, upgrade: BEND_E },
     { wave: 15, upgrade: GATE_E },
     { wave: 15, build: 'harpoon', tile: SEAM_E },
-    { wave: 15, build: 'choir', tile: EAST_BEND },
     { wave: 15, upgrade: MID_N },
-    { wave: 15, upgrade: RIDGE_W },
-    { wave: 15, build: 'harpoon', tile: INNER },
-    { wave: 15, specialize: BEND, spec: 'b' },
-    { wave: 15, upgrade: WEST_IN },
-    fire(18, 18, [9, 4]),
+    // Phase 2 at the Halls mouth (D156): what it earns goes where the Unsung and the adds meet
+    // the choir, the descent's ledges, its corner, and the Halls' harpoons.
+    { wave: 19, upgrade: LEDGE_E },
+    { wave: 19, upgrade: HALLS_E },
+    { wave: 20, upgrade: SEAM_E },
+    { wave: 20, upgrade: HALLS_E },
+    { wave: 21, upgrade: SEAM_E },
+    { wave: 21, upgrade: RIDGE_W },
     WHOS_THERE,
   ];
 }

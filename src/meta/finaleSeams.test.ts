@@ -84,9 +84,9 @@ describe('the dev saves into and out of the finale', () => {
   });
 
   it.runIf(isRegistered('a3_m06'))("the choir's extremes carry FIN_CHOIR_CELLS' flags", () => {
-    expect(build('after_a3m6_weakest').story.flags).toMatchObject(FIN_CHOIR_CELLS.weakest);
-    expect(build('after_a3m6_strongest').story.flags).toMatchObject(FIN_CHOIR_CELLS.strongest);
-    // Sell's windfall and tune-up on the weakest; the warren's paid jailbreak on the strongest.
+    expect(build('after_a3m6_weakest').story.flags).toMatchObject(FIN_CHOIR_CELLS.smallest);
+    expect(build('after_a3m6_strongest').story.flags).toMatchObject(FIN_CHOIR_CELLS.largest);
+    // Sell's windfall and tune-up on the smallest choir; the warren's paid jailbreak on the largest.
     expect(build('after_a3m6_weakest').upgrades.tune_zibzab).toBe(1);
     expect(build('after_a3m6_strongest').unlocks.towers).toContain('choir');
   });

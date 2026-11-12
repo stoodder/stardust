@@ -81,7 +81,7 @@ describe('the toggles', () => {
     expect(answersLabel(1)).toBe('1 of yours answers it');
   });
 
-  it("names what it folds (what earns the medals) and how many are on file (D156)", () => {
+  it('names what it folds (what earns the medals) and how many are on file (D156)', () => {
     expect(medalsLabel([m(false), m(false), m(false)])).toBe('What earns them');
     expect(medalsLabel([m(true), m(false), m(true)])).toBe('What earns them · 2 on file');
     expect(medalsLabel([m(false)])).toBe('What earns it');

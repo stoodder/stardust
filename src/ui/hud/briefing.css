@@ -3,7 +3,7 @@
    they win whichever stylesheet loads last. Authored in game pixels, spaced with the density tokens
    (theme.css). */
 
-/* Every run of one speaker's lines beside that speaker's face: a 42 px face column (every face
+/* Every run of one speaker's lines beside that speaker's face: a 44 px face column (every face
    one size, a window on its portrait; D156), then the lines. */
 .hud-briefing .hud-briefing-comms {
   display: block;
@@ -13,7 +13,7 @@
    longest name on it, at least 44 px; D156: "VES'THARA" crowded its line), then the words, so every
    run's words start on one edge. */
 .hud-briefing .hud-briefing-lines {
-  grid-template-columns: 42px minmax(44px, max-content) 1fr;
+  grid-template-columns: 44px minmax(44px, max-content) 1fr;
   gap: var(--space-m) 8px;
 }
 
@@ -38,13 +38,13 @@
   align-content: start;
 }
 
-/* The face: the bust at 1:1 (art-direction § Portraits: never scaled), a 40 px window on its 48 px
+/* The face: the bust at 1:1 (art-direction § Portraits: never scaled), a 42 px window on its 48 px
    frame (head and shoulders), in the speaker's colour. */
 .hud-briefing-chip {
   box-sizing: border-box;
   display: block;
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   overflow: hidden;
   border: 1px solid var(--accent);
   background: var(--sd-ink-0);
@@ -53,7 +53,7 @@
 .hud-briefing-chip .dlg-portrait {
   width: 48px;
   height: 48px;
-  margin: -2px 0 0 -4px;
+  margin: -1px 0 0 -3px;
   border: 0;
   background: transparent;
 }

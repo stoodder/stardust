@@ -58,7 +58,8 @@ export function optionKey(code: string): number | null {
  */
 export function choiceKeysHint(n: number): string {
   const keys = Array.from({ length: n }, (_, i) => String(i + 1));
-  const nums = keys.length <= 1 ? keys.join('') : `${keys.slice(0, -1).join(', ')} or ${keys.at(-1)}`;
+  const nums =
+    keys.length <= 1 ? keys.join('') : `${keys.slice(0, -1).join(', ')} or ${keys.at(-1)}`;
   return `Keys: ${nums}, or arrows and Enter`;
 }
 

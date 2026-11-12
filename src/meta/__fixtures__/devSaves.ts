@@ -785,7 +785,7 @@ export const DEV_SAVES: Readonly<Record<DevSaveId, DevSave>> = {
   after_a3m6_rewrite: a3m6Save('rewrite'),
   after_a3m6_weakest: {
     description:
-      'The weakest choir into the finale: the Quiet Wave cleared, C2 Sell (no Returned), the ' +
+      'The smallest choir into the finale: the Quiet Wave cleared, C2 Sell (no Returned), the ' +
       'convoy, C4 Purge; A3M6 won (Victory).',
     build: () =>
       actThreeThrough('a3_m06', {
@@ -798,7 +798,7 @@ export const DEV_SAVES: Readonly<Record<DevSaveId, DevSave>> = {
   },
   after_a3m6_strongest: {
     description:
-      'The strongest choir into the finale: the Quiet Wave spared (Thrum walks beside Pebble), C2 ' +
+      'The largest choir into the finale: the Quiet Wave spared (Thrum walks beside Pebble), C2 ' +
       'Return (the Returned), the warren, C4 Rewrite; A3M6 won (Victory).',
     build: () =>
       actThreeThrough('a3_m06', {

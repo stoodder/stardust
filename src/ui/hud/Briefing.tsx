@@ -269,7 +269,7 @@ export function Briefing({ view }: { view: SceneView }) {
 }
 
 /**
- * A run of one speaker's lines beside their face, every face the same size (D156): a 42 px window
+ * A run of one speaker's lines beside their face, every face the same size (D156): a 44 px window
  * on the portrait, its mouth moving on the run being read while the line types, at rest on an
  * earlier run; Gerald's icon as it is; nothing for a caption. The plate stays on every line.
  */

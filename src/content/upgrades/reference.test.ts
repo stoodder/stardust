@@ -285,14 +285,14 @@ describe('REFERENCE_PROFILES, the finale (M8, T800b)', () => {
     for (const cell of Object.values(FIN_CHOIR_CELLS)) {
       expect(firstMatch(REFERENCE_VARIANTS.fin_m01, cell) ?? fin_m01).toBe(fin_m01);
     }
-    // The weakest choir is every flag's smaller-choir branch, the strongest its larger.
-    expect(FIN_CHOIR_CELLS.weakest).toEqual({
+    // The smallest choir is every flag's smaller-choir branch, the largest its larger.
+    expect(FIN_CHOIR_CELLS.smallest).toEqual({
       spared_quiet_wave: false,
       stardust_choice: 'sold',
       door_choice: 'convoy',
       quill_choice: 'purge',
     });
-    expect(FIN_CHOIR_CELLS.strongest).toEqual({
+    expect(FIN_CHOIR_CELLS.largest).toEqual({
       spared_quiet_wave: true,
       stardust_choice: 'returned',
       door_choice: 'warren',
@@ -310,7 +310,7 @@ describe('REFERENCE_PROFILES, the finale (M8, T800b)', () => {
       expect(errors, name).toEqual([]);
     }
     // Priced past what the campaign pays, the finale's row is refused too.
-    const errors = pricedErrors(FIN_CHOIR_CELLS.strongest, 1700);
+    const errors = pricedErrors(FIN_CHOIR_CELLS.largest, 1700);
     expect(errors.join('\n')).toMatch(/fin_m01\.referenceProfile: spends \d+ Stardust/);
   });
 });
