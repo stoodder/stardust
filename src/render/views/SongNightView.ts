@@ -20,13 +20,7 @@ import type { SongCircle } from '../../sim/index.ts';
 import { gridToScreen, screenToGrid, type Vec2 } from '../iso.ts';
 import { VIEW_H, VIEW_W } from '../scale.ts';
 import { imageToCanvas } from '../sprites/canvas.ts';
-import {
-  MASK_DARK,
-  MASK_LIT,
-  noDark,
-  sceneryTint,
-  type LightDisc,
-} from '../vfx/darknessPixels.ts';
+import { MASK_DARK, MASK_LIT, noDark, sceneryTint, type LightDisc } from '../vfx/darknessPixels.ts';
 import { poolImage } from '../vfx/glowPixels.ts';
 import { snapRingRadius } from '../vfx/overlayPixels.ts';
 import {
@@ -82,6 +76,8 @@ export class SongNightView implements NightTint {
   /** Circles drawn, and the sun's step drawn (−1: nothing drawn yet). */
   #count = -1;
   #step = -1;
+  /** Mask redraws so far (smoke hooks: the night's cost). */
+  #redraws = 0;
 
   constructor(
     ctx: ViewContext,
@@ -234,6 +230,7 @@ export class SongNightView implements NightTint {
       night,
       circles: night ? this.#count : 0,
       sun: Math.max(0, this.#step),
+      redraws: this.#redraws,
       darkScenery: dark,
       litScenery: lit,
     };
@@ -271,6 +268,7 @@ export class SongNightView implements NightTint {
   }
 
   #drawNight(): void {
+    this.#redraws++;
     const data = this.#nightData!; // set with the night
     const px = this.#nightPx!;
     drawSongNightMask(

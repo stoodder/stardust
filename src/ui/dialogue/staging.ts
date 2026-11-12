@@ -11,9 +11,8 @@ import { yieldLogLeadInMs, yieldLogLockMs } from './yieldLog.ts';
 import { mailLeadInMs } from '../screens/mail.ts';
 import { nightShiftLeadInMs } from '../screens/nightShift.ts';
 import { waykeeperLeadInMs } from '../screens/waykeeper.ts';
-// T810: the First Dawn and C5 (their stages are in the finale's lazy chunk; epilogueState.ts).
-import { c5LeadInMs } from '../screens/c5.ts';
-import { dawnLeadInMs } from '../screens/dawn.ts';
+// T810: the First Dawn and C5 (their stages and lead-ins are in the finale's lazy chunk).
+import { finaleUi } from '../screens/epilogueState.ts';
 
 /** A scene's staging, by kind. */
 export type StagingKind =
@@ -114,8 +113,7 @@ export function stagingLeadInMs(kind: StagingKind, still: boolean): number {
   if (kind === 'mail') return mailLeadInMs(still);
   if (kind === 'night_shift') return nightShiftLeadInMs(still);
   if (kind === 'waykeeper') return waykeeperLeadInMs(still);
-  if (kind === 'dawn') return dawnLeadInMs(still);
-  if (kind === 'c5') return c5LeadInMs(still);
+  if (kind === 'dawn' || kind === 'c5') return finaleUi.value?.leadInMs(kind, still) ?? 0;
   return 0;
 }
 

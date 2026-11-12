@@ -1,33 +1,16 @@
-// The campaign's close as played (T810; design/core-loop.md § 6.8; story/campaign/finale.md § FIN):
-// once a won finale's card is dismissed (app/runFlow.ts `leaveResults`), the steps app/finaleFlow.ts
+// The campaign's close (T810; design/core-loop.md § 6.8; story/campaign/finale.md § FIN): once a
+// won finale's card is dismissed (app/runFlow.ts `leaveResults`), the steps app/finaleFlow.ts
 // gives, in order. The first win (C5 unanswered): Sterling's farewell memo as a card, C5's scene
 // full-screen (its choice commits `ending_choice` through meta's `resolveC5`, app/dialogue.ts), the
 // epilogue (the cards, the counter, the credits, the final image), then the post-game star map,
 // whatever way on the player picked. A later win plays only the post-game step, and only on the
 // way on (Continue). "Watch the epilogue" (the post-game star map, T863) replays the epilogue.
-//
-// The memo, C5, and the epilogue are story: they play only while dialogue does (`?test=1` turns
-// it off unless `&dialogue=1`, the scenes' rule), so a smoke flow that dismisses the finale's card
-// isn't held 90 s by the credits. C5 is asked with Esc held (`noSkip`): it is the campaign's last
-// question, asked once. The screens draw from ui/screens/epilogueState.ts; their components are
-// in the finale's lazy chunk (app/acts/fin.ts).
-import { sceneById } from '../content/dialogue/index.ts';
-import { epilogueFor, EPILOGUE_SLOTS, type EpilogueFlag } from '../content/dialogue/epilogue.ts';
+// This is the core's half: the cues, the post-game route, and the entry points. The first win's
+// close is played by app/endingPlay.ts, in the finale's screens chunk (app/acts/finUi.ts
+// registers it, `registerEnding`), so none of it is in the initial JS.
 import type { EndingStep } from '../content/dialogue/resultsFlow.ts';
-import { C5_CHOICES, type SaveData } from '../meta/index.ts';
-import { resolveText } from '../story/text.ts';
-import {
-  endingScreen,
-  type EndingChoice,
-  type EndingScreenView,
-  type EpilogueView,
-} from '../ui/screens/epilogueState.ts';
 import { ensureActs } from './actContent.ts';
-import { dialogueEnabled, playScene } from './dialogue.ts';
-import { endingPlaceholder } from './finaleFlow.ts';
 import { loadFinaleScreens } from './finaleScreens.ts';
-import { markMemoRead, memoView, textContext } from './inbox.ts';
-import { logError } from './log.ts';
 import { activeSave } from './save.ts';
 
 /**
@@ -79,157 +62,65 @@ export function asksC5(steps: readonly EndingStep[]): boolean {
   return steps.some((s) => 'scene' in s);
 }
 
-/** What runs as the ending screen on show is closed (its Continue, or the epilogue's end). */
-let onScreenDone: (() => void) | null = null;
-
-function show(view: EndingScreenView, done: () => void): void {
-  onScreenDone = done;
-  endingScreen.value = view;
+/** Goes to the post-game star map (the route navigation.ts installs). */
+export function toPostGameRoute(): void {
+  postGameRoute();
 }
 
-/** Closes the ending screen on show and goes on (its Continue, or the epilogue's last beat). */
-export function closeEndingScreen(): void {
-  const done = onScreenDone;
-  onScreenDone = null;
-  endingScreen.value = null;
-  done?.();
+/** The close's lazy half (app/endingPlay.ts), once the finale's screens chunk has registered it. */
+export interface EndingPlayer {
+  /** Plays a first win's close `steps`, then the post-game (or `go` if it never gets there). */
+  play(steps: readonly EndingStep[], opts: EndingOptions, go: () => void): void;
+  /** "Watch the epilogue" over the save in play; resolves once it has closed. */
+  watch(): Promise<void>;
 }
 
-/** The flags the epilogue reads: the save's, with C5's pick over them (the fixture's isn't saved). */
-export function epilogueFlags(
-  save: Pick<SaveData, 'story'> | null,
-  pick: EndingChoice | null,
-): Partial<Record<EpilogueFlag, unknown>> {
-  const flags: Partial<Record<EpilogueFlag, unknown>> = { ...save?.story.flags };
-  if (pick !== null) flags.ending_choice = pick;
-  return flags;
-}
+let player: EndingPlayer | null = null;
 
-/** The counter card's slot (EPILOGUE_SLOTS' `counter`). */
-const COUNTER_SLOTS: ReadonlySet<string> = new Set(
-  EPILOGUE_SLOTS.filter((s) => s.counter === true).map((s) => s.id),
-);
-
-/**
- * The epilogue over `flags` (`epilogueFor`: per slot, its first matching card; the finale's chunk
- * must have registered them), its tokens resolved for `save`: the cards, the counter card's text
- * apart, and the ending its final image shows.
- */
-export function epilogueView(
-  flags: Partial<Record<EpilogueFlag, unknown>>,
-  save: SaveData | null,
-  first: boolean,
-): EpilogueView {
-  const ctx = save === null ? null : textContext(save);
-  const text = (t: string): string => (ctx === null ? t : resolveText(t, ctx));
-  const all = epilogueFor(flags);
-  const counter = all.find((c) => COUNTER_SLOTS.has(c.slot));
-  const ending = flags.ending_choice;
-  return {
-    kind: 'epilogue',
-    cards: all
-      .filter((c) => !COUNTER_SLOTS.has(c.slot))
-      .map((c) => ({ slot: c.slot, text: text(c.text) })),
-    remembered: counter === undefined ? null : text(counter.text),
-    ending: C5_CHOICES.find((c) => c === ending) ?? null,
-    first,
-  };
+/** Registers the close's lazy half (app/acts/finUi.ts, as the chunk loads). */
+export function registerEnding(next: EndingPlayer): void {
+  player = next;
 }
 
 /**
  * Plays the close `steps` (app/finaleFlow.ts `endingSteps`) after a won finale's card, then `go`
- * (the way on), unless it reached the post-game step, which takes its place. A replay's close
- * (no C5) plays only on the way on; none at all goes straight to `go`.
+ * (the way on) unless it reached the post-game step, which takes its place. A replay's close (no
+ * C5) is the post-game alone, and only on the way on; none at all goes straight to `go`.
  */
 export function playEnding(
   steps: readonly EndingStep[],
   opts: EndingOptions,
   go: () => void,
 ): void {
-  if (steps.length === 0 || (!asksC5(steps) && !opts.onward)) {
+  if (steps.length === 0) {
     go();
     return;
   }
-  const story = dialogueEnabled();
-  let pick: EndingChoice | null = null;
-  const at = (i: number): void => {
-    const step = steps[i];
-    if (step === undefined) {
-      go();
-      return;
-    }
-    const next = (): void => at(i + 1);
-    if ('screen' in step && step.screen === 'post_game') {
-      // The campaign's last screen: it replaces the way on (T863 builds its own; the star map
-      // at dawn meanwhile).
+  if (!asksC5(steps)) {
+    if (opts.onward && steps.some((s) => 'screen' in s && s.screen === 'post_game')) {
       postGameRoute();
-      return;
+    } else {
+      go();
     }
-    // A step whose piece hasn't landed (app/finaleFlow.ts) is passed over, as story is with
-    // dialogue off.
-    if (endingPlaceholder(step) !== null || !story) {
-      next();
-      return;
-    }
-    const save = activeSave();
-    if ('memo' in step) {
-      const memo = save === null ? null : memoView(save, step.memo);
-      if (memo === null) {
-        next();
-        return;
-      }
-      show({ kind: 'memo', memo }, () => {
-        if (opts.record) markMemoRead(step.memo);
-        next();
-      });
-      return;
-    }
-    if ('scene' in step) {
-      const scene = sceneById(step.scene);
-      if (scene === undefined) {
-        next();
-        return;
-      }
-      playScene(scene, {
-        mode: 'fullscreen',
-        record: opts.record,
-        noSkip: true,
-        onEnd: (effects) => {
-          const said = effects.flags.ending_choice;
-          pick = C5_CHOICES.find((c) => c === said) ?? pick;
-          next();
-        },
-      });
-      return;
-    }
-    let view: EpilogueView;
-    try {
-      view = epilogueView(epilogueFlags(activeSave(), pick), activeSave(), true);
-    } catch (err) {
-      // The finale's chunk always precedes its card (app/contentGate.ts); never strand the close.
-      logError('ending: the epilogue could not be built', err);
-      next();
-      return;
-    }
-    show(view, next);
-  };
-  at(0);
+    return;
+  }
+  // The screens chunk is in before any finale card shows (app/contentGate.ts); never strand it.
+  if (player === null) postGameRoute();
+  else player.play(steps, opts, go);
 }
 
 /**
  * "Watch the epilogue" (T863's post-game star map): the epilogue again over the save in play, Esc
- * skipping it, then back to the screen under it. Loads the finale's chunk first (its cards and
- * screen). Resolves once it has closed; rejects without a save or with C5 unanswered.
+ * skipping it, then back to the screen under it. Loads the finale's content and screens first.
+ * Resolves once it has closed; rejects without a save or with C5 unanswered.
  */
 export function watchEpilogue(): Promise<void> {
   const save = activeSave();
   if (save === null || save.story.flags.ending_choice === undefined) {
     return Promise.reject(new Error('ending: the epilogue waits for C5'));
   }
-  return Promise.all([ensureActs('finale'), loadFinaleScreens()]).then(
-    () =>
-      new Promise<void>((resolve) => {
-        show(epilogueView(epilogueFlags(save, null), save, false), resolve);
-      }),
-  );
+  return Promise.all([ensureActs('finale'), loadFinaleScreens()]).then(() => {
+    if (player === null) throw new Error('ending: the finale screens did not register');
+    return player.watch();
+  });
 }

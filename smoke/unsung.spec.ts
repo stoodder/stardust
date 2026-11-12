@@ -1,11 +1,11 @@
 // T808: the Unsung on its dev range (`?map=dev_phases`, render/__fixtures__/devM8.ts), its minimal
 // view (render/views/UnsungView.ts). Par's towers and a ring of Rivets go up; the choir walks to
-// the Halls and Phase 2 begins, and the Unsung, held at the song's edge, carries the countdown on
-// a gold strip under its boss bar. Its HP is set by hand to each phase's edge (the fixture's
-// towers can't burn 30000) so the flow sees every form: the split's three parts, the rise, a dig
+// the Halls and Phase 2 begins, and the Unsung, held at the song's edge, has the countdown under
+// its boss bar (the HUD's finale clock, T832). Its HP is set by hand to each phase's edge (the
+// fixture's towers can't burn 30000) so the flow sees every form: the split's three parts, the rise, a dig
 // toward the choir (a violet ring on the singers' ground, tightening, then blinking through the
 // surfacing tell), the Song's call at the Halls, and Dawn, where it is laid to rest. Screenshots
-// in <out>/screens/unsung/ (look at them: the ring under the singers and the strip are the point).
+// in <out>/screens/unsung/ (look at them: the ring under the singers and the countdown are the point).
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 import { nextFrames, shot, waitForReady } from './hooks.ts';
@@ -94,11 +94,12 @@ test('unsung: held at the Halls, split, risen, a dig toward the choir, the call,
     sd.fastForward(1);
   });
 
-  // Phase 2: the Unsung held at the song's edge, the countdown on the strip under its bar.
+  // Phase 2: the Unsung held at the song's edge, the countdown on the HUD's clock under its bar.
   expect(await until(page, 'unsung')).toBe(true);
   await page.evaluate(() => globalThis.__sd!.fastForward(120));
   await nextFrames(page);
-  expect((await view(page)).restPx).toBeGreaterThanOrEqual(0);
+  // The countdown under its bar: the HUD's finale clock, its gold bar the song's rest (T832).
+  await expect(page.locator('[data-testid="finale-clock"][data-kind="counter"]')).toBeVisible();
   expect(await page.evaluate(() => globalThis.__sd!.render()!.bossBar)).toBeGreaterThan(0);
   await shot(page, 'unsung', 1, 'held');
 

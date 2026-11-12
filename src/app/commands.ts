@@ -267,7 +267,9 @@ export function pressAbility(slot: 1 | 2): void {
           ? 'silence'
           : state.revoked.abilities.includes(id)
             ? 'uplink'
-            : 'lockout',
+            : state.abilitiesLocked.includes(id) // T832: Directive 0's phase lock
+              ? 'directive'
+              : 'lockout',
       ),
     );
     return;

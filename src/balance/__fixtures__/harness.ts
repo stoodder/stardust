@@ -74,6 +74,7 @@ export function fakeResult(
     voices: 0,
     choirSize: 0,
     choirBase: 0,
+    phaseStartTick: [0],
     maxLost: null,
     credits: 0,
     lostAtWave,

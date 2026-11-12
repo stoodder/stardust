@@ -6,7 +6,7 @@
 // in `overlay`, so nothing hides it. The app resolves the name (app/memorial.ts: A3M3's tag text,
 // as the dialogue resolves it); with none, nothing shows. One texture, made once; nothing allocates
 // per frame.
-import type * as Phaser from 'phaser';
+import * as Phaser from 'phaser';
 import { imageToCanvas } from '../sprites/canvas.ts';
 import { nameTagImage, nameTagText } from '../vfx/nameTagPixels.ts';
 import { isScenery, sceneryGround } from './scenery.ts';
@@ -15,8 +15,11 @@ import type { Vec2 } from '../iso.ts';
 
 /** The marker the wreck stands on (T842). */
 export const MEMORIAL_MARKER = 'memorial_wreck';
-/** Clear pixels between the wreck's top and the plate. */
-const GAP_PX = 1;
+/**
+ * The plate's foot this far below the top of the wreck's frame: the wreck lost the top of its head
+ * (art-direction §6), so its art starts well under its frame's top.
+ */
+const PLATE_DROP_PX = 10;
 
 export class MemorialView {
   readonly #plate: Phaser.GameObjects.Image | null = null;
@@ -38,10 +41,10 @@ export class MemorialView {
     if (at === undefined || text === '') return;
     let wreck: Phaser.GameObjects.Sprite | null = null;
     for (const obj of ctx.layers.world.list) {
-      if (!isScenery(obj)) continue;
+      if (!isScenery(obj) || !(obj instanceof Phaser.GameObjects.Sprite)) continue;
       const g = sceneryGround(obj);
       if (g === null || g.x !== at[0] + 0.5 || g.y !== at[1] + 0.5) continue;
-      wreck = obj as Phaser.GameObjects.Sprite;
+      wreck = obj;
     }
     if (wreck === null) return;
     this.#tile = at[1] * map.cols + at[0];
@@ -59,7 +62,7 @@ export class MemorialView {
       .image({}, false)
       .setTexture(key)
       .setOrigin(0.5, 1)
-      .setPosition(Math.round((b.left + b.right) / 2), Math.round(b.top) - GAP_PX)
+      .setPosition(Math.round((b.left + b.right) / 2), Math.round(b.top) + PLATE_DROP_PX)
       .setVisible(false);
     ctx.layers.overlay.add(this.#plate);
   }
@@ -83,7 +86,11 @@ export class MemorialView {
     if (plate === null) return;
     const b = this.#box;
     const over =
-      pointer !== null && pointer.x >= b.l && pointer.x < b.r && pointer.y >= b.t && pointer.y < b.b;
+      pointer !== null &&
+      pointer.x >= b.l &&
+      pointer.x < b.r &&
+      pointer.y >= b.t &&
+      pointer.y < b.b;
     const show = tile === this.#tile || over;
     if (plate.visible !== show) plate.setVisible(show);
   }

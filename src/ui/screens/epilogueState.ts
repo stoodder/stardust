@@ -57,6 +57,8 @@ export interface FinaleUi {
   readonly C5Stage: ComponentType<{ readonly from: number }>;
   /** The First Dawn's stage (staging `dawn`, before the finale's card). */
   readonly DawnStage: ComponentType<{ readonly from: number }>;
+  /** How long each stage holds its scene's first line back (ui/dialogue/staging.ts asks). */
+  readonly leadInMs: (kind: 'dawn' | 'c5', still: boolean) => number;
 }
 
 /** The finale's components once its chunk has loaded (null before). */

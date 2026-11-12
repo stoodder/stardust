@@ -99,14 +99,14 @@ function paintSky(g: CharGrid): void {
   for (let y = -3; y <= 3; y++) {
     for (let x = -3; x <= 3; x++) {
       if (Math.hypot(x, y) > 3.2) continue;
-      plot(g, 38 + x, 24 + y, x + y > 1 ? 'B' : 'O');
+      plot(g, 150 + x, 20 + y, x + y > 1 ? 'B' : 'O');
     }
   }
   for (const [x, y, ch] of [
-    [57, 15, 'R'],
-    [58, 15, 'R'],
-    [57, 16, 'R'],
-    [58, 16, 'S'],
+    [168, 12, 'R'],
+    [169, 12, 'R'],
+    [168, 13, 'R'],
+    [169, 13, 'S'],
   ] as const) {
     plot(g, x, y, ch);
   }
@@ -300,8 +300,8 @@ const LITTLE = [
 
 /** Pebble: small, in front, with her two-leaf seedling tuft (the Peeker's, so you know her). */
 const PEBBLE = [
-  'x...x..', //
-  '.x.x...',
+  'xx.xx..', //
+  '.xxx...',
   '..x....',
   '..x....',
   '.xxxx..',
@@ -313,11 +313,11 @@ const PEBBLE = [
 ] as const;
 
 /** A little gold note over a singing head (the choir's sprites wear one: § 6, *The choir*). */
-const NOTE = ['..MM', '..ML', '..L.', 'LLL.', 'LL..'] as const;
+const NOTE = ['.MM', '.ML', '.L.', 'LL.', 'LL.'] as const;
 
 /** The choir on the ledge, west to east: who stands where, how big, and who wears a note. */
-const CHOIR: readonly { x: number; little: boolean; note: number | null }[] = [
-  { x: 128, little: false, note: null },
+const CHOIR: readonly { x: number; little: boolean; note: number | null; up?: number }[] = [
+  { x: 128, little: false, note: 7 },
   { x: 137, little: true, note: null },
   { x: 143, little: false, note: 9 },
   { x: 153, little: false, note: null },
@@ -325,12 +325,14 @@ const CHOIR: readonly { x: number; little: boolean; note: number | null }[] = [
   { x: 168, little: false, note: null },
   { x: 178, little: false, note: 12 },
   { x: 188, little: true, note: null },
+  { x: 197, little: true, note: 14, up: 6 },
   { x: 194, little: false, note: null },
   { x: 204, little: false, note: 6 },
-  { x: 214, little: true, note: null },
+  { x: 214, little: true, note: 2 },
   { x: 220, little: false, note: null },
   { x: 230, little: false, note: 10 },
   { x: 240, little: true, note: null },
+  { x: 248, little: true, note: 16, up: 6 },
   { x: 246, little: false, note: 3 },
 ];
 const PEBBLE_AT = { x: 258 } as const;
@@ -355,9 +357,11 @@ function silhouette(g: CharGrid, x0: number, y0: number, shape: readonly string[
 }
 
 function paintChoir(g: CharGrid): void {
-  for (const s of CHOIR) {
+  // Riders last, over the grown ones whose backs they ride.
+  const order = [...CHOIR].sort((a, b) => (a.up ?? 0) - (b.up ?? 0));
+  for (const s of order) {
     const shape = s.little ? LITTLE : GROWN;
-    const y0 = ledgeTop(s.x + 3) - shape.length + 1;
+    const y0 = ledgeTop(s.x + 3) - shape.length + 1 - (s.up ?? 0);
     silhouette(g, s.x, y0, shape);
     if (s.note !== null) stampNote(g, s.x + (s.little ? 2 : 4), y0 - 5 - s.note);
   }
@@ -367,11 +371,16 @@ function paintChoir(g: CharGrid): void {
   stampNote(g, PEBBLE_AT.x + 9, py - 20);
 }
 
+/**
+ * Stamps a note: gold where the sky behind it is dark enough to carry it, a dark silhouette where it
+ * crosses the brightest sky by the sun (back-lit, like the singers under it).
+ */
 function stampNote(g: CharGrid, x: number, y: number): void {
+  const backlit = ['D', 'E', 'M', 'N', 'T', 'L'].includes(at(g, x + 1, y + 2));
   NOTE.forEach((row, dy) => {
     for (let dx = 0; dx < row.length; dx++) {
       const ch = row.charAt(dx);
-      if (ch !== '.') plot(g, x + dx, y + dy, ch);
+      if (ch !== '.') plot(g, x + dx, y + dy, backlit ? (ch === 'M' ? 'H' : 'G') : ch);
     }
   });
 }
@@ -389,78 +398,87 @@ function paintMotes(g: CharGrid): void {
 }
 
 /** Ves'thara: where she stands (her hem's centre at the lip) and her height. */
-const VES = { x: 284, h: 60 } as const;
-/** Her shoulder nearer the choir (west): where Ishael's mote stops (`mote` frame on). */
-export const DAWN_MOTE = { x: 274, y: ledgeTopPure(284) - 60 + 25 } as const;
+const VES = { x: 284, h: 62 } as const;
 
-function ledgeTopPure(x: number): number {
-  return ledgeTop(x);
+/** Her top row (the veil's point). */
+function vesTop(): number {
+  return ledgeTop(VES.x) - VES.h;
+}
+
+/** Her shoulder nearer the choir (west): where Ishael's mote stops (`mote` frame on). */
+export function dawnMoteAt(): { readonly x: number; readonly y: number } {
+  return { x: VES.x - 5, y: vesTop() + 26 };
 }
 
 type VesPart = 'veil' | 'face' | 'robe' | 'drape';
 
 /**
- * Ves'thara's figure (art-direction § 5's woven face and pointed veil, as a figure): a tall pointed
- * veil of open lattice over a long woven face, the veil falling past her shoulders as a see-through
- * drape, and dark emerald robes, a little wider at the hem.
+ * Ves'thara's figure (her portrait's long woven face and tall pointed veil, art-direction § 5, as a
+ * figure): the veil's point over a long face, the veil falling past her shoulders as a see-through
+ * drape, and dark robes widening to the hem.
  */
 function inVes(x: number, y: number): VesPart | null {
-  const foot = ledgeTop(VES.x);
-  const top = foot - VES.h;
+  const top = vesTop();
   const t = (y - top) / VES.h;
   const dx = x - VES.x;
   if (t < 0 || t > 1) return null;
   const ax = Math.abs(dx);
-  // The face: a long oval under the veil's peak.
-  if (((dx + 0.5) / 3.2) ** 2 + ((t - 0.22) / 0.085) ** 2 <= 1) return 'face';
-  // The veil: a tall point curving out to below the shoulders.
-  if (t < 0.5) {
-    const half = 1.5 + Math.sin((t / 0.5) * (Math.PI / 2)) ** 1.4 * 10;
-    if (ax <= half) return t < 0.33 || ax > 6 ? 'veil' : 'robe';
-  }
-  // The drape: the veil's lattice hanging free beside the robe, to mid-thigh.
-  const robeHalf = t < 0.36 ? 0 : t < 0.42 ? 6 : 5.5 + (t - 0.42) * 7;
+  if (((dx + 0.5) / 3.2) ** 2 + ((t - 0.21) / 0.08) ** 2 <= 1) return 'face';
+  // The robe: shoulders from under the veil, widening to the hem.
+  const robeHalf = t < 0.34 ? -1 : t < 0.4 ? 4 + (t - 0.34) * 50 : 7 + ((t - 0.4) / 0.6) ** 1.5 * 5;
   if (ax <= robeHalf) return 'robe';
-  if (t < 0.72 && ax <= robeHalf + 4 - (t - 0.5) * 8) return 'drape';
+  // The veil: a tall point curving out to the shoulders.
+  if (t < 0.4) {
+    const half = 1 + Math.sin((t / 0.4) * (Math.PI / 2)) ** 1.6 * 10;
+    if (ax <= half) return 'veil';
+  }
+  // The drape: the veil's lattice hanging free beside the robe, narrowing to mid-thigh.
+  if (t >= 0.4 && t < 0.76 && ax <= robeHalf + 4 - (t - 0.4) * 11) return 'drape';
   return null;
 }
 
 function paintVesthara(g: CharGrid, lit: boolean): void {
+  const top = vesTop();
   const foot = ledgeTop(VES.x);
-  const top = foot - VES.h;
-  const strandAt = (x: number, y: number): boolean => (x + y) % 3 === 0 || (x - y + 99) % 3 === 0;
+  // Her lattice: strands on two diagonals, holes between them (the veil's are larger).
+  const strand = (x: number, y: number, step: number): boolean =>
+    (x + y) % step === 0 || (x - y + 99) % step === 0;
   for (let y = top; y <= foot; y++) {
     for (let x = VES.x - 16; x <= VES.x + 16; x++) {
       const part = inVes(x, y);
       if (part === null) continue;
-      const outside = (dx: number, dy: number): boolean => inVes(x + dx, y + dy) === null;
-      const edgeE = outside(1, 0) || outside(0, -1);
-      const edgeW = outside(-1, 0);
+      const out = (dx: number, dy: number): boolean => inVes(x + dx, y + dy) === null;
+      const edgeE = out(1, 0) || out(0, -1);
+      const edgeW = out(-1, 0);
       if (part === 'face') {
-        // The woven face, dark against the sun, lit from inside at its heart once she remembers.
-        const heart = Math.abs(x - VES.x) <= 1 && Math.abs(y - (top + 13)) <= 2;
-        plot(g, x, y, lit ? (heart ? 'M' : edgeE ? 'L' : 'K') : heart ? 'X' : 'H');
+        // The woven face, dark against the sun; once she remembers, lit from inside at its heart.
+        const heart = Math.abs(x - VES.x) <= 1 && Math.abs(y - (top + 13)) <= 1;
+        plot(g, x, y, lit ? (heart ? 'M' : edgeE || edgeW ? 'K' : 'J') : heart ? 'X' : 'H');
         continue;
       }
       if ((part === 'veil' || part === 'drape') && !edgeE && !edgeW) {
-        // Open lattice: strands on two diagonals, real holes between them (the sky shows).
-        if (!strandAt(x, y)) {
+        if (!strand(x, y, part === 'veil' ? 3 : 2)) {
           plot(g, x, y, skyAt(x, y));
           continue;
         }
-        // Her threads: frayed and dark, then lit gold one by one (her `dawn` portrait).
+        // Her threads: frayed and dark, then re-lit gold one by one (her `dawn` portrait).
         const relit = lit && hash01(x, y, 31) < 0.8;
-        plot(g, x, y, relit ? (y < top + 18 ? 'M' : 'L') : 'H');
+        plot(g, x, y, relit ? (y < top + 20 ? 'M' : 'L') : 'H');
         continue;
       }
       let ch = edgeE ? (lit ? 'M' : 'L') : edgeW ? 'F' : 'G';
-      if (part === 'robe' && !edgeE && !edgeW && (x - VES.x) % 3 === 0) ch = lit ? 'J' : 'H';
+      if (part === 'robe' && !edgeE && !edgeW) {
+        // Two folds falling from the knot at her heart, gold-threaded once she remembers.
+        const t = (y - top) / VES.h;
+        const fold = Math.round(1 + Math.max(0, t - 0.46) * 16);
+        if (t > 0.46 && Math.abs(x - VES.x) === fold) ch = lit ? 'K' : 'H';
+      }
       plot(g, x, y, ch);
     }
   }
   // The ruby knot on her brow and the knot of light at her heart (teal, Aelari).
   plot(g, VES.x, top + 7, lit ? 'R' : 'Q');
-  const heart = { x: VES.x, y: top + 28 };
+  const heart = { x: VES.x, y: top + 29 };
   plot(g, heart.x, heart.y, 'W');
   plot(g, heart.x, heart.y + 1, 'V');
   plot(g, heart.x - 1, heart.y, 'V');
@@ -470,7 +488,7 @@ function paintVesthara(g: CharGrid, lit: boolean): void {
 
 /** Ishael's mote: a white-hot cross in gold with a gold halo, its pink trail below it. */
 function paintIshaelMote(g: CharGrid): void {
-  const { x, y } = DAWN_MOTE;
+  const { x, y } = dawnMoteAt();
   for (const [dx, dy] of [
     [-2, -2],
     [2, -2],
@@ -506,25 +524,34 @@ function paintIshaelMote(g: CharGrid): void {
 
 /**
  * The Technician, from behind, three-quarter, turned toward the sun: the oversized Everglow helmet
- * (art-direction § 5's `player`), the collar, sloped shoulders and arms, the back past the frame.
+ * (art-direction § 5's `player`) with its antenna, the collar, sloped shoulders and arms, the back
+ * running out of the frame. A silhouette: no face is ever drawn.
  */
-const HELM = { cx: 92, cy: 72, rx: 15, ry: 14 } as const;
+const HELM = { cx: 92, cy: 71, rx: 17, ry: 15 } as const;
 
 function inHelmet(x: number, y: number): boolean {
   return ((x - HELM.cx) / HELM.rx) ** 2 + ((y - HELM.cy) / HELM.ry) ** 2 <= 1;
 }
 
-/** The back: collar, then shoulders rounding out, arms hanging, a little narrower at the waist. */
-function backHalf(t: number): number {
-  if (t < 3) return 8;
-  if (t < 14) return 8 + Math.sqrt((t - 3) / 11) * 25;
-  return 33 - Math.min(4, (t - 14) / 12);
+/** The helmet's visor, down: its band round the front, seen past the helmet's east edge. */
+function inVisor(x: number, y: number): boolean {
+  const dy = y - HELM.cy;
+  if (dy < -7 || dy > 6 || !inHelmet(x, y)) return false;
+  return x >= HELM.cx + 7 + (dy * dy) / 14;
 }
 
+/** The back: collar, then shoulders rounding out, arms hanging, a little narrower at the waist. */
+function backHalf(t: number): number {
+  if (t < 3) return 9;
+  if (t < 14) return 9 + Math.sqrt((t - 3) / 11) * 25;
+  return 34 - Math.min(4, (t - 14) / 12);
+}
+
+const COLLAR_Y = HELM.cy + HELM.ry - 4;
+
 function inBody(x: number, y: number): boolean {
-  const collar = HELM.cy + HELM.ry - 4;
-  if (y < collar) return false;
-  const half = backHalf(y - collar);
+  if (y < COLLAR_Y) return false;
+  const half = backHalf(y - COLLAR_Y);
   // Turned toward the sun: the far (east) shoulder a little narrower than the near one.
   return x >= HELM.cx - half && x <= HELM.cx + half * 0.86;
 }
@@ -535,58 +562,76 @@ function inTechnician(x: number, y: number): boolean {
 
 /** The gap between arm and torso: a dark line down each side, below the shoulder. */
 function armSeam(x: number, y: number): boolean {
-  const collar = HELM.cy + HELM.ry - 4;
-  const t = y - collar;
+  const t = y - COLLAR_Y;
   if (t < 18) return false;
   const half = backHalf(t);
   return x === Math.round(HELM.cx - half + 8) || x === Math.round(HELM.cx + half * 0.86 - 7);
 }
 
 function paintTechnician(g: CharGrid, visorUp: boolean): void {
-  const collarY = HELM.cy + HELM.ry - 4;
+  // The helmet's antenna (its mic stub's partner), up off the back-left, tipped pink.
+  eachOnLine(HELM.cx - 11, HELM.cy - 9, HELM.cx - 15, HELM.cy - 22, (x, y) => plot(g, x, y, 'G'));
+  plot(g, HELM.cx - 15, HELM.cy - 23, 'Q');
   for (let y = HELM.cy - HELM.ry - 1; y < SCENE_H; y++) {
     for (let x = HELM.cx - 40; x <= HELM.cx + 40; x++) {
       if (!inTechnician(x, y)) continue;
-      const helmet = inHelmet(x, y) && y < collarY + 2;
+      const helmet = inHelmet(x, y) && y < COLLAR_Y + 2;
       const eastEdge = !inTechnician(x + 1, y);
       const topEdge = !inTechnician(x, y - 1);
       let ch = 'G';
       if (helmet) {
         // The shell catches a little sky on its crown.
-        const crown = ((x - HELM.cx + 4) / 9) ** 2 + ((y - HELM.cy + 9) / 4) ** 2 <= 1;
+        const crown = ((x - HELM.cx + 4) / 10) ** 2 + ((y - HELM.cy + 9) / 4) ** 2 <= 1;
         ch = crown ? 'I' : 'G';
         if (!inTechnician(x + 2, y) && !eastEdge) ch = 'Z';
       } else if (armSeam(x, y)) ch = 'F';
       else if (!inTechnician(x + 2, y) && !eastEdge) ch = 'Z';
       else if (y > 150) ch = dithered(['G', 'F'], (y - 150) / 30, x, y);
-      if (eastEdge) ch = y < collarY ? 'M' : y < collarY + 30 ? 'L' : 'S';
-      else if (topEdge) ch = x > HELM.cx - 4 ? (helmet ? 'S' : 'Z') : 'P';
+      if (eastEdge) ch = y < COLLAR_Y ? 'M' : y < COLLAR_Y + 30 ? 'L' : 'S';
+      else if (topEdge) ch = x > HELM.cx - 4 ? (helmet ? 'S' : 'Z') : 'I';
       plot(g, x, y, ch);
     }
   }
-  // The collar ring under the helmet.
-  for (let x = HELM.cx - 9; x <= HELM.cx + 8; x++) {
-    if (inTechnician(x + 1, collarY) && inTechnician(x - 1, collarY)) plot(g, x, collarY, 'H');
+  // The helmet's rim, wider than the collar under it, and the collar ring.
+  for (let x = HELM.cx - 14; x <= HELM.cx + 13; x++) {
+    if (inHelmet(x, COLLAR_Y - 1)) plot(g, x, COLLAR_Y - 1, x > HELM.cx + 9 ? 'Z' : 'I');
   }
+  for (let x = HELM.cx - 9; x <= HELM.cx + 8; x++) plot(g, x, COLLAR_Y + 1, 'F');
   if (!visorUp) {
-    // Visor down: its mirrored edge wraps round the far side, full of the sunrise.
-    for (let y = HELM.cy - 7; y <= HELM.cy + 5; y++) {
-      for (let x = HELM.cx + 8; x <= HELM.cx + HELM.rx; x++) {
-        if (!inHelmet(x, y) || inHelmet(x + 2, y) || !inHelmet(x + 1, y)) continue;
-        plot(g, x, y, dithered(['C', 'D', 'E', 'M'], (y - HELM.cy + 7) / 12, x, y));
+    // Visor down: the mirrored glass wraps round the front in a dark frame, reflecting the sky
+    // behind us (violet to rose) with the sunrise's line across it and a white glint.
+    for (let y = HELM.cy - 7; y <= HELM.cy + 6; y++) {
+      for (let x = HELM.cx; x <= HELM.cx + HELM.rx; x++) {
+        if (!inVisor(x, y)) continue;
+        const framed = !inVisor(x - 1, y) || !inVisor(x, y - 1) || !inVisor(x, y + 1);
+        const dy = y - HELM.cy;
+        let ch = dithered(['X', 'B', 'C'], (dy + 6) / 10, x, y);
+        if (dy === 2) ch = 'L';
+        else if (dy === 3) ch = 'T';
+        plot(g, x, y, framed ? 'F' : ch);
       }
     }
+    plot(g, HELM.cx + 12, HELM.cy - 4, 'N');
+    plot(g, HELM.cx + 13, HELM.cy - 5, 'O');
     return;
   }
-  // Visor up: the plate tipped back off the brow, standing over the helmet's front, its mirror full
-  // of sky. Where it was, only the helmet's edge in shadow, rimmed by the light: no face.
-  for (let k = 0; k < 16; k++) {
-    const x = HELM.cx + 1 + k;
-    const y = HELM.cy - HELM.ry - 4 + Math.round((k / 15) ** 2 * 10);
-    plot(g, x, y - 1, 'G');
-    plot(g, x, y, k > 9 ? 'N' : 'M');
-    plot(g, x, y + 1, k > 11 ? 'E' : 'D');
-    plot(g, x, y + 2, 'C');
+  // Visor up: the plate tipped back over the crown, its mirror full of sky; under it, where the
+  // visor was, the helmet's open edge, warm with the light on a face we never see.
+  for (let k = 0; k < 17; k++) {
+    const x = HELM.cx - 1 + k;
+    const y = HELM.cy - HELM.ry - 4 + Math.round((k / 16) ** 2.2 * 11);
+    plot(g, x, y - 1, 'F');
+    plot(g, x, y, k > 11 ? 'N' : 'M');
+    plot(g, x, y + 1, dithered(['C', 'D', 'E'], k / 16, x, y + 1));
+    plot(g, x, y + 2, dithered(['B', 'C', 'D'], k / 16, x, y + 2));
+    plot(g, x, y + 3, 'F');
+  }
+  for (let y = HELM.cy - 5; y <= HELM.cy + 6; y++) {
+    for (let x = HELM.cx + 8; x <= HELM.cx + HELM.rx; x++) {
+      if (!inHelmet(x, y) || inHelmet(x + 1, y)) continue;
+      plot(g, x, y, 'M');
+      if (inHelmet(x - 1, y)) plot(g, x - 1, y, y % 3 === 0 ? 'T' : 'L');
+    }
   }
 }
 

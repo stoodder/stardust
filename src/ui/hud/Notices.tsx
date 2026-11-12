@@ -190,7 +190,12 @@ export function WaveBannerView() {
   const p = phaseBanner.value;
   if (p !== null) {
     return (
-      <div key={`p${p.id}`} class="hud-wave-banner phase" data-testid="phase-banner" aria-hidden="true">
+      <div
+        key={`p${p.id}`}
+        class="hud-wave-banner phase"
+        data-testid="phase-banner"
+        aria-hidden="true"
+      >
         <span class="hud-phase-kicker">{p.kicker}</span>
         {p.title}
       </div>

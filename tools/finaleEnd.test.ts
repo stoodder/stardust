@@ -28,6 +28,11 @@ const MAP = 'dev_phases';
 // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the dev ids are an IdSpace
 const RAW = DEV_CONTENT as unknown as RawContent<IdSpace>;
 
+/** The dev enemies, the Unsung's HP cut so the fixture's towers carry it through. */
+function cutEnemies(): RawContent<IdSpace>['enemies'] {
+  return { ...RAW.enemies, unsung: { ...RAW.enemies.unsung!, hp: 3000 } };
+}
+
 /** dev_phases with the Unsung's HP cut, and `patch` over the map. */
 function content(patch: Partial<MapDef<IdSpace>> = {}): CompiledContent<IdSpace> {
   const unsung = { ...RAW.enemies.unsung!, hp: 3000 };
@@ -136,7 +141,9 @@ describe("Dawn's hold (winBy: 'script') and Dawn waking the choir", () => {
   });
 
   it('a map with no winBy still wins as its last wave resolves', () => {
-    const plain = play(content({ winBy: undefined, events: noWin() }), {
+    const { winBy: _w, ...plainMap } = RAW.maps[MAP]!;
+    const plainRaw = { ...RAW, maps: { ...RAW.maps, [MAP]: { ...plainMap, events: noWin() } } };
+    const plain = play(compileContent({ ...plainRaw, enemies: cutEnemies() }), {
       quill_choice: 'rewrite',
       spared_quiet_wave: false,
     });
@@ -147,7 +154,7 @@ describe("Dawn's hold (winBy: 'script') and Dawn waking the choir", () => {
 });
 
 /** dev_phases' events without its `endMap` win. */
-function noWin(): MapDef<IdSpace>['events'] {
+function noWin(): NonNullable<MapDef<IdSpace>['events']> {
   return (RAW.maps[MAP]!.events ?? []).filter((e) => !e.actions.some((a) => 'endMap' in a));
 }
 
@@ -197,7 +204,11 @@ describe('waves of a script phase (inPhase)', () => {
       'no setPhase action reaches phase 5',
     );
     expect(
-      inPhaseIssues([base[0]!, base[1]!, { ...base[2]!, inPhase: 2, countdownAfter: 'bossEnded' }])[0],
+      inPhaseIssues([
+        base[0]!,
+        base[1]!,
+        { ...base[2]!, inPhase: 2, countdownAfter: 'bossEnded' },
+      ])[0],
     ).toContain("can't wait for a phase and a boss");
   });
 });
@@ -237,9 +248,14 @@ describe('the echoArrived trigger', () => {
 
 describe('the hush allowance (ChoirDef.maxHushed)', () => {
   it('sets the floor at the run’s choir − maxHushed (at least 1), in every cell', () => {
-    const fin = compileContent(RAW_CONTENT).maps.fin_m01;
+    const live = compileContent(RAW_CONTENT);
+    const fin = live.maps.fin_m01;
+    const par = fin.builds.parBuild;
+    const state = createSim(
+      runConfig(live, fin, par, referenceRunProfile(fin, live, 'standard'), 1, {}),
+    ).state;
     const floor = (singers: number): number | null =>
-      minVoicesOf({ choir: { singers } } as Parameters<typeof minVoicesOf>[0], fin);
+      minVoicesOf({ choir: { ...state.choir, singers } }, fin);
     expect(fin.choir!.maxHushed).toBe(14);
     expect(floor(20)).toBe(6);
     expect(floor(28)).toBe(14);
@@ -258,8 +274,13 @@ describe('the hush allowance (ChoirDef.maxHushed)', () => {
     expect(errs({ choir })).toEqual([
       '[choir] maps.dev_voices.minVoices: a choir map gives one of minVoices, minVoicesPct, or choir.maxHushed',
     ]);
-    expect(errs({ choir, minVoicesPct: undefined })).toEqual([]);
-    expect(errs({ choir: { ...choir, maxHushed: 2.5 }, minVoicesPct: undefined })).toEqual([
+    const { minVoicesPct: _p, ...noPct } = voices;
+    const errsNoPct = (c: typeof choir): string[] =>
+      validate({ ...RAW, maps: { ...RAW.maps, dev_voices: { ...noPct, choir: c } } })
+        .map(String)
+        .filter((m) => m.startsWith('[choir]'));
+    expect(errsNoPct(choir)).toEqual([]);
+    expect(errsNoPct({ ...choir, maxHushed: 2.5 })).toEqual([
       '[choir] maps.dev_voices.choir.maxHushed: must be a whole number ≥ 1',
     ]);
   });

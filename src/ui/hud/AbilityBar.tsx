@@ -80,6 +80,10 @@ function AbilitySlot({ a, cd }: { a: AbilitySlotView; cd: AbilityCooldownView | 
   if (revokedHud.value.slots.includes(a.slot)) {
     // T860: under Radio Silence (a veteran rule) a slot reads its rule's words, never a stamp.
     const silenced = revokedHud.value.silenced === true;
+    // T832: Directive 0's phase lock (the finale under Keep) is its own dark slot.
+    if (!silenced && revokedHud.value.locked?.includes(a.slot) === true) {
+      return <DirectiveSlot a={a} />;
+    }
     const uplink = a.slot === 1 && !silenced;
     const why = silenced ? 'Radio Silence' : uplink ? 'Uplink revoked' : 'Locked out';
     return (
@@ -194,6 +198,46 @@ function AbilitySlot({ a, cd }: { a: AbilitySlotView; cd: AbilityCooldownView | 
       {button}
       <span class="hud-new hud-free-tag" aria-hidden="true">
         Free
+      </span>
+    </div>
+  );
+}
+
+/** The tag on a slot dark under Directive 0 (T832). */
+export const DIRECTIVE_TAG = 'Directive 0';
+
+/**
+ * A slot dark under Directive 0's phase lock (T832; the finale under C4 Keep, core-loop.md § 6.11):
+ * QUILL's Time Dilation, in either slot, "suspended (per policy)" for Phase 2 alone. Never a
+ * revocation, so no stamp and no red: the lockout's dark slot (icon at 25%, steel edge) under a
+ * DIRECTIVE 0 tag on its top edge, in QUILL's system type, glitching once as it lands (still under
+ * reduced motion). Focusable; a press says why ("Suspended by Directive 0"), and the lock lifts at
+ * Dawn.
+ */
+function DirectiveSlot({ a }: { a: AbilitySlotView }) {
+  return (
+    <div class="hud-slot-holder">
+      <button
+        type="button"
+        class={`hud-btn hud-slot hud-ability chamfer absent revoked lockout directive${a.companion === null ? '' : ' companion'}`}
+        data-testid={`ability-${a.slot}`}
+        data-directive="0"
+        aria-disabled="true"
+        aria-label={`${a.label}, suspended by Directive 0 until Dawn`}
+        title={`${a.label}: suspended by Directive 0 (per policy)`}
+        onMouseDown={noFocusOnPress}
+        onClick={() => pressAbility(a.slot)}
+      >
+        <span class="ability-row">
+          {a.companion !== null && <CompanionFace c={a.companion} absent />}
+          <span class="ability-icon">
+            <Icon id={a.icon} class="slot-icon" />
+          </span>
+        </span>
+        <span class="hud-cd" />
+      </button>
+      <span class="hud-directive-tag" data-testid={`ability-${a.slot}-revoked`} aria-hidden="true">
+        {DIRECTIVE_TAG}
       </span>
     </div>
   );

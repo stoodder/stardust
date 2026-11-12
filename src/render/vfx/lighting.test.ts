@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { rgbOf } from '../../content/palettes/master.ts';
 import { ENV_SKY } from '../../content/palettes/env.ts';
 import {
+  EAST_REACH,
+  eastSkyImage,
+  skyStops,
+  worldStops,
   gradeAt,
   gradeOf,
   GRADE_STRENGTH,
@@ -180,5 +184,94 @@ describe('moonsImage', () => {
       );
     }
     expect(lit).toBeGreaterThan(SKY_MOONS.length * 9);
+  });
+});
+
+describe('the eastern dawn (T831: sky-only keys)', () => {
+  const keys = [
+    { wave: 1, env: 'act3', skyOnly: true },
+    { wave: 5, env: 'finale', skyOnly: true },
+    { wave: 9, env: 'finale', skyOnly: true },
+  ] as const;
+
+  it('raises a run of sky-only keys toward another env a step each, and holds the base env plain', () => {
+    expect(skyStops('act3', keys)).toEqual([
+      { wave: 0, env: 'act3' },
+      { wave: 1, env: 'act3' },
+      { wave: 5, env: 'finale', east: 0.5 },
+      { wave: 9, env: 'finale', east: 1 },
+    ]);
+  });
+
+  it('keeps every key that isn’t sky-only as lightStops does, and grades none of the sky-only', () => {
+    const mixed = [{ wave: 2, env: 'act2.dusk' as const }, ...keys];
+    expect(skyStops('act2.gold', [{ wave: 11, env: 'act2.dusk' }])).toEqual(
+      lightStops('act2.gold', [{ wave: 11, env: 'act2.dusk' }]),
+    );
+    expect(worldStops('act3', mixed)).toEqual(lightStops('act3', [{ wave: 2, env: 'act2.dusk' }]));
+  });
+
+  const w = 160;
+  const h = 90;
+  const skyH = Math.round(h * SKY_SHARE);
+  /** Pixels showing one of `env`'s sky colours that `act3`'s night sky doesn't. */
+  const warm = (img: { data: Uint8ClampedArray }): { n: number; xs: number[] } => {
+    const dawn = ENV_SKY.finale.map((c) => rgbOf(c));
+    let n = 0;
+    const xs: number[] = [];
+    for (let i = 0; i < w * h; i++) {
+      const [r, g, b] = [img.data[i * 4]!, img.data[i * 4 + 1]!, img.data[i * 4 + 2]!];
+      if (dawn.slice(1).some((c) => c.r === r && c.g === g && c.b === b)) {
+        n++;
+        xs.push(i % w);
+      }
+    }
+    return { n, xs };
+  };
+
+  it('is the base sky at east 0, and rises from the east edge as east grows', () => {
+    expect(eastSkyImage('act3', 'finale', 0, w, h).data).toEqual(skyImage('act3', w, h).data);
+    let last = 0;
+    for (const east of [0.25, 0.5, 0.75, 1]) {
+      const { n, xs } = warm(eastSkyImage('act3', 'finale', east, w, h));
+      expect(n, `east ${east}`).toBeGreaterThan(last);
+      last = n;
+      // East first: every warmed pixel lies within the reach of the right-hand edge.
+      expect(Math.min(...xs), `east ${east}`).toBeGreaterThanOrEqual(
+        Math.floor(w * (1 - east * EAST_REACH.x * 1.1)),
+      );
+    }
+  });
+
+  it('puts the dawn’s hottest band (its gold) at the horizon by the east edge', () => {
+    const img = eastSkyImage('act3', 'finale', 1, w, h);
+    const gold = rgbOf(ENV_SKY.finale.at(-1)!);
+    const i = ((skyH - 1) * w + (w - 2)) * 4;
+    expect([img.data[i], img.data[i + 1], img.data[i + 2]]).toEqual([gold.r, gold.g, gold.b]);
+    // The west of the sky stays the night.
+    const j = (2 * w + 2) * 4;
+    const night = skyImage('act3', w, h);
+    expect(img.data.subarray(j, j + 4)).toEqual(night.data.subarray(j, j + 4));
+  });
+
+  it('leaves the moons out when asked (a Long Night map hangs its own)', () => {
+    const moons = moonsImage(w, h);
+    for (const img of [
+      skyImage('act3', w, h, false),
+      eastSkyImage('act3', 'finale', 1, w, h, false),
+    ]) {
+      const plain = skyImage('act3', w, h);
+      let differs = 0;
+      for (let i = 0; i < w * h; i++) {
+        if (moons.data[i * 4 + 3] === 0) continue;
+        if (
+          img.data[i * 4] !== plain.data[i * 4] ||
+          img.data[i * 4 + 2] !== plain.data[i * 4 + 2]
+        ) {
+          differs++;
+        }
+      }
+      expect(differs).toBeGreaterThan(0);
+    }
   });
 });

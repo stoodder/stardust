@@ -16,6 +16,11 @@ export interface RevokedHud {
    * "Locked out". Absent: false.
    */
   readonly silenced?: boolean;
+  /**
+   * The slots dark under Directive 0's phase lock (T807's `lockAbility`, sim `abilitiesLocked`;
+   * T832): they read "Directive 0", never a revocation's stamp. Absent: none.
+   */
+  readonly locked?: readonly (1 | 2)[];
 }
 
 export const NOTHING_REVOKED: RevokedHud = {

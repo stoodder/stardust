@@ -8,6 +8,7 @@ import { Icon } from './Icon.tsx';
 import { alignPulse } from './pulse.ts';
 import { Glyph, HOLD_GLYPH, Key } from './parts.tsx';
 import { revokedHud } from './revokedState.ts'; // T606
+import { nextHeld } from './finaleState.ts'; // T832
 
 /** Top-right: speed and pause. */
 export function SpeedControls() {
@@ -174,6 +175,17 @@ export function WavePanel() {
           {countdown !== null && (
             <li class="hud-countdown" aria-label={`Starts in ${countdown} seconds`}>
               <span class="hud-label">in</span> <span class="num">{countdown}s</span>
+            </li>
+          )}
+          {/* A wave held for its script phase (the finale's W19 waits for the Halls; T832): no
+              countdown runs, so none shows. */}
+          {countdown === null && nextHeld.value && (
+            <li
+              class="hud-countdown held"
+              data-testid="preview-held"
+              aria-label="Held until the choir reaches the Halls"
+            >
+              <span class="hud-label">Held</span>
             </li>
           )}
         </ul>

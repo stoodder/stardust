@@ -1588,3 +1588,231 @@ section.chamfer,
     0 0 0 1px var(--sd-violet-4),
     0 0 0 2px var(--sd-ink-0);
 }
+
+/* ── The finale (T832; art-direction §9 *Finale HUD*) ─────────────────────────────────────── */
+
+/* The top-centre clock: one slot under the boss bar (render/vfx/bossBar.ts: its bar at y 39, its
+   flags to 47), the boss bar's width, through the phases: the Deep Bore (Phase 1), the countdown
+   (Phase 2), the counter at 0 (Dawn). */
+.hud-finale-clock {
+  --edge: var(--sd-ink-3);
+  position: absolute;
+  left: 50%;
+  top: 49px;
+  box-sizing: border-box;
+  width: calc(var(--clock-w) + 8px);
+  display: grid;
+  gap: 2px;
+  padding: 3px 4px 4px;
+  transform: translateX(-50%);
+  background: var(--panel-fill);
+  pointer-events: none;
+}
+
+.hud-finale-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.hud-finale-row .hud-label {
+  color: var(--sd-steel-3);
+}
+
+.hud-finale-row .num {
+  color: var(--sd-white-1);
+}
+
+/* The bar: a 3 px track in a 1 px ink frame, its top row lit. */
+.hud-finale-bar {
+  position: relative;
+  display: block;
+  width: var(--clock-w);
+  height: 3px;
+  background: var(--sd-ink-2);
+  box-shadow: 0 0 0 1px var(--sd-ink-0);
+}
+
+.hud-finale-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  display: block;
+}
+
+/* The Bore glows unsung (art-direction §3 *Finale*): violet, burning bright once it breaks through. */
+.hud-finale-clock.bore .hud-finale-fill {
+  background: linear-gradient(var(--sd-violet-4) 0 1px, var(--sd-violet-3) 1px);
+}
+
+.hud-finale-clock.bore.full {
+  --edge: var(--sd-violet-3);
+}
+
+.hud-finale-clock.bore.full .hud-finale-fill {
+  background: var(--sd-violet-4);
+}
+
+.hud-finale-clock.bore.full .num {
+  color: var(--sd-violet-4);
+}
+
+/* The countdown: the song's gold (rest motes, the light), the edge in the act's gold. */
+.hud-finale-clock.counter {
+  --edge: var(--sd-gold-2);
+}
+
+.hud-finale-clock.counter .hud-finale-fill {
+  background: linear-gradient(var(--sd-gold-4) 0 1px, var(--sd-gold-3) 1px);
+}
+
+.hud-finale-clock.counter .hud-label {
+  color: var(--sd-gold-3);
+}
+
+/* On a phased map the wave and phase banners sit under the clock. */
+.hud[data-phased] .hud-wave-banner {
+  top: 84px;
+}
+
+/* A phase banner: the kicker in the small type over the phase's name; it holds twice as long. */
+.hud-wave-banner.phase {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  animation-duration: 2.4s;
+}
+
+.hud-phase-kicker {
+  font-size: 8px;
+  line-height: 8px;
+  color: var(--sd-white-1);
+}
+
+/* The choir's rows start under its glyph: "Hushed" and up to 15 pips (its hushes before the floor)
+   fit the panel's 100 px only without the Escort's 12 px indent. */
+.hud-escort.choir .hud-escort-of,
+.hud-escort.choir .hud-escort-lost {
+  margin-left: 0;
+}
+
+/* The choir halted (the playfield's HALTED plate): white on red at the end of the "of 16" row. */
+.hud-escort.choir .hud-escort-of {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.hud-halted-tag {
+  padding: 0 2px;
+  color: var(--sd-white-1);
+  background: var(--sd-red-2);
+  box-shadow: 0 0 0 1px var(--sd-ink-0);
+}
+
+/* The gate's row under Voices: secondary, its number in the small type. */
+.hud-gate .num {
+  min-width: 0;
+  color: var(--sd-white-1);
+}
+
+.hud-gate .num.danger {
+  color: var(--sd-red-3);
+}
+
+/* A held wave (its script phase hasn't come): "Held" where the countdown would be. */
+.hud-countdown.held .hud-label {
+  color: var(--sd-steel-3);
+}
+
+/* Directive 0's dark slot (core-loop.md § 6.11): the lockout's dark slot under a tag in QUILL's
+   system type (white on ink, a teal rule), glitching once as it lands. */
+.hud-directive-tag {
+  position: absolute;
+  left: -1px;
+  top: -6px;
+  padding: 1px 2px 0;
+  white-space: nowrap;
+  color: var(--sd-white-1);
+  background: var(--sd-ink-1);
+  box-shadow:
+    0 0 0 1px var(--sd-ink-0),
+    inset 0 -1px var(--sd-teal-3);
+  pointer-events: none;
+  animation: hud-directive-glitch 0.4s steps(1, end);
+}
+
+@keyframes hud-directive-glitch {
+  0% {
+    transform: translateX(2px);
+    color: var(--sd-teal-4);
+  }
+  25% {
+    transform: translateX(-1px);
+  }
+  50% {
+    transform: translateX(1px);
+    color: var(--sd-red-3);
+  }
+  75%,
+  100% {
+    transform: none;
+  }
+}
+
+/* Dawn (T832): nothing but the light. Everything fades but the name plate and the clock (the
+   counter at 0), and the comms panel, which stays for any line (the story keeps its place); the
+   controls go too (Esc and M still answer). Hidden once faded, so nothing invisible takes a click
+   or the focus. The status panel's frame goes with its rows, the plate standing on its own. */
+.hud[data-dawn] .hud-play > .hud-lock > :not(.hud-top-left, .hud-finale-clock, .hud-comms-top),
+.hud[data-dawn] .hud-top-right,
+.hud[data-dawn] .hud-status > :not(.hud-plate) {
+  animation: hud-dawn-out 1.2s linear forwards;
+}
+
+.hud[data-dawn] .hud-status {
+  --edge: transparent;
+  background: transparent;
+  transition: background 1.2s linear;
+}
+
+.hud[data-dawn] .hud-plate {
+  text-shadow:
+    1px 0 var(--sd-ink-0),
+    -1px 0 var(--sd-ink-0),
+    0 1px var(--sd-ink-0),
+    0 -1px var(--sd-ink-0);
+}
+
+@keyframes hud-dawn-out {
+  0% {
+    opacity: 1;
+  }
+  99% {
+    opacity: 0;
+    visibility: visible;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hud-directive-tag {
+    animation: none;
+  }
+
+  .hud[data-dawn] .hud-play > .hud-lock > :not(.hud-top-left, .hud-finale-clock, .hud-comms-top),
+  .hud[data-dawn] .hud-top-right,
+  .hud[data-dawn] .hud-status > :not(.hud-plate) {
+    animation: none;
+    visibility: hidden;
+  }
+
+  .hud[data-dawn] .hud-status {
+    transition: none;
+  }
+}

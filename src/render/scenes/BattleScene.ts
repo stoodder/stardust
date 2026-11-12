@@ -137,7 +137,6 @@ import { presentationOfMap } from '../../story/presentation.ts';
 import { EnemyView } from '../views/EnemyView.ts';
 import { FieldTintView } from '../views/FieldTintView.ts';
 import { LightingView } from '../views/LightingView.ts';
-import { TimerBarView } from '../views/TimerBarView.ts'; // T806
 import { SongView } from '../views/SongView.ts'; // T805
 import { UnsungView } from '../views/UnsungView.ts'; // T808
 import { DarknessView } from '../views/DarknessView.ts';
@@ -296,7 +295,6 @@ export class BattleScene extends Phaser.Scene {
   #tidybots!: TidybotView;
   #bossBar!: BossBarView;
   /** The secondary timers' minimal bar (the Deep Bore; T806). */
-  #timerBars!: TimerBarView;
   /** The Leaving Song's rest flip and gold motes, the scatter's violet motes (T805). */
   #song!: SongView;
   #unsung!: UnsungView; // T808: the Unsung's dig marks, its call, the rest strip
@@ -529,7 +527,6 @@ export class BattleScene extends Phaser.Scene {
       map.markers,
     );
     this.#bossBar = new BossBarView(ctx, prefersReducedMotion);
-    this.#timerBars = new TimerBarView(ctx, map.timers); // T806
     this.#song = new SongView(ctx, prefersReducedMotion); // T805
     this.#unsung = new UnsungView(ctx, prefersReducedMotion); // T808
     this.#huddles = new HuddleView(ctx, prefersReducedMotion, pulseOn);
@@ -769,7 +766,6 @@ export class BattleScene extends Phaser.Scene {
       this.#wreckage.reset();
       this.#tidybots.reset();
       this.#bossBar.reset();
-      this.#timerBars.reset(); // T806
       this.#song.reset(); // T805
       this.#unsung.reset(); // T808
       this.#huddles.reset();
@@ -846,7 +842,6 @@ export class BattleScene extends Phaser.Scene {
     this.#drone.update(state.wreckage, this.#clearTicks, state.tick);
     this.#tidybots.update(state.tick);
     this.#bossBar.update(dt, state.enemies);
-    this.#timerBars.update(state.timers); // T806
     this.#bore.update(state.timers); // T831
     this.#memorial.update(
       this.#hover.pointerTile(true).index,
@@ -1082,7 +1077,6 @@ export class BattleScene extends Phaser.Scene {
       },
       debris: this.#fx.debrisLive,
       bossBar: this.bossBarFill,
-      timerBars: this.#timerBars.shown, // T806
       songNight: this.#songNight.look(), // T831
       bore: this.#bore.look(), // T831
       memorial: { tile: this.#memorial.tile, shown: this.#memorial.shown }, // T831

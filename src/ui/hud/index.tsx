@@ -1,7 +1,9 @@
 // The in-map HUD (T106, T113; art-direction §9, core-loop §4): status top-left, waves and speed
 // top-right, commander abilities bottom-left, build slots bottom-right, the selected tower's panel
 // beside it (clear of its neighbours, T126), notices top center, and the keyboard tile cursor's
-// announcement (a visually hidden aria-live region). Components read the `hud` signals (kept in
+// announcement (a visually hidden aria-live region); on the finale (T832) its clock top centre (the
+// Deep Bore, then the countdown), and at Dawn nothing but the name plate and the counter at 0
+// (`data-dawn`: the rest fades out, at once under reduced motion). Components read the `hud` signals (kept in
 // sync by app/hud.ts) and act only through app/commands.ts; each lives in its own file here
 // (T225). Every control is a real <button> of at least 16×16 game px.
 import type { ComponentChildren } from 'preact';
@@ -27,6 +29,8 @@ import {
   PausedOverlay,
 } from './Notices.tsx';
 import { StatusPanel } from './StatusPanel.tsx';
+import { FinaleClock } from './FinaleClock.tsx'; // T832
+import { finaleClock, finalePhase } from './finaleState.ts';
 import { TowerPanel } from './TowerPanel.tsx';
 import { SpeedControls, WavePanel } from './WavePanel.tsx';
 import './hud.css';
@@ -55,14 +59,25 @@ export function Hud() {
   const locked = forcedInput.value !== null;
   // The comms panel moves off the doors while a forced input waits and through the close (D143 R3).
   const topComms = locked || forcedInputAvoid.value.length > 0;
+  // The finale (T832): a phased map moves the wave banner under its clock; Dawn steps the HUD back.
+  const phase = finalePhase.value;
+  const dawn = phase >= 3 && finaleClock.value?.kind === 'counter';
   return (
-    <div class="hud" data-act={hud.act.value} data-testid="hud" data-locked={locked || undefined}>
+    <div
+      class="hud"
+      data-act={hud.act.value}
+      data-testid="hud"
+      data-locked={locked || undefined}
+      data-phased={phase > 0 || undefined}
+      data-dawn={dawn || undefined}
+    >
       <ForcedInputVeil />
       {/* Everything but the briefing: inert (unfocusable, unclickable) while it, a scene, or the
           pause menu is open; under a forced input, everything but the Menu and the speaker. */}
       <div class="hud-play" inert={open}>
         <Lock locked={locked}>
           <PausedOverlay />
+          <FinaleClock />
           <WaveBannerView />
           {/* Top-left: status, then the comms panel under it (it follows the status panel's height).
               Under a forced input the panel moves to the top centre, clear of the map's doors

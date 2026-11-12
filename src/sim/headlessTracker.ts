@@ -81,6 +81,11 @@ export interface RunSummary {
    * the margin reads Voices against (balance/checks.ts `marginOf`); 0 otherwise.
    */
   readonly choirBase: number;
+  /**
+   * The tick each script phase began, index = phase (phase 1 at 0; −1 for a phase skipped): the
+   * finale's Phase 2 runs from `[2]` to `[3]` (Dawn; harness #18, T821).
+   */
+  readonly phaseStartTick: readonly number[];
   /** Credits left at the end (unspent). */
   readonly credits: number;
   /** The last wave started when the map was lost, or null. */
@@ -141,6 +146,8 @@ export function createRunTracker<K extends IdSpace>(
   let abilityKills = 0;
   let allyKills = 0;
   let lostAtWave: number | null = null;
+  /** The tick each script phase began (index = phase; T821); −1 for one never reached. */
+  const phaseStartTick: number[] = [0];
 
   const violate = (what: string): void => {
     if (violations.length < MAX_VIOLATIONS) violations.push(`tick ${state.tick}: ${what}`);
@@ -280,6 +287,10 @@ export function createRunTracker<K extends IdSpace>(
           case 'MapLost':
             lostAtWave = state.wave;
             break;
+          case 'PhaseChanged': // T821: the finale's Phase 2 length (harness #18)
+            while (phaseStartTick.length < e.phase) phaseStartTick.push(-1);
+            phaseStartTick[e.phase] = state.phaseTick;
+            break;
           case 'AllyAttacked':
             // Allies never target quiet-wave, youngling, or fleeing units (D005).
             if (checkInvariants && allyExempt.has(e.targetUid)) {
@@ -380,7 +391,6 @@ export function createRunTracker<K extends IdSpace>(
           case 'BearerHome':
           case 'ScriptGroupSpawned':
           // The finale (T800a seams): their tasks may tally them.
-          case 'PhaseChanged':
           case 'ChoirHalted':
           case 'SingerHushed':
           case 'LaidToRest':
@@ -521,6 +531,7 @@ export function createRunTracker<K extends IdSpace>(
         voices: state.choir.voices,
         choirSize: state.choir.singers,
         choirBase: choirBaseOf(map),
+        phaseStartTick: [...phaseStartTick],
         credits: state.credits,
         lostAtWave,
         stats: {

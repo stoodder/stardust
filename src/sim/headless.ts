@@ -279,7 +279,7 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
         if (def !== undefined && state.credits < price(r.tower, def.tiers[0].cost, 'build')) {
           return 'wait';
         }
-        cmd = { type: 'build', tile: r.tile, tower: r.tower as K['tower'] };
+        cmd = { type: 'build', tile: r.tile, tower: r.tower };
       } else {
         const t = towerAt(r.tile);
         const def = t?.def ?? null;

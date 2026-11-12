@@ -113,7 +113,11 @@ export class BoreView {
   /** What the rig shows now (smoke hooks; null off a Bore map). */
   look(): BoreLook | null {
     if (this.#head === null) return null;
-    return { gauge: this.#gauge, head: this.#headState === '' ? 'idle' : this.#headState, full: this.#full };
+    return {
+      gauge: this.#gauge,
+      head: this.#headState === '' ? 'idle' : this.#headState,
+      full: this.#full,
+    };
   }
 
   update(timers: readonly DeepReadonly<TimerState>[]): void {
@@ -122,7 +126,8 @@ export class BoreView {
     const def = this.#timer;
     if (rig === null || head === null || def === null) return;
     const t = timers[0];
-    const filled = t === undefined || def.fillTicks <= 0 ? 0 : Math.min(1, t.filled / def.fillTicks);
+    const filled =
+      t === undefined || def.fillTicks <= 0 ? 0 : Math.min(1, t.filled / def.fillTicks);
     const full = t?.full === true;
     const { sprites } = this.#ctx;
     const reduced = this.#reduced();

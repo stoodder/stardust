@@ -1,9 +1,9 @@
 // T806: phases, the Deep Bore, the Halls checkpoint, and Dawn's light on their dev range
 // (`?map=dev_bore`, render/__fixtures__/devPhases.ts), played by par (`autoplay('par')`; with no
 // save the run takes `quill_choice = keep`, the flag's first variant, so the Bore runs at 100%).
-// W1 starts the Bore: its minimal bar shows under the boss bar's place and fills. W2 cleared is
-// the Halls: Phase 2, the 'halls' checkpoint, the Bore stopped with its boss bonus fixed; W3's
-// boss walks in with it. The sky warmed a step at W2 (a sky-only key) while the world's grade held.
+// W1 starts the Bore: the HUD's finale clock shows it under the boss bar's place and fills (T832).
+// W2 cleared is the Halls: Phase 2, the 'halls' checkpoint, the Bore stopped with its boss bonus
+// fixed (the clock lets the Bore go: it is Phase 1's); W3's boss walks in with it. The sky warmed a step at W2 (a sky-only key) while the world's grade held.
 // W3 cleared is Dawn: the light turns over 8 s (the sky and the grade move, the dark lifts), and
 // the map is won 8 s on. Screenshots via shot().
 import type { Page } from '@playwright/test';
@@ -41,11 +41,16 @@ const until = (page: Page, cond: Until) =>
     };
   }, cond);
 
-const look = (page: Page) =>
-  page.evaluate(() => {
+const look = async (page: Page) => {
+  const light = await page.evaluate(() => {
     const r = globalThis.__sd!.render()!;
-    return { bars: [...r.timerBars], sky: r.lighting.sky, world: r.lighting.world };
+    return { sky: r.lighting.sky, world: r.lighting.world };
   });
+  // The Bore's fill on the HUD's clock (px of 160; −1: no Bore shows; T832).
+  const clock = page.locator('[data-testid="finale-clock"][data-kind="bore"]');
+  const fill = (await clock.count()) === 0 ? -1 : Number(await clock.getAttribute('data-fill'));
+  return { bars: [fill], ...light };
+};
 
 test('phases: the Bore fills and stops at the Halls; Dawn turns the light and lifts the dark', async ({
   page,
@@ -66,7 +71,7 @@ test('phases: the Bore fills and stops at the Halls; Dawn turns the light and li
   await nextFrames(page);
   const filling = await look(page);
   expect(filling.bars[0]).toBeGreaterThan(0);
-  expect(filling.bars[0]).toBeLessThan(96);
+  expect(filling.bars[0]).toBeLessThan(160);
   await shot(page, 'phases', 1, 'bore');
 
   // W2 cleared: Phase 2 at the Halls; the Bore stops, its bonus fixed. The sky warmed a step at
@@ -84,7 +89,8 @@ test('phases: the Bore fills and stops at the Halls; Dawn turns the light and li
   const boss = await until(page, 'boss');
   expect(boss.filled).toBe(halls.filled); // stopped
   await nextFrames(page);
-  expect((await look(page)).bars[0]).toBe(stopped.bars[0]);
+  expect((await look(page)).bars[0]).toBe(-1); // the Bore is Phase 1's (T832)
+  expect(stopped.bars[0]).toBe(-1);
   await shot(page, 'phases', 3, 'boss');
 
   // W3 cleared: Dawn. 4 s into the turn the sky and the grade are on their way and the dark lifts.

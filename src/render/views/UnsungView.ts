@@ -10,12 +10,9 @@
 //   (`surfaceBurstAt`), the light pouring up out of the mound as its `surface` anim plays.
 // - **The Song's call** (`addsCalling`): a `violet.4` ring at its road's spawn, where the
 //   Silencers walk in, through the call's 1.5 s tell.
-// - **The rest progress on the boss bar** (`bossRestProgress`): while a `layToRest` boss or one of
-//   its parts is on the map, a 2 px `gold.3` strip (a lit `gold.4` top row) under the boss bar,
-//   the countdown's progress across its 160 px, in `overlay` and fixed to the screen (T808's
-//   placeholder; the HUD's rest strip is T832's).
-// Two Graphics; the world one redraws each frame only while a mark shows, the strip only when its
-// fill changes. Allocation-free per frame.
+// The rest progress under the boss bar is the HUD's (T832: the finale clock's countdown, its gold
+// bar the song's rest; ui/hud/FinaleClock.tsx).
+// One Graphics, redrawn each frame only while a mark shows. Allocation-free per frame.
 import type * as Phaser from 'phaser';
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
 import type { IdSpace } from '../../content/types.ts';
@@ -23,7 +20,6 @@ import type { Bus } from '../../shared/bus.ts';
 import type { DeepReadonly } from '../../shared/types.ts';
 import {
   addsCalling,
-  bossRestProgress,
   digTarget,
   surfaceTelling,
   type Enemy,
@@ -37,13 +33,8 @@ import {
   SURFACE_BURST_MS,
   surfaceBurstAt,
 } from './unsungLook.ts';
-import { VIEW_W } from '../scale.ts';
-import { BOSS_BAR_H, BOSS_BAR_W, BOSS_BAR_Y } from '../vfx/bossBar.ts';
 import type { ViewContext } from './ViewContext.ts';
 
-/** The rest strip: under the boss bar's frame, 1 px clear of it. */
-export const REST_STRIP_Y = BOSS_BAR_Y + BOSS_BAR_H + 2;
-export const REST_STRIP_H = 2;
 const BLINK_MS = 120;
 /** Surfacing bursts at once (two digs a fight; room to spare). */
 const MAX_BURSTS = 4;
@@ -57,9 +48,6 @@ const C = {
   tell: hex('violet.4'),
   flash: hex('white.1'),
   frame: hex('ink.0'),
-  track: hex('ink.2'),
-  rest: hex('gold.3'),
-  lit: hex('gold.4'),
   clod: hex('grime.3'),
 };
 
@@ -69,17 +57,9 @@ interface Burst {
   y: number;
 }
 
-/** The rest strip's fill (px) for progress `p` (0–1): rounded down, full only at 1. */
-export function restStripPx(p: number): number {
-  if (!(p > 0)) return 0;
-  return Math.min(BOSS_BAR_W, Math.floor(p * BOSS_BAR_W + 1e-9));
-}
-
-/** The enemy pool and rest as this view reads them. */
+/** The enemy pool as this view reads it. */
 export interface UnsungState {
   readonly enemies: { readonly used: number; readonly items: readonly DeepReadonly<Enemy>[] };
-  readonly restPoints: number;
-  readonly restTarget: number;
 }
 
 const p: Vec2 = { x: 0, y: 0 };
@@ -91,8 +71,6 @@ export class UnsungView {
   readonly #ctx: ViewContext;
   readonly #still: () => boolean;
   readonly #g: Phaser.GameObjects.Graphics;
-  readonly #strip: Phaser.GameObjects.Graphics;
-  #restPx = -1;
   #drew = false;
   readonly #bursts: Burst[] = [];
   #nextBurst = 0;
@@ -111,8 +89,6 @@ export class UnsungView {
     this.#still = reducedMotion;
     this.#g = ctx.scene.make.graphics({}, false);
     ctx.layers.vfx.add(this.#g);
-    this.#strip = ctx.scene.make.graphics({}, false).setScrollFactor(0).setVisible(false);
-    ctx.layers.overlay.add(this.#strip);
     for (let i = 0; i < MAX_BURSTS; i++) this.#bursts.push({ ms: -1, x: 0, y: 0 });
   }
 
@@ -147,26 +123,23 @@ export class UnsungView {
     };
   }
 
-  /** What shows now: dig marks, surfacing tells, calls, and the rest strip's fill (−1: none). */
+  /** What shows now: dig marks, surfacing tells, and calls. */
   get shown(): {
     digs: number;
     surfaceTells: number;
     calls: number;
-    restPx: number;
     bursts: number;
   } {
     return {
       digs: this.#digs,
       surfaceTells: this.#tells,
       calls: this.#calls,
-      restPx: this.#restPx,
       bursts: this.#burstsShown,
     };
   }
 
   update(state: UnsungState, deltaMs = 0): void {
     const items = state.enemies.items;
-    let rest = -1;
     this.#digs = 0;
     this.#tells = 0;
     this.#calls = 0;
@@ -176,8 +149,6 @@ export class UnsungView {
     for (let i = 0; i < state.enemies.used; i++) {
       const e = items[i]!; // i < used ≤ items.length
       if (!e.alive || e.def === null || e.def.boss === null) continue;
-      const r = bossRestProgress(state, e);
-      if (r >= 0 && rest < 0) rest = r;
       if (digTarget(e, p)) {
         const telling = surfaceTelling(e);
         const dig = e.def.boss.phases[e.bossPhase - 1]?.burrow?.durationTicks ?? 1;
@@ -195,7 +166,6 @@ export class UnsungView {
       }
     }
     this.#drawBursts(Number.isFinite(deltaMs) && deltaMs > 0 ? deltaMs : 0);
-    this.#drawStrip(rest < 0 ? -1 : restStripPx(rest));
   }
 
   /** The singers' ground churning through the surfacing tell: clods hopping on the ring. */
@@ -238,8 +208,6 @@ export class UnsungView {
   reset(): void {
     this.#g.clear();
     this.#drew = false;
-    this.#restPx = -1;
-    this.#strip.clear().setVisible(false);
     for (const b of this.#bursts) b.ms = -1;
   }
 
@@ -255,24 +223,5 @@ export class UnsungView {
     const h = tiles * HALF_H * 2;
     this.#g.lineStyle(2, color, 1).strokeEllipse(s.x, s.y, w, h);
     this.#drew = true;
-  }
-
-  #drawStrip(px: number): void {
-    if (px === this.#restPx) return;
-    this.#restPx = px;
-    const g = this.#strip.clear();
-    if (px < 0) {
-      g.setVisible(false);
-      return;
-    }
-    const x = Math.round((VIEW_W - BOSS_BAR_W) / 2);
-    const y = REST_STRIP_Y;
-    g.fillStyle(C.frame).fillRect(x - 1, y - 1, BOSS_BAR_W + 2, REST_STRIP_H + 2);
-    g.fillStyle(C.track).fillRect(x, y, BOSS_BAR_W, REST_STRIP_H);
-    if (px > 0) {
-      g.fillStyle(C.rest).fillRect(x, y, px, REST_STRIP_H);
-      g.fillStyle(C.lit).fillRect(x, y, px, 1);
-    }
-    g.setVisible(true);
   }
 }

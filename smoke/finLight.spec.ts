@@ -1,28 +1,64 @@
-// T831 exploratory (replaced below).
+// T831: FIN's light (art-direction.md §3 *Finale*; design/maps.md § 5.5), played by par
+// (`autoplay('par')`) on the map's own flags; the memorial's name on the reference save
+// (`save=after_a3m6`); its frame cost on the strongest choir (`save=after_a3m6_strongest`: the warren's 28 singers, Thrum, the Returned's two
+// auras). The finale's night over the world from the first
+// tick, punched by the song's circles (a warm gold pool in each); the eastern sky warming a step
+// as Phase 1's waves clear (sky-only keys: the world's grade and night hold); the Deep Bore's rig
+// drilling, its gauge filling; the relit waymark lanterns; the memorial wreck's name on hover; and
+// Dawn: the sun raking in from the east over 8 s (start, middle, end), and at once under reduced
+// motion. Each shot plays a moment at 1× first. Screenshots in <out>/screens/fin-light/ (look at
+// them: the song's warm light in the dark, the horizon warming behind the Halls, the sunrise).
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 import { nextFrames, shot, waitForReady } from './hooks.ts';
 
-async function until(page: Page, cond: string, max = 400_000) {
+/** The finale on its own flags (par plays it to Dawn), with the reference save (the memorial's
+ * name), and the strongest choir (the frame cost). */
+const URL = '/?test=1&map=fin_m01&seed=1';
+const REFERENCE = '/?test=1&map=fin_m01&seed=1&save=after_a3m6';
+const STRONGEST = '/?test=1&map=fin_m01&seed=1&save=after_a3m6_strongest';
+/** The sun's last step (vfx/songNightPixels.ts SUN_STEPS). */
+const SUN_STEPS = 48;
+/** The memorial wreck's marker (fin_m01's `memorial_wreck`). */
+const MEMORIAL: readonly [number, number] = [14, 6];
+
+/** Plays par a tick at a time until wave `wave` has started, or Dawn's light has been set. */
+async function until(page: Page, to: number | 'dawn', max = 2_000_000) {
   return page.evaluate(
-    ([c, limit]) => {
-      const sd = globalThis.__sd!;
+    ([target, limit]) => {
+      const sd = globalThis.__sd!; // installed: waitForReady passed
       const st = sd.state()!;
-      const check = (): boolean => {
-        if (c.startsWith('w')) return st.wave >= Number(c.slice(1));
-        if (c === 'dawn') return st.lightingKey === 'dawn';
-        return false;
-      };
+      const check = (): boolean =>
+        target === 'dawn' ? st.lightingKey === 'dawn' : st.wave >= target;
       for (let k = 0; k < limit && !check() && st.outcome === 'playing'; k++) sd.fastForward(1);
-      return { held: check(), wave: st.wave, phase: st.phase, outcome: st.outcome, tick: st.tick };
+      return { held: check(), wave: st.wave, phase: st.phase, outcome: st.outcome };
     },
-    [cond, max] as const,
+    [to, max] as const,
   );
 }
 
-test('explore fin_m01 light', async ({ page }) => {
-  test.setTimeout(600_000);
-  await page.goto('/?test=1&map=fin_m01&seed=1');
+async function look(page: Page) {
+  return page.evaluate(() => {
+    const r = globalThis.__sd!.render()!;
+    return { night: r.songNight, bore: r.bore, sky: r.lighting.sky, grade: r.lighting.grade };
+  });
+}
+
+/** Plays to wave `wave`, checks the sky has warmed past `before` alone, and shoots it. */
+async function skyAt(page: Page, wave: number, before: number): Promise<number> {
+  expect(await until(page, wave)).toMatchObject({ held: true, outcome: 'playing' });
+  await page.evaluate(() => globalThis.__sd!.fastForward(600));
+  await nextFrames(page);
+  const l = await look(page);
+  expect(l.sky).toBeGreaterThan(before);
+  expect(l.grade).toBe(0xffffff);
+  expect(l.night).toMatchObject({ night: true, sun: 0 });
+  await shot(page, 'fin-light', 3 + wave / 6, `w${wave}-sky`);
+  return l.sky;
+}
+
+async function open(page: Page, url = URL): Promise<void> {
+  await page.goto(url);
   await waitForReady(page);
   const brief = page.getByRole('dialog');
   if (await brief.isVisible()) await page.keyboard.press('Escape');
@@ -33,21 +69,93 @@ test('explore fin_m01 light', async ({ page }) => {
     sd.autoplay('par');
     sd.fastForward(0);
   });
-  for (const w of ['w1', 'w10', 'w18']) {
-    const r = await until(page, w);
-    await page.evaluate(() => globalThis.__sd!.fastForward(600));
-    await nextFrames(page);
-    console.log(w, JSON.stringify(r), JSON.stringify(await page.evaluate(() => globalThis.__sd!.render()!.songNight)), JSON.stringify(await page.evaluate(() => globalThis.__sd!.render()!.bore)));
-    await shot(page, 'fin-light', Number(w.slice(1)), w);
-  }
-  const r = await until(page, 'dawn', 2_000_000);
-  console.log('dawn', JSON.stringify(r));
+}
+
+test('FIN light: the night, the song, the warming sky, the Bore, and Dawn', async ({ page }) => {
+  test.setTimeout(240_000);
+  await open(page);
+
+  // W1: the night is down, and the song's circles (Pebble's and the Returned's) are lit in it.
+  expect(await until(page, 1)).toMatchObject({ held: true, outcome: 'playing' });
+  await page.evaluate(() => globalThis.__sd!.fastForward(120));
   await nextFrames(page);
-  await shot(page, 'fin-light', 30, 'dawn0');
-  for (const [n, t] of [[31, 160], [32, 160], [33, 200]] as const) {
-    await page.evaluate((k) => globalThis.__sd!.fastForward(k), t);
-    await nextFrames(page);
-    console.log(n, JSON.stringify(await page.evaluate(() => globalThis.__sd!.render()!.songNight)));
-    await shot(page, 'fin-light', n, `dawn${n}`);
-  }
+  const w1 = await look(page);
+  expect(w1.night).toMatchObject({ night: true, sun: 0 });
+  expect(w1.night.circles).toBeGreaterThanOrEqual(1);
+  expect(w1.night.darkScenery).toBeGreaterThan(w1.night.litScenery);
+  expect(w1.bore).toMatchObject({ head: 'drill', full: false });
+  await shot(page, 'fin-light', 1, 'w1-song-light');
+
+  // The eastern sky warms a step as each wave clears; the world's grade and night hold.
+  const w6 = await skyAt(page, 6, w1.sky);
+  const w12 = await skyAt(page, 12, w6);
+  await skyAt(page, 18, w12);
+  const bore = (await look(page)).bore!;
+  expect(bore.gauge === 'full' || Number(bore.gauge.slice(1)) > 0).toBe(true);
+
+  // Dawn: the sun rakes in from the east over 8 s, the night lifting behind its front.
+  expect(await until(page, 'dawn')).toMatchObject({ held: true, phase: 3, outcome: 'playing' });
+  await nextFrames(page);
+  await shot(page, 'fin-light', 10, 'dawn-start');
+  await page.evaluate(() => globalThis.__sd!.fastForward(240)); // 4 s: halfway
+  await nextFrames(page);
+  const mid = (await look(page)).night;
+  expect(mid.night).toBe(true);
+  expect(mid.sun).toBeGreaterThan(0);
+  expect(mid.sun).toBeLessThan(SUN_STEPS);
+  await shot(page, 'fin-light', 11, 'dawn-middle');
+  // The sun lands as the win's 8 s hold ends (finale.md: "the map is won as it lands"): a tick
+  // before, it has crossed the map.
+  await page.evaluate(() => globalThis.__sd!.fastForward(238));
+  await nextFrames(page);
+  const end = (await look(page)).night;
+  expect(end).toMatchObject({ night: false, sun: SUN_STEPS });
+  await shot(page, 'fin-light', 12, 'dawn-end');
+});
+
+test("FIN light: the memorial wreck's name on hover", async ({ page }) => {
+  test.setTimeout(60_000);
+  await open(page, REFERENCE);
+  expect(await until(page, 1)).toMatchObject({ held: true });
+  const at = await page.evaluate(([c, r]) => globalThis.__sd!.tileToClient(c, r), MEMORIAL);
+  expect(at).not.toBeNull();
+  expect((await page.evaluate(() => globalThis.__sd!.render()!.memorial)).shown).toBe('');
+  await page.mouse.move(at!.x, at!.y);
+  await nextFrames(page);
+  const memorial = await page.evaluate(() => globalThis.__sd!.render()!.memorial);
+  expect(memorial.shown.length).toBeGreaterThan(0);
+  expect(memorial.shown).not.toContain('{');
+  await shot(page, 'fin-light', 2, 'memorial-name');
+  await page.mouse.move(5, 5);
+  await nextFrames(page);
+  expect((await page.evaluate(() => globalThis.__sd!.render()!.memorial)).shown).toBe('');
+});
+
+test('FIN light at 1×: the night and the song cost little per frame', async ({ page }) => {
+  test.setTimeout(120_000);
+  await open(page, STRONGEST);
+  expect(await until(page, 3)).toMatchObject({ held: true });
+  await page.evaluate(() => globalThis.__sd!.setSpeed(1));
+  const before = (await look(page)).night;
+  await page.waitForTimeout(3000);
+  const after = (await look(page)).night;
+  const perf = await page.evaluate(() => globalThis.__sd!.perf());
+  await page.evaluate(() => globalThis.__sd!.setSpeed(0));
+  // The leader walks a pixel every second or so: the mask redraws a few times a second at most.
+  const perSec = (after.redraws - before.redraws) / 3;
+  console.log(`fin-light 1x: frameMs ${perf.frameMs.toFixed(2)}, night redraws/s ${perSec}`);
+  expect(perSec).toBeLessThan(15);
+  await shot(page, 'fin-light', 13, 'phase1-1x');
+});
+
+test('FIN light under reduced motion: Dawn lands at once', async ({ browser }) => {
+  test.setTimeout(240_000);
+  const context = await browser.newContext({ reducedMotion: 'reduce' });
+  const page = await context.newPage();
+  await open(page);
+  expect(await until(page, 'dawn')).toMatchObject({ held: true, phase: 3 });
+  await nextFrames(page);
+  expect((await look(page)).night).toMatchObject({ night: false, sun: SUN_STEPS });
+  await shot(page, 'fin-light', 14, 'reduced-dawn');
+  await context.close();
 });

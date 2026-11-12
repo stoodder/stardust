@@ -18,6 +18,13 @@ import type { Host } from './host.ts';
 function sync(host: Host<IdSpace>, leakLine: string | null): void {
   const { state, config } = host.sim;
   const slots = ([1, 2] as const).filter((s) => slotRevoked(state, config, s));
+  // T832: the slots dark under a phase lock (Directive 0's Time Dilation), not a revocation.
+  const locked = slots.filter((s) => {
+    const id = s === 1 ? config.abilities.slot1 : config.abilities.slot2;
+    return (
+      id !== null && state.abilitiesLocked.includes(id) && !state.revoked.abilities.includes(id)
+    );
+  });
   revokedHud.value = {
     towers: [...state.revoked.towers],
     slots,
@@ -25,6 +32,7 @@ function sync(host: Host<IdSpace>, leakLine: string | null): void {
     leakLine,
     // T860: Radio Silence (a veteran rule) darkens the slots; absent otherwise.
     ...(radioSilent(config) ? { silenced: true } : {}),
+    ...(locked.length > 0 ? { locked } : {}),
   };
 }
 
@@ -68,12 +76,18 @@ export function setLeakLine(text: string | null): void {
   revokedHud.value = { ...revokedHud.value, leakLine: text };
 }
 
+/** What a slot dark under Directive 0's phase lock says (T832; QUILL's "Time Dilation suspended."). */
+export const DIRECTIVE_TEXT = 'Suspended by Directive 0';
+
 /** What a slot dark under Radio Silence says (T860; a veteran rule, not Directive 0's lock). */
 export const RADIO_SILENCE_TEXT = 'Radio Silence';
 
 /** The notice for a press on a revoked build slot or ability slot. */
-export function revokedText(kind: 'tower' | 'uplink' | 'lockout' | 'silence'): string {
+export function revokedText(
+  kind: 'tower' | 'uplink' | 'lockout' | 'silence' | 'directive',
+): string {
   if (kind === 'tower') return 'License revoked';
   if (kind === 'silence') return RADIO_SILENCE_TEXT;
+  if (kind === 'directive') return DIRECTIVE_TEXT;
   return kind === 'uplink' ? 'Uplink revoked' : 'Locked out';
 }

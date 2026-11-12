@@ -313,8 +313,6 @@ export interface RenderState {
   readonly debris: number;
   /** The boss bar's fill (px of 160), or −1 while none shows. */
   readonly bossBar: number;
-  /** Each secondary timer's bar fill (px of 96; −1 before it starts; T806's TimerBarView). */
-  readonly timerBars: readonly number[];
   /** The finale's night, the song's light and Dawn's sun (T831; SongNightView). */
   readonly songNight: {
     /** Whether the night shows (false off a song map, and once the sun has risen). */
@@ -323,6 +321,8 @@ export interface RenderState {
     readonly circles: number;
     /** The sun's step (0: none yet; 48, SUN_STEPS: risen). */
     readonly sun: number;
+    /** How many times the night's mask has been redrawn (its cost: a few times a second). */
+    readonly redraws: number;
     /** Scenery in `world` in the night now, and out of it (both 0 while no night shows). */
     readonly darkScenery: number;
     readonly litScenery: number;
@@ -351,15 +351,14 @@ export interface RenderState {
     readonly reformsSeen: number;
   };
   /**
-   * UnsungView (T808): dig marks, surfacing tells, and adds' calls showing now; the rest strip
-   * under the boss bar (px of 160; −1: none shows); surfacings (dug out among them) and rises this
-   * battle.
+   * UnsungView (T808): dig marks, surfacing tells, and adds' calls showing now; surfacings (dug out
+   * among them) and rises this battle. (The rest progress under the boss bar is the HUD's finale
+   * clock, T832.)
    */
   readonly unsung: {
     readonly digs: number;
     readonly surfaceTells: number;
     readonly calls: number;
-    readonly restPx: number;
     readonly surfacesSeen: number;
     readonly dugOutSeen: number;
     readonly risesSeen: number;

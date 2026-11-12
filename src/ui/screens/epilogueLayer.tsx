@@ -7,7 +7,8 @@
 // beat; Esc skips nothing the first time and closes "Watch the epilogue". The stage is a modal:
 // Tab stays on it, and keys stop here. Part of the finale's lazy chunk (app/acts/fin.ts).
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { closeEndingScreen, endingCue } from '../../app/ending.ts';
+import { endingCue } from '../../app/ending.ts';
+import { closeEndingScreen } from '../../app/endingPlay.ts';
 import { assertNever } from '../../shared/types.ts';
 import { prefersReducedMotion } from '../motion.ts';
 import { silkText } from '../silk.ts';

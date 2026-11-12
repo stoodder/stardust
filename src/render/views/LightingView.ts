@@ -39,6 +39,7 @@ import {
   type LightStop,
 } from '../vfx/lighting.ts';
 import type { LightingLook } from './renderState.ts';
+import { isLongNight } from '../vfx/nightGlow.ts';
 import { isScenery } from './scenery.ts';
 import type { ViewContext } from './ViewContext.ts';
 
@@ -122,13 +123,15 @@ export class LightingView {
     if (this.#stops.length === 0) return;
     const w = VIEW_W + 2 * OVERHANG_PX;
     const h = VIEW_H + 2 * OVERHANG_PX;
+    // In the Long Night (the finale) WorldGlowView hangs the moons; the skies leave them out.
+    const moons = !isLongNight(map.env);
     for (const stop of this.#stops) {
-      const key = skyKey(stop);
+      const key = skyKey(stop) + (moons ? '' : '.moonless');
       if (!scene.textures.exists(key)) {
         const img =
           stop.east === undefined
-            ? skyImage(stop.env, w, h)
-            : eastSkyImage(base!, stop.env, stop.east, w, h); // draws: base set
+            ? skyImage(stop.env, w, h, moons)
+            : eastSkyImage(base!, stop.env, stop.east, w, h, moons); // draws: base set
         scene.textures.addCanvas(key, imageToCanvas(img));
       }
       const img = new Phaser.GameObjects.Image(scene, -OVERHANG_PX, -OVERHANG_PX, key);

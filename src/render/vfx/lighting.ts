@@ -60,7 +60,11 @@ export function lightStops(env: EnvPaletteId, keys: readonly LightingKeyDef[]): 
  */
 export function skyStops(
   env: EnvPaletteId,
-  keys: readonly { readonly wave: number; readonly env: EnvPaletteId; readonly skyOnly?: boolean }[],
+  keys: readonly {
+    readonly wave: number;
+    readonly env: EnvPaletteId;
+    readonly skyOnly?: boolean;
+  }[],
 ): LightStop[] {
   const rising = keys.filter((k) => k.skyOnly === true && k.env !== env).length;
   let k = 0;
@@ -79,7 +83,11 @@ export function skyStops(
  */
 export function worldStops(
   env: EnvPaletteId,
-  keys: readonly { readonly wave: number; readonly env: EnvPaletteId; readonly skyOnly?: boolean }[],
+  keys: readonly {
+    readonly wave: number;
+    readonly env: EnvPaletteId;
+    readonly skyOnly?: boolean;
+  }[],
 ): LightStop[] {
   return lightStops(
     env,
@@ -283,9 +291,10 @@ const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5] as const;
 /**
  * `env`'s sky as a `w`×`h` image: its gradient (ENV_SKY, top first) in equal stepped bands over
  * the top SKY_SHARE of the height, each seam dithered over 4 rows, then dithered out to
- * transparent over the next eighth of the height, so it sinks into the void behind the map.
+ * transparent over the next eighth of the height, so it sinks into the void behind the map. The
+ * moons hang in it unless `moons` is false (a Long Night map, where WorldGlowView hangs them).
  */
-export function skyImage(env: EnvPaletteId, w: number, h: number): RgbaImage {
+export function skyImage(env: EnvPaletteId, w: number, h: number, moons = true): RgbaImage {
   const bands: readonly ColorName[] = ENV_SKY[env];
   const data = new Uint8ClampedArray(new ArrayBuffer(w * h * 4));
   const skyH = Math.round(h * SKY_SHARE);
@@ -312,7 +321,7 @@ export function skyImage(env: EnvPaletteId, w: number, h: number): RgbaImage {
     }
   }
   const img = { w, h, data };
-  for (const moon of SKY_MOONS) drawMoon(img, moon);
+  if (moons) for (const moon of SKY_MOONS) drawMoon(img, moon);
   return img;
 }
 
@@ -328,7 +337,8 @@ export const EAST_REACH = { x: 0.55, y: 0.85 } as const;
  * art-direction §3 *Finale*): an ellipse centred on the sky's foot at its right (east) edge, its
  * radii `east` × EAST_REACH, inside which `env`'s bands rise hottest at the centre (its last band,
  * the dawn's gold, at the horizon) and coolest at the rim (its first), each seam dithered, the rim
- * dithered into `base`'s night. The moons stay over it. `east` 0 is `base`'s sky.
+ * dithered into `base`'s night. The moons stay over it (`moons`; a Long Night map leaves them to
+ * WorldGlowView's, so they aren't added twice). `east` 0 is `base`'s sky.
  */
 export function eastSkyImage(
   base: EnvPaletteId,
@@ -336,10 +346,11 @@ export function eastSkyImage(
   east: number,
   w: number,
   h: number,
+  moons = true,
 ): RgbaImage {
-  const img = skyImage(base, w, h);
+  const img = skyImage(base, w, h, false);
   const level = Math.min(1, Math.max(0, east));
-  if (level <= 0) return img;
+  if (level <= 0) return moons ? skyImage(base, w, h) : img;
   const bands: readonly ColorName[] = ENV_SKY[env];
   const colors = bands.map((b) => rgbOf(b));
   const n = colors.length;
@@ -364,6 +375,6 @@ export function eastSkyImage(
       data[i + 2] = c.b;
     }
   }
-  for (const moon of SKY_MOONS) drawMoon(img, moon);
+  if (moons) for (const moon of SKY_MOONS) drawMoon(img, moon);
   return img;
 }
