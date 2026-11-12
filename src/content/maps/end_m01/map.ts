@@ -1,5 +1,5 @@
-// END_M01 · The Open Perimeter: Endless mode's map (design/maps.md § 8). Dome Row at dawn, after
-// the campaign: a revisit of A1M1 by reference (`revisitOf`, content/compileRevisit.ts), its 14×10
+// END_M01 · The Long Shift: Endless mode's map (design/maps.md § 8), on QUILL's sim deck (D156).
+// Dome Row at dawn, after the campaign: a revisit of A1M1 by reference (`revisitOf`, content/compileRevisit.ts), its 14×10
 // layout centred at (4, 2) in 22×14, as A3M6 sets it, with its S-road, its 10 pads (the greenhouse
 // roof's high ground (11,4) among them), the Peeker rock (7,3), and the gate (8,11), which is the
 // core again: a Defend map. An edit to A1M1 flows here.
@@ -19,6 +19,8 @@
 //   and a pad (3,6) either side of the west rift, and a pad (18,4) and high ground (18,6) either
 //   side of the east one, under the air lanes as they come in; (3,9) and (18,9) on the flanks; and
 //   either side of the gate's approach from the south ((7,12), (9,12)).
+// - **The crash site**: four decor tiles east of the old map ((19,3), (20,7), (19,10), (16,12)),
+//   where "Shareholder Value" drops its plating when it jettisons (`crash_1..4`; never a pad).
 import { defineMapLayout } from '../../define.ts';
 import type { GridPos } from '../../types.ts';
 import { map as a1m01 } from '../a1_m01/map.ts';
@@ -105,16 +107,32 @@ export const map = defineMapLayout({
     },
   ],
   // A1M1's markers come with its layout (the Peeker rock (7,3), Bricks's old post by the gate
-  // (9,10), empty now). No script, no story beat: the shift that never ends.
+  // (9,10), empty now). No script, no story beat: the shift that never ends. The band adds the
+  // crash site "Shareholder Value"'s plates land on (a boss of the rotation; endless.ts).
+  markers: { crash_1: [19, 3], crash_2: [20, 7], crash_3: [19, 10], crash_4: [16, 12] },
   startCredits: 900,
   coreIntegrity: 20,
   // Endless pays no first-clear Stardust: its reward is the score (waves held, one record per seed;
   // meta/endless.ts).
   stardust: 0,
   // The warm-up's intel (waves.ts); a run's intel is its plan's (sim/endless.ts `endlessIntel`).
-  threatIntel: ['fast'],
+  threatIntel: ['clustered', 'splitting'],
   // The warm-up demands no counter; each generated block names its own (≤ 3; sim/endless.ts).
   requiredCounters: [],
+  // The warm-up is Hollow (waves.ts): with the Skitterkin off this map (D156), every unit left
+  // carries a counter category, and the warm-up names none, so its two traits pass the soft cap.
+  softExempt: [
+    {
+      trait: 'clustered',
+      reason:
+        "Endless's warm-up (W1–W5) is Mote knots and names no counter: the generator's blocks name them from W6, and any four towers work through 25-HP Motes.",
+    },
+    {
+      trait: 'splitting',
+      reason:
+        "Endless's warm-up sends one Fracture a wave from W3, at the head of a Mote knot; it names no counter (the generator's blocks do from W6).",
+    },
+  ],
   // The finale's pick list: whoever walked the Long Walk with you.
   companion: { pick: ['vesthara', 'bramble', 'zibzab', 'quill'] },
 });

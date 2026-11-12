@@ -1,6 +1,9 @@
 // The post-game's maps on the Sector map at dawn (design/core-loop.md § 1.1, *After the finale*;
 // design/maps.md § 8; T863): Endless's map and the challenge maps, each with its name, its place in
-// the valley, and its kind, in the order the post-game plate lists them. A map shows only once its
+// the valley, and its kind, in the order the post-game plate lists them. The plate frames them as
+// QUILL's sim deck (D156; story/style-guide.md § 2, *Post-game system copy*): drills, none of it
+// real and nobody counted, so after "Remember them." no run asks the player to shoot the people
+// they walked home. A map shows only once its
 // content is registered (the finale's lazy chunk registers them, content/acts/fin.ts), so a
 // challenge map still being built is simply not listed. A challenge's tagline is its own
 // (`MapLayoutDef.challenge.tagline`); Endless's is here. Pure data and small: the core's
@@ -19,14 +22,20 @@ export interface PostGameMap {
   readonly tagline?: string;
 }
 
+/** The post-game plate's heading and the line under it (story/style-guide.md § 2). */
+export const POST_GAME_PLATE = {
+  heading: "QUILL's sim deck",
+  tagline: 'Drills only. None of it is real, and nobody is counted.',
+} as const;
+
 /** Endless first (what's new leads), then the challenges in their build order. */
 export const POST_GAME_MAPS: readonly PostGameMap[] = [
   {
     id: 'end_m01',
     kind: 'endless',
-    name: 'The Open Perimeter',
+    name: 'The Long Shift',
     place: 'Dome Row at dawn',
-    tagline: 'Dome Row, where it started. The waves keep coming. Hold as many as you can.',
+    tagline: 'Dome Row, rebuilt in the sim. The shift never ends. Hold as many waves as you can.',
   },
   { id: 'ch_m01', kind: 'challenge', name: 'Skitterkin Only', place: 'The Preserve' },
   { id: 'ch_m02', kind: 'challenge', name: 'Lights Out', place: 'Colony perimeter' },

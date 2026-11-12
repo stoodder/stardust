@@ -5,7 +5,7 @@ import type { ComponentChildren } from 'preact';
 import { assertNever } from '../../shared/types.ts';
 import { dialogue, type SceneMode } from '../dialogue/state.ts';
 import { hud, speed } from '../state.ts';
-import { finalePhase, phaseBanner } from './finaleState.ts';
+import { finalePhase, pauseNote, phaseBanner } from './finaleState.ts';
 import { Key } from './parts.tsx';
 
 /** A short message (a rejected command), top center; a banner (HudNotice.banner) below the top row. */
@@ -237,15 +237,24 @@ export function showsPaused(gameSpeed: number, outcome: string, scene: SceneMode
   return scene === null || scene === 'briefing';
 }
 
-/** While paused: a light scrim over the playfield and a pinned PAUSED notice (D026). */
+/**
+ * While paused: a light scrim over the playfield and a pinned PAUSED notice (D026), with a
+ * speaker's word under it when the story paused the battle for the player (`pauseNote`).
+ */
 export function PausedOverlay() {
   const scene = dialogue.scene.value?.mode ?? null;
   if (!showsPaused(speed.value, hud.outcome.value, scene)) return null;
+  const note = pauseNote.value;
   return (
     <>
       <div class="hud-paused-scrim" aria-hidden="true" />
-      <div class="hud-paused chamfer" role="status">
+      <div class={note === null ? 'hud-paused chamfer' : 'hud-paused noted chamfer'} role="status">
         Paused
+        {note !== null && (
+          <span class="hud-paused-note" data-testid="pause-note" data-voice="note">
+            <span class="hud-paused-speaker">{note.speaker}</span> {note.text}
+          </span>
+        )}
       </div>
     </>
   );

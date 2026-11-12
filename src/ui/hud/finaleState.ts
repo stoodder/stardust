@@ -47,3 +47,14 @@ export interface PhaseBanner {
 }
 
 export const phaseBanner = signal<PhaseBanner | null>(null);
+
+/**
+ * QUILL's word under the PAUSED notice (M8 r1, D156): after "Who's there?" restores the folded
+ * class, the battle stands paused so the player can rebuild; cleared as play resumes.
+ */
+export interface PauseNote {
+  readonly speaker: string;
+  readonly text: string;
+}
+
+export const pauseNote = signal<PauseNote | null>(null);

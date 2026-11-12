@@ -23,6 +23,8 @@
 // - Splats (T730a; gloopLook.ts): a Gloop glob's green splash where it lands, over what it hit
 //   (its own pool of SPLAT_POOL in `vfx`, made on the first splat; stepping out), its splash's
 //   reach in a green ring, and green drops flung up (none under reduced motion).
+// - A dim box (`setDim`; M8 R1): floaters, bursts, debris and motes inside it draw at its alpha
+//   (UnsungView sets it round the held Unsung, so its silhouette stays whole at its climax).
 // FxView adds the abilities' effects on top (the Orbital Strike, Suppressing Fire).
 import type * as Phaser from 'phaser';
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
@@ -289,6 +291,15 @@ export class TransientFx {
   #obstacle: FloatObstacle | null = null;
   /** No floater rises any more (the finale's Dawn: the battle is over; T803b). */
   #textMuted = false;
+  /**
+   * A screen box whose effects draw dimmed (the held Unsung's frame and a margin; M8 R1: its
+   * silhouette stays whole under the hit sparks and numbers), and their alpha there; none at w < 0.
+   */
+  #dimL = 0;
+  #dimT = 0;
+  #dimR = 0;
+  #dimB = 0;
+  #dimAlpha = 1;
   /** Which shake runs: the strike's 2 px or a leak's 1 px. */
   #shakeSmall = false;
   /** Shell bursts skipped by the per-tile cap since the view was made (the smoke flow's check). */
@@ -680,6 +691,32 @@ export class TransientFx {
     return k.covers(cx - w / 2, baseY - risePx - FLOAT_ROW_PX, cx + w / 2, baseY);
   }
 
+  /**
+   * Effects (floaters, bursts, sparks, motes) inside screen box (left, top, w, h) grown by
+   * `margin` px draw at `alpha` of their own (UnsungView: the held Unsung, M8 R1); `clearDim`
+   * ends it. Read each frame, so a spark crossing the box dims only while inside it.
+   */
+  setDim(left: number, top: number, w: number, h: number, margin: number, alpha: number): void {
+    this.#dimL = left - margin;
+    this.#dimT = top - margin;
+    this.#dimR = left + w + margin;
+    this.#dimB = top + h + margin;
+    this.#dimAlpha = alpha;
+  }
+
+  /** No effect draws dimmed (see `setDim`). */
+  clearDim(): void {
+    this.#dimAlpha = 1;
+  }
+
+  /** The dim factor for an effect at screen (x, y): `setDim`'s alpha inside its box, else 1. */
+  protected dimAt(x: number, y: number): number {
+    if (this.#dimAlpha === 1) return 1;
+    return x >= this.#dimL && x <= this.#dimR && y >= this.#dimT && y <= this.#dimB
+      ? this.#dimAlpha
+      : 1;
+  }
+
   /** A plate floaters rise clear of (Bricks's name tag; the scene's), or none. */
   setFloatObstacle(obstacle: FloatObstacle | null): void {
     this.#obstacle = obstacle;
@@ -954,7 +991,9 @@ export class TransientFx {
         b.sprite.stop().setVisible(false);
       } else if (b.ms >= 0) {
         // Its smoke thins by alpha over the last frame.
-        b.sprite.setAlpha(burstAlpha(b.ms, look.ms, look.frames));
+        b.sprite.setAlpha(
+          burstAlpha(b.ms, look.ms, look.frames) * this.dimAt(b.sprite.x, b.sprite.y),
+        );
       }
     }
     for (const d of this.#debris) {
@@ -970,7 +1009,7 @@ export class TransientFx {
       d.y += d.vy * dt;
       d.img
         .setPosition(Math.round(d.x), Math.round(d.y))
-        .setAlpha(d.steady ? 1 : fadeAlpha(d.ms / d.lifeMs));
+        .setAlpha((d.steady ? 1 : fadeAlpha(d.ms / d.lifeMs)) * this.dimAt(d.x, d.y));
     }
     for (const m of this.#motes) {
       if (!m.active) continue;
@@ -982,7 +1021,9 @@ export class TransientFx {
       }
       m.x += m.vx * dt;
       m.y += m.vy * dt;
-      m.sprite.setPosition(Math.round(m.x), Math.round(m.y)).setAlpha(fadeAlpha(m.ms / m.lifeMs));
+      m.sprite
+        .setPosition(Math.round(m.x), Math.round(m.y))
+        .setAlpha(fadeAlpha(m.ms / m.lifeMs) * this.dimAt(m.x, m.y));
     }
   }
 
@@ -995,6 +1036,7 @@ export class TransientFx {
 
   /** Hides every pooled effect and resets the camera (the scene is shutting down). */
   protected resetTransient(): void {
+    this.#dimAlpha = 1;
     for (const t of this.#tracers) {
       t.active = false;
       t.img.setVisible(false);
@@ -1048,7 +1090,7 @@ export class TransientFx {
     f.baseY = f.y - floatRise(Math.min(f.ms, FLOAT_MS));
     f.img
       .setPosition(f.x, f.baseY)
-      .setAlpha(fadeAlpha(f.ms / f.durationMs))
+      .setAlpha(fadeAlpha(f.ms / f.durationMs) * this.dimAt(f.cx, f.y))
       .setVisible(true);
   }
 

@@ -1,50 +1,51 @@
 // END_M01's warm-up: the five waves every Endless seed opens with, before the generator's first
-// counter block (src/sim/endless.ts; ENDLESS in endless.ts). Plain Skitterkin down the old road on
-// the threat curve's first steps (ENDLESS.firstWaveThreat 600, ×1.07 a wave: 600, 642, 687, 735,
-// 786; sim/endless.test.ts holds each within 5% and above the one before), so a post-game player
-// builds up while the colony's oldest pests say hello. The block demands no counter, so every
-// trait in it is soft (≤ 15% of a wave's threat, maps.md § 6.2): the Zoomers' `fast` is intel only,
-// and a splitter can't fit (a Bunchling with its three Nibblers is 147, 19% of W5). Countdowns are
-// Endless's default (20 s, rules.ts).
+// counter block (src/sim/endless.ts; ENDLESS in endless.ts). Hollow down the old road on the threat
+// curve's first steps (ENDLESS.firstWaveThreat 600, ×1.07 a wave: 600, 642, 687, 735, 786;
+// sim/endless.test.ts holds each within 5% and above the one before): Mote knots, then a Fracture
+// at the head of each from W3, so a post-game player builds up against the Long Night's smallest.
+// No Skitterkin: after the finale the player is never asked to shoot the people they walked home
+// (D156). The block demands no counter; the Motes' `clustered` and the Fractures' `splitting` are
+// passed over the soft cap on this map (map.ts `softExempt`). Countdowns are Endless's default
+// (20 s, rules.ts).
 import { defineWaves } from '../../define.ts';
 
 const ROUTE = 'road';
 
 export const waves = defineWaves([
-  // W1 · 600: twenty Nibblers, two knots.
+  // W1 · 601: nineteen Motes, two knots.
   {
     groups: [
-      { enemy: 'nibbler', count: 10, intervalSec: 0.6, route: ROUTE },
-      { enemy: 'nibbler', count: 10, intervalSec: 0.6, delaySec: 9, route: ROUTE },
+      { enemy: 'mote', count: 10, intervalSec: 0.6, route: ROUTE },
+      { enemy: 'mote', count: 9, intervalSec: 0.6, delaySec: 9, route: ROUTE },
     ],
   },
-  // W2 · 644: Nibblers, then a Zoomer run.
+  // W2 · 632: twenty Motes, a long knot and a short one.
   {
     groups: [
-      { enemy: 'nibbler', count: 14, intervalSec: 0.6, route: ROUTE },
-      { enemy: 'zoomer', count: 8, delaySec: 6, route: ROUTE },
+      { enemy: 'mote', count: 14, intervalSec: 0.5, route: ROUTE },
+      { enemy: 'mote', count: 6, intervalSec: 0.5, delaySec: 10, route: ROUTE },
     ],
   },
-  // W3 · 704
+  // W3 · 674: the first Fracture, Motes behind it.
   {
     groups: [
-      { enemy: 'zoomer', count: 8, route: ROUTE },
-      { enemy: 'nibbler', count: 16, intervalSec: 0.5, delaySec: 4, route: ROUTE },
+      { enemy: 'fracture', count: 1, route: ROUTE },
+      { enemy: 'mote', count: 6, intervalSec: 0.5, delaySec: 5, route: ROUTE },
     ],
   },
-  // W4 · 724: two Zoomer runs either side of a Nibbler knot.
+  // W4 · 737: Motes either side of a Fracture.
   {
     groups: [
-      { enemy: 'zoomer', count: 6, route: ROUTE },
-      { enemy: 'nibbler', count: 12, intervalSec: 0.5, delaySec: 4, route: ROUTE },
-      { enemy: 'zoomer', count: 7, delaySec: 10, route: ROUTE },
+      { enemy: 'mote', count: 4, intervalSec: 0.5, route: ROUTE },
+      { enemy: 'fracture', count: 1, delaySec: 4, route: ROUTE },
+      { enemy: 'mote', count: 4, intervalSec: 0.5, delaySec: 10, route: ROUTE },
     ],
   },
-  // W5 · 766: a long Nibbler knot, then a Zoomer run.
+  // W5 · 800: a Fracture and a long Mote knot behind it.
   {
     groups: [
-      { enemy: 'nibbler', count: 18, intervalSec: 0.45, route: ROUTE },
-      { enemy: 'zoomer', count: 8, delaySec: 9, route: ROUTE },
+      { enemy: 'fracture', count: 1, route: ROUTE },
+      { enemy: 'mote', count: 10, intervalSec: 0.45, delaySec: 5, route: ROUTE },
     ],
   },
 ]);

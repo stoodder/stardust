@@ -14,8 +14,13 @@
 // Phase banners (in the wave banner's place): W1's "The Descent", and Phase 2's "The Halls" over
 // "The Unsung" (the Halls banner and Phase 2's are one: Phase 2 begins as the choir reaches the
 // Halls). A resumed run's replay shows none (app/checkpoints.ts). No "!" anywhere (finale tone).
+// After "Who's there?" restores the class Directive 0 folded (`ClassRestored`), the battle stands
+// paused with QUILL's word under PAUSED (`REBUILD_NOTE`, D156) so the player rebuilds before the
+// Halls run on; play resumes on the player's own Space or speed button, and the word goes with it.
 // Every signal here is quiet (ui/hud/finaleState.ts) on a map without the finale's song or timers.
+import { effect } from '@preact/signals';
 import type { CompiledMapDef } from '../content/compiled.ts';
+import { SPEAKER_DEFS } from '../content/dialogue/speakers.ts';
 import type { IdSpace } from '../content/types.ts';
 import { formatCount } from '../story/counter.ts';
 import {
@@ -24,12 +29,26 @@ import {
   finaleClock,
   finalePhase,
   nextHeld,
+  pauseNote,
   phaseBanner,
   type FinaleClockView,
+  type PauseNote,
 } from '../ui/hud/finaleState.ts';
+import { speed } from '../ui/state.ts';
+import { setSpeed } from './commands.ts';
 import { COUNTDOWN_PHASE, trackCountdown } from './countdown.ts';
 import type { Host } from './host.ts';
 import { cueStale, displayName } from './hudText.ts';
+
+/**
+ * QUILL's word as the battle pauses after "Who's there?" (D156): the refund is already in the
+ * credits (Directive 0 folded the class at 100%), so the pause is for the rebuild. Warm, never a
+ * scolding; Keep's QUILL, still holding things.
+ */
+export const REBUILD_NOTE: PauseNote = {
+  speaker: SPEAKER_DEFS.quill.name,
+  text: "I'm holding the clock. Your refund's in the credits: rebuild, then Space.",
+};
 
 /** The countdown's label: the counter's own name, the one the epilogue's last card lands on 0. */
 export const COUNTER_LABEL = 'Pests processed';
@@ -94,6 +113,7 @@ function reset(): void {
   choirHalted.value = false;
   nextHeld.value = false;
   phaseBanner.value = null;
+  pauseNote.value = null;
 }
 
 /**
@@ -161,6 +181,16 @@ export function bindFinaleHud(host: Host<IdSpace>, lifetime: number): () => void
     host.bus.on('PhaseChanged', (e) => {
       sync();
       if (e.phase === COUNTDOWN_PHASE) banner(PHASE_TWO_BANNER.kicker, PHASE_TWO_BANNER.title);
+    }),
+    // The folded class is back: hold the battle for the rebuild (not in a resumed run's replay).
+    host.bus.on('ClassRestored', () => {
+      if (host.replaying) return;
+      setSpeed(0);
+      pauseNote.value = REBUILD_NOTE;
+    }),
+    // Play resumed (the player's own press): QUILL's word goes.
+    effect(() => {
+      if (speed.value !== 0 && pauseNote.peek() !== null) pauseNote.value = null;
     }),
   ];
   return () => {

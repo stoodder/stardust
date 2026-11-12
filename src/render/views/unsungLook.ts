@@ -17,6 +17,7 @@
 //   CHURN_CLODS `grime.3` clods hop on it (`clodAt`), still under reduced motion. As it comes up
 //   among the singers a `violet.4` burst rings out (`surfaceBurstAt`, SURFACE_BURST_MS).
 import { UNSUNG_FORM_SPRITE, UNSUNG_STAGES } from '../../content/sprites/enemies/unsung.ts';
+import { TILE_H } from '../iso.ts';
 import { STEPPED_ALPHA } from '../vfx/fxTiming.ts';
 import type { Facing } from './spriteInfo.ts';
 
@@ -142,5 +143,98 @@ export function surfaceBurstAt(
 export function unsungForms(views: Iterable<{ readonly bodyId: string | null }>): string[] {
   const out: string[] = [];
   for (const v of views) if (v.bodyId?.startsWith('enemy.unsung') === true) out.push(v.bodyId);
+  return out;
+}
+
+// --- Held by the song (M8 review R1): the final boss must read as one at its climax -------------
+// In Phase 2 the song holds the Unsung (and its split's parts) at its circle's edge, among the
+// Halls mouth's towers, under the Bore beam and a cloud of numbers. Render-only, so the fight's
+// balance never moves: while it is held (`heldBySong`), its body
+// - wears a 1 px `gold.4` rim on the side that faces the song (`rimToward`: the song's light on it,
+//   gold = remembered, art-direction §3),
+// - stands in a soft `violet.3` ground pool (UNSUNG_POOL_TILES: violet = forgotten; additive, so it
+//   reads in the night and in the song's gold),
+// - sorts over the towers on the tiles round it (UNSUNG_HOLD_LIFT_PX),
+// - and the hit sparks and floating numbers that start on or round it draw dimmed
+//   (UNSUNG_DIM_ALPHA within UNSUNG_DIM_MARGIN_PX of its frame), so its silhouette stays whole.
+
+/** The script phase the song sings in (sim/song.ts `SONG_PHASE`; battleEvents.ts reads it too). */
+export const SONG_SCRIPT_PHASE = 2;
+/** Sort lift while held (px of foot y): one tile row and a pixel, over the tower in front of it. */
+export const UNSUNG_HOLD_LIFT_PX = TILE_H + 1;
+/** The ground pool's radius (tiles) and strength (additive alpha scale). */
+export const UNSUNG_POOL_TILES = 1.1;
+export const UNSUNG_POOL_STRENGTH = 0.9;
+/** The rim's colour: the song's light on the side it holds. */
+export const UNSUNG_RIM_COLOR = 'gold.4';
+/** Effects that start this near its drawn frame (px) dim to UNSUNG_DIM_ALPHA (a ladder step). */
+export const UNSUNG_DIM_MARGIN_PX = 10;
+export const UNSUNG_DIM_ALPHA: number = STEPPED_ALPHA[2];
+
+
+/** What the hold reads of a unit (sim `Enemy`). */
+export interface HeldFacts {
+  readonly alive: boolean;
+  readonly burrowed: boolean;
+  readonly leaving: boolean;
+  readonly x: number;
+  readonly y: number;
+}
+
+/** A song circle (sim `SongCircle`). */
+export interface HoldCircle {
+  readonly x: number;
+  readonly y: number;
+  readonly r: number;
+}
+
+/**
+ * The song circle holding a song-bound unit (the Unsung or a split part, `laidToRestBySong`) in
+ * script phase `phase`, or null: it stands inside one, above ground, while the song sings. The
+ * nearest centre wins when circles overlap.
+ */
+export function heldBySong(
+  e: HeldFacts,
+  phase: number,
+  circles: readonly HoldCircle[],
+): HoldCircle | null {
+  if (phase !== SONG_SCRIPT_PHASE || !e.alive || e.burrowed || e.leaving) return null;
+  let best: HoldCircle | null = null;
+  let bestD = Number.POSITIVE_INFINITY;
+  for (const c of circles) {
+    const dx = e.x - c.x;
+    const dy = e.y - c.y;
+    const d = dx * dx + dy * dy;
+    if (d <= c.r * c.r && d < bestD) {
+      best = c;
+      bestD = d;
+    }
+  }
+  return best;
+}
+
+/**
+ * The rim's 1 px offset (screen px, each −1, 0 or 1) from a body at screen (bx, by) toward the
+ * song's centre at screen (cx, cy): the copy drawn under the body shows one pixel on that side.
+ * Eight ways; straight on when the centre sits under the body.
+ */
+export function rimToward(
+  bx: number,
+  by: number,
+  cx: number,
+  cy: number,
+  out: { dx: number; dy: number },
+): { dx: number; dy: number } {
+  const vx = cx - bx;
+  const vy = cy - by;
+  if (vx === 0 && vy === 0) {
+    out.dx = 0;
+    out.dy = -1;
+    return out;
+  }
+  // 22.5° either side of an axis is that axis alone.
+  const tan = Math.tan(Math.PI / 8);
+  out.dx = Math.abs(vx) > Math.abs(vy) * tan ? Math.sign(vx) : 0;
+  out.dy = Math.abs(vy) > Math.abs(vx) * tan ? Math.sign(vy) : 0;
   return out;
 }

@@ -1084,6 +1084,25 @@ section.chamfer,
   pointer-events: none;
 }
 
+/* A speaker's word under PAUSED (the finale's rebuild pause, `pauseNote`): one line, the
+   speaker's plate colour, the notice's own panel. */
+.hud-paused.noted {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+
+.hud-paused-note {
+  color: var(--sd-white-1);
+}
+
+.hud-paused-speaker {
+  color: var(--sd-teal-4);
+}
+
 /* Reduced motion (D138, D139): no blink. The old meter holds a steady 2 s, then the new label
    shows in a steady accent for 2 s before it settles. Each a cut, never a motion. */
 @keyframes hud-relabel-still-to {
