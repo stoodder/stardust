@@ -30,10 +30,10 @@ jobs:
     # The whole gate takes ~18 min on the 4-core cloud session; a hosted runner is slower.
     timeout-minutes: 90
     env:
-      # A hosted runner's CPU is ~2.1× slower than the reference session's (Endless's 60 waves:
-      # 2.44 s here vs 1.1–1.2 s there), so assertion 13 reads its CPU time at that scale
-      # (tools/simClock.ts; architecture.md § 5).
-      SIM_CPU_SCALE: '2.5'
+      # A hosted runner's CPU is 2.1–4.4× slower than the reference session's, varying by runner
+      # (Endless's 60 waves: 2.44 s and 5.04 s there vs 1.1–1.2 s here), so assertion 13 reads
+      # its CPU time at the slow end's scale (tools/simClock.ts; architecture.md § 5).
+      SIM_CPU_SCALE: '4'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
