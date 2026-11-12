@@ -102,8 +102,9 @@ function Card({ view }: { view: CrateView }) {
             class="cr-lid-brand"
             tabIndex={-1}
             ref={view.kind === 'pick' ? focusOnce : null}
+            aria-label="Zibzab's crate"
           >
-            Zibzab<span class="hud-sr-only">'s crate</span>
+            Zibzab
           </h2>
           <span class="cr-sticker" aria-hidden="true">
             {STICKER}

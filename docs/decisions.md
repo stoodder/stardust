@@ -1924,3 +1924,28 @@ The finale's spine, C5, the epilogue, veteran replays and the declutter pass are
 - **Thrum's echo** spawns at the first live boss, else at the Halls end of the choir's road, and drifts to Pebble at 1 tile/s. It is untargetable. It turns gold on its first tick inside the song (`EchoArrived`), rises for 3 s, then is gone.
 - **Story conditions** gain `{ phaseAtLeast }` and `{ inputResolved }`. The forced input id is `WHOS_THERE_INPUT` (`content/forcedInputs.ts`), and it arms after `fin_m01_cue_directive0`'s last line. On a pick-list map, the speakers present are the run's pick, Ves'thara and the choir's leader.
 - **The Unsung keeps the Maw's gather growth** (5 stages, `enemy.unsung_g1`–`_g5`).
+
+### D155 — 2026-11-12 — M8 as built: rulings and addenda to D154
+
+The finale, its ending, the post-game and the polish are built (tasks.md § M8). The rulings made while building, beyond D154 and its addenda:
+
+**The finale's battle.**
+- **The choir:** a hush allowance replaces the Voices floor. The choir is lost once more than K = 14 singers are hushed, in every cell (`ChoirDef.maxHushed`), so every door choice has the same margin in singers. The harness reads Voices % of the base 20 at its lowest point (`stats.voicesMin`), because Dawn wakes the hushed; Results says "Voices held n of N". Convoy militia damage is 2.5 (at 4 it was the whole warren/convoy gap). The procession walks 0.08 tiles/s, one leg per wave (`walkWaves` 18); `haltTiles` 2.5.
+- **Phase 2:** waves W19–26 hold until Phase 2 (`WaveDef.inPhase`), and none start after Dawn. The win is scripted (`MapDef.winBy: 'script'`), so Dawn plays its 8 s. Rest is trickle-dominant (target 1400, 5.6/s, 0.001 per boss HP) so every QUILL answer lands within ±30% of ~3 min. The Unsung has 18,000 HP (parts 1,500, worth 5 rest each) and is held still inside the song. A forced input freezes the whole sim, and the harness's executor rebuilds a restored class.
+- **Two answers to the Descent, not one (pillar 2):** the finale has a winning build without a Mindspike (`alt:no_mindspike`: Thumper, Hum Choir, Sproing Pad, Harpoon; 45%), pinned on every seed, companion and the warren. It came from waves alone: about a third of the late void threat became Everglow's Bore security on the Bore road (Auditors, drones, an Associate), and most Silencers, which were what hushed non-psionic builds, became Auditors. Par holds 55.
+- **Laid to Rest is 60%** of Phase 2 kills laid to rest inside the song. A deliberate "fight inside the song" build earns it; plain par doesn't.
+- **The finale's night is render-only:** the world darkens toward Sundown's plum, punched by the song's rings; the sim's darkness stays 0, so no range penalty. The eastern sky warms per Phase 1 wave (sky-only keys) and Dawn's sun sweeps east to west over 8 s.
+
+**The ending.** The close runs Dawn (unskippable the first time) → Results (REMEMBERED: {n}, Voices held, Continue only) → Sterling's memo → C5 (asked once, never re-asked) → the epilogue cards → PESTS PROCESSED: 0 flipping to REMEMBERED → credits → the final image (Wayside for Stay, the orbit for Go) → the post-game star map. One thing at a time (D153). The finale's music is the colony's jingle as a hymn, in tune over minor harmony, turning major at Dawn; laying a Hollow to rest chimes the jingle's next note.
+
+**The post-game.** An "After the dawn" plate on the dawn star map lists Endless, the three challenges (Skitterkin Only, Lights Out, Glass Core) and "Watch the epilogue". Endless is seeded (one record per seed), with rotating counter blocks previewed in the HUD. Challenges carry their rules as map data, open the loadout (non-faction towers greyed with the reason), pay Intel once per medal and never touch the campaign. 3× speed unlocks once the finale is won. Veteran replays: eight opt-in modifiers on the briefing; a modifier that wouldn't bite is dimmed with its reason; the Veteran medal needs +100% and a win from wave 1.
+
+**The rest of the curve.** A3M4's and A3M5's references carry Head Start (what the live player carries), with par 63.6 on each. The escort chain climbs A2M5 75 → A3M1 66.7 → A3M6 59.3 → FIN 55. A splitter's brood counts toward a wave's threat (maps.md §6.2). Story wins on every campaign and challenge map.
+
+**Engineering.**
+- The initial JS is 780 kB gz: Act II, Act III, the finale, the battle renderer, the portraits and the finale's sprites each load lazily, behind one content gate. Post-game maps register through the finale's chunk (`registerActMaps`). Finale-only code and sprites import only from the finale's edge.
+- The sim harness spreads a map's runs over its workers; FIN's balance tests are split into parts.
+- A GitHub Pages deploy runs on a release tag `m*` (architecture.md § 5, *Owner recipe*).
+- The SEAL fallback band is 96 px, not the 64 px logged earlier: the comms panel is up to 86 px tall.
+
+**The declutter pass (D153).** A voice guard is now a test (`smoke/declutter.spec.ts` against `smoke/declutter-before/`): no gameplay-critical readout behind a "more", and no character or story element loses area. Under it: the star-map panel tucks medals behind a toggle and no longer hides nodes; the loadout folds links and protocol effects; briefings give each line its own speaker's face and fold the answering-tower lists; floating text merges and goes quiet at Dawn; Results says each fact once.
