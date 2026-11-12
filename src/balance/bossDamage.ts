@@ -6,7 +6,8 @@
 // boss's damage × k, so each hit takes k times the share of its HP and feeds k times the rest.
 // Its time floors (`notBeforeSec`) are what hold it: hit harder, a form still comes at its time.
 // The harness runs it on the map's default flags (label `bossDamage<k>:alt:<name>`); the finale's
-// 24 story cells are swept in the slow lane (balance/finM01CombosDamage.test.ts).
+// 24 story cells are swept in the slow lane (`altCellFailures`, the second `it.each` of each
+// balance/finM01Combos<Alt>.test.ts).
 import type {
   CompiledContent,
   CompiledEnemyDef,
