@@ -18,14 +18,14 @@
     },
     "journal": {
       "count": 1,
-      "area": 141848,
-      "shown": 141848,
+      "area": 157344,
+      "shown": 157344,
       "inMore": 0,
       "boxes": [
         {
-          "x": 556,
+          "x": 504,
           "y": 184,
-          "w": 476,
+          "w": 528,
           "h": 298
         }
       ]
@@ -33,9 +33,9 @@
   },
   "critical": {},
   "density": {
-    "elements": 33,
+    "elements": 34,
     "controls": 17,
-    "words": 103,
+    "words": 102,
     "numbers": 6,
     "repeated": ["2346 ×2"],
     "longCopy": [
