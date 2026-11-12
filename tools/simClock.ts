@@ -6,14 +6,14 @@
 // divided by that scale, so assertion 13's budget means the same work everywhere.
 import { performance } from 'node:perf_hooks';
 
-/** The machine's declared CPU slowdown against the reference (`SIM_CPU_SCALE`, ≥ 1; else 1). */
-export function simCpuScale(env: string | undefined = process.env.SIM_CPU_SCALE): number {
+/** A declared CPU slowdown against the reference (a `SIM_CPU_SCALE` value, ≥ 1; else 1). */
+export function simCpuScale(env: string | undefined): number {
   if (env === undefined || env.trim() === '') return 1;
   const n = Number(env);
   return Number.isFinite(n) && n >= 1 ? n : 1;
 }
 
-const scale = simCpuScale();
+const scale = simCpuScale(process.env.SIM_CPU_SCALE);
 
 /** This thread's raw CPU time (user + system) in ms, or wall time on a Node without it. */
 const rawClockMs: () => number =
